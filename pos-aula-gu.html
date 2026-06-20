@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Gu — CZK English</title>
+
+  <style>
+    :root{
+      --page-bg: #f4f7fa;
+      --card-bg: #fff;
+      --accent: #2f86e6;
+      --accent-dark: #1f6fd1;
+      --green: #36b37e;
+      --muted: #6b7280;
+      --border: #e6eef8;
+      --box-radius: 12px;
+      --card-width: 720px;
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+      padding:0;
+      background:var(--page-bg);
+      font-family:Inter, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    .wrap{
+      min-height:100%;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      padding:48px 20px;
+    }
+
+    .card{
+      width:100%;
+      max-width:var(--card-width);
+      background:var(--card-bg);
+      border-radius:18px;
+      padding:28px;
+      box-shadow:0 6px 22px rgba(33,47,60,0.06);
+      border:1px solid rgba(15,33,64,0.03);
+    }
+
+    header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:8px;
+    }
+
+    .badge{
+      background:linear-gradient(180deg,#fff,#f2fbff);
+      border:1px solid var(--border);
+      padding:8px 12px;
+      border-radius:999px;
+      color:var(--accent);
+      font-weight:700;
+      font-size:0.85rem;
+    }
+
+    h1{
+      margin:0;
+      font-size:1.3rem;
+      color:#0f1724;
+    }
+
+    .meta{
+      color:var(--muted);
+      font-size:0.92rem;
+      margin-top:6px;
+    }
+
+    .actions{
+      display:flex;
+      gap:10px;
+    }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      border-radius:10px;
+      border:none;
+      background:var(--accent);
+      color:#fff;
+      text-decoration:none;
+      font-weight:600;
+      cursor:pointer;
+      box-shadow:0 6px 14px rgba(47,134,230,0.12);
+    }
+
+    .btn.secondary{
+      background:#fff;
+      color:var(--accent);
+      border:1px solid var(--border);
+      box-shadow:none;
+    }
+
+    main{margin-top:18px;}
+    section{margin-top:18px;}
+
+    .panel{
+      background:#fbfdff;
+      border-radius:12px;
+      padding:16px;
+      border:1px solid var(--border);
+    }
+
+    .outline-card{
+      border-radius:10px;
+      border:1px solid var(--border);
+      padding:16px;
+      background:#fff;
+    }
+
+    .vocab-grid{
+      display:flex;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+
+    .vocab{
+      flex:1;
+      min-width:220px;
+      border-radius:10px;
+      padding:14px;
+      border:2px solid #dfeefe;
+      background:#fff;
+    }
+
+    .vocab.green{
+      border-color:#c9f3dc;
+      background:#f5fff6;
+    }
+
+    .vocab h3{
+      margin:0;
+      font-size:1rem;
+      color:#154360;
+    }
+
+    .vocab p{
+      margin:8px 0 0 0;
+      color:var(--muted);
+      font-size:0.95rem;
+    }
+
+    .media-row{
+      display:flex;
+      gap:14px;
+      margin-top:12px;
+      flex-wrap:wrap;
+    }
+
+    .media-btn{
+      background:#fff;
+      border:1px solid var(--border);
+      padding:12px 16px;
+      border-radius:10px;
+      font-weight:700;
+      color:var(--accent);
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      min-width:200px;
+      justify-content:center;
+    }
+
+    .homework{
+      background:#f3fff6;
+      border:1px solid #d7f5df;
+      border-radius:10px;
+      padding:14px;
+      margin-top:10px;
+    }
+
+    .speaking{
+      margin-top:18px;
+      padding:16px;
+      border-radius:12px;
+      background:linear-gradient(180deg,#ffffff,#fbfdff);
+      border:1px solid var(--border);
+      max-width:640px;
+    }
+
+    .speaking h2{
+      margin:0 0 10px 0;
+      font-size:1.05rem;
+      color:#0f1724;
+    }
+
+    .talk-table{
+      width:100%;
+      border-collapse:collapse;
+      border-radius:10px;
+      overflow:hidden;
+      background:#fff;
+      border:1px solid #e1e9f5;
+      font-size:0.9rem;
+    }
+
+    .talk-table th,
+    .talk-table td{
+      padding:8px 10px;
+      text-align:left;
+    }
+
+    .talk-table th{
+      background:#eef4ff;
+      color:#1b3556;
+      font-weight:700;
+      border-bottom:1px solid #dde6fa;
+    }
+
+    .row-teacher{ background:#e7f2ff; }
+    .row-student{ background:#e8f7ef; }
+    .talk-label{ font-weight:700; }
+    .talk-percent{ font-weight:700; color:#0f1724; }
+    .talk-time{ color:var(--muted); }
+
+    footer{
+      margin-top:20px;
+      color:var(--muted);
+      font-size:0.9rem;
+      text-align:center;
+    }
+
+    @media (max-width:720px){
+      .card{padding:18px;border-radius:14px;}
+      .vocab-grid{flex-direction:column;}
+      .media-row{flex-direction:column;}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Sistema de Medidas Americano — Imperial System</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Gu &nbsp;•&nbsp;
+            <strong>Data:</strong> 06/10/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" onclick="window.print();return false;">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+        <section class="panel">
+          <p style="margin:0;font-weight:600;color:#08325a;">
+            Resumo da aula: unidades de medida americanas (distância, peso, volume e temperatura), vocabulário temático e vídeo com atividade de verdadeiro ou falso.
+          </p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 10px 0;">
+              A aula começou com uma conversa em inglês sobre a semana de Gu — privação de sono (<em>sleep deprivation</em>), trabalho no domingo e planos de viagem para Goiás com a família, usando milhas de cartão de crédito para as passagens. Ótima prática de inglês conversacional!
+            </p>
+            <p style="margin:0 0 10px 0;">
+              O tema principal foi o <strong>sistema de medidas americano (Imperial System)</strong>: as unidades de distância, peso, volume e temperatura usadas nos EUA — que diferem completamente do sistema métrico usado no Brasil. O professor apresentou cada unidade com sua equivalência em metros/quilos e deu dicas práticas de conversão mental, como dividir pounds por 2 para ter uma aproximação em quilos.
+            </p>
+            <p style="margin:0 0 10px 0;">
+              Antes do vídeo, foi feita uma preparação de vocabulário temático — palavras que apareceriam no conteúdo, como <em>troops, ruler, melting pot, to throw a tantrum, to get rid of</em> e outros.
+            </p>
+            <p style="margin:0 0 10px 0;">
+              Em seguida, foi assistido um <strong>vídeo cômico</strong> ambientado na época da independência americana, com o General Washington e seus assessores decidindo qual sistema de medidas os EUA iriam adotar. O humor do vídeo está na arbitrariedade do sistema imperial — e em como os americanos optaram deliberadamente pelo sistema "aleatório" em vez do métrico.
+            </p>
+            <p style="margin:0;">
+              Após o vídeo, foi feita uma <strong>atividade de verdadeiro ou falso</strong> com perguntas sobre o conteúdo assistido, com bom desempenho de Gu.
+            </p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <h3>Melting pot</h3>
+              <p>
+                <em>(pt) caldeirão cultural — lugar onde diferentes culturas se misturam</em><br>
+                <small>New York is a melting pot of cultures.</small>
+              </p>
+            </div>
+            <div class="vocab green">
+              <h3>To throw a tantrum</h3>
+              <p>
+                <em>(pt) perder o controle / fazer birra (ficar barulhento e nervoso de repente)</em><br>
+                <small>He threw a tantrum when he heard the news.</small>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📚 Vocabulário da aula</h2>
+          <div class="outline-card">
+            <h3 style="margin-top:0;">Unidades de distância</h3>
+            <ul>
+              <li><strong>inch (in)</strong> – polegada (~2,54 cm) &nbsp;|&nbsp; 12 inches = 1 foot</li>
+              <li><strong>foot / feet (ft)</strong> – pé / pés (~30 cm) &nbsp;|&nbsp; 3 feet = 1 yard</li>
+              <li><strong>yard (yd)</strong> – yard (~91 cm) &nbsp;|&nbsp; 1,760 yards = 1 mile</li>
+              <li><strong>mile (mi)</strong> – milha (~1,6 km)</li>
+            </ul>
+
+            <h3>Unidades de peso</h3>
+            <ul>
+              <li><strong>ounce (oz)</strong> – onça (~28 g) &nbsp;|&nbsp; 16 ounces = 1 pound</li>
+              <li><strong>pound (lb)</strong> – libra (~454 g ≈ meio quilo) &nbsp;|&nbsp; 2,000 pounds = 1 ton</li>
+              <li><strong>ton</strong> – tonelada americana (~907 kg)</li>
+            </ul>
+
+            <h3>Unidades de volume (líquidos)</h3>
+            <ul>
+              <li><strong>pint</strong> – pint (~473 ml)</li>
+              <li><strong>quart</strong> – quart (~946 ml)</li>
+              <li><strong>gallon</strong> – galão (~3,78 L) — usado para gasolina, leite, tinta</li>
+            </ul>
+
+            <h3>Temperatura</h3>
+            <ul>
+              <li><strong>Fahrenheit (°F)</strong> – escala americana &nbsp;|&nbsp; 32°F = 0°C &nbsp;|&nbsp; 212°F = 100°C</li>
+              <li><strong>Celsius (°C)</strong> – escala métrica / lógica (0° = gelo, 100° = fervura)</li>
+            </ul>
+
+            <h3>Vocabulário do vídeo e da aula</h3>
+            <ul>
+              <li><strong>troops</strong> – tropas</li>
+              <li><strong>system of weights and measures</strong> – sistema de pesos e medidas</li>
+              <li><strong>God willing</strong> – se Deus quiser</li>
+              <li><strong>man of color</strong> – homem negro</li>
+              <li><strong>track</strong> – pista de corrida</li>
+              <li><strong>ruler</strong> – régua</li>
+              <li><strong>to line up</strong> – se alinhar (frasal verbo: alinha + up = mesma ideia, mais enfático)</li>
+              <li><strong>slave / slavery</strong> – escravo / escravidão</li>
+              <li><strong>melting pot</strong> – caldeirão cultural / mistura de culturas</li>
+              <li><strong>to throw a tantrum</strong> – perder o controle, fazer birra</li>
+              <li><strong>glamour</strong> – glamour (britânico) / glamor (americano)</li>
+              <li><strong>to get rid of</strong> – se livrar de</li>
+              <li><strong>sleep deprivation</strong> – privação de sono</li>
+              <li><strong>miles</strong> (reward miles) – milhas de pontos / programa de fidelidade</li>
+              <li><strong>rent a car</strong> – alugar um carro</li>
+              <li><strong>by plane</strong> – de avião</li>
+            </ul>
+
+            <h3>Inglês britânico vs americano — ortografia</h3>
+            <ul>
+              <li><strong>colour</strong> (BR) → <strong>color</strong> (US)</li>
+              <li><strong>armour</strong> (BR) → <strong>armor</strong> (US)</li>
+              <li><strong>glamour</strong> (BR) → <strong>glamor</strong> (US) — os americanos "se livraram do U"</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2>
+          <div class="outline-card">
+            <ul>
+              <li>Yeah, sleep deprivation this week. — Sim, privação de sono essa semana.</li>
+              <li>I worked this Sunday. — Eu trabalhei nesse domingo.</li>
+              <li>We will go to Goiás by plane and rent a car. — Vamos ir para Goiás de avião e alugar um carro.</li>
+              <li>Can I share my screen? — Posso compartilhar minha tela?</li>
+              <li>Do you want to join us on a trip? — Você quer viajar com a gente?</li>
+              <li>I have twenty-two thousand miles. — Eu tenho vinte e dois mil milhas.</li>
+              <li>One foot is twelve inches. — Um pé equivale a doze polegadas.</li>
+              <li>One yard equals three feet. — Um yard equivale a três pés.</li>
+              <li>One mile is one thousand, seven hundred and sixty yards. — Uma milha equivale a 1.760 yards.</li>
+              <li>One pound is about half a kilo. — Um pound é aproximadamente meio quilo.</li>
+              <li>Divide by two to get an approximate value. — Divida por dois para ter um valor aproximado.</li>
+              <li>Our great nation will use the random one. — Nossa grande nação vai usar o aleatório.</li>
+              <li>We will use gallons, pints and quarts for milk and paint. — Usaremos galões, pints e quarts para leite e tinta.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">🚨 Correções importantes</h2>
+          <div class="outline-card">
+
+            <p style="margin:0 0 12px 0;color:var(--muted);font-size:0.92rem;">Pontos que o professor corrigiu ou reforçou durante a aula:</p>
+
+            <p><strong>1. "I work at this Sunday" — preposição errada com dia da semana</strong></p>
+            <p style="color:var(--muted);font-size:0.94rem;margin-top:0;">
+              ❌ <em>I work at this Sunday.</em><br>
+              ✅ <strong>I worked this Sunday.</strong> / <strong>I'm working this Sunday.</strong><br>
+              Com dias da semana, não se usa "at". Basta o dia: <em>on Sunday</em> (no domingo em geral) ou só <em>this Sunday</em> (nesse domingo específico).
+            </p>
+
+            <p><strong>2. Foot (singular) → Feet (plural) — irregular!</strong></p>
+            <p style="color:var(--muted);font-size:0.94rem;margin-top:0;">
+              ❌ <em>Three foots.</em><br>
+              ✅ <strong>Three feet.</strong><br>
+              O plural de <em>foot</em> é <em>feet</em> — não segue a regra do "s". É um plural irregular, como <em>tooth → teeth</em> e <em>mouse → mice</em>.
+            </p>
+
+            <p><strong>3. Pound = libra (peso) E libra esterlina (moeda)</strong></p>
+            <p style="color:var(--muted);font-size:0.94rem;margin-top:0;">
+              Em inglês, a mesma palavra <strong>pound</strong> é usada tanto para a unidade de peso (lb) quanto para a moeda do Reino Unido (£). O contexto deixa claro qual é qual.
+            </p>
+
+            <p><strong>4. Fahrenheit — por que parece aleatório?</strong></p>
+            <p style="color:var(--muted);font-size:0.94rem;margin-top:0;">
+              Celsius faz sentido lógico: 0°C = água congela, 100°C = água ferve. Fahrenheit não segue essa lógica tão clara — daí o humor do vídeo. O ponto de congelamento da água em Fahrenheit é 32°F, e o de fervura é 212°F.
+            </p>
+
+            <p><strong>5. To get rid of — tradução literal não funciona</strong></p>
+            <p style="color:var(--muted);font-size:0.94rem;margin-top:0;">
+              ✅ <strong>To get rid of</strong> = se livrar de (não tem tradução palavra por palavra)<br>
+              No vídeo: os americanos "got rid of" (se livraram de) a letra U em palavras como <em>colour → color</em> e <em>armour → armor</em>.
+            </p>
+
+            <p><strong>6. Line up — frasal verbo que intensifica o verbo base</strong></p>
+            <p style="color:var(--muted);font-size:0.94rem;margin-top:0;">
+              <em>Line</em> = alinhar &nbsp;|&nbsp; <em>Line up</em> = se alinhar (frasal verbo com significado similar, mas mais enfático e coloquial)<br>
+              O professor explicou que o <em>up</em> em muitos frasais verbos simplesmente intensifica a ação: <em>wake up</em> = acordar (mais intenso que só <em>wake</em>).
+            </p>
+
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">🎥 Transcrição &amp; Gravação</h2>
+          <div class="media-row">
+            <a class="media-btn" href="#" role="button">📄 Acessar transcrição</a>
+
+            <a
+              class="media-btn"
+              href="https://youtu.be/HLpUwj7lock"
+              target="_blank"
+              rel="noopener noreferrer"
+              role="button"
+              style="background:linear-gradient(180deg,#1f6fd1,#2f86e6);color:#fff;border:none;min-width:260px;"
+            >
+              🎥 Assistir gravação (acesso privado)
+            </a>
+          </div>
+        </section>
+
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>🗣️ Tempo de Fala (Talk Time)</h2>
+          <table class="talk-table">
+            <thead>
+              <tr>
+                <th>Quem falou</th>
+                <th>Porcentagem</th>
+                <th>Duração aproximada</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="row-teacher">
+                <td><span class="talk-label">César (Professor)</span></td>
+                <td><span class="talk-percent">52%</span></td>
+                <td class="talk-time">~27 minutos</td>
+              </tr>
+              <tr class="row-student">
+                <td><span class="talk-label">Gu</span></td>
+                <td><span class="talk-percent">48%</span></td>
+                <td class="talk-time">~25 minutos</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📝 Homework</h2>
+          <div class="homework">
+            <p style="margin:0 0 8px 0;">
+              📌 <strong>Lição de casa:</strong>
+            </p>
+            <ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+              <li>Leia o pós-aula de <strong>2 a 3 vezes na semana</strong>.</li>
+            </ul>
+          </div>
+
+          <div style="margin-top:14px;">
+            <a class="btn" href="https://wa.me" style="background:#25D366;border-radius:10px;box-shadow:none;">
+              💬 Falar comigo no WhatsApp
+            </a>
+          </div>
+        </section>
+
+      </main>
+
+      <footer>
+        <p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">
+          © 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com
+        </p>
+      </footer>
+    </article>
+  </div>
+</body>
+</html>
