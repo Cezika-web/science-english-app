@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Gu — CZK English</title>
+
+  <style>
+    :root{
+      --page-bg: #f4f7fa;
+      --card-bg: #fff;
+      --accent: #2f86e6;
+      --accent-dark: #1f6fd1;
+      --green: #36b37e;
+      --muted: #6b7280;
+      --border: #e6eef8;
+      --box-radius: 12px;
+      --card-width: 720px;
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+      padding:0;
+      background:var(--page-bg);
+      font-family:Inter, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    .wrap{
+      min-height:100%;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      padding:48px 20px;
+    }
+
+    .card{
+      width:100%;
+      max-width:var(--card-width);
+      background:var(--card-bg);
+      border-radius:18px;
+      padding:28px;
+      box-shadow:0 6px 22px rgba(33,47,60,0.06);
+      border:1px solid rgba(15,33,64,0.03);
+    }
+
+    header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:8px;
+    }
+
+    .badge{
+      background:linear-gradient(180deg,#fff,#f2fbff);
+      border:1px solid var(--border);
+      padding:8px 12px;
+      border-radius:999px;
+      color:var(--accent);
+      font-weight:700;
+      font-size:0.85rem;
+    }
+
+    h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+    .meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+    .actions{ display:flex; gap:10px; }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      border-radius:10px;
+      border:none;
+      background:var(--accent);
+      color:#fff;
+      text-decoration:none;
+      font-weight:600;
+      cursor:pointer;
+      box-shadow:0 6px 14px rgba(47,134,230,0.12);
+    }
+
+    .btn.secondary{
+      background:#fff;
+      color:var(--accent);
+      border:1px solid var(--border);
+      box-shadow:none;
+    }
+
+    main{margin-top:18px;}
+    section{margin-top:18px;}
+
+    .panel{
+      background:#fbfdff;
+      border-radius:12px;
+      padding:16px;
+      border:1px solid var(--border);
+    }
+
+    .outline-card{
+      border-radius:10px;
+      border:1px solid var(--border);
+      padding:16px;
+      background:#fff;
+    }
+
+    .vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+
+    .vocab{
+      flex:1;
+      min-width:220px;
+      border-radius:10px;
+      padding:14px;
+      border:2px solid #dfeefe;
+      background:#fff;
+    }
+
+    .vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+    .vocab h3{ margin:0; font-size:1rem; color:#154360; }
+    .vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+
+    .media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+
+    .media-btn{
+      background:#fff;
+      border:1px solid var(--border);
+      padding:12px 16px;
+      border-radius:10px;
+      font-weight:700;
+      color:var(--accent);
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      min-width:200px;
+      justify-content:center;
+    }
+
+    .homework{
+      background:#f3fff6;
+      border:1px solid #d7f5df;
+      border-radius:10px;
+      padding:14px;
+      margin-top:10px;
+    }
+
+    .speaking{
+      margin-top:18px;
+      padding:16px;
+      border-radius:12px;
+      background:linear-gradient(180deg,#ffffff,#fbfdff);
+      border:1px solid var(--border);
+      max-width:640px;
+    }
+
+    .speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+
+    .talk-table{
+      width:100%;
+      border-collapse:collapse;
+      border-radius:10px;
+      overflow:hidden;
+      background:#fff;
+      border:1px solid #e1e9f5;
+      font-size:0.9rem;
+    }
+
+    .talk-table th, .talk-table td{ padding:8px 10px; text-align:left; }
+    .talk-table th{ background:#eef4ff; color:#1b3556; font-weight:700; border-bottom:1px solid #dde6fa; }
+    .row-teacher{ background:#e7f2ff; }
+    .row-student{ background:#e8f7ef; }
+    .talk-label{ font-weight:700; }
+    .talk-percent{ font-weight:700; color:#0f1724; }
+    .talk-time{ color:var(--muted); }
+
+    footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+
+    @media (max-width:720px){
+      .card{padding:18px;border-radius:14px;}
+      .vocab-grid{flex-direction:column;}
+      .media-row{flex-direction:column;}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Conversação Livre — Empreendedorismo, IA e Planejamento de Negócios</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Gu &nbsp;•&nbsp;
+            <strong>Data:</strong> 06/17/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" onclick="window.print();return false;">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+        <section class="panel">
+          <p style="margin:0;font-weight:600;color:#08325a;">
+            Aula de conversação livre em inglês — aproximadamente 55 minutos de discussão sobre negócios, tecnologia e planejamento de carreira. Vocabulário de contexto real, organicamente incorporado.
+          </p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 10px 0;">
+              A aula foi inteiramente conduzida em inglês no formato de <strong>conversação livre</strong>. Os temas surgiram naturalmente a partir da vida profissional e pessoal do Gu, criando um ambiente de imersão real.
+            </p>
+            <p style="margin:0 0 10px 0;">
+              O principal assunto foi a <strong>transição de carreira do Gu</strong>: após anos na Toyota trabalhando em projetos grandes (como o lançamento de um novo modelo de carro), ele está planejando abrir sua própria empresa de engenharia com foco em IA. Discutiu a situação do mercado automotivo — a Toyota perdendo espaço para concorrentes como a Peugeot — e como isso abre oportunidade para quem entrega trabalho diferenciado.
+            </p>
+            <p style="margin:0 0 10px 0;">
+              Um tema central foi a <strong>estrutura inicial do negócio</strong>: onde trabalhar (home office no quintal, aluguel de escritório por ~R$1.400/mês, co-working por ~R$300–500/mês), quanto investir no começo, e a lógica de minimizar custos fixos no início. O professor recomendou a opção mais barata primeiro e apontou que comprometer-se com um contrato de aluguel de 1 ano pode ser arriscado no início.
+            </p>
+            <p style="margin:0 0 10px 0;">
+              Gu planeja <strong>contratar Matthias</strong> — um jovem de 22 anos, especialista em IA e ex-aluno do César — como primeiro funcionário, com remuneração aproximada de R$14/hora para 200 horas mensais. O professor falou sobre o perfil do Matthias e como uma primeira oportunidade de emprego pode gerar grande motivação e lealdade.
+            </p>
+            <p style="margin:0;">
+              O professor compartilhou um desafio pessoal: um <strong>bloqueio com redes sociais</strong> — dificuldade em postar conteúdo de forma consistente para promover o CZK English. Gu sugeriu usar IA (Claude/Cloud) para automatizar a criação de posts diários, stories e reels, tirando o peso criativo do professor. Discutiram também o uso de Obsidian + Claude para pesquisa e criação de conteúdo estratégico. A conversa terminou com a marcação de uma reunião com Rafael (especialista em cloud) para a segunda semana de julho.
+            </p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2>
+          <div class="outline-card">
+            <ul>
+              <li>I am excited. — Estou animado/empolgado.</li>
+              <li>It's just the beginning. — É apenas o começo.</li>
+              <li>I visited a supplier last Saturday. — Visitei um fornecedor no último sábado.</li>
+              <li>I closed a deal with them. — Fechei um acordo com eles.</li>
+              <li>I need to minimize my costs. — Preciso minimizar meus custos.</li>
+              <li>It's difficult in the beginning. — É difícil no começo.</li>
+              <li>I lost 3 students last month. — Perdi 3 alunos no mês passado.</li>
+              <li>They come and they go. — Eles vêm e vão. (sobre alunos/clientes)</li>
+              <li>If you do decent work, you don't have competition. — Se você faz um trabalho decente, não tem concorrência.</li>
+              <li>I need a place where it's quiet. I have a noisy problem. — Preciso de um lugar silencioso. Tenho problema com barulho.</li>
+              <li>Can I work from a co-working space? — Posso trabalhar de um co-working?</li>
+              <li>I can put my laptop in the backyard. — Posso colocar meu laptop no quintal.</li>
+              <li>I think I should start with the cheapest option. — Acho que devo começar pela opção mais barata.</li>
+              <li>She had a sore throat. — Ela estava com dor de garganta.</li>
+              <li>This is priceless. — Isso não tem preço.</li>
+              <li>I am treating this. — Estou trabalhando nisso / tratando disso.</li>
+              <li>Use AI in your specific problem. — Use IA no seu problema específico.</li>
+              <li>He will be really grateful to you. — Ele vai ser muito grato a você.</li>
+              <li>I think he's looking for an opportunity. — Acho que ele está em busca de uma oportunidade.</li>
+              <li>I have a lot of alternatives. — Tenho muitas alternativas.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <h3>Supplier</h3>
+              <p>
+                <em>(pt) fornecedor — empresa ou pessoa que fornece produtos ou serviços para outra empresa</em><br>
+                <small>I visited a supplier last Saturday and closed a deal with them.</small>
+              </p>
+            </div>
+            <div class="vocab green">
+              <h3>Noisy / Noisy problem</h3>
+              <p>
+                <em>(pt) barulhento / problema com barulho — Gu estava procurando essa palavra durante a conversa</em><br>
+                <small>My home office has a noisy problem. I need a quieter space to work.</small>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2>
+          <div class="outline-card">
+            <h3 style="margin-top:0;">Negócios e empreendedorismo</h3>
+            <ul>
+              <li><strong>supplier</strong> – fornecedor</li>
+              <li><strong>deal</strong> – acordo, negócio fechado | <em>I closed a deal with them.</em></li>
+              <li><strong>hiring</strong> – contratação, contratar | <em>I want to start hiring.</em> (≠ wedding = casamento)</li>
+              <li><strong>contract</strong> – contrato | <em>I need to sign a minimum 1-year contract.</em></li>
+              <li><strong>installment</strong> – parcela (pagamento parcelado)</li>
+              <li><strong>co-working</strong> – espaço de trabalho compartilhado</li>
+              <li><strong>backyard</strong> – quintal, fundo da casa</li>
+              <li><strong>receptionist</strong> – recepcionista</li>
+              <li><strong>minimize</strong> – minimizar | <em>I need to minimize my costs.</em></li>
+              <li><strong>opportunity</strong> – oportunidade</li>
+              <li><strong>decent</strong> – decente, razoável | <em>If you do decent work, you don't have competition.</em></li>
+              <li><strong>schedule</strong> – agenda, horário</li>
+              <li><strong>full schedule</strong> – agenda cheia</li>
+            </ul>
+
+            <h3>Tecnologia e IA</h3>
+            <ul>
+              <li><strong>AI / artificial intelligence</strong> – inteligência artificial</li>
+              <li><strong>cloud</strong> – nuvem / nome informal para Claude AI no contexto da aula</li>
+              <li><strong>post</strong> – publicação (redes sociais) | <em>Create one post per day.</em></li>
+              <li><strong>reel / story</strong> – formatos de conteúdo de redes sociais</li>
+              <li><strong>content creation</strong> – criação de conteúdo</li>
+              <li><strong>brainstorm</strong> – sessão de geração de ideias</li>
+              <li><strong>assistant</strong> – assistente (neste contexto, assistente de IA)</li>
+              <li><strong>report</strong> – relatório</li>
+            </ul>
+
+            <h3>Expressões e vocabulário do dia a dia</h3>
+            <ul>
+              <li><strong>priceless</strong> – não tem preço / inestimável | <em>"This is priceless."</em> (referência ao slogan da MasterCard)</li>
+              <li><strong>sore throat</strong> – dor de garganta | <em>Sophia had a sore throat.</em></li>
+              <li><strong>noisy</strong> – barulhento | <em>My house is noisy. I need silence.</em></li>
+              <li><strong>quiet</strong> – silencioso, quieto</li>
+              <li><strong>treating</strong> – tratando (de um problema/questão) | <em>"I am treating this."</em> → tratando/trabalhando nisso</li>
+              <li><strong>grateful</strong> – grato | <em>"He will be really grateful to you."</em></li>
+              <li><strong>rhythm</strong> – ritmo | <em>If I keep this rhythm...</em></li>
+              <li><strong>decent</strong> – decente, satisfatório</li>
+              <li><strong>originally</strong> – originalmente / ser original</li>
+              <li><strong>They come and they go.</strong> – Eles vêm e vão. (expressão natural para falar de rotatividade)</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">🚨 Correções importantes</h2>
+          <div class="outline-card">
+
+            <p style="margin:0 0 12px 0;color:var(--muted);font-size:0.92rem;">Pontos corrigidos ou que vale reforçar da aula:</p>
+
+            <p><strong>1. "Hiring" ≠ "Wedding" — contratar em inglês</strong></p>
+            <p style="color:var(--muted);font-size:0.94rem;margin-top:0;">
+              ❌ <em>"I wanna wedding, I wanna..."</em> (tentando dizer "contratar")<br>
+              ✅ <strong>"I want to hire / I want to start hiring."</strong><br>
+              <em>Hire</em> = contratar (um funcionário) | <em>Wedding</em> = casamento. Para falar de contratação formal, pode-se também usar "contract someone" ou simplesmente "hire."
+            </p>
+
+            <p><strong>2. "I am excited" vs "I am exciting"</strong></p>
+            <p style="color:var(--muted);font-size:0.94rem;margin-top:0;">
+              ❌ <em>"I am exciting."</em><br>
+              ✅ <strong>"I am excited."</strong><br>
+              <em>Excited</em> = empolgado, animado (sentimento da pessoa). <em>Exciting</em> = empolgante (descreve algo, não a pessoa). Ex.: "The news is exciting. I am excited about it."
+            </p>
+
+            <p><strong>3. "I am broke" vs "I am broken"</strong></p>
+            <p style="color:var(--muted);font-size:0.94rem;margin-top:0;">
+              ❌ <em>"I am broken."</em> (querendo dizer sem dinheiro)<br>
+              ✅ <strong>"I am broke."</strong> (gíria: sem dinheiro) / <strong>"I'm short on cash."</strong><br>
+              <em>Broken</em> = quebrado, destruído (objeto ou pessoa em sentido figurado). <em>Broke</em> = sem dinheiro (informal, muito comum).
+            </p>
+
+            <p><strong>4. "I saw her" vs "I see him" — tempo verbal passado</strong></p>
+            <p style="color:var(--muted);font-size:0.94rem;margin-top:0;">
+              Ao falar de algo que já aconteceu (ver a filha do professor no hospital), use o passado:<br>
+              ❌ <em>"I see him."</em><br>
+              ✅ <strong>"I saw her."</strong> (passado de "see" = saw)<br>
+              Atenção também ao pronome: para uma menina, usa-se <em>her</em>, não <em>him</em>.
+            </p>
+
+            <p><strong>5. Vocabulário que precisou de ajuda do professor</strong></p>
+            <p style="color:var(--muted);font-size:0.94rem;margin-top:0;">
+              Algumas palavras que surgiram durante a conversa e que o professor precisou fornecer. Vale memorizar:
+              <em>noisy</em> (barulhento), <em>backyard</em> (quintal), <em>supplier</em> (fornecedor), <em>hiring</em> (contratar), <em>treating</em> (tratando/lidando com), <em>report</em> (relatório), <em>decent</em> (decente).
+            </p>
+
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">🎥 Transcrição &amp; Gravação</h2>
+          <div class="media-row">
+            <a class="media-btn" href="#" role="button">📄 Acessar transcrição</a>
+
+            <a
+              class="media-btn"
+              href="https://youtu.be/3dz4_cXLsys"
+              target="_blank"
+              rel="noopener noreferrer"
+              role="button"
+              style="background:linear-gradient(180deg,#1f6fd1,#2f86e6);color:#fff;border:none;min-width:260px;"
+            >
+              🎥 Assistir gravação (acesso privado)
+            </a>
+          </div>
+        </section>
+
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>🗣️ Tempo de Fala (Talk Time)</h2>
+          <table class="talk-table">
+            <thead>
+              <tr>
+                <th>Quem falou</th>
+                <th>Porcentagem</th>
+                <th>Duração aproximada</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="row-teacher">
+                <td><span class="talk-label">César (Professor)</span></td>
+                <td><span class="talk-percent">50%</span></td>
+                <td class="talk-time">~28 minutos</td>
+              </tr>
+              <tr class="row-student">
+                <td><span class="talk-label">Gu</span></td>
+                <td><span class="talk-percent">50%</span></td>
+                <td class="talk-time">~28 minutos</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📝 Homework</h2>
+          <div class="homework">
+            <p style="margin:0 0 8px 0;">
+              📌 <strong>Lição de casa:</strong>
+            </p>
+            <ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+              <li>Leia o pós-aula de <strong>2 a 3 vezes na semana</strong>.</li>
+            </ul>
+          </div>
+
+          <div style="margin-top:14px;">
+            <a class="btn" href="https://wa.me" style="background:#25D366;border-radius:10px;box-shadow:none;">
+              💬 Falar comigo no WhatsApp
+            </a>
+          </div>
+        </section>
+
+      </main>
+
+      <footer>
+        <p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">
+          © 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com
+        </p>
+      </footer>
+    </article>
+  </div>
+</body>
+</html>
