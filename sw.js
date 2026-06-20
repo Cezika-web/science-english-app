@@ -38,17 +38,17 @@ self.addEventListener('fetch', e => {
 
 // Push Notifications
 self.addEventListener('push', e => {
-  const data = e.data?.json() || {};
-  const title   = data.notification?.title || 'CZK English';
-  const body    = data.notification?.body  || 'Novo pós-aula disponível!';
-  const icon    = data.notification?.icon  || '/icons/icon-192.png';
-  const url     = data.data?.url           || '/';
+  const data  = e.data?.json() || {};
+  const title = data.notification?.title || 'Science English';
+  const body  = data.notification?.body  || 'Novo pós-aula disponível!';
+  // FCM v1 webpush sends the link in data.fcmOptions.link or data.data.url
+  const url   = data.fcmOptions?.link || data.data?.url || '/science-english-app/';
 
   e.waitUntil(
     self.registration.showNotification(title, {
       body,
-      icon,
-      badge: '/icons/icon-192.png',
+      icon: '/science-english-app/icons/icon-192.png',
+      badge: '/science-english-app/icons/icon-192.png',
       data: { url },
       requireInteraction: false,
       vibrate: [200, 100, 200]
