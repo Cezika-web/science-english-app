@@ -241,6 +241,7 @@
       font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0;
     }
     .btn-dismiss { background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; padding: 4px; flex-shrink: 0; }
+    .btn-notif { background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.1rem; cursor: pointer; padding: 6px 8px; border-radius: 8px; }
   </style>
 </head>
 <body>
@@ -282,6 +283,7 @@
           <strong id="student-name">Olá!</strong>
           <span id="student-level"></span>
         </div>
+        <button class="btn-notif" id="btn-notif" title="Ativar notificações" style="display:none;">🔔</button>
         <button class="btn-logout" id="btn-logout" title="Sair">↩</button>
       </div>
     </div>
@@ -362,7 +364,11 @@
         currentUser = user;
         await loadStudent(user.uid);
         showView('home');
-        requestPushPermission();
+        updateNotifButton();
+        // on desktop/Android, try automatically; on iOS it needs user gesture
+        if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+          requestPushPermission().catch(() => {});
+        }
       } else {
         currentUser = null;
         showView('login');
@@ -388,6 +394,7 @@
 
     document.getElementById('password').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('btn-login').click(); });
     document.getElementById('btn-logout').onclick = () => signOut(auth);
+    document.getElementById('btn-notif').onclick = () => requestPushPermission();
 
     function showErr(msg) {
       const el = document.getElementById('login-error');
@@ -473,15 +480,30 @@
 
     // ── PUSH NOTIFICATIONS ──────────────────────────────────────────────
     async function requestPushPermission() {
-      if (!messaging || Notification.permission === 'denied') return;
+      if (!messaging) return;
       try {
         const perm = await Notification.requestPermission();
         if (perm !== 'granted') return;
         const token = await getToken(messaging, { vapidKey: VAPID_KEY });
         if (token && currentUser) {
           await setDoc(doc(db, 'students', currentUser.uid), { fcmToken: token }, { merge: true });
+          document.getElementById('btn-notif').style.display = 'none';
+          showToast('✅ Notificações ativadas!');
         }
       } catch(e) { console.warn('Push setup:', e); }
+    }
+
+    function updateNotifButton() {
+      const btn = document.getElementById('btn-notif');
+      if (!btn) return;
+      if (typeof Notification === 'undefined') { btn.style.display = 'none'; return; }
+      if (Notification.permission === 'granted') {
+        btn.style.display = 'none';
+      } else if (Notification.permission === 'denied') {
+        btn.style.display = 'none';
+      } else {
+        btn.style.display = 'inline-block';
+      }
     }
 
     if (messaging) {
