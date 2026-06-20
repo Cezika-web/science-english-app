@@ -2,339 +2,190 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <meta name="theme-color" content="#2f86e6" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="Science English" />
-  <title>Science English</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
-
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CZK Admin</title>
   <style>
     :root {
-      --accent: #2f86e6;
-      --accent-dark: #1f6fd1;
-      --green: #36b37e;
-      --muted: #6b7280;
-      --border: #e6eef8;
-      --bg: #f4f7fa;
-      --card: #ffffff;
-      --danger: #e53e3e;
+      --accent: #2f86e6; --green: #36b37e; --muted: #6b7280;
+      --border: #e6eef8; --bg: #f4f7fa; --danger: #e53e3e;
     }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, "Segoe UI", sans-serif; background: var(--bg); color: #0f1724; }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
-    body {
-      font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
-      background: var(--bg);
-      color: #0f1724;
-      min-height: 100vh;
-      overscroll-behavior: none;
-    }
-
-    .view { display: none; min-height: 100vh; }
-    .view.active { display: flex; flex-direction: column; }
-
-    /* ── LOGIN ── */
-    #view-login {
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      background: linear-gradient(160deg, #1a3a5c 0%, #2f86e6 100%);
-    }
-
-    .login-card {
-      background: white;
-      border-radius: 20px;
-      padding: 36px 28px;
-      width: 100%;
-      max-width: 380px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-    }
-
-    .login-logo { text-align: center; margin-bottom: 28px; }
-    .login-logo .logo-badge {
-      display: inline-block;
-      background: var(--accent);
-      color: white;
-      font-weight: 800;
-      font-size: 1.5rem;
-      letter-spacing: -0.5px;
-      padding: 10px 20px;
-      border-radius: 12px;
-      margin-bottom: 10px;
-    }
-    .login-logo p { color: var(--muted); font-size: 0.9rem; }
-
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 6px; }
-    .form-group input {
-      width: 100%; padding: 12px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px; font-size: 1rem; outline: none;
-      transition: border-color 0.2s; background: #fafbfd;
-    }
-    .form-group input:focus { border-color: var(--accent); background: white; }
-
-    .btn-primary {
-      width: 100%; padding: 14px;
-      background: var(--accent); color: white;
-      border: none; border-radius: 12px;
-      font-size: 1rem; font-weight: 700; cursor: pointer;
-      margin-top: 8px; transition: background 0.2s, transform 0.1s;
-    }
-    .btn-primary:active { transform: scale(0.98); background: var(--accent-dark); }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-
-    .login-error {
-      background: #fff5f5; border: 1px solid #fed7d7;
-      color: var(--danger); padding: 10px 14px;
-      border-radius: 8px; font-size: 0.85rem;
-      margin-top: 12px; display: none;
-    }
-
-    /* ── HOME ── */
-    #view-home { background: var(--bg); }
-
-    .app-header {
-      background: white; padding: 16px 20px 12px;
+    .header {
+      background: #1a3a5c; color: white; padding: 16px 24px;
       display: flex; align-items: center; justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-      position: sticky; top: 0; z-index: 10;
     }
-    .app-header .logo { font-weight: 800; font-size: 1.1rem; color: var(--accent); }
-    .user-greeting { font-size: 0.82rem; color: var(--muted); text-align: right; }
-    .user-greeting strong { color: #0f1724; display: block; font-size: 0.9rem; }
-    .btn-logout {
-      background: none; border: none; color: var(--muted);
-      font-size: 0.78rem; cursor: pointer; padding: 4px 8px; border-radius: 6px;
-    }
-    .btn-logout:hover { background: #f3f4f6; color: var(--danger); }
+    .header h1 { font-size: 1.1rem; font-weight: 800; }
+    .header span { font-size: 0.82rem; opacity: 0.7; }
+    .btn-sm-danger { background: rgba(255,255,255,0.15); border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
 
-    .home-content { padding: 20px 16px; flex: 1; }
+    .container { max-width: 960px; margin: 0 auto; padding: 24px 20px; }
 
-    .posaula-card {
-      background: white; border-radius: 16px; padding: 20px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid var(--border);
-      margin-bottom: 16px;
-    }
-    .posaula-card .pill {
-      display: inline-block; background: #e8f3ff; color: var(--accent);
-      font-size: 0.75rem; font-weight: 700; padding: 4px 10px;
-      border-radius: 999px; margin-bottom: 10px;
-    }
-    .posaula-card h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; line-height: 1.3; }
-    .posaula-card .meta { font-size: 0.82rem; color: var(--muted); margin-bottom: 16px; }
-    .posaula-card .read-status { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; margin-bottom: 14px; }
+    /* Stats bar */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 28px; }
+    .stat-card { background: white; border-radius: 12px; padding: 16px; border: 1px solid var(--border); }
+    .stat-card .val { font-size: 1.8rem; font-weight: 800; color: var(--accent); }
+    .stat-card .lbl { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
 
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
-    .status-dot.read { background: var(--green); }
-    .status-dot.unread { background: #f6ad55; }
+    /* Tabs */
+    .tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+    .tab { padding: 8px 16px; border-radius: 8px; border: none; background: none; font-size: 0.9rem; cursor: pointer; color: var(--muted); font-weight: 600; }
+    .tab.active { background: var(--accent); color: white; }
 
-    .btn-read {
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      width: 100%; padding: 13px; background: var(--accent); color: white;
-      border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 700;
-      cursor: pointer; transition: background 0.2s;
-    }
-    .btn-read:active { background: var(--accent-dark); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
 
-    .notion-card {
-      background: white; border-radius: 16px; padding: 20px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid var(--border);
-      margin-bottom: 16px; display: flex; align-items: center; gap: 16px;
-      cursor: pointer; text-decoration: none; transition: box-shadow 0.2s;
+    /* Students table */
+    .students-grid { display: grid; gap: 10px; }
+    .student-row {
+      background: white; border-radius: 12px; padding: 14px 18px;
+      border: 1px solid var(--border); display: flex; align-items: center; gap: 14px;
     }
-    .notion-card:active { box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-    .notion-icon {
-      width: 48px; height: 48px; background: #f8f9fa;
-      border: 1px solid #e5e7eb; border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.5rem; flex-shrink: 0;
-    }
-    .notion-card .notion-text h3 { font-size: 1rem; font-weight: 700; color: #0f1724; margin-bottom: 3px; }
-    .notion-card .notion-text p { font-size: 0.82rem; color: var(--muted); }
-    .notion-arrow { margin-left: auto; color: var(--muted); font-size: 1.1rem; flex-shrink: 0; }
-
-    .section-title {
-      font-size: 0.85rem; font-weight: 700; color: var(--muted);
-      text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 12px;
-    }
-
-    .history-item {
-      background: white; border-radius: 12px; padding: 14px 16px;
-      margin-bottom: 8px; border: 1px solid var(--border);
-      display: flex; align-items: center; gap: 12px;
-      cursor: pointer; transition: box-shadow 0.15s;
-    }
-    .history-item:active { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-    .h-icon {
-      width: 36px; height: 36px; border-radius: 10px; background: #f0f7ff;
-      display: flex; align-items: center; justify-content: center;
+    .avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: #e8f3ff; display: flex; align-items: center;
+      justify-content: center; font-weight: 800; color: var(--accent);
       font-size: 1rem; flex-shrink: 0;
     }
-    .h-text { flex: 1; min-width: 0; }
-    .h-title { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .h-date { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
-    .h-status { font-size: 0.78rem; font-weight: 600; flex-shrink: 0; }
-    .h-status.read { color: var(--green); }
-    .h-status.unread { color: #f6ad55; }
+    .student-info { flex: 1; min-width: 0; }
+    .student-info .name { font-weight: 700; }
+    .student-info .email { font-size: 0.8rem; color: var(--muted); }
+    .read-badge { font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; flex-shrink: 0; }
+    .read-badge.read { background: #d1fae5; color: #065f46; }
+    .read-badge.unread { background: #fff3cd; color: #92400e; }
+    .btn-detail { background: #f0f7ff; border: none; color: var(--accent); padding: 7px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; flex-shrink: 0; }
 
-    .empty-state { text-align: center; padding: 32px 20px; color: var(--muted); font-size: 0.9rem; }
-    .empty-icon { font-size: 2rem; margin-bottom: 8px; }
+    /* Add student form */
+    .form-card { background: white; border-radius: 16px; padding: 24px; border: 1px solid var(--border); max-width: 500px; }
+    .form-card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 18px; }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 0.83rem; font-weight: 600; margin-bottom: 5px; color: #374151; }
+    .field input, .field select {
+      width: 100%; padding: 10px 12px; border: 1.5px solid var(--border);
+      border-radius: 8px; font-size: 0.95rem; outline: none;
+    }
+    .field input:focus, .field select:focus { border-color: var(--accent); }
+    .btn-add { background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-size: 0.95rem; font-weight: 700; cursor: pointer; }
+    .form-msg { margin-top: 10px; font-size: 0.85rem; display: none; }
+    .form-msg.ok { color: var(--green); }
+    .form-msg.err { color: var(--danger); }
 
-    /* ── READER ── */
-    #view-reader { background: var(--bg); }
-    .reader-header {
-      background: var(--accent); padding: 14px 16px;
-      display: flex; align-items: center; gap: 12px; color: white;
-    }
-    .btn-back {
-      background: rgba(255,255,255,0.2); border: none; color: white;
-      width: 36px; height: 36px; border-radius: 50%; font-size: 1.2rem;
-      cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .reader-title { font-weight: 700; font-size: 0.95rem; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .reader-frame { flex: 1; border: none; width: 100%; background: white; }
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 100; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: white; border-radius: 16px; width: 100%; max-width: 540px; max-height: 80vh; overflow-y: auto; }
+    .modal-header { padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: white; z-index: 1; }
+    .modal-header h2 { font-size: 1rem; font-weight: 700; }
+    .btn-close { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--muted); }
+    .modal-body { padding: 20px; }
 
-    /* ── LOADING ── */
-    .loading-screen {
-      position: fixed; inset: 0; background: white;
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: 16px; z-index: 100;
-    }
-    .loading-screen .logo-badge {
-      display: inline-block; background: var(--accent); color: white;
-      font-weight: 800; font-size: 1.5rem; padding: 10px 20px; border-radius: 12px;
-    }
-    .spinner {
-      width: 32px; height: 32px; border: 3px solid var(--border);
-      border-top-color: var(--accent); border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-screen p { font-size: 0.85rem; color: var(--muted); }
+    .posaula-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .posaula-item:last-child { border-bottom: none; }
+    .posaula-item .p-title { font-weight: 600; font-size: 0.95rem; }
+    .posaula-item .p-meta { font-size: 0.78rem; color: var(--muted); margin-top: 3px; }
+    .posaula-item .p-status { font-size: 0.78rem; font-weight: 700; margin-top: 4px; }
+    .posaula-item .p-status.read { color: var(--green); }
+    .posaula-item .p-status.unread { color: #f6ad55; }
 
-    /* ── TOAST ── */
-    .toast {
-      position: fixed; bottom: 24px; left: 50%;
-      transform: translateX(-50%) translateY(80px);
-      background: #1a202c; color: white; padding: 12px 20px;
-      border-radius: 10px; font-size: 0.88rem; font-weight: 500;
-      z-index: 999; opacity: 0; transition: transform 0.3s, opacity 0.3s;
-      white-space: nowrap; pointer-events: none;
-    }
-    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 0.9rem; }
 
-    /* ── INSTALL BANNER ── */
-    .install-banner {
-      background: #e8f3ff; border: 1px solid #c5d8ff;
-      border-radius: 12px; padding: 14px 16px;
-      margin-bottom: 16px; display: flex; align-items: center; gap: 12px;
-    }
-    .install-banner p { font-size: 0.85rem; color: #1a3a5c; flex: 1; }
-    .install-banner p strong { display: block; font-size: 0.9rem; margin-bottom: 2px; }
-    .btn-install {
-      background: var(--accent); color: white; border: none;
-      padding: 8px 14px; border-radius: 8px; font-size: 0.82rem;
-      font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0;
-    }
-    .btn-dismiss { background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; padding: 4px; flex-shrink: 0; }
+    /* Login screen */
+    #admin-login { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+    .admin-login-card { background: white; border-radius: 16px; padding: 32px; width: 100%; max-width: 360px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
+    .admin-login-card h1 { font-size: 1.2rem; font-weight: 800; margin-bottom: 4px; }
+    .admin-login-card p { font-size: 0.85rem; color: var(--muted); margin-bottom: 24px; }
   </style>
 </head>
 <body>
 
-  <div class="loading-screen" id="loading">
-    <div class="logo-badge">SE</div>
-    <div class="spinner"></div>
-    <p>Carregando...</p>
-  </div>
-
-  <div class="toast" id="toast"></div>
-
-  <!-- LOGIN -->
-  <div class="view" id="view-login">
-    <div class="login-card">
-      <div class="login-logo">
-        <div class="logo-badge">SE</div>
-        <p>English — Área do Aluno</p>
-      </div>
-      <div class="form-group">
-        <label for="email">E-mail</label>
-        <input type="email" id="email" placeholder="seu@email.com" autocomplete="email" />
-      </div>
-      <div class="form-group">
-        <label for="password">Senha</label>
-        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
-      </div>
-      <button class="btn-primary" id="btn-login">Entrar</button>
-      <div class="login-error" id="login-error"></div>
+  <!-- Admin Login -->
+  <div id="admin-login">
+    <div class="admin-login-card">
+      <h1>🔐 CZK Admin</h1>
+      <p>Área exclusiva do professor</p>
+      <div class="field"><label>E-mail</label><input type="email" id="a-email" placeholder="cesar@czkenglish.com" /></div>
+      <div class="field"><label>Senha</label><input type="password" id="a-pass" placeholder="••••••••" /></div>
+      <button class="btn-add" style="width:100%" id="a-login-btn">Entrar</button>
+      <div class="form-msg" id="a-login-err"></div>
     </div>
   </div>
 
-  <!-- HOME -->
-  <div class="view" id="view-home">
-    <div class="app-header">
-      <div class="logo">Science English</div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <div class="user-greeting">
-          <strong id="student-name">Olá!</strong>
-          <span id="student-level"></span>
-        </div>
-        <button class="btn-logout" id="btn-logout" title="Sair">↩</button>
+  <!-- Admin Panel (hidden until login) -->
+  <div id="admin-panel" style="display:none;">
+    <div class="header">
+      <h1>CZK English — Painel Admin</h1>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span id="admin-email-display"></span>
+        <button class="btn-sm-danger" id="a-logout-btn">Sair</button>
       </div>
     </div>
-    <div class="home-content">
-      <div class="install-banner" id="install-banner" style="display:none;">
-        <p><strong>📲 Instalar app</strong>Adicione à tela inicial para acesso rápido.</p>
-        <button class="btn-install" id="btn-install-app">Instalar</button>
-        <button class="btn-dismiss" id="btn-dismiss-install">✕</button>
+
+    <div class="container">
+      <!-- Stats -->
+      <div class="stats">
+        <div class="stat-card"><div class="val" id="stat-total">—</div><div class="lbl">Alunos ativos</div></div>
+        <div class="stat-card"><div class="val" id="stat-read">—</div><div class="lbl">Leram o último pós-aula</div></div>
+        <div class="stat-card"><div class="val" id="stat-unread">—</div><div class="lbl">Ainda não leram</div></div>
       </div>
-      <div class="posaula-card">
-        <span class="pill">📄 PÓS-AULA DA SEMANA</span>
-        <h2 id="latest-title">Carregando...</h2>
-        <div class="meta" id="latest-date"></div>
-        <div class="read-status">
-          <div class="status-dot unread" id="read-dot"></div>
-          <span id="read-label">Ainda não lido</span>
-        </div>
-        <button class="btn-read" id="btn-open-reader">📖 Ler agora</button>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" data-tab="students">👥 Alunos</button>
+        <button class="tab" data-tab="add">➕ Novo aluno</button>
       </div>
-      <a class="notion-card" id="notion-link" href="#" target="_blank" rel="noopener">
-        <div class="notion-icon">📚</div>
-        <div class="notion-text">
-          <h3>Minha Área de Atividades</h3>
-          <p>Acessar exercícios no Notion</p>
+
+      <!-- Students list -->
+      <div class="tab-panel active" id="tab-students">
+        <div class="students-grid" id="students-grid">
+          <div class="loading">Carregando alunos...</div>
         </div>
-        <div class="notion-arrow">›</div>
-      </a>
-      <div class="section-title">Histórico de pós-aulas</div>
-      <div id="history-list">
-        <div class="empty-state"><div class="empty-icon">📂</div><p>Nenhum pós-aula anterior ainda.</p></div>
+      </div>
+
+      <!-- Add student -->
+      <div class="tab-panel" id="tab-add">
+        <div class="form-card">
+          <h2>Cadastrar novo aluno</h2>
+          <div class="field"><label>Nome completo</label><input type="text" id="f-name" placeholder="Mateus Richter" /></div>
+          <div class="field"><label>E-mail (para login)</label><input type="email" id="f-email" placeholder="aluno@email.com" /></div>
+          <div class="field"><label>Senha inicial</label><input type="password" id="f-pass" placeholder="Mínimo 6 caracteres" /></div>
+          <div class="field"><label>Nível</label>
+            <select id="f-level">
+              <option value="">Selecione...</option>
+              <option>Beginner (A1)</option><option>Elementary (A2)</option>
+              <option>Pre-Intermediate (B1)</option><option>Intermediate (B1+)</option>
+              <option>Upper-Intermediate (B2)</option><option>Advanced (C1)</option>
+            </select>
+          </div>
+          <div class="field"><label>URL da área do Notion</label><input type="url" id="f-notion" placeholder="https://notion.so/..." /></div>
+          <button class="btn-add" id="btn-create-student">Criar aluno</button>
+          <div class="form-msg" id="create-msg"></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- READER -->
-  <div class="view" id="view-reader">
-    <div class="reader-header">
-      <button class="btn-back" id="btn-back">‹</button>
-      <div class="reader-title" id="reader-title">Pós-aula</div>
+  <!-- Student detail modal -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-name">Aluno</h2>
+        <button class="btn-close" id="modal-close">✕</button>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <div class="loading">Carregando...</div>
+      </div>
     </div>
-    <iframe class="reader-frame" id="reader-frame" src="about:blank" allowfullscreen></iframe>
   </div>
 
   <script type="module">
-    import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-    import { getFirestore, doc, getDoc, collection, query, orderBy, getDocs, setDoc, updateDoc, serverTimestamp }
+    import { getFirestore, collection, getDocs, getDoc, doc, setDoc, query, orderBy, serverTimestamp }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-    import { getMessaging, getToken, onMessage }
-      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
 
-    // ── FIREBASE CONFIG ─── substitua com seus dados ───────────────────
+    // ── FIREBASE CONFIG ─── mesma config do app do aluno ───────────────
     const firebaseConfig = {
       apiKey:            "AIzaSyDgDlLyU15p8wQ1YtCN8NebGes_oq3atU8",
       authDomain:        "scienceenglish.firebaseapp.com",
@@ -343,202 +194,164 @@
       messagingSenderId: "152554774632",
       appId:             "1:152554774632:web:c43dfd4698efb136ed9bdd"
     };
-    const VAPID_KEY = "BAM4g0RG7hCFL6Ck1YH6L_mMQcpOtdjYL_eFX-cXOH82y6d9XVsgwRHcWLPO8QHAVhsUDMgDYCzqChH22yNif_U";
     // ───────────────────────────────────────────────────────────────────
 
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db   = getFirestore(app);
-    let messaging;
-    try { messaging = getMessaging(app); } catch(e) { /* iOS < 16.4 */ }
 
-    let currentUser = null;
-    let currentPost = null;
-    let deferredPrompt = null;
+    let adminUid = null;
 
     // ── AUTH ────────────────────────────────────────────────────────────
-    onAuthStateChanged(auth, async user => {
+    onAuthStateChanged(auth, user => {
       if (user) {
-        currentUser = user;
-        await loadStudent(user.uid);
-        showView('home');
-        requestPushPermission();
+        adminUid = user.uid;
+        document.getElementById('admin-login').style.display = 'none';
+        document.getElementById('admin-panel').style.display = 'block';
+        document.getElementById('admin-email-display').textContent = user.email;
+        loadStudents();
       } else {
-        currentUser = null;
-        showView('login');
+        adminUid = null;
+        document.getElementById('admin-login').style.display = 'flex';
+        document.getElementById('admin-panel').style.display = 'none';
       }
-      document.getElementById('loading').style.display = 'none';
     });
 
-    document.getElementById('btn-login').onclick = async () => {
-      const email = document.getElementById('email').value.trim();
-      const pass  = document.getElementById('password').value;
-      const btn   = document.getElementById('btn-login');
-      const err   = document.getElementById('login-error');
-      if (!email || !pass) { showErr('Preencha e-mail e senha.'); return; }
-      btn.disabled = true; btn.textContent = 'Entrando...'; err.style.display = 'none';
+    document.getElementById('a-login-btn').onclick = async () => {
+      const email = document.getElementById('a-email').value.trim();
+      const pass  = document.getElementById('a-pass').value;
+      const err   = document.getElementById('a-login-err');
       try {
         await signInWithEmailAndPassword(auth, email, pass);
       } catch(e) {
-        btn.disabled = false; btn.textContent = 'Entrar';
-        const m = { 'auth/invalid-credential':'E-mail ou senha incorretos.', 'auth/too-many-requests':'Muitas tentativas. Aguarde.' };
-        showErr(m[e.code] || 'Erro ao entrar. Tente novamente.');
+        err.textContent = 'E-mail ou senha incorretos.';
+        err.className = 'form-msg err'; err.style.display = 'block';
       }
     };
 
-    document.getElementById('password').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('btn-login').click(); });
-    document.getElementById('btn-logout').onclick = () => signOut(auth);
+    document.getElementById('a-logout-btn').onclick = () => signOut(auth);
 
-    function showErr(msg) {
-      const el = document.getElementById('login-error');
-      el.textContent = msg; el.style.display = 'block';
-    }
-
-    // ── STUDENT DATA ────────────────────────────────────────────────────
-    async function loadStudent(uid) {
-      const snap = await getDoc(doc(db, 'students', uid));
-      if (!snap.exists()) { toast('Perfil não encontrado.'); return; }
-      const s = snap.data();
-      document.getElementById('student-name').textContent = s.firstName || s.name || 'Aluno';
-      document.getElementById('student-level').textContent = s.level || '';
-      if (s.notionUrl) document.getElementById('notion-link').href = s.notionUrl;
-      await loadPosaulas(uid);
-    }
-
-    async function loadPosaulas(uid) {
-      const q = query(collection(db, 'students', uid, 'posaulas'), orderBy('createdAt', 'desc'));
-      const snaps = await getDocs(q);
-      if (snaps.empty) { document.getElementById('latest-title').textContent = 'Nenhum pós-aula ainda.'; return; }
-
-      const posts = snaps.docs.map(d => ({ id: d.id, ...d.data() }));
-      currentPost = posts[0];
-
-      document.getElementById('latest-title').textContent = currentPost.title || 'Pós-Aula';
-      document.getElementById('latest-date').textContent  = fmtDate(currentPost.createdAt);
-      document.getElementById('reader-title').textContent = currentPost.title || 'Pós-Aula';
-
-      const isRead = !!currentPost.readAt;
-      document.getElementById('read-dot').className = 'status-dot ' + (isRead ? 'read' : 'unread');
-      document.getElementById('read-label').textContent = isRead ? `Lido em ${fmtDate(currentPost.readAt)}` : 'Ainda não lido';
-
-      // History
-      const list = document.getElementById('history-list');
-      if (posts.length <= 1) {
-        list.innerHTML = `<div class="empty-state"><div class="empty-icon">📂</div><p>Sem histórico anterior.</p></div>`;
-        return;
-      }
-      list.innerHTML = posts.slice(1).map(p => `
-        <div class="history-item" data-id="${p.id}" data-url="${esc(p.url||'')}" data-title="${esc(p.title||'')}">
-          <div class="h-icon">📄</div>
-          <div class="h-text">
-            <div class="h-title">${esc(p.title||'Pós-Aula')}</div>
-            <div class="h-date">${fmtDate(p.createdAt)}</div>
-          </div>
-          <div class="h-status ${p.readAt?'read':'unread'}">${p.readAt?'✓ Lido':'Não lido'}</div>
-        </div>`).join('');
-
-      list.querySelectorAll('.history-item').forEach(el => {
-        el.onclick = () => openPost(el.dataset.id, el.dataset.title, el.dataset.url);
-      });
-    }
-
-    // ── READER ──────────────────────────────────────────────────────────
-    document.getElementById('btn-open-reader').onclick = () => {
-      if (!currentPost?.url) { toast('Link não disponível.'); return; }
-      openPost(currentPost.id, currentPost.title, currentPost.url);
-    };
-
-    document.getElementById('btn-back').onclick = () => {
-      document.getElementById('reader-frame').src = 'about:blank';
-      showView('home');
-      if (currentUser) loadPosaulas(currentUser.uid);
-    };
-
-    function openPost(id, title, url) {
-      document.getElementById('reader-frame').src = url;
-      document.getElementById('reader-title').textContent = title || 'Pós-Aula';
-      showView('reader');
-      markRead(id);
-    }
-
-    async function markRead(postId) {
-      if (!currentUser) return;
-      try {
-        await updateDoc(doc(db, 'students', currentUser.uid, 'posaulas', postId), {
-          readAt: serverTimestamp(),
-          readCount: (currentPost?.readCount || 0) + 1
-        });
-      } catch(e) {}
-    }
-
-    // ── PUSH NOTIFICATIONS ──────────────────────────────────────────────
-    async function requestPushPermission() {
-      if (!messaging || Notification.permission === 'denied') return;
-      try {
-        const perm = await Notification.requestPermission();
-        if (perm !== 'granted') return;
-        const token = await getToken(messaging, { vapidKey: VAPID_KEY });
-        if (token && currentUser) {
-          await setDoc(doc(db, 'students', currentUser.uid), { fcmToken: token }, { merge: true });
-        }
-      } catch(e) { console.warn('Push setup:', e); }
-    }
-
-    if (messaging) {
-      onMessage(messaging, payload => {
-        toast(`📄 ${payload.notification?.body || 'Novo pós-aula disponível!'}`);
-        if (currentUser) loadPosaulas(currentUser.uid);
-      });
-    }
-
-    // ── PWA INSTALL ─────────────────────────────────────────────────────
-    window.addEventListener('beforeinstallprompt', e => {
-      e.preventDefault(); deferredPrompt = e;
-      if (!localStorage.getItem('installDismissed')) {
-        document.getElementById('install-banner').style.display = 'flex';
-      }
+    // ── TABS ────────────────────────────────────────────────────────────
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.onclick = () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+      };
     });
 
-    document.getElementById('btn-install-app').onclick = async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') localStorage.setItem('installDismissed', '1');
-      document.getElementById('install-banner').style.display = 'none';
-      deferredPrompt = null;
-    };
+    // ── LOAD STUDENTS ───────────────────────────────────────────────────
+    async function loadStudents() {
+      const grid = document.getElementById('students-grid');
+      const snap = await getDocs(collection(db, 'students'));
+      const students = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
 
-    document.getElementById('btn-dismiss-install').onclick = () => {
-      document.getElementById('install-banner').style.display = 'none';
-      localStorage.setItem('installDismissed', '1');
-    };
+      let readCount = 0;
+      const rows = await Promise.all(students.map(async s => {
+        const posSnap = await getDocs(query(collection(db, 'students', s.uid, 'posaulas'), orderBy('createdAt', 'desc')));
+        const latest = posSnap.docs[0]?.data();
+        const isRead = !!latest?.readAt;
+        if (isRead) readCount++;
+        return { ...s, latestRead: isRead, latestTitle: latest?.title || null };
+      }));
 
-    // ── HELPERS ─────────────────────────────────────────────────────────
-    function showView(name) {
-      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-      document.getElementById('view-' + name).classList.add('active');
+      document.getElementById('stat-total').textContent  = students.length;
+      document.getElementById('stat-read').textContent   = readCount;
+      document.getElementById('stat-unread').textContent = students.length - readCount;
+
+      grid.innerHTML = rows.map(s => `
+        <div class="student-row">
+          <div class="avatar">${(s.firstName || s.name || '?')[0].toUpperCase()}</div>
+          <div class="student-info">
+            <div class="name">${esc(s.name || s.firstName || 'Aluno')}</div>
+            <div class="email">${esc(s.email || '')} · ${esc(s.level || '')}</div>
+          </div>
+          ${s.latestTitle
+            ? `<span class="read-badge ${s.latestRead ? 'read' : 'unread'}">${s.latestRead ? '✓ Lido' : '⏳ Não lido'}</span>`
+            : `<span class="read-badge" style="background:#f3f4f6;color:var(--muted)">Sem pós-aula</span>`
+          }
+          <button class="btn-detail" data-uid="${s.uid}" data-name="${esc(s.name || s.firstName || 'Aluno')}">Ver →</button>
+        </div>
+      `).join('') || '<div class="loading">Nenhum aluno cadastrado.</div>';
+
+      grid.querySelectorAll('.btn-detail').forEach(btn => {
+        btn.onclick = () => openDetail(btn.dataset.uid, btn.dataset.name);
+      });
     }
 
-    function toast(msg, ms = 3500) {
-      const t = document.getElementById('toast');
-      t.textContent = msg; t.classList.add('show');
-      setTimeout(() => t.classList.remove('show'), ms);
+    // ── STUDENT DETAIL MODAL ────────────────────────────────────────────
+    async function openDetail(uid, name) {
+      document.getElementById('modal-name').textContent = name;
+      document.getElementById('modal-body').innerHTML = '<div class="loading">Carregando...</div>';
+      document.getElementById('modal').classList.add('open');
+
+      const posSnap = await getDocs(query(collection(db, 'students', uid, 'posaulas'), orderBy('createdAt', 'desc')));
+      if (posSnap.empty) {
+        document.getElementById('modal-body').innerHTML = '<div class="loading">Nenhum pós-aula ainda.</div>';
+        return;
+      }
+
+      document.getElementById('modal-body').innerHTML = posSnap.docs.map(d => {
+        const p = d.data();
+        const isRead = !!p.readAt;
+        return `
+          <div class="posaula-item">
+            <div class="p-title">${esc(p.title || 'Pós-Aula')}</div>
+            <div class="p-meta">Enviado: ${fmtDate(p.createdAt)}</div>
+            <div class="p-status ${isRead ? 'read' : 'unread'}">
+              ${isRead ? `✓ Lido em ${fmtDate(p.readAt)}` : '⏳ Ainda não lido'}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    document.getElementById('modal-close').onclick = () => document.getElementById('modal').classList.remove('open');
+    document.getElementById('modal').onclick = e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); };
+
+    // ── CREATE STUDENT ──────────────────────────────────────────────────
+    document.getElementById('btn-create-student').onclick = async () => {
+      const name   = document.getElementById('f-name').value.trim();
+      const email  = document.getElementById('f-email').value.trim();
+      const pass   = document.getElementById('f-pass').value;
+      const level  = document.getElementById('f-level').value;
+      const notion = document.getElementById('f-notion').value.trim();
+      const msg    = document.getElementById('create-msg');
+
+      if (!name || !email || !pass) { showMsg('Preencha nome, e-mail e senha.', 'err'); return; }
+      if (pass.length < 6)          { showMsg('Senha mínima de 6 caracteres.', 'err'); return; }
+
+      try {
+        // Create auth user
+        const cred = await createUserWithEmailAndPassword(auth, email, pass);
+        // Save profile
+        await setDoc(doc(db, 'students', cred.user.uid), {
+          name, firstName: name.split(' ')[0], email, level: level || '',
+          notionUrl: notion || '', createdAt: serverTimestamp()
+        });
+        showMsg(`✅ Aluno ${name} criado com sucesso!`, 'ok');
+        ['f-name','f-email','f-pass','f-notion'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('f-level').value = '';
+        loadStudents();
+      } catch(e) {
+        const m = { 'auth/email-already-in-use': 'Este e-mail já está cadastrado.' };
+        showMsg(m[e.code] || `Erro: ${e.message}`, 'err');
+      }
+    };
+
+    function showMsg(text, type) {
+      const el = document.getElementById('create-msg');
+      el.textContent = text; el.className = `form-msg ${type}`; el.style.display = 'block';
     }
 
     function fmtDate(ts) {
-      if (!ts) return '';
+      if (!ts) return '—';
       const d = ts.toDate ? ts.toDate() : new Date(ts);
-      return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+      return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' });
     }
 
     function esc(s = '') {
-      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-  </script>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(console.warn);
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
   </script>
 </body>
