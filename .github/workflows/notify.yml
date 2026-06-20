@@ -1,0 +1,41 @@
+name: Notify student - new pós-aula
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'pos-aula-*.html'
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install google-auth requests
+
+      - name: Notify students for new pós-aula files
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          NEW_FILES=$(git diff --name-only --diff-filter=A HEAD~1 HEAD | grep '^pos-aula-.*\.html$' || true)
+
+          if [ -z "$NEW_FILES" ]; then
+            echo "No new pós-aula files in this push."
+            exit 0
+          fi
+
+          for FILE in $NEW_FILES; do
+            echo "── Processing: $FILE ──"
+            python .github/scripts/notify_student.py "$FILE"
+          done
