@@ -2,7 +2,7 @@
   "name": "CZK English",
   "short_name": "CZK",
   "description": "Área do Aluno — CZK English",
-  "start_url": "/",
+  "start_url": "/science-english-app/",
   "display": "standalone",
   "background_color": "#f4f7fa",
   "theme_color": "#2f86e6",
