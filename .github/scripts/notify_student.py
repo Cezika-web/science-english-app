@@ -138,9 +138,18 @@ def main():
                     "body": f"Seu resumo de aula está pronto, {first_name}!",
                 },
                 "webpush": {
+                    "notification": {
+                        "title": "Novo pós-aula! 📚",
+                        "body": f"Seu resumo de aula está pronto, {first_name}!",
+                        "icon": "https://cezika-web.github.io/science-english-app/icons/icon-192.png",
+                        "badge": "https://cezika-web.github.io/science-english-app/icons/icon-192.png",
+                    },
+                    "data": {
+                        "url": posaula_url,
+                    },
                     "fcm_options": {
-                        "link": posaula_url
-                    }
+                        "link": posaula_url,
+                    },
                 },
             }
         },
@@ -149,7 +158,14 @@ def main():
     if resp.status_code == 200:
         print(f"✅ Push notification sent to {first_name}")
     else:
-        print(f"❌ FCM error: {resp.status_code} {resp.text}")
+        print(f"❌ FCM error: {resp.status_code}")
+        try:
+            err = resp.json()
+            print(f"   code:    {err.get('error', {}).get('code')}")
+            print(f"   status:  {err.get('error', {}).get('status')}")
+            print(f"   message: {err.get('error', {}).get('message')}")
+        except Exception:
+            print(f"   raw: {resp.text}")
 
 
 if __name__ == "__main__":
