@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Gu — CZK English</title>
+
+  <style>
+    :root{
+      --page-bg: #f4f7fa;
+      --card-bg: #fff;
+      --accent: #2f86e6;
+      --accent-dark: #1f6fd1;
+      --green: #36b37e;
+      --muted: #6b7280;
+      --border: #e6eef8;
+      --box-radius: 12px;
+      --card-width: 720px;
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+      padding:0;
+      background:var(--page-bg);
+      font-family:Inter, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    .wrap{
+      min-height:100%;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      padding:48px 20px;
+    }
+
+    .card{
+      width:100%;
+      max-width:var(--card-width);
+      background:var(--card-bg);
+      border-radius:18px;
+      padding:28px;
+      box-shadow:0 6px 22px rgba(33,47,60,0.06);
+      border:1px solid rgba(15,33,64,0.03);
+    }
+
+    header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:8px;
+    }
+
+    .badge{
+      background:linear-gradient(180deg,#fff,#f2fbff);
+      border:1px solid var(--border);
+      padding:8px 12px;
+      border-radius:999px;
+      color:var(--accent);
+      font-weight:700;
+      font-size:0.85rem;
+    }
+
+    h1{
+      margin:0;
+      font-size:1.3rem;
+      color:#0f1724;
+    }
+
+    .meta{
+      color:var(--muted);
+      font-size:0.92rem;
+      margin-top:6px;
+    }
+
+    .actions{
+      display:flex;
+      gap:10px;
+    }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      border-radius:10px;
+      border:none;
+      background:var(--accent);
+      color:#fff;
+      text-decoration:none;
+      font-weight:600;
+      cursor:pointer;
+      box-shadow:0 6px 14px rgba(47,134,230,0.12);
+    }
+
+    .btn.secondary{
+      background:#fff;
+      color:var(--accent);
+      border:1px solid var(--border);
+      box-shadow:none;
+    }
+
+    main{margin-top:18px;}
+    section{margin-top:18px;}
+
+    .panel{
+      background:#fbfdff;
+      border-radius:12px;
+      padding:16px;
+      border:1px solid var(--border);
+    }
+
+    .outline-card{
+      border-radius:10px;
+      border:1px solid var(--border);
+      padding:16px;
+      background:#fff;
+    }
+
+    /* Vocabulary boxes */
+    .vocab-grid{
+      display:flex;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+
+    .vocab{
+      flex:1;
+      min-width:220px;
+      border-radius:10px;
+      padding:14px;
+      border:2px solid #dfeefe;
+      background:#fff;
+    }
+
+    .vocab.green{
+      border-color:#c9f3dc;
+      background:#f5fff6;
+    }
+
+    .vocab h3{
+      margin:0;
+      font-size:1rem;
+      color:#154360;
+    }
+
+    .vocab p{
+      margin:8px 0 0 0;
+      color:var(--muted);
+      font-size:0.95rem;
+    }
+
+    /* Transcrição / gravação buttons */
+    .media-row{
+      display:flex;
+      gap:14px;
+      margin-top:12px;
+      flex-wrap:wrap;
+    }
+
+    .media-btn{
+      background:#fff;
+      border:1px solid var(--border);
+      padding:12px 16px;
+      border-radius:10px;
+      font-weight:700;
+      color:var(--accent);
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      min-width:200px;
+      justify-content:center;
+    }
+
+    /* Homework box */
+    .homework{
+      background:#f3fff6;
+      border:1px solid #d7f5df;
+      border-radius:10px;
+      padding:14px;
+      margin-top:10px;
+    }
+
+    /* ===== TALK TIME – TABELA RETANGULAR ===== */
+    .speaking{
+      margin-top:18px;
+      padding:16px;
+      border-radius:12px;
+      background:linear-gradient(180deg,#ffffff,#fbfdff);
+      border:1px solid var(--border);
+      max-width:640px;
+    }
+
+    .speaking h2{
+      margin:0 0 10px 0;
+      font-size:1.05rem;
+      color:#0f1724;
+    }
+
+    .talk-table{
+      width:100%;
+      border-collapse:collapse;
+      border-radius:10px;
+      overflow:hidden;
+      background:#fff;
+      border:1px solid #e1e9f5;
+      font-size:0.9rem;
+    }
+
+    .talk-table th,
+    .talk-table td{
+      padding:8px 10px;
+      text-align:left;
+    }
+
+    .talk-table th{
+      background:#eef4ff;
+      color:#1b3556;
+      font-weight:700;
+      border-bottom:1px solid #dde6fa;
+    }
+
+    .row-teacher{
+      background:#e7f2ff; /* azul clarinho */
+    }
+
+    .row-student{
+      background:#e8f7ef; /* verde clarinho */
+    }
+
+    .talk-label{
+      font-weight:700;
+    }
+
+    .talk-percent{
+      font-weight:700;
+      color:#0f1724;
+    }
+
+    .talk-time{
+      color:var(--muted);
+    }
+
+    footer{
+      margin-top:20px;
+      color:var(--muted);
+      font-size:0.9rem;
+      text-align:center;
+    }
+
+    /* responsive */
+    @media (max-width:720px){
+      .card{padding:18px;border-radius:14px;}
+      .vocab-grid{flex-direction:column;}
+      .media-row{flex-direction:column;}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Body image, Ozempic e body positivity</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Gu &nbsp;•&nbsp;
+            <strong>Data:</strong> 13/05/2026
+          </div>
+        </div>
+
+        <div class="actions">
+          <a class="btn" href="#" onclick="window.print();return false;">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+        <section class="panel">
+          <p style="margin:0;font-weight:600;color:#08325a;">
+            Resumo da aula sobre exames, abertura de empresa, ferramentas de IA para estudos e discussão sobre body image, Ozempic e body positivity.
+          </p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 8px 0;">
+              A aula começou com uma conversa livre sobre <strong>exames de saúde</strong>, testosterona, exames de sangue e vocabulário ligado a saúde e aparência. Também apareceram palavras úteis como <em>exam</em>, <em>high</em>, <em>wet</em>, <em>dry</em>, <em>bald</em> e <em>baldness</em>. O aluno praticou descrever resultados, falar sobre rotina e comentar mudanças físicas de forma mais natural.
+            </p>
+            <p style="margin:0 0 8px 0;">
+              Depois, a conversa passou por um tema profissional: <strong>MEI, CNPJ, invoices, taxes, profit</strong> e dúvidas sobre abertura de empresa. Esse momento foi usado como prática real de speaking, com o aluno tentando explicar cenários complexos em inglês, como tipos de serviço, impostos, lucro e enquadramento de empresa. Também houve uma conversa rápida sobre o uso de <strong>Claude / ChatGPT</strong> para criar materiais interativos de estudo.
+            </p>
+            <p style="margin:0 0 8px 0;">
+              Na parte principal da aula, retomamos o tema <strong>body image</strong> e <strong>body positivity</strong>. O aluno assistiu e analisou vídeos com opiniões fortes sobre Ozempic, emagrecimento rápido e o possível enfraquecimento do movimento de body positivity. A aula trabalhou bastante compreensão oral, vocabulário de opinião e expressões como <em>Have you realized...?</em>, <em>mainstream</em>, <em>get thin</em>, <em>easy way out</em>, <em>drives me crazy</em>, <em>muscle loss</em>, <em>gallstones</em>, <em>at least</em> e <em>no one cares</em>.
+            </p>
+            <p style="margin:0;">
+              O ponto mais importante foi comparar duas ideias: o discurso de “ame seu corpo sem mudar nada” e o uso de medicamentos como uma saída rápida. A discussão levou o aluno a formular opiniões mais completas, concordando que os dois extremos podem passar uma mensagem parecida: evitar mudança de hábitos como comer melhor, dormir melhor e se movimentar mais.
+            </p>
+          
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Key Vocabulary</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <h3>Easy way out</h3>
+              <p style="margin-top:8px;font-size:0.92rem;color:var(--muted);">
+                <em>(pt) saída fácil / atalho para escapar de uma situação difícil</em><br>
+                <small>Ozempic can look like an easy way out.</small>
+              </p>
+            </div>
+            <div class="vocab green">
+              <h3>Body positivity</h3>
+              <p style="margin-top:8px;font-size:0.92rem;color:var(--muted);">
+                <em>(pt) movimento de aceitação do próprio corpo</em><br>
+                <small>The body positivity movement is changing.</small>
+              </p>
+            </div>
+          
+          </div>
+        </section>
+
+        <!-- NOVOS TÓPICOS: VOCABULÁRIO DA AULA, FRASES MODELO, CORREÇÕES -->
+        <section>
+          <h2 style="margin-bottom:8px;">Vocabulário da aula</h2>
+          <div class="outline-card">
+            <h3 style="margin-top:0;">Body image, Ozempic e saúde</h3>
+            <ul>
+              <li><strong>body image</strong> – imagem corporal</li>
+              <li><strong>body pressure</strong> – pressão estética / pressão sobre o corpo</li>
+              <li><strong>body positivity</strong> – movimento de aceitação corporal</li>
+              <li><strong>mainstream</strong> – popular, comum, presente na mídia e nas conversas</li>
+              <li><strong>thin</strong> – magro(a)</li>
+              <li><strong>in shape</strong> – em forma</li>
+              <li><strong>get thin</strong> – ficar magro(a)</li>
+              <li><strong>get in shape</strong> – ficar em forma</li>
+              <li><strong>easy way out</strong> – saída fácil / atalho</li>
+              <li><strong>inject and shrink</strong> – injetar e encolher / emagrecer rapidamente</li>
+              <li><strong>nausea</strong> – náusea / enjoo</li>
+              <li><strong>muscle loss</strong> – perda de massa muscular</li>
+              <li><strong>gallstones</strong> – pedras na vesícula</li>
+              <li><strong>scale</strong> – balança / escala / gráfico, dependendo do contexto</li>
+              <li><strong>the scale is going down</strong> – o peso na balança está caindo</li>
+              <li><strong>health</strong> – saúde</li>
+              <li><strong>healthy</strong> – saudável</li>
+            </ul>
+
+            <h3>Expressões de opinião e conversa</h3>
+            <ul>
+              <li><strong>Have you realized...?</strong> – Você percebeu...?</li>
+              <li><strong>as soon as</strong> – assim que / logo que</li>
+              <li><strong>all of a sudden</strong> – de repente / do nada</li>
+              <li><strong>drives me crazy</strong> – me deixa louco / me irrita muito</li>
+              <li><strong>here's the thing</strong> – é o seguinte</li>
+              <li><strong>no one cares</strong> – ninguém liga / ninguém se importa</li>
+              <li><strong>at least</strong> – pelo menos</li>
+              <li><strong>both</strong> – ambos / os dois</li>
+              <li><strong>lazy message</strong> – mensagem preguiçosa / ideia que evita esforço</li>
+              <li><strong>no need to...</strong> – não precisa...</li>
+              <li><strong>actually</strong> – na verdade</li>
+              <li><strong>that’s true</strong> – isso é verdade</li>
+              <li><strong>I agree with him</strong> – eu concordo com ele</li>
+            </ul>
+
+            <h3>Gramática e estruturas praticadas</h3>
+            <ul>
+              <li><strong>Have you realized...?</strong> → pergunta no present perfect.</li>
+              <li><strong>I was going to say...</strong> → “eu ia dizer...” / intenção no passado.</li>
+              <li><strong>get + adjective</strong> → ficar alguma coisa. Ex.: <em>get thin, get strong, get angry, get hungry</em>.</li>
+              <li><strong>might + verb</strong> → pode / talvez aconteça. Ex.: <em>You might get nausea.</em></li>
+              <li><strong>become + adjective/noun</strong> → tornar-se / virar. Ex.: <em>Ozempic becomes mainstream.</em></li>
+            </ul>
+
+            <h3>Outros vocabulários que apareceram</h3>
+            <ul>
+              <li><strong>exam</strong> – exame</li>
+              <li><strong>high</strong> – alto / elevado</li>
+              <li><strong>wet</strong> – molhado</li>
+              <li><strong>dry</strong> – seco</li>
+              <li><strong>bald</strong> – careca</li>
+              <li><strong>baldness</strong> – calvície</li>
+              <li><strong>invoice</strong> – nota fiscal / fatura</li>
+              <li><strong>taxes</strong> – impostos</li>
+              <li><strong>profit</strong> – lucro</li>
+              <li><strong>revenue</strong> – faturamento / receita</li>
+              <li><strong>company</strong> – empresa</li>
+              <li><strong>service invoice</strong> – nota fiscal de serviço</li>
+            </ul>
+          
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Frases modelo da aula</h2>
+          <div class="outline-card">
+            <ul>
+              <li>Have you realized the body positivity movement is dead?</li>
+              <li>Ozempic becomes mainstream.</li>
+              <li>It is easy to get thin.</li>
+              <li>I was going to say in shape, but it is not in shape.</li>
+              <li>All of a sudden, it is not cool to be body positive anymore.</li>
+              <li>They have an easy way out now.</li>
+              <li>You might get nausea, muscle loss, or gallstones.</li>
+              <li>At least the scale is going down.</li>
+              <li>Both push the same lazy message.</li>
+              <li>No need to eat better, move more, or sleep well.</li>
+              <li>It completely ignores what health actually is.</li>
+              <li>I never thought about it this way.</li>
+              <li>I agree with this opinion.</li>
+            </ul>
+          
+          </div>
+        </section>
+
+        <!-- ✅ NOVA SEÇÃO FIXA: CORREÇÕES IMPORTANTES -->
+        <section>
+          <h2 style="margin-bottom:8px;">Correções importantes</h2>
+          <div class="outline-card">
+            <h3 style="margin-top:0;">Pronúncia e vocabulário</h3>
+            <ul>
+              <li><strong>exam</strong>, não “ecazem”: atenção ao som inicial e à pronúncia mais limpa da palavra.</li>
+              <li><strong>high</strong> = alto / elevado. Foi usado para falar de resultados de exame.</li>
+              <li><strong>wet</strong> = molhado; <strong>dry</strong> = seco.</li>
+              <li><strong>bald</strong> = careca; <strong>baldness</strong> = calvície. A terminação <strong>-ness</strong> transforma adjetivos em substantivos, como <em>happy → happiness</em>.</li>
+              <li><strong>thin</strong> = magro(a). Não confundir com <em>in shape</em>, que significa estar em forma.</li>
+            </ul>
+
+            <h3>Estruturas corrigidas</h3>
+            <ul>
+              <li><strong>Have you realized...?</strong> = “Você percebeu...?” Não traduzir <em>realize</em> como “realizar” nesse contexto.</li>
+              <li><strong>I was going to say...</strong> = “Eu ia dizer...”. É a forma passada de <em>I am going to say</em>.</li>
+              <li><strong>get + adjective</strong> = ficar. Ex.: <em>get thin</em>, <em>get strong</em>, <em>get angry</em>, <em>get hungry</em>.</li>
+              <li><strong>become / became</strong>: <em>become</em> = tornar-se; <em>became</em> = tornou-se / virou.</li>
+              <li><strong>muscle loss</strong> = perda de músculo / massa muscular. Atenção à pronúncia de <em>muscle</em>.</li>
+            </ul>
+
+            <h3>Confusões de significado</h3>
+            <ul>
+              <li><strong>at least</strong> = pelo menos, não “a lista”. Ex.: <em>At least the scale is going down.</em></li>
+              <li><strong>scale</strong> pode ser balança, escala ou gráfico, dependendo do contexto. No vídeo, a ideia principal era a balança/peso diminuindo.</li>
+              <li><strong>no one cares</strong> = ninguém liga / ninguém se importa.</li>
+              <li><strong>actually</strong> = na verdade, não “atualmente”. Para atualmente, use <em>nowadays</em> ou <em>currently</em>.</li>
+              <li><strong>easy way out</strong> = saída fácil / atalho para escapar de uma situação difícil.</li>
+            </ul>
+          
+          </div>
+        </section>
+        <!-- ✅ FIM DA NOVA SEÇÃO -->
+
+        <section>
+          <h2 style="margin-bottom:8px;">Transcrição &amp; Gravação</h2>
+          <div class="media-row">
+            <!-- Transcrição sem link (apenas botão) -->
+            <a class="media-btn" href="#" role="button">📄 Acessar transcrição</a>
+
+            <!-- Vídeo da aula com o link que você mandou -->
+            <a
+              class="media-btn"
+              href="https://youtu.be/0G__SQerLc8"
+              target="_blank"
+              rel="noopener noreferrer"
+              role="button"
+              style="background:linear-gradient(180deg,#1f6fd1,#2f86e6);color:#fff;border:none;min-width:260px;"
+            >
+              🎥 Assistir gravação (acesso privado)
+            </a>
+          </div>
+        </section>
+
+        <!-- ===== TABELA DE DISTRIBUIÇÃO DE FALA ===== -->
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>Tempo de Fala (Talk Time)</h2>
+          <table class="talk-table">
+            <thead>
+              <tr>
+                <th>Quem falou</th>
+                <th>Porcentagem</th>
+                <th>Duração aproximada</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="row-teacher">
+                <td><span class="talk-label">César (Professor)</span></td>
+                <td><span class="talk-percent">52%</span></td>
+                <td class="talk-time">~31 minutos</td>
+              </tr>
+              <tr class="row-student">
+                <td><span class="talk-label">Gu</span></td>
+                <td><span class="talk-percent">48%</span></td>
+                <td class="talk-time">~29 minutos</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+        <!-- ===== FIM TABELA ===== -->
+
+        <section>
+          <h2 style="margin-bottom:8px;">Homework</h2>
+          <div class="homework">
+            <p style="margin:0 0 8px 0;">
+              📌 <strong>Lição de casa:</strong>
+            </p>
+            <ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+              <li>Ler este pós-aula de <strong>2 a 3 vezes na semana</strong>.</li>
+            </ul>
+          
+          </div>
+
+          <div style="margin-top:14px;">
+            <a class="btn" href="https://wa.me" style="background:#25D366;border-radius:10px;box-shadow:none;">
+              💬 Falar comigo no WhatsApp
+            </a>
+          </div>
+        </section>
+
+      </main>
+
+      <footer>
+        <p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">
+          © 2026 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com
+        </p>
+      </footer>
+    </article>
+  </div>
+</body>
+</html>
