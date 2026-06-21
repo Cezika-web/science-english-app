@@ -1,4 +1,17 @@
 // CZK English — Service Worker
+importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
+
+firebase.initializeApp({
+  apiKey:            "AIzaSyDgDlLyU15p8wQ1YtCN8NebGes_oq3atU8",
+  authDomain:        "scienceenglish.firebaseapp.com",
+  projectId:         "scienceenglish",
+  storageBucket:     "scienceenglish.firebasestorage.app",
+  messagingSenderId: "152554774632",
+  appId:             "1:152554774632:web:c43dfd4698efb136ed9bdd"
+});
+const _messaging = firebase.messaging();
+
 const CACHE = 'czk-v1';
 const SHELL = ['/', '/index.html', '/manifest.json'];
 
