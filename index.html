@@ -486,19 +486,22 @@
 
     // ── PUSH NOTIFICATIONS ──────────────────────────────────────────────
     async function requestPushPermission() {
-      if (!messaging) return;
+      if (!messaging) { toast('❌ messaging null'); return; }
       try {
         const perm = await Notification.requestPermission();
+        toast('🔔 perm: ' + perm);
         if (perm !== 'granted') return;
         const registration = await navigator.serviceWorker.getRegistration();
+        toast('⚙️ SW: ' + (registration ? registration.scope : 'none'));
         if (registration) await registration.update();
         const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
+        toast('🎟️ token: ' + (token ? token.slice(0,20) : 'null'));
         if (token && currentUser) {
           await setDoc(doc(db, 'students', currentUser.uid), { fcmToken: token }, { merge: true });
           document.getElementById('btn-notif').style.display = 'none';
-          showToast('✅ Notificações ativadas!');
+          toast('✅ Notificações ativadas!');
         }
-      } catch(e) { console.warn('Push setup:', e); }
+      } catch(e) { toast('❌ ' + e.message); console.warn('Push setup:', e); }
     }
 
     function updateNotifButton() {
