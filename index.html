@@ -365,10 +365,15 @@
         await loadStudent(user.uid);
         showView('home');
         updateNotifButton();
-        // iOS requires a user gesture — skip auto-request to avoid poisoning permission state
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        if (!isIOS && typeof Notification !== 'undefined' && Notification.permission === 'default') {
-          requestPushPermission().catch(() => {});
+        if (typeof Notification !== 'undefined') {
+          if (Notification.permission === 'granted') {
+            // Permission already granted — get/refresh token silently (no gesture needed)
+            requestPushPermission().catch(() => {});
+          } else if (!isIOS && Notification.permission === 'default') {
+            // Non-iOS: request automatically on first login
+            requestPushPermission().catch(() => {});
+          }
         }
       } else {
         currentUser = null;
