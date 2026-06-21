@@ -12,7 +12,7 @@ firebase.initializeApp({
 });
 const _messaging = firebase.messaging();
 
-const CACHE = 'czk-v1';
+const CACHE = 'czk-v2';
 const SHELL = ['/', '/index.html', '/manifest.json'];
 
 // Install: cache the app shell
