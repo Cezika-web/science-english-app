@@ -485,7 +485,8 @@
       try {
         const perm = await Notification.requestPermission();
         if (perm !== 'granted') return;
-        const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+        const registration = await navigator.serviceWorker.getRegistration();
+        const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
         if (token && currentUser) {
           await setDoc(doc(db, 'students', currentUser.uid), { fcmToken: token }, { merge: true });
           document.getElementById('btn-notif').style.display = 'none';
