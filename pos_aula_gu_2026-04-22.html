@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Gu — CZK English</title>
+
+  <style>
+    :root{
+      --page-bg: #f4f7fa;
+      --card-bg: #fff;
+      --accent: #2f86e6;
+      --accent-dark: #1f6fd1;
+      --green: #36b37e;
+      --muted: #6b7280;
+      --border: #e6eef8;
+      --box-radius: 12px;
+      --card-width: 720px;
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+      padding:0;
+      background:var(--page-bg);
+      font-family:Inter, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    .wrap{
+      min-height:100%;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      padding:48px 20px;
+    }
+
+    .card{
+      width:100%;
+      max-width:var(--card-width);
+      background:var(--card-bg);
+      border-radius:18px;
+      padding:28px;
+      box-shadow:0 6px 22px rgba(33,47,60,0.06);
+      border:1px solid rgba(15,33,64,0.03);
+    }
+
+    header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:8px;
+    }
+
+    .badge{
+      background:linear-gradient(180deg,#fff,#f2fbff);
+      border:1px solid var(--border);
+      padding:8px 12px;
+      border-radius:999px;
+      color:var(--accent);
+      font-weight:700;
+      font-size:0.85rem;
+    }
+
+    h1{
+      margin:0;
+      font-size:1.3rem;
+      color:#0f1724;
+    }
+
+    .meta{
+      color:var(--muted);
+      font-size:0.92rem;
+      margin-top:6px;
+    }
+
+    .actions{
+      display:flex;
+      gap:10px;
+    }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      border-radius:10px;
+      border:none;
+      background:var(--accent);
+      color:#fff;
+      text-decoration:none;
+      font-weight:600;
+      cursor:pointer;
+      box-shadow:0 6px 14px rgba(47,134,230,0.12);
+    }
+
+    .btn.secondary{
+      background:#fff;
+      color:var(--accent);
+      border:1px solid var(--border);
+      box-shadow:none;
+    }
+
+    main{margin-top:18px;}
+    section{margin-top:18px;}
+
+    .panel{
+      background:#fbfdff;
+      border-radius:12px;
+      padding:16px;
+      border:1px solid var(--border);
+    }
+
+    .outline-card{
+      border-radius:10px;
+      border:1px solid var(--border);
+      padding:16px;
+      background:#fff;
+    }
+
+    .vocab-grid{
+      display:flex;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+
+    .vocab{
+      flex:1;
+      min-width:220px;
+      border-radius:10px;
+      padding:14px;
+      border:2px solid #dfeefe;
+      background:#fff;
+    }
+
+    .vocab.green{
+      border-color:#c9f3dc;
+      background:#f5fff6;
+    }
+
+    .vocab h3{
+      margin:0;
+      font-size:1rem;
+      color:#154360;
+    }
+
+    .vocab p{
+      margin:8px 0 0 0;
+      color:var(--muted);
+      font-size:0.95rem;
+    }
+
+    .media-row{
+      display:flex;
+      gap:14px;
+      margin-top:12px;
+      flex-wrap:wrap;
+    }
+
+    .media-btn{
+      background:#fff;
+      border:1px solid var(--border);
+      padding:12px 16px;
+      border-radius:10px;
+      font-weight:700;
+      color:var(--accent);
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      min-width:200px;
+      justify-content:center;
+    }
+
+    .homework{
+      background:#f3fff6;
+      border:1px solid #d7f5df;
+      border-radius:10px;
+      padding:14px;
+      margin-top:10px;
+    }
+
+    .speaking{
+      margin-top:18px;
+      padding:16px;
+      border-radius:12px;
+      background:linear-gradient(180deg,#ffffff,#fbfdff);
+      border:1px solid var(--border);
+      max-width:640px;
+    }
+
+    .speaking h2{
+      margin:0 0 10px 0;
+      font-size:1.05rem;
+      color:#0f1724;
+    }
+
+    .talk-table{
+      width:100%;
+      border-collapse:collapse;
+      border-radius:10px;
+      overflow:hidden;
+      background:#fff;
+      border:1px solid #e1e9f5;
+      font-size:0.9rem;
+    }
+
+    .talk-table th,
+    .talk-table td{
+      padding:8px 10px;
+      text-align:left;
+    }
+
+    .talk-table th{
+      background:#eef4ff;
+      color:#1b3556;
+      font-weight:700;
+      border-bottom:1px solid #dde6fa;
+    }
+
+    .row-teacher{
+      background:#e7f2ff;
+    }
+
+    .row-student{
+      background:#e8f7ef;
+    }
+
+    .talk-label{
+      font-weight:700;
+    }
+
+    .talk-percent{
+      font-weight:700;
+      color:#0f1724;
+    }
+
+    .talk-time{
+      color:var(--muted);
+    }
+
+    footer{
+      margin-top:20px;
+      color:var(--muted);
+      font-size:0.9rem;
+      text-align:center;
+    }
+
+    @media (max-width:720px){
+      .card{padding:18px;border-radius:14px;}
+      .vocab-grid{flex-direction:column;}
+      .media-row{flex-direction:column;}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Consumerism, minimalism e present perfect</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Gu &nbsp;•&nbsp;
+            <strong>Data:</strong> 22/04/2026
+          </div>
+        </div>
+
+        <div class="actions">
+          <a class="btn" href="#" onclick="window.print();return false;">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+        <section class="panel">
+          <p style="margin:0;font-weight:600;color:#08325a;">
+            Resumo da aula sobre rotina, Pilates, consumerism x minimalism, hypothetical situations e vocabulário de listening com present perfect.
+          </p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 8px 0;">
+              Nesta aula, começamos com uma conversa mais livre sobre a sua <strong>rotina do dia</strong>, seu trabalho e como estão sendo os seus horários. Você contou sobre acordar cedo, voltar para casa, tomar banho, comer e cuidar da Elena. Essa parte foi importante para revisar verbos do cotidiano e também corrigir construções no passado e no presente.
+            </p>
+            <p style="margin:0 0 8px 0;">
+              Depois, falamos bastante sobre <strong>Pilates</strong> e sobre as diferenças em relação à academia. Você explicou como funciona o estúdio novo, o uso das máquinas, o foco das aulas e os efeitos que já está sentindo no corpo, como melhora da <em>mobility</em>, do <em>core</em> e redução da dor nas costas. Nessa parte, surgiram correções importantes de plural, vocabulário de corpo, verbo <em>hurt</em> e maneiras mais naturais de explicar rotina e exercícios.
+            </p>
+            <p style="margin:0 0 8px 0;">
+              Em seguida, a conversa avançou para um tema mais abstrato: <strong>dinheiro, consumo, consumerism e minimalism</strong>. Você explicou como imagina sua vida se tivesse muito dinheiro, falou sobre casa, carro, conforto, serviços e o que considera necessário ou exagerado. Essa parte foi ótima para praticar estruturas de hipótese com <em>would</em> e ampliar vocabulário de opinião.
+            </p>
+            <p style="margin:0 0 8px 0;">
+              Depois disso, assistimos a dois trechos curtos em inglês sobre <strong>minimalism</strong> e <strong>consumerism</strong>. A aula passou então a focar mais em <strong>listening, interpretação e vocabulário</strong>. O vídeo trouxe palavras e expressões como <em>advertising</em>, <em>profit</em>, <em>disposable income</em>, <em>although</em>, <em>depression</em>, <em>anxiety</em>, <em>capitalism</em>, <em>greed</em>, <em>garbage</em>, <em>fast fashion</em>, <em>single-use items</em> e <em>byproducts</em>.
+            </p>
+            <p style="margin:0;">
+              Além do vocabulário, também retomamos pontos de <strong>gramática</strong>, especialmente <strong>present perfect</strong>, com frases como <em>We’ve all been raised on television</em>, <em>Humans now own more than they have ever owned</em> e <em>I have been a rich man, and I have been a poor man</em>. A aula terminou com a ideia de continuar essa conversa sobre consumerism na próxima semana, porque ainda há bastante conteúdo útil para explorar.
+            </p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Key Vocabulary</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <h3>Consumerism</h3>
+              <p style="margin-top:8px;font-size:0.92rem;color:var(--muted);">
+                <em>(pt) consumismo</em><br>
+                <small>Consumerism makes people want more and more things.</small>
+              </p>
+            </div>
+            <div class="vocab green">
+              <h3>Advertising</h3>
+              <p style="margin-top:8px;font-size:0.92rem;color:var(--muted);">
+                <em>(pt) propaganda / publicidade</em><br>
+                <small>Advertising creates demand for products.</small>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Vocabulário da aula</h2>
+          <div class="outline-card">
+            <h3 style="margin-top:0;">Rotina e Pilates</h3>
+            <ul>
+              <li><strong>device / machine</strong> – aparelho / máquina</li>
+              <li><strong>stretch</strong> – alongar</li>
+              <li><strong>mobility</strong> – mobilidade</li>
+              <li><strong>core</strong> – core / centro do corpo / abdômen profundo</li>
+              <li><strong>knee</strong> – joelho</li>
+              <li><strong>back</strong> – costas</li>
+              <li><strong>hurt</strong> – doer / machucar</li>
+              <li><strong>stiff</strong> – rígido / travado</li>
+              <li><strong>lumbar</strong> – lombar</li>
+              <li><strong>posterior</strong> – posterior / parte de trás</li>
+            </ul>
+
+            <h3>Hipóteses, dinheiro e serviços</h3>
+            <ul>
+              <li><strong>would</strong> – usaria / faria / compraria (hipótese)</li>
+              <li><strong>wouldn’t</strong> – não faria / não compraria</li>
+              <li><strong>pay for</strong> – pagar por</li>
+              <li><strong>house</strong> – casa</li>
+              <li><strong>comfortable</strong> – confortável</li>
+              <li><strong>bulletproof</strong> – blindado / à prova de balas</li>
+              <li><strong>watches</strong> – relógios de pulso</li>
+              <li><strong>garage</strong> – garagem</li>
+              <li><strong>daily routine</strong> – rotina diária</li>
+              <li><strong>some money / a lot of money / much money</strong> – algum dinheiro / muito dinheiro</li>
+            </ul>
+
+            <h3>Minimalism e consumerism</h3>
+            <ul>
+              <li><strong>minimalism</strong> – minimalismo</li>
+              <li><strong>consumerism</strong> – consumismo</li>
+              <li><strong>only what you need</strong> – apenas o que você precisa</li>
+              <li><strong>necessary</strong> – necessário</li>
+              <li><strong>amount of stuff</strong> – quantidade de coisas</li>
+              <li><strong>stuff</strong> – coisas</li>
+              <li><strong>advertising</strong> – publicidade / propaganda</li>
+              <li><strong>demand</strong> – demanda</li>
+              <li><strong>profit</strong> – lucro</li>
+              <li><strong>disposable income</strong> – renda disponível para gastar</li>
+            </ul>
+
+            <h3>Vocabulário do vídeo</h3>
+            <ul>
+              <li><strong>although</strong> – embora / apesar de</li>
+              <li><strong>depression</strong> – depressão</li>
+              <li><strong>anxiety</strong> – ansiedade</li>
+              <li><strong>capitalism</strong> – capitalismo</li>
+              <li><strong>greed</strong> – ganância</li>
+              <li><strong>garbage</strong> – lixo</li>
+              <li><strong>fast fashion</strong> – moda rápida / consumo rápido de roupas</li>
+              <li><strong>waste</strong> – desperdício / resíduo</li>
+              <li><strong>single-use items</strong> – itens de uso único</li>
+              <li><strong>supply</strong> – fornecer / abastecer</li>
+              <li><strong>byproducts</strong> – subprodutos</li>
+              <li><strong>murder</strong> – assassinato</li>
+              <li><strong>poverty</strong> – pobreza</li>
+              <li><strong>concern</strong> – preocupar / ser motivo de preocupação</li>
+              <li><strong>underwear</strong> – roupa íntima / cueca</li>
+              <li><strong>chasing</strong> – perseguindo / caçando</li>
+              <li><strong>raised</strong> – criados</li>
+              <li><strong>owned</strong> – possuído / teve</li>
+              <li><strong>finest</strong> – melhor nível / mais alto nível</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Frases modelo da aula</h2>
+          <div class="outline-card">
+            <ul>
+              <li>My days are long.</li>
+              <li>I arrived home at 7 PM.</li>
+              <li>I stretched a lot in Pilates.</li>
+              <li>My mobility was bad before, but now it’s better.</li>
+              <li>My back doesn’t hurt now.</li>
+              <li>One class, you do this exercise. In another class, you do a different exercise.</li>
+              <li>I gotta study more.</li>
+              <li>I gotta work more.</li>
+              <li>If I had a lot of money, I would buy a comfortable house.</li>
+              <li>I would pay for cleaning.</li>
+              <li>I would pay for cooking.</li>
+              <li>Minimalism is living with only what you need.</li>
+              <li>Consumerism makes people want more things.</li>
+              <li>Advertising creates a demand for products.</li>
+              <li>Research shows that people don’t feel happier.</li>
+              <li>The things you own end up owning you.</li>
+              <li>Fast fashion creates huge amounts of waste.</li>
+              <li>Plastic is often single use.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Correções importantes</h2>
+          <div class="outline-card">
+            <ul>
+              <li><strong>Your days are long:</strong> corrigimos <em>my days is long</em> para <em>my days are long</em>, porque <em>days</em> está no plural.</li>
+              <li><strong>She slept / she is sleeping:</strong> houve confusão ao tentar dizer que Elena dormiu ou estava dormindo. A forma precisa depende do contexto, mas a ideia principal era evitar misturar passado com presente.</li>
+              <li><strong>Class x classes:</strong> revisamos que, em frases como <em>one class</em> e <em>other class</em>, não se usa plural quando a referência é singular.</li>
+              <li><strong>My mobility was...:</strong> corrigimos o uso de <em>was</em> no lugar de <em>were</em>, porque <em>mobility</em> é singular.</li>
+              <li><strong>Hurt:</strong> trabalhamos que para “doer” a forma natural foi <em>my back hurts</em> ou <em>my back doesn’t hurt</em>.</li>
+              <li><strong>Money é incontável:</strong> reforçamos que não se diz <em>a money</em>. O correto é <em>some money</em>, <em>a lot of money</em> ou <em>much money</em>.</li>
+              <li><strong>Children:</strong> corrigimos <em>childrens</em>. O plural correto é <em>children</em>.</li>
+              <li><strong>Would buy x pay for:</strong> quando a ideia é contratar um serviço, o mais natural não é <em>buy cleaning</em>, mas <em>pay for cleaning</em> ou <em>pay for cooking</em>.</li>
+              <li><strong>Watches x clock:</strong> para relógio de pulso, usamos <em>watch</em> / <em>watches</em>. <em>Clock</em> costuma ser relógio de parede, mesa etc.</li>
+              <li><strong>Present perfect:</strong> retomamos estruturas como <em>We’ve all been raised</em>, <em>they have ever owned</em> e <em>I have been a rich man</em>, sempre observando <em>have/has + particípio</em>.</li>
+              <li><strong>Raised:</strong> vimos que <em>raised</em> pode significar “criados” no sentido de formação / criação de pessoas.</li>
+              <li><strong>Own / owned:</strong> reforçamos o verbo <em>own</em> como “possuir”.</li>
+              <li><strong>Advertising x consumerism:</strong> ficou claro na aula que consumerism não é só “comprar”, mas um ciclo maior estimulado por propaganda, desejo e busca de status ou compensação emocional.</li>
+              <li><strong>Greed, garbage, waste e byproducts:</strong> essas palavras apareceram no listening e foram destrinchadas uma a uma para ajudar sua compreensão geral do vídeo.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Transcrição &amp; Gravação</h2>
+          <div class="media-row">
+            <a class="media-btn" href="#" role="button">📄 Acessar transcrição</a>
+            <a
+              class="media-btn"
+              href="https://youtu.be/jJpfafbPVhA"
+              target="_blank"
+              rel="noopener noreferrer"
+              role="button"
+              style="background:linear-gradient(180deg,#1f6fd1,#2f86e6);color:#fff;border:none;min-width:260px;"
+            >
+              🎥 Assistir gravação (acesso privado)
+            </a>
+          </div>
+        </section>
+
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>Tempo de Fala (Talk Time)</h2>
+          <table class="talk-table">
+            <thead>
+              <tr>
+                <th>Quem falou</th>
+                <th>Porcentagem</th>
+                <th>Duração aproximada</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="row-teacher">
+                <td><span class="talk-label">César (Professor)</span></td>
+                <td><span class="talk-percent">72%</span></td>
+                <td class="talk-time">~36 minutos</td>
+              </tr>
+              <tr class="row-student">
+                <td><span class="talk-label">Gu</span></td>
+                <td><span class="talk-percent">28%</span></td>
+                <td class="talk-time">~14 minutos</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Homework</h2>
+          <div class="homework">
+            <p style="margin:0 0 8px 0;">
+              📌 <strong>Lição de casa (como combinado em aula):</strong>
+            </p>
+            <ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+              <li>Lembrar de ler o pós-aula de 2 a 3x na semana.</li>
+            </ul>
+            <p style="margin:6px 0 0 0;">
+              <a
+                href="https://babadum.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn secondary"
+                style="padding:8px 12px;border-radius:8px;font-weight:700;"
+              >
+                🎮 Abrir tarefa de casa (Babadum)
+              </a>
+            </p>
+          </div>
+
+          <div style="margin-top:14px;">
+            <a class="btn" href="https://wa.me" style="background:#25D366;border-radius:10px;box-shadow:none;">
+              💬 Falar comigo no WhatsApp
+            </a>
+          </div>
+        </section>
+
+      </main>
+
+      <footer>
+        <p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">
+          © 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com
+        </p>
+      </footer>
+    </article>
+  </div>
+</body>
+</html>
