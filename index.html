@@ -500,10 +500,7 @@
         const perm = await Notification.requestPermission();
         toast('🔔 perm: ' + perm);
         if (perm !== 'granted') return;
-        const fmswReg = await navigator.serviceWorker.register('firebase-messaging-sw.js');
-        await navigator.serviceWorker.ready;
-        toast('⚙️ SW: ' + fmswReg.scope);
-        const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: fmswReg });
+        const token = await getToken(messaging, { vapidKey: VAPID_KEY });
         toast('🎟️ token: ' + (token ? token.slice(0,20) : 'null'));
         if (token && currentUser) {
           await setDoc(doc(db, 'students', currentUser.uid), { fcmToken: token }, { merge: true });
@@ -582,7 +579,6 @@
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(console.warn);
-      navigator.serviceWorker.register('firebase-messaging-sw.js').catch(console.warn);
     }
   </script>
 </body>
