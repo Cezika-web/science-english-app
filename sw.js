@@ -1,6 +1,10 @@
 // CZK English — Service Worker
-const CACHE = 'czk-v3';
-const SHELL = ['/', '/index.html', '/manifest.json'];
+const CACHE = 'czk-v4';
+const SHELL = [
+  '/science-english-app/',
+  '/science-english-app/index.html',
+  '/science-english-app/manifest.json'
+];
 
 // Install: cache the app shell
 self.addEventListener('install', e => {
