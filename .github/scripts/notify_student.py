@@ -9,6 +9,7 @@ import json
 import os
 import sys
 import datetime
+from urllib.parse import quote
 import requests
 from google.oauth2 import service_account
 import google.auth.transport.requests
@@ -21,6 +22,10 @@ def main():
 
     filename = sys.argv[1]
     print(f"Processing: {filename}")
+
+    if "/" in filename or not filename.startswith("pos-aula-") or not filename.endswith(".html"):
+        print(f"Invalid pós-aula filename: {filename}")
+        sys.exit(1)
 
     # Parse slug from filename: pos-aula-{slug}-DD-MM-YYYY.html
     basename = filename
@@ -37,8 +42,9 @@ def main():
 
     date_str = "-".join(parts[-3:])   # e.g. 20-06-2026
     slug = "-".join(parts[:-3])       # e.g. mateus-richter
+    post_id = filename[:-5]
 
-    print(f"Slug: {slug} | Date: {date_str}")
+    print(f"Slug: {slug} | Date: {date_str} | Post ID: {post_id}")
 
     # Load service account from env
     sa_info = json.loads(os.environ["FIREBASE_SERVICE_ACCOUNT"])
@@ -92,7 +98,14 @@ def main():
     uid = student_doc["name"].split("/")[-1]
     fields = student_doc.get("fields", {})
     first_name = fields.get("firstName", {}).get("stringValue", "Aluno")
+    fcm_tokens = []
     fcm_token = fields.get("fcmToken", {}).get("stringValue", "")
+    if fcm_token:
+        fcm_tokens.append(fcm_token)
+    for value in fields.get("fcmTokens", {}).get("arrayValue", {}).get("values", []):
+        token = value.get("stringValue", "")
+        if token and token not in fcm_tokens:
+            fcm_tokens.append(token)
 
     print(f"Student found: {first_name} (uid: {uid})")
 
@@ -100,15 +113,20 @@ def main():
     posaula_url = (
         f"https://cezika-web.github.io/science-english-app/{filename}"
     )
-    now = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    app_url = (
+        "https://cezika-web.github.io/science-english-app/"
+        f"?post={quote(post_id)}"
+    )
+    now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    resp = requests.post(
-        f"{base_url}/students/{uid}/posaulas",
+    resp = requests.patch(
+        f"{base_url}/students/{uid}/posaulas/{post_id}",
         headers=headers,
         json={
             "fields": {
                 "filename": {"stringValue": filename},
                 "url": {"stringValue": posaula_url},
+                "appUrl": {"stringValue": app_url},
                 "title": {"stringValue": f"Pós-aula {date_str}"},
                 "createdAt": {"timestampValue": now},
                 "readAt": {"nullValue": None},
@@ -123,49 +141,61 @@ def main():
         sys.exit(1)
 
     # ── Send FCM push notification ────────────────────────────────────────────
-    if not fcm_token:
+    if not fcm_tokens:
         print("ℹ️  No FCM token — student hasn't enabled notifications yet.")
         return
 
-    resp = requests.post(
-        f"https://fcm.googleapis.com/v1/projects/{project_id}/messages:send",
-        headers=headers,
-        json={
+    def build_message(token):
+        return {
             "message": {
-                "token": fcm_token,
-                "notification": {
+                "token": token,
+                "data": {
+                    "url": app_url,
+                    "postId": post_id,
+                    "contentUrl": posaula_url,
                     "title": "Novo pós-aula! 📚",
                     "body": f"Seu resumo de aula está pronto, {first_name}!",
                 },
                 "webpush": {
-                    "notification": {
-                        "title": "Novo pós-aula! 📚",
-                        "body": f"Seu resumo de aula está pronto, {first_name}!",
-                        "icon": "https://cezika-web.github.io/science-english-app/icons/icon-192.png",
-                        "badge": "https://cezika-web.github.io/science-english-app/icons/icon-192.png",
+                    "headers": {
+                        "Urgency": "high",
                     },
                     "data": {
-                        "url": posaula_url,
+                        "url": app_url,
+                        "postId": post_id,
+                        "title": "Novo pós-aula! 📚",
+                        "body": f"Seu resumo de aula está pronto, {first_name}!",
+                        "contentUrl": posaula_url,
                     },
                     "fcm_options": {
-                        "link": posaula_url,
+                        "link": app_url,
                     },
                 },
             }
-        },
-    )
+        }
 
-    if resp.status_code == 200:
-        print(f"✅ Push notification sent to {first_name}")
-    else:
-        print(f"❌ FCM error: {resp.status_code}")
-        try:
-            err = resp.json()
-            print(f"   code:    {err.get('error', {}).get('code')}")
-            print(f"   status:  {err.get('error', {}).get('status')}")
-            print(f"   message: {err.get('error', {}).get('message')}")
-        except Exception:
-            print(f"   raw: {resp.text}")
+    success_count = 0
+    for token in fcm_tokens:
+        resp = requests.post(
+            f"https://fcm.googleapis.com/v1/projects/{project_id}/messages:send",
+            headers=headers,
+            json=build_message(token),
+        )
+
+        if resp.status_code == 200:
+            success_count += 1
+            print(f"✅ Push notification sent to {first_name}")
+        else:
+            print(f"❌ FCM error: {resp.status_code}")
+            try:
+                err = resp.json()
+                print(f"   code:    {err.get('error', {}).get('code')}")
+                print(f"   status:  {err.get('error', {}).get('status')}")
+                print(f"   message: {err.get('error', {}).get('message')}")
+            except Exception:
+                print(f"   raw: {resp.text}")
+
+    print(f"Sent {success_count}/{len(fcm_tokens)} notification(s).")
 
 
 if __name__ == "__main__":
