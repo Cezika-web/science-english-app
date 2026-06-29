@@ -235,6 +235,10 @@
     }
     .install-banner p { font-size: 0.85rem; color: #1a3a5c; flex: 1; }
     .install-banner p strong { display: block; font-size: 0.9rem; margin-bottom: 2px; }
+    .notification-banner {
+      background: #eefaf5; border-color: #b7ebd3;
+    }
+    .notification-banner p { color: #0f5132; }
     .btn-install {
       background: var(--accent); color: white; border: none;
       padding: 8px 14px; border-radius: 8px; font-size: 0.82rem;
@@ -293,6 +297,15 @@
         <button class="btn-install" id="btn-install-app">Instalar</button>
         <button class="btn-dismiss" id="btn-dismiss-install">✕</button>
       </div>
+      <div class="install-banner" id="ios-install-banner" style="display:none;">
+        <p><strong>📲 Instalar app</strong>No iPhone: Compartilhar → Adicionar à Tela de Início.</p>
+        <button class="btn-dismiss" id="btn-dismiss-ios-install">✕</button>
+      </div>
+      <div class="install-banner notification-banner" id="notif-banner" style="display:none;">
+        <p><strong>🔔 Ativar notificações</strong>Receba os pós-aulas neste celular.</p>
+        <button class="btn-install" id="btn-enable-notif">Ativar</button>
+        <button class="btn-dismiss" id="btn-dismiss-notif">✕</button>
+      </div>
       <div class="posaula-card">
         <span class="pill">📄 PÓS-AULA DA SEMANA</span>
         <h2 id="latest-title">Carregando...</h2>
@@ -331,9 +344,9 @@
     import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-    import { getFirestore, doc, getDoc, collection, query, orderBy, getDocs, setDoc, updateDoc, serverTimestamp }
+    import { getFirestore, doc, getDoc, collection, query, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-    import { getMessaging, getToken, onMessage }
+    import { getMessaging, getToken, onMessage, isSupported }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
 
     // ── FIREBASE CONFIG ─── substitua com seus dados ───────────────────
@@ -352,11 +365,14 @@
     const auth = getAuth(app);
     const db   = getFirestore(app);
     let messaging;
-    try { messaging = getMessaging(app); } catch(e) { /* iOS < 16.4 */ }
+    try { if (await isSupported()) messaging = getMessaging(app); } catch(e) { /* unsupported browser */ }
 
     let currentUser = null;
     let currentPost = null;
     let deferredPrompt = null;
+    let appSwRegistration = null;
+    let pendingPostId = new URLSearchParams(window.location.search).get('post') || '';
+    let pendingPostToOpen = null;
 
     // ── AUTH ────────────────────────────────────────────────────────────
     onAuthStateChanged(auth, async user => {
@@ -364,18 +380,9 @@
         currentUser = user;
         await loadStudent(user.uid);
         showView('home');
-        updateNotifButton();
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        toast('📱 iOS:' + isIOS + ' perm:' + (typeof Notification !== 'undefined' ? Notification.permission : 'N/A'), 6000);
-        if (typeof Notification !== 'undefined') {
-          if (Notification.permission === 'granted') {
-            // Permission already granted — get/refresh token silently (no gesture needed)
-            requestPushPermission().catch(() => {});
-          } else if (!isIOS && Notification.permission === 'default') {
-            // Non-iOS: request automatically on first login
-            requestPushPermission().catch(() => {});
-          }
-        }
+        openPendingPostFromNotification();
+        updatePwaPrompts();
+        syncPushTokenIfGranted().catch(() => {});
       } else {
         currentUser = null;
         showView('login');
@@ -402,6 +409,7 @@
     document.getElementById('password').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('btn-login').click(); });
     document.getElementById('btn-logout').onclick = () => signOut(auth);
     document.getElementById('btn-notif').onclick = () => requestPushPermission();
+    document.getElementById('btn-enable-notif').onclick = () => requestPushPermission();
 
     function showErr(msg) {
       const el = document.getElementById('login-error');
@@ -426,6 +434,9 @@
 
       const posts = snaps.docs.map(d => ({ id: d.id, ...d.data() }));
       currentPost = posts[0];
+      if (pendingPostId) {
+        pendingPostToOpen = posts.find(p => p.id === pendingPostId || p.filename === pendingPostId) || null;
+      }
 
       document.getElementById('latest-title').textContent = currentPost.title || 'Pós-Aula';
       document.getElementById('latest-date').textContent  = fmtDate(currentPost.createdAt);
@@ -475,6 +486,15 @@
       markRead(id);
     }
 
+    function openPendingPostFromNotification() {
+      if (!pendingPostToOpen) return;
+      const p = pendingPostToOpen;
+      pendingPostToOpen = null;
+      pendingPostId = '';
+      openPost(p.id, p.title, p.url);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
     async function markRead(postId) {
       if (!currentUser) return;
       try {
@@ -498,35 +518,85 @@
       if (!messaging) { toast('❌ messaging null'); return; }
       try {
         const perm = await Notification.requestPermission();
-        toast('🔔 perm: ' + perm);
         if (perm !== 'granted') return;
-        const token = await getToken(messaging, { vapidKey: VAPID_KEY });
-        toast('🎟️ token: ' + (token ? token.slice(0,20) : 'null'));
+        const serviceWorkerRegistration = await getAppServiceWorkerRegistration();
+        const tokenOptions = { vapidKey: VAPID_KEY };
+        if (serviceWorkerRegistration) tokenOptions.serviceWorkerRegistration = serviceWorkerRegistration;
+        const token = await getToken(messaging, tokenOptions);
         if (token && currentUser) {
-          await setDoc(doc(db, 'students', currentUser.uid), { fcmToken: token }, { merge: true });
+          await setDoc(doc(db, 'students', currentUser.uid), {
+            fcmToken: token,
+            fcmTokens: arrayUnion(token)
+          }, { merge: true });
+          localStorage.setItem('notifEnabled', '1');
+          localStorage.removeItem('notifDismissed');
           document.getElementById('btn-notif').style.display = 'none';
+          document.getElementById('notif-banner').style.display = 'none';
           toast('✅ Notificações ativadas!');
         }
-      } catch(e) { toast('❌ ' + e.message); console.warn('Push setup:', e); }
+      } catch(e) {
+        updatePwaPrompts();
+        toast('❌ ' + e.message);
+        console.warn('Push setup:', e);
+      }
     }
 
-    function updateNotifButton() {
+    async function syncPushTokenIfGranted() {
+      if (!currentUser || !messaging || typeof Notification === 'undefined') return;
+      if (Notification.permission !== 'granted') return;
+      const serviceWorkerRegistration = await getAppServiceWorkerRegistration();
+      const tokenOptions = { vapidKey: VAPID_KEY };
+      if (serviceWorkerRegistration) tokenOptions.serviceWorkerRegistration = serviceWorkerRegistration;
+      const token = await getToken(messaging, tokenOptions);
+      if (token) {
+        await setDoc(doc(db, 'students', currentUser.uid), {
+          fcmToken: token,
+          fcmTokens: arrayUnion(token)
+        }, { merge: true });
+      }
+    }
+
+    function updatePwaPrompts() {
       const btn = document.getElementById('btn-notif');
+      const notifBanner = document.getElementById('notif-banner');
+      const iosInstallBanner = document.getElementById('ios-install-banner');
       if (!btn) return;
-      if (typeof Notification === 'undefined') { btn.style.display = 'none'; return; }
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      btn.style.display = 'none';
+      notifBanner.style.display = 'none';
+      iosInstallBanner.style.display = 'none';
+
+      if (!currentUser) return;
+      if (isIOSDevice() && !isStandalonePwa() && !localStorage.getItem('iosInstallDismissed')) {
+        iosInstallBanner.style.display = 'flex';
+      }
+      if (!messaging || typeof Notification === 'undefined') return;
+
       if (Notification.permission === 'granted') {
         btn.style.display = 'none';
-      } else if (Notification.permission === 'denied' && !isIOS) {
-        btn.style.display = 'none';
-      } else {
+        return;
+      }
+      if (Notification.permission === 'denied') return;
+
+      if (isStandalonePwa() && !localStorage.getItem('notifDismissed')) {
+        notifBanner.style.display = 'flex';
+      }
+      if (isStandalonePwa()) {
         btn.style.display = 'inline-block';
       }
     }
 
+    function isIOSDevice() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    function isStandalonePwa() {
+      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
+
     if (messaging) {
       onMessage(messaging, payload => {
-        toast(`📄 ${payload.notification?.body || 'Novo pós-aula disponível!'}`);
+        toast(`📄 ${payload.notification?.body || payload.data?.body || 'Novo pós-aula disponível!'}`);
         if (currentUser) loadPosaulas(currentUser.uid);
       });
     }
@@ -543,7 +613,10 @@
       if (!deferredPrompt) return;
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') localStorage.setItem('installDismissed', '1');
+      if (outcome === 'accepted') {
+        localStorage.setItem('installDismissed', '1');
+        localStorage.removeItem('notifDismissed');
+      }
       document.getElementById('install-banner').style.display = 'none';
       deferredPrompt = null;
     };
@@ -552,6 +625,23 @@
       document.getElementById('install-banner').style.display = 'none';
       localStorage.setItem('installDismissed', '1');
     };
+
+    document.getElementById('btn-dismiss-ios-install').onclick = () => {
+      document.getElementById('ios-install-banner').style.display = 'none';
+      localStorage.setItem('iosInstallDismissed', '1');
+    };
+
+    document.getElementById('btn-dismiss-notif').onclick = () => {
+      document.getElementById('notif-banner').style.display = 'none';
+      localStorage.setItem('notifDismissed', '1');
+      updatePwaPrompts();
+    };
+
+    window.addEventListener('appinstalled', () => {
+      localStorage.setItem('installDismissed', '1');
+      localStorage.removeItem('notifDismissed');
+      updatePwaPrompts();
+    });
 
     // ── HELPERS ─────────────────────────────────────────────────────────
     function showView(name) {
@@ -565,6 +655,14 @@
       setTimeout(() => t.classList.remove('show'), ms);
     }
 
+    async function getAppServiceWorkerRegistration() {
+      if (!('serviceWorker' in navigator)) return undefined;
+      if (!appSwRegistration) {
+        appSwRegistration = await navigator.serviceWorker.register('sw.js');
+      }
+      return appSwRegistration;
+    }
+
     function fmtDate(ts) {
       if (!ts) return '';
       const d = ts.toDate ? ts.toDate() : new Date(ts);
@@ -574,12 +672,8 @@
     function esc(s = '') {
       return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
-  </script>
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(console.warn);
-    }
+    getAppServiceWorkerRegistration().catch(console.warn);
   </script>
 </body>
 </html>

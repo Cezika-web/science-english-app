@@ -1,145 +1,156 @@
-# CZK English App — Guia de Instalação
+# Science English App - Setup
 
-## Estrutura do projeto
+Guia de configuracao do PWA Science English.
 
-```
-czk-app/
-├── index.html          ← App do aluno (PWA)
-├── manifest.json       ← Configuração PWA
-├── sw.js               ← Service worker (offline + push)
-├── icons/              ← Ícones do app (você vai gerar)
+## Requisitos
+
+- Firebase project
+- GitHub Pages habilitado para este repositorio
+- GitHub Actions habilitado
+- Secret `FIREBASE_SERVICE_ACCOUNT` configurado no repositorio
+
+## Estrutura
+
+```text
+.
+├── index.html
 ├── admin/
-│   └── index.html      ← Painel do César
-├── functions/
-│   └── index.js        ← Firebase Cloud Function (webhook)
-└── .github/workflows/
-    └── notify.yml      ← GitHub Actions (detecta novo pós-aula)
+│   └── index.html
+├── manifest.json
+├── sw.js
+├── icons/
+├── .github/
+│   ├── workflows/notify.yml
+│   └── scripts/notify_student.py
+├── README.md
+├── NOTIFICATIONS.md
+├── CHANGELOG.md
+└── VERSION
 ```
 
----
+## Firebase
 
-## Passo 1 — Criar projeto no Firebase
+Ative no Firebase:
 
-1. Acesse https://console.firebase.google.com
-2. Clique **"Adicionar projeto"** → nome: `czk-english`
-3. Ative **Google Analytics** (opcional)
+- Authentication com e-mail/senha
+- Firestore Database
+- Cloud Messaging
+- Web Push certificates
 
-### Ativar serviços:
-- **Authentication** → Sign-in method → **E-mail/senha** → Ativar
-- **Firestore Database** → Criar banco → modo **Produção** → região `southamerica-east1` (São Paulo)
-- **Cloud Messaging** → já vem ativado
+Copie as credenciais web do Firebase para:
 
----
+- `index.html`
+- `admin/index.html`
+- `sw.js`
+- `firebase-messaging-sw.js`
 
-## Passo 2 — Pegar as credenciais
+Copie a VAPID key para `index.html`.
 
-1. Firebase Console → ⚙️ Configurações do projeto → **Seus aplicativos** → Adicionar app web
-2. Copie o objeto `firebaseConfig` e substitua em:
-   - `index.html` (linha com `SUA_API_KEY`)
-   - `admin/index.html` (mesma coisa)
+## GitHub Secret
 
-3. Para a **VAPID Key** (push notifications):
-   - Firebase Console → Cloud Messaging → aba **Web Push certificates**
-   - Clique **Gerar par de chaves** → copie a chave pública
-   - Cole em `index.html` onde está `SUA_VAPID_KEY`
+O workflow usa este secret:
 
----
-
-## Passo 3 — Hospedar o app
-
-### Opção A: GitHub Pages (mais simples)
-1. Crie um repositório: `czk-english-app` no GitHub
-2. Faça upload de todos os arquivos da pasta `czk-app/` (exceto `functions/`)
-3. GitHub → Settings → Pages → Branch: `main` → Salvar
-4. URL do app: `https://SEU_USUARIO.github.io/czk-english-app/`
-
-### Opção B: Firebase Hosting (recomendado para domínio próprio)
-```bash
-npm install -g firebase-tools
-firebase login
-firebase init hosting
-firebase deploy --only hosting
+```text
+FIREBASE_SERVICE_ACCOUNT
 ```
 
----
+O valor deve ser o JSON completo de uma service account com permissao para:
 
-## Passo 4 — Deploy da Cloud Function
+- Firestore
+- Firebase Cloud Messaging
 
-```bash
-cd functions
-npm install
-cd ..
-firebase deploy --only functions
+O workflow atual e:
+
+```text
+.github/workflows/notify.yml
 ```
 
-Após o deploy, copie a URL da função (aparece no terminal) — vai ser algo como:
-`https://southamerica-east1-czk-english.cloudfunctions.net/notifyStudent`
+## Hospedagem
 
----
+O app roda em GitHub Pages:
 
-## Passo 5 — Configurar GitHub Actions
-
-No repositório de pós-aulas (`Czk-post-classes`):
-
-1. Vá em **Settings → Secrets and variables → Actions**
-2. Adicione dois secrets:
-   - `FIREBASE_FUNCTION_URL` = URL da função acima
-   - `NOTIFY_SECRET` = uma senha qualquer, ex: `czk2026secreto`
-
-3. Configure o mesmo segredo no Firebase:
-```bash
-firebase functions:config:set notify.secret="czk2026secreto"
-firebase deploy --only functions
+```text
+https://cezika-web.github.io/science-english-app/
 ```
 
----
+Deploy e feito ao enviar mudancas para `main`; o GitHub Pages publica a nova versao automaticamente.
 
-## Passo 6 — Gerar os ícones
+## Cadastro de Alunos
 
-Você precisa de dois ícones PNG na pasta `icons/`:
-- `icon-192.png` (192×192 px)
-- `icon-512.png` (512×512 px)
+1. Acesse `/admin/`.
+2. Entre com a conta admin do Firebase Authentication.
+3. Cadastre nome, e-mail, senha inicial, nivel e link do Notion.
+4. O painel cria o aluno e salva o perfil em `students/{uid}`.
 
-Você pode criar no **Canva** com o logo CZK e exportar nesses tamanhos.
+## PWA e Notificacoes
 
----
+O alvo e PWA no Android e no iPhone.
 
-## Passo 7 — Cadastrar os alunos
+Android:
 
-1. Acesse `https://seu-app.github.io/admin/`
-2. Faça login com seu e-mail/senha (você precisará criar sua conta admin primeiro pelo Firebase Console → Authentication → Adicionar usuário)
-3. Aba **Novo aluno** → preencha nome, e-mail, senha inicial, nível e URL do Notion
-4. O aluno recebe o e-mail e a senha de você → entra no app e muda a senha se quiser
+1. O aluno instala o PWA pelo navegador.
+2. Abre o app instalado.
+3. Toca em **Ativar notificacoes**.
+4. O token FCM web e salvo no Firestore.
 
----
+iPhone:
 
-## Padrão de nome dos arquivos de pós-aula
+1. O aluno precisa usar iOS 16.4+.
+2. No Safari, usa **Compartilhar -> Adicionar a Tela de Inicio**.
+3. Abre o app pela Tela de Inicio.
+4. Toca em **Ativar notificacoes**.
+5. O token FCM web e salvo no Firestore.
 
-Para a notificação automática funcionar, os arquivos HTML devem seguir o padrão:
+Detalhes em [`NOTIFICATIONS.md`](NOTIFICATIONS.md).
 
-```
+## Padrao dos Arquivos de Pos-Aula
+
+Arquivos que disparam notificacao devem seguir:
+
+```text
 pos-aula-{slug-do-aluno}-DD-MM-YYYY.html
 ```
 
 Exemplos:
-- `pos-aula-mateus-richter-20-06-2026.html`
-- `pos-aula-lorena-20-06-2026.html`
 
-O "slug" que você coloca no nome do arquivo deve corresponder ao campo `slug` que você salva no Firestore ao cadastrar o aluno.
+```text
+pos-aula-mateus-richter-20-06-2026.html
+pos-aula-lorena-20-06-2026.html
+```
 
-**Para adicionar o campo slug ao cadastro**: ao criar o aluno no painel admin, o slug é gerado automaticamente (nome em minúsculas com hífens). Ex: "Mateus Richter" → `mateus-richter`.
+O `slug` precisa bater com o campo `slug` do aluno no Firestore.
 
----
+## Fluxo Completo
 
-## Fluxo completo após a configuração
+1. Um arquivo `pos-aula-*.html` entra no repositorio.
+2. GitHub Actions executa `notify.yml`.
+3. O script `notify_student.py` identifica o aluno pelo slug.
+4. O script cria/atualiza o pos-aula em `students/{uid}/posaulas/{postId}`.
+5. O script envia push pelo Firebase Cloud Messaging.
+6. O aluno toca na notificacao.
+7. O app abre em `/?post=<postId>`.
+8. O reader abre o pos-aula.
+9. O app registra `readAt`.
 
-1. Você faz a aula → gera o pós-aula com `/posaula`
-2. Faz upload do HTML para o GitHub Pages de pós-aulas
-3. GitHub Actions detecta o arquivo novo → chama a Firebase Function
-4. A Function identifica o aluno pelo nome do arquivo
-5. Salva o pós-aula no Firestore do aluno
-6. Envia push notification pro celular do aluno
-7. Aluno toca na notificação → abre o app → lê o pós-aula
-8. App registra "lido" no Firestore
-9. Você vê no painel admin quem leu e quem não leu ✅
+## Disparo Manual
 
+No GitHub:
+
+1. Abra **Actions**.
+2. Escolha **Notify student - new pos-aula**.
+3. Clique **Run workflow**.
+4. Informe o arquivo:
+
+```text
+pos-aula-mateus-richter-20-06-2026.html
+```
+
+## Validacao Local
+
+```bash
+python3 -m py_compile .github/scripts/notify_student.py
+ruby -e "require 'yaml'; YAML.load_file('.github/workflows/notify.yml'); puts 'yaml ok'"
+perl -0ne 'print $1 if /<script type=\"module\">([\s\S]*?)<\/script>/' index.html | node --check --input-type=module
+node --check sw.js
+python3 -m json.tool manifest.json >/dev/null
+```

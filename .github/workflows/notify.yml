@@ -5,6 +5,12 @@ on:
     branches: [main]
     paths:
       - 'pos-aula-*.html'
+  workflow_dispatch:
+    inputs:
+      filename:
+        description: 'Arquivo do pós-aula para notificar. Ex: pos-aula-mateus-richter-20-06-2026.html'
+        required: true
+        type: string
 
 jobs:
   notify:
@@ -14,7 +20,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -27,8 +33,22 @@ jobs:
       - name: Notify students for new pós-aula files
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          MANUAL_FILENAME: ${{ github.event.inputs.filename }}
         run: |
-          NEW_FILES=$(git diff --name-only --diff-filter=A HEAD~1 HEAD | grep '^pos-aula-.*\.html$' || true)
+          if [ -n "$MANUAL_FILENAME" ]; then
+            if [ ! -f "$MANUAL_FILENAME" ]; then
+              echo "File not found: $MANUAL_FILENAME"
+              exit 1
+            fi
+            NEW_FILES="$MANUAL_FILENAME"
+          else
+            BASE_SHA="${{ github.event.before }}"
+            if [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+              NEW_FILES=$(git diff-tree --no-commit-id --name-only --diff-filter=A -r "$GITHUB_SHA" | grep '^pos-aula-.*\.html$' || true)
+            else
+              NEW_FILES=$(git diff --name-only --diff-filter=A "$BASE_SHA" "$GITHUB_SHA" | grep '^pos-aula-.*\.html$' || true)
+            fi
+          fi
 
           if [ -z "$NEW_FILES" ]; then
             echo "No new pós-aula files in this push."

@@ -1,6 +1,7 @@
 {
   "name": "Science English",
   "short_name": "Science English",
+  "id": "/science-english-app/",
   "description": "Área do Aluno — Science English",
   "start_url": "/science-english-app/",
   "scope": "/science-english-app/",
