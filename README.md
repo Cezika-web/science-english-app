@@ -2,7 +2,7 @@
 
 PWA da Science English para alunos acessarem pós-aulas, atividades no Notion e receberem notificações no celular. O projeto é estático e roda em GitHub Pages, com Firebase para autenticação, Firestore e Firebase Cloud Messaging.
 
-Versão atual: `v1.0.0`
+Versão atual: `v1.0.1`
 
 ## Visão Geral
 
@@ -44,8 +44,8 @@ Versão atual: `v1.0.0`
 2. O app carrega o perfil em `students/{uid}` no Firestore.
 3. O app lista os pós-aulas em `students/{uid}/posaulas`.
 4. O aluno instala o PWA no Android ou iPhone.
-5. Ao abrir o PWA instalado, o app mostra o botão **Ativar notificações**.
-6. Ao tocar em **Ativar**, o app pede permissão nativa e salva o token FCM em:
+5. Ao abrir o PWA instalado, o app mostra o botão **Ativar notificações**, inclusive antes do login.
+6. Ao tocar em **Ativar**, o app pede permissão nativa, guarda o token no aparelho e salva no perfil do aluno depois do login.
 
 ```text
 students/{uid}.fcmToken

@@ -93,6 +93,19 @@
       border-radius: 8px; font-size: 0.85rem;
       margin-top: 12px; display: none;
     }
+    .login-notif {
+      background: #eefaf5; border: 1px solid #b7ebd3;
+      border-radius: 12px; padding: 12px 14px;
+      margin-bottom: 16px; display: none; gap: 10px;
+      align-items: center;
+    }
+    .login-notif p { flex: 1; color: #0f5132; font-size: 0.82rem; line-height: 1.35; }
+    .login-notif p strong { display: block; font-size: 0.88rem; margin-bottom: 2px; }
+    .login-notif button {
+      background: var(--green); color: white; border: none;
+      padding: 8px 12px; border-radius: 8px; font-size: 0.8rem;
+      font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+    }
 
     /* ── HOME ── */
     #view-home { background: var(--bg); }
@@ -265,6 +278,10 @@
         <div class="logo-badge">Science English</div>
         <p>English — Área do Aluno</p>
       </div>
+      <div class="login-notif" id="login-notif-banner">
+        <p><strong>🔔 Ativar notificações</strong>Receba os pós-aulas neste celular.</p>
+        <button id="btn-login-enable-notif">Ativar</button>
+      </div>
       <div class="form-group">
         <label for="email">E-mail</label>
         <input type="email" id="email" placeholder="seu@email.com" autocomplete="email" />
@@ -382,10 +399,11 @@
         showView('home');
         openPendingPostFromNotification();
         updatePwaPrompts();
-        syncPushTokenIfGranted().catch(() => {});
+        syncPushTokenIfGranted().catch(console.warn);
       } else {
         currentUser = null;
         showView('login');
+        updatePwaPrompts();
       }
       document.getElementById('loading').style.display = 'none';
     });
@@ -410,6 +428,7 @@
     document.getElementById('btn-logout').onclick = () => signOut(auth);
     document.getElementById('btn-notif').onclick = () => requestPushPermission();
     document.getElementById('btn-enable-notif').onclick = () => requestPushPermission();
+    document.getElementById('btn-login-enable-notif').onclick = () => requestPushPermission();
 
     function showErr(msg) {
       const el = document.getElementById('login-error');
@@ -523,16 +542,14 @@
         const tokenOptions = { vapidKey: VAPID_KEY };
         if (serviceWorkerRegistration) tokenOptions.serviceWorkerRegistration = serviceWorkerRegistration;
         const token = await getToken(messaging, tokenOptions);
-        if (token && currentUser) {
-          await setDoc(doc(db, 'students', currentUser.uid), {
-            fcmToken: token,
-            fcmTokens: arrayUnion(token)
-          }, { merge: true });
+        if (token) {
+          await savePushToken(token);
           localStorage.setItem('notifEnabled', '1');
           localStorage.removeItem('notifDismissed');
           document.getElementById('btn-notif').style.display = 'none';
           document.getElementById('notif-banner').style.display = 'none';
-          toast('✅ Notificações ativadas!');
+          document.getElementById('login-notif-banner').style.display = 'none';
+          toast(currentUser ? '✅ Notificações ativadas!' : '✅ Notificações ativadas! Entre para vincular ao seu perfil.');
         }
       } catch(e) {
         updatePwaPrompts();
@@ -541,32 +558,40 @@
       }
     }
 
+    async function savePushToken(token) {
+      localStorage.setItem('pendingFcmToken', token);
+      if (!currentUser) return;
+      await setDoc(doc(db, 'students', currentUser.uid), {
+        fcmToken: token,
+        fcmTokens: arrayUnion(token)
+      }, { merge: true });
+      localStorage.removeItem('pendingFcmToken');
+    }
+
     async function syncPushTokenIfGranted() {
       if (!currentUser || !messaging || typeof Notification === 'undefined') return;
       if (Notification.permission !== 'granted') return;
+      const pendingToken = localStorage.getItem('pendingFcmToken');
+      if (pendingToken) await savePushToken(pendingToken);
       const serviceWorkerRegistration = await getAppServiceWorkerRegistration();
       const tokenOptions = { vapidKey: VAPID_KEY };
       if (serviceWorkerRegistration) tokenOptions.serviceWorkerRegistration = serviceWorkerRegistration;
       const token = await getToken(messaging, tokenOptions);
-      if (token) {
-        await setDoc(doc(db, 'students', currentUser.uid), {
-          fcmToken: token,
-          fcmTokens: arrayUnion(token)
-        }, { merge: true });
-      }
+      if (token) await savePushToken(token);
     }
 
     function updatePwaPrompts() {
       const btn = document.getElementById('btn-notif');
       const notifBanner = document.getElementById('notif-banner');
       const iosInstallBanner = document.getElementById('ios-install-banner');
+      const loginNotifBanner = document.getElementById('login-notif-banner');
       if (!btn) return;
       btn.style.display = 'none';
       notifBanner.style.display = 'none';
       iosInstallBanner.style.display = 'none';
+      loginNotifBanner.style.display = 'none';
 
-      if (!currentUser) return;
-      if (isIOSDevice() && !isStandalonePwa() && !localStorage.getItem('iosInstallDismissed')) {
+      if (isIOSDevice() && !isStandalonePwa() && !localStorage.getItem('iosInstallDismissed') && currentUser) {
         iosInstallBanner.style.display = 'flex';
       }
       if (!messaging || typeof Notification === 'undefined') return;
@@ -577,6 +602,10 @@
       }
       if (Notification.permission === 'denied') return;
 
+      if (isStandalonePwa() && !currentUser) {
+        loginNotifBanner.style.display = 'flex';
+        return;
+      }
       if (isStandalonePwa() && !localStorage.getItem('notifDismissed')) {
         notifBanner.style.display = 'flex';
       }

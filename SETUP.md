@@ -90,16 +90,16 @@ Android:
 
 1. O aluno instala o PWA pelo navegador.
 2. Abre o app instalado.
-3. Toca em **Ativar notificacoes**.
-4. O token FCM web e salvo no Firestore.
+3. Toca em **Ativar notificacoes** na tela de login.
+4. O token FCM web fica guardado no aparelho e e salvo no Firestore depois do login.
 
 iPhone:
 
 1. O aluno precisa usar iOS 16.4+.
 2. No Safari, usa **Compartilhar -> Adicionar a Tela de Inicio**.
 3. Abre o app pela Tela de Inicio.
-4. Toca em **Ativar notificacoes**.
-5. O token FCM web e salvo no Firestore.
+4. Toca em **Ativar notificacoes** na tela de login.
+5. O token FCM web fica guardado no aparelho e e salvo no Firestore depois do login.
 
 Detalhes em [`NOTIFICATIONS.md`](NOTIFICATIONS.md).
 
