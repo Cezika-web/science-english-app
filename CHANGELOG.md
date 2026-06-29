@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.1 - Login Notification Prompt
+
+- Shows **Ativar notificações** on the login screen when the app is already installed as a PWA.
+- Allows notification permission before login.
+- Stores the FCM token locally and links it to the student profile after login.
+
 ## v1.0.0 - PWA Notifications
 
 - Added PWA notification activation flow for Android and iPhone.
