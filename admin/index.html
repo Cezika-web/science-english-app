@@ -6,8 +6,8 @@
   <title>CZK Admin</title>
   <style>
     :root {
-      --accent: #2f86e6; --green: #36b37e; --muted: #6b7280;
-      --border: #e6eef8; --bg: #f4f7fa; --danger: #e53e3e;
+      --accent: #2f86e6; --accent-dark: #1f6fd1; --green: #36b37e;
+      --muted: #6b7280; --border: #e6eef8; --bg: #f4f7fa; --danger: #e53e3e;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Inter, "Segoe UI", sans-serif; background: var(--bg); color: #0f1724; }
@@ -22,21 +22,18 @@
 
     .container { max-width: 960px; margin: 0 auto; padding: 24px 20px; }
 
-    /* Stats bar */
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 28px; }
     .stat-card { background: white; border-radius: 12px; padding: 16px; border: 1px solid var(--border); }
     .stat-card .val { font-size: 1.8rem; font-weight: 800; color: var(--accent); }
     .stat-card .lbl { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
 
-    /* Tabs */
-    .tabs { display: flex; gap: 4px; margin-bottom: 20px; }
-    .tab { padding: 8px 16px; border-radius: 8px; border: none; background: none; font-size: 0.9rem; cursor: pointer; color: var(--muted); font-weight: 600; }
+    .tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab { padding: 8px 14px; border-radius: 8px; border: none; background: none; font-size: 0.85rem; cursor: pointer; color: var(--muted); font-weight: 600; white-space: nowrap; }
     .tab.active { background: var(--accent); color: white; }
 
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
 
-    /* Students table */
     .students-grid { display: grid; gap: 10px; }
     .student-row {
       background: white; border-radius: 12px; padding: 14px 18px;
@@ -56,22 +53,53 @@
     .read-badge.unread { background: #fff3cd; color: #92400e; }
     .btn-detail { background: #f0f7ff; border: none; color: var(--accent); padding: 7px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; flex-shrink: 0; }
 
-    /* Add student form */
-    .form-card { background: white; border-radius: 16px; padding: 24px; border: 1px solid var(--border); max-width: 500px; }
+    .form-card { background: white; border-radius: 16px; padding: 24px; border: 1px solid var(--border); max-width: 560px; }
     .form-card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 18px; }
     .field { margin-bottom: 14px; }
     .field label { display: block; font-size: 0.83rem; font-weight: 600; margin-bottom: 5px; color: #374151; }
-    .field input, .field select {
+    .field input, .field select, .field textarea {
       width: 100%; padding: 10px 12px; border: 1.5px solid var(--border);
-      border-radius: 8px; font-size: 0.95rem; outline: none;
+      border-radius: 8px; font-size: 0.9rem; outline: none; font-family: inherit;
     }
-    .field input:focus, .field select:focus { border-color: var(--accent); }
-    .btn-add { background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-size: 0.95rem; font-weight: 700; cursor: pointer; }
-    .form-msg { margin-top: 10px; font-size: 0.85rem; display: none; }
-    .form-msg.ok { color: var(--green); }
-    .form-msg.err { color: var(--danger); }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+    .field textarea { resize: vertical; min-height: 160px; font-family: monospace; font-size: 0.82rem; }
+    .btn-add { background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+    .btn-add:hover { background: var(--accent-dark); }
+    .btn-add:disabled { opacity: 0.6; cursor: not-allowed; }
+    .form-msg { margin-top: 10px; font-size: 0.85rem; display: none; padding: 10px 14px; border-radius: 8px; }
+    .form-msg.ok { color: #065f46; background: #d1fae5; display: block; }
+    .form-msg.err { color: var(--danger); background: #fff5f5; display: block; }
+    .form-msg.info { color: #1a3a5c; background: #e8f3ff; display: block; }
 
-    /* Modal */
+    /* Publish / Correct tabs */
+    .publish-preview {
+      background: #f8fafc; border: 1px solid var(--border); border-radius: 12px;
+      padding: 16px; margin-top: 14px; display: none;
+    }
+    .publish-preview h3 { font-size: 0.88rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
+    .preview-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    .preview-item:last-child { border-bottom: none; }
+    .preview-emoji { font-size: 1.2rem; }
+    .preview-title { font-weight: 600; }
+    .preview-meta { font-size: 0.78rem; color: var(--muted); margin-top: 1px; }
+
+    .activities-list { display: grid; gap: 8px; margin-top: 12px; }
+    .act-select-row {
+      background: white; border: 1.5px solid var(--border); border-radius: 10px;
+      padding: 12px 14px; cursor: pointer; transition: border-color 0.15s;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .act-select-row:hover { border-color: var(--accent); }
+    .act-select-row.selected { border-color: var(--accent); background: #f0f7ff; }
+    .act-select-row input[type=radio] { flex-shrink: 0; }
+    .act-select-info { flex: 1; }
+    .act-select-title { font-weight: 700; font-size: 0.9rem; }
+    .act-select-meta { font-size: 0.78rem; color: var(--muted); }
+
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 100; }
     .modal-overlay.open { display: flex; }
     .modal { background: white; border-radius: 16px; width: 100%; max-width: 540px; max-height: 80vh; overflow-y: auto; }
@@ -79,7 +107,6 @@
     .modal-header h2 { font-size: 1rem; font-weight: 700; }
     .btn-close { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--muted); }
     .modal-body { padding: 20px; }
-
     .posaula-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
     .posaula-item:last-child { border-bottom: none; }
     .posaula-item .p-title { font-weight: 600; font-size: 0.95rem; }
@@ -90,7 +117,6 @@
 
     .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 0.9rem; }
 
-    /* Login screen */
     #admin-login { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
     .admin-login-card { background: white; border-radius: 16px; padding: 32px; width: 100%; max-width: 360px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
     .admin-login-card h1 { font-size: 1.2rem; font-weight: 800; margin-bottom: 4px; }
@@ -111,7 +137,7 @@
     </div>
   </div>
 
-  <!-- Admin Panel (hidden until login) -->
+  <!-- Admin Panel -->
   <div id="admin-panel" style="display:none;">
     <div class="header">
       <h1>CZK English — Painel Admin</h1>
@@ -122,34 +148,92 @@
     </div>
 
     <div class="container">
-      <!-- Stats -->
       <div class="stats">
         <div class="stat-card"><div class="val" id="stat-total">—</div><div class="lbl">Alunos ativos</div></div>
         <div class="stat-card"><div class="val" id="stat-read">—</div><div class="lbl">Leram o último pós-aula</div></div>
         <div class="stat-card"><div class="val" id="stat-unread">—</div><div class="lbl">Ainda não leram</div></div>
       </div>
 
-      <!-- Tabs -->
       <div class="tabs">
         <button class="tab active" data-tab="students">👥 Alunos</button>
-        <button class="tab" data-tab="add">➕ Novo aluno</button>
+        <button class="tab" data-tab="publish">📤 Publicar Atividades</button>
+        <button class="tab" data-tab="correct">✅ Aplicar Correção</button>
+        <button class="tab" data-tab="add">➕ Novo Aluno</button>
       </div>
 
-      <!-- Students list -->
+      <!-- ALUNOS -->
       <div class="tab-panel active" id="tab-students">
         <div class="students-grid" id="students-grid">
           <div class="loading">Carregando alunos...</div>
         </div>
       </div>
 
-      <!-- Add student -->
+      <!-- PUBLICAR ATIVIDADES -->
+      <div class="tab-panel" id="tab-publish">
+        <div class="form-card">
+          <h2>📤 Publicar Atividades no App</h2>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;">
+            Cole o JSON gerado pela skill <strong>alunos-app</strong> e clique em Publicar.
+          </p>
+
+          <div class="field">
+            <label>JSON das Atividades</label>
+            <textarea id="pub-json" placeholder='{"studentName":"Gustavo","uid":"...","week":"30 DE JUNHO 2026","activities":[...]}'></textarea>
+          </div>
+
+          <button class="btn-add" id="btn-parse-json" type="button">Verificar JSON →</button>
+
+          <div class="publish-preview" id="pub-preview">
+            <h3>Preview</h3>
+            <div id="pub-preview-student" style="font-weight:700;margin-bottom:10px;font-size:0.95rem;"></div>
+            <div id="pub-preview-list"></div>
+            <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
+              <button class="btn-add" id="btn-publish" type="button">🚀 Publicar para o aluno</button>
+            </div>
+          </div>
+
+          <div class="form-msg" id="pub-msg"></div>
+        </div>
+      </div>
+
+      <!-- APLICAR CORREÇÃO -->
+      <div class="tab-panel" id="tab-correct">
+        <div class="form-card">
+          <h2>✅ Aplicar Correção</h2>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;">
+            Cole o JSON gerado pela skill <strong>correcao-app</strong>, selecione a atividade e aplique.
+          </p>
+
+          <div class="field">
+            <label>JSON da Correção</label>
+            <textarea id="cor-json" placeholder='{"studentName":"Gustavo","uid":"...","week":"30 DE JUNHO 2026","feedback":{...}}'></textarea>
+          </div>
+
+          <button class="btn-add" id="btn-load-activities" type="button">Carregar atividades do aluno →</button>
+
+          <div id="cor-activities-section" style="display:none;margin-top:16px;">
+            <div class="field">
+              <label>Selecione a atividade para corrigir:</label>
+              <div class="activities-list" id="cor-activities-list"></div>
+            </div>
+            <div style="margin-top:16px;">
+              <button class="btn-add" id="btn-apply-correction" type="button">✅ Aplicar Correção</button>
+            </div>
+          </div>
+
+          <div class="form-msg" id="cor-msg"></div>
+        </div>
+      </div>
+
+      <!-- NOVO ALUNO -->
       <div class="tab-panel" id="tab-add">
         <div class="form-card">
           <h2>Cadastrar novo aluno</h2>
           <div class="field"><label>Nome completo</label><input type="text" id="f-name" placeholder="Mateus Richter" /></div>
           <div class="field"><label>E-mail (para login)</label><input type="email" id="f-email" placeholder="aluno@email.com" /></div>
           <div class="field"><label>Senha inicial</label><input type="password" id="f-pass" placeholder="Mínimo 6 caracteres" /></div>
-          <div class="field"><label>Nível</label>
+          <div class="field">
+            <label>Nível</label>
             <select id="f-level">
               <option value="">Selecione...</option>
               <option>Beginner (A1)</option><option>Elementary (A2)</option>
@@ -157,7 +241,7 @@
               <option>Upper-Intermediate (B2)</option><option>Advanced (C1)</option>
             </select>
           </div>
-          <div class="field"><label>URL da área do Notion</label><input type="url" id="f-notion" placeholder="https://notion.so/..." /></div>
+          <div class="field"><label>URL da área do Notion (opcional)</label><input type="url" id="f-notion" placeholder="https://notion.so/..." /></div>
           <button class="btn-add" id="btn-create-student">Criar aluno</button>
           <div class="form-msg" id="create-msg"></div>
         </div>
@@ -182,11 +266,10 @@
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-    import { initializeApp as initializeApp2 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getFirestore, collection, getDocs, getDoc, doc, setDoc, query, orderBy, serverTimestamp }
+    import { getFirestore, collection, getDocs, getDoc, doc, setDoc, addDoc, updateDoc,
+             query, orderBy, serverTimestamp, where }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-    // ── FIREBASE CONFIG ─── mesma config do app do aluno ───────────────
     const firebaseConfig = {
       apiKey:            "AIzaSyDgDlLyU15p8wQ1YtCN8NebGes_oq3atU8",
       authDomain:        "scienceenglish.firebaseapp.com",
@@ -195,17 +278,18 @@
       messagingSenderId: "152554774632",
       appId:             "1:152554774632:web:c43dfd4698efb136ed9bdd"
     };
-    // ───────────────────────────────────────────────────────────────────
 
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db   = getFirestore(app);
-
-    // App secundário para criar alunos sem deslogar o admin
-    const app2  = initializeApp2(firebaseConfig, 'secondary');
+    const app2 = initializeApp({ ...firebaseConfig }, 'secondary');
     const auth2 = getAuth(app2);
 
     let adminUid = null;
+    let allStudents = [];
+    let parsedActivityJson = null;
+    let parsedCorrectionJson = null;
+    let selectedActivityId = null;
 
     // ── AUTH ────────────────────────────────────────────────────────────
     onAuthStateChanged(auth, user => {
@@ -226,6 +310,7 @@
       const email = document.getElementById('a-email').value.trim();
       const pass  = document.getElementById('a-pass').value;
       const err   = document.getElementById('a-login-err');
+      err.className = 'form-msg'; err.style.display = 'none';
       try {
         await signInWithEmailAndPassword(auth, email, pass);
       } catch(e) {
@@ -234,6 +319,7 @@
       }
     };
 
+    document.getElementById('a-pass').onkeydown = e => { if (e.key === 'Enter') document.getElementById('a-login-btn').click(); };
     document.getElementById('a-logout-btn').onclick = () => signOut(auth);
 
     // ── TABS ────────────────────────────────────────────────────────────
@@ -250,20 +336,20 @@
     async function loadStudents() {
       const grid = document.getElementById('students-grid');
       const snap = await getDocs(collection(db, 'students'));
-      const students = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+      allStudents = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
 
       let readCount = 0;
-      const rows = await Promise.all(students.map(async s => {
+      const rows = await Promise.all(allStudents.map(async s => {
         const posSnap = await getDocs(query(collection(db, 'students', s.uid, 'posaulas'), orderBy('createdAt', 'desc')));
-        const latest = posSnap.docs[0]?.data();
-        const isRead = !!latest?.readAt;
+        const latest  = posSnap.docs[0]?.data();
+        const isRead  = !!latest?.readAt;
         if (isRead) readCount++;
         return { ...s, latestRead: isRead, latestTitle: latest?.title || null };
       }));
 
-      document.getElementById('stat-total').textContent  = students.length;
+      document.getElementById('stat-total').textContent  = allStudents.length;
       document.getElementById('stat-read').textContent   = readCount;
-      document.getElementById('stat-unread').textContent = students.length - readCount;
+      document.getElementById('stat-unread').textContent = allStudents.length - readCount;
 
       grid.innerHTML = rows.map(s => `
         <div class="student-row">
@@ -274,11 +360,9 @@
           </div>
           ${s.latestTitle
             ? `<span class="read-badge ${s.latestRead ? 'read' : 'unread'}">${s.latestRead ? '✓ Lido' : '⏳ Não lido'}</span>`
-            : `<span class="read-badge" style="background:#f3f4f6;color:var(--muted)">Sem pós-aula</span>`
-          }
+            : `<span class="read-badge" style="background:#f3f4f6;color:var(--muted)">Sem pós-aula</span>`}
           <button class="btn-detail" data-uid="${s.uid}" data-name="${esc(s.name || s.firstName || 'Aluno')}">Ver →</button>
-        </div>
-      `).join('') || '<div class="loading">Nenhum aluno cadastrado.</div>';
+        </div>`).join('') || '<div class="loading">Nenhum aluno cadastrado.</div>';
 
       grid.querySelectorAll('.btn-detail').forEach(btn => {
         btn.onclick = () => openDetail(btn.dataset.uid, btn.dataset.name);
@@ -290,29 +374,182 @@
       document.getElementById('modal-name').textContent = name;
       document.getElementById('modal-body').innerHTML = '<div class="loading">Carregando...</div>';
       document.getElementById('modal').classList.add('open');
-
       const posSnap = await getDocs(query(collection(db, 'students', uid, 'posaulas'), orderBy('createdAt', 'desc')));
-      if (posSnap.empty) {
-        document.getElementById('modal-body').innerHTML = '<div class="loading">Nenhum pós-aula ainda.</div>';
-        return;
-      }
-
+      if (posSnap.empty) { document.getElementById('modal-body').innerHTML = '<div class="loading">Nenhum pós-aula ainda.</div>'; return; }
       document.getElementById('modal-body').innerHTML = posSnap.docs.map(d => {
-        const p = d.data();
-        const isRead = !!p.readAt;
-        return `
-          <div class="posaula-item">
-            <div class="p-title">${esc(p.title || 'Pós-Aula')}</div>
-            <div class="p-meta">Enviado: ${fmtDate(p.createdAt)}</div>
-            <div class="p-status ${isRead ? 'read' : 'unread'}">
-              ${isRead ? `✓ Lido em ${fmtDate(p.readAt)}` : '⏳ Ainda não lido'}
-            </div>
-          </div>`;
+        const p = d.data(); const isRead = !!p.readAt;
+        return `<div class="posaula-item">
+          <div class="p-title">${esc(p.title || 'Pós-Aula')}</div>
+          <div class="p-meta">Enviado: ${fmtDate(p.createdAt)}</div>
+          <div class="p-status ${isRead ? 'read' : 'unread'}">${isRead ? `✓ Lido em ${fmtDate(p.readAt)}` : '⏳ Ainda não lido'}</div>
+        </div>`;
       }).join('');
     }
 
     document.getElementById('modal-close').onclick = () => document.getElementById('modal').classList.remove('open');
     document.getElementById('modal').onclick = e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); };
+
+    // ── PUBLICAR ATIVIDADES ──────────────────────────────────────────────
+    document.getElementById('btn-parse-json').onclick = () => {
+      const raw = document.getElementById('pub-json').value.trim();
+      const msg = document.getElementById('pub-msg');
+      msg.style.display = 'none';
+
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch(e) {
+        showMsg('pub-msg', 'JSON inválido. Verifique o formato.', 'err'); return;
+      }
+
+      if (!data.activities || !Array.isArray(data.activities) || data.activities.length === 0) {
+        showMsg('pub-msg', 'JSON não contém atividades. Verifique o campo "activities".', 'err'); return;
+      }
+
+      parsedActivityJson = data;
+
+      // Preview
+      const student = allStudents.find(s =>
+        (s.name || s.firstName || '').toLowerCase().includes((data.studentName || '').toLowerCase())
+      );
+      const resolvedUid = data.uid || (student ? student.uid : null);
+      parsedActivityJson._resolvedUid = resolvedUid;
+
+      document.getElementById('pub-preview-student').textContent =
+        `Aluno: ${data.studentName || '?'}${resolvedUid ? '' : ' ⚠️ UID não encontrado — verifique o nome'}`;
+
+      document.getElementById('pub-preview-list').innerHTML = data.activities.map(a => `
+        <div class="preview-item">
+          <span class="preview-emoji">${a.emoji || '📚'}</span>
+          <div>
+            <div class="preview-title">${esc(a.title || 'Atividade')}</div>
+            <div class="preview-meta">${(a.parts || []).length} partes · Semana: ${esc(data.week || '—')}</div>
+          </div>
+        </div>`).join('');
+
+      document.getElementById('pub-preview').style.display = 'block';
+      if (!resolvedUid) {
+        showMsg('pub-msg', '⚠️ UID do aluno não encontrado. O campo "uid" no JSON deve estar preenchido com o UID do Firebase.', 'err');
+      }
+    };
+
+    document.getElementById('btn-publish').onclick = async () => {
+      if (!parsedActivityJson) return;
+      const uid = parsedActivityJson._resolvedUid;
+      if (!uid) { showMsg('pub-msg', 'UID do aluno não encontrado. Adicione o campo "uid" ao JSON.', 'err'); return; }
+
+      const btn = document.getElementById('btn-publish');
+      btn.disabled = true; btn.textContent = 'Publicando...';
+
+      try {
+        const activitiesRef = collection(db, 'students', uid, 'activities');
+        const { activities, week } = parsedActivityJson;
+
+        for (const act of activities) {
+          await addDoc(activitiesRef, {
+            week:      week || '',
+            title:     act.title || '',
+            emoji:     act.emoji || '📚',
+            parts:     act.parts || [],
+            status:    'pending',
+            createdAt: serverTimestamp(),
+          });
+        }
+
+        btn.textContent = '🚀 Publicar para o aluno';
+        btn.disabled = false;
+        document.getElementById('pub-preview').style.display = 'none';
+        document.getElementById('pub-json').value = '';
+        parsedActivityJson = null;
+        showMsg('pub-msg', `✅ ${activities.length} atividade(s) publicadas com sucesso! O aluno já pode ver no app.`, 'ok');
+      } catch(e) {
+        btn.textContent = '🚀 Publicar para o aluno';
+        btn.disabled = false;
+        showMsg('pub-msg', `Erro ao publicar: ${e.message}`, 'err');
+      }
+    };
+
+    // ── APLICAR CORREÇÃO ─────────────────────────────────────────────────
+    document.getElementById('btn-load-activities').onclick = async () => {
+      const raw = document.getElementById('cor-json').value.trim();
+      showMsg('cor-msg', '', 'info');
+
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch(e) {
+        showMsg('cor-msg', 'JSON inválido. Verifique o formato.', 'err'); return;
+      }
+
+      if (!data.feedback) {
+        showMsg('cor-msg', 'JSON não contém campo "feedback". Verifique o conteúdo gerado pela skill.', 'err'); return;
+      }
+
+      parsedCorrectionJson = data;
+
+      const student = allStudents.find(s =>
+        (s.name || s.firstName || '').toLowerCase().includes((data.studentName || '').toLowerCase())
+      );
+      const uid = data.uid || (student ? student.uid : null);
+      if (!uid) { showMsg('cor-msg', '⚠️ UID do aluno não encontrado. Preencha o campo "uid" no JSON.', 'err'); return; }
+      parsedCorrectionJson._resolvedUid = uid;
+
+      showMsg('cor-msg', `Carregando atividades de ${data.studentName}...`, 'info');
+
+      const actsSnap = await getDocs(query(collection(db, 'students', uid, 'activities'), orderBy('createdAt', 'desc')));
+      if (actsSnap.empty) {
+        showMsg('cor-msg', 'Este aluno não tem atividades publicadas no app ainda.', 'err'); return;
+      }
+
+      const acts = actsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      document.getElementById('cor-activities-list').innerHTML = acts.map(a => `
+        <label class="act-select-row">
+          <input type="radio" name="cor-act" value="${a.id}" />
+          <div class="act-select-info">
+            <div class="act-select-title">${a.emoji || '📚'} ${esc(a.title || 'Atividade')}</div>
+            <div class="act-select-meta">Semana: ${esc(a.week || '—')} · Status: ${a.status === 'corrected' ? '✓ Já corrigida' : 'Pendente'}</div>
+          </div>
+        </label>`).join('');
+
+      document.querySelectorAll('input[name="cor-act"]').forEach(r => {
+        r.onchange = () => {
+          document.querySelectorAll('.act-select-row').forEach(row => row.classList.remove('selected'));
+          r.closest('.act-select-row').classList.add('selected');
+          selectedActivityId = r.value;
+        };
+      });
+
+      document.getElementById('cor-activities-section').style.display = 'block';
+      showMsg('cor-msg', `${acts.length} atividade(s) encontrada(s). Selecione qual corrigir.`, 'info');
+    };
+
+    document.getElementById('btn-apply-correction').onclick = async () => {
+      if (!parsedCorrectionJson || !selectedActivityId) {
+        showMsg('cor-msg', 'Selecione uma atividade antes de aplicar.', 'err'); return;
+      }
+      const uid = parsedCorrectionJson._resolvedUid;
+      const btn = document.getElementById('btn-apply-correction');
+      btn.disabled = true; btn.textContent = 'Aplicando...';
+
+      try {
+        const actRef = doc(db, 'students', uid, 'activities', selectedActivityId);
+        await updateDoc(actRef, {
+          status:   'corrected',
+          feedback: parsedCorrectionJson.feedback,
+          ...(parsedCorrectionJson.summary && { summary: parsedCorrectionJson.summary }),
+          correctedAt: serverTimestamp(),
+        });
+
+        btn.disabled = false; btn.textContent = '✅ Aplicar Correção';
+        document.getElementById('cor-activities-section').style.display = 'none';
+        document.getElementById('cor-json').value = '';
+        parsedCorrectionJson = null; selectedActivityId = null;
+        showMsg('cor-msg', '✅ Correção aplicada! O aluno já pode ver no app.', 'ok');
+      } catch(e) {
+        btn.disabled = false; btn.textContent = '✅ Aplicar Correção';
+        showMsg('cor-msg', `Erro: ${e.message}`, 'err');
+      }
+    };
 
     // ── CREATE STUDENT ──────────────────────────────────────────────────
     document.getElementById('btn-create-student').onclick = async () => {
@@ -321,27 +558,20 @@
       const pass   = document.getElementById('f-pass').value;
       const level  = document.getElementById('f-level').value;
       const notion = document.getElementById('f-notion').value.trim();
-      const msg    = document.getElementById('create-msg');
-
-      if (!name || !email || !pass) { showMsg('Preencha nome, e-mail e senha.', 'err'); return; }
-      if (pass.length < 6)          { showMsg('Senha mínima de 6 caracteres.', 'err'); return; }
-
+      if (!name || !email || !pass) { showMsg('create-msg', 'Preencha nome, e-mail e senha.', 'err'); return; }
+      if (pass.length < 6)          { showMsg('create-msg', 'Senha mínima de 6 caracteres.', 'err'); return; }
       try {
-        // Usa app secundário para não deslogar o admin
         const cred = await createUserWithEmailAndPassword(auth2, email, pass);
-        // Save profile
         await setDoc(doc(db, 'students', cred.user.uid), {
           name, firstName: name.split(' ')[0],
           slug: name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-'),
-          email, level: level || '',
-          notionUrl: notion || '', createdAt: serverTimestamp()
+          email, level: level || '', notionUrl: notion || '',
+          createdAt: serverTimestamp()
         });
-        // Desloga do app secundário (não afeta o admin)
         await signOut(auth2);
-        showMsg(`✅ Aluno ${name} criado com sucesso!`, 'ok');
+        showMsg('create-msg', `✅ Aluno ${name} criado!`, 'ok');
         ['f-name','f-email','f-pass','f-notion'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('f-level').value = '';
-        // Volta para a aba de alunos automaticamente
         setTimeout(() => {
           document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
           document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -351,13 +581,15 @@
         }, 1200);
       } catch(e) {
         const m = { 'auth/email-already-in-use': 'Este e-mail já está cadastrado.' };
-        showMsg(m[e.code] || `Erro: ${e.message}`, 'err');
+        showMsg('create-msg', m[e.code] || `Erro: ${e.message}`, 'err');
       }
     };
 
-    function showMsg(text, type) {
-      const el = document.getElementById('create-msg');
-      el.textContent = text; el.className = `form-msg ${type}`; el.style.display = 'block';
+    // ── HELPERS ─────────────────────────────────────────────────────────
+    function showMsg(id, text, type) {
+      const el = document.getElementById(id);
+      if (!text) { el.style.display = 'none'; return; }
+      el.textContent = text; el.className = `form-msg ${type}`;
     }
 
     function fmtDate(ts) {

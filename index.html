@@ -153,22 +153,24 @@
     }
     .btn-read:active { background: var(--accent-dark); }
 
-    .notion-card {
+    /* ── ACTIVITIES HOME CARD ── */
+    .activities-home-card {
       background: white; border-radius: 16px; padding: 20px;
       box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid var(--border);
       margin-bottom: 16px; display: flex; align-items: center; gap: 16px;
-      cursor: pointer; text-decoration: none; transition: box-shadow 0.2s;
+      cursor: pointer; transition: box-shadow 0.2s, transform 0.1s;
     }
-    .notion-card:active { box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-    .notion-icon {
-      width: 48px; height: 48px; background: #f8f9fa;
-      border: 1px solid #e5e7eb; border-radius: 12px;
+    .activities-home-card:active { box-shadow: 0 1px 4px rgba(0,0,0,0.08); transform: scale(0.99); }
+    .act-home-icon {
+      width: 48px; height: 48px; background: #f0f7ff;
+      border: 1px solid #c5d8ff; border-radius: 12px;
       display: flex; align-items: center; justify-content: center;
       font-size: 1.5rem; flex-shrink: 0;
     }
-    .notion-card .notion-text h3 { font-size: 1rem; font-weight: 700; color: #0f1724; margin-bottom: 3px; }
-    .notion-card .notion-text p { font-size: 0.82rem; color: var(--muted); }
-    .notion-arrow { margin-left: auto; color: var(--muted); font-size: 1.1rem; flex-shrink: 0; }
+    .act-home-text { flex: 1; }
+    .act-home-text h3 { font-size: 1rem; font-weight: 700; color: #0f1724; margin-bottom: 3px; }
+    .act-home-text p { font-size: 0.82rem; color: var(--muted); }
+    .act-home-arrow { margin-left: auto; color: var(--muted); font-size: 1.3rem; flex-shrink: 0; }
 
     .section-title {
       font-size: 0.85rem; font-weight: 700; color: var(--muted);
@@ -211,6 +213,157 @@
     .reader-title { font-weight: 700; font-size: 0.95rem; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .reader-frame { flex: 1; border: none; width: 100%; background: white; }
 
+    /* ── ACTIVITIES VIEW ── */
+    #view-activities { background: var(--bg); }
+
+    .acts-header {
+      background: white; padding: 14px 16px;
+      display: flex; align-items: center; gap: 12px;
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .btn-back-acts {
+      background: #f3f4f6; border: none; color: #374151;
+      width: 36px; height: 36px; border-radius: 50%; font-size: 1.2rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .acts-header-title { font-weight: 700; font-size: 1rem; color: #0f1724; }
+
+    .acts-content { padding: 16px; flex: 1; }
+
+    .week-label {
+      font-size: 0.75rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1px;
+      margin: 20px 0 10px; display: flex; align-items: center; gap: 6px;
+    }
+    .week-label:first-child { margin-top: 4px; }
+
+    .activity-card {
+      background: white; border-radius: 14px; padding: 16px;
+      margin-bottom: 10px; border: 1px solid var(--border);
+      display: flex; align-items: center; gap: 14px;
+      cursor: pointer; transition: box-shadow 0.15s, transform 0.1s;
+    }
+    .activity-card:active { transform: scale(0.98); box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+
+    .act-emoji {
+      font-size: 1.5rem; width: 46px; height: 46px;
+      background: #f0f7ff; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .act-info { flex: 1; min-width: 0; }
+    .act-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 3px; }
+    .act-meta { font-size: 0.78rem; color: var(--muted); }
+    .act-status {
+      font-size: 0.75rem; font-weight: 700;
+      padding: 4px 10px; border-radius: 999px; flex-shrink: 0;
+    }
+    .act-status.pending { background: #fff7ed; color: #c05621; }
+    .act-status.corrected { background: #eefaf5; color: #276749; }
+
+    /* ── MODAL SYSTEM ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(10, 20, 40, 0.55);
+      z-index: 50;
+      display: flex; align-items: flex-end;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+    .modal-sheet {
+      background: white; border-radius: 24px 24px 0 0;
+      width: 100%; max-height: 75vh;
+      overflow-y: auto;
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      padding-bottom: env(safe-area-inset-bottom, 16px);
+    }
+    .modal-overlay.open .modal-sheet { transform: translateY(0); }
+    .modal-sheet-tall { max-height: 92vh; display: flex; flex-direction: column; }
+
+    .modal-drag-handle {
+      width: 40px; height: 4px; background: #e5e7eb; border-radius: 2px;
+      margin: 12px auto 0;
+    }
+
+    .modal-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 16px 14px;
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; background: white;
+      border-radius: 24px 24px 0 0;
+      z-index: 1;
+    }
+
+    .modal-emoji { font-size: 1.8rem; flex-shrink: 0; line-height: 1; }
+
+    .modal-titles { flex: 1; min-width: 0; }
+    .modal-subtitle {
+      font-size: 0.72rem; color: var(--muted);
+      font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; margin-bottom: 2px;
+    }
+    .modal-title-text { font-size: 1rem; font-weight: 700; color: #0f1724; line-height: 1.3; }
+
+    .modal-icon-btn {
+      background: #f3f4f6; border: none;
+      width: 34px; height: 34px; border-radius: 50%;
+      font-size: 1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; color: #374151;
+      transition: background 0.15s;
+    }
+    .modal-icon-btn:active { background: #e5e7eb; }
+
+    .modal-body { padding: 16px; }
+    .modal-instruction { font-size: 0.88rem; color: var(--muted); margin-bottom: 14px; }
+
+    .part-btn {
+      display: flex; align-items: center; gap: 14px;
+      width: 100%; background: #f8fafc;
+      border: 1.5px solid var(--border);
+      border-radius: 14px; padding: 16px;
+      margin-bottom: 10px; cursor: pointer; text-align: left;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .part-btn:active { background: #eff6ff; border-color: var(--accent); }
+
+    .part-number {
+      width: 34px; height: 34px; background: var(--accent);
+      color: white; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.88rem; font-weight: 800; flex-shrink: 0;
+    }
+    .part-btn-info { flex: 1; }
+    .part-btn-title { font-size: 0.93rem; font-weight: 700; color: #0f1724; }
+    .part-btn-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+    .part-btn-arrow { color: var(--muted); font-size: 1.2rem; flex-shrink: 0; }
+
+    .modal-part-content {
+      flex: 1; overflow-y: auto;
+      padding: 16px;
+      font-size: 0.92rem; line-height: 1.75; color: #1f2937;
+    }
+    .modal-part-content p { margin-bottom: 12px; }
+    .modal-part-content ol, .modal-part-content ul { padding-left: 20px; margin-bottom: 12px; }
+    .modal-part-content li { margin-bottom: 8px; }
+    .modal-part-content strong { color: #0f1724; }
+
+    .modal-feedback {
+      margin: 0 16px 16px;
+      background: #eefaf5; border: 1px solid #b7ebd3;
+      border-radius: 14px; padding: 16px;
+    }
+    .feedback-header { font-weight: 700; color: #276749; margin-bottom: 8px; font-size: 0.9rem; }
+    .feedback-score {
+      display: inline-block; background: #276749; color: white;
+      font-size: 0.8rem; font-weight: 700; padding: 3px 10px;
+      border-radius: 999px; margin-left: 8px;
+    }
+    .feedback-body { font-size: 0.85rem; color: #374151; line-height: 1.6; }
+
     /* ── LOADING ── */
     .loading-screen {
       position: fixed; inset: 0; background: white;
@@ -248,9 +401,7 @@
     }
     .install-banner p { font-size: 0.85rem; color: #1a3a5c; flex: 1; }
     .install-banner p strong { display: block; font-size: 0.9rem; margin-bottom: 2px; }
-    .notification-banner {
-      background: #eefaf5; border-color: #b7ebd3;
-    }
+    .notification-banner { background: #eefaf5; border-color: #b7ebd3; }
     .notification-banner p { color: #0f5132; }
     .btn-install {
       background: var(--accent); color: white; border: none;
@@ -323,6 +474,8 @@
         <button class="btn-install" id="btn-enable-notif">Ativar</button>
         <button class="btn-dismiss" id="btn-dismiss-notif">✕</button>
       </div>
+
+      <!-- LATEST PÓS-AULA -->
       <div class="posaula-card">
         <span class="pill">📄 PÓS-AULA DA SEMANA</span>
         <h2 id="latest-title">Carregando...</h2>
@@ -333,14 +486,17 @@
         </div>
         <button class="btn-read" id="btn-open-reader">📖 Ler agora</button>
       </div>
-      <a class="notion-card" id="notion-link" href="#" target="_blank" rel="noopener">
-        <div class="notion-icon">📚</div>
-        <div class="notion-text">
-          <h3>Minha Área de Atividades</h3>
-          <p>Acessar exercícios no Notion</p>
+
+      <!-- ATIVIDADES (SUBSTITUI O NOTION) -->
+      <div class="activities-home-card" id="btn-go-activities">
+        <div class="act-home-icon">✏️</div>
+        <div class="act-home-text">
+          <h3>Minhas Atividades</h3>
+          <p id="activities-home-count">Carregando...</p>
         </div>
-        <div class="notion-arrow">›</div>
-      </a>
+        <div class="act-home-arrow">›</div>
+      </div>
+
       <div class="section-title">Histórico de pós-aulas</div>
       <div id="history-list">
         <div class="empty-state"><div class="empty-icon">📂</div><p>Nenhum pós-aula anterior ainda.</p></div>
@@ -357,6 +513,62 @@
     <iframe class="reader-frame" id="reader-frame" src="about:blank" allowfullscreen></iframe>
   </div>
 
+  <!-- ACTIVITIES VIEW -->
+  <div class="view" id="view-activities">
+    <div class="acts-header">
+      <button class="btn-back-acts" id="btn-back-acts">‹</button>
+      <div class="acts-header-title">Minhas Atividades</div>
+    </div>
+    <div class="acts-content" id="activities-list">
+      <div class="empty-state">
+        <div class="empty-icon">✏️</div>
+        <p>Suas atividades aparecerão aqui em breve.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ACTIVITY (lista de partes) -->
+  <div class="modal-overlay" id="modal-activity">
+    <div class="modal-sheet">
+      <div class="modal-drag-handle"></div>
+      <div class="modal-header">
+        <div class="modal-emoji" id="modal-act-emoji">📚</div>
+        <div class="modal-titles">
+          <div class="modal-subtitle" id="modal-act-week"></div>
+          <div class="modal-title-text" id="modal-act-title">Atividade</div>
+        </div>
+        <button class="modal-icon-btn" id="btn-close-activity" title="Fechar">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-instruction">Selecione uma parte para começar:</p>
+        <div id="modal-parts-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PART (conteúdo do exercício) -->
+  <div class="modal-overlay" id="modal-part">
+    <div class="modal-sheet modal-sheet-tall">
+      <div class="modal-drag-handle"></div>
+      <div class="modal-header">
+        <button class="modal-icon-btn" id="btn-back-part" title="Voltar">‹</button>
+        <div class="modal-titles">
+          <div class="modal-subtitle" id="modal-part-act-title"></div>
+          <div class="modal-title-text" id="modal-part-title">Parte</div>
+        </div>
+        <button class="modal-icon-btn" id="btn-close-part-all" title="Fechar tudo">✕</button>
+      </div>
+      <div class="modal-part-content" id="modal-part-content"></div>
+      <div class="modal-feedback" id="modal-feedback" style="display:none">
+        <div class="feedback-header">
+          📝 Correção do professor
+          <span class="feedback-score" id="modal-feedback-score" style="display:none"></span>
+        </div>
+        <div class="feedback-body" id="modal-feedback-text"></div>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
@@ -366,7 +578,6 @@
     import { getMessaging, getToken, onMessage, isSupported }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
 
-    // ── FIREBASE CONFIG ─── substitua com seus dados ───────────────────
     const firebaseConfig = {
       apiKey:            "AIzaSyDgDlLyU15p8wQ1YtCN8NebGes_oq3atU8",
       authDomain:        "scienceenglish.firebaseapp.com",
@@ -376,20 +587,23 @@
       appId:             "1:152554774632:web:c43dfd4698efb136ed9bdd"
     };
     const VAPID_KEY = "BB-SFzT1aH1SQUX6H44tjzoLq2-xxgj4GLxXVa4JKehDBD8PXy-JUvrmN3LftOJbqRtTvl9NRghZSDXVBu0BoHs";
-    // ───────────────────────────────────────────────────────────────────
 
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db   = getFirestore(app);
     let messaging;
-    try { if (await isSupported()) messaging = getMessaging(app); } catch(e) { /* unsupported browser */ }
+    try { if (await isSupported()) messaging = getMessaging(app); } catch(e) {}
 
-    let currentUser = null;
-    let currentPost = null;
+    let currentUser   = null;
+    let currentPost   = null;
     let deferredPrompt = null;
     let appSwRegistration = null;
     let pendingPostId = new URLSearchParams(window.location.search).get('post') || '';
     let pendingPostToOpen = null;
+
+    // Activities state
+    let currentActivities  = [];
+    let currentActivityData = null;
 
     // ── AUTH ────────────────────────────────────────────────────────────
     onAuthStateChanged(auth, async user => {
@@ -442,8 +656,10 @@
       const s = snap.data();
       document.getElementById('student-name').textContent = s.firstName || s.name || 'Aluno';
       document.getElementById('student-level').textContent = s.level || '';
-      if (s.notionUrl) document.getElementById('notion-link').href = s.notionUrl;
-      await loadPosaulas(uid);
+      await Promise.all([
+        loadPosaulas(uid),
+        loadActivities(uid)
+      ]);
     }
 
     async function loadPosaulas(uid) {
@@ -465,7 +681,6 @@
       document.getElementById('read-dot').className = 'status-dot ' + (isRead ? 'read' : 'unread');
       document.getElementById('read-label').textContent = isRead ? `Lido em ${fmtDate(currentPost.readAt)}` : 'Ainda não lido';
 
-      // History
       const list = document.getElementById('history-list');
       if (posts.length <= 1) {
         list.innerHTML = `<div class="empty-state"><div class="empty-icon">📂</div><p>Sem histórico anterior.</p></div>`;
@@ -485,6 +700,178 @@
         el.onclick = () => openPost(el.dataset.id, el.dataset.title, el.dataset.url);
       });
     }
+
+    // ── ACTIVITIES ───────────────────────────────────────────────────────
+    async function loadActivities(uid) {
+      try {
+        const q = query(
+          collection(db, 'students', uid, 'activities'),
+          orderBy('createdAt', 'desc')
+        );
+        const snaps = await getDocs(q);
+        currentActivities = snaps.docs.map(d => ({ id: d.id, ...d.data() }));
+        updateActivitiesHomeCount();
+      } catch(e) {
+        console.warn('Erro ao carregar atividades:', e);
+        document.getElementById('activities-home-count').textContent = 'Não disponível';
+      }
+    }
+
+    function updateActivitiesHomeCount() {
+      const el = document.getElementById('activities-home-count');
+      if (currentActivities.length === 0) {
+        el.textContent = 'Nenhuma atividade ainda';
+        return;
+      }
+      const pending = currentActivities.filter(a => (a.status || 'pending') !== 'corrected').length;
+      const total   = currentActivities.length;
+      if (pending > 0) {
+        el.textContent = `${total} atividade${total !== 1 ? 's' : ''} · ${pending} pendente${pending !== 1 ? 's' : ''}`;
+      } else {
+        el.textContent = `${total} atividade${total !== 1 ? 's' : ''} · todas corrigidas ✓`;
+      }
+    }
+
+    function showActivitiesView() {
+      renderActivitiesList();
+      showView('activities');
+    }
+
+    function renderActivitiesList() {
+      const list = document.getElementById('activities-list');
+
+      if (currentActivities.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">✏️</div>
+            <p>Suas atividades aparecerão aqui em breve.</p>
+          </div>`;
+        return;
+      }
+
+      // Group by week
+      const byWeek = {};
+      const weekOrder = [];
+      currentActivities.forEach(act => {
+        const week = act.week || 'Atividades recentes';
+        if (!byWeek[week]) { byWeek[week] = []; weekOrder.push(week); }
+        byWeek[week].push(act);
+      });
+
+      let html = '';
+      weekOrder.forEach(week => {
+        html += `<div class="week-label">📅 ${esc(week)}</div>`;
+        byWeek[week].forEach(act => {
+          const status     = (act.status === 'corrected') ? 'corrected' : 'pending';
+          const statusText = (status === 'corrected') ? '✓ Corrigida' : 'Pendente';
+          const partsCount = (act.parts || []).length;
+          html += `
+            <div class="activity-card" data-act-id="${esc(act.id)}">
+              <div class="act-emoji">${act.emoji || '📚'}</div>
+              <div class="act-info">
+                <div class="act-title">${esc(act.title || 'Atividade')}</div>
+                <div class="act-meta">${partsCount} parte${partsCount !== 1 ? 's' : ''}</div>
+              </div>
+              <span class="act-status ${status}">${statusText}</span>
+            </div>`;
+        });
+      });
+
+      list.innerHTML = html;
+
+      list.querySelectorAll('.activity-card').forEach(el => {
+        el.onclick = () => {
+          const act = currentActivities.find(a => a.id === el.dataset.actId);
+          if (act) openActivityModal(act);
+        };
+      });
+    }
+
+    // ── MODAL: ACTIVITY ──────────────────────────────────────────────────
+    function openActivityModal(activity) {
+      currentActivityData = activity;
+      document.getElementById('modal-act-emoji').textContent = activity.emoji || '📚';
+      document.getElementById('modal-act-week').textContent  = activity.week || '';
+      document.getElementById('modal-act-title').textContent = activity.title || 'Atividade';
+
+      const parts     = activity.parts || [];
+      const partsList = document.getElementById('modal-parts-list');
+
+      partsList.innerHTML = parts.map((part, i) => `
+        <button class="part-btn" data-part-idx="${i}">
+          <div class="part-number">${i + 1}</div>
+          <div class="part-btn-info">
+            <div class="part-btn-title">${esc(part.title || `Part ${i + 1}`)}</div>
+            ${part.type ? `<div class="part-btn-sub">${esc(part.type)}</div>` : ''}
+          </div>
+          <div class="part-btn-arrow">›</div>
+        </button>`).join('');
+
+      partsList.querySelectorAll('.part-btn').forEach(btn => {
+        btn.onclick = () => {
+          const idx = parseInt(btn.dataset.partIdx);
+          openPartModal(parts[idx], activity);
+        };
+      });
+
+      document.getElementById('modal-activity').classList.add('open');
+    }
+
+    function closeActivityModal() {
+      document.getElementById('modal-activity').classList.remove('open');
+      currentActivityData = null;
+    }
+
+    // ── MODAL: PART ──────────────────────────────────────────────────────
+    function openPartModal(part, activity) {
+      document.getElementById('modal-part-act-title').textContent = activity.title || 'Atividade';
+      document.getElementById('modal-part-title').textContent     = part.title || 'Parte';
+      document.getElementById('modal-part-content').innerHTML     = part.content || '<p style="color:var(--muted)">Conteúdo não disponível.</p>';
+
+      // Feedback
+      const feedbackEl    = document.getElementById('modal-feedback');
+      const feedbackText  = document.getElementById('modal-feedback-text');
+      const feedbackScore = document.getElementById('modal-feedback-score');
+      const fb = activity.feedback && activity.feedback[part.id || part.title];
+      if (fb) {
+        feedbackText.textContent = typeof fb === 'string' ? fb : (fb.comment || '');
+        if (fb.score) {
+          feedbackScore.textContent = fb.score;
+          feedbackScore.style.display = 'inline-block';
+        } else {
+          feedbackScore.style.display = 'none';
+        }
+        feedbackEl.style.display = 'block';
+      } else {
+        feedbackEl.style.display = 'none';
+      }
+
+      document.getElementById('modal-part').classList.add('open');
+    }
+
+    function closePartModal() {
+      document.getElementById('modal-part').classList.remove('open');
+    }
+
+    function closeAllModals() {
+      closePartModal();
+      setTimeout(() => closeActivityModal(), 50);
+    }
+
+    // Modal event listeners
+    document.getElementById('btn-close-activity').onclick = closeActivityModal;
+    document.getElementById('btn-back-part').onclick      = closePartModal;
+    document.getElementById('btn-close-part-all').onclick = closeAllModals;
+    document.getElementById('btn-go-activities').onclick  = () => showActivitiesView();
+    document.getElementById('btn-back-acts').onclick      = () => showView('home');
+
+    // Close on overlay tap
+    document.getElementById('modal-activity').addEventListener('click', e => {
+      if (e.target === document.getElementById('modal-activity')) closeActivityModal();
+    });
+    document.getElementById('modal-part').addEventListener('click', e => {
+      if (e.target === document.getElementById('modal-part')) closeAllModals();
+    });
 
     // ── READER ──────────────────────────────────────────────────────────
     document.getElementById('btn-open-reader').onclick = () => {
@@ -525,14 +912,6 @@
     }
 
     // ── PUSH NOTIFICATIONS ──────────────────────────────────────────────
-    function urlBase64ToUint8Array(base64String) {
-      const clean = base64String.trim().replace(/[^A-Za-z0-9\-_]/g, '');
-      const padding = '='.repeat((4 - clean.length % 4) % 4);
-      const base64 = (clean + padding).replace(/-/g, '+').replace(/_/g, '/');
-      const rawData = atob(base64);
-      return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
-    }
-
     async function requestPushPermission() {
       if (!messaging) { toast('❌ messaging null'); return; }
       try {
@@ -595,23 +974,13 @@
         iosInstallBanner.style.display = 'flex';
       }
       if (!messaging || typeof Notification === 'undefined') return;
-
-      if (Notification.permission === 'granted') {
-        btn.style.display = 'none';
-        return;
-      }
+      if (Notification.permission === 'granted') { btn.style.display = 'none'; return; }
       if (Notification.permission === 'denied') return;
-
-      if (isStandalonePwa() && !currentUser) {
-        loginNotifBanner.style.display = 'flex';
-        return;
-      }
+      if (isStandalonePwa() && !currentUser) { loginNotifBanner.style.display = 'flex'; return; }
       if (isStandalonePwa() && !localStorage.getItem('notifDismissed')) {
         notifBanner.style.display = 'flex';
       }
-      if (isStandalonePwa()) {
-        btn.style.display = 'inline-block';
-      }
+      if (isStandalonePwa()) { btn.style.display = 'inline-block'; }
     }
 
     function isIOSDevice() {
@@ -654,18 +1023,15 @@
       document.getElementById('install-banner').style.display = 'none';
       localStorage.setItem('installDismissed', '1');
     };
-
     document.getElementById('btn-dismiss-ios-install').onclick = () => {
       document.getElementById('ios-install-banner').style.display = 'none';
       localStorage.setItem('iosInstallDismissed', '1');
     };
-
     document.getElementById('btn-dismiss-notif').onclick = () => {
       document.getElementById('notif-banner').style.display = 'none';
       localStorage.setItem('notifDismissed', '1');
       updatePwaPrompts();
     };
-
     window.addEventListener('appinstalled', () => {
       localStorage.setItem('installDismissed', '1');
       localStorage.removeItem('notifDismissed');
@@ -699,7 +1065,7 @@
     }
 
     function esc(s = '') {
-      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
     getAppServiceWorkerRegistration().catch(console.warn);
