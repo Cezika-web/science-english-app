@@ -623,14 +623,79 @@ function AulasTab({ activities, onOpenActivity }) {
 }
 
 // ── VocabTab ─────────────────────────────────────────────────────
-function VocabTab() {
-  return (
+function VocabTab({ vocab }) {
+  const [openMonths, setOpenMonths] = useState({});
+
+  const grouped = React.useMemo(() => {
+    const map = {};
+    vocab.forEach(v => {
+      const k = monthKey(v.date);
+      const ord = monthOrder(v.date);
+      if (!map[k]) map[k] = { words: [], ord };
+      map[k].words.push(v);
+    });
+    return Object.entries(map).sort((a,b) => b[1].ord - a[1].ord);
+  }, [vocab]);
+
+  if (vocab.length === 0) return (
     <div className="scroll-area" style={{ padding: '16px 16px 8px' }}>
       <GlassCard style={{ padding: 36, textAlign: 'center' }}>
         <div style={{ fontSize: 42, marginBottom: 12 }}>&#128292;</div>
         <div style={{ fontSize: 17, fontWeight: 800, color: '#0F172A', marginBottom: 6 }}>Vocabulario</div>
         <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.5 }}>Aqui aparecerao as palavras das suas pos-aulas, agrupadas por mes.</div>
       </GlassCard>
+    </div>
+  );
+
+  return (
+    <div className="scroll-area" style={{ padding: '16px 16px 8px' }}>
+      <GlassCard style={{ padding: '16px 18px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(139,94,52,0.1)', border: '1px solid rgba(139,94,52,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>&#128292;</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 15, fontWeight: 800, color: '#0F172A' }}>Meu Vocabulario</div>
+          <div style={{ fontSize: 12.5, color: '#64748B', marginTop: 2 }}>{vocab.length} palavra{vocab.length !== 1 ? 's' : ''} · direto das suas pos-aulas</div>
+        </div>
+        <Pill style={{ fontSize: 10, padding: '4px 10px' }}>MEU VOCABULARIO</Pill>
+      </GlassCard>
+
+      {grouped.map(([month, { words }]) => {
+        const open = openMonths[month] !== false;
+        return (
+          <div key={month} style={{ marginBottom: 10 }}>
+            <button onClick={() => setOpenMonths(o => ({ ...o, [month]: !open }))} style={{
+              width: '100%', background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(22,163,74,0.12)', borderRadius: 14,
+              padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontFamily: 'inherit',
+            }}>
+              <span style={{ fontSize: 13, fontWeight: 800, color: '#7C4A21', textTransform: 'capitalize' }}>{month}</span>
+              <span style={{ fontSize: 11, color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>{words.length} palavra{words.length !== 1 ? 's' : ''}</span>
+                <span style={{ fontSize: 14 }}>{open ? '▾' : '▸'}</span>
+              </span>
+            </button>
+            {open && (
+              <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {words.map((v, i) => (
+                  <div key={i} style={{
+                    background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(22,163,74,0.1)',
+                    borderRadius: 14, padding: '12px 16px',
+                    display: 'flex', alignItems: 'center', gap: 12,
+                  }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(139,94,52,0.1)', border: '1px solid rgba(139,94,52,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 15 }}>&#127760;</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 14.5, fontWeight: 700, color: '#0F172A' }}>{v.en}</span>
+                        <span style={{ fontSize: 13, color: '#16A34A', fontWeight: 600 }}>{v.pt}</span>
+                      </div>
+                      {v.source && <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{v.source}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+      <div style={{ height: 12 }} />
     </div>
   );
 }
@@ -841,6 +906,7 @@ function App() {
   const [student, setStudent]           = useState(null);
   const [posaulas, setPosaulas]         = useState([]);
   const [activities, setActivities]     = useState([]);
+  const [vocab, setVocab]               = useState([]);
   const [tab, setTab]                   = useState('home');
   const [readerPost, setReaderPost]     = useState(null);
   const [openActivity, setOpenActivity] = useState(null);
@@ -876,16 +942,18 @@ function App() {
   }, []);
 
   async function loadData(uid, fb) {
-    const [snap, posSnaps, actSnaps] = await Promise.all([
+    const [snap, posSnaps, actSnaps, vocSnaps] = await Promise.all([
       fb.getDoc(fb.doc(fb.db, 'students', uid)),
       fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'posaulas'), fb.orderBy('createdAt','desc'))),
       fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'activities'), fb.orderBy('createdAt','desc'))).catch(() => ({ docs: [] })),
+      fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'vocabulario'), fb.orderBy('date','desc'))).catch(() => ({ docs: [] })),
     ]);
     if (!snap.exists()) return;
     setStudent({ ...snap.data(), uid });
     const posts = posSnaps.docs.map(d => ({ id: d.id, ...d.data() }));
     setPosaulas(posts);
     setActivities(actSnaps.docs.map(d => ({ id: d.id, ...d.data() })));
+    setVocab(vocSnaps.docs.map(d => ({ id: d.id, ...d.data() })));
     if (pendingPostId.current && posts.length > 0) {
       const target = posts.find(p => p.id === pendingPostId.current || p.filename === pendingPostId.current);
       if (target) {
@@ -977,7 +1045,7 @@ function App() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         {tab === 'home'   && <HomeTab   posaulas={posaulas} activities={activities} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} />}
         {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} />}
-        {tab === 'vocab'  && <VocabTab />}
+        {tab === 'vocab'  && <VocabTab vocab={vocab} />}
         {tab === 'perfil' && <PerfilTab student={student} onLogout={handleLogout} />}
       </div>
 
