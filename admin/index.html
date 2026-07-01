@@ -141,6 +141,10 @@
     .posaula-item .p-status { font-size: 0.78rem; font-weight: 700; margin-top: 4px; }
     .posaula-item .p-status.read { color: var(--green); }
     .posaula-item .p-status.unread { color: #f6ad55; }
+    .detail-section-title { font-size: 0.82rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .btn-del-item { background: #fff5f5; border: 1px solid #fed7d7; color: var(--danger); padding: 6px 10px; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer; flex-shrink: 0; white-space: nowrap; }
+    .btn-del-item:hover { background: #fee; }
+    .btn-del-item:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 0.9rem; }
 
@@ -535,16 +539,66 @@
       document.getElementById('modal-name').textContent = name;
       document.getElementById('modal-body').innerHTML = '<div class="loading">Carregando...</div>';
       document.getElementById('modal').classList.add('open');
-      const posSnap = await getDocs(query(collection(db, 'students', uid, 'posaulas'), orderBy('createdAt', 'desc')));
-      if (posSnap.empty) { document.getElementById('modal-body').innerHTML = '<div class="loading">Nenhum pós-aula ainda.</div>'; return; }
-      document.getElementById('modal-body').innerHTML = posSnap.docs.map(d => {
+      await renderDetail(uid, name);
+    }
+
+    async function renderDetail(uid, name) {
+      const body = document.getElementById('modal-body');
+      const [posSnap, actSnap] = await Promise.all([
+        getDocs(query(collection(db, 'students', uid, 'posaulas'), orderBy('createdAt', 'desc'))),
+        getDocs(query(collection(db, 'students', uid, 'activities'), orderBy('createdAt', 'desc'))).catch(() => ({ docs: [] })),
+      ]);
+
+      const posHtml = posSnap.docs.length ? posSnap.docs.map(d => {
         const p = d.data(); const isRead = !!p.readAt;
         return `<div class="posaula-item">
-          <div class="p-title">${esc(p.title || 'Pós-Aula')}</div>
-          <div class="p-meta">Enviado: ${fmtDate(p.createdAt)}</div>
-          <div class="p-status ${isRead ? 'read' : 'unread'}">${isRead ? `✓ Lido em ${fmtDate(p.readAt)}` : '⏳ Ainda não lido'}</div>
+          <div style="display:flex;align-items:flex-start;gap:10px;">
+            <div style="flex:1;">
+              <div class="p-title">${esc(p.title || 'Pós-Aula')}</div>
+              <div class="p-meta">Enviado: ${fmtDate(p.createdAt)}</div>
+              <div class="p-status ${isRead ? 'read' : 'unread'}">${isRead ? `✓ Lido em ${fmtDate(p.readAt)}` : '⏳ Ainda não lido'}</div>
+            </div>
+            <button class="btn-del-item" data-type="posaulas" data-id="${d.id}" data-label="${esc(p.title || 'Pós-Aula')}">🗑️ Excluir</button>
+          </div>
         </div>`;
-      }).join('');
+      }).join('') : '<div class="loading" style="padding:16px;">Nenhum pós-aula ainda.</div>';
+
+      const actHtml = actSnap.docs.length ? actSnap.docs.map(d => {
+        const a = d.data();
+        const parts = (a.parts || []).length;
+        const status = a.status === 'corrected' ? '✓ Corrigida' : 'Pendente';
+        return `<div class="posaula-item">
+          <div style="display:flex;align-items:flex-start;gap:10px;">
+            <div style="flex:1;">
+              <div class="p-title">${a.emoji || '📚'} ${esc(a.title || 'Atividade')}</div>
+              <div class="p-meta">Semana: ${esc(a.week || '—')} · ${parts} parte(s) · ${status}</div>
+            </div>
+            <button class="btn-del-item" data-type="activities" data-id="${d.id}" data-label="${esc(a.title || 'Atividade')}">🗑️ Excluir</button>
+          </div>
+        </div>`;
+      }).join('') : '<div class="loading" style="padding:16px;">Nenhuma atividade publicada.</div>';
+
+      body.innerHTML = `
+        <div class="detail-section-title">📄 Pós-aulas</div>
+        ${posHtml}
+        <div class="detail-section-title" style="margin-top:18px;">✏️ Atividades publicadas</div>
+        ${actHtml}`;
+
+      body.querySelectorAll('.btn-del-item').forEach(btn => {
+        btn.onclick = async () => {
+          const { type, id, label } = btn.dataset;
+          const what = type === 'activities' ? 'a atividade' : 'o pós-aula';
+          if (!confirm(`Excluir ${what} "${label}"? Esta ação não pode ser desfeita.`)) return;
+          btn.disabled = true; btn.textContent = 'Excluindo...';
+          try {
+            await deleteDoc(doc(db, 'students', uid, type, id));
+            await renderDetail(uid, name);
+          } catch(e) {
+            btn.disabled = false; btn.textContent = '🗑️ Excluir';
+            alert('Erro ao excluir: ' + e.message);
+          }
+        };
+      });
     }
 
     document.getElementById('modal-close').onclick = () => document.getElementById('modal').classList.remove('open');
