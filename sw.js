@@ -12,7 +12,7 @@ firebase.initializeApp({
 });
 
 const messaging = firebase.messaging();
-const CACHE = 'czk-v5';
+const CACHE = 'czk-v6';
 const SHELL = [
   '/science-english-app/',
   '/science-english-app/index.html',
@@ -36,21 +36,40 @@ self.addEventListener('activate', e => {
   );
 });
 
-// Fetch: network-first for API calls, cache-first for shell
+// Fetch: network-first for the app HTML (always fresh), cache-first for other assets
 self.addEventListener('fetch', e => {
-  const url = new URL(e.request.url);
+  const req = e.request;
+  const url = new URL(req.url);
 
-  // Always network for Firebase, Notion, pós-aula HTML files
-  if (url.hostname.includes('firebase') ||
-      url.hostname.includes('notion.so') ||
-      url.hostname.includes('github.io')) {
-    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+  // App HTML / navigations: ALWAYS network-first so the app never gets stuck on an old build
+  if (req.mode === 'navigate' ||
+      url.pathname.endsWith('/') ||
+      url.pathname.endsWith('index.html')) {
+    e.respondWith(
+      fetch(req)
+        .then(res => {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
+          return res;
+        })
+        .catch(() => caches.match(req).then(r => r || caches.match('/science-english-app/')))
+    );
     return;
   }
 
-  // Cache-first for the app shell
+  // Firebase / CDNs / external HTML (pós-aulas): network-first
+  if (url.hostname.includes('firebase') ||
+      url.hostname.includes('gstatic') ||
+      url.hostname.includes('unpkg') ||
+      url.hostname.includes('notion.so') ||
+      url.hostname.includes('github.io')) {
+    e.respondWith(fetch(req).catch(() => caches.match(req)));
+    return;
+  }
+
+  // Everything else: cache-first
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
+    caches.match(req).then(cached => cached || fetch(req))
   );
 });
 
