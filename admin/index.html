@@ -354,7 +354,7 @@
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-    import { getFirestore, collection, getDocs, getDoc, doc, setDoc, addDoc, updateDoc,
+    import { getFirestore, collection, getDocs, getDoc, doc, setDoc, addDoc, updateDoc, deleteDoc,
              query, orderBy, serverTimestamp, where }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -428,9 +428,10 @@
         : (s.latestTitle
             ? `<span class="read-badge ${s.latestRead ? 'read' : 'unread'}">${s.latestRead ? '✓ Lido' : '⏳ Não lido'}</span>`
             : `<span class="read-badge" style="background:#f3f4f6;color:var(--muted)">Sem pós-aula</span>`);
-      const menuItem = archived
+      const menuItem = (archived
         ? `<button class="kebab-item" data-action="reactivate" data-uid="${s.uid}" data-name="${nm}">↩️ Reativar aluno</button>`
-        : `<button class="kebab-item danger" data-action="archive" data-uid="${s.uid}" data-name="${nm}">🗄️ Enviar para Ex-alunos</button>`;
+        : `<button class="kebab-item" data-action="archive" data-uid="${s.uid}" data-name="${nm}">🗄️ Enviar para Ex-alunos</button>`)
+        + `<button class="kebab-item danger" data-action="delete" data-uid="${s.uid}" data-name="${nm}">🗑️ Excluir aluno</button>`;
       return `
         <div class="student-row">
           <div class="avatar">${(s.firstName || s.name || '?')[0].toUpperCase()}</div>
@@ -469,10 +470,27 @@
             await updateDoc(doc(db, 'students', uid), { archived: true, archivedAt: serverTimestamp() });
           } else if (action === 'reactivate') {
             await updateDoc(doc(db, 'students', uid), { archived: false });
+          } else if (action === 'delete') {
+            if (!confirm(`Excluir DEFINITIVAMENTE ${name}?\n\nApaga o perfil, pos-aulas, atividades e vocabulario dele. Esta acao NAO pode ser desfeita.`)) return;
+            await deleteStudent(uid);
+            alert(`${name} foi excluido.\n\nObs.: o LOGIN (e-mail/senha) continua no Firebase Authentication. Se quiser liberar o e-mail para reuso, remova-o em Firebase Console > Authentication.`);
           }
           loadStudents();
         };
       });
+    }
+
+    async function deleteSubcollection(uid, name) {
+      const snap = await getDocs(collection(db, 'students', uid, name));
+      await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'students', uid, name, d.id))));
+    }
+
+    async function deleteStudent(uid) {
+      // Apaga subcoleções conhecidas e depois o documento do aluno
+      for (const sub of ['posaulas', 'activities', 'vocabulario']) {
+        try { await deleteSubcollection(uid, sub); } catch(e) { console.warn('sub', sub, e); }
+      }
+      await deleteDoc(doc(db, 'students', uid));
     }
 
     async function loadStudents() {
