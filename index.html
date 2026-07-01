@@ -61,14 +61,19 @@
     }
     .modal-overlay.open .modal-sheet { transform: translateY(0); }
     .modal-sheet-tall { max-height: 92vh; display: flex; flex-direction: column; }
+    .modal-sheet-full {
+      max-height: 100%; height: 100%; border-radius: 0;
+      display: flex; flex-direction: column;
+      padding-bottom: 0;
+    }
     .modal-drag { width: 40px; height: 4px; background: #E2E8F0; border-radius: 2px; margin: 12px auto 0; }
 
     .reader-frame { flex: 1; border: none; width: 100%; background: white; display: block; }
     .scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
     /* ── Interactive exercises ── */
-    .ex-root ol, .ex-root ul { padding-left: 22px; margin: 0 0 4px; }
-    .ex-root li { margin-bottom: 16px; }
+    .ex-root ol, .ex-root ul { padding-left: 30px; margin: 0 0 4px; }
+    .ex-root li { margin-bottom: 16px; padding-left: 2px; }
     .ex-root p { margin-bottom: 12px; }
     .ex-stem { font-size: 14.5px; line-height: 1.7; color: #1F2937; margin-bottom: 10px; }
     .ex-gap { color: #16A34A; font-weight: 700; letter-spacing: 1px; }
@@ -1072,9 +1077,8 @@ function PartModal({ part, activity, onBack, onClose, onFinish }) {
 
   return (
     <div className={'modal-overlay' + (part ? ' open' : '')} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal-sheet modal-sheet-tall">
-        <div className="modal-drag" />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderBottom: '1px solid #F1F5F9', position: 'sticky', top: 0, background: 'white', borderRadius: '24px 24px 0 0', zIndex: 1, flexShrink: 0 }}>
+      <div className="modal-sheet modal-sheet-full">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: '1px solid #F1F5F9', position: 'sticky', top: 0, background: 'white', zIndex: 1, flexShrink: 0, paddingTop: 'calc(14px + env(safe-area-inset-top, 0px))' }}>
           <button onClick={onBack} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: '#F1F5F9', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', flexShrink: 0, fontFamily: 'inherit' }}>&#8249;</button>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 11, color: '#9A6438', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 1 }}>{activity?.title}</div>
@@ -1099,7 +1103,7 @@ function PartModal({ part, activity, onBack, onClose, onFinish }) {
         )}
 
         {!isCorrected && (
-          <div style={{ padding: '12px 16px 16px', borderTop: '1px solid #F1F5F9', flexShrink: 0 }}>
+          <div style={{ padding: '12px 16px', paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid #F1F5F9', flexShrink: 0 }}>
             {!canFinish && (
               <div style={{ fontSize: 12, color: '#D97706', marginBottom: 8, textAlign: 'center', fontWeight: 600 }}>
                 Responda todos os exercicios para finalizar ({filled}/{total})
