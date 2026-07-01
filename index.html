@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
@@ -36,7 +36,7 @@
     .view { display: none; min-height: 100vh; }
     .view.active { display: flex; flex-direction: column; }
 
-    /* ── LOGIN ── */
+    /* â”€â”€ LOGIN â”€â”€ */
     #view-login {
       align-items: center;
       justify-content: center;
@@ -107,7 +107,7 @@
       font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0;
     }
 
-    /* ── HOME ── */
+    /* â”€â”€ HOME â”€â”€ */
     #view-home { background: var(--bg); }
 
     .app-header {
@@ -153,7 +153,7 @@
     }
     .btn-read:active { background: var(--accent-dark); }
 
-    /* ── ACTIVITIES HOME CARD ── */
+    /* â”€â”€ ACTIVITIES HOME CARD â”€â”€ */
     .activities-home-card {
       background: white; border-radius: 16px; padding: 20px;
       box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid var(--border);
@@ -199,7 +199,7 @@
     .empty-state { text-align: center; padding: 32px 20px; color: var(--muted); font-size: 0.9rem; }
     .empty-icon { font-size: 2rem; margin-bottom: 8px; }
 
-    /* ── READER ── */
+    /* â”€â”€ READER â”€â”€ */
     #view-reader { background: var(--bg); }
     .reader-header {
       background: var(--accent); padding: 14px 16px;
@@ -213,7 +213,7 @@
     .reader-title { font-weight: 700; font-size: 0.95rem; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .reader-frame { flex: 1; border: none; width: 100%; background: white; }
 
-    /* ── ACTIVITIES VIEW ── */
+    /* â”€â”€ ACTIVITIES VIEW â”€â”€ */
     #view-activities { background: var(--bg); }
 
     .acts-header {
@@ -261,7 +261,7 @@
     .act-status.pending { background: #fff7ed; color: #c05621; }
     .act-status.corrected { background: #eefaf5; color: #276749; }
 
-    /* ── MODAL SYSTEM ── */
+    /* â”€â”€ MODAL SYSTEM â”€â”€ */
     .modal-overlay {
       position: fixed; inset: 0;
       background: rgba(10, 20, 40, 0.55);
@@ -364,7 +364,7 @@
     }
     .feedback-body { font-size: 0.85rem; color: #374151; line-height: 1.6; }
 
-    /* ── LOADING ── */
+    /* â”€â”€ LOADING â”€â”€ */
     .loading-screen {
       position: fixed; inset: 0; background: white;
       display: flex; flex-direction: column; align-items: center;
@@ -382,7 +382,7 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .loading-screen p { font-size: 0.85rem; color: var(--muted); }
 
-    /* ── TOAST ── */
+    /* â”€â”€ TOAST â”€â”€ */
     .toast {
       position: fixed; bottom: 24px; left: 50%;
       transform: translateX(-50%) translateY(80px);
@@ -393,7 +393,7 @@
     }
     .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-    /* ── INSTALL BANNER ── */
+    /* â”€â”€ INSTALL BANNER â”€â”€ */
     .install-banner {
       background: #e8f3ff; border: 1px solid #c5d8ff;
       border-radius: 12px; padding: 14px 16px;
@@ -427,10 +427,10 @@
     <div class="login-card">
       <div class="login-logo">
         <div class="logo-badge">Science English</div>
-        <p>English — Área do Aluno</p>
+        <p>English â€” Ãrea do Aluno</p>
       </div>
       <div class="login-notif" id="login-notif-banner">
-        <p><strong>🔔 Ativar notificações</strong>Receba os pós-aulas neste celular.</p>
+        <p><strong>ðŸ”” Ativar notificaÃ§Ãµes</strong>Receba os pÃ³s-aulas neste celular.</p>
         <button id="btn-login-enable-notif">Ativar</button>
       </div>
       <div class="form-group">
@@ -439,7 +439,7 @@
       </div>
       <div class="form-group">
         <label for="password">Senha</label>
-        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+        <input type="password" id="password" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" autocomplete="current-password" />
       </div>
       <button class="btn-primary" id="btn-login">Entrar</button>
       <div class="login-error" id="login-error"></div>
@@ -452,54 +452,54 @@
       <div class="logo">Science English</div>
       <div style="display:flex;align-items:center;gap:8px;">
         <div class="user-greeting">
-          <strong id="student-name">Olá!</strong>
+          <strong id="student-name">OlÃ¡!</strong>
           <span id="student-level"></span>
         </div>
-        <button class="btn-notif" id="btn-notif" title="Ativar notificações" style="display:none;">🔔</button>
-        <button class="btn-logout" id="btn-logout" title="Sair">↩</button>
+        <button class="btn-notif" id="btn-notif" title="Ativar notificaÃ§Ãµes" style="display:none;">ðŸ””</button>
+        <button class="btn-logout" id="btn-logout" title="Sair">â†©</button>
       </div>
     </div>
     <div class="home-content">
       <div class="install-banner" id="install-banner" style="display:none;">
-        <p><strong>📲 Instalar app</strong>Adicione à tela inicial para acesso rápido.</p>
+        <p><strong>ðŸ“² Instalar app</strong>Adicione Ã  tela inicial para acesso rÃ¡pido.</p>
         <button class="btn-install" id="btn-install-app">Instalar</button>
-        <button class="btn-dismiss" id="btn-dismiss-install">✕</button>
+        <button class="btn-dismiss" id="btn-dismiss-install">âœ•</button>
       </div>
       <div class="install-banner" id="ios-install-banner" style="display:none;">
-        <p><strong>📲 Instalar app</strong>No iPhone: Compartilhar → Adicionar à Tela de Início.</p>
-        <button class="btn-dismiss" id="btn-dismiss-ios-install">✕</button>
+        <p><strong>ðŸ“² Instalar app</strong>No iPhone: Compartilhar â†’ Adicionar Ã  Tela de InÃ­cio.</p>
+        <button class="btn-dismiss" id="btn-dismiss-ios-install">âœ•</button>
       </div>
       <div class="install-banner notification-banner" id="notif-banner" style="display:none;">
-        <p><strong>🔔 Ativar notificações</strong>Receba os pós-aulas neste celular.</p>
+        <p><strong>ðŸ”” Ativar notificaÃ§Ãµes</strong>Receba os pÃ³s-aulas neste celular.</p>
         <button class="btn-install" id="btn-enable-notif">Ativar</button>
-        <button class="btn-dismiss" id="btn-dismiss-notif">✕</button>
+        <button class="btn-dismiss" id="btn-dismiss-notif">âœ•</button>
       </div>
 
-      <!-- LATEST PÓS-AULA -->
+      <!-- LATEST PÃ“S-AULA -->
       <div class="posaula-card">
-        <span class="pill">📄 PÓS-AULA DA SEMANA</span>
+        <span class="pill">ðŸ“„ PÃ“S-AULA DA SEMANA</span>
         <h2 id="latest-title">Carregando...</h2>
         <div class="meta" id="latest-date"></div>
         <div class="read-status">
           <div class="status-dot unread" id="read-dot"></div>
-          <span id="read-label">Ainda não lido</span>
+          <span id="read-label">Ainda nÃ£o lido</span>
         </div>
-        <button class="btn-read" id="btn-open-reader">📖 Ler agora</button>
+        <button class="btn-read" id="btn-open-reader">ðŸ“– Ler agora</button>
       </div>
 
       <!-- ATIVIDADES (SUBSTITUI O NOTION) -->
       <div class="activities-home-card" id="btn-go-activities">
-        <div class="act-home-icon">✏️</div>
+        <div class="act-home-icon">âœï¸</div>
         <div class="act-home-text">
           <h3>Minhas Atividades</h3>
           <p id="activities-home-count">Carregando...</p>
         </div>
-        <div class="act-home-arrow">›</div>
+        <div class="act-home-arrow">â€º</div>
       </div>
 
-      <div class="section-title">Histórico de pós-aulas</div>
+      <div class="section-title">HistÃ³rico de pÃ³s-aulas</div>
       <div id="history-list">
-        <div class="empty-state"><div class="empty-icon">📂</div><p>Nenhum pós-aula anterior ainda.</p></div>
+        <div class="empty-state"><div class="empty-icon">ðŸ“‚</div><p>Nenhum pÃ³s-aula anterior ainda.</p></div>
       </div>
     </div>
   </div>
@@ -507,8 +507,8 @@
   <!-- READER -->
   <div class="view" id="view-reader">
     <div class="reader-header">
-      <button class="btn-back" id="btn-back">‹</button>
-      <div class="reader-title" id="reader-title">Pós-aula</div>
+      <button class="btn-back" id="btn-back">â€¹</button>
+      <div class="reader-title" id="reader-title">PÃ³s-aula</div>
     </div>
     <iframe class="reader-frame" id="reader-frame" src="about:blank" allowfullscreen></iframe>
   </div>
@@ -516,13 +516,13 @@
   <!-- ACTIVITIES VIEW -->
   <div class="view" id="view-activities">
     <div class="acts-header">
-      <button class="btn-back-acts" id="btn-back-acts">‹</button>
+      <button class="btn-back-acts" id="btn-back-acts">â€¹</button>
       <div class="acts-header-title">Minhas Atividades</div>
     </div>
     <div class="acts-content" id="activities-list">
       <div class="empty-state">
-        <div class="empty-icon">✏️</div>
-        <p>Suas atividades aparecerão aqui em breve.</p>
+        <div class="empty-icon">âœï¸</div>
+        <p>Suas atividades aparecerÃ£o aqui em breve.</p>
       </div>
     </div>
   </div>
@@ -532,36 +532,36 @@
     <div class="modal-sheet">
       <div class="modal-drag-handle"></div>
       <div class="modal-header">
-        <div class="modal-emoji" id="modal-act-emoji">📚</div>
+        <div class="modal-emoji" id="modal-act-emoji">ðŸ“š</div>
         <div class="modal-titles">
           <div class="modal-subtitle" id="modal-act-week"></div>
           <div class="modal-title-text" id="modal-act-title">Atividade</div>
         </div>
-        <button class="modal-icon-btn" id="btn-close-activity" title="Fechar">✕</button>
+        <button class="modal-icon-btn" id="btn-close-activity" title="Fechar">âœ•</button>
       </div>
       <div class="modal-body">
-        <p class="modal-instruction">Selecione uma parte para começar:</p>
+        <p class="modal-instruction">Selecione uma parte para comeÃ§ar:</p>
         <div id="modal-parts-list"></div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: PART (conteúdo do exercício) -->
+  <!-- MODAL: PART (conteÃºdo do exercÃ­cio) -->
   <div class="modal-overlay" id="modal-part">
     <div class="modal-sheet modal-sheet-tall">
       <div class="modal-drag-handle"></div>
       <div class="modal-header">
-        <button class="modal-icon-btn" id="btn-back-part" title="Voltar">‹</button>
+        <button class="modal-icon-btn" id="btn-back-part" title="Voltar">â€¹</button>
         <div class="modal-titles">
           <div class="modal-subtitle" id="modal-part-act-title"></div>
           <div class="modal-title-text" id="modal-part-title">Parte</div>
         </div>
-        <button class="modal-icon-btn" id="btn-close-part-all" title="Fechar tudo">✕</button>
+        <button class="modal-icon-btn" id="btn-close-part-all" title="Fechar tudo">âœ•</button>
       </div>
       <div class="modal-part-content" id="modal-part-content"></div>
       <div class="modal-feedback" id="modal-feedback" style="display:none">
         <div class="feedback-header">
-          📝 Correção do professor
+          ðŸ“ CorreÃ§Ã£o do professor
           <span class="feedback-score" id="modal-feedback-score" style="display:none"></span>
         </div>
         <div class="feedback-body" id="modal-feedback-text"></div>
@@ -586,7 +586,7 @@
       messagingSenderId: "152554774632",
       appId:             "1:152554774632:web:c43dfd4698efb136ed9bdd"
     };
-    const VAPID_KEY = "BB-SFzT1aH1SQUX6H44tjzoLq2-xxgj4GLxXVa4JKehDBD8PXy-JUvrmN3LftOJbqRtTvl9NRghZSDXVBu0BoHs";
+    const VAPID_KEY = "BAM4g0RG7hCFL6Ck1YH6L_mMQcpOtdjYL_eFX-cXOH82y6d9XVsgwRHcWLPO8QHAVhsUDMgDYCzqChH22yNif_U";
 
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -605,7 +605,7 @@
     let currentActivities  = [];
     let currentActivityData = null;
 
-    // ── AUTH ────────────────────────────────────────────────────────────
+    // â”€â”€ AUTH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     onAuthStateChanged(auth, async user => {
       if (user) {
         currentUser = user;
@@ -649,10 +649,10 @@
       el.textContent = msg; el.style.display = 'block';
     }
 
-    // ── STUDENT DATA ────────────────────────────────────────────────────
+    // â”€â”€ STUDENT DATA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function loadStudent(uid) {
       const snap = await getDoc(doc(db, 'students', uid));
-      if (!snap.exists()) { toast('Perfil não encontrado.'); return; }
+      if (!snap.exists()) { toast('Perfil nÃ£o encontrado.'); return; }
       const s = snap.data();
       document.getElementById('student-name').textContent = s.firstName || s.name || 'Aluno';
       document.getElementById('student-level').textContent = s.level || '';
@@ -665,7 +665,7 @@
     async function loadPosaulas(uid) {
       const q = query(collection(db, 'students', uid, 'posaulas'), orderBy('createdAt', 'desc'));
       const snaps = await getDocs(q);
-      if (snaps.empty) { document.getElementById('latest-title').textContent = 'Nenhum pós-aula ainda.'; return; }
+      if (snaps.empty) { document.getElementById('latest-title').textContent = 'Nenhum pÃ³s-aula ainda.'; return; }
 
       const posts = snaps.docs.map(d => ({ id: d.id, ...d.data() }));
       currentPost = posts[0];
@@ -673,27 +673,27 @@
         pendingPostToOpen = posts.find(p => p.id === pendingPostId || p.filename === pendingPostId) || null;
       }
 
-      document.getElementById('latest-title').textContent = currentPost.title || 'Pós-Aula';
+      document.getElementById('latest-title').textContent = currentPost.title || 'PÃ³s-Aula';
       document.getElementById('latest-date').textContent  = fmtDate(currentPost.createdAt);
-      document.getElementById('reader-title').textContent = currentPost.title || 'Pós-Aula';
+      document.getElementById('reader-title').textContent = currentPost.title || 'PÃ³s-Aula';
 
       const isRead = !!currentPost.readAt;
       document.getElementById('read-dot').className = 'status-dot ' + (isRead ? 'read' : 'unread');
-      document.getElementById('read-label').textContent = isRead ? `Lido em ${fmtDate(currentPost.readAt)}` : 'Ainda não lido';
+      document.getElementById('read-label').textContent = isRead ? `Lido em ${fmtDate(currentPost.readAt)}` : 'Ainda nÃ£o lido';
 
       const list = document.getElementById('history-list');
       if (posts.length <= 1) {
-        list.innerHTML = `<div class="empty-state"><div class="empty-icon">📂</div><p>Sem histórico anterior.</p></div>`;
+        list.innerHTML = `<div class="empty-state"><div class="empty-icon">ðŸ“‚</div><p>Sem histÃ³rico anterior.</p></div>`;
         return;
       }
       list.innerHTML = posts.slice(1).map(p => `
         <div class="history-item" data-id="${p.id}" data-url="${esc(p.url||'')}" data-title="${esc(p.title||'')}">
-          <div class="h-icon">📄</div>
+          <div class="h-icon">ðŸ“„</div>
           <div class="h-text">
-            <div class="h-title">${esc(p.title||'Pós-Aula')}</div>
+            <div class="h-title">${esc(p.title||'PÃ³s-Aula')}</div>
             <div class="h-date">${fmtDate(p.createdAt)}</div>
           </div>
-          <div class="h-status ${p.readAt?'read':'unread'}">${p.readAt?'✓ Lido':'Não lido'}</div>
+          <div class="h-status ${p.readAt?'read':'unread'}">${p.readAt?'âœ“ Lido':'NÃ£o lido'}</div>
         </div>`).join('');
 
       list.querySelectorAll('.history-item').forEach(el => {
@@ -701,7 +701,7 @@
       });
     }
 
-    // ── ACTIVITIES ───────────────────────────────────────────────────────
+    // â”€â”€ ACTIVITIES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function loadActivities(uid) {
       try {
         const q = query(
@@ -713,7 +713,7 @@
         updateActivitiesHomeCount();
       } catch(e) {
         console.warn('Erro ao carregar atividades:', e);
-        document.getElementById('activities-home-count').textContent = 'Não disponível';
+        document.getElementById('activities-home-count').textContent = 'NÃ£o disponÃ­vel';
       }
     }
 
@@ -726,9 +726,9 @@
       const pending = currentActivities.filter(a => (a.status || 'pending') !== 'corrected').length;
       const total   = currentActivities.length;
       if (pending > 0) {
-        el.textContent = `${total} atividade${total !== 1 ? 's' : ''} · ${pending} pendente${pending !== 1 ? 's' : ''}`;
+        el.textContent = `${total} atividade${total !== 1 ? 's' : ''} Â· ${pending} pendente${pending !== 1 ? 's' : ''}`;
       } else {
-        el.textContent = `${total} atividade${total !== 1 ? 's' : ''} · todas corrigidas ✓`;
+        el.textContent = `${total} atividade${total !== 1 ? 's' : ''} Â· todas corrigidas âœ“`;
       }
     }
 
@@ -743,8 +743,8 @@
       if (currentActivities.length === 0) {
         list.innerHTML = `
           <div class="empty-state">
-            <div class="empty-icon">✏️</div>
-            <p>Suas atividades aparecerão aqui em breve.</p>
+            <div class="empty-icon">âœï¸</div>
+            <p>Suas atividades aparecerÃ£o aqui em breve.</p>
           </div>`;
         return;
       }
@@ -760,14 +760,14 @@
 
       let html = '';
       weekOrder.forEach(week => {
-        html += `<div class="week-label">📅 ${esc(week)}</div>`;
+        html += `<div class="week-label">ðŸ“… ${esc(week)}</div>`;
         byWeek[week].forEach(act => {
           const status     = (act.status === 'corrected') ? 'corrected' : 'pending';
-          const statusText = (status === 'corrected') ? '✓ Corrigida' : 'Pendente';
+          const statusText = (status === 'corrected') ? 'âœ“ Corrigida' : 'Pendente';
           const partsCount = (act.parts || []).length;
           html += `
             <div class="activity-card" data-act-id="${esc(act.id)}">
-              <div class="act-emoji">${act.emoji || '📚'}</div>
+              <div class="act-emoji">${act.emoji || 'ðŸ“š'}</div>
               <div class="act-info">
                 <div class="act-title">${esc(act.title || 'Atividade')}</div>
                 <div class="act-meta">${partsCount} parte${partsCount !== 1 ? 's' : ''}</div>
@@ -787,10 +787,10 @@
       });
     }
 
-    // ── MODAL: ACTIVITY ──────────────────────────────────────────────────
+    // â”€â”€ MODAL: ACTIVITY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function openActivityModal(activity) {
       currentActivityData = activity;
-      document.getElementById('modal-act-emoji').textContent = activity.emoji || '📚';
+      document.getElementById('modal-act-emoji').textContent = activity.emoji || 'ðŸ“š';
       document.getElementById('modal-act-week').textContent  = activity.week || '';
       document.getElementById('modal-act-title').textContent = activity.title || 'Atividade';
 
@@ -804,7 +804,7 @@
             <div class="part-btn-title">${esc(part.title || `Part ${i + 1}`)}</div>
             ${part.type ? `<div class="part-btn-sub">${esc(part.type)}</div>` : ''}
           </div>
-          <div class="part-btn-arrow">›</div>
+          <div class="part-btn-arrow">â€º</div>
         </button>`).join('');
 
       partsList.querySelectorAll('.part-btn').forEach(btn => {
@@ -822,11 +822,11 @@
       currentActivityData = null;
     }
 
-    // ── MODAL: PART ──────────────────────────────────────────────────────
+    // â”€â”€ MODAL: PART â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function openPartModal(part, activity) {
       document.getElementById('modal-part-act-title').textContent = activity.title || 'Atividade';
       document.getElementById('modal-part-title').textContent     = part.title || 'Parte';
-      document.getElementById('modal-part-content').innerHTML     = part.content || '<p style="color:var(--muted)">Conteúdo não disponível.</p>';
+      document.getElementById('modal-part-content').innerHTML     = part.content || '<p style="color:var(--muted)">ConteÃºdo nÃ£o disponÃ­vel.</p>';
 
       // Feedback
       const feedbackEl    = document.getElementById('modal-feedback');
@@ -873,9 +873,9 @@
       if (e.target === document.getElementById('modal-part')) closeAllModals();
     });
 
-    // ── READER ──────────────────────────────────────────────────────────
+    // â”€â”€ READER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     document.getElementById('btn-open-reader').onclick = () => {
-      if (!currentPost?.url) { toast('Link não disponível.'); return; }
+      if (!currentPost?.url) { toast('Link nÃ£o disponÃ­vel.'); return; }
       openPost(currentPost.id, currentPost.title, currentPost.url);
     };
 
@@ -887,7 +887,7 @@
 
     function openPost(id, title, url) {
       document.getElementById('reader-frame').src = url;
-      document.getElementById('reader-title').textContent = title || 'Pós-Aula';
+      document.getElementById('reader-title').textContent = title || 'PÃ³s-Aula';
       showView('reader');
       markRead(id);
     }
@@ -911,9 +911,9 @@
       } catch(e) {}
     }
 
-    // ── PUSH NOTIFICATIONS ──────────────────────────────────────────────
+    // â”€â”€ PUSH NOTIFICATIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     async function requestPushPermission() {
-      if (!messaging) { toast('❌ messaging null'); return; }
+      if (!messaging) { toast('âŒ messaging null'); return; }
       try {
         const perm = await Notification.requestPermission();
         if (perm !== 'granted') return;
@@ -928,11 +928,11 @@
           document.getElementById('btn-notif').style.display = 'none';
           document.getElementById('notif-banner').style.display = 'none';
           document.getElementById('login-notif-banner').style.display = 'none';
-          toast(currentUser ? '✅ Notificações ativadas!' : '✅ Notificações ativadas! Entre para vincular ao seu perfil.');
+          toast(currentUser ? 'âœ… NotificaÃ§Ãµes ativadas!' : 'âœ… NotificaÃ§Ãµes ativadas! Entre para vincular ao seu perfil.');
         }
       } catch(e) {
         updatePwaPrompts();
-        toast('❌ ' + e.message);
+        toast('âŒ ' + e.message);
         console.warn('Push setup:', e);
       }
     }
@@ -994,12 +994,12 @@
 
     if (messaging) {
       onMessage(messaging, payload => {
-        toast(`📄 ${payload.notification?.body || payload.data?.body || 'Novo pós-aula disponível!'}`);
+        toast(`ðŸ“„ ${payload.notification?.body || payload.data?.body || 'Novo pÃ³s-aula disponÃ­vel!'}`);
         if (currentUser) loadPosaulas(currentUser.uid);
       });
     }
 
-    // ── PWA INSTALL ─────────────────────────────────────────────────────
+    // â”€â”€ PWA INSTALL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     window.addEventListener('beforeinstallprompt', e => {
       e.preventDefault(); deferredPrompt = e;
       if (!localStorage.getItem('installDismissed')) {
@@ -1038,7 +1038,7 @@
       updatePwaPrompts();
     });
 
-    // ── HELPERS ─────────────────────────────────────────────────────────
+    // â”€â”€ HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function showView(name) {
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
       document.getElementById('view-' + name).classList.add('active');
