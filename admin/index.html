@@ -419,7 +419,7 @@
           <div class="student-info">
             <div class="name">${nm}</div>
             <div class="email">${esc(s.email || '')} · ${esc(s.level || '')}</div>
-            ${s.slug ? `<div class="slug-line">slug: <strong>${esc(s.slug)}</strong> &nbsp;→&nbsp; pos-aula-<strong>${esc(s.slug)}</strong>-DD-MM-AAAA.html</div>` : ''}
+            ${s.slug ? `<div class="slug-line">slug: <strong>${esc(s.slug)}</strong> &nbsp;→&nbsp; pos-aula-<strong>${esc(s.slug)}</strong>-MM-DD-AAAA.html</div>` : ''}
           </div>
           ${badge}
           <button class="btn-detail" data-uid="${s.uid}" data-name="${nm}">Ver →</button>
