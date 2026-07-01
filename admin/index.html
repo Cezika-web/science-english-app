@@ -218,12 +218,18 @@
         <div class="form-card">
           <h2>📤 Publicar Atividades no App</h2>
           <p style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;">
-            Cole o JSON gerado pela skill <strong>alunos-app</strong> e clique em Publicar.
+            Cole o JSON gerado pela skill <strong>alunos-app</strong>, escolha o aluno e clique em Publicar.
+            Para publicar a mesma atividade para vários alunos, é só trocar o aluno aqui e clicar de novo.
           </p>
 
           <div class="field">
+            <label>Publicar para o aluno</label>
+            <select id="pub-student"></select>
+          </div>
+
+          <div class="field">
             <label>JSON das Atividades</label>
-            <textarea id="pub-json" placeholder='{"studentName":"Gustavo","uid":"...","week":"30 DE JUNHO 2026","activities":[...]}'></textarea>
+            <textarea id="pub-json" placeholder='{"week":"30 DE JUNHO 2026","activities":[...]}'></textarea>
           </div>
 
           <button class="btn-add" id="btn-parse-json" type="button">Verificar JSON →</button>
@@ -275,11 +281,15 @@
         <div class="form-card">
           <h2>📖 Publicar Vocabulário</h2>
           <p style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;">
-            Cole o JSON do vocabulário extraído do pós-aula.
+            Cole o JSON do vocabulário, escolha o aluno e publique. Dá pra reusar o mesmo JSON trocando o aluno.
           </p>
           <div class="field">
+            <label>Publicar para o aluno</label>
+            <select id="voc-student"></select>
+          </div>
+          <div class="field">
             <label>JSON do Vocabulário</label>
-            <textarea id="voc-json" placeholder='{"studentName":"Gu","uid":"...","source":"Negócios, Precificação e Rotina de Estudos","vocabulary":[{"en":"to charge","pt":"cobrar"},{"en":"to fire","pt":"demitir"},{"en":"depreciation","pt":"depreciação"}]}'></textarea>
+            <textarea id="voc-json" placeholder='{"source":"Artigos e Perguntas","vocabulary":[{"en":"treadmill","pt":"esteira"}]}'></textarea>
           </div>
           <button class="btn-add" id="btn-parse-vocab">Verificar JSON →</button>
           <div class="publish-preview" id="voc-preview">
@@ -475,6 +485,15 @@
       await deleteDoc(doc(db, 'students', uid));
     }
 
+    function populateStudentSelects(active) {
+      const opts = '<option value="">Selecione o aluno...</option>' +
+        active.map(s => `<option value="${s.uid}">${esc(s.name || s.firstName || 'Aluno')}</option>`).join('');
+      ['pub-student', 'voc-student'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (sel) { const prev = sel.value; sel.innerHTML = opts; sel.value = prev; }
+      });
+    }
+
     async function loadStudents() {
       const grid   = document.getElementById('students-grid');
       const exGrid = document.getElementById('exalunos-grid');
@@ -493,6 +512,7 @@
         return { ...s, latestRead: isRead, latestTitle: latest?.title || null };
       }));
 
+      populateStudentSelects(active);
       document.getElementById('stat-total').textContent  = active.length;
       document.getElementById('stat-read').textContent   = readCount;
       document.getElementById('stat-unread').textContent = active.length - readCount;
@@ -600,15 +620,18 @@
 
       parsedActivityJson = data;
 
-      // Preview
-      const student = allStudents.find(s =>
+      // Preview — aluno vem do seletor (prioridade) ou do studentName do JSON
+      const selUid = document.getElementById('pub-student').value;
+      const selStudent = allStudents.find(s => s.uid === selUid);
+      const matchStudent = allStudents.find(s =>
         (s.name || s.firstName || '').toLowerCase().includes((data.studentName || '').toLowerCase())
       );
-      const resolvedUid = data.uid || (student ? student.uid : null);
+      const resolvedUid = selUid || data.uid || (matchStudent ? matchStudent.uid : null);
+      const resolvedName = selStudent ? (selStudent.name || selStudent.firstName) : (data.studentName || '?');
       parsedActivityJson._resolvedUid = resolvedUid;
 
       document.getElementById('pub-preview-student').textContent =
-        `Aluno: ${data.studentName || '?'}${resolvedUid ? '' : ' ⚠️ UID não encontrado — verifique o nome'}`;
+        `Aluno: ${resolvedName}${resolvedUid ? '' : ' ⚠️ Selecione o aluno acima'}`;
 
       document.getElementById('pub-preview-list').innerHTML = data.activities.map(a => `
         <div class="prev-act">
@@ -630,8 +653,8 @@
 
     document.getElementById('btn-publish').onclick = async () => {
       if (!parsedActivityJson) return;
-      const uid = parsedActivityJson._resolvedUid;
-      if (!uid) { showMsg('pub-msg', 'UID do aluno não encontrado. Adicione o campo "uid" ao JSON.', 'err'); return; }
+      const uid = document.getElementById('pub-student').value || parsedActivityJson._resolvedUid;
+      if (!uid) { showMsg('pub-msg', 'Selecione o aluno no topo antes de publicar.', 'err'); return; }
 
       const btn = document.getElementById('btn-publish');
       btn.disabled = true; btn.textContent = 'Publicando...';
@@ -756,14 +779,17 @@
       if (!data.vocabulary || !Array.isArray(data.vocabulary) || data.vocabulary.length === 0) {
         showMsg('voc-msg', 'JSON não contém campo "vocabulary".', 'err'); return;
       }
-      const student = allStudents.find(s =>
+      const selUid = document.getElementById('voc-student').value;
+      const selStudent = allStudents.find(s => s.uid === selUid);
+      const matchStudent = allStudents.find(s =>
         (s.name || s.firstName || '').toLowerCase().includes((data.studentName || '').toLowerCase())
       );
-      data._resolvedUid = data.uid || (student ? student.uid : null);
+      data._resolvedUid = selUid || data.uid || (matchStudent ? matchStudent.uid : null);
       parsedVocabJson = data;
 
+      const vName = selStudent ? (selStudent.name || selStudent.firstName) : (data.studentName || '?');
       document.getElementById('voc-preview-student').textContent =
-        `Aluno: ${data.studentName || '?'} · Fonte: ${data.source || '—'}${data._resolvedUid ? '' : ' ⚠️ UID não encontrado'}`;
+        `Aluno: ${vName} · Fonte: ${data.source || '—'}${data._resolvedUid ? '' : ' ⚠️ Selecione o aluno acima'}`;
       document.getElementById('voc-preview-list').innerHTML = data.vocabulary.map(v =>
         `<div class="preview-item"><span class="preview-emoji">🔤</span><div><div class="preview-title">${esc(v.en)}</div><div class="preview-meta">${esc(v.pt)}</div></div></div>`
       ).join('');
@@ -772,10 +798,11 @@
 
     document.getElementById('btn-publish-vocab').onclick = async () => {
       if (!parsedVocabJson) return;
-      const uid = parsedVocabJson._resolvedUid;
-      if (!uid) { showMsg('voc-msg', 'UID do aluno não encontrado.', 'err'); return; }
+      const uid = document.getElementById('voc-student').value || parsedVocabJson._resolvedUid;
+      if (!uid) { showMsg('voc-msg', 'Selecione o aluno no topo antes de publicar.', 'err'); return; }
       const btn = document.getElementById('btn-publish-vocab');
       btn.disabled = true; btn.textContent = 'Publicando...';
+      const count = parsedVocabJson.vocabulary.length;
       try {
         const vocRef = collection(db, 'students', uid, 'vocabulario');
         for (const v of parsedVocabJson.vocabulary) {
@@ -789,7 +816,7 @@
         document.getElementById('voc-preview').style.display = 'none';
         document.getElementById('voc-json').value = '';
         parsedVocabJson = null;
-        showMsg('voc-msg', `✅ ${parsedVocabJson?.vocabulary?.length || ''} palavras publicadas!`, 'ok');
+        showMsg('voc-msg', `✅ ${count} palavras publicadas!`, 'ok');
       } catch(e) {
         btn.disabled = false; btn.textContent = '🚀 Publicar vocabulário';
         showMsg('voc-msg', `Erro: ${e.message}`, 'err');
