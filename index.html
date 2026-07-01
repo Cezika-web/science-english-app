@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <meta name="theme-color" content="#2f86e6" />
+  <meta name="theme-color" content="#16A34A" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Science English" />
@@ -11,1064 +11,985 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
 
+  <!-- React + Babel via CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
   <style>
-    :root {
-      --accent: #2f86e6;
-      --accent-dark: #1f6fd1;
-      --green: #36b37e;
-      --muted: #6b7280;
-      --border: #e6eef8;
-      --bg: #f4f7fa;
-      --card: #ffffff;
-      --danger: #e53e3e;
-    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
-    body {
-      font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
-      background: var(--bg);
-      color: #0f1724;
-      min-height: 100vh;
+    html, body {
+      height: 100%;
+      font-family: -apple-system, "SF Pro Display", Inter, "Segoe UI", Roboto, Arial, sans-serif;
+      background: #F6F1EA;
+      color: #0F172A;
       overscroll-behavior: none;
+      -webkit-font-smoothing: antialiased;
     }
 
-    .view { display: none; min-height: 100vh; }
-    .view.active { display: flex; flex-direction: column; }
+    #root { height: 100%; display: flex; flex-direction: column; }
 
-    /* ── LOGIN ── */
-    #view-login {
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      background: linear-gradient(160deg, #1a3a5c 0%, #2f86e6 100%);
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-    .login-card {
-      background: white;
-      border-radius: 20px;
-      padding: 36px 28px;
-      width: 100%;
-      max-width: 380px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    .toast-el {
+      position: fixed; bottom: 90px; left: 50%;
+      transform: translateX(-50%) translateY(40px);
+      background: #0F172A; color: white; padding: 11px 20px;
+      border-radius: 12px; font-size: 0.88rem; font-weight: 500;
+      z-index: 9999; opacity: 0; transition: transform 0.3s, opacity 0.3s;
+      white-space: nowrap; pointer-events: none;
     }
+    .toast-el.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-    .login-logo { text-align: center; margin-bottom: 28px; }
-    .login-logo .logo-badge {
-      display: inline-block;
-      background: var(--accent);
-      color: white;
-      font-weight: 800;
-      font-size: 1rem;
-      letter-spacing: -0.5px;
-      padding: 10px 20px;
-      border-radius: 12px;
-      margin-bottom: 10px;
-    }
-    .login-logo p { color: var(--muted); font-size: 0.9rem; }
-
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 6px; }
-    .form-group input {
-      width: 100%; padding: 12px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px; font-size: 1rem; outline: none;
-      transition: border-color 0.2s; background: #fafbfd;
-    }
-    .form-group input:focus { border-color: var(--accent); background: white; }
-
-    .btn-primary {
-      width: 100%; padding: 14px;
-      background: var(--accent); color: white;
-      border: none; border-radius: 12px;
-      font-size: 1rem; font-weight: 700; cursor: pointer;
-      margin-top: 8px; transition: background 0.2s, transform 0.1s;
-    }
-    .btn-primary:active { transform: scale(0.98); background: var(--accent-dark); }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-
-    .login-error {
-      background: #fff5f5; border: 1px solid #fed7d7;
-      color: var(--danger); padding: 10px 14px;
-      border-radius: 8px; font-size: 0.85rem;
-      margin-top: 12px; display: none;
-    }
-    .login-notif {
-      background: #eefaf5; border: 1px solid #b7ebd3;
-      border-radius: 12px; padding: 12px 14px;
-      margin-bottom: 16px; display: none; gap: 10px;
-      align-items: center;
-    }
-    .login-notif p { flex: 1; color: #0f5132; font-size: 0.82rem; line-height: 1.35; }
-    .login-notif p strong { display: block; font-size: 0.88rem; margin-bottom: 2px; }
-    .login-notif button {
-      background: var(--green); color: white; border: none;
-      padding: 8px 12px; border-radius: 8px; font-size: 0.8rem;
-      font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0;
-    }
-
-    /* ── HOME ── */
-    #view-home { background: var(--bg); }
-
-    .app-header {
-      background: white; padding: 16px 20px 12px;
-      display: flex; align-items: center; justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-      position: sticky; top: 0; z-index: 10;
-    }
-    .app-header .logo { font-weight: 800; font-size: 1.1rem; color: var(--accent); }
-    .user-greeting { font-size: 0.82rem; color: var(--muted); text-align: right; }
-    .user-greeting strong { color: #0f1724; display: block; font-size: 0.9rem; }
-    .btn-logout {
-      background: none; border: none; color: var(--muted);
-      font-size: 0.78rem; cursor: pointer; padding: 4px 8px; border-radius: 6px;
-    }
-    .btn-logout:hover { background: #f3f4f6; color: var(--danger); }
-
-    .home-content { padding: 20px 16px; flex: 1; }
-
-    .posaula-card {
-      background: white; border-radius: 16px; padding: 20px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid var(--border);
-      margin-bottom: 16px;
-    }
-    .posaula-card .pill {
-      display: inline-block; background: #e8f3ff; color: var(--accent);
-      font-size: 0.75rem; font-weight: 700; padding: 4px 10px;
-      border-radius: 999px; margin-bottom: 10px;
-    }
-    .posaula-card h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; line-height: 1.3; }
-    .posaula-card .meta { font-size: 0.82rem; color: var(--muted); margin-bottom: 16px; }
-    .posaula-card .read-status { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; margin-bottom: 14px; }
-
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
-    .status-dot.read { background: var(--green); }
-    .status-dot.unread { background: #f6ad55; }
-
-    .btn-read {
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      width: 100%; padding: 13px; background: var(--accent); color: white;
-      border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 700;
-      cursor: pointer; transition: background 0.2s;
-    }
-    .btn-read:active { background: var(--accent-dark); }
-
-    /* ── ACTIVITIES HOME CARD ── */
-    .activities-home-card {
-      background: white; border-radius: 16px; padding: 20px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid var(--border);
-      margin-bottom: 16px; display: flex; align-items: center; gap: 16px;
-      cursor: pointer; transition: box-shadow 0.2s, transform 0.1s;
-    }
-    .activities-home-card:active { box-shadow: 0 1px 4px rgba(0,0,0,0.08); transform: scale(0.99); }
-    .act-home-icon {
-      width: 48px; height: 48px; background: #f0f7ff;
-      border: 1px solid #c5d8ff; border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.5rem; flex-shrink: 0;
-    }
-    .act-home-text { flex: 1; }
-    .act-home-text h3 { font-size: 1rem; font-weight: 700; color: #0f1724; margin-bottom: 3px; }
-    .act-home-text p { font-size: 0.82rem; color: var(--muted); }
-    .act-home-arrow { margin-left: auto; color: var(--muted); font-size: 1.3rem; flex-shrink: 0; }
-
-    .section-title {
-      font-size: 0.85rem; font-weight: 700; color: var(--muted);
-      text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 12px;
-    }
-
-    .history-item {
-      background: white; border-radius: 12px; padding: 14px 16px;
-      margin-bottom: 8px; border: 1px solid var(--border);
-      display: flex; align-items: center; gap: 12px;
-      cursor: pointer; transition: box-shadow 0.15s;
-    }
-    .history-item:active { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-    .h-icon {
-      width: 36px; height: 36px; border-radius: 10px; background: #f0f7ff;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1rem; flex-shrink: 0;
-    }
-    .h-text { flex: 1; min-width: 0; }
-    .h-title { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .h-date { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
-    .h-status { font-size: 0.78rem; font-weight: 600; flex-shrink: 0; }
-    .h-status.read { color: var(--green); }
-    .h-status.unread { color: #f6ad55; }
-
-    .empty-state { text-align: center; padding: 32px 20px; color: var(--muted); font-size: 0.9rem; }
-    .empty-icon { font-size: 2rem; margin-bottom: 8px; }
-
-    /* ── READER ── */
-    #view-reader { background: var(--bg); }
-    .reader-header {
-      background: var(--accent); padding: 14px 16px;
-      display: flex; align-items: center; gap: 12px; color: white;
-    }
-    .btn-back {
-      background: rgba(255,255,255,0.2); border: none; color: white;
-      width: 36px; height: 36px; border-radius: 50%; font-size: 1.2rem;
-      cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .reader-title { font-weight: 700; font-size: 0.95rem; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .reader-frame { flex: 1; border: none; width: 100%; background: white; }
-
-    /* ── ACTIVITIES VIEW ── */
-    #view-activities { background: var(--bg); }
-
-    .acts-header {
-      background: white; padding: 14px 16px;
-      display: flex; align-items: center; gap: 12px;
-      border-bottom: 1px solid var(--border);
-      position: sticky; top: 0; z-index: 10;
-    }
-    .btn-back-acts {
-      background: #f3f4f6; border: none; color: #374151;
-      width: 36px; height: 36px; border-radius: 50%; font-size: 1.2rem;
-      cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .acts-header-title { font-weight: 700; font-size: 1rem; color: #0f1724; }
-
-    .acts-content { padding: 16px; flex: 1; }
-
-    .week-label {
-      font-size: 0.75rem; font-weight: 700; color: var(--muted);
-      text-transform: uppercase; letter-spacing: 1px;
-      margin: 20px 0 10px; display: flex; align-items: center; gap: 6px;
-    }
-    .week-label:first-child { margin-top: 4px; }
-
-    .activity-card {
-      background: white; border-radius: 14px; padding: 16px;
-      margin-bottom: 10px; border: 1px solid var(--border);
-      display: flex; align-items: center; gap: 14px;
-      cursor: pointer; transition: box-shadow 0.15s, transform 0.1s;
-    }
-    .activity-card:active { transform: scale(0.98); box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
-
-    .act-emoji {
-      font-size: 1.5rem; width: 46px; height: 46px;
-      background: #f0f7ff; border-radius: 12px;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .act-info { flex: 1; min-width: 0; }
-    .act-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 3px; }
-    .act-meta { font-size: 0.78rem; color: var(--muted); }
-    .act-status {
-      font-size: 0.75rem; font-weight: 700;
-      padding: 4px 10px; border-radius: 999px; flex-shrink: 0;
-    }
-    .act-status.pending { background: #fff7ed; color: #c05621; }
-    .act-status.corrected { background: #eefaf5; color: #276749; }
-
-    /* ── MODAL SYSTEM ── */
     .modal-overlay {
       position: fixed; inset: 0;
-      background: rgba(10, 20, 40, 0.55);
-      z-index: 50;
+      background: rgba(10,20,40,0.55);
+      z-index: 500;
       display: flex; align-items: flex-end;
       opacity: 0; pointer-events: none;
       transition: opacity 0.3s;
     }
     .modal-overlay.open { opacity: 1; pointer-events: all; }
-
     .modal-sheet {
       background: white; border-radius: 24px 24px 0 0;
-      width: 100%; max-height: 75vh;
-      overflow-y: auto;
+      width: 100%; max-height: 82vh; overflow-y: auto;
       transform: translateY(100%);
-      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-      padding-bottom: env(safe-area-inset-bottom, 16px);
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+      padding-bottom: env(safe-area-inset-bottom, 20px);
     }
     .modal-overlay.open .modal-sheet { transform: translateY(0); }
     .modal-sheet-tall { max-height: 92vh; display: flex; flex-direction: column; }
+    .modal-drag { width: 40px; height: 4px; background: #E2E8F0; border-radius: 2px; margin: 12px auto 0; }
 
-    .modal-drag-handle {
-      width: 40px; height: 4px; background: #e5e7eb; border-radius: 2px;
-      margin: 12px auto 0;
-    }
-
-    .modal-header {
-      display: flex; align-items: center; gap: 12px;
-      padding: 16px 16px 14px;
-      border-bottom: 1px solid var(--border);
-      position: sticky; top: 0; background: white;
-      border-radius: 24px 24px 0 0;
-      z-index: 1;
-    }
-
-    .modal-emoji { font-size: 1.8rem; flex-shrink: 0; line-height: 1; }
-
-    .modal-titles { flex: 1; min-width: 0; }
-    .modal-subtitle {
-      font-size: 0.72rem; color: var(--muted);
-      font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.5px; margin-bottom: 2px;
-    }
-    .modal-title-text { font-size: 1rem; font-weight: 700; color: #0f1724; line-height: 1.3; }
-
-    .modal-icon-btn {
-      background: #f3f4f6; border: none;
-      width: 34px; height: 34px; border-radius: 50%;
-      font-size: 1rem; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; color: #374151;
-      transition: background 0.15s;
-    }
-    .modal-icon-btn:active { background: #e5e7eb; }
-
-    .modal-body { padding: 16px; }
-    .modal-instruction { font-size: 0.88rem; color: var(--muted); margin-bottom: 14px; }
-
-    .part-btn {
-      display: flex; align-items: center; gap: 14px;
-      width: 100%; background: #f8fafc;
-      border: 1.5px solid var(--border);
-      border-radius: 14px; padding: 16px;
-      margin-bottom: 10px; cursor: pointer; text-align: left;
-      transition: background 0.15s, border-color 0.15s;
-    }
-    .part-btn:active { background: #eff6ff; border-color: var(--accent); }
-
-    .part-number {
-      width: 34px; height: 34px; background: var(--accent);
-      color: white; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.88rem; font-weight: 800; flex-shrink: 0;
-    }
-    .part-btn-info { flex: 1; }
-    .part-btn-title { font-size: 0.93rem; font-weight: 700; color: #0f1724; }
-    .part-btn-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
-    .part-btn-arrow { color: var(--muted); font-size: 1.2rem; flex-shrink: 0; }
-
-    .modal-part-content {
-      flex: 1; overflow-y: auto;
-      padding: 16px;
-      font-size: 0.92rem; line-height: 1.75; color: #1f2937;
-    }
-    .modal-part-content p { margin-bottom: 12px; }
-    .modal-part-content ol, .modal-part-content ul { padding-left: 20px; margin-bottom: 12px; }
-    .modal-part-content li { margin-bottom: 8px; }
-    .modal-part-content strong { color: #0f1724; }
-
-    .modal-feedback {
-      margin: 0 16px 16px;
-      background: #eefaf5; border: 1px solid #b7ebd3;
-      border-radius: 14px; padding: 16px;
-    }
-    .feedback-header { font-weight: 700; color: #276749; margin-bottom: 8px; font-size: 0.9rem; }
-    .feedback-score {
-      display: inline-block; background: #276749; color: white;
-      font-size: 0.8rem; font-weight: 700; padding: 3px 10px;
-      border-radius: 999px; margin-left: 8px;
-    }
-    .feedback-body { font-size: 0.85rem; color: #374151; line-height: 1.6; }
-
-    /* ── LOADING ── */
-    .loading-screen {
-      position: fixed; inset: 0; background: white;
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: 16px; z-index: 100;
-    }
-    .loading-screen .logo-badge {
-      display: inline-block; background: var(--accent); color: white;
-      font-weight: 800; font-size: 1rem; padding: 10px 20px; border-radius: 12px;
-    }
-    .spinner {
-      width: 32px; height: 32px; border: 3px solid var(--border);
-      border-top-color: var(--accent); border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-screen p { font-size: 0.85rem; color: var(--muted); }
-
-    /* ── TOAST ── */
-    .toast {
-      position: fixed; bottom: 24px; left: 50%;
-      transform: translateX(-50%) translateY(80px);
-      background: #1a202c; color: white; padding: 12px 20px;
-      border-radius: 10px; font-size: 0.88rem; font-weight: 500;
-      z-index: 999; opacity: 0; transition: transform 0.3s, opacity 0.3s;
-      white-space: nowrap; pointer-events: none;
-    }
-    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-
-    /* ── INSTALL BANNER ── */
-    .install-banner {
-      background: #e8f3ff; border: 1px solid #c5d8ff;
-      border-radius: 12px; padding: 14px 16px;
-      margin-bottom: 16px; display: flex; align-items: center; gap: 12px;
-    }
-    .install-banner p { font-size: 0.85rem; color: #1a3a5c; flex: 1; }
-    .install-banner p strong { display: block; font-size: 0.9rem; margin-bottom: 2px; }
-    .notification-banner { background: #eefaf5; border-color: #b7ebd3; }
-    .notification-banner p { color: #0f5132; }
-    .btn-install {
-      background: var(--accent); color: white; border: none;
-      padding: 8px 14px; border-radius: 8px; font-size: 0.82rem;
-      font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0;
-    }
-    .btn-dismiss { background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; padding: 4px; flex-shrink: 0; }
-    .btn-notif { background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.1rem; cursor: pointer; padding: 6px 8px; border-radius: 8px; }
+    .reader-frame { flex: 1; border: none; width: 100%; background: white; display: block; }
+    .scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   </style>
 </head>
 <body>
+<div id="root"></div>
+<div class="toast-el" id="global-toast"></div>
 
-  <div class="loading-screen" id="loading">
-    <div class="logo-badge">Science English</div>
-    <div class="spinner"></div>
-    <p>Carregando...</p>
-  </div>
+<script type="text/babel">
+const FB_CONFIG = {
+  apiKey:            "AIzaSyDgDlLyU15p8wQ1YtCN8NebGes_oq3atU8",
+  authDomain:        "scienceenglish.firebaseapp.com",
+  projectId:         "scienceenglish",
+  storageBucket:     "scienceenglish.firebasestorage.app",
+  messagingSenderId: "152554774632",
+  appId:             "1:152554774632:web:c43dfd4698efb136ed9bdd"
+};
+const VAPID_KEY = "BB-SFzT1aH1SQUX6H44tjzoLq2-xxgj4GLxXVa4JKehDBD8PXy-JUvrmN3LftOJbqRtTvl9NRqhZSDXVBu0BoHs";
 
-  <div class="toast" id="toast"></div>
+let _fb = null;
+async function getFB() {
+  if (_fb) return _fb;
+  const [
+    { initializeApp },
+    { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential },
+    { getFirestore, doc, getDoc, collection, query, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion },
+    { getMessaging, getToken, onMessage, isSupported },
+  ] = await Promise.all([
+    import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
+    import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'),
+    import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'),
+    import('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js'),
+  ]);
+  const app  = initializeApp(FB_CONFIG);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+  let messaging = null;
+  try { if (await isSupported()) messaging = getMessaging(app); } catch(e) {}
+  _fb = { app, auth, db, messaging,
+    signInWithEmailAndPassword, signOut, onAuthStateChanged,
+    updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential,
+    doc, getDoc, collection, query, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion,
+    getToken, onMessage };
+  return _fb;
+}
 
-  <!-- LOGIN -->
-  <div class="view" id="view-login">
-    <div class="login-card">
-      <div class="login-logo">
-        <div class="logo-badge">Science English</div>
-        <p>English — Área do Aluno</p>
-      </div>
-      <div class="login-notif" id="login-notif-banner">
-        <p><strong>🔔 Ativar notificações</strong>Receba os pós-aulas neste celular.</p>
-        <button id="btn-login-enable-notif">Ativar</button>
-      </div>
-      <div class="form-group">
-        <label for="email">E-mail</label>
-        <input type="email" id="email" placeholder="seu@email.com" autocomplete="email" />
-      </div>
-      <div class="form-group">
-        <label for="password">Senha</label>
-        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
-      </div>
-      <button class="btn-primary" id="btn-login">Entrar</button>
-      <div class="login-error" id="login-error"></div>
-    </div>
-  </div>
+function showToast(msg, ms = 3500) {
+  const el = document.getElementById('global-toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._tid);
+  el._tid = setTimeout(() => el.classList.remove('show'), ms);
+}
 
-  <!-- HOME -->
-  <div class="view" id="view-home">
-    <div class="app-header">
-      <div class="logo">Science English</div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <div class="user-greeting">
-          <strong id="student-name">Olá!</strong>
-          <span id="student-level"></span>
+function fmtDate(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+}
+
+function monthKey(ts) {
+  if (!ts) return 'Sem data';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('pt-BR', { month:'long', year:'numeric' });
+}
+
+function monthOrder(ts) {
+  if (!ts) return 0;
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.getFullYear() * 100 + d.getMonth();
+}
+
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+let _swReg = null;
+async function getSW() {
+  if (!('serviceWorker' in navigator)) return undefined;
+  if (!_swReg) _swReg = await navigator.serviceWorker.register('sw.js');
+  return _swReg;
+}
+getSW().catch(() => {});
+
+const { useState, useEffect, useRef } = React;
+
+const GLASS = {
+  background: 'rgba(255,255,255,0.78)',
+  backdropFilter: 'blur(18px)',
+  WebkitBackdropFilter: 'blur(18px)',
+  border: '1px solid rgba(22,163,74,0.15)',
+  boxShadow: '0 12px 35px rgba(15,23,42,0.08)',
+  borderRadius: 28,
+};
+
+function GlassCard({ children, style, onClick, tappable }) {
+  const [pressed, setPressed] = useState(false);
+  return (
+    <div
+      onClick={onClick}
+      onPointerDown={() => tappable && setPressed(true)}
+      onPointerUp={() => tappable && setPressed(false)}
+      onPointerLeave={() => tappable && setPressed(false)}
+      style={{
+        ...GLASS,
+        transition: 'transform .18s ease, box-shadow .18s ease',
+        transform: pressed ? 'scale(0.985)' : 'scale(1)',
+        boxShadow: pressed ? '0 6px 18px rgba(15,23,42,0.06)' : '0 12px 35px rgba(15,23,42,0.08)',
+        cursor: tappable ? 'pointer' : 'default',
+        ...style,
+      }}
+    >{children}</div>
+  );
+}
+
+function Pill({ children, style }) {
+  return (
+    <span style={{
+      display: 'inline-block', padding: '5px 12px', borderRadius: 999,
+      background: 'rgba(139,94,52,0.13)', border: '1px solid rgba(139,94,52,0.28)',
+      color: '#7C4A21', fontSize: 10.5, fontWeight: 800, letterSpacing: 0.8,
+      ...style,
+    }}>{children}</span>
+  );
+}
+
+function Spinner({ size = 28 }) {
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%',
+      border: '3px solid rgba(22,163,74,0.15)',
+      borderTopColor: '#16A34A',
+      animation: 'spin 0.8s linear infinite',
+    }} />
+  );
+}
+
+// ── AppHeader ───────────────────────────────────────────────────
+function AppHeader({ student, onNotif, showNotifBtn, onLogout }) {
+  const name    = student?.firstName || student?.name || 'Aluno';
+  const level   = student?.level || '';
+  const initial = name[0].toUpperCase();
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
+      borderBottom: '1px solid rgba(22,163,74,0.12)',
+      padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+      position: 'sticky', top: 0, zIndex: 100, flexShrink: 0,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{
+          width: 42, height: 42, borderRadius: 13, flexShrink: 0,
+          background: 'linear-gradient(145deg,#16A34A,#064E3B)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 6px 16px rgba(22,163,74,0.35)',
+        }}>
+          <span style={{ color: '#fff', fontWeight: 800, fontSize: 17, letterSpacing: -0.5 }}>SE</span>
         </div>
-        <button class="btn-notif" id="btn-notif" title="Ativar notificações" style="display:none;">🔔</button>
-        <button class="btn-logout" id="btn-logout" title="Sair">↩</button>
-      </div>
-    </div>
-    <div class="home-content">
-      <div class="install-banner" id="install-banner" style="display:none;">
-        <p><strong>📲 Instalar app</strong>Adicione à tela inicial para acesso rápido.</p>
-        <button class="btn-install" id="btn-install-app">Instalar</button>
-        <button class="btn-dismiss" id="btn-dismiss-install">✕</button>
-      </div>
-      <div class="install-banner" id="ios-install-banner" style="display:none;">
-        <p><strong>📲 Instalar app</strong>No iPhone: Compartilhar → Adicionar à Tela de Início.</p>
-        <button class="btn-dismiss" id="btn-dismiss-ios-install">✕</button>
-      </div>
-      <div class="install-banner notification-banner" id="notif-banner" style="display:none;">
-        <p><strong>🔔 Ativar notificações</strong>Receba os pós-aulas neste celular.</p>
-        <button class="btn-install" id="btn-enable-notif">Ativar</button>
-        <button class="btn-dismiss" id="btn-dismiss-notif">✕</button>
-      </div>
-
-      <!-- LATEST PÓS-AULA -->
-      <div class="posaula-card">
-        <span class="pill">📄 PÓS-AULA DA SEMANA</span>
-        <h2 id="latest-title">Carregando...</h2>
-        <div class="meta" id="latest-date"></div>
-        <div class="read-status">
-          <div class="status-dot unread" id="read-dot"></div>
-          <span id="read-label">Ainda não lido</span>
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: '#0F172A', lineHeight: 1.1 }}>Science English</div>
+          <div style={{ fontSize: 10.5, color: '#64748B', fontWeight: 500 }}>Explore. Learn. Grow.</div>
         </div>
-        <button class="btn-read" id="btn-open-reader">📖 Ler agora</button>
       </div>
-
-      <!-- ATIVIDADES (SUBSTITUI O NOTION) -->
-      <div class="activities-home-card" id="btn-go-activities">
-        <div class="act-home-icon">✏️</div>
-        <div class="act-home-text">
-          <h3>Minhas Atividades</h3>
-          <p id="activities-home-count">Carregando...</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {showNotifBtn && (
+          <button onClick={onNotif} title="Ativar notificacoes" style={{
+            background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.25)',
+            color: '#16A34A', borderRadius: 10, padding: '6px 10px', fontSize: 16, cursor: 'pointer', lineHeight: 1,
+          }}>&#128276;</button>
+        )}
+        <div style={{ textAlign: 'right', marginRight: 4 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', lineHeight: 1.1 }}>{name}</div>
+          {level && <div style={{ fontSize: 10.5, color: '#16A34A', fontWeight: 600 }}>{level}</div>}
         </div>
-        <div class="act-home-arrow">›</div>
-      </div>
-
-      <div class="section-title">Histórico de pós-aulas</div>
-      <div id="history-list">
-        <div class="empty-state"><div class="empty-icon">📂</div><p>Nenhum pós-aula anterior ainda.</p></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- READER -->
-  <div class="view" id="view-reader">
-    <div class="reader-header">
-      <button class="btn-back" id="btn-back">‹</button>
-      <div class="reader-title" id="reader-title">Pós-aula</div>
-    </div>
-    <iframe class="reader-frame" id="reader-frame" src="about:blank" allowfullscreen></iframe>
-  </div>
-
-  <!-- ACTIVITIES VIEW -->
-  <div class="view" id="view-activities">
-    <div class="acts-header">
-      <button class="btn-back-acts" id="btn-back-acts">‹</button>
-      <div class="acts-header-title">Minhas Atividades</div>
-    </div>
-    <div class="acts-content" id="activities-list">
-      <div class="empty-state">
-        <div class="empty-icon">✏️</div>
-        <p>Suas atividades aparecerão aqui em breve.</p>
+        <div style={{
+          width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
+          background: 'rgba(22,163,74,0.12)', border: '1px solid rgba(22,163,74,0.25)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#064E3B', fontWeight: 800, fontSize: 16, cursor: 'pointer',
+        }} onClick={onLogout} title="Sair">{initial}</div>
       </div>
     </div>
-  </div>
+  );
+}
 
-  <!-- MODAL: ACTIVITY (lista de partes) -->
-  <div class="modal-overlay" id="modal-activity">
-    <div class="modal-sheet">
-      <div class="modal-drag-handle"></div>
-      <div class="modal-header">
-        <div class="modal-emoji" id="modal-act-emoji">📚</div>
-        <div class="modal-titles">
-          <div class="modal-subtitle" id="modal-act-week"></div>
-          <div class="modal-title-text" id="modal-act-title">Atividade</div>
-        </div>
-        <button class="modal-icon-btn" id="btn-close-activity" title="Fechar">✕</button>
-      </div>
-      <div class="modal-body">
-        <p class="modal-instruction">Selecione uma parte para começar:</p>
-        <div id="modal-parts-list"></div>
-      </div>
-    </div>
-  </div>
+// ── BottomNav ───────────────────────────────────────────────────
+const TABS = [
+  { id: 'home',   label: 'Inicio',      icon: '🏠' },
+  { id: 'aulas',  label: 'Aulas',       icon: '📚' },
+  { id: 'vocab',  label: 'Vocabulario', icon: '🔤' },
+  { id: 'perfil', label: 'Perfil',      icon: '👤' },
+];
 
-  <!-- MODAL: PART (conteúdo do exercício) -->
-  <div class="modal-overlay" id="modal-part">
-    <div class="modal-sheet modal-sheet-tall">
-      <div class="modal-drag-handle"></div>
-      <div class="modal-header">
-        <button class="modal-icon-btn" id="btn-back-part" title="Voltar">‹</button>
-        <div class="modal-titles">
-          <div class="modal-subtitle" id="modal-part-act-title"></div>
-          <div class="modal-title-text" id="modal-part-title">Parte</div>
-        </div>
-        <button class="modal-icon-btn" id="btn-close-part-all" title="Fechar tudo">✕</button>
-      </div>
-      <div class="modal-part-content" id="modal-part-content"></div>
-      <div class="modal-feedback" id="modal-feedback" style="display:none">
-        <div class="feedback-header">
-          📝 Correção do professor
-          <span class="feedback-score" id="modal-feedback-score" style="display:none"></span>
-        </div>
-        <div class="feedback-body" id="modal-feedback-text"></div>
-      </div>
-    </div>
-  </div>
-
-  <script type="module">
-    import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
-      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-    import { getFirestore, doc, getDoc, collection, query, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion }
-      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-    import { getMessaging, getToken, onMessage, isSupported }
-      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
-
-    const firebaseConfig = {
-      apiKey:            "AIzaSyDgDlLyU15p8wQ1YtCN8NebGes_oq3atU8",
-      authDomain:        "scienceenglish.firebaseapp.com",
-      projectId:         "scienceenglish",
-      storageBucket:     "scienceenglish.firebasestorage.app",
-      messagingSenderId: "152554774632",
-      appId:             "1:152554774632:web:c43dfd4698efb136ed9bdd"
-    };
-    const VAPID_KEY = "BB-SFzT1aH1SQUX6H44tjzoLq2-xxgj4GLxXVa4JKehDBD8PXy-JUvrmN3LftOJbqRtTvl9NRqhZSDXVBu0BoHs";
-
-    const app  = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db   = getFirestore(app);
-    let messaging;
-    try { if (await isSupported()) messaging = getMessaging(app); } catch(e) {}
-
-    let currentUser   = null;
-    let currentPost   = null;
-    let deferredPrompt = null;
-    let appSwRegistration = null;
-    let pendingPostId = new URLSearchParams(window.location.search).get('post') || '';
-    let pendingPostToOpen = null;
-
-    // Activities state
-    let currentActivities  = [];
-    let currentActivityData = null;
-
-    // ── AUTH ────────────────────────────────────────────────────────────
-    onAuthStateChanged(auth, async user => {
-      if (user) {
-        currentUser = user;
-        await loadStudent(user.uid);
-        showView('home');
-        openPendingPostFromNotification();
-        updatePwaPrompts();
-        syncPushTokenIfGranted().catch(console.warn);
-      } else {
-        currentUser = null;
-        showView('login');
-        updatePwaPrompts();
-      }
-      document.getElementById('loading').style.display = 'none';
-    });
-
-    document.getElementById('btn-login').onclick = async () => {
-      const email = document.getElementById('email').value.trim();
-      const pass  = document.getElementById('password').value;
-      const btn   = document.getElementById('btn-login');
-      const err   = document.getElementById('login-error');
-      if (!email || !pass) { showErr('Preencha e-mail e senha.'); return; }
-      btn.disabled = true; btn.textContent = 'Entrando...'; err.style.display = 'none';
-      try {
-        await signInWithEmailAndPassword(auth, email, pass);
-      } catch(e) {
-        btn.disabled = false; btn.textContent = 'Entrar';
-        const m = { 'auth/invalid-credential':'E-mail ou senha incorretos.', 'auth/too-many-requests':'Muitas tentativas. Aguarde.' };
-        showErr(m[e.code] || 'Erro ao entrar. Tente novamente.');
-      }
-    };
-
-    document.getElementById('password').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('btn-login').click(); });
-    document.getElementById('btn-logout').onclick = () => signOut(auth);
-    document.getElementById('btn-notif').onclick = () => requestPushPermission();
-    document.getElementById('btn-enable-notif').onclick = () => requestPushPermission();
-    document.getElementById('btn-login-enable-notif').onclick = () => requestPushPermission();
-
-    function showErr(msg) {
-      const el = document.getElementById('login-error');
-      el.textContent = msg; el.style.display = 'block';
-    }
-
-    // ── STUDENT DATA ────────────────────────────────────────────────────
-    async function loadStudent(uid) {
-      const snap = await getDoc(doc(db, 'students', uid));
-      if (!snap.exists()) { toast('Perfil não encontrado.'); return; }
-      const s = snap.data();
-      document.getElementById('student-name').textContent = s.firstName || s.name || 'Aluno';
-      document.getElementById('student-level').textContent = s.level || '';
-      await Promise.all([
-        loadPosaulas(uid),
-        loadActivities(uid)
-      ]);
-    }
-
-    async function loadPosaulas(uid) {
-      const q = query(collection(db, 'students', uid, 'posaulas'), orderBy('createdAt', 'desc'));
-      const snaps = await getDocs(q);
-      if (snaps.empty) { document.getElementById('latest-title').textContent = 'Nenhum pós-aula ainda.'; return; }
-
-      const posts = snaps.docs.map(d => ({ id: d.id, ...d.data() }));
-      currentPost = posts[0];
-      if (pendingPostId) {
-        pendingPostToOpen = posts.find(p => p.id === pendingPostId || p.filename === pendingPostId) || null;
-      }
-
-      document.getElementById('latest-title').textContent = currentPost.title || 'Pós-Aula';
-      document.getElementById('latest-date').textContent  = fmtDate(currentPost.createdAt);
-      document.getElementById('reader-title').textContent = currentPost.title || 'Pós-Aula';
-
-      const isRead = !!currentPost.readAt;
-      document.getElementById('read-dot').className = 'status-dot ' + (isRead ? 'read' : 'unread');
-      document.getElementById('read-label').textContent = isRead ? `Lido em ${fmtDate(currentPost.readAt)}` : 'Ainda não lido';
-
-      const list = document.getElementById('history-list');
-      if (posts.length <= 1) {
-        list.innerHTML = `<div class="empty-state"><div class="empty-icon">📂</div><p>Sem histórico anterior.</p></div>`;
-        return;
-      }
-      list.innerHTML = posts.slice(1).map(p => `
-        <div class="history-item" data-id="${p.id}" data-url="${esc(p.url||'')}" data-title="${esc(p.title||'')}">
-          <div class="h-icon">📄</div>
-          <div class="h-text">
-            <div class="h-title">${esc(p.title||'Pós-Aula')}</div>
-            <div class="h-date">${fmtDate(p.createdAt)}</div>
-          </div>
-          <div class="h-status ${p.readAt?'read':'unread'}">${p.readAt?'✓ Lido':'Não lido'}</div>
-        </div>`).join('');
-
-      list.querySelectorAll('.history-item').forEach(el => {
-        el.onclick = () => openPost(el.dataset.id, el.dataset.title, el.dataset.url);
-      });
-    }
-
-    // ── ACTIVITIES ───────────────────────────────────────────────────────
-    async function loadActivities(uid) {
-      try {
-        const q = query(
-          collection(db, 'students', uid, 'activities'),
-          orderBy('createdAt', 'desc')
+function BottomNav({ active, onChange }) {
+  return (
+    <div style={{
+      position: 'sticky', bottom: 0, left: 0, right: 0, zIndex: 200,
+      background: 'rgba(255,255,255,0.93)',
+      backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+      borderTop: '1px solid rgba(22,163,74,0.12)',
+      display: 'flex',
+      paddingBottom: 'env(safe-area-inset-bottom, 8px)',
+      flexShrink: 0,
+    }}>
+      {TABS.map(t => {
+        const isActive = t.id === active;
+        return (
+          <button key={t.id} onClick={() => onChange(t.id)} style={{
+            flex: 1, background: 'none', border: 'none', cursor: 'pointer',
+            padding: '8px 4px 6px', display: 'flex', flexDirection: 'column',
+            alignItems: 'center', gap: 3,
+          }}>
+            <div style={{
+              width: 44, height: 36, borderRadius: 12,
+              background: isActive ? 'rgba(22,163,74,0.14)' : 'transparent',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'background 0.2s', fontSize: 19,
+            }}>{t.icon}</div>
+            <span style={{
+              fontSize: 10, fontWeight: isActive ? 700 : 500,
+              color: isActive ? '#064E3B' : '#94A3B8',
+              transition: 'color 0.2s', lineHeight: 1,
+            }}>{t.label}</span>
+          </button>
         );
-        const snaps = await getDocs(q);
-        currentActivities = snaps.docs.map(d => ({ id: d.id, ...d.data() }));
-        updateActivitiesHomeCount();
-      } catch(e) {
-        console.warn('Erro ao carregar atividades:', e);
-        document.getElementById('activities-home-count').textContent = 'Não disponível';
-      }
+      })}
+    </div>
+  );
+}
+
+// ── Login ───────────────────────────────────────────────────────
+function LoginScreen() {
+  const [email, setEmail]     = useState('');
+  const [pass, setPass]       = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState('');
+
+  const handleLogin = async () => {
+    if (!email || !pass) { setError('Preencha e-mail e senha.'); return; }
+    setLoading(true); setError('');
+    try {
+      const fb = await getFB();
+      await fb.signInWithEmailAndPassword(fb.auth, email, pass);
+    } catch(e) {
+      setLoading(false);
+      const m = { 'auth/invalid-credential':'E-mail ou senha incorretos.', 'auth/too-many-requests':'Muitas tentativas. Aguarde.' };
+      setError(m[e.code] || 'Erro ao entrar. Tente novamente.');
     }
+  };
 
-    function updateActivitiesHomeCount() {
-      const el = document.getElementById('activities-home-count');
-      if (currentActivities.length === 0) {
-        el.textContent = 'Nenhuma atividade ainda';
-        return;
-      }
-      const pending = currentActivities.filter(a => (a.status || 'pending') !== 'corrected').length;
-      const total   = currentActivities.length;
-      if (pending > 0) {
-        el.textContent = `${total} atividade${total !== 1 ? 's' : ''} · ${pending} pendente${pending !== 1 ? 's' : ''}`;
-      } else {
-        el.textContent = `${total} atividade${total !== 1 ? 's' : ''} · todas corrigidas ✓`;
-      }
-    }
+  const inp = {
+    width: '100%', padding: '13px 14px', border: '1.5px solid #E2E8F0',
+    borderRadius: 14, fontSize: 15, outline: 'none', background: '#F8FAFC', color: '#0F172A',
+    fontFamily: 'inherit',
+  };
 
-    function showActivitiesView() {
-      renderActivitiesList();
-      showView('activities');
-    }
-
-    function renderActivitiesList() {
-      const list = document.getElementById('activities-list');
-
-      if (currentActivities.length === 0) {
-        list.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon">✏️</div>
-            <p>Suas atividades aparecerão aqui em breve.</p>
-          </div>`;
-        return;
-      }
-
-      // Group by week
-      const byWeek = {};
-      const weekOrder = [];
-      currentActivities.forEach(act => {
-        const week = act.week || 'Atividades recentes';
-        if (!byWeek[week]) { byWeek[week] = []; weekOrder.push(week); }
-        byWeek[week].push(act);
-      });
-
-      let html = '';
-      weekOrder.forEach(week => {
-        html += `<div class="week-label">📅 ${esc(week)}</div>`;
-        byWeek[week].forEach(act => {
-          const status     = (act.status === 'corrected') ? 'corrected' : 'pending';
-          const statusText = (status === 'corrected') ? '✓ Corrigida' : 'Pendente';
-          const partsCount = (act.parts || []).length;
-          html += `
-            <div class="activity-card" data-act-id="${esc(act.id)}">
-              <div class="act-emoji">${act.emoji || '📚'}</div>
-              <div class="act-info">
-                <div class="act-title">${esc(act.title || 'Atividade')}</div>
-                <div class="act-meta">${partsCount} parte${partsCount !== 1 ? 's' : ''}</div>
-              </div>
-              <span class="act-status ${status}">${statusText}</span>
-            </div>`;
-        });
-      });
-
-      list.innerHTML = html;
-
-      list.querySelectorAll('.activity-card').forEach(el => {
-        el.onclick = () => {
-          const act = currentActivities.find(a => a.id === el.dataset.actId);
-          if (act) openActivityModal(act);
-        };
-      });
-    }
-
-    // ── MODAL: ACTIVITY ──────────────────────────────────────────────────
-    function openActivityModal(activity) {
-      currentActivityData = activity;
-      document.getElementById('modal-act-emoji').textContent = activity.emoji || '📚';
-      document.getElementById('modal-act-week').textContent  = activity.week || '';
-      document.getElementById('modal-act-title').textContent = activity.title || 'Atividade';
-
-      const parts     = activity.parts || [];
-      const partsList = document.getElementById('modal-parts-list');
-
-      partsList.innerHTML = parts.map((part, i) => `
-        <button class="part-btn" data-part-idx="${i}">
-          <div class="part-number">${i + 1}</div>
-          <div class="part-btn-info">
-            <div class="part-btn-title">${esc(part.title || `Part ${i + 1}`)}</div>
-            ${part.type ? `<div class="part-btn-sub">${esc(part.type)}</div>` : ''}
+  return (
+    <div style={{
+      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 24,
+      background: 'linear-gradient(160deg, #064E3B 0%, #16A34A 60%, #A7F3D0 100%)',
+      minHeight: '100vh',
+    }}>
+      <div style={{
+        background: 'rgba(255,255,255,0.97)', borderRadius: 28, padding: '36px 28px',
+        width: '100%', maxWidth: 380,
+        boxShadow: '0 24px 60px rgba(0,0,0,0.18)',
+        animation: 'fadeIn 0.4s ease',
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: 20, margin: '0 auto 14px',
+            background: 'linear-gradient(145deg,#16A34A,#064E3B)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 8px 24px rgba(22,163,74,0.35)',
+          }}>
+            <span style={{ color: '#fff', fontWeight: 800, fontSize: 22, letterSpacing: -0.5 }}>SE</span>
           </div>
-          <div class="part-btn-arrow">›</div>
-        </button>`).join('');
+          <div style={{ fontSize: 22, fontWeight: 800, color: '#0F172A', lineHeight: 1.1, marginBottom: 4 }}>Science English</div>
+          <div style={{ fontSize: 13, color: '#64748B', fontWeight: 500 }}>Area do Aluno</div>
+        </div>
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>E-mail</label>
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+            placeholder="seu@email.com" autoComplete="email"
+            onKeyDown={e => e.key === 'Enter' && handleLogin()}
+            style={inp}
+            onFocus={e => e.target.style.borderColor = '#16A34A'}
+            onBlur={e => e.target.style.borderColor = '#E2E8F0'}
+          />
+        </div>
+        <div style={{ marginBottom: 8 }}>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>Senha</label>
+          <input type="password" value={pass} onChange={e => setPass(e.target.value)}
+            placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autoComplete="current-password"
+            onKeyDown={e => e.key === 'Enter' && handleLogin()}
+            style={inp}
+            onFocus={e => e.target.style.borderColor = '#16A34A'}
+            onBlur={e => e.target.style.borderColor = '#E2E8F0'}
+          />
+        </div>
+        {error && (
+          <div style={{ background: '#FFF5F5', border: '1px solid #FED7D7', color: '#C53030', padding: '10px 14px', borderRadius: 10, fontSize: 13, marginBottom: 10, marginTop: 6 }}>{error}</div>
+        )}
+        <button disabled={loading} onClick={handleLogin} style={{
+          width: '100%', padding: 15, marginTop: 10,
+          background: loading ? '#94A3B8' : 'linear-gradient(180deg,#22C55E,#16A34A)',
+          color: '#fff', border: 'none', borderRadius: 16,
+          fontSize: 16, fontWeight: 800, cursor: loading ? 'not-allowed' : 'pointer',
+          boxShadow: '0 8px 24px rgba(22,163,74,0.3)', fontFamily: 'inherit',
+        }}>{loading ? 'Entrando...' : 'Entrar'}</button>
+      </div>
+    </div>
+  );
+}
 
-      partsList.querySelectorAll('.part-btn').forEach(btn => {
-        btn.onclick = () => {
-          const idx = parseInt(btn.dataset.partIdx);
-          openPartModal(parts[idx], activity);
-        };
-      });
+// ── InstallBanner ───────────────────────────────────────────────
+let _deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); _deferredPrompt = e; });
 
-      document.getElementById('modal-activity').classList.add('open');
+function InstallBanner() {
+  const [showInstall, setShowInstall] = useState(!!_deferredPrompt && !localStorage.getItem('installDismissed'));
+  const [showIos, setShowIos]         = useState(isIOS() && !isStandalone() && !localStorage.getItem('iosInstallDismissed'));
+  const [showNotif, setShowNotif]     = useState(isStandalone() && typeof Notification !== 'undefined' && Notification.permission === 'default' && !localStorage.getItem('notifDismissed'));
+
+  const base = {
+    display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
+    borderRadius: 16, marginBottom: 12,
+    background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.2)',
+  };
+  const xBtn = { background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', fontSize: 18, lineHeight: 1, flexShrink: 0, padding: 0 };
+  const actBtn = { background: '#16A34A', color: '#fff', border: 'none', borderRadius: 10, padding: '7px 12px', fontWeight: 700, fontSize: 12, cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit' };
+
+  if (showInstall) return (
+    <div style={base}>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#064E3B' }}>&#128242; Instalar app</div>
+        <div style={{ fontSize: 12, color: '#16A34A', marginTop: 2 }}>Adicione a tela inicial para acesso rapido.</div>
+      </div>
+      <button style={actBtn} onClick={async () => { if (!_deferredPrompt) return; _deferredPrompt.prompt(); await _deferredPrompt.userChoice; localStorage.setItem('installDismissed','1'); setShowInstall(false); _deferredPrompt = null; }}>Instalar</button>
+      <button style={xBtn} onClick={() => { setShowInstall(false); localStorage.setItem('installDismissed','1'); }}>&#x2715;</button>
+    </div>
+  );
+  if (showIos) return (
+    <div style={base}>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#064E3B' }}>&#128242; Instalar app</div>
+        <div style={{ fontSize: 12, color: '#16A34A', marginTop: 2 }}>No iPhone: Compartilhar &#8594; Adicionar a Tela de Inicio.</div>
+      </div>
+      <button style={xBtn} onClick={() => { setShowIos(false); localStorage.setItem('iosInstallDismissed','1'); }}>&#x2715;</button>
+    </div>
+  );
+  if (showNotif) return (
+    <div style={base}>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#064E3B' }}>&#128276; Ativar notificacoes</div>
+        <div style={{ fontSize: 12, color: '#16A34A', marginTop: 2 }}>Receba os pos-aulas neste celular.</div>
+      </div>
+      <button style={actBtn} onClick={() => { setShowNotif(false); window.dispatchEvent(new CustomEvent('request-notif')); }}>Ativar</button>
+      <button style={xBtn} onClick={() => { setShowNotif(false); localStorage.setItem('notifDismissed','1'); }}>&#x2715;</button>
+    </div>
+  );
+  return null;
+}
+
+// ── HomeTab ─────────────────────────────────────────────────────
+function HomeTab({ posaulas, activities, onOpenPost, onGoActivities }) {
+  const latest = posaulas[0] || null;
+  const [openMonths, setOpenMonths] = useState({});
+  const [btnPressed, setBtnPressed] = useState(false);
+
+  const grouped = React.useMemo(() => {
+    const map = {};
+    posaulas.slice(1).forEach(p => {
+      const k = monthKey(p.createdAt);
+      const ord = monthOrder(p.createdAt);
+      if (!map[k]) map[k] = { posts: [], ord };
+      map[k].posts.push(p);
+    });
+    return Object.entries(map).sort((a,b) => b[1].ord - a[1].ord);
+  }, [posaulas]);
+
+  const pendingActs = activities.filter(a => (a.status||'') !== 'corrected').length;
+
+  return (
+    <div className="scroll-area" style={{ padding: '16px 16px 8px' }}>
+      <InstallBanner />
+
+      {latest ? (
+        <GlassCard style={{ padding: 22, marginBottom: 14, position: 'relative', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14 }}>
+            <div style={{ flex: 1 }}>
+              <Pill>POS-AULA DA SEMANA</Pill>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#0F172A', marginTop: 12, lineHeight: 1.2 }}>{latest.title || 'Pos-Aula'}</div>
+              <div style={{ fontSize: 13, color: '#64748B', marginTop: 4, fontWeight: 500 }}>{fmtDate(latest.createdAt)}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 12 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: latest.readAt ? '#16A34A' : '#F59E0B', boxShadow: latest.readAt ? '0 0 0 4px rgba(22,163,74,0.15)' : '0 0 0 4px rgba(245,158,11,0.15)', flexShrink: 0 }} />
+                <span style={{ fontSize: 12, fontWeight: 600, color: latest.readAt ? '#16A34A' : '#D97706' }}>{latest.readAt ? 'Lido em ' + fmtDate(latest.readAt) : 'Ainda nao lido'}</span>
+              </div>
+            </div>
+            <div style={{ width: 68, height: 68, borderRadius: 20, flexShrink: 0, background: 'linear-gradient(160deg,#A7F3D0,#16A34A)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 24px rgba(22,163,74,0.3)', fontSize: 30 }}>&#128218;</div>
+          </div>
+          <button
+            onPointerDown={() => setBtnPressed(true)}
+            onPointerUp={() => setBtnPressed(false)}
+            onPointerLeave={() => setBtnPressed(false)}
+            onClick={() => onOpenPost(latest)}
+            style={{
+              marginTop: 18, width: '100%', border: 'none', cursor: 'pointer',
+              padding: '14px 20px', borderRadius: 16, color: '#fff',
+              fontSize: 15, fontWeight: 800,
+              background: 'linear-gradient(180deg,#34D399,#22C55E)',
+              boxShadow: '0 8px 24px rgba(22,163,74,0.3)',
+              transition: 'transform .15s ease',
+              transform: btnPressed ? 'scale(0.98)' : 'scale(1)',
+              fontFamily: 'inherit',
+            }}
+          >&#128218; Ler agora</button>
+        </GlassCard>
+      ) : (
+        <GlassCard style={{ padding: 28, marginBottom: 14, textAlign: 'center' }}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>&#128196;</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>Nenhum pos-aula ainda</div>
+          <div style={{ fontSize: 13, color: '#64748B' }}>O professor publicara em breve.</div>
+        </GlassCard>
+      )}
+
+      <GlassCard tappable onClick={onGoActivities} style={{ padding: '16px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, background: 'rgba(139,94,52,0.1)', border: '1px solid rgba(139,94,52,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>&#9999;&#65039;</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A' }}>Minhas Atividades</div>
+          <div style={{ fontSize: 12.5, color: '#64748B', marginTop: 2 }}>
+            {activities.length === 0 ? 'Nenhuma atividade ainda'
+              : pendingActs > 0 ? `${activities.length} atividade${activities.length !== 1 ? 's' : ''} · ${pendingActs} pendente${pendingActs !== 1 ? 's' : ''}`
+              : `${activities.length} atividade${activities.length !== 1 ? 's' : ''} · todas corrigidas ✓`}
+          </div>
+        </div>
+        <span style={{ color: '#94A3B8', fontSize: 22, lineHeight: 1 }}>&#8250;</span>
+      </GlassCard>
+
+      {grouped.length > 0 && (
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 800, color: '#9A6438', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Historico de pos-aulas</div>
+          {grouped.map(([month, { posts }]) => {
+            const open = openMonths[month] !== false;
+            return (
+              <div key={month} style={{ marginBottom: 8 }}>
+                <button onClick={() => setOpenMonths(o => ({ ...o, [month]: !open }))} style={{
+                  width: '100%', background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(22,163,74,0.12)', borderRadius: 14,
+                  padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontFamily: 'inherit',
+                }}>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: '#7C4A21', textTransform: 'capitalize' }}>{month}</span>
+                  <span style={{ fontSize: 11, color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span>{posts.length} aula{posts.length !== 1 ? 's' : ''}</span>
+                    <span style={{ fontSize: 14 }}>{open ? '&#9660;' : '&#9654;'}</span>
+                  </span>
+                </button>
+                {open && (
+                  <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {posts.map(p => (
+                      <div key={p.id} onClick={() => onOpenPost(p)} style={{
+                        background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(22,163,74,0.1)',
+                        borderRadius: 12, padding: '11px 14px',
+                        display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer',
+                      }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(22,163,74,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14 }}>&#128196;</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13.5, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title || 'Pos-Aula'}</div>
+                          <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>{fmtDate(p.createdAt)}</div>
+                        </div>
+                        <span style={{ fontSize: 11.5, fontWeight: 700, color: p.readAt ? '#16A34A' : '#D97706', flexShrink: 0 }}>{p.readAt ? '✓ Lido' : 'Nao lido'}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <div style={{ height: 12 }} />
+    </div>
+  );
+}
+
+// ── AulasTab ─────────────────────────────────────────────────────
+function AulasTab({ activities, onOpenActivity }) {
+  const [sub, setSub] = useState('atividades');
+
+  const byWeek = React.useMemo(() => {
+    const map = {}, order = [];
+    activities.forEach(act => {
+      const wk = act.week || 'Atividades recentes';
+      if (!map[wk]) { map[wk] = []; order.push(wk); }
+      map[wk].push(act);
+    });
+    return order.map(wk => ({ wk, acts: map[wk] }));
+  }, [activities]);
+
+  return (
+    <div className="scroll-area" style={{ padding: '16px 16px 8px' }}>
+      <div style={{ display: 'flex', background: 'rgba(255,255,255,0.6)', borderRadius: 14, padding: 4, marginBottom: 16, border: '1px solid rgba(22,163,74,0.12)' }}>
+        {['atividades', 'extras'].map(s => (
+          <button key={s} onClick={() => setSub(s)} style={{
+            flex: 1, padding: '9px 0', borderRadius: 11, border: 'none', cursor: 'pointer',
+            background: sub === s ? 'linear-gradient(180deg,#22C55E,#16A34A)' : 'transparent',
+            color: sub === s ? '#fff' : '#64748B', fontWeight: sub === s ? 800 : 600, fontSize: 13,
+            transition: 'background 0.2s, color 0.2s', fontFamily: 'inherit',
+          }}>{s === 'atividades' ? 'Atividades' : 'Extras'}</button>
+        ))}
+      </div>
+
+      {sub === 'atividades' && (activities.length === 0 ? (
+        <GlassCard style={{ padding: 32, textAlign: 'center' }}>
+          <div style={{ fontSize: 36, marginBottom: 10 }}>&#9999;&#65039;</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>Sem atividades ainda</div>
+          <div style={{ fontSize: 13, color: '#64748B' }}>O professor publicara em breve.</div>
+        </GlassCard>
+      ) : byWeek.map(({ wk, acts }) => (
+        <div key={wk} style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: '#9A6438', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>&#128197; {wk}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {acts.map(act => {
+              const isCorrected = act.status === 'corrected';
+              const partsN = (act.parts || []).length;
+              return (
+                <GlassCard key={act.id} tappable onClick={() => onOpenActivity(act)} style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div style={{ fontSize: 24, width: 46, height: 46, borderRadius: 14, background: 'rgba(139,94,52,0.1)', border: '1px solid rgba(139,94,52,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{act.emoji || '&#128218;'}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 2 }}>{act.title || 'Atividade'}</div>
+                    <div style={{ fontSize: 12, color: '#64748B' }}>{partsN} parte{partsN !== 1 ? 's' : ''}</div>
+                  </div>
+                  <span style={{ fontSize: 11.5, fontWeight: 700, padding: '4px 10px', borderRadius: 999, flexShrink: 0, background: isCorrected ? 'rgba(22,163,74,0.12)' : 'rgba(245,158,11,0.12)', color: isCorrected ? '#064E3B' : '#92400E' }}>
+                    {isCorrected ? '✓ Corrigida' : 'Pendente'}
+                  </span>
+                </GlassCard>
+              );
+            })}
+          </div>
+        </div>
+      )))}
+
+      {sub === 'extras' && (
+        <GlassCard style={{ padding: 32, textAlign: 'center' }}>
+          <div style={{ fontSize: 36, marginBottom: 10 }}>&#127911;</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>Atividades Extras</div>
+          <div style={{ fontSize: 13, color: '#64748B' }}>Em breve disponivel.</div>
+        </GlassCard>
+      )}
+      <div style={{ height: 12 }} />
+    </div>
+  );
+}
+
+// ── VocabTab ─────────────────────────────────────────────────────
+function VocabTab() {
+  return (
+    <div className="scroll-area" style={{ padding: '16px 16px 8px' }}>
+      <GlassCard style={{ padding: 36, textAlign: 'center' }}>
+        <div style={{ fontSize: 42, marginBottom: 12 }}>&#128292;</div>
+        <div style={{ fontSize: 17, fontWeight: 800, color: '#0F172A', marginBottom: 6 }}>Vocabulario</div>
+        <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.5 }}>Aqui aparecerao as palavras das suas pos-aulas, agrupadas por mes.</div>
+      </GlassCard>
+    </div>
+  );
+}
+
+// ── PerfilTab ─────────────────────────────────────────────────────
+function PerfilTab({ student, onLogout }) {
+  const name    = student?.firstName || student?.name || 'Aluno';
+  const level   = student?.level || '';
+  const initial = name[0].toUpperCase();
+  const [showEmail, setShowEmail] = useState(false);
+  const [showPass, setShowPass]   = useState(false);
+  const [newEmail, setNewEmail]   = useState('');
+  const [newPass, setNewPass]     = useState('');
+  const [confPass, setConfPass]   = useState('');
+  const [currPass, setCurrPass]   = useState('');
+  const [saving, setSaving]       = useState(false);
+  const [msg, setMsg]             = useState('');
+
+  const doReauth = async (fb) => {
+    if (!currPass) throw { code: 'need-currpass' };
+    const cred = fb.EmailAuthProvider.credential(fb.auth.currentUser.email, currPass);
+    await fb.reauthenticateWithCredential(fb.auth.currentUser, cred);
+  };
+
+  const updateEmailFn = async () => {
+    if (!newEmail) return;
+    setSaving(true); setMsg('');
+    try {
+      const fb = await getFB();
+      try { await fb.updateEmail(fb.auth.currentUser, newEmail); }
+      catch(e) { if (e.code === 'auth/requires-recent-login') { await doReauth(fb); await fb.updateEmail(fb.auth.currentUser, newEmail); } else throw e; }
+      setMsg('✅ E-mail atualizado!'); setShowEmail(false); setNewEmail(''); setCurrPass('');
+    } catch(e) {
+      if (e.code === 'need-currpass') setMsg('Digite sua senha atual no campo abaixo.');
+      else if (e.code === 'auth/email-already-in-use') setMsg('❌ E-mail ja em uso.');
+      else setMsg('❌ ' + (e.message || 'Erro'));
     }
+    setSaving(false);
+  };
 
-    function closeActivityModal() {
-      document.getElementById('modal-activity').classList.remove('open');
-      currentActivityData = null;
+  const updatePassFn = async () => {
+    if (!newPass || newPass !== confPass) { setMsg('As senhas nao coincidem.'); return; }
+    setSaving(true); setMsg('');
+    try {
+      const fb = await getFB();
+      try { await fb.updatePassword(fb.auth.currentUser, newPass); }
+      catch(e) { if (e.code === 'auth/requires-recent-login') { await doReauth(fb); await fb.updatePassword(fb.auth.currentUser, newPass); } else throw e; }
+      setMsg('✅ Senha atualizada!'); setShowPass(false); setNewPass(''); setConfPass(''); setCurrPass('');
+    } catch(e) {
+      if (e.code === 'need-currpass') setMsg('Digite sua senha atual no campo abaixo.');
+      else setMsg('❌ ' + (e.message || 'Erro'));
     }
+    setSaving(false);
+  };
 
-    // ── MODAL: PART ──────────────────────────────────────────────────────
-    function openPartModal(part, activity) {
-      document.getElementById('modal-part-act-title').textContent = activity.title || 'Atividade';
-      document.getElementById('modal-part-title').textContent     = part.title || 'Parte';
-      document.getElementById('modal-part-content').innerHTML     = part.content || '<p style="color:var(--muted)">Conteúdo não disponível.</p>';
+  const inp = { width: '100%', padding: '12px 14px', border: '1.5px solid #E2E8F0', borderRadius: 12, fontSize: 14, outline: 'none', background: '#F8FAFC', color: '#0F172A', marginBottom: 8, fontFamily: 'inherit' };
+  const actBtn = (color = '#16A34A') => ({ padding: '10px 18px', borderRadius: 12, border: 'none', cursor: 'pointer', background: color, color: '#fff', fontWeight: 700, fontSize: 13, marginRight: 6, marginTop: 4, fontFamily: 'inherit' });
 
-      // Feedback
-      const feedbackEl    = document.getElementById('modal-feedback');
-      const feedbackText  = document.getElementById('modal-feedback-text');
-      const feedbackScore = document.getElementById('modal-feedback-score');
-      const fb = activity.feedback && activity.feedback[part.id || part.title];
-      if (fb) {
-        feedbackText.textContent = typeof fb === 'string' ? fb : (fb.comment || '');
-        if (fb.score) {
-          feedbackScore.textContent = fb.score;
-          feedbackScore.style.display = 'inline-block';
+  return (
+    <div className="scroll-area" style={{ padding: '16px 16px 8px' }}>
+      <GlassCard style={{ padding: '28px 20px', textAlign: 'center', marginBottom: 14 }}>
+        <div style={{ width: 72, height: 72, borderRadius: '50%', margin: '0 auto 12px', background: 'linear-gradient(145deg,#16A34A,#064E3B)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, fontWeight: 800, color: '#fff', boxShadow: '0 8px 24px rgba(22,163,74,0.3)' }}>{initial}</div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: '#0F172A', marginBottom: 8 }}>{name}</div>
+        {level && <Pill>{level}</Pill>}
+      </GlassCard>
+
+      <GlassCard style={{ padding: 18, marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: showEmail ? 14 : 0 }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>E-mail</div>
+            <div style={{ fontSize: 12.5, color: '#64748B', marginTop: 2 }}>{student?.email || ''}</div>
+          </div>
+          <button onClick={() => { setShowEmail(!showEmail); setShowPass(false); setMsg(''); }} style={actBtn()}>{showEmail ? 'Cancelar' : 'Alterar'}</button>
+        </div>
+        {showEmail && (
+          <div>
+            <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="Novo e-mail" style={inp} />
+            <input type="password" value={currPass} onChange={e => setCurrPass(e.target.value)} placeholder="Senha atual (se solicitado)" style={inp} />
+            <button onClick={updateEmailFn} disabled={saving} style={actBtn()}>Salvar</button>
+          </div>
+        )}
+      </GlassCard>
+
+      <GlassCard style={{ padding: 18, marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: showPass ? 14 : 0 }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>Senha</div>
+            <div style={{ fontSize: 12.5, color: '#64748B', marginTop: 2 }}>&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</div>
+          </div>
+          <button onClick={() => { setShowPass(!showPass); setShowEmail(false); setMsg(''); }} style={actBtn()}>{showPass ? 'Cancelar' : 'Alterar'}</button>
+        </div>
+        {showPass && (
+          <div>
+            <input type="password" value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="Nova senha" style={inp} />
+            <input type="password" value={confPass} onChange={e => setConfPass(e.target.value)} placeholder="Confirmar nova senha" style={inp} />
+            <input type="password" value={currPass} onChange={e => setCurrPass(e.target.value)} placeholder="Senha atual (se solicitado)" style={inp} />
+            <button onClick={updatePassFn} disabled={saving} style={actBtn()}>Salvar</button>
+          </div>
+        )}
+      </GlassCard>
+
+      {msg && (
+        <div style={{ padding: '12px 16px', borderRadius: 12, marginBottom: 12, background: msg.startsWith('✅') ? 'rgba(22,163,74,0.1)' : 'rgba(220,38,38,0.08)', color: msg.startsWith('✅') ? '#064E3B' : '#991B1B', fontSize: 13, fontWeight: 600 }}>{msg}</div>
+      )}
+
+      <GlassCard style={{ padding: 18 }}>
+        <button onClick={onLogout} style={{ width: '100%', padding: 14, border: 'none', borderRadius: 14, background: 'rgba(220,38,38,0.08)', color: '#991B1B', fontWeight: 700, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit' }}>Sair da conta</button>
+      </GlassCard>
+      <div style={{ height: 12 }} />
+    </div>
+  );
+}
+
+// ── Activity Modals ──────────────────────────────────────────────
+function ActivityModal({ activity, onClose, onOpenPart }) {
+  const parts = activity?.parts || [];
+  return (
+    <div className={'modal-overlay' + (activity ? ' open' : '')} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal-sheet">
+        <div className="modal-drag" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px 12px', borderBottom: '1px solid #F1F5F9', position: 'sticky', top: 0, background: 'white', borderRadius: '24px 24px 0 0', zIndex: 1 }}>
+          <div style={{ fontSize: 26, lineHeight: 1 }}>{activity?.emoji || '&#128218;'}</div>
+          <div style={{ flex: 1 }}>
+            {activity?.week && <div style={{ fontSize: 11, color: '#9A6438', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>{activity.week}</div>}
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#0F172A' }}>{activity?.title || 'Atividade'}</div>
+          </div>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: '#F1F5F9', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', fontFamily: 'inherit' }}>&#x2715;</button>
+        </div>
+        <div style={{ padding: 16 }}>
+          <div style={{ fontSize: 13, color: '#64748B', marginBottom: 12 }}>Selecione uma parte para comecar:</div>
+          {parts.map((part, i) => (
+            <button key={i} onClick={() => onOpenPart(part)} style={{
+              display: 'flex', alignItems: 'center', gap: 14, width: '100%',
+              background: '#F8FAFC', border: '1.5px solid #E2E8F0', borderRadius: 14,
+              padding: 16, marginBottom: 10, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+            }}>
+              <div style={{ width: 34, height: 34, background: 'linear-gradient(145deg,#22C55E,#16A34A)', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, flexShrink: 0 }}>{i+1}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{part.title || 'Parte ' + (i+1)}</div>
+                {part.type && <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>{part.type}</div>}
+              </div>
+              <span style={{ color: '#94A3B8', fontSize: 20, lineHeight: 1 }}>&#8250;</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PartModal({ part, activity, onBack, onClose }) {
+  const fb_item = activity?.feedback && part ? (activity.feedback[part.id || part.title]) : null;
+  return (
+    <div className={'modal-overlay' + (part ? ' open' : '')} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal-sheet modal-sheet-tall">
+        <div className="modal-drag" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderBottom: '1px solid #F1F5F9', position: 'sticky', top: 0, background: 'white', borderRadius: '24px 24px 0 0', zIndex: 1, flexShrink: 0 }}>
+          <button onClick={onBack} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: '#F1F5F9', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', flexShrink: 0, fontFamily: 'inherit' }}>&#8249;</button>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, color: '#9A6438', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 1 }}>{activity?.title}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{part?.title || 'Parte'}</div>
+          </div>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: '#F1F5F9', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', flexShrink: 0, fontFamily: 'inherit' }}>&#x2715;</button>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: 16, fontSize: 14.5, lineHeight: 1.75, color: '#1F2937' }} dangerouslySetInnerHTML={{ __html: part?.content || '<p style="color:#94A3B8">Conteudo nao disponivel.</p>' }} />
+        {fb_item && (
+          <div style={{ margin: '0 16px 16px', background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: 14, padding: 16, flexShrink: 0 }}>
+            <div style={{ fontWeight: 700, color: '#064E3B', marginBottom: 8, fontSize: 13 }}>
+              &#128221; Correcao do professor
+              {fb_item.score && <span style={{ display: 'inline-block', background: '#064E3B', color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 999, marginLeft: 8 }}>{fb_item.score}</span>}
+            </div>
+            <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.6 }}>{typeof fb_item === 'string' ? fb_item : (fb_item.comment || '')}</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── ReaderView ───────────────────────────────────────────────────
+function ReaderView({ post, onBack }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div style={{ background: 'linear-gradient(180deg,#16A34A,#064E3B)', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+        <button onClick={onBack} style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'inherit' }}>&#8249;</button>
+        <div style={{ fontSize: 14.5, fontWeight: 700, color: '#fff', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{post?.title || 'Pos-Aula'}</div>
+      </div>
+      <iframe className="reader-frame" src={post?.url || 'about:blank'} allowFullScreen />
+    </div>
+  );
+}
+
+// ── Loading ──────────────────────────────────────────────────────
+function LoadingScreen() {
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: '#F6F1EA', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, zIndex: 9999 }}>
+      <div style={{ width: 64, height: 64, borderRadius: 20, background: 'linear-gradient(145deg,#16A34A,#064E3B)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(22,163,74,0.35)', fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: -0.5 }}>SE</div>
+      <Spinner />
+      <div style={{ fontSize: 13, color: '#64748B', fontWeight: 500 }}>Carregando...</div>
+    </div>
+  );
+}
+
+// ── ROOT APP ─────────────────────────────────────────────────────
+function App() {
+  const [loading, setLoading]           = useState(true);
+  const [user, setUser]                 = useState(null);
+  const [student, setStudent]           = useState(null);
+  const [posaulas, setPosaulas]         = useState([]);
+  const [activities, setActivities]     = useState([]);
+  const [tab, setTab]                   = useState('home');
+  const [readerPost, setReaderPost]     = useState(null);
+  const [openActivity, setOpenActivity] = useState(null);
+  const [openPart, setOpenPart]         = useState(null);
+  const [showNotifBtn, setShowNotifBtn] = useState(false);
+  const pendingPostId = useRef(new URLSearchParams(window.location.search).get('post') || '');
+
+  useEffect(() => {
+    let unsub;
+    (async () => {
+      const fb = await getFB();
+      unsub = fb.onAuthStateChanged(fb.auth, async u => {
+        if (u) {
+          setUser(u);
+          await loadData(u.uid, fb);
+          updateNotifBtn();
+          syncPushIfGranted(u.uid, fb);
+          if (fb.messaging) {
+            fb.onMessage(fb.messaging, payload => {
+              showToast('&#128196; ' + (payload.notification?.body || 'Novo pos-aula disponivel!'));
+              loadData(u.uid, fb);
+            });
+          }
         } else {
-          feedbackScore.style.display = 'none';
+          setUser(null); setStudent(null); setPosaulas([]); setActivities([]);
         }
-        feedbackEl.style.display = 'block';
-      } else {
-        feedbackEl.style.display = 'none';
-      }
-
-      document.getElementById('modal-part').classList.add('open');
-    }
-
-    function closePartModal() {
-      document.getElementById('modal-part').classList.remove('open');
-    }
-
-    function closeAllModals() {
-      closePartModal();
-      setTimeout(() => closeActivityModal(), 50);
-    }
-
-    // Modal event listeners
-    document.getElementById('btn-close-activity').onclick = closeActivityModal;
-    document.getElementById('btn-back-part').onclick      = closePartModal;
-    document.getElementById('btn-close-part-all').onclick = closeAllModals;
-    document.getElementById('btn-go-activities').onclick  = () => showActivitiesView();
-    document.getElementById('btn-back-acts').onclick      = () => showView('home');
-
-    // Close on overlay tap
-    document.getElementById('modal-activity').addEventListener('click', e => {
-      if (e.target === document.getElementById('modal-activity')) closeActivityModal();
-    });
-    document.getElementById('modal-part').addEventListener('click', e => {
-      if (e.target === document.getElementById('modal-part')) closeAllModals();
-    });
-
-    // ── READER ──────────────────────────────────────────────────────────
-    document.getElementById('btn-open-reader').onclick = () => {
-      if (!currentPost?.url) { toast('Link não disponível.'); return; }
-      openPost(currentPost.id, currentPost.title, currentPost.url);
-    };
-
-    document.getElementById('btn-back').onclick = () => {
-      document.getElementById('reader-frame').src = 'about:blank';
-      showView('home');
-      if (currentUser) loadPosaulas(currentUser.uid);
-    };
-
-    function openPost(id, title, url) {
-      document.getElementById('reader-frame').src = url;
-      document.getElementById('reader-title').textContent = title || 'Pós-Aula';
-      showView('reader');
-      markRead(id);
-    }
-
-    function openPendingPostFromNotification() {
-      if (!pendingPostToOpen) return;
-      const p = pendingPostToOpen;
-      pendingPostToOpen = null;
-      pendingPostId = '';
-      openPost(p.id, p.title, p.url);
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-
-    async function markRead(postId) {
-      if (!currentUser) return;
-      try {
-        await updateDoc(doc(db, 'students', currentUser.uid, 'posaulas', postId), {
-          readAt: serverTimestamp(),
-          readCount: (currentPost?.readCount || 0) + 1
-        });
-      } catch(e) {}
-    }
-
-    // ── PUSH NOTIFICATIONS ──────────────────────────────────────────────
-    async function requestPushPermission() {
-      if (!messaging) { toast('❌ messaging null'); return; }
-      try {
-        const perm = await Notification.requestPermission();
-        if (perm !== 'granted') return;
-        const serviceWorkerRegistration = await getAppServiceWorkerRegistration();
-        const tokenOptions = { vapidKey: VAPID_KEY };
-        if (serviceWorkerRegistration) tokenOptions.serviceWorkerRegistration = serviceWorkerRegistration;
-        const token = await getToken(messaging, tokenOptions);
-        if (token) {
-          await savePushToken(token);
-          localStorage.setItem('notifEnabled', '1');
-          localStorage.removeItem('notifDismissed');
-          document.getElementById('btn-notif').style.display = 'none';
-          document.getElementById('notif-banner').style.display = 'none';
-          document.getElementById('login-notif-banner').style.display = 'none';
-          toast(currentUser ? '✅ Notificações ativadas!' : '✅ Notificações ativadas! Entre para vincular ao seu perfil.');
-        }
-      } catch(e) {
-        updatePwaPrompts();
-        toast('❌ ' + e.message);
-        console.warn('Push setup:', e);
-      }
-    }
-
-    async function savePushToken(token) {
-      localStorage.setItem('pendingFcmToken', token);
-      if (!currentUser) return;
-      await setDoc(doc(db, 'students', currentUser.uid), {
-        fcmToken: token,
-        fcmTokens: arrayUnion(token)
-      }, { merge: true });
-      localStorage.removeItem('pendingFcmToken');
-    }
-
-    async function syncPushTokenIfGranted() {
-      if (!currentUser || !messaging || typeof Notification === 'undefined') return;
-      if (Notification.permission !== 'granted') return;
-      const pendingToken = localStorage.getItem('pendingFcmToken');
-      if (pendingToken) await savePushToken(pendingToken);
-      const serviceWorkerRegistration = await getAppServiceWorkerRegistration();
-      const tokenOptions = { vapidKey: VAPID_KEY };
-      if (serviceWorkerRegistration) tokenOptions.serviceWorkerRegistration = serviceWorkerRegistration;
-      const token = await getToken(messaging, tokenOptions);
-      if (token) await savePushToken(token);
-    }
-
-    function updatePwaPrompts() {
-      const btn = document.getElementById('btn-notif');
-      const notifBanner = document.getElementById('notif-banner');
-      const iosInstallBanner = document.getElementById('ios-install-banner');
-      const loginNotifBanner = document.getElementById('login-notif-banner');
-      if (!btn) return;
-      btn.style.display = 'none';
-      notifBanner.style.display = 'none';
-      iosInstallBanner.style.display = 'none';
-      loginNotifBanner.style.display = 'none';
-
-      if (isIOSDevice() && !isStandalonePwa() && !localStorage.getItem('iosInstallDismissed') && currentUser) {
-        iosInstallBanner.style.display = 'flex';
-      }
-      if (!messaging || typeof Notification === 'undefined') return;
-      if (Notification.permission === 'granted') { btn.style.display = 'none'; return; }
-      if (Notification.permission === 'denied') return;
-      if (isStandalonePwa() && !currentUser) { loginNotifBanner.style.display = 'flex'; return; }
-      if (isStandalonePwa() && !localStorage.getItem('notifDismissed')) {
-        notifBanner.style.display = 'flex';
-      }
-      if (isStandalonePwa()) { btn.style.display = 'inline-block'; }
-    }
-
-    function isIOSDevice() {
-      return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    }
-
-    function isStandalonePwa() {
-      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-    }
-
-    if (messaging) {
-      onMessage(messaging, payload => {
-        toast(`📄 ${payload.notification?.body || payload.data?.body || 'Novo pós-aula disponível!'}`);
-        if (currentUser) loadPosaulas(currentUser.uid);
+        setLoading(false);
       });
-    }
+    })();
+    window.addEventListener('request-notif', handleRequestNotif);
+    window.addEventListener('appinstalled', () => { localStorage.setItem('installDismissed','1'); updateNotifBtn(); });
+    return () => { unsub?.(); window.removeEventListener('request-notif', handleRequestNotif); };
+  }, []);
 
-    // ── PWA INSTALL ─────────────────────────────────────────────────────
-    window.addEventListener('beforeinstallprompt', e => {
-      e.preventDefault(); deferredPrompt = e;
-      if (!localStorage.getItem('installDismissed')) {
-        document.getElementById('install-banner').style.display = 'flex';
+  async function loadData(uid, fb) {
+    const [snap, posSnaps, actSnaps] = await Promise.all([
+      fb.getDoc(fb.doc(fb.db, 'students', uid)),
+      fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'posaulas'), fb.orderBy('createdAt','desc'))),
+      fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'activities'), fb.orderBy('createdAt','desc'))).catch(() => ({ docs: [] })),
+    ]);
+    if (!snap.exists()) return;
+    setStudent({ ...snap.data(), uid });
+    const posts = posSnaps.docs.map(d => ({ id: d.id, ...d.data() }));
+    setPosaulas(posts);
+    setActivities(actSnaps.docs.map(d => ({ id: d.id, ...d.data() })));
+    if (pendingPostId.current && posts.length > 0) {
+      const target = posts.find(p => p.id === pendingPostId.current || p.filename === pendingPostId.current);
+      if (target) {
+        pendingPostId.current = '';
+        window.history.replaceState({}, '', window.location.pathname);
+        openPost(target, fb, uid);
       }
-    });
+    }
+  }
 
-    document.getElementById('btn-install-app').onclick = async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        localStorage.setItem('installDismissed', '1');
-        localStorage.removeItem('notifDismissed');
+  async function openPost(post, fb, uid) {
+    setReaderPost(post);
+    try {
+      const f = fb || await getFB();
+      const u = uid || user?.uid;
+      if (u) await f.updateDoc(f.doc(f.db, 'students', u, 'posaulas', post.id), { readAt: f.serverTimestamp() });
+    } catch(e) {}
+  }
+
+  function updateNotifBtn() {
+    if (typeof Notification === 'undefined') { setShowNotifBtn(false); return; }
+    setShowNotifBtn(Notification.permission === 'default' && isStandalone());
+  }
+
+  const handleRequestNotif = () => requestPush();
+
+  async function requestPush() {
+    const fb = await getFB();
+    if (!fb.messaging) { showToast('Notificacoes nao suportadas neste dispositivo.'); return; }
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') return;
+      const sw = await getSW();
+      const opts = { vapidKey: VAPID_KEY };
+      if (sw) opts.serviceWorkerRegistration = sw;
+      const token = await fb.getToken(fb.messaging, opts);
+      if (token && user) {
+        await fb.setDoc(fb.doc(fb.db, 'students', user.uid), { fcmToken: token, fcmTokens: fb.arrayUnion(token) }, { merge: true });
+        localStorage.setItem('notifEnabled','1');
+        setShowNotifBtn(false);
+        showToast('✅ Notificacoes ativadas!');
       }
-      document.getElementById('install-banner').style.display = 'none';
-      deferredPrompt = null;
-    };
-
-    document.getElementById('btn-dismiss-install').onclick = () => {
-      document.getElementById('install-banner').style.display = 'none';
-      localStorage.setItem('installDismissed', '1');
-    };
-    document.getElementById('btn-dismiss-ios-install').onclick = () => {
-      document.getElementById('ios-install-banner').style.display = 'none';
-      localStorage.setItem('iosInstallDismissed', '1');
-    };
-    document.getElementById('btn-dismiss-notif').onclick = () => {
-      document.getElementById('notif-banner').style.display = 'none';
-      localStorage.setItem('notifDismissed', '1');
-      updatePwaPrompts();
-    };
-    window.addEventListener('appinstalled', () => {
-      localStorage.setItem('installDismissed', '1');
-      localStorage.removeItem('notifDismissed');
-      updatePwaPrompts();
-    });
-
-    // ── HELPERS ─────────────────────────────────────────────────────────
-    function showView(name) {
-      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-      document.getElementById('view-' + name).classList.add('active');
+    } catch(e) {
+      showToast('❌ ' + e.message);
     }
+  }
 
-    function toast(msg, ms = 3500) {
-      const t = document.getElementById('toast');
-      t.textContent = msg; t.classList.add('show');
-      setTimeout(() => t.classList.remove('show'), ms);
-    }
+  async function syncPushIfGranted(uid, fb) {
+    if (!fb.messaging || typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    try {
+      const sw = await getSW();
+      const opts = { vapidKey: VAPID_KEY };
+      if (sw) opts.serviceWorkerRegistration = sw;
+      const token = await fb.getToken(fb.messaging, opts);
+      if (token) await fb.setDoc(fb.doc(fb.db, 'students', uid), { fcmToken: token, fcmTokens: fb.arrayUnion(token) }, { merge: true });
+    } catch(e) {}
+  }
 
-    async function getAppServiceWorkerRegistration() {
-      if (!('serviceWorker' in navigator)) return undefined;
-      if (!appSwRegistration) {
-        appSwRegistration = await navigator.serviceWorker.register('sw.js');
-      }
-      return appSwRegistration;
-    }
+  async function handleLogout() {
+    const fb = await getFB();
+    await fb.signOut(fb.auth);
+  }
 
-    function fmtDate(ts) {
-      if (!ts) return '';
-      const d = ts.toDate ? ts.toDate() : new Date(ts);
-      return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
-    }
+  if (loading) return <LoadingScreen />;
+  if (!user)   return <LoginScreen />;
 
-    function esc(s = '') {
-      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
+  if (readerPost) {
+    return (
+      <ReaderView post={readerPost} onBack={async () => {
+        setReaderPost(null);
+        const fb = await getFB();
+        const snaps = await fb.getDocs(fb.query(fb.collection(fb.db, 'students', user.uid, 'posaulas'), fb.orderBy('createdAt','desc')));
+        setPosaulas(snaps.docs.map(d => ({ id: d.id, ...d.data() })));
+      }} />
+    );
+  }
 
-    getAppServiceWorkerRegistration().catch(console.warn);
-  </script>
+  const handleOpenPost     = (post) => { getFB().then(fb => openPost(post, fb, user.uid)); };
+  const handleOpenActivity = (act)  => setOpenActivity(act);
+  const handleOpenPart     = (part) => setOpenPart(part);
+  const handleClosePart    = ()     => setOpenPart(null);
+  const handleCloseAll     = ()     => { setOpenPart(null); setOpenActivity(null); };
+  const handleGoActivities = ()     => setTab('aulas');
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', maxWidth: 480, margin: '0 auto', background: '#F6F1EA' }}>
+      <AppHeader student={student} onNotif={requestPush} showNotifBtn={showNotifBtn} onLogout={handleLogout} />
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        {tab === 'home'   && <HomeTab   posaulas={posaulas} activities={activities} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} />}
+        {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} />}
+        {tab === 'vocab'  && <VocabTab />}
+        {tab === 'perfil' && <PerfilTab student={student} onLogout={handleLogout} />}
+      </div>
+
+      <BottomNav active={tab} onChange={setTab} />
+
+      <ActivityModal activity={openActivity} onClose={handleCloseAll} onOpenPart={handleOpenPart} />
+      <PartModal part={openPart} activity={openActivity} onBack={handleClosePart} onClose={handleCloseAll} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
 </body>
 </html>
