@@ -156,8 +156,10 @@
 
       <div class="tabs">
         <button class="tab active" data-tab="students">👥 Alunos</button>
-        <button class="tab" data-tab="publish">📤 Publicar Atividades</button>
-        <button class="tab" data-tab="correct">✅ Aplicar Correção</button>
+        <button class="tab" data-tab="publish">📤 Atividades</button>
+        <button class="tab" data-tab="correct">✅ Correção</button>
+        <button class="tab" data-tab="posaula">📋 Pós-Aula</button>
+        <button class="tab" data-tab="vocab">📖 Vocabulário</button>
         <button class="tab" data-tab="add">➕ Novo Aluno</button>
       </div>
 
@@ -222,6 +224,54 @@
           </div>
 
           <div class="form-msg" id="cor-msg"></div>
+        </div>
+      </div>
+
+      <!-- REGISTRAR PÓS-AULA -->
+      <div class="tab-panel" id="tab-posaula">
+        <div class="form-card">
+          <h2>📋 Registrar Pós-Aula</h2>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;">
+            Registra um pós-aula com URL externa diretamente na conta do aluno.
+          </p>
+          <div class="field">
+            <label>Aluno</label>
+            <select id="pa-student"></select>
+          </div>
+          <div class="field">
+            <label>Título</label>
+            <input type="text" id="pa-title" placeholder="Pós-aula 30-06-2026" />
+          </div>
+          <div class="field">
+            <label>URL do pós-aula</label>
+            <input type="url" id="pa-url" placeholder="https://cezika-web.github.io/Czk-post-classes/pos-aula-gustavo-06-30-2026.html" />
+          </div>
+          <button class="btn-add" id="btn-register-posaula">Registrar →</button>
+          <div class="form-msg" id="pa-msg"></div>
+        </div>
+      </div>
+
+      <!-- PUBLICAR VOCABULÁRIO -->
+      <div class="tab-panel" id="tab-vocab">
+        <div class="form-card">
+          <h2>📖 Publicar Vocabulário</h2>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;">
+            Cole o JSON do vocabulário extraído do pós-aula.
+          </p>
+          <div class="field">
+            <label>JSON do Vocabulário</label>
+            <textarea id="voc-json" placeholder='{"studentName":"Gu","uid":"...","source":"Negócios, Precificação e Rotina de Estudos","vocabulary":[{"en":"to charge","pt":"cobrar"},{"en":"to fire","pt":"demitir"},{"en":"depreciation","pt":"depreciação"}]}'></textarea>
+          </div>
+          <button class="btn-add" id="btn-parse-vocab">Verificar JSON →</button>
+          <div class="publish-preview" id="voc-preview">
+            <h3>Preview</h3>
+            <div id="voc-preview-student" style="font-weight:700;margin-bottom:8px;font-size:0.9rem;"></div>
+            <div id="voc-preview-list"></div>
+            <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+              <button class="btn-add" id="btn-publish-vocab">🚀 Publicar vocabulário</button>
+            </div>
+          </div>
+          <div class="form-msg" id="voc-msg"></div>
         </div>
       </div>
 
@@ -347,6 +397,7 @@
         return { ...s, latestRead: isRead, latestTitle: latest?.title || null };
       }));
 
+      populatePaStudentSelect();
       document.getElementById('stat-total').textContent  = allStudents.length;
       document.getElementById('stat-read').textContent   = readCount;
       document.getElementById('stat-unread').textContent = allStudents.length - readCount;
@@ -548,6 +599,85 @@
       } catch(e) {
         btn.disabled = false; btn.textContent = '✅ Aplicar Correção';
         showMsg('cor-msg', `Erro: ${e.message}`, 'err');
+      }
+    };
+
+    // ── REGISTRAR PÓS-AULA ──────────────────────────────────────────────
+    function populatePaStudentSelect() {
+      const sel = document.getElementById('pa-student');
+      sel.innerHTML = '<option value="">Selecione o aluno...</option>' +
+        allStudents.map(s => `<option value="${s.uid}">${esc(s.name || s.firstName || 'Aluno')}</option>`).join('');
+    }
+
+    document.getElementById('btn-register-posaula').onclick = async () => {
+      const uid   = document.getElementById('pa-student').value;
+      const title = document.getElementById('pa-title').value.trim();
+      const url   = document.getElementById('pa-url').value.trim();
+      if (!uid || !title || !url) { showMsg('pa-msg', 'Preencha todos os campos.', 'err'); return; }
+      const btn = document.getElementById('btn-register-posaula');
+      btn.disabled = true; btn.textContent = 'Registrando...';
+      try {
+        await addDoc(collection(db, 'students', uid, 'posaulas'), {
+          title, url, filename: url.split('/').pop(),
+          createdAt: serverTimestamp(), readAt: null,
+        });
+        btn.disabled = false; btn.textContent = 'Registrar →';
+        document.getElementById('pa-title').value = '';
+        document.getElementById('pa-url').value = '';
+        showMsg('pa-msg', `✅ Pós-aula "${title}" registrado com sucesso!`, 'ok');
+      } catch(e) {
+        btn.disabled = false; btn.textContent = 'Registrar →';
+        showMsg('pa-msg', `Erro: ${e.message}`, 'err');
+      }
+    };
+
+    // ── PUBLICAR VOCABULÁRIO ─────────────────────────────────────────────
+    let parsedVocabJson = null;
+
+    document.getElementById('btn-parse-vocab').onclick = () => {
+      const raw = document.getElementById('voc-json').value.trim();
+      let data;
+      try { data = JSON.parse(raw); } catch(e) { showMsg('voc-msg', 'JSON inválido.', 'err'); return; }
+      if (!data.vocabulary || !Array.isArray(data.vocabulary) || data.vocabulary.length === 0) {
+        showMsg('voc-msg', 'JSON não contém campo "vocabulary".', 'err'); return;
+      }
+      const student = allStudents.find(s =>
+        (s.name || s.firstName || '').toLowerCase().includes((data.studentName || '').toLowerCase())
+      );
+      data._resolvedUid = data.uid || (student ? student.uid : null);
+      parsedVocabJson = data;
+
+      document.getElementById('voc-preview-student').textContent =
+        `Aluno: ${data.studentName || '?'} · Fonte: ${data.source || '—'}${data._resolvedUid ? '' : ' ⚠️ UID não encontrado'}`;
+      document.getElementById('voc-preview-list').innerHTML = data.vocabulary.map(v =>
+        `<div class="preview-item"><span class="preview-emoji">🔤</span><div><div class="preview-title">${esc(v.en)}</div><div class="preview-meta">${esc(v.pt)}</div></div></div>`
+      ).join('');
+      document.getElementById('voc-preview').style.display = 'block';
+    };
+
+    document.getElementById('btn-publish-vocab').onclick = async () => {
+      if (!parsedVocabJson) return;
+      const uid = parsedVocabJson._resolvedUid;
+      if (!uid) { showMsg('voc-msg', 'UID do aluno não encontrado.', 'err'); return; }
+      const btn = document.getElementById('btn-publish-vocab');
+      btn.disabled = true; btn.textContent = 'Publicando...';
+      try {
+        const vocRef = collection(db, 'students', uid, 'vocabulario');
+        for (const v of parsedVocabJson.vocabulary) {
+          await addDoc(vocRef, {
+            en: v.en, pt: v.pt,
+            source: parsedVocabJson.source || '',
+            date: serverTimestamp(),
+          });
+        }
+        btn.disabled = false; btn.textContent = '🚀 Publicar vocabulário';
+        document.getElementById('voc-preview').style.display = 'none';
+        document.getElementById('voc-json').value = '';
+        parsedVocabJson = null;
+        showMsg('voc-msg', `✅ ${parsedVocabJson?.vocabulary?.length || ''} palavras publicadas!`, 'ok');
+      } catch(e) {
+        btn.disabled = false; btn.textContent = '🚀 Publicar vocabulário';
+        showMsg('voc-msg', `Erro: ${e.message}`, 'err');
       }
     };
 
