@@ -65,6 +65,41 @@
 
     .reader-frame { flex: 1; border: none; width: 100%; background: white; display: block; }
     .scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+    /* ── Interactive exercises ── */
+    .ex-root ol, .ex-root ul { padding-left: 22px; margin: 0 0 4px; }
+    .ex-root li { margin-bottom: 16px; }
+    .ex-root p { margin-bottom: 12px; }
+    .ex-stem { font-size: 14.5px; line-height: 1.7; color: #1F2937; margin-bottom: 10px; }
+    .ex-gap { color: #16A34A; font-weight: 700; letter-spacing: 1px; }
+    .ex-opts { display: flex; flex-direction: column; gap: 8px; }
+    .ex-opt {
+      display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+      background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 12px;
+      padding: 11px 14px; font-size: 14px; color: #0F172A; cursor: pointer;
+      font-family: inherit; transition: background .15s, border-color .15s, transform .1s;
+    }
+    .ex-opt:active { transform: scale(0.99); }
+    .ex-opt .ex-letter {
+      width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%;
+      background: #E2E8F0; color: #475569; font-weight: 800; font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ex-opt.sel { background: rgba(22,163,74,0.1); border-color: #16A34A; color: #064E3B; font-weight: 600; }
+    .ex-opt.sel .ex-letter { background: #16A34A; color: #fff; }
+    .ex-input {
+      border: none; border-bottom: 2px solid #16A34A; background: rgba(22,163,74,0.06);
+      font-size: 14.5px; font-family: inherit; color: #0F172A; padding: 2px 6px;
+      margin: 0 2px; outline: none; border-radius: 6px 6px 0 0; min-width: 60px;
+      max-width: 100%;
+    }
+    .ex-input:focus { background: rgba(22,163,74,0.14); }
+    .ex-textarea {
+      width: 100%; border: 1.5px solid #E2E8F0; border-radius: 12px; background: #F8FAFC;
+      font-size: 15px; font-family: inherit; color: #0F172A; padding: 12px 14px;
+      outline: none; resize: none; line-height: 1.6; margin-top: 6px;
+    }
+    .ex-textarea:focus { border-color: #16A34A; background: #fff; }
   </style>
 </head>
 <body>
@@ -153,6 +188,137 @@ async function getSW() {
 getSW().catch(() => {});
 
 const { useState, useEffect, useRef } = React;
+
+// ── Interactive exercise engine (universal) ──────────────────────
+// Turns any activity HTML into interactive exercises:
+//   - "a) .. b) .. c) .." on a line  -> tappable multiple choice
+//   - "___" blanks                   -> inline growing text inputs
+//   - a paragraph that is only blanks -> a growing writing textarea
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function parseChoice(text) {
+  const re = /([a-eA-E])\)\s*/g;
+  const marks = []; let m;
+  while ((m = re.exec(text)) !== null) marks.push({ letter: m[1].toLowerCase(), start: m.index, end: re.lastIndex });
+  if (marks.length < 2) return null;
+  const seq = []; let expIdx = 0;
+  for (const mk of marks) {
+    if (mk.letter === String.fromCharCode(97 + expIdx)) { seq.push(mk); expIdx++; }
+  }
+  if (seq.length < 2) return null;
+  const stem = text.slice(0, seq[0].start).replace(/\s+/g,' ').trim();
+  const options = seq.map((mk, i) => {
+    const endPos = (i + 1 < seq.length) ? seq[i + 1].start : text.length;
+    let t = text.slice(mk.end, endPos).replace(/ /g,' ').replace(/\s+/g,' ').trim().replace(/[.;,]$/,'');
+    return { letter: mk.letter, text: t };
+  });
+  return { stem, options };
+}
+
+function buildChoice(li, key, choice, ctx) {
+  li.innerHTML = '';
+  const stem = document.createElement('div');
+  stem.className = 'ex-stem';
+  stem.innerHTML = escHtml(choice.stem).replace(/_{3,}/g, '<span class="ex-gap">_____</span>');
+  li.appendChild(stem);
+  const opts = document.createElement('div');
+  opts.className = 'ex-opts';
+  choice.options.forEach(o => {
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'ex-opt'; btn.dataset.key = key;
+    btn.innerHTML = '<span class="ex-letter">' + o.letter.toUpperCase() + '</span><span>' + escHtml(o.text) + '</span>';
+    if (ctx.saved[key] === o.letter) { btn.classList.add('sel'); ctx.values[key] = o.letter; }
+    btn.addEventListener('click', () => {
+      opts.querySelectorAll('.ex-opt').forEach(x => x.classList.remove('sel'));
+      btn.classList.add('sel');
+      ctx.values[key] = o.letter;
+      ctx.onChange();
+    });
+    opts.appendChild(btn);
+  });
+  li.appendChild(opts);
+}
+
+function buildInlineInputs(el, keys, ctx) {
+  const segs = el.innerHTML.split(/(_{3,})/);
+  el.innerHTML = '';
+  let ki = 0;
+  segs.forEach(seg => {
+    if (/^_{3,}$/.test(seg)) {
+      const key = keys[ki++];
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.className = 'ex-input'; inp.dataset.key = key;
+      inp.setAttribute('autocomplete','off'); inp.setAttribute('autocapitalize','off'); inp.setAttribute('spellcheck','false');
+      const sv = ctx.saved[key] || '';
+      inp.value = sv; if (sv) ctx.values[key] = sv;
+      const resize = () => { inp.style.width = Math.max(60, (inp.value.length + 1) * 8.5) + 'px'; };
+      inp.addEventListener('input', () => { ctx.values[key] = inp.value; resize(); ctx.onChange(); });
+      resize();
+      el.appendChild(inp);
+    } else if (seg) {
+      const span = document.createElement('span');
+      span.innerHTML = seg;
+      while (span.firstChild) el.appendChild(span.firstChild);
+    }
+  });
+}
+
+function buildTextarea(p, key, ctx) {
+  p.innerHTML = '';
+  const ta = document.createElement('textarea');
+  ta.className = 'ex-textarea'; ta.dataset.key = key; ta.rows = 3;
+  ta.setAttribute('placeholder', 'Escreva sua resposta aqui...');
+  const sv = ctx.saved[key] || '';
+  ta.value = sv; if (sv) ctx.values[key] = sv;
+  const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.max(72, ta.scrollHeight) + 'px'; };
+  ta.addEventListener('input', () => { ctx.values[key] = ta.value; grow(); ctx.onChange(); });
+  p.appendChild(ta);
+  setTimeout(grow, 0);
+}
+
+function processExercises(root, ctx) {
+  const genKey = () => 'e' + (ctx.keyc.n++);
+  root.querySelectorAll('li').forEach(li => {
+    const text = li.textContent || '';
+    const choice = parseChoice(text);
+    if (choice && choice.options.length >= 2) {
+      const key = genKey();
+      if (ctx.build) buildChoice(li, key, choice, ctx);
+      return;
+    }
+    const blanks = (li.innerHTML.match(/_{3,}/g) || []);
+    if (blanks.length > 0) {
+      const keys = blanks.map(() => genKey());
+      if (ctx.build) buildInlineInputs(li, keys, ctx);
+    }
+  });
+  root.querySelectorAll('p').forEach(p => {
+    if (p.closest('li')) return;
+    const blanks = (p.innerHTML.match(/_{3,}/g) || []);
+    if (blanks.length === 0) return;
+    const pure = (p.textContent || '').replace(/[_\s ]/g,'') === '';
+    if (pure) {
+      const key = genKey();
+      if (ctx.build) buildTextarea(p, key, ctx);
+    } else {
+      const keys = blanks.map(() => genKey());
+      if (ctx.build) buildInlineInputs(p, keys, ctx);
+    }
+  });
+}
+
+function countExercises(html) {
+  if (!html) return 0;
+  try {
+    const doc = new DOMParser().parseFromString('<div>' + html + '</div>', 'text/html');
+    const root = doc.body.firstChild;
+    const ctx = { build: false, saved: {}, values: {}, onChange() {}, keyc: { n: 0 } };
+    processExercises(root, ctx);
+    return ctx.keyc.n;
+  } catch (e) { return 0; }
+}
 
 const GLASS = {
   background: 'rgba(255,255,255,0.78)',
@@ -593,12 +759,16 @@ function AulasTab({ activities, onOpenActivity }) {
             {acts.map(act => {
               const isCorrected = act.status === 'corrected';
               const partsN = (act.parts || []).length;
+              const actPct = act.conclusao?.atividadePct;
               return (
                 <GlassCard key={act.id} tappable onClick={() => onOpenActivity(act)} style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
                   <div style={{ fontSize: 24, width: 46, height: 46, borderRadius: 14, background: 'rgba(139,94,52,0.1)', border: '1px solid rgba(139,94,52,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{act.emoji || '&#128218;'}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 2 }}>{act.title || 'Atividade'}</div>
-                    <div style={{ fontSize: 12, color: '#64748B' }}>{partsN} parte{partsN !== 1 ? 's' : ''}</div>
+                    <div style={{ fontSize: 12, color: '#64748B' }}>
+                      {partsN} parte{partsN !== 1 ? 's' : ''}
+                      {typeof actPct === 'number' && actPct > 0 && <span> · {act.finalizada ? 'Finalizada ✓' : actPct + '% concluida'}</span>}
+                    </div>
                   </div>
                   <span style={{ fontSize: 11.5, fontWeight: 700, padding: '4px 10px', borderRadius: 999, flexShrink: 0, background: isCorrected ? 'rgba(22,163,74,0.12)' : 'rgba(245,158,11,0.12)', color: isCorrected ? '#064E3B' : '#92400E' }}>
                     {isCorrected ? '✓ Corrigida' : 'Pendente'}
@@ -826,28 +996,80 @@ function ActivityModal({ activity, onClose, onOpenPart }) {
         </div>
         <div style={{ padding: 16 }}>
           <div style={{ fontSize: 13, color: '#64748B', marginBottom: 12 }}>Selecione uma parte para comecar:</div>
-          {parts.map((part, i) => (
+          {parts.map((part, i) => {
+            const pid    = part.id || part.title;
+            const pconcl = activity?.conclusao?.parts?.[pid];
+            const pdone  = activity?.partsDone?.[pid];
+            return (
             <button key={i} onClick={() => onOpenPart(part)} style={{
               display: 'flex', alignItems: 'center', gap: 14, width: '100%',
               background: '#F8FAFC', border: '1.5px solid #E2E8F0', borderRadius: 14,
               padding: 16, marginBottom: 10, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
             }}>
-              <div style={{ width: 34, height: 34, background: 'linear-gradient(145deg,#22C55E,#16A34A)', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, flexShrink: 0 }}>{i+1}</div>
+              <div style={{ width: 34, height: 34, background: pdone ? 'linear-gradient(145deg,#16A34A,#064E3B)' : 'linear-gradient(145deg,#22C55E,#16A34A)', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, flexShrink: 0 }}>{pdone ? '✓' : i+1}</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{part.title || 'Parte ' + (i+1)}</div>
                 {part.type && <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>{part.type}</div>}
               </div>
-              <span style={{ color: '#94A3B8', fontSize: 20, lineHeight: 1 }}>&#8250;</span>
+              {pdone ? (
+                <span style={{ fontSize: 11.5, fontWeight: 800, color: '#16A34A', flexShrink: 0 }}>Feita</span>
+              ) : pconcl ? (
+                <span style={{ fontSize: 11.5, fontWeight: 800, color: '#9A6438', flexShrink: 0 }}>{pconcl.pct}%</span>
+              ) : (
+                <span style={{ color: '#94A3B8', fontSize: 20, lineHeight: 1 }}>&#8250;</span>
+              )}
             </button>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
   );
 }
 
-function PartModal({ part, activity, onBack, onClose }) {
-  const fb_item = activity?.feedback && part ? (activity.feedback[part.id || part.title]) : null;
+function PartModal({ part, activity, onBack, onClose, onFinish }) {
+  const contentRef = useRef(null);
+  const valuesRef  = useRef({});
+  const [stats, setStats]   = useState({ total: 0, filled: 0 });
+  const [saving, setSaving] = useState(false);
+
+  const partId    = part ? (part.id || part.title || '') : '';
+  const fb_item   = activity?.feedback && part ? (activity.feedback[part.id || part.title]) : null;
+  const isCorrected = activity?.status === 'corrected';
+  const alreadyDone = !!(activity?.partsDone && activity.partsDone[partId]);
+
+  useEffect(() => {
+    if (!part || !contentRef.current) return;
+    const container = contentRef.current;
+    const saved  = (activity?.respostas && activity.respostas[partId]) || {};
+    const values = {};
+    valuesRef.current = values;
+    container.innerHTML = part.content || '<p style="color:#94A3B8">Conteudo nao disponivel.</p>';
+    const recount = () => {
+      let filled = 0;
+      Object.keys(values).forEach(k => {
+        const v = values[k];
+        if (typeof v === 'string' ? v.trim() !== '' : !!v) filled++;
+      });
+      setStats({ total: ctx.keyc.n, filled });
+    };
+    const ctx = { build: true, saved, values, onChange: recount, keyc: { n: 0 } };
+    processExercises(container, ctx);
+    recount();
+  }, [part, activity]);
+
+  const total     = stats.total;
+  const filled    = stats.filled;
+  const canFinish = total === 0 ? true : filled >= total;
+  const pct       = total === 0 ? 100 : Math.round((filled / total) * 100);
+
+  const handleFinish = async () => {
+    if (!canFinish || saving) return;
+    setSaving(true);
+    await onFinish(partId, { values: { ...valuesRef.current }, respondidos: filled, total, pct });
+    setSaving(false);
+  };
+
   return (
     <div className={'modal-overlay' + (part ? ' open' : '')} onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal-sheet modal-sheet-tall">
@@ -858,9 +1080,14 @@ function PartModal({ part, activity, onBack, onClose }) {
             <div style={{ fontSize: 11, color: '#9A6438', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 1 }}>{activity?.title}</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{part?.title || 'Parte'}</div>
           </div>
+          {total > 0 && !isCorrected && (
+            <div style={{ fontSize: 12, fontWeight: 800, color: pct === 100 ? '#16A34A' : '#9A6438', flexShrink: 0 }}>{pct}%</div>
+          )}
           <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: '#F1F5F9', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', flexShrink: 0, fontFamily: 'inherit' }}>&#x2715;</button>
         </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: 16, fontSize: 14.5, lineHeight: 1.75, color: '#1F2937' }} dangerouslySetInnerHTML={{ __html: part?.content || '<p style="color:#94A3B8">Conteudo nao disponivel.</p>' }} />
+
+        <div ref={contentRef} className="ex-root" style={{ flex: 1, overflowY: 'auto', padding: 16, fontSize: 14.5, lineHeight: 1.75, color: '#1F2937' }} />
+
         {fb_item && (
           <div style={{ margin: '0 16px 16px', background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: 14, padding: 16, flexShrink: 0 }}>
             <div style={{ fontWeight: 700, color: '#064E3B', marginBottom: 8, fontSize: 13 }}>
@@ -868,6 +1095,24 @@ function PartModal({ part, activity, onBack, onClose }) {
               {fb_item.score && <span style={{ display: 'inline-block', background: '#064E3B', color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 999, marginLeft: 8 }}>{fb_item.score}</span>}
             </div>
             <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.6 }}>{typeof fb_item === 'string' ? fb_item : (fb_item.comment || '')}</div>
+          </div>
+        )}
+
+        {!isCorrected && (
+          <div style={{ padding: '12px 16px 16px', borderTop: '1px solid #F1F5F9', flexShrink: 0 }}>
+            {!canFinish && (
+              <div style={{ fontSize: 12, color: '#D97706', marginBottom: 8, textAlign: 'center', fontWeight: 600 }}>
+                Responda todos os exercicios para finalizar ({filled}/{total})
+              </div>
+            )}
+            <button onClick={handleFinish} disabled={!canFinish || saving} style={{
+              width: '100%', padding: 14, border: 'none', borderRadius: 14, fontSize: 15, fontWeight: 800, fontFamily: 'inherit',
+              cursor: canFinish && !saving ? 'pointer' : 'not-allowed',
+              background: canFinish ? 'linear-gradient(180deg,#22C55E,#16A34A)' : '#CBD5E1',
+              color: '#fff', boxShadow: canFinish ? '0 8px 20px rgba(22,163,74,0.3)' : 'none',
+            }}>
+              {saving ? 'Salvando...' : alreadyDone ? '✓ Salvar alteracoes' : 'Finalizei esta parte'}
+            </button>
           </div>
         )}
       </div>
@@ -1038,6 +1283,39 @@ function App() {
   const handleCloseAll     = ()     => { setOpenPart(null); setOpenActivity(null); };
   const handleGoActivities = ()     => setTab('aulas');
 
+  async function handleFinishPart(partId, result) {
+    if (!openActivity || !user) return;
+    const fb = await getFB();
+    const actId = openActivity.id;
+    const parts = openActivity.parts || [];
+
+    // total exercises across ALL parts (for the activity-level %)
+    let sumTotal = 0;
+    parts.forEach(p => { sumTotal += countExercises(p.content); });
+
+    const prevParts = (openActivity.conclusao && openActivity.conclusao.parts) || {};
+    const newParts  = { ...prevParts, [partId]: { respondidos: result.respondidos, total: result.total, pct: result.pct } };
+    let sumResp = 0;
+    Object.keys(newParts).forEach(pid => { sumResp += (newParts[pid].respondidos || 0); });
+    const atividadePct = sumTotal > 0 ? Math.round((sumResp / sumTotal) * 100) : 100;
+
+    const newDone   = { ...(openActivity.partsDone || {}), [partId]: true };
+    const allDone   = parts.every(p => newDone[p.id || p.title]);
+    const conclusao = { parts: newParts, atividadePct };
+    const respostas = { ...(openActivity.respostas || {}), [partId]: result.values };
+
+    try {
+      await fb.updateDoc(fb.doc(fb.db, 'students', user.uid, 'activities', actId), {
+        respostas, partsDone: newDone, conclusao, finalizada: allDone,
+      });
+    } catch(e) { showToast('Erro ao salvar: ' + e.message); return; }
+
+    const updated = { ...openActivity, respostas, partsDone: newDone, conclusao, finalizada: allDone };
+    setActivities(prev => prev.map(a => a.id === actId ? updated : a));
+    setOpenActivity(updated);
+    showToast(allDone ? 'Parte salva! Atividade completa 🎉' : 'Parte salva!');
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', maxWidth: 480, margin: '0 auto', background: '#F6F1EA' }}>
       <AppHeader student={student} onNotif={requestPush} showNotifBtn={showNotifBtn} onLogout={handleLogout} />
@@ -1052,7 +1330,7 @@ function App() {
       <BottomNav active={tab} onChange={setTab} />
 
       <ActivityModal activity={openActivity} onClose={handleCloseAll} onOpenPart={handleOpenPart} />
-      <PartModal part={openPart} activity={openActivity} onBack={handleClosePart} onClose={handleCloseAll} />
+      <PartModal part={openPart} activity={openActivity} onBack={handleClosePart} onClose={handleCloseAll} onFinish={handleFinishPart} />
     </div>
   );
 }
