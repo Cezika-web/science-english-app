@@ -53,6 +53,20 @@
     .read-badge.unread { background: #fff3cd; color: #92400e; }
     .btn-detail { background: #f0f7ff; border: none; color: var(--accent); padding: 7px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; flex-shrink: 0; }
 
+    .kebab-wrap { position: relative; flex-shrink: 0; }
+    .btn-kebab { background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer; padding: 4px 8px; border-radius: 8px; line-height: 1; }
+    .btn-kebab:hover { background: #f3f4f6; }
+    .kebab-menu {
+      position: absolute; right: 0; top: 100%; margin-top: 4px;
+      background: white; border: 1px solid var(--border); border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 20; min-width: 180px; overflow: hidden;
+      display: none;
+    }
+    .kebab-menu.open { display: block; }
+    .kebab-item { display: block; width: 100%; text-align: left; background: none; border: none; padding: 11px 14px; font-size: 0.85rem; cursor: pointer; color: #0f1724; }
+    .kebab-item:hover { background: #f3f4f6; }
+    .kebab-item.danger { color: var(--danger); }
+
     .form-card { background: white; border-radius: 16px; padding: 24px; border: 1px solid var(--border); max-width: 560px; }
     .form-card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 18px; }
     .field { margin-bottom: 14px; }
@@ -86,6 +100,19 @@
     .preview-emoji { font-size: 1.2rem; }
     .preview-title { font-weight: 600; }
     .preview-meta { font-size: 0.78rem; color: var(--muted); margin-top: 1px; }
+
+    /* Full activity preview */
+    .prev-act { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+    .prev-act-head { font-size: 1rem; font-weight: 800; color: #0f1724; }
+    .prev-act-sub { font-size: 0.78rem; color: var(--muted); margin: 2px 0 10px; }
+    .prev-part { border-top: 1px solid var(--border); padding-top: 10px; margin-top: 10px; }
+    .prev-part:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+    .prev-part-head { font-size: 0.82rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px; }
+    .prev-part-body { font-size: 0.88rem; line-height: 1.6; color: #1f2937; }
+    .prev-part-body ol, .prev-part-body ul { padding-left: 28px; margin: 4px 0 8px; }
+    .prev-part-body li { margin-bottom: 6px; }
+    .prev-part-body p { margin-bottom: 6px; }
+    .prev-count { font-size: 0.75rem; color: var(--green); font-weight: 700; margin-top: 4px; }
 
     .activities-list { display: grid; gap: 8px; margin-top: 12px; }
     .act-select-row {
@@ -161,12 +188,23 @@
         <button class="tab" data-tab="posaula">📋 Pós-Aula</button>
         <button class="tab" data-tab="vocab">📖 Vocabulário</button>
         <button class="tab" data-tab="add">➕ Novo Aluno</button>
+        <button class="tab" data-tab="exalunos">🗄️ Ex-alunos</button>
       </div>
 
       <!-- ALUNOS -->
       <div class="tab-panel active" id="tab-students">
         <div class="students-grid" id="students-grid">
           <div class="loading">Carregando alunos...</div>
+        </div>
+      </div>
+
+      <!-- EX-ALUNOS -->
+      <div class="tab-panel" id="tab-exalunos">
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;">
+          Alunos que pararam o curso. Eles não aparecem na lista principal, mas os dados ficam salvos.
+        </p>
+        <div class="students-grid" id="exalunos-grid">
+          <div class="loading">Carregando...</div>
         </div>
       </div>
 
@@ -383,13 +421,71 @@
     });
 
     // ── LOAD STUDENTS ───────────────────────────────────────────────────
+    function studentRowHtml(s, archived) {
+      const nm = esc(s.name || s.firstName || 'Aluno');
+      const badge = archived
+        ? `<span class="read-badge" style="background:#f3f4f6;color:var(--muted)">Ex-aluno</span>`
+        : (s.latestTitle
+            ? `<span class="read-badge ${s.latestRead ? 'read' : 'unread'}">${s.latestRead ? '✓ Lido' : '⏳ Não lido'}</span>`
+            : `<span class="read-badge" style="background:#f3f4f6;color:var(--muted)">Sem pós-aula</span>`);
+      const menuItem = archived
+        ? `<button class="kebab-item" data-action="reactivate" data-uid="${s.uid}" data-name="${nm}">↩️ Reativar aluno</button>`
+        : `<button class="kebab-item danger" data-action="archive" data-uid="${s.uid}" data-name="${nm}">🗄️ Enviar para Ex-alunos</button>`;
+      return `
+        <div class="student-row">
+          <div class="avatar">${(s.firstName || s.name || '?')[0].toUpperCase()}</div>
+          <div class="student-info">
+            <div class="name">${nm}</div>
+            <div class="email">${esc(s.email || '')} · ${esc(s.level || '')}</div>
+          </div>
+          ${badge}
+          <button class="btn-detail" data-uid="${s.uid}" data-name="${nm}">Ver →</button>
+          <div class="kebab-wrap">
+            <button class="btn-kebab" data-uid="${s.uid}">⋮</button>
+            <div class="kebab-menu" data-uid="${s.uid}">${menuItem}</div>
+          </div>
+        </div>`;
+    }
+
+    function wireStudentGrid(grid) {
+      grid.querySelectorAll('.btn-detail').forEach(btn => {
+        btn.onclick = () => openDetail(btn.dataset.uid, btn.dataset.name);
+      });
+      grid.querySelectorAll('.btn-kebab').forEach(btn => {
+        btn.onclick = e => {
+          e.stopPropagation();
+          const menu = btn.parentElement.querySelector('.kebab-menu');
+          const isOpen = menu.classList.contains('open');
+          document.querySelectorAll('.kebab-menu.open').forEach(m => m.classList.remove('open'));
+          if (!isOpen) menu.classList.add('open');
+        };
+      });
+      grid.querySelectorAll('.kebab-item').forEach(item => {
+        item.onclick = async e => {
+          e.stopPropagation();
+          const { action, uid, name } = item.dataset;
+          if (action === 'archive') {
+            if (!confirm(`Enviar ${name} para Ex-alunos?`)) return;
+            await updateDoc(doc(db, 'students', uid), { archived: true, archivedAt: serverTimestamp() });
+          } else if (action === 'reactivate') {
+            await updateDoc(doc(db, 'students', uid), { archived: false });
+          }
+          loadStudents();
+        };
+      });
+    }
+
     async function loadStudents() {
-      const grid = document.getElementById('students-grid');
+      const grid   = document.getElementById('students-grid');
+      const exGrid = document.getElementById('exalunos-grid');
       const snap = await getDocs(collection(db, 'students'));
       allStudents = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
 
+      const active   = allStudents.filter(s => !s.archived);
+      const archived = allStudents.filter(s => s.archived);
+
       let readCount = 0;
-      const rows = await Promise.all(allStudents.map(async s => {
+      const rows = await Promise.all(active.map(async s => {
         const posSnap = await getDocs(query(collection(db, 'students', s.uid, 'posaulas'), orderBy('createdAt', 'desc')));
         const latest  = posSnap.docs[0]?.data();
         const isRead  = !!latest?.readAt;
@@ -398,27 +494,23 @@
       }));
 
       populatePaStudentSelect();
-      document.getElementById('stat-total').textContent  = allStudents.length;
+      document.getElementById('stat-total').textContent  = active.length;
       document.getElementById('stat-read').textContent   = readCount;
-      document.getElementById('stat-unread').textContent = allStudents.length - readCount;
+      document.getElementById('stat-unread').textContent = active.length - readCount;
 
-      grid.innerHTML = rows.map(s => `
-        <div class="student-row">
-          <div class="avatar">${(s.firstName || s.name || '?')[0].toUpperCase()}</div>
-          <div class="student-info">
-            <div class="name">${esc(s.name || s.firstName || 'Aluno')}</div>
-            <div class="email">${esc(s.email || '')} · ${esc(s.level || '')}</div>
-          </div>
-          ${s.latestTitle
-            ? `<span class="read-badge ${s.latestRead ? 'read' : 'unread'}">${s.latestRead ? '✓ Lido' : '⏳ Não lido'}</span>`
-            : `<span class="read-badge" style="background:#f3f4f6;color:var(--muted)">Sem pós-aula</span>`}
-          <button class="btn-detail" data-uid="${s.uid}" data-name="${esc(s.name || s.firstName || 'Aluno')}">Ver →</button>
-        </div>`).join('') || '<div class="loading">Nenhum aluno cadastrado.</div>';
+      grid.innerHTML = rows.map(s => studentRowHtml(s, false)).join('')
+        || '<div class="loading">Nenhum aluno cadastrado.</div>';
+      exGrid.innerHTML = archived.map(s => studentRowHtml(s, true)).join('')
+        || '<div class="loading">Nenhum ex-aluno.</div>';
 
-      grid.querySelectorAll('.btn-detail').forEach(btn => {
-        btn.onclick = () => openDetail(btn.dataset.uid, btn.dataset.name);
-      });
+      wireStudentGrid(grid);
+      wireStudentGrid(exGrid);
     }
+
+    // Close kebab menus when clicking elsewhere
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.kebab-menu.open').forEach(m => m.classList.remove('open'));
+    });
 
     // ── STUDENT DETAIL MODAL ────────────────────────────────────────────
     async function openDetail(uid, name) {
@@ -470,12 +562,15 @@
         `Aluno: ${data.studentName || '?'}${resolvedUid ? '' : ' ⚠️ UID não encontrado — verifique o nome'}`;
 
       document.getElementById('pub-preview-list').innerHTML = data.activities.map(a => `
-        <div class="preview-item">
-          <span class="preview-emoji">${a.emoji || '📚'}</span>
-          <div>
-            <div class="preview-title">${esc(a.title || 'Atividade')}</div>
-            <div class="preview-meta">${(a.parts || []).length} partes · Semana: ${esc(data.week || '—')}</div>
-          </div>
+        <div class="prev-act">
+          <div class="prev-act-head">${a.emoji || '📚'} ${esc(a.title || 'Atividade')}</div>
+          <div class="prev-act-sub">Semana: ${esc(data.week || '—')} · ${(a.parts || []).length} parte(s)</div>
+          ${(a.parts || []).map((p, i) => `
+            <div class="prev-part">
+              <div class="prev-part-head">Part ${i + 1} — ${esc(p.title || '')}${p.type ? ` (${esc(p.type)})` : ''}</div>
+              <div class="prev-part-body">${p.content || '<em>Sem conteúdo</em>'}</div>
+              <div class="prev-count">${countQuestions(p.content)} exercício(s) que o aluno responde</div>
+            </div>`).join('')}
         </div>`).join('');
 
       document.getElementById('pub-preview').style.display = 'block';
@@ -606,7 +701,7 @@
     function populatePaStudentSelect() {
       const sel = document.getElementById('pa-student');
       sel.innerHTML = '<option value="">Selecione o aluno...</option>' +
-        allStudents.map(s => `<option value="${s.uid}">${esc(s.name || s.firstName || 'Aluno')}</option>`).join('');
+        allStudents.filter(s => !s.archived).map(s => `<option value="${s.uid}">${esc(s.name || s.firstName || 'Aluno')}</option>`).join('');
     }
 
     document.getElementById('btn-register-posaula').onclick = async () => {
@@ -730,6 +825,32 @@
 
     function esc(s = '') {
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // Conta quantos exercícios o aluno responde (mesma lógica do motor do app):
+    // múltipla escolha (a/b/c) = 1; cada lacuna ___ = 1; parágrafo só de lacunas = 1.
+    function countQuestions(html) {
+      if (!html) return 0;
+      try {
+        const doc = new DOMParser().parseFromString('<div>' + html + '</div>', 'text/html');
+        const root = doc.body.firstChild;
+        let n = 0;
+        root.querySelectorAll('li').forEach(li => {
+          const text = li.textContent || '';
+          const marks = (text.match(/([a-eA-E])\)/g) || []);
+          if (marks.length >= 2) { n += 1; return; }
+          const blanks = (li.innerHTML.match(/_{3,}/g) || []).length;
+          n += blanks;
+        });
+        root.querySelectorAll('p').forEach(p => {
+          if (p.closest('li')) return;
+          const blanks = (p.innerHTML.match(/_{3,}/g) || []).length;
+          if (blanks === 0) return;
+          const pure = (p.textContent || '').replace(/[_\s ]/g,'') === '';
+          n += pure ? 1 : blanks;
+        });
+        return n;
+      } catch (e) { return 0; }
     }
   </script>
 </body>
