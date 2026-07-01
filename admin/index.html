@@ -48,6 +48,8 @@
     .student-info { flex: 1; min-width: 0; }
     .student-info .name { font-weight: 700; }
     .student-info .email { font-size: 0.8rem; color: var(--muted); }
+    .student-info .slug-line { font-size: 0.72rem; color: #64748b; margin-top: 3px; font-family: monospace; background: #f6f8fb; padding: 2px 6px; border-radius: 5px; display: inline-block; }
+    .student-info .slug-line strong { color: var(--accent); }
     .read-badge { font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; flex-shrink: 0; }
     .read-badge.read { background: #d1fae5; color: #065f46; }
     .read-badge.unread { background: #fff3cd; color: #92400e; }
@@ -189,7 +191,6 @@
         <button class="tab active" data-tab="students">👥 Alunos</button>
         <button class="tab" data-tab="publish">📤 Atividades</button>
         <button class="tab" data-tab="correct">✅ Correção</button>
-        <button class="tab" data-tab="posaula">📋 Pós-Aula</button>
         <button class="tab" data-tab="vocab">📖 Vocabulário</button>
         <button class="tab" data-tab="add">➕ Novo Aluno</button>
         <button class="tab" data-tab="exalunos">🗄️ Ex-alunos</button>
@@ -266,30 +267,6 @@
           </div>
 
           <div class="form-msg" id="cor-msg"></div>
-        </div>
-      </div>
-
-      <!-- REGISTRAR PÓS-AULA -->
-      <div class="tab-panel" id="tab-posaula">
-        <div class="form-card">
-          <h2>📋 Registrar Pós-Aula</h2>
-          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;">
-            Registra um pós-aula com URL externa diretamente na conta do aluno.
-          </p>
-          <div class="field">
-            <label>Aluno</label>
-            <select id="pa-student"></select>
-          </div>
-          <div class="field">
-            <label>Título</label>
-            <input type="text" id="pa-title" placeholder="Pós-aula 30-06-2026" />
-          </div>
-          <div class="field">
-            <label>URL do pós-aula</label>
-            <input type="url" id="pa-url" placeholder="https://cezika-web.github.io/Czk-post-classes/pos-aula-gustavo-06-30-2026.html" />
-          </div>
-          <button class="btn-add" id="btn-register-posaula">Registrar →</button>
-          <div class="form-msg" id="pa-msg"></div>
         </div>
       </div>
 
@@ -442,6 +419,7 @@
           <div class="student-info">
             <div class="name">${nm}</div>
             <div class="email">${esc(s.email || '')} · ${esc(s.level || '')}</div>
+            ${s.slug ? `<div class="slug-line">slug: <strong>${esc(s.slug)}</strong> &nbsp;→&nbsp; pos-aula-<strong>${esc(s.slug)}</strong>-DD-MM-AAAA.html</div>` : ''}
           </div>
           ${badge}
           <button class="btn-detail" data-uid="${s.uid}" data-name="${nm}">Ver →</button>
@@ -515,7 +493,6 @@
         return { ...s, latestRead: isRead, latestTitle: latest?.title || null };
       }));
 
-      populatePaStudentSelect();
       document.getElementById('stat-total').textContent  = active.length;
       document.getElementById('stat-read').textContent   = readCount;
       document.getElementById('stat-unread').textContent = active.length - readCount;
@@ -766,35 +743,6 @@
       } catch(e) {
         btn.disabled = false; btn.textContent = '✅ Aplicar Correção';
         showMsg('cor-msg', `Erro: ${e.message}`, 'err');
-      }
-    };
-
-    // ── REGISTRAR PÓS-AULA ──────────────────────────────────────────────
-    function populatePaStudentSelect() {
-      const sel = document.getElementById('pa-student');
-      sel.innerHTML = '<option value="">Selecione o aluno...</option>' +
-        allStudents.filter(s => !s.archived).map(s => `<option value="${s.uid}">${esc(s.name || s.firstName || 'Aluno')}</option>`).join('');
-    }
-
-    document.getElementById('btn-register-posaula').onclick = async () => {
-      const uid   = document.getElementById('pa-student').value;
-      const title = document.getElementById('pa-title').value.trim();
-      const url   = document.getElementById('pa-url').value.trim();
-      if (!uid || !title || !url) { showMsg('pa-msg', 'Preencha todos os campos.', 'err'); return; }
-      const btn = document.getElementById('btn-register-posaula');
-      btn.disabled = true; btn.textContent = 'Registrando...';
-      try {
-        await addDoc(collection(db, 'students', uid, 'posaulas'), {
-          title, url, filename: url.split('/').pop(),
-          createdAt: serverTimestamp(), readAt: null,
-        });
-        btn.disabled = false; btn.textContent = 'Registrar →';
-        document.getElementById('pa-title').value = '';
-        document.getElementById('pa-url').value = '';
-        showMsg('pa-msg', `✅ Pós-aula "${title}" registrado com sucesso!`, 'ok');
-      } catch(e) {
-        btn.disabled = false; btn.textContent = 'Registrar →';
-        showMsg('pa-msg', `Erro: ${e.message}`, 'err');
       }
     };
 
