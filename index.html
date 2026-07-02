@@ -432,10 +432,10 @@ function AppHeader({ student, onNotif, showNotifBtn, onLogout }) {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 6px 16px rgba(22,163,74,0.35)',
         }}>
-          <span style={{ color: '#fff', fontWeight: 800, fontSize: 17, letterSpacing: -0.5 }}>SE</span>
+          <ChatBubble w={22} fill="#fff" dot="#16A34A" />
         </div>
         <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: '#0F172A', lineHeight: 1.1 }}>Science English</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: '#0F172A', lineHeight: 1.1 }}>science english</div>
           <div style={{ fontSize: 10.5, color: '#64748B', fontWeight: 500 }}>Explore. Learn. Grow.</div>
         </div>
       </div>
@@ -514,6 +514,79 @@ function BottomNav({ active, onChange }) {
 }
 
 // ── Login ───────────────────────────────────────────────────────
+// ── Marca "science english" (estilo balão de chat) ──────────────
+function ChatBubble({ w = 44, fill = '#A7F3D0', dot = '#064E3B' }) {
+  const h = w * 0.82;
+  return (
+    <svg width={w} height={h} viewBox="0 0 46 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="1" width="44" height="30" rx="10" fill={fill} />
+      <path d="M13 30 L13 38 L23 30 Z" fill={fill} />
+      <circle cx="15" cy="16" r="3" fill={dot} />
+      <circle cx="23" cy="16" r="3" fill={dot} />
+      <circle cx="31" cy="16" r="3" fill={dot} />
+    </svg>
+  );
+}
+
+function BrandLogo({ scale = 1, dark = false }) {
+  const main = dark ? '#0F172A' : '#fff';
+  const sub  = dark ? '#16A34A' : '#A7F3D0';
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <div style={{ position: 'relative', display: 'inline-block', paddingTop: 16 * scale }}>
+        <div style={{ position: 'absolute', top: -4 * scale, right: -8 * scale }}>
+          <ChatBubble w={38 * scale} />
+        </div>
+        <div style={{ fontSize: 46 * scale, fontWeight: 800, color: main, letterSpacing: -1.5 * scale, lineHeight: 1 }}>science</div>
+      </div>
+      <div style={{ fontSize: 21 * scale, fontWeight: 500, color: sub, letterSpacing: 7 * scale, marginTop: 4 * scale }}>english</div>
+    </div>
+  );
+}
+
+function Waves() {
+  return (
+    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 160, pointerEvents: 'none', overflow: 'hidden' }}>
+      <svg viewBox="0 0 400 160" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
+        <path d="M0,90 Q100,50 200,85 T400,80" stroke="rgba(167,243,208,0.28)" strokeWidth="2" fill="none" />
+        <path d="M0,112 Q120,68 240,108 T400,100" stroke="rgba(167,243,208,0.20)" strokeWidth="2" fill="none" />
+        <path d="M0,134 Q100,92 200,128 T400,124" stroke="rgba(167,243,208,0.13)" strokeWidth="2" fill="none" />
+      </svg>
+    </div>
+  );
+}
+
+const TAGLINES = [
+  ['Explore', 'Learn', 'Grow'],
+  ['Listen', 'Speak', 'Read'],
+  ['Study', 'Practice', 'Improve'],
+  ['Read', 'Write', 'Shine'],
+];
+function AnimatedTagline() {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setI(x => (x + 1) % TAGLINES.length), 1500);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div key={i} style={{ display: 'flex', gap: 6, justifyContent: 'center', animation: 'fadeIn 0.5s ease' }}>
+      {TAGLINES[i].map((w, idx) => (
+        <span key={idx} style={{ color: idx === 1 ? '#A7F3D0' : '#fff', fontWeight: 700, fontSize: 15, letterSpacing: 0.3 }}>{w}.</span>
+      ))}
+    </div>
+  );
+}
+
+function LoadingSplash() {
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'linear-gradient(165deg,#053C2E 0%,#064E3B 45%,#0C6B45 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 22, overflow: 'hidden', zIndex: 9999 }}>
+      <BrandLogo scale={1} />
+      <div style={{ marginTop: 10 }}><AnimatedTagline /></div>
+      <Waves />
+    </div>
+  );
+}
+
 function LoginScreen() {
   const [email, setEmail]     = useState('');
   const [pass, setPass]       = useState('');
@@ -533,6 +606,8 @@ function LoginScreen() {
     }
   };
 
+  if (loading) return <LoadingSplash />;
+
   const inp = {
     width: '100%', padding: '13px 14px', border: '1.5px solid #E2E8F0',
     borderRadius: 14, fontSize: 15, outline: 'none', background: '#F8FAFC', color: '#0F172A',
@@ -541,60 +616,48 @@ function LoginScreen() {
 
   return (
     <div style={{
-      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 24,
-      background: 'linear-gradient(160deg, #064E3B 0%, #16A34A 60%, #A7F3D0 100%)',
-      minHeight: '100vh',
+      position: 'relative', flex: 1, minHeight: '100vh',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      padding: 24, overflow: 'hidden',
+      background: 'linear-gradient(165deg,#053C2E 0%,#064E3B 45%,#0C6B45 100%)',
     }}>
-      <div style={{
-        background: 'rgba(255,255,255,0.97)', borderRadius: 28, padding: '36px 28px',
-        width: '100%', maxWidth: 380,
-        boxShadow: '0 24px 60px rgba(0,0,0,0.18)',
-        animation: 'fadeIn 0.4s ease',
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{
-            width: 64, height: 64, borderRadius: 20, margin: '0 auto 14px',
-            background: 'linear-gradient(145deg,#16A34A,#064E3B)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 8px 24px rgba(22,163,74,0.35)',
-          }}>
-            <span style={{ color: '#fff', fontWeight: 800, fontSize: 22, letterSpacing: -0.5 }}>SE</span>
+      <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 360 }}>
+        <div style={{ marginBottom: 26 }}><BrandLogo scale={0.92} /></div>
+        <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: 24, padding: '24px 22px', boxShadow: '0 24px 60px rgba(0,0,0,0.28)', animation: 'fadeIn 0.4s ease' }}>
+          <div style={{ fontSize: 13, color: '#64748B', fontWeight: 600, textAlign: 'center', marginBottom: 18 }}>Área do Aluno</div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>E-mail</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+              placeholder="seu@email.com" autoComplete="email"
+              onKeyDown={e => e.key === 'Enter' && handleLogin()}
+              style={inp}
+              onFocus={e => e.target.style.borderColor = '#16A34A'}
+              onBlur={e => e.target.style.borderColor = '#E2E8F0'}
+            />
           </div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: '#0F172A', lineHeight: 1.1, marginBottom: 4 }}>Science English</div>
-          <div style={{ fontSize: 13, color: '#64748B', fontWeight: 500 }}>Area do Aluno</div>
+          <div style={{ marginBottom: 8 }}>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>Senha</label>
+            <input type="password" value={pass} onChange={e => setPass(e.target.value)}
+              placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autoComplete="current-password"
+              onKeyDown={e => e.key === 'Enter' && handleLogin()}
+              style={inp}
+              onFocus={e => e.target.style.borderColor = '#16A34A'}
+              onBlur={e => e.target.style.borderColor = '#E2E8F0'}
+            />
+          </div>
+          {error && (
+            <div style={{ background: '#FFF5F5', border: '1px solid #FED7D7', color: '#C53030', padding: '10px 14px', borderRadius: 10, fontSize: 13, marginBottom: 10, marginTop: 6 }}>{error}</div>
+          )}
+          <button disabled={loading} onClick={handleLogin} style={{
+            width: '100%', padding: 15, marginTop: 10,
+            background: 'linear-gradient(180deg,#22C55E,#16A34A)',
+            color: '#fff', border: 'none', borderRadius: 16,
+            fontSize: 16, fontWeight: 800, cursor: 'pointer',
+            boxShadow: '0 8px 24px rgba(22,163,74,0.3)', fontFamily: 'inherit',
+          }}>Entrar</button>
         </div>
-        <div style={{ marginBottom: 14 }}>
-          <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>E-mail</label>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-            placeholder="seu@email.com" autoComplete="email"
-            onKeyDown={e => e.key === 'Enter' && handleLogin()}
-            style={inp}
-            onFocus={e => e.target.style.borderColor = '#16A34A'}
-            onBlur={e => e.target.style.borderColor = '#E2E8F0'}
-          />
-        </div>
-        <div style={{ marginBottom: 8 }}>
-          <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>Senha</label>
-          <input type="password" value={pass} onChange={e => setPass(e.target.value)}
-            placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autoComplete="current-password"
-            onKeyDown={e => e.key === 'Enter' && handleLogin()}
-            style={inp}
-            onFocus={e => e.target.style.borderColor = '#16A34A'}
-            onBlur={e => e.target.style.borderColor = '#E2E8F0'}
-          />
-        </div>
-        {error && (
-          <div style={{ background: '#FFF5F5', border: '1px solid #FED7D7', color: '#C53030', padding: '10px 14px', borderRadius: 10, fontSize: 13, marginBottom: 10, marginTop: 6 }}>{error}</div>
-        )}
-        <button disabled={loading} onClick={handleLogin} style={{
-          width: '100%', padding: 15, marginTop: 10,
-          background: loading ? '#94A3B8' : 'linear-gradient(180deg,#22C55E,#16A34A)',
-          color: '#fff', border: 'none', borderRadius: 16,
-          fontSize: 16, fontWeight: 800, cursor: loading ? 'not-allowed' : 'pointer',
-          boxShadow: '0 8px 24px rgba(22,163,74,0.3)', fontFamily: 'inherit',
-        }}>{loading ? 'Entrando...' : 'Entrar'}</button>
       </div>
+      <Waves />
     </div>
   );
 }
@@ -1369,13 +1432,7 @@ function ReaderView({ post, onBack }) {
 
 // ── Loading ──────────────────────────────────────────────────────
 function LoadingScreen() {
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: '#F6F1EA', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, zIndex: 9999 }}>
-      <div style={{ width: 64, height: 64, borderRadius: 20, background: 'linear-gradient(145deg,#16A34A,#064E3B)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(22,163,74,0.35)', fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: -0.5 }}>SE</div>
-      <Spinner />
-      <div style={{ fontSize: 13, color: '#64748B', fontWeight: 500 }}>Carregando...</div>
-    </div>
-  );
+  return <LoadingSplash />;
 }
 
 // ── ROOT APP ─────────────────────────────────────────────────────
