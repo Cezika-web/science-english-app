@@ -320,6 +320,7 @@
               <option>Upper-Intermediate (B2)</option><option>Advanced (C1)</option>
             </select>
           </div>
+          <div class="field"><label>Meta de aulas no ano</label><input type="number" id="f-meta" placeholder="Ex: 40" min="1" /></div>
           <div class="field"><label>URL da área do Notion (opcional)</label><input type="url" id="f-notion" placeholder="https://notion.so/..." /></div>
           <button class="btn-add" id="btn-create-student">Criar aluno</button>
           <div class="form-msg" id="create-msg"></div>
@@ -419,9 +420,10 @@
         : (s.latestTitle
             ? `<span class="read-badge ${s.latestRead ? 'read' : 'unread'}">${s.latestRead ? '✓ Lido' : '⏳ Não lido'}</span>`
             : `<span class="read-badge" style="background:#f3f4f6;color:var(--muted)">Sem pós-aula</span>`);
-      const menuItem = (archived
-        ? `<button class="kebab-item" data-action="reactivate" data-uid="${s.uid}" data-name="${nm}">↩️ Reativar aluno</button>`
-        : `<button class="kebab-item" data-action="archive" data-uid="${s.uid}" data-name="${nm}">🗄️ Enviar para Ex-alunos</button>`)
+      const menuItem = `<button class="kebab-item" data-action="setmeta" data-uid="${s.uid}" data-name="${nm}" data-meta="${s.metaAnual || ''}">🎯 Meta de aulas${s.metaAnual ? ` (${s.metaAnual})` : ''}</button>`
+        + (archived
+          ? `<button class="kebab-item" data-action="reactivate" data-uid="${s.uid}" data-name="${nm}">↩️ Reativar aluno</button>`
+          : `<button class="kebab-item" data-action="archive" data-uid="${s.uid}" data-name="${nm}">🗄️ Enviar para Ex-alunos</button>`)
         + `<button class="kebab-item danger" data-action="delete" data-uid="${s.uid}" data-name="${nm}">🗑️ Excluir aluno</button>`;
       return `
         <div class="student-row">
@@ -457,7 +459,14 @@
         item.onclick = async e => {
           e.stopPropagation();
           const { action, uid, name } = item.dataset;
-          if (action === 'archive') {
+          if (action === 'setmeta') {
+            const cur = item.dataset.meta || '';
+            const val = prompt(`Meta de aulas no ano para ${name}:`, cur);
+            if (val === null) return;
+            const n = parseInt(val, 10);
+            if (!(n > 0)) { alert('Digite um número maior que zero.'); return; }
+            await updateDoc(doc(db, 'students', uid), { metaAnual: n });
+          } else if (action === 'archive') {
             if (!confirm(`Enviar ${name} para Ex-alunos?`)) return;
             await updateDoc(doc(db, 'students', uid), { archived: true, archivedAt: serverTimestamp() });
           } else if (action === 'reactivate') {
@@ -830,6 +839,7 @@
       const pass   = document.getElementById('f-pass').value;
       const level  = document.getElementById('f-level').value;
       const notion = document.getElementById('f-notion').value.trim();
+      const meta   = parseInt(document.getElementById('f-meta').value, 10);
       if (!name || !email || !pass) { showMsg('create-msg', 'Preencha nome, e-mail e senha.', 'err'); return; }
       if (pass.length < 6)          { showMsg('create-msg', 'Senha mínima de 6 caracteres.', 'err'); return; }
       try {
@@ -838,11 +848,12 @@
           name, firstName: name.split(' ')[0],
           slug: name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-'),
           email, level: level || '', notionUrl: notion || '',
+          ...(meta > 0 && { metaAnual: meta }),
           createdAt: serverTimestamp()
         });
         await signOut(auth2);
         showMsg('create-msg', `✅ Aluno ${name} criado!`, 'ok');
-        ['f-name','f-email','f-pass','f-notion'].forEach(id => document.getElementById(id).value = '');
+        ['f-name','f-email','f-pass','f-notion','f-meta'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('f-level').value = '';
         setTimeout(() => {
           document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
