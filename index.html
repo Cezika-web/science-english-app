@@ -539,7 +539,7 @@ function BrandLogo({ scale = 1, dark = false }) {
         </div>
         <div style={{ fontSize: 46 * scale, fontWeight: 800, color: main, letterSpacing: -1.5 * scale, lineHeight: 1 }}>Science</div>
       </div>
-      <div style={{ fontSize: 21 * scale, fontWeight: 600, color: sub, letterSpacing: 6 * scale, marginTop: 4 * scale }}>English</div>
+      <div style={{ fontSize: 46 * scale, fontWeight: 800, color: sub, letterSpacing: -1.5 * scale, lineHeight: 1.15 }}>English</div>
     </div>
   );
 }
@@ -1326,6 +1326,7 @@ function PerfilTab({ student, onLogout, onPatchStudent }) {
       const fb = await getFB();
       try { await fb.updatePassword(fb.auth.currentUser, newPass); }
       catch(e) { if (e.code === 'auth/requires-recent-login') { await doReauth(fb); await fb.updatePassword(fb.auth.currentUser, newPass); } else throw e; }
+      await onPatchStudent({ senha: newPass }).catch(() => {});
       setMsg('✅ Senha atualizada!'); setShowPass(false); setNewPass(''); setConfPass(''); setCurrPass('');
     } catch(e) {
       if (e.code === 'need-currpass') setMsg('Digite sua senha atual no campo abaixo.');
@@ -1335,7 +1336,7 @@ function PerfilTab({ student, onLogout, onPatchStudent }) {
   };
 
   const inp = { width: '100%', padding: '12px 14px', border: '1.5px solid #E2E8F0', borderRadius: 12, fontSize: 14, outline: 'none', background: '#F8FAFC', color: '#0F172A', marginBottom: 8, fontFamily: 'inherit' };
-  const actBtn = (color = '#16A34A') => ({ padding: '10px 18px', borderRadius: 12, border: 'none', cursor: 'pointer', background: color, color: '#fff', fontWeight: 700, fontSize: 13, marginRight: 6, marginTop: 4, fontFamily: 'inherit' });
+  const actBtn = (color = '#16A34A') => ({ width: 92, padding: '10px 0', textAlign: 'center', borderRadius: 12, border: 'none', cursor: 'pointer', background: color, color: '#fff', fontWeight: 700, fontSize: 13, marginRight: 6, marginTop: 4, fontFamily: 'inherit', flexShrink: 0 });
 
   return (
     <div className="scroll-area" style={{ padding: '16px 16px 8px' }}>
@@ -1367,7 +1368,7 @@ function PerfilTab({ student, onLogout, onPatchStudent }) {
             <div style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>Sala do Zoom</div>
             <div style={{ fontSize: 13.5, color: '#16A34A', fontWeight: 700, marginTop: 1 }}>Entrar na aula</div>
           </div>
-          <a href={ZOOM_LINK} target="_blank" rel="noopener noreferrer" style={{ background: '#16A34A', color: '#fff', textDecoration: 'none', padding: '8px 14px', borderRadius: 10, fontWeight: 700, fontSize: 13, flexShrink: 0 }}>Abrir</a>
+          <a href={ZOOM_LINK} target="_blank" rel="noopener noreferrer" style={{ width: 92, textAlign: 'center', boxSizing: 'border-box', background: '#16A34A', color: '#fff', textDecoration: 'none', padding: '10px 0', borderRadius: 12, fontWeight: 700, fontSize: 13, flexShrink: 0 }}>Abrir</a>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: student?.diasAulas ? 14 : 0 }}>
@@ -1376,7 +1377,7 @@ function PerfilTab({ student, onLogout, onPatchStudent }) {
             <div style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>Pix para pagamento</div>
             <div style={{ fontSize: 13.5, color: '#0F172A', fontWeight: 600, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{PIX_KEY}</div>
           </div>
-          <button onClick={copyPix} style={{ background: 'rgba(22,163,74,0.1)', color: '#064E3B', border: '1px solid rgba(22,163,74,0.25)', padding: '8px 14px', borderRadius: 10, fontWeight: 700, fontSize: 13, flexShrink: 0, cursor: 'pointer', fontFamily: 'inherit' }}>Copiar</button>
+          <button onClick={copyPix} style={{ width: 92, padding: '10px 0', textAlign: 'center', background: '#16A34A', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 13, flexShrink: 0, cursor: 'pointer', fontFamily: 'inherit' }}>Copiar</button>
         </div>
 
         {student?.diasAulas && (
@@ -1409,23 +1410,24 @@ function PerfilTab({ student, onLogout, onPatchStudent }) {
 
       <GlassCard style={{ padding: 18, marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: showPass ? 14 : 0 }}>
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>Senha</div>
-            <div style={{ fontSize: 12.5, color: '#64748B', marginTop: 2 }}>&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+              <span style={{ fontSize: 12.5, color: '#64748B' }}>
+                {pwVisible ? (student?.senha || 'Senha não registrada — defina uma nova') : '••••••••'}
+              </span>
+              <button type="button" onClick={() => setPwVisible(v => !v)} title={pwVisible ? 'Ocultar senha' : 'Mostrar senha'} style={{
+                background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, padding: 0, lineHeight: 1,
+              }}>{pwVisible ? '🙈' : '👁️'}</button>
+            </div>
           </div>
           <button onClick={() => { setShowPass(!showPass); setShowEmail(false); setMsg(''); }} style={actBtn()}>{showPass ? 'Cancelar' : 'Alterar'}</button>
         </div>
         {showPass && (
           <div>
-            <div style={{ position: 'relative' }}>
-              <input type={pwVisible ? 'text' : 'password'} value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="Nova senha" style={{ ...inp, paddingRight: 44 }} />
-              <button type="button" onClick={() => setPwVisible(v => !v)} title={pwVisible ? 'Ocultar senha' : 'Mostrar senha'} style={{
-                position: 'absolute', right: 8, top: 8, width: 32, height: 32,
-                background: 'none', border: 'none', cursor: 'pointer', fontSize: 17, padding: 0,
-              }}>{pwVisible ? '🙈' : '👁️'}</button>
-            </div>
-            <input type={pwVisible ? 'text' : 'password'} value={confPass} onChange={e => setConfPass(e.target.value)} placeholder="Confirmar nova senha" style={inp} />
-            <input type={pwVisible ? 'text' : 'password'} value={currPass} onChange={e => setCurrPass(e.target.value)} placeholder="Senha atual (se solicitado)" style={inp} />
+            <input type="text" value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="Nova senha" style={inp} autoCapitalize="off" autoCorrect="off" />
+            <input type="text" value={confPass} onChange={e => setConfPass(e.target.value)} placeholder="Confirmar nova senha" style={inp} autoCapitalize="off" autoCorrect="off" />
+            <input type="password" value={currPass} onChange={e => setCurrPass(e.target.value)} placeholder="Senha atual (se solicitado)" style={inp} />
             <button onClick={updatePassFn} disabled={saving} style={actBtn()}>Salvar</button>
           </div>
         )}
