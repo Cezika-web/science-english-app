@@ -605,10 +605,43 @@ function InstallBanner() {
 }
 
 // ── HomeTab ─────────────────────────────────────────────────────
-function HomeTab({ posaulas, activities, onOpenPost, onGoActivities }) {
+function ProgressRing({ value, goal, label, sublabel }) {
+  const size = 118, stroke = 11, r = (size - stroke) / 2, c = 2 * Math.PI * r;
+  const pct = goal > 0 ? Math.min(value / goal, 1) : 0;
+  const off = c - pct * c;
+  return (
+    <GlassCard style={{ padding: 16, flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, borderRadius: 24 }}>
+      <div style={{ position: 'relative', width: size, height: size }}>
+        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(22,163,74,0.12)" strokeWidth={stroke} />
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#16A34A" strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={off} style={{ transition: 'stroke-dashoffset 1s ease' }} />
+        </svg>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#0F172A', lineHeight: 1 }}>{value}</div>
+          <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginTop: 2 }}>de {goal}</div>
+        </div>
+      </div>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: 12.5, fontWeight: 800, color: '#064E3B' }}>{label}</div>
+        {sublabel && <div style={{ fontSize: 10.5, color: '#64748B', marginTop: 1, fontWeight: 500 }}>{sublabel}</div>}
+      </div>
+    </GlassCard>
+  );
+}
+
+function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) {
   const latest = posaulas[0] || null;
   const [openMonths, setOpenMonths] = useState({});
   const [btnPressed, setBtnPressed] = useState(false);
+
+  const currentYear = new Date().getFullYear();
+  const aulasAno = posaulas.filter(p => {
+    const d = p.createdAt?.toDate ? p.createdAt.toDate() : (p.createdAt ? new Date(p.createdAt) : null);
+    return d && d.getFullYear() === currentYear;
+  }).length;
+  const metaAnual = Number(student?.metaAnual) || 40;
+  const atividadesFeitas = activities.filter(a => a.finalizada).length;
+  const atividadesTotal = activities.length;
 
   const grouped = React.useMemo(() => {
     const map = {};
@@ -626,6 +659,12 @@ function HomeTab({ posaulas, activities, onOpenPost, onGoActivities }) {
   return (
     <div className="scroll-area" style={{ padding: '16px 16px 8px' }}>
       <InstallBanner />
+
+      {/* Anéis de progresso: aulas no ano + atividades */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+        <ProgressRing value={aulasAno} goal={metaAnual} label="Aulas no ano" sublabel="meta do ano" />
+        <ProgressRing value={atividadesFeitas} goal={atividadesTotal} label="Atividades" sublabel="finalizadas" />
+      </div>
 
       {latest ? (
         <GlassCard style={{ padding: 22, marginBottom: 14, position: 'relative', overflow: 'hidden' }}>
@@ -1325,7 +1364,7 @@ function App() {
       <AppHeader student={student} onNotif={requestPush} showNotifBtn={showNotifBtn} onLogout={handleLogout} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-        {tab === 'home'   && <HomeTab   posaulas={posaulas} activities={activities} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} />}
+        {tab === 'home'   && <HomeTab   student={student} posaulas={posaulas} activities={activities} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} />}
         {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} />}
         {tab === 'vocab'  && <VocabTab vocab={vocab} />}
         {tab === 'perfil' && <PerfilTab student={student} onLogout={handleLogout} />}
