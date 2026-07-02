@@ -6,8 +6,8 @@
   "start_url": "/science-english-app/",
   "scope": "/science-english-app/",
   "display": "standalone",
-  "background_color": "#f4f7fa",
-  "theme_color": "#2f86e6",
+  "background_color": "#064E3B",
+  "theme_color": "#064E3B",
   "orientation": "portrait",
   "lang": "pt-BR",
   "icons": [
