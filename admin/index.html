@@ -192,6 +192,7 @@
         <button class="tab" data-tab="publish">📤 Atividades</button>
         <button class="tab" data-tab="correct">✅ Correção</button>
         <button class="tab" data-tab="vocab">📖 Vocabulário</button>
+        <button class="tab" data-tab="extras">🎧 Extras</button>
         <button class="tab" data-tab="add">➕ Novo Aluno</button>
         <button class="tab" data-tab="exalunos">🗄️ Ex-alunos</button>
       </div>
@@ -301,6 +302,47 @@
             </div>
           </div>
           <div class="form-msg" id="voc-msg"></div>
+        </div>
+      </div>
+
+      <!-- ATIVIDADES EXTRAS -->
+      <div class="tab-panel" id="tab-extras">
+        <div class="form-card">
+          <h2>🎧 Publicar Atividade Extra</h2>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;">
+            Atividades das 4 habilidades (Listening, Speaking, Reading, Writing). Aparecem na aba Extras do app, filtradas pelo nível do aluno.
+          </p>
+          <div class="field">
+            <label>Habilidade</label>
+            <select id="ex-skill">
+              <option value="">Selecione...</option>
+              <option value="listening">🎧 Listening</option>
+              <option value="speaking">🎤 Speaking</option>
+              <option value="reading">📖 Reading</option>
+              <option value="writing">✍️ Writing</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Nível (deixe vazio para todos os níveis)</label>
+            <select id="ex-level">
+              <option value="">Todos os níveis</option>
+              <option value="A1">A1</option><option value="A2">A2</option>
+              <option value="B1">B1</option><option value="B1+">B1+</option>
+              <option value="B2">B2</option><option value="C1">C1</option>
+            </select>
+          </div>
+          <div class="field"><label>Título</label><input type="text" id="ex-title" placeholder="Ex: Vídeo — Daily Routine (BBC Learning)" /></div>
+          <div class="field"><label>Link (vídeo, app, site)</label><input type="url" id="ex-link" placeholder="https://youtube.com/..." /></div>
+          <div class="field"><label>Instrução para o aluno (opcional)</label><input type="text" id="ex-intro" placeholder="Ex: Assista o vídeo e anote 5 palavras novas" /></div>
+          <button class="btn-add" id="btn-add-extra">Publicar Extra →</button>
+          <div class="form-msg" id="ex-msg"></div>
+        </div>
+
+        <div style="margin-top:20px;">
+          <h2 style="font-size:0.95rem;font-weight:700;margin-bottom:10px;">Extras publicados</h2>
+          <div class="students-grid" id="extras-list">
+            <div class="loading">Carregando...</div>
+          </div>
         </div>
       </div>
 
@@ -426,6 +468,7 @@
         document.getElementById('admin-panel').style.display = 'block';
         document.getElementById('admin-email-display').textContent = user.email;
         loadStudents();
+        loadExtras();
       } else {
         adminUid = null;
         document.getElementById('admin-login').style.display = 'flex';
@@ -973,6 +1016,60 @@
       } catch(e) {
         btn.disabled = false; btn.textContent = '🚀 Publicar vocabulário';
         showMsg('voc-msg', `Erro: ${e.message}`, 'err');
+      }
+    };
+
+    // ── ATIVIDADES EXTRAS ───────────────────────────────────────────────
+    const SKILL_LABELS = { listening: '🎧 Listening', speaking: '🎤 Speaking', reading: '📖 Reading', writing: '✍️ Writing' };
+
+    async function loadExtras() {
+      const list = document.getElementById('extras-list');
+      try {
+        const snap = await getDocs(collection(db, 'extras'));
+        const extras = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (extras.length === 0) { list.innerHTML = '<div class="loading">Nenhum extra publicado ainda.</div>'; return; }
+        list.innerHTML = extras.map(e => `
+          <div class="student-row">
+            <div class="student-info">
+              <div class="name">${SKILL_LABELS[e.skill] || e.skill} — ${esc(e.title || '')}</div>
+              <div class="email">Nível: ${esc(e.level || 'Todos')}${e.link ? ` · <a href="${esc(e.link)}" target="_blank">abrir link</a>` : ''}</div>
+              ${e.intro ? `<div class="email" style="margin-top:2px;">${esc(e.intro)}</div>` : ''}
+            </div>
+            <button class="btn-del-item" data-id="${e.id}" data-title="${esc(e.title || '')}">🗑️ Excluir</button>
+          </div>`).join('');
+        list.querySelectorAll('.btn-del-item').forEach(btn => {
+          btn.onclick = async () => {
+            if (!confirm(`Excluir o extra "${btn.dataset.title}"?`)) return;
+            await deleteDoc(doc(db, 'extras', btn.dataset.id));
+            loadExtras();
+          };
+        });
+      } catch(e) {
+        list.innerHTML = `<div class="loading">Erro ao carregar: ${esc(e.message)}</div>`;
+      }
+    }
+
+    document.getElementById('btn-add-extra').onclick = async () => {
+      const skill = document.getElementById('ex-skill').value;
+      const level = document.getElementById('ex-level').value;
+      const title = document.getElementById('ex-title').value.trim();
+      const link  = document.getElementById('ex-link').value.trim();
+      const intro = document.getElementById('ex-intro').value.trim();
+      if (!skill || !title) { showMsg('ex-msg', 'Preencha a habilidade e o título.', 'err'); return; }
+      const btn = document.getElementById('btn-add-extra');
+      btn.disabled = true; btn.textContent = 'Publicando...';
+      try {
+        await addDoc(collection(db, 'extras'), {
+          skill, level: level || '', title, link: link || '', intro: intro || '',
+          createdAt: serverTimestamp(),
+        });
+        btn.disabled = false; btn.textContent = 'Publicar Extra →';
+        ['ex-title','ex-link','ex-intro'].forEach(id => document.getElementById(id).value = '');
+        showMsg('ex-msg', '✅ Extra publicado! Já aparece na aba Extras dos alunos.', 'ok');
+        loadExtras();
+      } catch(e) {
+        btn.disabled = false; btn.textContent = 'Publicar Extra →';
+        showMsg('ex-msg', `Erro: ${e.message}`, 'err');
       }
     };
 
