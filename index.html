@@ -32,6 +32,15 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes conffall {
+      0%   { transform: translateY(-40px) rotate(0deg); opacity: 1; }
+      85%  { opacity: 1; }
+      100% { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+    }
+    @keyframes ringpop {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
 
     .toast-el {
       position: fixed; bottom: 90px; left: 50%;
@@ -609,24 +618,49 @@ function ProgressRing({ value, goal, label, sublabel }) {
   const size = 118, stroke = 11, r = (size - stroke) / 2, c = 2 * Math.PI * r;
   const pct = goal > 0 ? Math.min(value / goal, 1) : 0;
   const off = c - pct * c;
+  const complete = goal > 0 && value >= goal;
+  const ringColor = complete ? '#F59E0B' : '#16A34A';
   return (
-    <GlassCard style={{ padding: 16, flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, borderRadius: 24 }}>
+    <GlassCard style={{ padding: 16, flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, borderRadius: 24, border: complete ? '1px solid rgba(245,158,11,0.4)' : GLASS.border, animation: complete ? 'ringpop 1.4s ease-in-out infinite' : 'none' }}>
       <div style={{ position: 'relative', width: size, height: size }}>
         <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(22,163,74,0.12)" strokeWidth={stroke} />
-          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#16A34A" strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={off} style={{ transition: 'stroke-dashoffset 1s ease' }} />
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={complete ? 'rgba(245,158,11,0.15)' : 'rgba(22,163,74,0.12)'} strokeWidth={stroke} />
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={ringColor} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={off} style={{ transition: 'stroke-dashoffset 1s ease' }} />
         </svg>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#0F172A', lineHeight: 1 }}>{value}</div>
+          {complete && <div style={{ fontSize: 20, lineHeight: 1, marginBottom: 2 }}>&#127881;</div>}
+          <div style={{ fontSize: 24, fontWeight: 800, color: complete ? '#B45309' : '#0F172A', lineHeight: 1 }}>{value}</div>
           <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginTop: 2 }}>de {goal}</div>
         </div>
       </div>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: 12.5, fontWeight: 800, color: '#064E3B' }}>{label}</div>
-        {sublabel && <div style={{ fontSize: 10.5, color: '#64748B', marginTop: 1, fontWeight: 500 }}>{sublabel}</div>}
+        <div style={{ fontSize: 12.5, fontWeight: 800, color: complete ? '#B45309' : '#064E3B' }}>{label}</div>
+        {sublabel && <div style={{ fontSize: 10.5, color: complete ? '#D97706' : '#64748B', marginTop: 1, fontWeight: complete ? 700 : 500 }}>{sublabel}</div>}
       </div>
     </GlassCard>
   );
+}
+
+function Celebration({ show, onDone }) {
+  useEffect(() => {
+    if (!show) return;
+    const t = setTimeout(onDone, 4500);
+    return () => clearTimeout(t);
+  }, [show]);
+  if (!show) return null;
+  const emojis = ['🎉','🎈','🎊','✨','🥳','⭐','🎆'];
+  const pieces = Array.from({ length: 46 }).map((_, i) => {
+    const left = Math.random() * 100;
+    const delay = Math.random() * 0.8;
+    const dur = 2.6 + Math.random() * 2.2;
+    const size = 18 + Math.random() * 20;
+    return (
+      <div key={i} style={{ position: 'absolute', left: left + '%', top: '-40px', fontSize: size, animation: `conffall ${dur}s ${delay}s ease-in forwards` }}>
+        {emojis[i % emojis.length]}
+      </div>
+    );
+  });
+  return <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9998, overflow: 'hidden' }}>{pieces}</div>;
 }
 
 function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) {
@@ -640,8 +674,29 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) 
     return d && d.getFullYear() === currentYear;
   }).length;
   const metaAnual = Number(student?.metaAnual) || 40;
-  const atividadesFeitas = activities.filter(a => a.finalizada).length;
-  const atividadesTotal = activities.length;
+
+  // Atividades da SEMANA = as atuais (ainda não corrigidas). As corrigidas descem pro histórico.
+  const semanaAtivs      = activities.filter(a => a.status !== 'corrected');
+  const atividadesTotal  = semanaAtivs.length;
+  const atividadesFeitas = semanaAtivs.filter(a => a.finalizada).length;
+  const weekAtual        = semanaAtivs[0]?.week || '';
+
+  const ativsComplete = atividadesTotal > 0 && atividadesFeitas === atividadesTotal;
+  const aulasComplete = metaAnual > 0 && aulasAno >= metaAnual;
+
+  const [celebrate, setCelebrate] = useState(false);
+  useEffect(() => {
+    let fire = false;
+    if (ativsComplete) {
+      const k = `celeb-ativs-${weekAtual}-${atividadesTotal}`;
+      if (!localStorage.getItem(k)) { localStorage.setItem(k, '1'); fire = true; }
+    }
+    if (aulasComplete) {
+      const k = `celeb-aulas-${metaAnual}-${aulasAno}`;
+      if (!localStorage.getItem(k)) { localStorage.setItem(k, '1'); fire = true; }
+    }
+    if (fire) setCelebrate(true);
+  }, [ativsComplete, aulasComplete, atividadesTotal, aulasAno, metaAnual, weekAtual]);
 
   const grouped = React.useMemo(() => {
     const map = {};
@@ -660,11 +715,12 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) 
     <div className="scroll-area" style={{ padding: '16px 16px 8px' }}>
       <InstallBanner />
 
-      {/* Anéis de progresso: aulas no ano + atividades */}
+      {/* Anéis de progresso: aulas no ano + atividades da semana */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-        <ProgressRing value={aulasAno} goal={metaAnual} label="Aulas no ano" sublabel="meta do ano" />
-        <ProgressRing value={atividadesFeitas} goal={atividadesTotal} label="Atividades" sublabel="finalizadas" />
+        <ProgressRing value={aulasAno} goal={metaAnual} label="Aulas no ano" sublabel={aulasComplete ? '🎉 meta batida!' : 'meta do ano'} />
+        <ProgressRing value={atividadesFeitas} goal={atividadesTotal} label="Atividades" sublabel={ativsComplete ? '🎉 tudo feito!' : 'da semana'} />
       </div>
+      <Celebration show={celebrate} onDone={() => setCelebrate(false)} />
 
       {latest ? (
         <GlassCard style={{ padding: 22, marginBottom: 14, position: 'relative', overflow: 'hidden' }}>

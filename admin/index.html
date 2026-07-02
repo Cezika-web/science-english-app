@@ -321,7 +321,6 @@
             </select>
           </div>
           <div class="field"><label>Meta de aulas no ano</label><input type="number" id="f-meta" placeholder="Ex: 40" min="1" /></div>
-          <div class="field"><label>URL da área do Notion (opcional)</label><input type="url" id="f-notion" placeholder="https://notion.so/..." /></div>
           <button class="btn-add" id="btn-create-student">Criar aluno</button>
           <div class="form-msg" id="create-msg"></div>
         </div>
@@ -338,6 +337,38 @@
       </div>
       <div class="modal-body" id="modal-body">
         <div class="loading">Carregando...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit student modal -->
+  <div class="modal-overlay" id="edit-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>✏️ Editar dados do aluno</h2>
+        <button class="btn-close" id="edit-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="e-uid" />
+        <div class="field"><label>Nome completo</label><input type="text" id="e-name" /></div>
+        <div class="field"><label>E-mail (exibição no perfil)</label><input type="email" id="e-email" /></div>
+        <div class="field">
+          <label>Nível</label>
+          <select id="e-level">
+            <option value="">Selecione...</option>
+            <option>Beginner (A1)</option><option>Elementary (A2)</option>
+            <option>Pre-Intermediate (B1)</option><option>Intermediate (B1+)</option>
+            <option>Upper-Intermediate (B2)</option><option>Advanced (C1)</option>
+          </select>
+        </div>
+        <div class="field"><label>Meta de aulas no ano</label><input type="number" id="e-meta" min="1" /></div>
+        <div class="field">
+          <label>Slug (usado no nome do arquivo de pós-aula)</label>
+          <input type="text" id="e-slug" />
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">Muda sozinho ao editar o nome. Só ajuste se souber o que está fazendo.</div>
+        </div>
+        <button class="btn-add" id="e-save">Salvar alterações</button>
+        <div class="form-msg" id="e-msg"></div>
       </div>
     </div>
   </div>
@@ -420,7 +451,7 @@
         : (s.latestTitle
             ? `<span class="read-badge ${s.latestRead ? 'read' : 'unread'}">${s.latestRead ? '✓ Lido' : '⏳ Não lido'}</span>`
             : `<span class="read-badge" style="background:#f3f4f6;color:var(--muted)">Sem pós-aula</span>`);
-      const menuItem = `<button class="kebab-item" data-action="setmeta" data-uid="${s.uid}" data-name="${nm}" data-meta="${s.metaAnual || ''}">🎯 Meta de aulas${s.metaAnual ? ` (${s.metaAnual})` : ''}</button>`
+      const menuItem = `<button class="kebab-item" data-action="edit" data-uid="${s.uid}" data-name="${nm}">✏️ Editar dados</button>`
         + (archived
           ? `<button class="kebab-item" data-action="reactivate" data-uid="${s.uid}" data-name="${nm}">↩️ Reativar aluno</button>`
           : `<button class="kebab-item" data-action="archive" data-uid="${s.uid}" data-name="${nm}">🗄️ Enviar para Ex-alunos</button>`)
@@ -459,13 +490,9 @@
         item.onclick = async e => {
           e.stopPropagation();
           const { action, uid, name } = item.dataset;
-          if (action === 'setmeta') {
-            const cur = item.dataset.meta || '';
-            const val = prompt(`Meta de aulas no ano para ${name}:`, cur);
-            if (val === null) return;
-            const n = parseInt(val, 10);
-            if (!(n > 0)) { alert('Digite um número maior que zero.'); return; }
-            await updateDoc(doc(db, 'students', uid), { metaAnual: n });
+          if (action === 'edit') {
+            openEditStudent(uid);
+            return;
           } else if (action === 'archive') {
             if (!confirm(`Enviar ${name} para Ex-alunos?`)) return;
             await updateDoc(doc(db, 'students', uid), { archived: true, archivedAt: serverTimestamp() });
@@ -502,6 +529,62 @@
         if (sel) { const prev = sel.value; sel.innerHTML = opts; sel.value = prev; }
       });
     }
+
+    // ── EDITAR DADOS DO ALUNO ───────────────────────────────────────────
+    function toSlug(str) {
+      return (str || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+    }
+
+    let editSlugTouched = false;
+
+    function openEditStudent(uid) {
+      const s = allStudents.find(x => x.uid === uid);
+      if (!s) return;
+      editSlugTouched = false;
+      document.getElementById('e-uid').value   = uid;
+      document.getElementById('e-name').value  = s.name || s.firstName || '';
+      document.getElementById('e-email').value = s.email || '';
+      document.getElementById('e-level').value = s.level || '';
+      document.getElementById('e-meta').value  = s.metaAnual || '';
+      document.getElementById('e-slug').value  = s.slug || toSlug(s.name || s.firstName || '');
+      showMsg('e-msg', '', 'info');
+      document.getElementById('edit-modal').classList.add('open');
+    }
+
+    document.getElementById('e-name').oninput = () => {
+      if (!editSlugTouched) document.getElementById('e-slug').value = toSlug(document.getElementById('e-name').value);
+    };
+    document.getElementById('e-slug').oninput = () => { editSlugTouched = true; };
+    document.getElementById('edit-close').onclick = () => document.getElementById('edit-modal').classList.remove('open');
+    document.getElementById('edit-modal').onclick = e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); };
+
+    document.getElementById('e-save').onclick = async () => {
+      const uid   = document.getElementById('e-uid').value;
+      const name  = document.getElementById('e-name').value.trim();
+      const email = document.getElementById('e-email').value.trim();
+      const level = document.getElementById('e-level').value;
+      const meta  = parseInt(document.getElementById('e-meta').value, 10);
+      const slug  = document.getElementById('e-slug').value.trim();
+      if (!name) { showMsg('e-msg', 'O nome não pode ficar vazio.', 'err'); return; }
+      const btn = document.getElementById('e-save');
+      btn.disabled = true; btn.textContent = 'Salvando...';
+      try {
+        await updateDoc(doc(db, 'students', uid), {
+          name,
+          firstName: name.split(' ')[0],
+          email: email || '',
+          level: level || '',
+          slug: slug || toSlug(name),
+          metaAnual: meta > 0 ? meta : null,
+        });
+        btn.disabled = false; btn.textContent = 'Salvar alterações';
+        document.getElementById('edit-modal').classList.remove('open');
+        loadStudents();
+      } catch(e) {
+        btn.disabled = false; btn.textContent = 'Salvar alterações';
+        showMsg('e-msg', 'Erro: ' + e.message, 'err');
+      }
+    };
 
     async function loadStudents() {
       const grid   = document.getElementById('students-grid');
@@ -838,7 +921,6 @@
       const email  = document.getElementById('f-email').value.trim();
       const pass   = document.getElementById('f-pass').value;
       const level  = document.getElementById('f-level').value;
-      const notion = document.getElementById('f-notion').value.trim();
       const meta   = parseInt(document.getElementById('f-meta').value, 10);
       if (!name || !email || !pass) { showMsg('create-msg', 'Preencha nome, e-mail e senha.', 'err'); return; }
       if (pass.length < 6)          { showMsg('create-msg', 'Senha mínima de 6 caracteres.', 'err'); return; }
@@ -847,13 +929,13 @@
         await setDoc(doc(db, 'students', cred.user.uid), {
           name, firstName: name.split(' ')[0],
           slug: name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-'),
-          email, level: level || '', notionUrl: notion || '',
+          email, level: level || '',
           ...(meta > 0 && { metaAnual: meta }),
           createdAt: serverTimestamp()
         });
         await signOut(auth2);
         showMsg('create-msg', `✅ Aluno ${name} criado!`, 'ok');
-        ['f-name','f-email','f-pass','f-notion','f-meta'].forEach(id => document.getElementById(id).value = '');
+        ['f-name','f-email','f-pass','f-meta'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('f-level').value = '';
         setTimeout(() => {
           document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
