@@ -350,6 +350,18 @@
       </div>
       <div class="modal-body">
         <input type="hidden" id="e-uid" />
+
+        <div class="field" style="text-align:center;">
+          <label style="text-align:left;">Foto do aluno</label>
+          <div style="display:flex;align-items:center;gap:14px;">
+            <img id="e-photo-preview" src="" alt="" style="width:64px;height:64px;border-radius:50%;object-fit:cover;background:#e8f3ff;flex-shrink:0;border:1px solid var(--border);" />
+            <div style="flex:1;text-align:left;">
+              <input type="file" id="e-photo-file" accept="image/*" style="font-size:0.82rem;" />
+              <button type="button" id="e-photo-remove" class="btn-sm-danger" style="background:#fff5f5;color:var(--danger);margin-top:6px;">Remover foto</button>
+            </div>
+          </div>
+        </div>
+
         <div class="field"><label>Nome completo</label><input type="text" id="e-name" /></div>
         <div class="field"><label>E-mail (exibição no perfil)</label><input type="email" id="e-email" /></div>
         <div class="field">
@@ -362,6 +374,12 @@
           </select>
         </div>
         <div class="field"><label>Meta de aulas no ano</label><input type="number" id="e-meta" min="1" /></div>
+
+        <div style="border-top:1px solid var(--border);margin:16px 0 12px;padding-top:12px;font-size:0.82rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Informações do curso</div>
+        <div class="field"><label>Dias e horário das aulas</label><input type="text" id="e-dias" placeholder="Ex: Segunda e quarta, 19h" /></div>
+        <div class="field"><label>Link do Zoom</label><input type="url" id="e-zoom" placeholder="https://zoom.us/j/..." /></div>
+        <div class="field"><label>Pix (chave para pagamento)</label><input type="text" id="e-pix" placeholder="Ex: czkenglish@gmail.com" /></div>
+
         <div class="field">
           <label>Slug (usado no nome do arquivo de pós-aula)</label>
           <input type="text" id="e-slug" />
@@ -456,9 +474,12 @@
           ? `<button class="kebab-item" data-action="reactivate" data-uid="${s.uid}" data-name="${nm}">↩️ Reativar aluno</button>`
           : `<button class="kebab-item" data-action="archive" data-uid="${s.uid}" data-name="${nm}">🗄️ Enviar para Ex-alunos</button>`)
         + `<button class="kebab-item danger" data-action="delete" data-uid="${s.uid}" data-name="${nm}">🗑️ Excluir aluno</button>`;
+      const avatar = s.photo
+        ? `<img class="avatar" src="${s.photo}" alt="" style="object-fit:cover;" />`
+        : `<div class="avatar">${(s.firstName || s.name || '?')[0].toUpperCase()}</div>`;
       return `
         <div class="student-row">
-          <div class="avatar">${(s.firstName || s.name || '?')[0].toUpperCase()}</div>
+          ${avatar}
           <div class="student-info">
             <div class="name">${nm}</div>
             <div class="email">${esc(s.email || '')} · ${esc(s.level || '')}</div>
@@ -536,20 +557,61 @@
     }
 
     let editSlugTouched = false;
+    let editPhoto = '';
+
+    function resizeImg(file, maxSize) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = new Image();
+          img.onload = () => {
+            let { width, height } = img;
+            const scale = Math.min(1, maxSize / Math.max(width, height));
+            const w = Math.round(width * scale), h = Math.round(height * scale);
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', 0.85));
+          };
+          img.onerror = reject; img.src = e.target.result;
+        };
+        reader.onerror = reject; reader.readAsDataURL(file);
+      });
+    }
 
     function openEditStudent(uid) {
       const s = allStudents.find(x => x.uid === uid);
       if (!s) return;
       editSlugTouched = false;
+      editPhoto = s.photo || '';
       document.getElementById('e-uid').value   = uid;
       document.getElementById('e-name').value  = s.name || s.firstName || '';
       document.getElementById('e-email').value = s.email || '';
       document.getElementById('e-level').value = s.level || '';
       document.getElementById('e-meta').value  = s.metaAnual || '';
+      document.getElementById('e-dias').value  = s.diasAulas || '';
+      document.getElementById('e-zoom').value  = s.zoomLink || '';
+      document.getElementById('e-pix').value   = s.pix || '';
       document.getElementById('e-slug').value  = s.slug || toSlug(s.name || s.firstName || '');
+      document.getElementById('e-photo-preview').src = editPhoto || '';
+      document.getElementById('e-photo-file').value = '';
       showMsg('e-msg', '', 'info');
       document.getElementById('edit-modal').classList.add('open');
     }
+
+    document.getElementById('e-photo-file').onchange = async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        editPhoto = await resizeImg(file, 256);
+        document.getElementById('e-photo-preview').src = editPhoto;
+      } catch(err) { showMsg('e-msg', 'Erro ao carregar a foto.', 'err'); }
+    };
+    document.getElementById('e-photo-remove').onclick = () => {
+      editPhoto = '';
+      document.getElementById('e-photo-preview').src = '';
+      document.getElementById('e-photo-file').value = '';
+    };
 
     document.getElementById('e-name').oninput = () => {
       if (!editSlugTouched) document.getElementById('e-slug').value = toSlug(document.getElementById('e-name').value);
@@ -565,6 +627,9 @@
       const level = document.getElementById('e-level').value;
       const meta  = parseInt(document.getElementById('e-meta').value, 10);
       const slug  = document.getElementById('e-slug').value.trim();
+      const dias  = document.getElementById('e-dias').value.trim();
+      const zoom  = document.getElementById('e-zoom').value.trim();
+      const pix   = document.getElementById('e-pix').value.trim();
       if (!name) { showMsg('e-msg', 'O nome não pode ficar vazio.', 'err'); return; }
       const btn = document.getElementById('e-save');
       btn.disabled = true; btn.textContent = 'Salvando...';
@@ -576,6 +641,10 @@
           level: level || '',
           slug: slug || toSlug(name),
           metaAnual: meta > 0 ? meta : null,
+          diasAulas: dias || '',
+          zoomLink: zoom || '',
+          pix: pix || '',
+          photo: editPhoto || '',
         });
         btn.disabled = false; btn.textContent = 'Salvar alterações';
         document.getElementById('edit-modal').classList.remove('open');
