@@ -684,20 +684,6 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) 
   const ativsComplete = atividadesTotal > 0 && atividadesFeitas === atividadesTotal;
   const aulasComplete = metaAnual > 0 && aulasAno >= metaAnual;
 
-  const [celebrate, setCelebrate] = useState(false);
-  useEffect(() => {
-    let fire = false;
-    if (ativsComplete) {
-      const k = `celeb-ativs-${weekAtual}-${atividadesTotal}`;
-      if (!localStorage.getItem(k)) { localStorage.setItem(k, '1'); fire = true; }
-    }
-    if (aulasComplete) {
-      const k = `celeb-aulas-${metaAnual}-${aulasAno}`;
-      if (!localStorage.getItem(k)) { localStorage.setItem(k, '1'); fire = true; }
-    }
-    if (fire) setCelebrate(true);
-  }, [ativsComplete, aulasComplete, atividadesTotal, aulasAno, metaAnual, weekAtual]);
-
   const grouped = React.useMemo(() => {
     const map = {};
     posaulas.slice(1).forEach(p => {
@@ -720,7 +706,6 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) 
         <ProgressRing value={aulasAno} goal={metaAnual} label="Aulas no ano" sublabel={aulasComplete ? '🎉 meta batida!' : 'meta do ano'} />
         <ProgressRing value={atividadesFeitas} goal={atividadesTotal} label="Atividades" sublabel={ativsComplete ? '🎉 tudo feito!' : 'da semana'} />
       </div>
-      <Celebration show={celebrate} onDone={() => setCelebrate(false)} />
 
       {latest ? (
         <GlassCard style={{ padding: 22, marginBottom: 14, position: 'relative', overflow: 'hidden' }}>
@@ -1256,7 +1241,34 @@ function App() {
   const [openActivity, setOpenActivity] = useState(null);
   const [openPart, setOpenPart]         = useState(null);
   const [showNotifBtn, setShowNotifBtn] = useState(false);
+  const [celebrate, setCelebrate]       = useState(false);
   const pendingPostId = useRef(new URLSearchParams(window.location.search).get('post') || '');
+
+  // ── Comemoração (confete): dispara na hora que completa, em qualquer aba ──
+  useEffect(() => {
+    if (!student) return;
+    const currentYear = new Date().getFullYear();
+    const aulasAno = posaulas.filter(p => {
+      const d = p.createdAt?.toDate ? p.createdAt.toDate() : (p.createdAt ? new Date(p.createdAt) : null);
+      return d && d.getFullYear() === currentYear;
+    }).length;
+    const metaAnual  = Number(student?.metaAnual) || 40;
+    const semanaAtivs = activities.filter(a => a.status !== 'corrected');
+    const total       = semanaAtivs.length;
+    const feitas      = semanaAtivs.filter(a => a.finalizada).length;
+    const weekAtual   = semanaAtivs[0]?.week || '';
+
+    let fire = false;
+    if (total > 0 && feitas === total) {
+      const k = `celeb-ativs-${student.uid}-${weekAtual}-${total}`;
+      if (!localStorage.getItem(k)) { localStorage.setItem(k, '1'); fire = true; }
+    }
+    if (metaAnual > 0 && aulasAno >= metaAnual) {
+      const k = `celeb-aulas-${student.uid}-${metaAnual}-${aulasAno}`;
+      if (!localStorage.getItem(k)) { localStorage.setItem(k, '1'); fire = true; }
+    }
+    if (fire) setCelebrate(true);
+  }, [student, posaulas, activities]);
 
   useEffect(() => {
     let unsub;
@@ -1430,6 +1442,8 @@ function App() {
 
       <ActivityModal activity={openActivity} onClose={handleCloseAll} onOpenPart={handleOpenPart} />
       <PartModal part={openPart} activity={openActivity} onBack={handleClosePart} onClose={handleCloseAll} onFinish={handleFinishPart} />
+
+      <Celebration show={celebrate} onDone={() => setCelebrate(false)} />
     </div>
   );
 }
