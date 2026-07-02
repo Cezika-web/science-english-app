@@ -1205,7 +1205,7 @@
         await setDoc(doc(db, 'students', cred.user.uid), {
           name, firstName: name.split(' ')[0],
           slug: name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-'),
-          email, level: level || '',
+          email, level: level || '', senha: pass,
           ...(meta > 0 && { metaAnual: meta }),
           ...(dias && { diasAulas: dias }),
           createdAt: serverTimestamp()
