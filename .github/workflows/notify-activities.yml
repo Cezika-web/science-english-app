@@ -1,0 +1,32 @@
+name: Avisar - novas atividades
+
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: 'Slug do aluno (ex: gu, isabelle-bueno, vitor-pereira) ou "todos" para todos os alunos'
+        required: true
+        default: 'todos'
+        type: string
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install google-auth requests
+
+      - name: Enviar aviso de novas atividades
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          TARGET_SLUG: ${{ github.event.inputs.slug }}
+        run: python .github/scripts/notify_activities.py "$TARGET_SLUG"
