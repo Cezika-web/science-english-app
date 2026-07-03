@@ -114,6 +114,28 @@
       outline: none; resize: none; line-height: 1.6; margin-top: 6px;
     }
     .ex-textarea:focus { border-color: #16A34A; background: #fff; }
+
+    /* ── Arrastar (matching) ── */
+    .ex-match { margin: 4px 0 10px; }
+    .ex-match-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .ex-match-row { display: flex; align-items: center; gap: 10px; }
+    .ex-match-left { flex: 1; font-size: 14.5px; color: #1F2937; }
+    .ex-match-slot {
+      width: 130px; min-height: 40px; flex-shrink: 0;
+      border: 1.5px dashed #C7B29A; border-radius: 12px; background: #FBF7F1;
+      display: flex; align-items: center; justify-content: center; padding: 3px;
+    }
+    .ex-match-slot .ex-match-chip { margin: 0; }
+    .ex-match-pool {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      padding-top: 10px; border-top: 1px dashed #E2E8F0;
+    }
+    .ex-match-chip {
+      background: #fff; border: 1.5px solid #16A34A; color: #064E3B;
+      border-radius: 12px; padding: 8px 13px; font-size: 13.5px; font-weight: 600;
+      cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none;
+    }
+    .ex-match-chip.dragging { box-shadow: 0 10px 24px rgba(0,0,0,0.22); opacity: 0.95; }
   </style>
 </head>
 <body>
@@ -325,9 +347,117 @@ function buildTextarea(p, key, ctx) {
   setTimeout(grow, 0);
 }
 
+function shuffleArr(a) {
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+
+// Exercício de ARRASTAR (matching): esquerda (PT) fixa, o aluno arrasta a
+// tradução (EN) do pool para o espaço na frente de cada palavra.
+function buildMatch(list, pairs, keys, ctx) {
+  const wrap = document.createElement('div');
+  wrap.className = 'ex-match';
+  const rowsBox = document.createElement('div'); rowsBox.className = 'ex-match-rows';
+  const slots = [];
+  pairs.forEach((p, i) => {
+    const row = document.createElement('div'); row.className = 'ex-match-row';
+    const left = document.createElement('div'); left.className = 'ex-match-left'; left.textContent = p.left;
+    const slot = document.createElement('div'); slot.className = 'ex-match-slot'; slot.dataset.idx = i;
+    slots.push(slot);
+    row.appendChild(left); row.appendChild(slot); rowsBox.appendChild(row);
+  });
+  const pool = document.createElement('div'); pool.className = 'ex-match-pool';
+  wrap.appendChild(rowsBox); wrap.appendChild(pool);
+
+  function recordValue() {
+    slots.forEach((slot, i) => {
+      const chip = slot.querySelector('.ex-match-chip');
+      if (chip) ctx.values[keys[i]] = chip.dataset.text; else delete ctx.values[keys[i]];
+    });
+    ctx.onChange();
+  }
+  function placeChip(chip, slot) {
+    const existing = slot.querySelector('.ex-match-chip');
+    if (existing) pool.appendChild(existing);
+    slot.appendChild(chip);
+    recordValue();
+  }
+  function returnChip(chip) { pool.appendChild(chip); recordValue(); }
+
+  function attachDrag(chip) {
+    let dragging = false, clone = null, sx = 0, sy = 0, moved = false;
+    chip.addEventListener('pointerdown', e => {
+      dragging = true; moved = false; sx = e.clientX; sy = e.clientY;
+      try { chip.setPointerCapture(e.pointerId); } catch (er) {}
+    });
+    chip.addEventListener('pointermove', e => {
+      if (!dragging) return;
+      const dx = e.clientX - sx, dy = e.clientY - sy;
+      if (!moved && Math.hypot(dx, dy) > 6) {
+        moved = true;
+        const r = chip.getBoundingClientRect();
+        clone = chip.cloneNode(true);
+        clone.classList.add('dragging');
+        clone.style.cssText = 'position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;margin:0;z-index:9999;pointer-events:none;';
+        clone._w = r.width; clone._h = r.height;
+        document.body.appendChild(clone);
+        chip.style.opacity = '0.3';
+      }
+      if (moved && clone) { clone.style.left = (e.clientX - clone._w / 2) + 'px'; clone.style.top = (e.clientY - clone._h / 2) + 'px'; }
+    });
+    chip.addEventListener('pointerup', e => {
+      if (!dragging) return; dragging = false;
+      if (!moved) {
+        if (chip.parentElement.classList.contains('ex-match-slot')) returnChip(chip);
+        return;
+      }
+      if (clone) { clone.remove(); clone = null; }
+      chip.style.opacity = '';
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const slot = el && el.closest ? el.closest('.ex-match-slot') : null;
+      if (slot) placeChip(chip, slot);
+      moved = false;
+    });
+  }
+
+  const rights = shuffleArr(pairs.map(p => p.right));
+  rights.forEach(text => {
+    const chip = document.createElement('div'); chip.className = 'ex-match-chip';
+    chip.textContent = text; chip.dataset.text = text; chip.style.touchAction = 'none';
+    attachDrag(chip);
+    pool.appendChild(chip);
+  });
+
+  keys.forEach((k, i) => {
+    const sv = ctx.saved[k];
+    if (sv) {
+      const chip = [...pool.querySelectorAll('.ex-match-chip')].find(c => c.dataset.text === sv && c.parentElement === pool);
+      if (chip) placeChip(chip, slots[i]);
+    }
+  });
+
+  list.replaceWith(wrap);
+}
+
 function processExercises(root, ctx) {
   const genKey = () => 'e' + (ctx.keyc.n++);
+
+  // 1) ARRASTAR (matching) — <ol data-match> / <ul data-match> com "PT | EN"
+  root.querySelectorAll('ol[data-match], ul[data-match]').forEach(list => {
+    const pairs = [];
+    list.querySelectorAll('li').forEach(li => {
+      const parts = (li.textContent || '').split('|');
+      if (parts.length >= 2) pairs.push({ left: parts[0].trim(), right: parts.slice(1).join('|').trim() });
+    });
+    if (pairs.length === 0) return;
+    const keys = pairs.map(() => genKey());
+    list.removeAttribute('data-match');
+    list.setAttribute('data-match-done', '1');
+    if (ctx.build) buildMatch(list, pairs, keys, ctx);
+  });
+
   root.querySelectorAll('li').forEach(li => {
+    if (li.closest('[data-match-done]')) return;
     const text = li.textContent || '';
     const choice = parseChoice(text);
     if (choice && choice.options.length >= 2) {
