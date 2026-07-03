@@ -949,8 +949,10 @@
         const actRef = doc(db, 'students', uid, 'activities', selectedActivityId);
         await updateDoc(actRef, {
           status:   'corrected',
-          feedback: parsedCorrectionJson.feedback,
+          ...(parsedCorrectionJson.feedback && { feedback: parsedCorrectionJson.feedback }),
           ...(parsedCorrectionJson.summary && { summary: parsedCorrectionJson.summary }),
+          ...(parsedCorrectionJson.report && { report: parsedCorrectionJson.report }),
+          ...(parsedCorrectionJson.correcao && { correcao: parsedCorrectionJson.correcao }),
           correctedAt: serverTimestamp(),
         });
 
