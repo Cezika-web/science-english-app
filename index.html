@@ -486,6 +486,44 @@ function processExercises(root, ctx) {
   });
 }
 
+// Aplica a correção do professor: colore cada questão (li ou bloco de escrita)
+// conforme o status e mostra resposta correta + explicação. Deixa read-only.
+const CORR_COLORS = {
+  ok:      { bg: 'rgba(22,163,74,0.06)', bd: '#16A34A', tx: '#3B6D11', label: '✓ correto' },
+  bobo:    { bg: '#FEFCE8', bd: '#CA8A04', tx: '#854F0B', label: 'Erro bobo' },
+  mediano: { bg: '#FFF7ED', bd: '#EA580C', tx: '#9A3412', label: 'Erro mediano' },
+  grave:   { bg: '#FEF2F2', bd: '#DC2626', tx: '#991B1B', label: 'Erro grave' },
+};
+function applyCorrection(container, arr) {
+  const qs = [...container.querySelectorAll('li, p')].filter(el =>
+    el.tagName === 'LI' || el.querySelector('.ex-textarea'));
+  (arr || []).forEach((c, i) => {
+    const el = qs[i]; if (!el) return;
+    const st = CORR_COLORS[c.status] || CORR_COLORS.ok;
+    el.style.borderLeft = '4px solid ' + st.bd;
+    el.style.background = st.bg;
+    el.style.borderRadius = '0 10px 10px 0';
+    el.style.padding = '8px 10px';
+    el.style.marginBottom = '10px';
+    if (c.status !== 'ok' && (c.correct || c.explain)) {
+      const box = document.createElement('div');
+      box.style.cssText = 'margin-top:6px;font-size:12px;line-height:1.5;color:' + st.tx + ';';
+      box.innerHTML =
+        '<div style="font-weight:800;margin-bottom:2px;">' + st.label + '</div>' +
+        (c.correct ? '<div><strong>Resposta correta:</strong> ' + escHtml(c.correct) + '</div>' : '') +
+        (c.explain ? '<div>' + escHtml(c.explain) + '</div>' : '');
+      el.appendChild(box);
+    } else if (c.status === 'ok') {
+      const tag = document.createElement('div');
+      tag.style.cssText = 'margin-top:4px;font-size:11px;font-weight:800;color:' + st.tx + ';';
+      tag.textContent = st.label;
+      el.appendChild(tag);
+    }
+  });
+  container.querySelectorAll('input, textarea').forEach(x => { x.disabled = true; });
+  container.querySelectorAll('.ex-opt, .ex-match-chip').forEach(x => { x.style.pointerEvents = 'none'; });
+}
+
 function countExercises(html) {
   if (!html) return 0;
   try {
@@ -1764,6 +1802,9 @@ function PartModal({ part, activity, onBack, onClose, onFinish }) {
     const ctx = { build: true, saved, values, onChange: recount, keyc: { n: 0 } };
     processExercises(container, ctx);
     recount();
+    if (isCorrected && activity?.correcao && activity.correcao[partId]) {
+      applyCorrection(container, activity.correcao[partId]);
+    }
   }, [part, activity]);
 
   const total     = stats.total;
