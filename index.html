@@ -177,6 +177,29 @@ function fmtDate(ts) {
   return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
 }
 
+function fmtCourseStart(v) {
+  if (!v) return '';
+  // v vem como "AAAA-MM-DD" (input date) ou timestamp
+  let d;
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v)) {
+    const [y, m, dd] = v.split('-');
+    d = new Date(Number(y), Number(m) - 1, Number(dd));
+  } else {
+    d = v.toDate ? v.toDate() : new Date(v);
+  }
+  if (isNaN(d)) return '';
+  const dataStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+  const meses = Math.max(0, (new Date().getFullYear() - d.getFullYear()) * 12 + (new Date().getMonth() - d.getMonth()));
+  let tempo = '';
+  if (meses < 1) tempo = 'este mês';
+  else if (meses < 12) tempo = `há ${meses} ${meses === 1 ? 'mês' : 'meses'}`;
+  else {
+    const anos = Math.floor(meses / 12), rest = meses % 12;
+    tempo = `há ${anos} ${anos === 1 ? 'ano' : 'anos'}${rest ? ` e ${rest} ${rest === 1 ? 'mês' : 'meses'}` : ''}`;
+  }
+  return `${dataStr} · ${tempo}`;
+}
+
 function monthKey(ts) {
   if (!ts) return 'Sem data';
   const d = ts.toDate ? ts.toDate() : new Date(ts);
@@ -730,6 +753,7 @@ function ProgressRing({ value, goal, label, sublabel }) {
       </div>
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: 12.5, fontWeight: 800, color: complete ? '#B45309' : '#064E3B' }}>{label}</div>
+        <div style={{ fontSize: 11.5, fontWeight: 800, color: complete ? '#D97706' : '#16A34A', marginTop: 2 }}>{Math.round(pct * 100)}% da meta</div>
         {sublabel && <div style={{ fontSize: 10.5, color: complete ? '#D97706' : '#64748B', marginTop: 1, fontWeight: complete ? 700 : 500 }}>{sublabel}</div>}
       </div>
     </GlassCard>
@@ -1386,11 +1410,21 @@ function PerfilTab({ student, onLogout, onPatchStudent }) {
         </div>
 
         {student?.diasAulas && (
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: student?.inicioCurso ? 14 : 0 }}>
             <div style={{ fontSize: 20, flexShrink: 0 }}>📅</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>Dias e horário das aulas</div>
               <div style={{ fontSize: 14, color: '#0F172A', fontWeight: 600, marginTop: 1 }}>{student.diasAulas}</div>
+            </div>
+          </div>
+        )}
+
+        {student?.inicioCurso && (
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <div style={{ fontSize: 20, flexShrink: 0 }}>🎓</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>Início das aulas</div>
+              <div style={{ fontSize: 14, color: '#0F172A', fontWeight: 600, marginTop: 1 }}>{fmtCourseStart(student.inicioCurso)}</div>
             </div>
           </div>
         )}
