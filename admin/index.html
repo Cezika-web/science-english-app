@@ -500,7 +500,8 @@
         : (s.latestTitle
             ? `<span class="read-badge ${s.latestRead ? 'read' : 'unread'}">${s.latestRead ? '✓ Lido' : '⏳ Não lido'}</span>`
             : `<span class="read-badge" style="background:#f3f4f6;color:var(--muted)">Sem pós-aula</span>`);
-      const menuItem = `<button class="kebab-item" data-action="edit" data-uid="${s.uid}" data-name="${nm}">✏️ Editar dados</button>`
+      const menuItem = `<button class="kebab-item" data-action="mirror" data-uid="${s.uid}" data-name="${nm}">🪞 Espelho (ver área do aluno)</button>`
+        + `<button class="kebab-item" data-action="edit" data-uid="${s.uid}" data-name="${nm}">✏️ Editar dados</button>`
         + (archived
           ? `<button class="kebab-item" data-action="reactivate" data-uid="${s.uid}" data-name="${nm}">↩️ Reativar aluno</button>`
           : `<button class="kebab-item" data-action="archive" data-uid="${s.uid}" data-name="${nm}">🗄️ Enviar para Ex-alunos</button>`)
@@ -542,7 +543,10 @@
         item.onclick = async e => {
           e.stopPropagation();
           const { action, uid, name } = item.dataset;
-          if (action === 'edit') {
+          if (action === 'mirror') {
+            window.open('../?mirror=' + encodeURIComponent(uid), '_blank');
+            return;
+          } else if (action === 'edit') {
             openEditStudent(uid);
             return;
           } else if (action === 'archive') {

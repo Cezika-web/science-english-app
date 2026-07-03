@@ -99,8 +99,8 @@
       background: #E2E8F0; color: #475569; font-weight: 800; font-size: 13px;
       display: flex; align-items: center; justify-content: center;
     }
-    .ex-opt.sel { background: rgba(22,163,74,0.1); border-color: #16A34A; color: #064E3B; font-weight: 600; }
-    .ex-opt.sel .ex-letter { background: #16A34A; color: #fff; }
+    .ex-opt.sel { background: rgba(37,99,235,0.1); border-color: #2563EB; color: #1E40AF; font-weight: 600; }
+    .ex-opt.sel .ex-letter { background: #2563EB; color: #fff; }
     .ex-input {
       border: none; border-bottom: 2px solid #16A34A; background: rgba(22,163,74,0.06);
       font-size: 14.5px; font-family: inherit; color: #0F172A; padding: 2px 6px;
@@ -250,9 +250,14 @@ function buildChoice(li, key, choice, ctx) {
     btn.innerHTML = '<span class="ex-letter">' + o.letter.toUpperCase() + '</span><span>' + escHtml(o.text) + '</span>';
     if (ctx.saved[key] === o.letter) { btn.classList.add('sel'); ctx.values[key] = o.letter; }
     btn.addEventListener('click', () => {
+      const wasSel = btn.classList.contains('sel');
       opts.querySelectorAll('.ex-opt').forEach(x => x.classList.remove('sel'));
-      btn.classList.add('sel');
-      ctx.values[key] = o.letter;
+      if (wasSel) {
+        delete ctx.values[key];   // clicar de novo desmarca (deixa sem resposta)
+      } else {
+        btn.classList.add('sel');
+        ctx.values[key] = o.letter;
+      }
       ctx.onChange();
     });
     opts.appendChild(btn);
@@ -1620,6 +1625,8 @@ function App() {
   const [showNotifBtn, setShowNotifBtn] = useState(false);
   const [celebrate, setCelebrate]       = useState(false);
   const pendingPostId = useRef(new URLSearchParams(window.location.search).get('post') || '');
+  const mirrorUid = useRef(new URLSearchParams(window.location.search).get('mirror') || '');
+  const mirror = !!mirrorUid.current;
 
   // ── Comemoração (confete): dispara na hora que completa, em qualquer aba ──
   useEffect(() => {
@@ -1654,14 +1661,17 @@ function App() {
       unsub = fb.onAuthStateChanged(fb.auth, async u => {
         if (u) {
           setUser(u);
-          await loadData(u.uid, fb);
-          updateNotifBtn();
-          syncPushIfGranted(u.uid, fb);
-          if (fb.messaging) {
-            fb.onMessage(fb.messaging, payload => {
-              showToast('&#128196; ' + (payload.notification?.body || 'Novo pos-aula disponivel!'));
-              loadData(u.uid, fb);
-            });
+          const dataUid = mirror ? mirrorUid.current : u.uid;
+          await loadData(dataUid, fb);
+          if (!mirror) {
+            updateNotifBtn();
+            syncPushIfGranted(u.uid, fb);
+            if (fb.messaging) {
+              fb.onMessage(fb.messaging, payload => {
+                showToast('&#128196; ' + (payload.notification?.body || 'Novo pos-aula disponivel!'));
+                loadData(u.uid, fb);
+              });
+            }
           }
         } else {
           setUser(null); setStudent(null); setPosaulas([]); setActivities([]);
@@ -1701,6 +1711,7 @@ function App() {
 
   async function openPost(post, fb, uid) {
     setReaderPost(post);
+    if (mirror) return;
     try {
       const f = fb || await getFB();
       const u = uid || user?.uid;
@@ -1753,7 +1764,7 @@ function App() {
   }
 
   async function patchStudent(patch) {
-    if (!user) return;
+    if (!user || mirror) return;
     const fb = await getFB();
     await fb.setDoc(fb.doc(fb.db, 'students', user.uid), patch, { merge: true });
     setStudent(s => ({ ...s, ...patch }));
@@ -1761,6 +1772,7 @@ function App() {
 
   async function handleFinishExtra(extra, result) {
     if (!user) return;
+    if (mirror) { showToast('👁 Modo espelho — somente leitura'); return; }
     const fb = await getFB();
     const conclusao = { respondidos: result.respondidos, total: result.total, pct: result.pct };
     try {
@@ -1798,6 +1810,7 @@ function App() {
 
   async function handleFinishPart(partId, result) {
     if (!openActivity || !user) return;
+    if (mirror) { showToast('👁 Modo espelho — somente leitura'); return; }
     const fb = await getFB();
     const actId = openActivity.id;
     const parts = openActivity.parts || [];
@@ -1831,6 +1844,11 @@ function App() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', maxWidth: 480, margin: '0 auto', background: '#F6F1EA' }}>
+      {mirror && (
+        <div style={{ background: '#1E40AF', color: '#fff', fontSize: 12.5, fontWeight: 700, textAlign: 'center', padding: '7px 12px', flexShrink: 0 }}>
+          👁 Modo espelho — {student?.name || student?.firstName || 'aluno'} (somente leitura)
+        </div>
+      )}
       <AppHeader student={student} onNotif={requestPush} showNotifBtn={showNotifBtn} onLogout={handleLogout} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
