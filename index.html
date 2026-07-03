@@ -1161,6 +1161,69 @@ function ExtrasSection({ extras, onOpenExtra }) {
 }
 
 // ── Modal do Extra (link + questões interativas) ─────────────────
+// ── Modal de Correção (relatório completo dos 6 blocos) ──────────
+function CorrecaoModal({ data, onClose }) {
+  if (!data) return null;
+  const acts = (data.acts || []).filter(a => a.report || a.summary || a.correcao);
+
+  const tot = { correct: 0, bobo: 0, mediano: 0, grave: 0 };
+  acts.forEach(a => {
+    const s = a.summary || {};
+    tot.correct += Number(s.correct || 0);
+    const e = s.errors || {};
+    tot.bobo += Number(e.bobo || 0);
+    tot.mediano += Number(e.mediano || 0);
+    tot.grave += Number(e.grave || 0);
+  });
+
+  const cell = (n, label, bg, color) => (
+    <div style={{ background: bg, borderRadius: 10, padding: '8px 10px' }}>
+      <div style={{ fontSize: 18, fontWeight: 800, color }}>{n}</div>
+      <div style={{ fontSize: 10.5, color, fontWeight: 600 }}>{label}</div>
+    </div>
+  );
+
+  return (
+    <div className={'modal-overlay' + (data ? ' open' : '')} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal-sheet modal-sheet-full">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: '1px solid #F1F5F9', position: 'sticky', top: 0, background: 'white', zIndex: 1, flexShrink: 0, paddingTop: 'calc(14px + env(safe-area-inset-top, 0px))' }}>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: '#F1F5F9', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', flexShrink: 0, fontFamily: 'inherit' }}>&#8249;</button>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 11, color: '#9A6438', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 1 }}>Correção</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{data.wk || ''}</div>
+          </div>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
+          {/* Contagem geral */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
+            {cell(tot.correct, 'acertos', '#EAF3DE', '#3B6D11')}
+            {cell(tot.bobo, 'erros bobos', '#FEFCE8', '#854F0B')}
+            {cell(tot.mediano, 'erros medianos', '#FFF7ED', '#9A3412')}
+            {cell(tot.grave, 'erros graves', '#FEF2F2', '#991B1B')}
+          </div>
+
+          {/* Relatório(s) completo(s) — 6 blocos */}
+          {acts.map((a, i) => (
+            (a.report || (a.feedback && Object.keys(a.feedback).length)) && (
+              <div key={a.id || i} style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', marginBottom: 8 }}>{a.emoji || '📚'} {a.title || 'Atividade'}</div>
+                {a.report && (
+                  <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: 14, fontSize: 13, lineHeight: 1.6, color: '#334155', whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>{a.report}</div>
+                )}
+              </div>
+            )
+          ))}
+
+          {acts.length === 0 && (
+            <div style={{ textAlign: 'center', color: '#64748B', fontSize: 13, padding: 24 }}>Relatório de correção ainda não disponível.</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ExtraModal({ extra, onClose, onFinish }) {
   const contentRef = useRef(null);
   const valuesRef  = useRef({});
@@ -1250,7 +1313,7 @@ function ExtraModal({ extra, onClose, onFinish }) {
   );
 }
 
-function AulasTab({ activities, onOpenActivity, extras, onOpenExtra }) {
+function AulasTab({ activities, onOpenActivity, extras, onOpenExtra, onOpenCorrecao }) {
   const [sub, setSub] = useState('atividades');
   const [openHist, setOpenHist] = useState({});
 
@@ -1327,6 +1390,16 @@ function AulasTab({ activities, onOpenActivity, extras, onOpenExtra }) {
                     {open && (
                       <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {acts.map(act => <ActivityRow key={act.id} act={act} onOpenActivity={onOpenActivity} />)}
+                        {acts.some(a => a.report || a.summary || a.correcao) && (
+                          <GlassCard tappable onClick={() => onOpenCorrecao(wk, acts)} style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid rgba(22,163,74,0.25)' }}>
+                            <div style={{ fontSize: 24, width: 46, height: 46, borderRadius: 14, background: 'rgba(22,163,74,0.12)', border: '1px solid rgba(22,163,74,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>📋</div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 15, fontWeight: 800, color: '#064E3B', marginBottom: 2 }}>Correção</div>
+                              <div style={{ fontSize: 12, color: '#64748B' }}>Relatório completo — erros, padrões e resumo</div>
+                            </div>
+                            <span style={{ color: '#94A3B8', fontSize: 20, lineHeight: 1 }}>›</span>
+                          </GlassCard>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1782,6 +1855,7 @@ function App() {
   const [vocab, setVocab]               = useState([]);
   const [extras, setExtras]             = useState([]);
   const [openExtra, setOpenExtra]       = useState(null);
+  const [openCorrecao, setOpenCorrecao] = useState(null);
   const [tab, setTab]                   = useState('home');
   const [readerPost, setReaderPost]     = useState(null);
   const [openActivity, setOpenActivity] = useState(null);
@@ -2017,7 +2091,7 @@ function App() {
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         {tab === 'home'   && <HomeTab   student={student} posaulas={posaulas} activities={activities} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} />}
-        {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} extras={extras} onOpenExtra={setOpenExtra} />}
+        {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} />}
         {tab === 'vocab'  && <VocabTab vocab={vocab} />}
         {tab === 'perfil' && <PerfilTab student={student} onLogout={handleLogout} onPatchStudent={patchStudent} />}
       </div>
@@ -2027,6 +2101,7 @@ function App() {
       <ActivityModal activity={openActivity} onClose={handleCloseAll} onOpenPart={handleOpenPart} />
       <PartModal part={openPart} activity={openActivity} onBack={handleClosePart} onClose={handleCloseAll} onFinish={handleFinishPart} />
       <ExtraModal extra={openExtra} onClose={() => setOpenExtra(null)} onFinish={handleFinishExtra} />
+      <CorrecaoModal data={openCorrecao} onClose={() => setOpenCorrecao(null)} />
 
       <Celebration show={celebrate} onDone={() => setCelebrate(false)} />
     </div>
