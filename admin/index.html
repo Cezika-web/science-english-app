@@ -354,6 +354,7 @@
           </div>
           <div class="field"><label>Meta de aulas no ano</label><input type="number" id="f-meta" placeholder="Ex: 40" min="1" /></div>
           <div class="field"><label>Dias e horário das aulas</label><input type="text" id="f-dias" placeholder="Ex: Segunda e quarta, 19h" /></div>
+          <div class="field"><label>Data de início das aulas</label><input type="date" id="f-inicio" /></div>
           <button class="btn-add" id="btn-create-student">Criar aluno</button>
           <div class="form-msg" id="create-msg"></div>
         </div>
@@ -409,6 +410,7 @@
         <div class="field"><label>Meta de aulas no ano</label><input type="number" id="e-meta" min="1" /></div>
 
         <div class="field"><label>Dias e horário das aulas</label><input type="text" id="e-dias" placeholder="Ex: Segunda e quarta, 19h" /></div>
+        <div class="field"><label>Data de início das aulas</label><input type="date" id="e-inicio" /></div>
 
         <div class="field">
           <label>Slug (usado no nome do arquivo de pós-aula)</label>
@@ -625,6 +627,7 @@
       document.getElementById('e-level').value = s.level || '';
       document.getElementById('e-meta').value  = s.metaAnual || '';
       document.getElementById('e-dias').value  = s.diasAulas || '';
+      document.getElementById('e-inicio').value = s.inicioCurso || '';
       document.getElementById('e-slug').value  = s.slug || toSlug(s.name || s.firstName || '');
       document.getElementById('e-photo-preview').src = editPhoto || '';
       document.getElementById('e-photo-file').value = '';
@@ -661,6 +664,7 @@
       const meta  = parseInt(document.getElementById('e-meta').value, 10);
       const slug  = document.getElementById('e-slug').value.trim();
       const dias  = document.getElementById('e-dias').value.trim();
+      const inicio = document.getElementById('e-inicio').value;
       if (!name) { showMsg('e-msg', 'O nome não pode ficar vazio.', 'err'); return; }
       const btn = document.getElementById('e-save');
       btn.disabled = true; btn.textContent = 'Salvando...';
@@ -673,6 +677,7 @@
           slug: slug || toSlug(name),
           metaAnual: meta > 0 ? meta : null,
           diasAulas: dias || '',
+          inicioCurso: inicio || '',
           photo: editPhoto || '',
         });
         btn.disabled = false; btn.textContent = 'Salvar alterações';
@@ -688,7 +693,8 @@
       const grid   = document.getElementById('students-grid');
       const exGrid = document.getElementById('exalunos-grid');
       const snap = await getDocs(collection(db, 'students'));
-      allStudents = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+      allStudents = snap.docs.map(d => ({ uid: d.id, ...d.data() }))
+        .sort((a, b) => (a.name || a.firstName || '').localeCompare(b.name || b.firstName || '', 'pt', { sensitivity: 'base' }));
 
       const active   = allStudents.filter(s => !s.archived);
       const archived = allStudents.filter(s => s.archived);
@@ -1202,6 +1208,7 @@
       const level  = document.getElementById('f-level').value;
       const meta   = parseInt(document.getElementById('f-meta').value, 10);
       const dias   = document.getElementById('f-dias').value.trim();
+      const inicio = document.getElementById('f-inicio').value;
       if (!name || !email || !pass) { showMsg('create-msg', 'Preencha nome, e-mail e senha.', 'err'); return; }
       if (pass.length < 6)          { showMsg('create-msg', 'Senha mínima de 6 caracteres.', 'err'); return; }
       try {
@@ -1212,11 +1219,12 @@
           email, level: level || '', senha: pass,
           ...(meta > 0 && { metaAnual: meta }),
           ...(dias && { diasAulas: dias }),
+          ...(inicio && { inicioCurso: inicio }),
           createdAt: serverTimestamp()
         });
         await signOut(auth2);
         showMsg('create-msg', `✅ Aluno ${name} criado!`, 'ok');
-        ['f-name','f-email','f-pass','f-meta','f-dias'].forEach(id => document.getElementById(id).value = '');
+        ['f-name','f-email','f-pass','f-meta','f-dias','f-inicio'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('f-level').value = '';
         setTimeout(() => {
           document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
