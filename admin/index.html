@@ -152,6 +152,9 @@
 
     #admin-login { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
     .admin-login-card { background: white; border-radius: 16px; padding: 32px; width: 100%; max-width: 360px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
+    .dias-week { display: flex; flex-wrap: wrap; gap: 6px; }
+    .dias-week label { display: inline-flex; align-items: center; gap: 5px; font-size: 0.85rem; background: #f6f8fb; border: 1.5px solid var(--border); border-radius: 8px; padding: 6px 10px; cursor: pointer; user-select: none; }
+    .dias-week input { margin: 0; }
     .admin-login-card h1 { font-size: 1.2rem; font-weight: 800; margin-bottom: 4px; }
     .admin-login-card p { font-size: 0.85rem; color: var(--muted); margin-bottom: 24px; }
   </style>
@@ -353,7 +356,19 @@
             </select>
           </div>
           <div class="field"><label>Meta de aulas no ano</label><input type="number" id="f-meta" placeholder="Ex: 40" min="1" /></div>
-          <div class="field"><label>Dias e horário das aulas</label><input type="text" id="f-dias" placeholder="Ex: Segunda e quarta, 19h" /></div>
+          <div class="field">
+            <label>Dias da aula</label>
+            <div class="dias-week" id="f-dias-week">
+              <label><input type="checkbox" data-d="0">Dom</label>
+              <label><input type="checkbox" data-d="1">Seg</label>
+              <label><input type="checkbox" data-d="2">Ter</label>
+              <label><input type="checkbox" data-d="3">Qua</label>
+              <label><input type="checkbox" data-d="4">Qui</label>
+              <label><input type="checkbox" data-d="5">Sex</label>
+              <label><input type="checkbox" data-d="6">Sáb</label>
+            </div>
+          </div>
+          <div class="field"><label>Horário da aula</label><input type="time" id="f-hora" /></div>
           <div class="field"><label>Data de início das aulas</label><input type="date" id="f-inicio" /></div>
           <button class="btn-add" id="btn-create-student">Criar aluno</button>
           <div class="form-msg" id="create-msg"></div>
@@ -409,7 +424,19 @@
         </div>
         <div class="field"><label>Meta de aulas no ano</label><input type="number" id="e-meta" min="1" /></div>
 
-        <div class="field"><label>Dias e horário das aulas</label><input type="text" id="e-dias" placeholder="Ex: Segunda e quarta, 19h" /></div>
+        <div class="field">
+          <label>Dias da aula</label>
+          <div class="dias-week" id="e-dias-week">
+            <label><input type="checkbox" data-d="0">Dom</label>
+            <label><input type="checkbox" data-d="1">Seg</label>
+            <label><input type="checkbox" data-d="2">Ter</label>
+            <label><input type="checkbox" data-d="3">Qua</label>
+            <label><input type="checkbox" data-d="4">Qui</label>
+            <label><input type="checkbox" data-d="5">Sex</label>
+            <label><input type="checkbox" data-d="6">Sáb</label>
+          </div>
+        </div>
+        <div class="field"><label>Horário da aula</label><input type="time" id="e-hora" /></div>
         <div class="field"><label>Data de início das aulas</label><input type="date" id="e-inicio" /></div>
 
         <div class="field">
@@ -593,6 +620,19 @@
       return (str || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
     }
 
+    const DIAS_NOMES = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+    function readAula(weekId, horaId) {
+      const dias = [...document.querySelectorAll('#' + weekId + ' input:checked')].map(c => Number(c.dataset.d)).sort((a,b) => a - b);
+      const hora = document.getElementById(horaId).value || '';
+      const texto = dias.length ? dias.map(d => DIAS_NOMES[d]).join(', ') + (hora ? ' · ' + hora : '') : (hora || '');
+      return { aulaDias: dias, aulaHora: hora, texto };
+    }
+    function fillAula(weekId, horaId, aulaDias, aulaHora) {
+      const set = new Set((aulaDias || []).map(Number));
+      document.querySelectorAll('#' + weekId + ' input').forEach(c => { c.checked = set.has(Number(c.dataset.d)); });
+      document.getElementById(horaId).value = aulaHora || '';
+    }
+
     let editSlugTouched = false;
     let editPhoto = '';
 
@@ -626,7 +666,7 @@
       document.getElementById('e-email').value = s.email || '';
       document.getElementById('e-level').value = s.level || '';
       document.getElementById('e-meta').value  = s.metaAnual || '';
-      document.getElementById('e-dias').value  = s.diasAulas || '';
+      fillAula('e-dias-week', 'e-hora', s.aulaDias, s.aulaHora);
       document.getElementById('e-inicio').value = s.inicioCurso || '';
       document.getElementById('e-slug').value  = s.slug || toSlug(s.name || s.firstName || '');
       document.getElementById('e-photo-preview').src = editPhoto || '';
@@ -663,7 +703,7 @@
       const level = document.getElementById('e-level').value;
       const meta  = parseInt(document.getElementById('e-meta').value, 10);
       const slug  = document.getElementById('e-slug').value.trim();
-      const dias  = document.getElementById('e-dias').value.trim();
+      const aula = readAula('e-dias-week', 'e-hora');
       const inicio = document.getElementById('e-inicio').value;
       if (!name) { showMsg('e-msg', 'O nome não pode ficar vazio.', 'err'); return; }
       const btn = document.getElementById('e-save');
@@ -676,7 +716,9 @@
           level: level || '',
           slug: slug || toSlug(name),
           metaAnual: meta > 0 ? meta : null,
-          diasAulas: dias || '',
+          diasAulas: aula.texto,
+          aulaDias: aula.aulaDias,
+          aulaHora: aula.aulaHora,
           inicioCurso: inicio || '',
           photo: editPhoto || '',
         });
@@ -1209,7 +1251,7 @@
       const pass   = document.getElementById('f-pass').value;
       const level  = document.getElementById('f-level').value;
       const meta   = parseInt(document.getElementById('f-meta').value, 10);
-      const dias   = document.getElementById('f-dias').value.trim();
+      const aula   = readAula('f-dias-week', 'f-hora');
       const inicio = document.getElementById('f-inicio').value;
       if (!name || !email || !pass) { showMsg('create-msg', 'Preencha nome, e-mail e senha.', 'err'); return; }
       if (pass.length < 6)          { showMsg('create-msg', 'Senha mínima de 6 caracteres.', 'err'); return; }
@@ -1220,13 +1262,16 @@
           slug: name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-'),
           email, level: level || '', senha: pass,
           ...(meta > 0 && { metaAnual: meta }),
-          ...(dias && { diasAulas: dias }),
+          ...(aula.texto && { diasAulas: aula.texto }),
+          ...(aula.aulaDias.length && { aulaDias: aula.aulaDias }),
+          ...(aula.aulaHora && { aulaHora: aula.aulaHora }),
           ...(inicio && { inicioCurso: inicio }),
           createdAt: serverTimestamp()
         });
         await signOut(auth2);
         showMsg('create-msg', `✅ Aluno ${name} criado!`, 'ok');
-        ['f-name','f-email','f-pass','f-meta','f-dias','f-inicio'].forEach(id => document.getElementById(id).value = '');
+        ['f-name','f-email','f-pass','f-meta','f-hora','f-inicio'].forEach(id => document.getElementById(id).value = '');
+        document.querySelectorAll('#f-dias-week input').forEach(c => c.checked = false);
         document.getElementById('f-level').value = '';
         setTimeout(() => {
           document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
