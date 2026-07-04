@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Mateus Richter — CZK English</title>
+  <style>
+    :root{
+      --page-bg: #f4f7fa;
+      --card-bg: #fff;
+      --accent: #2f86e6;
+      --accent-dark: #1f6fd1;
+      --green: #36b37e;
+      --muted: #6b7280;
+      --border: #e6eef8;
+      --card-width: 720px;
+    }
+    html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+    .wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+    .card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+    header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+    .badge{ background:linear-gradient(180deg,#fff,#f2fbff); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+    h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+    .meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+    .actions{ display:flex; gap:10px; }
+    .btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(47,134,230,0.12); }
+    main{ margin-top:18px; }
+    section{ margin-top:18px; }
+    .panel{ background:#fbfdff; border-radius:12px; padding:16px; border:1px solid var(--border); }
+    .outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+    .vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+    .vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #dfeefe; background:#fff; }
+    .vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+    .vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+    .vocab h3{ margin:0; font-size:1rem; color:#154360; }
+    .vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+    .media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+    .media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+    .homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+    .speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#fbfdff); border:1px solid var(--border); max-width:640px; }
+    .speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+    .talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #e1e9f5; font-size:0.9rem; }
+    .talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+    .talk-table th{ background:#eef4ff; color:#1b3556; font-weight:700; border-bottom:1px solid #dde6fa; }
+    .row-teacher{ background:#e7f2ff; }
+    .row-student{ background:#e8f7ef; }
+    .talk-label{ font-weight:700; }
+    .talk-percent{ font-weight:700; color:#0f1724; }
+    .talk-time{ color:var(--muted); }
+    footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+    @media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+    /* extras */
+    .listening-card{ background:#f8faff; border:1px solid #dde9fa; border-radius:10px; padding:14px; margin-top:10px; }
+    .listening-card h4{ margin:0 0 8px 0; color:#154360; font-size:0.96rem; }
+    .rule-box{ background:#fffbe6; border:1px solid #fde68a; border-radius:8px; padding:12px 14px; margin-top:10px; font-size:0.92rem; }
+    .rule-box strong{ color:#92400e; }
+    .app-box{ background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:14px; margin-top:10px; }
+    .app-box h4{ margin:0 0 8px 0; color:#065f46; font-size:0.95rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Text Reading, Listening Comprehension &amp; Verb + Transport Rules</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Mateus Richter &nbsp;•&nbsp;
+            <strong>Data:</strong> 07/04/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" onclick="window.print();return false;">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+
+        <!-- INTRO -->
+        <section class="panel">
+          <p style="margin:0;font-weight:600;color:#08325a;">Aula intensa com três frentes: correção das atividades do Notion com foco em dois erros recorrentes (verbos no presente + posição do <em>by</em>), revisão do texto da Emily com exercícios de possessivo e localização, e treino de listening em inglês nativo — incluindo dois áudios sobre bairros e um vídeo de sobrevivência humana.</p>
+        </section>
+
+        <!-- RESUMO -->
+        <section>
+          <h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 10px 0;">A aula começou com a correção das atividades do Notion. César identificou dois padrões de erro que apareceram em várias frases: o primeiro foi o uso de <strong>dois verbos no presente consecutivos sem "to"</strong> entre eles — ex.: <em>"I need drive to go to the airport"</em> deve ser <em>"I need <strong>to</strong> drive to go to the airport"</em>. O segundo foi a <strong>posição do transporte</strong> com "by" — em inglês, ele sempre vai no <em>final</em> da sentença: "I go to work <strong>by motorcycle</strong>", "She goes to São Paulo <strong>by train</strong>". Mateus reconheceu o padrão rapidamente.</p>
+
+            <p style="margin:0 0 10px 0;">Em seguida, revisaram o texto do livro: um email da Emily descrevendo seu bairro. O exercício explorou <strong>possessivos com apóstrofe 's</strong> (Dennis's bookstore = a livraria do Dennis; Matt's teacher = a professora do Matt) e expressões de <strong>localização</strong> como <em>right down the street</em> (seguindo a rua), <em>right around the corner</em> (na esquina), <em>next to</em> (ao lado) e <em>across the street from</em> (do outro lado da rua de um ponto específico). Vocabulário-chave: <strong>both</strong> = ambos/os dois; <strong>colleague</strong> = colega de trabalho/escola; <strong>neighbor</strong> = vizinho.</p>
+
+            <p style="margin:0 0 10px 0;">A segunda metade foi dedicada a <strong>listening comprehension</strong>. Dois áudios em inglês nativo sobre personagens de um bairro (Ken Tony e Linda Sellers) exigiram completar frases a partir de inferência — não transcrição direta. Mateus acertou vários pontos-chave (chef, friends, across the street from) e foi chegando às respostas por eliminação e raciocínio de contexto. Aprendeu que <strong>manager</strong> vem do verbo "to manage" (gerenciar), assim como "driver" vem de "to drive". Por fim, assistiram a um vídeo sobre sobrevivência humana sem água, comida e oxigênio — Mateus acertou de primeira o tempo sem água (~3-4 dias) e se saiu bem no listening geral, acima da média.</p>
+          </div>
+        </section>
+
+        <!-- FRASES USADAS EM AULA -->
+        <section>
+          <h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2>
+          <div class="outline-card">
+            <ul style="margin:0;padding-left:18px;">
+              <li style="margin-bottom:8px;"><em>"I need <strong>to</strong> drive to go to the airport."</em> → Eu preciso dirigir para ir ao aeroporto. <span style="color:var(--muted);font-size:0.88rem;">(dois verbos = precisa de "to" entre eles)</span></li>
+              <li style="margin-bottom:8px;"><em>"I go to work <strong>by motorcycle</strong>."</em> → Eu vou ao trabalho de moto. <span style="color:var(--muted);font-size:0.88rem;">(by + transporte = sempre no final)</span></li>
+              <li style="margin-bottom:8px;"><em>"She goes to São Paulo <strong>by train</strong>."</em> → Ela vai a São Paulo de trem.</li>
+              <li style="margin-bottom:8px;"><em>"They go to school <strong>by bus</strong>."</em> → Eles vão à escola de ônibus.</li>
+              <li style="margin-bottom:8px;"><em>"He goes to the gym <strong>by bike</strong>."</em> → Ele vai à academia de bicicleta.</li>
+              <li style="margin-bottom:8px;"><em>"We are <strong>both</strong> teachers at the same school."</em> → Ambos somos professores na mesma escola.</li>
+              <li style="margin-bottom:8px;"><em>"The bookstore is <strong>right down the street</strong>."</em> → A livraria é seguindo a rua.</li>
+              <li style="margin-bottom:8px;"><em>"The restaurant is <strong>across the street from</strong> the bookstore."</em> → O restaurante é do outro lado da rua da livraria. <span style="color:var(--muted);font-size:0.88rem;">("from" = referência específica)</span></li>
+              <li style="margin-bottom:8px;"><em>"Linda's last name is Sellers."</em> → O sobrenome da Linda é Sellers.</li>
+              <li style="margin-bottom:8px;"><em>"We are <strong>all</strong> friends now."</em> → Nós todos somos amigos agora.</li>
+              <li style="margin-bottom:8px;"><em>"How long can humans survive without water?"</em> → Por quanto tempo os humanos sobrevivem sem água? <span style="color:var(--muted);font-size:0.88rem;">(How long = por quanto tempo)</span></li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- KEY VOCABULARY -->
+        <section>
+          <h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <h3>Both</h3>
+              <p><em>(pt) ambos / os dois</em><br><small>Usado quando duas pessoas ou coisas fazem ou são a mesma coisa.<br>Ex.: <em>"We are both teachers."</em> = Ambos somos professores.</small></p>
+            </div>
+            <div class="vocab green">
+              <h3>Manager</h3>
+              <p><em>(pt) gerente</em><br><small>Vem do verbo <strong>to manage</strong> = gerenciar, dar conta de algo. Assim como <em>driver</em> vem de <em>to drive</em>.<br>Ex.: <em>"She is the store manager."</em></small></p>
+            </div>
+            <div class="vocab yellow">
+              <h3>Fast</h3>
+              <p><em>(pt) rápido (adj) / jejum (subst.)</em><br><small><em>Fast</em> tem dois sentidos! Por isso <strong>breakfast</strong> = break + fast = quebrar o jejum. É a primeira refeição que "quebra" a noite sem comer.</small></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- VOCABULÁRIO COMPLETO -->
+        <section>
+          <h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2>
+          <div class="outline-card">
+
+            <h3 style="margin-top:0;">📍 Expressões de localização (revisão)</h3>
+            <ul style="margin:0 0 14px 0;padding-left:18px;font-size:0.92rem;">
+              <li><strong>right around the corner</strong> – bem na esquina</li>
+              <li><strong>right down the street</strong> – seguindo a rua, mais adiante na mesma rua</li>
+              <li><strong>next to</strong> – ao lado de</li>
+              <li><strong>across the street</strong> – do outro lado da rua <em style="color:var(--muted);font-size:0.87rem;">(sem referência específica)</em></li>
+              <li><strong>across the street <u>from</u> the restaurant</strong> – do outro lado da rua <u>do restaurante</u> <em style="color:var(--muted);font-size:0.87rem;">("from" = referência a um ponto específico)</em></li>
+              <li><strong>from work</strong> – saindo do trabalho, a partir do trabalho</li>
+            </ul>
+
+            <h3>🚌 Meios de transporte com "by"</h3>
+            <div class="rule-box">
+              <strong>Regra:</strong> "by + transporte" vai SEMPRE no <strong>final</strong> da sentença.<br>
+              ✅ "I go to work <strong>by car</strong>." &nbsp;|&nbsp; ✅ "She goes to school <strong>by bus</strong>." &nbsp;|&nbsp; ✅ "He cycles to the gym <strong>by bike</strong>."
+            </div>
+            <ul style="margin:10px 0 14px 0;padding-left:18px;font-size:0.92rem;">
+              <li><strong>by car</strong> – de carro</li>
+              <li><strong>by bus</strong> – de ônibus</li>
+              <li><strong>by train</strong> – de trem</li>
+              <li><strong>by bike</strong> – de bicicleta</li>
+              <li><strong>by motorcycle</strong> – de moto</li>
+              <li><strong>on foot</strong> – a pé <em style="color:var(--muted);font-size:0.87rem;">(único que usa "on", não "by")</em></li>
+            </ul>
+
+            <h3>👥 Pessoas e relacionamentos (texto da Emily)</h3>
+            <ul style="margin:0 0 14px 0;padding-left:18px;font-size:0.92rem;">
+              <li><strong>colleague</strong> – colega de trabalho ou escola</li>
+              <li><strong>neighbor</strong> – vizinho/a</li>
+              <li><strong>both</strong> – ambos, os dois</li>
+              <li><strong>owner</strong> – dono/a, proprietário/a</li>
+              <li><strong>last name / surname</strong> – sobrenome</li>
+            </ul>
+
+            <h3>🎧 Vocabulário do listening (human survival)</h3>
+            <ul style="margin:0;padding-left:18px;font-size:0.92rem;">
+              <li><strong>survive / survival</strong> – sobreviver / sobrevivência</li>
+              <li><strong>the world average</strong> – a média mundial</li>
+              <li><strong>how long</strong> – por quanto tempo</li>
+              <li><strong>fast</strong> – (adj) rápido / (subst.) jejum</li>
+              <li><strong>breakfast</strong> – café da manhã (break + fast = quebrar o jejum)</li>
+              <li><strong>oxygen</strong> – oxigênio</li>
+              <li><strong>diver</strong> – mergulhador</li>
+              <li><strong>approximately / about</strong> – aproximadamente, cerca de</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- LISTENING SECTION -->
+        <section>
+          <h2 style="margin-bottom:8px;">🎧 Exercícios de Listening — Resumo</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 12px 0;color:var(--muted);font-size:0.9rem;">Dois áudios em inglês nativo sobre personagens de um bairro. A tarefa era completar frases por <strong>inferência de contexto</strong> — não transcrição literal. Os áudios foram ouvidos várias vezes.</p>
+
+            <div class="listening-card">
+              <h4>🔊 Áudio 1 — Ken Tony</h4>
+              <ul style="margin:0;padding-left:18px;font-size:0.92rem;color:#374151;">
+                <li>Ken Tony é o <strong>manager</strong> (gerente) da livraria — não "teacher" nem "labor"</li>
+                <li>Vai ao trabalho <strong>de carro</strong> (by car)</li>
+                <li>Seu vizinho Emile du Clos é um <strong>chef</strong> de restaurante, da França</li>
+                <li>O restaurante fica <strong>do outro lado da rua da livraria</strong> (across the street from the bookstore)</li>
+                <li>Emile e Ken eram membros do mesmo clube → agora são <strong>friends</strong></li>
+              </ul>
+            </div>
+
+            <div class="listening-card" style="margin-top:10px;">
+              <h4>🔊 Áudio 2 — Linda Sellers</h4>
+              <ul style="margin:0;padding-left:18px;font-size:0.92rem;color:#374151;">
+                <li>Linda Sellers é <strong>professora</strong> (teacher) — "Sellers" é o sobrenome, não profissão</li>
+                <li>Vai ao trabalho <strong>de ônibus</strong> (by bus) com o colega Michael Blayne</li>
+                <li>A escola fica <strong>na esquina de um restaurante</strong> (right around the corner from a restaurant)</li>
+                <li>O chef do restaurante é Emile Duclos — o mesmo personagem do áudio anterior!</li>
+                <li>Michael é <strong>colega</strong> da Emily na escola (colleague) — eles trabalham na mesma escola</li>
+                <li>À noite, Linda e Michael voltam pra casa <strong>de carro</strong> (by car)</li>
+                <li>São todos do mesmo bairro: <em>"We are all from Ken's neighborhood"</em></li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- CORREÇÕES -->
+        <section>
+          <h2 style="margin-bottom:8px;">🚨 Correções importantes</h2>
+          <div class="outline-card">
+
+            <p style="margin:0 0 10px 0;"><strong>1. Dois verbos no presente sem "to" entre eles</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "I need drive to go to the airport."</p>
+            <p style="margin:0 0 4px 0;color:#276749;">✅ <strong>"I need <u>to</u> drive to go to the airport."</strong></p>
+            <p style="margin:0 0 14px 0;font-size:0.88rem;color:var(--muted);">💡 Em inglês, dois verbos no presente não podem ficar lado a lado. Você precisa colocar <strong>"to"</strong> entre eles (infinitivo) — ex.: <em>need to drive, want to go, have to work</em> — ou transformar o segundo em gerúndio (-ing): <em>"I need driving…"</em></p>
+
+            <hr style="border:none;border-top:1px solid var(--border);margin:14px 0;">
+
+            <p style="margin:0 0 10px 0;"><strong>2. Posição do "by + transporte" — sempre no final</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "I buy motorcycle to work." &nbsp;|&nbsp; "She by train to S.Paulo." &nbsp;|&nbsp; "They go by bus to school."</p>
+            <p style="margin:0 0 4px 0;color:#276749;">✅ <strong>"I go to work by motorcycle."</strong><br>✅ <strong>"She goes to São Paulo by train."</strong><br>✅ <strong>"They go to school by bus."</strong><br>✅ <strong>"He goes to the gym by bike."</strong></p>
+            <p style="margin:0 0 4px 0;font-size:0.88rem;color:var(--muted);">💡 O meio de transporte é a <em>última informação</em> da sentença — sempre vem depois do destino. Pense assim: <strong>[sujeito] + [verbo] + [destino] + [by transporte]</strong>.</p>
+
+          </div>
+        </section>
+
+        <!-- GRAVAÇÃO -->
+        <section>
+          <h2 style="margin-bottom:8px;">🎥 Transcrição &amp; Gravação</h2>
+          <div class="media-row">
+            <a class="media-btn" href="#" role="button">📄 Acessar transcrição</a>
+            <a class="media-btn" href="https://youtu.be/W2WEV7_oZrc" target="_blank" rel="noopener noreferrer" role="button"
+               style="background:linear-gradient(180deg,#1f6fd1,#2f86e6);color:#fff;border:none;min-width:260px;">
+              🎥 Assistir gravação (acesso privado)
+            </a>
+          </div>
+        </section>
+
+        <!-- TALK TIME -->
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>🗣️ Tempo de Fala (Talk Time)</h2>
+          <table class="talk-table">
+            <thead>
+              <tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr>
+            </thead>
+            <tbody>
+              <tr class="row-teacher">
+                <td><span class="talk-label">César (Professor)</span></td>
+                <td><span class="talk-percent">55%</span></td>
+                <td class="talk-time">~34 minutos</td>
+              </tr>
+              <tr class="row-student">
+                <td><span class="talk-label">Mateus Richter</span></td>
+                <td><span class="talk-percent">45%</span></td>
+                <td class="talk-time">~28 minutos</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin-top:10px;font-size:0.85rem;color:var(--muted);">💪 Boa participação — você conversou bastante no warm-up e respondeu ativamente nos exercícios de listening. Keep it up!</p>
+        </section>
+
+        <!-- APP -->
+        <section>
+          <div class="app-box">
+            <h4>📱 Novidade: Science English App</h4>
+            <p style="margin:0;font-size:0.92rem;color:#065f46;">A partir de agora, as atividades e pós-aulas vão ficar no app — não mais pelo WhatsApp ou Notion. <strong>O que fazer:</strong></p>
+            <ul style="margin:8px 0 0 0;padding-left:18px;font-size:0.91rem;color:#374151;">
+              <li>Verifique o e-mail com o login e senha que César vai mandar hoje</li>
+              <li>Adicione o app à tela inicial do celular (como ícone)</li>
+              <li><strong>Ative as notificações</strong> — você vai receber aviso assim que o pós-aula ou atividade chegar</li>
+              <li>Qualquer bug ou travamento: manda mensagem pro César</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- HOMEWORK -->
+        <section>
+          <h2 style="margin-bottom:8px;">📝 Homework</h2>
+          <div class="homework">
+            <p style="margin:0 0 8px 0;">📌 <strong>Lição de casa:</strong></p>
+            <ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+              <li style="margin-bottom:6px;">Escreva <strong>5 frases</strong> usando meios de transporte com "by" — lembre: sempre no <strong>final</strong> da sentença.</li>
+              <li style="margin-bottom:6px;">Escreva <strong>3 frases</strong> usando dois verbos (ex.: need, want, have) + <strong>to</strong> + verbo.</li>
+              <li style="margin-bottom:6px;">Configure o <strong>Science English App</strong> no celular e ative as notificações.</li>
+              <li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana.</li>
+            </ul>
+          </div>
+          <div style="margin-top:14px;">
+            <a class="btn" href="https://wa.me" style="background:#25D366;border-radius:10px;box-shadow:none;">
+              💬 Falar comigo no WhatsApp
+            </a>
+          </div>
+        </section>
+
+      </main>
+
+      <footer>
+        <p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">
+          © 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com
+        </p>
+      </footer>
+
+    </article>
+  </div>
+</body>
+</html>
