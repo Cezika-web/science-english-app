@@ -1,0 +1,27 @@
+name: Lembretes - nao leu / nao fez
+
+on:
+  schedule:
+    # 13:00 e 21:00 UTC = 10h e 18h no horario de Brasilia (UTC-3)
+    - cron: '0 13,21 * * *'
+  workflow_dispatch:
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install google-auth requests
+
+      - name: Enviar lembretes
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: python .github/scripts/notify_reminders.py
