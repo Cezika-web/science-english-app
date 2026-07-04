@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Lorena — CZK English</title>
+  <style>
+    :root{
+      --page-bg: #f4f7fa;
+      --card-bg: #fff;
+      --accent: #2f86e6;
+      --accent-dark: #1f6fd1;
+      --green: #36b37e;
+      --muted: #6b7280;
+      --border: #e6eef8;
+      --card-width: 720px;
+    }
+    html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+    .wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+    .card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+    header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+    .badge{ background:linear-gradient(180deg,#fff,#f2fbff); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+    h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+    .meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+    .actions{ display:flex; gap:10px; }
+    .btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(47,134,230,0.12); }
+    main{ margin-top:18px; }
+    section{ margin-top:18px; }
+    .panel{ background:#fbfdff; border-radius:12px; padding:16px; border:1px solid var(--border); }
+    .outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+    .vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+    .vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #dfeefe; background:#fff; }
+    .vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+    .vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+    .vocab h3{ margin:0; font-size:1rem; color:#154360; }
+    .vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+    .media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+    .media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+    .homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+    .speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#fbfdff); border:1px solid var(--border); max-width:640px; }
+    .speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+    .talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #e1e9f5; font-size:0.9rem; }
+    .talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+    .talk-table th{ background:#eef4ff; color:#1b3556; font-weight:700; border-bottom:1px solid #dde6fa; }
+    .row-teacher{ background:#e7f2ff; }
+    .row-student{ background:#e8f7ef; }
+    .talk-label{ font-weight:700; }
+    .talk-percent{ font-weight:700; color:#0f1724; }
+    .talk-time{ color:var(--muted); }
+    footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+    @media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+    /* Rule table */
+    .rule-table{ width:100%; border-collapse:collapse; font-size:0.91rem; margin-top:10px; }
+    .rule-table th{ background:#eef4ff; color:#1b3556; font-weight:700; padding:8px 10px; text-align:left; border-bottom:2px solid #dde6fa; }
+    .rule-table td{ padding:8px 10px; border-bottom:1px solid #eef0f4; vertical-align:top; }
+    .rule-table tr:last-child td{ border-bottom:none; }
+    .rule-table tr:nth-child(even) td{ background:#f9fbff; }
+    .tag{ display:inline-block; padding:2px 8px; border-radius:999px; font-size:0.78rem; font-weight:700; margin-left:4px; }
+    .tag-cvc{ background:#dbeafe; color:#1e40af; }
+    .tag-y{ background:#fde68a; color:#92400e; }
+    .tag-e{ background:#c9f3dc; color:#065f46; }
+    .tag-irreg{ background:#fecaca; color:#991b1b; }
+    .tag-more{ background:#e9d5ff; color:#6b21a8; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Comparative &amp; Superlative Adjectives — Spelling Rules</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Lorena &nbsp;•&nbsp;
+            <strong>Data:</strong> 07/04/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" onclick="window.print();return false;">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+
+        <!-- PAINEL INTRO -->
+        <section class="panel">
+          <p style="margin:0;font-weight:600;color:#08325a;">Nesta aula revisamos comparativos e superlativos em profundidade, com foco especial nas 7 regras de spelling — incluindo o padrão CVC de dobrar consoante, a regra do -e silencioso, a troca de -y por -ier/-iest, o uso de more/most para adjetivos longos e as formas irregulares.</p>
+        </section>
+
+        <!-- RESUMO DETALHADO -->
+        <section>
+          <h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 10px 0;">A aula começou revisando o conceito central: o <strong>comparativo</strong> compara <em>duas coisas</em> e usa a estrutura <strong>adjetivo + -er + than</strong>, enquanto o <strong>superlativo</strong> compara um elemento dentro de um <em>grupo</em> e usa <strong>the + adjetivo + -est</strong>. Lorena demonstrou ter entendido essa base ao produzir corretamente frases como <em>"I am taller than my brother"</em> e ao identificar rapidamente o superlativo <em>the tallest</em>.</p>
+
+            <p style="margin:0 0 10px 0;">Em seguida, o foco foi nas <strong>7 regras de spelling</strong>. A <strong>regra do -e silencioso</strong>: quando o adjetivo termina em -e, basta adicionar <strong>-r</strong> (comparativo) ou <strong>-st</strong> (superlativo) — ex.: <em>nice → nicer → the nicest</em>. A <strong>regra do -y</strong>: troca o -y por <strong>-ier/-iest</strong> — ex.: <em>happy → happier → the happiest</em>. O <strong>padrão CVC</strong> (Consoante-Vogal-Consoante em monossílabos): dobra-se a última consoante — ex.: <em>hot → hotter → the hottest</em>. Lorena acertou com segurança quais adjetivos dobram (<em>hot, fat, thin, sad, wet, big</em>) e quais <em>não</em> dobram por ter VCC (<em>fast, tall</em>), VVC (<em>cool, cheap</em>) ou terminar em W/X (<em>new, low</em>).</p>
+
+            <p style="margin:0 0 10px 0;">Adjetivos com 2 ou mais sílabas seguem a regra do <strong>more/most</strong> — ex.: <em>more expensive, the most modern</em>. Por fim, as <strong>formas irregulares</strong>: <em>good → better → the best</em> e <em>bad → worse → the worst</em>. No desafio de vocabulário ao final da aula, Lorena acertou <strong>28 de 30 palavras</strong> — desempenho excelente. A aula encerrou com a informação de que a partir de segunda-feira as atividades estarão no novo app de alunos.</p>
+          </div>
+        </section>
+
+        <!-- FRASES USADAS EM AULA -->
+        <section>
+          <h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2>
+          <div class="outline-card">
+            <ul style="margin:0;padding-left:18px;">
+              <li style="margin-bottom:8px;"><em>"I am taller than my brother."</em> → Eu sou mais alto do que meu irmão. <span style="color:var(--muted);font-size:0.88rem;">(comparativo básico com -er + than)</span></li>
+              <li style="margin-bottom:8px;"><em>"This book is cheaper than that one."</em> → Este livro é mais barato do que aquele. <span style="color:var(--muted);font-size:0.88rem;">(cheap = ch-ea-p = VVC → NÃO dobra)</span></li>
+              <li style="margin-bottom:8px;"><em>"July is hotter than June."</em> → Julho é mais quente do que junho. <span style="color:var(--muted);font-size:0.88rem;">(hot = CVC → dobra: hotter)</span></li>
+              <li style="margin-bottom:8px;"><em>"She is the happiest person I know."</em> → Ela é a pessoa mais feliz que eu conheço. <span style="color:var(--muted);font-size:0.88rem;">(happy → remove Y, add -iest)</span></li>
+              <li style="margin-bottom:8px;"><em>"This is the worst day of my life."</em> → Este é o pior dia da minha vida. <span style="color:var(--muted);font-size:0.88rem;">(bad → worse → the worst — irregular)</span></li>
+              <li style="margin-bottom:8px;"><em>"English is more interesting than I thought."</em> → O inglês é mais interessante do que eu pensava. <span style="color:var(--muted);font-size:0.88rem;">(2 sílabas+ → more/most)</span></li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- KEY VOCABULARY -->
+        <section>
+          <h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <h3>Comparative</h3>
+              <p><em>(pt) comparativo</em><br><small>Compara <strong>duas coisas</strong>. Estrutura: adj + <strong>-er + than</strong>.<br>Ex.: <em>"She is taller than him."</em></small></p>
+            </div>
+            <div class="vocab green">
+              <h3>Superlative</h3>
+              <p><em>(pt) superlativo</em><br><small>Compara um item dentro de um <strong>grupo</strong>. Estrutura: <strong>the</strong> + adj + <strong>-est</strong>.<br>Ex.: <em>"She is the tallest in the class."</em></small></p>
+            </div>
+            <div class="vocab yellow">
+              <h3>CVC Pattern</h3>
+              <p><em>(pt) Padrão Consoante-Vogal-Consoante</em><br><small>Se o adjetivo monossilábico termina em CVC → <strong>dobra a última consoante</strong>.<br>Ex.: <em>hot → hott<strong>er</strong> / hott<strong>est</strong></em></small></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- VOCABULÁRIO COMPLETO -->
+        <section>
+          <h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2>
+          <div class="outline-card">
+
+            <h3 style="margin-top:0;">📏 Regras de Spelling — Tabela Completa</h3>
+            <table class="rule-table">
+              <thead>
+                <tr>
+                  <th>Regra</th>
+                  <th>Quando usar</th>
+                  <th>Exemplos</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Padrão básico</strong></td>
+                  <td>Adjetivos curtos (1 sílaba)</td>
+                  <td>tall → taller → the tallest<br>small → smaller → the smallest<br>old → older → the oldest</td>
+                </tr>
+                <tr>
+                  <td><strong>Regra do -e silencioso</strong> <span class="tag tag-e">-e</span></td>
+                  <td>Termina em -e → só add R ou ST</td>
+                  <td>nice → nicer → the nicest<br>large → larger → the largest<br>safe → safer → the safest<br>wide → wider → the widest</td>
+                </tr>
+                <tr>
+                  <td><strong>Regra do -y</strong> <span class="tag tag-y">-Y</span></td>
+                  <td>Termina em -y → troca por IER/IEST</td>
+                  <td>happy → happier → the happiest<br>busy → busier → the busiest<br>easy → easier → the easiest</td>
+                </tr>
+                <tr>
+                  <td><strong>Padrão CVC — dobra</strong> <span class="tag tag-cvc">CVC ✓</span></td>
+                  <td>Consoante-Vogal-Consoante, 1 sílaba → dobra a última consoante</td>
+                  <td>big → bigger → the biggest<br>hot → hotter → the hottest<br>fat → fatter → the fattest<br>thin → thinner → the thinnest<br>sad → sadder → the saddest<br>wet → wetter → the wettest</td>
+                </tr>
+                <tr>
+                  <td><strong>NÃO dobra — VCC</strong> <span class="tag tag-cvc" style="background:#e0e7ff;color:#3730a3;">VCC ✗</span></td>
+                  <td>Termina em 2 consoantes → não dobra</td>
+                  <td>fast → faster → the fastest<br>tall → taller → the tallest</td>
+                </tr>
+                <tr>
+                  <td><strong>NÃO dobra — VVC</strong> <span class="tag tag-cvc" style="background:#e0e7ff;color:#3730a3;">VVC ✗</span></td>
+                  <td>2 vogais antes da última consoante → não dobra</td>
+                  <td>cool → cooler → the coolest<br>cheap → cheaper → the cheapest</td>
+                </tr>
+                <tr>
+                  <td><strong>NÃO dobra — W/X/Y</strong></td>
+                  <td>Termina em W, X ou Y → não dobra</td>
+                  <td>new → newer → the newest<br>low → lower → the lowest</td>
+                </tr>
+                <tr>
+                  <td><strong>More / Most</strong> <span class="tag tag-more">2+ sílabas</span></td>
+                  <td>Adjetivos com 2 ou mais sílabas</td>
+                  <td>expensive → more expensive → the most expensive<br>modern → more modern → the most modern<br>beautiful → more beautiful → the most beautiful</td>
+                </tr>
+                <tr>
+                  <td><strong>Irregulares</strong> <span class="tag tag-irreg">irregular</span></td>
+                  <td>Formas únicas — memorizar!</td>
+                  <td>good → <strong>better</strong> → <strong>the best</strong><br>bad → <strong>worse</strong> → <strong>the worst</strong><br>far → <strong>farther/further</strong> → <strong>the farthest/furthest</strong></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h3 style="margin-top:18px;">🔤 Adjetivos vistos no desafio de vocabulário</h3>
+            <ul style="margin:0;padding-left:18px;font-size:0.92rem;color:#374151;">
+              <li><strong>tall</strong> – alto/a</li>
+              <li><strong>small</strong> – pequeno/a</li>
+              <li><strong>old</strong> – velho/a, antigo/a</li>
+              <li><strong>cheap</strong> – barato/a</li>
+              <li><strong>nice</strong> – agradável, simpático/a</li>
+              <li><strong>large</strong> – grande, amplo/a</li>
+              <li><strong>safe</strong> – seguro/a</li>
+              <li><strong>wide</strong> – largo/a, amplo/a</li>
+              <li><strong>happy</strong> – feliz</li>
+              <li><strong>busy</strong> – ocupado/a</li>
+              <li><strong>easy</strong> – fácil</li>
+              <li><strong>big</strong> – grande</li>
+              <li><strong>hot</strong> – quente</li>
+              <li><strong>fat</strong> – gordo/a</li>
+              <li><strong>thin</strong> – magro/a, fino/a</li>
+              <li><strong>sad</strong> – triste</li>
+              <li><strong>wet</strong> – molhado/a</li>
+              <li><strong>fast</strong> – rápido/a</li>
+              <li><strong>cool</strong> – legal; fresco/a</li>
+              <li><strong>new</strong> – novo/a</li>
+              <li><strong>low</strong> – baixo/a</li>
+              <li><strong>expensive</strong> – caro/a</li>
+              <li><strong>modern</strong> – moderno/a</li>
+              <li><strong>beautiful</strong> – bonito/a, lindo/a</li>
+              <li><strong>good</strong> – bom/boa → <strong>better / the best</strong></li>
+              <li><strong>bad</strong> – ruim, mau → <strong>worse / the worst</strong></li>
+              <li><strong>far</strong> – longe → <strong>farther / the farthest</strong></li>
+              <li><strong>worse</strong> – pior (comparativo de bad)</li>
+              <li><strong>nicer</strong> – mais agradável (comparativo de nice)</li>
+              <li><strong>the best</strong> – o melhor / a melhor (superlativo de good)</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- CORREÇÕES IMPORTANTES -->
+        <section>
+          <h2 style="margin-bottom:8px;">🚨 Correções importantes</h2>
+          <div class="outline-card">
+
+            <p style="margin:0 0 10px 0;"><strong>1. Tradução de "nicer"</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "Nicer significa melhor (better)"</p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong>"Nicer = mais agradável / mais simpático"</strong> — "Better" é o comparativo de <em>good</em>. "Nicer" é o comparativo de <em>nice</em>, que significa agradável, simpático. São palavras diferentes com significados distintos.</p>
+            <p style="margin:0 0 4px 0;font-size:0.88rem;color:var(--muted);">💡 Lembre: <em>good → better</em> (melhor) | <em>nice → nicer</em> (mais agradável)</p>
+
+            <hr style="border:none;border-top:1px solid var(--border);margin:14px 0;">
+
+            <p style="margin:0 0 10px 0;"><strong>2. Forma irregular de "bad"</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "Worse → worship"</p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong>"bad → worse → the worst"</strong> — "Worship" significa adorar/culto religioso — é uma palavra completamente diferente. O comparativo de <em>bad</em> é <em>worse</em> (pior) e o superlativo é <em>the worst</em> (o pior).</p>
+            <p style="margin:0 0 4px 0;font-size:0.88rem;color:var(--muted);">💡 Memorize o trio: <strong>bad / worse / the worst</strong> — é uma das formas mais usadas em inglês!</p>
+
+            <hr style="border:none;border-top:1px solid var(--border);margin:14px 0;">
+
+            <p style="margin:0 0 10px 0;"><strong>3. Dobrar consoante em "cheap"</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "Cheaper → cheapper" (tentativa de dobrar o P)</p>
+            <p style="margin:0 0 10px 0;color:#276749;">✅ <strong>"cheaper"</strong> — <em>cheap</em> termina em VVC (ch-<strong>ea</strong>-p): duas vogais antes do P. Pela regra VVC, <strong>não se dobra a consoante</strong>. Resultado: cheaper / the cheapest.</p>
+            <p style="margin:0 0 4px 0;font-size:0.88rem;color:var(--muted);">💡 Verifique sempre: CVC = dobra | VVC = não dobra | VCC = não dobra</p>
+
+          </div>
+        </section>
+
+        <!-- TRANSCRIÇÃO & GRAVAÇÃO -->
+        <section>
+          <h2 style="margin-bottom:8px;">🎥 Transcrição &amp; Gravação</h2>
+          <div class="media-row">
+            <a class="media-btn" href="#" role="button">📄 Acessar transcrição</a>
+          </div>
+          <p style="margin-top:10px;font-size:0.88rem;color:var(--muted);">Esta aula não possui gravação em vídeo.</p>
+        </section>
+
+        <!-- TALK TIME -->
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>🗣️ Tempo de Fala (Talk Time)</h2>
+          <table class="talk-table">
+            <thead>
+              <tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr>
+            </thead>
+            <tbody>
+              <tr class="row-teacher">
+                <td><span class="talk-label">César (Professor)</span></td>
+                <td><span class="talk-percent">65%</span></td>
+                <td class="talk-time">~34 minutos</td>
+              </tr>
+              <tr class="row-student">
+                <td><span class="talk-label">Lorena</span></td>
+                <td><span class="talk-percent">35%</span></td>
+                <td class="talk-time">~18 minutos</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin-top:10px;font-size:0.85rem;color:var(--muted);">💡 A aula foi mais expositiva porque o conteúdo era novo (regras de spelling). A partir da próxima, o foco será em você produzir mais!</p>
+        </section>
+
+        <!-- HOMEWORK -->
+        <section>
+          <h2 style="margin-bottom:8px;">📝 Homework</h2>
+          <div class="homework">
+            <p style="margin:0 0 8px 0;">📌 <strong>Lição de casa:</strong></p>
+            <ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+              <li style="margin-bottom:6px;">Escreva <strong>3 frases</strong> usando comparativo e <strong>3 frases</strong> usando superlativo com adjetivos desta aula.</li>
+              <li style="margin-bottom:6px;">Memorize as formas irregulares: <strong>good/better/best</strong> e <strong>bad/worse/worst</strong>.</li>
+              <li style="margin-bottom:6px;">Revise a tabela das 7 regras de spelling — tente reproduzi-la de memória.</li>
+              <li style="margin-bottom:6px;"><strong>🆕 App:</strong> A partir de segunda-feira, as atividades estarão no novo app de alunos — fique de olho!</li>
+              <li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana.</li>
+            </ul>
+          </div>
+          <div style="margin-top:14px;">
+            <a class="btn" href="https://wa.me" style="background:#25D366;border-radius:10px;box-shadow:none;">
+              💬 Falar comigo no WhatsApp
+            </a>
+          </div>
+        </section>
+
+      </main>
+
+      <footer>
+        <p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">
+          © 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com
+        </p>
+      </footer>
+
+    </article>
+  </div>
+</body>
+</html>
