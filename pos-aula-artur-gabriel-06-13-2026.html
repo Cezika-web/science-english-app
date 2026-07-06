@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Gabriel Artur — CZK English</title>
+
+  <style>
+    :root{
+      --page-bg: #f4f7fa;
+      --card-bg: #fff;
+      --accent: #2f86e6;
+      --accent-dark: #1f6fd1;
+      --green: #36b37e;
+      --muted: #6b7280;
+      --border: #e6eef8;
+      --box-radius: 12px;
+      --card-width: 720px;
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+      padding:0;
+      background:var(--page-bg);
+      font-family:Inter, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    .wrap{
+      min-height:100%;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      padding:48px 20px;
+    }
+
+    .card{
+      width:100%;
+      max-width:var(--card-width);
+      background:var(--card-bg);
+      border-radius:18px;
+      padding:28px;
+      box-shadow:0 6px 22px rgba(33,47,60,0.06);
+      border:1px solid rgba(15,33,64,0.03);
+    }
+
+    header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:8px;
+    }
+
+    .badge{
+      background:linear-gradient(180deg,#fff,#f2fbff);
+      border:1px solid var(--border);
+      padding:8px 12px;
+      border-radius:999px;
+      color:var(--accent);
+      font-weight:700;
+      font-size:0.85rem;
+    }
+
+    h1{
+      margin:0;
+      font-size:1.3rem;
+      color:#0f1724;
+    }
+
+    .meta{
+      color:var(--muted);
+      font-size:0.92rem;
+      margin-top:6px;
+    }
+
+    .actions{
+      display:flex;
+      gap:10px;
+    }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      border-radius:10px;
+      border:none;
+      background:var(--accent);
+      color:#fff;
+      text-decoration:none;
+      font-weight:600;
+      cursor:pointer;
+      box-shadow:0 6px 14px rgba(47,134,230,0.12);
+    }
+
+    .btn.secondary{
+      background:#fff;
+      color:var(--accent);
+      border:1px solid var(--border);
+      box-shadow:none;
+    }
+
+    main{margin-top:18px;}
+    section{margin-top:18px;}
+
+    .panel{
+      background:#fbfdff;
+      border-radius:12px;
+      padding:16px;
+      border:1px solid var(--border);
+    }
+
+    .outline-card{
+      border-radius:10px;
+      border:1px solid var(--border);
+      padding:16px;
+      background:#fff;
+    }
+
+    .vocab-grid{
+      display:flex;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+
+    .vocab{
+      flex:1;
+      min-width:220px;
+      border-radius:10px;
+      padding:14px;
+      border:2px solid #dfeefe;
+      background:#fff;
+    }
+
+    .vocab.green{
+      border-color:#c9f3dc;
+      background:#f5fff6;
+    }
+
+    .vocab h3{
+      margin:0;
+      font-size:1rem;
+      color:#154360;
+    }
+
+    .vocab p{
+      margin:8px 0 0 0;
+      color:var(--muted);
+      font-size:0.95rem;
+    }
+
+    .media-row{
+      display:flex;
+      gap:14px;
+      margin-top:12px;
+      flex-wrap:wrap;
+    }
+
+    .media-btn{
+      background:#fff;
+      border:1px solid var(--border);
+      padding:12px 16px;
+      border-radius:10px;
+      font-weight:700;
+      color:var(--accent);
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      min-width:200px;
+      justify-content:center;
+    }
+
+    .homework{
+      background:#f3fff6;
+      border:1px solid #d7f5df;
+      border-radius:10px;
+      padding:14px;
+      margin-top:10px;
+    }
+
+    .speaking{
+      margin-top:18px;
+      padding:16px;
+      border-radius:12px;
+      background:linear-gradient(180deg,#ffffff,#fbfdff);
+      border:1px solid var(--border);
+      max-width:640px;
+    }
+
+    .speaking h2{
+      margin:0 0 10px 0;
+      font-size:1.05rem;
+      color:#0f1724;
+    }
+
+    .talk-table{
+      width:100%;
+      border-collapse:collapse;
+      border-radius:10px;
+      overflow:hidden;
+      background:#fff;
+      border:1px solid #e1e9f5;
+      font-size:0.9rem;
+    }
+
+    .talk-table th,
+    .talk-table td{
+      padding:8px 10px;
+      text-align:left;
+    }
+
+    .talk-table th{
+      background:#eef4ff;
+      color:#1b3556;
+      font-weight:700;
+      border-bottom:1px solid #dde6fa;
+    }
+
+    .row-teacher{ background:#e7f2ff; }
+    .row-student{ background:#e8f7ef; }
+    .talk-label{ font-weight:700; }
+    .talk-percent{ font-weight:700; color:#0f1724; }
+    .talk-time{ color:var(--muted); }
+
+    footer{
+      margin-top:20px;
+      color:var(--muted);
+      font-size:0.9rem;
+      text-align:center;
+    }
+
+    @media (max-width:720px){
+      .card{padding:18px;border-radius:14px;}
+      .vocab-grid{flex-direction:column;}
+      .media-row{flex-direction:column;}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Valentine's Day em Inglês, Was/Were, Sufixo -ful e At/On/In</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Gabriel Artur &nbsp;•&nbsp;
+            <strong>Data:</strong> 06/13/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" onclick="window.print();return false;">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+        <section class="panel">
+          <p style="margin:0;font-weight:600;color:#08325a;">
+            Resumo da aula: conversa em inglês sobre o Dia dos Namorados, vocabulário de culinária, verbo <em>was/were</em>, sufixo <em>-ful</em>, sílaba tônica e prática com preposições <em>at / on / in</em>.
+          </p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 10px 0;">
+              A aula começou com uma <strong>conversa inteira em inglês</strong> sobre o Dia dos Namorados — e Gabriel se saiu muito bem, surpreendendo o professor depois de um período sem aulas. Ele contou que planejou a semana toda (<em>I planned the whole week</em>), preparou o almoço favorito da namorada (<em>ground beef with mashed potatoes, rice, beans and salad</em>), pesquisou as preferências dela e organizou um passeio de patinete (<em>scooter</em>) até o parque. Depois pegaram um Uber até a casa dela, ele conheceu o pai da namorada, e ela tinha preparado um presente artesanal (<em>handmade present</em>) — um quebra-cabeça (<em>puzzle</em>).
+            </p>
+            <p style="margin:0 0 10px 0;">
+              Durante a conversa, surgiu vocabulário rico de culinária: <em>ground beef</em> (carne moída de boi), <em>oats</em> (aveia), <em>cinnamon</em> (canela), <em>pan</em> (frigideira), <em>to peel</em> (descascar), <em>to slice</em> (cortar em fatias), <em>turn off</em> (apagar o fogo), <em>pasty texture</em> (textura pastosa). Gabriel contou que prepara um café da manhã especial todo dia com 70g de aveia, 250ml de leite, banana e canela.
+            </p>
+            <p style="margin:0 0 10px 0;">
+              O professor então focou em dois pontos gramaticais importantes. O primeiro foi o verbo <strong>was</strong> — o passado de <em>am</em> e <em>is</em>. Gabriel havia percebido esse padrão assistindo séries americanas e quis entender. A regra é simples: <em>I am hungry → I was hungry</em> / <em>She is tired → She was tired</em> / <em>I am a pilot → I was a pilot</em>. O <em>was</em> é o passado de qualquer estado ou situação.
+            </p>
+            <p style="margin:0 0 10px 0;">
+              O segundo ponto foi o <strong>sufixo -ful</strong>: quando adicionado a um substantivo ou verbo, transforma a palavra em adjetivo com o sentido de "cheio de". Exemplos: <em>beauty → beautiful</em> (cheio de beleza = bonito); <em>use → useful</em> (cheio de uso = útil). Também foi explicado que <em>screwdriver</em> (chave de fenda) é <em>useful</em> — <em>screw</em> é parafuso, <em>driver</em> é o que você usa para girar.
+            </p>
+            <p style="margin:0;">
+              A aula encerrou com prática das <strong>preposições at / on / in</strong> em horários e lugares, usando eventos reais do livro: para horas usa-se <em>at</em> (<em>at 7:30</em>); para dias da semana, <em>on</em> (<em>on Friday</em>); para períodos maiores, <em>in</em> (<em>in May</em>). Para lugares específicos (nome do local), usa-se <em>at</em> (<em>at Elliott Stadium</em>); para nomes de rua sem número, <em>on</em> (<em>on Main Street</em>).
+            </p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2>
+          <div class="outline-card">
+            <ul>
+              <li>I planned the whole week. — Eu planejei a semana toda.</li>
+              <li>I made her favourite lunch. — Eu fiz o almoço favorito dela.</li>
+              <li>Ground beef with mashed potatoes, rice, beans and salad. — Carne moída com purê de batata, arroz, feijão e salada.</li>
+              <li>I researched her favourite food. — Eu pesquisei a comida favorita dela.</li>
+              <li>We took a scooter to the mall. — Pegamos uma patinete até o shopping.</li>
+              <li>The Uber price is high. — O preço do Uber está alto.</li>
+              <li>I met her dad. — Eu conheci o pai dela.</li>
+              <li>She got a present for me. — Ela preparou um presente para mim.</li>
+              <li>It was a handmade present. — Era um presente feito à mão.</li>
+              <li>I love it. — Eu adorei. (eu amei)</li>
+              <li>I was hungry. — Eu estava com fome. (was = passado de am)</li>
+              <li>She was tired. — Ela estava cansada. (was = passado de is)</li>
+              <li>I was a pilot. — Eu era um piloto. (was = passado de am)</li>
+              <li>She got tired. — Ela ficou cansada. (get = ficar)</li>
+              <li>Every day I practice twenty minutes of English. — Todos os dias eu pratico vinte minutos de inglês.</li>
+              <li>I mix oats, 250ml of milk, a banana and cinnamon. — Eu misturo aveia, 250ml de leite, uma banana e canela.</li>
+              <li>I turn off the heat. — Eu apago o fogo.</li>
+              <li>The movie is on Friday night at 7:30. — O filme é na sexta à noite às 7:30.</li>
+              <li>The play is at the Reed Theater. — A peça é no Reed Theater.</li>
+              <li>The talk is at 8pm on Thursday. — A palestra é às 20h na quinta-feira.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <h3>Was / Were (passado de be)</h3>
+              <p>
+                <em>(pt) era / estava — passado de am/is (was) e are (were)</em><br>
+                <small>I was hungry. She was tired. We were happy.</small>
+              </p>
+            </div>
+            <div class="vocab green">
+              <h3>Sufixo -ful ("cheio de")</h3>
+              <p>
+                <em>(pt) transforma substantivos em adjetivos: beauty → beautiful; use → useful</em><br>
+                <small>A screwdriver is a very useful tool.</small>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📚 Vocabulário da aula</h2>
+          <div class="outline-card">
+            <h3 style="margin-top:0;">Culinária e cozinha</h3>
+            <ul>
+              <li><strong>ground beef</strong> – carne moída de boi (beef = boi especificamente)</li>
+              <li><strong>ground meat</strong> – carne moída (qualquer tipo)</li>
+              <li><strong>mashed potatoes</strong> – purê de batata</li>
+              <li><strong>oats</strong> – aveia</li>
+              <li><strong>cinnamon</strong> – canela (pronúncia: SIN-a-mon)</li>
+              <li><strong>pan</strong> – frigideira</li>
+              <li><strong>to peel</strong> – descascar</li>
+              <li><strong>to slice</strong> – cortar em fatias / rodelas</li>
+              <li><strong>to mix</strong> – misturar</li>
+              <li><strong>turn off</strong> – apagar / desligar (zerar o fogo)</li>
+              <li><strong>turn down</strong> – diminuir (reduzir o fogo ou volume)</li>
+              <li><strong>pasty texture</strong> – textura pastosa</li>
+            </ul>
+
+            <h3>Vocabulário do Dia dos Namorados</h3>
+            <ul>
+              <li><strong>Valentine's Day</strong> – Dia dos Namorados</li>
+              <li><strong>the whole week</strong> – a semana toda / inteira</li>
+              <li><strong>to plan</strong> – planejar</li>
+              <li><strong>handmade</strong> – feito à mão (hand + made; made = passado de make)</li>
+              <li><strong>puzzle</strong> – quebra-cabeça</li>
+              <li><strong>scooter</strong> – patinete elétrica (o que se aluga na rua)</li>
+              <li><strong>high price</strong> – preço alto / caro</li>
+              <li><strong>to walk around</strong> – dar uma volta / passear</li>
+            </ul>
+
+            <h3>Gramática — was / were e to get</h3>
+            <ul>
+              <li><strong>was</strong> – passado de <em>am</em> e <em>is</em>: <em>I am → I was</em> / <em>She is → She was</em></li>
+              <li><strong>were</strong> – passado de <em>are</em>: <em>We are → We were</em></li>
+              <li><strong>to get + adjective</strong> – ficar + adjetivo: <em>get tired</em> = ficar cansado; <em>get hungry</em> = ficar com fome; <em>get angry</em> = ficar bravo</li>
+            </ul>
+
+            <h3>Sufixo -ful e vocabulário relacionado</h3>
+            <ul>
+              <li><strong>-ful</strong> (sufixo) – "cheio de": transforma substantivo/verbo em adjetivo</li>
+              <li><strong>beauty → beautiful</strong> – beleza → bonito(a)</li>
+              <li><strong>use → useful</strong> – uso → útil</li>
+              <li><strong>screwdriver</strong> – chave de fenda (screw = parafuso; driver = o que aciona)</li>
+            </ul>
+
+            <h3>Preposições de tempo e lugar — At / On / In</h3>
+            <ul>
+              <li><strong>at</strong> + hora: <em>at 7:30, at 8pm, at 5 o'clock</em></li>
+              <li><strong>on</strong> + dia da semana: <em>on Friday, on Thursday, on Saturday</em></li>
+              <li><strong>in</strong> + mês / período longo: <em>in May, in April, in five minutes</em></li>
+              <li><strong>at</strong> + lugar específico (nome do local): <em>at Elliott Stadium, at the Reed Theater, at the Book Center</em></li>
+              <li><strong>on</strong> + nome de rua (sem número): <em>on Main Street</em></li>
+            </ul>
+
+            <h3>Outras palavras da aula</h3>
+            <ul>
+              <li><strong>every day</strong> – todos os dias (repetição diária)</li>
+              <li><strong>all day</strong> – o dia inteiro (do acordar ao dormir)</li>
+              <li><strong>spent</strong> – possível gíria americana: sem energia, "acabado" (de <em>to spend</em> = gastar)</li>
+              <li><strong>presents</strong> – apresenta (em contexto de cinema: "Film Forum presents...")</li>
+              <li><strong>play</strong> – peça de teatro</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">🚨 Correções importantes</h2>
+          <div class="outline-card">
+
+            <p style="margin:0 0 12px 0;color:var(--muted);font-size:0.92rem;">Pontos corrigidos ou reforçados durante a aula:</p>
+
+            <p><strong>1. "Roller" → "Scooter"</strong></p>
+            <p style="color:var(--muted);font-size:0.94rem;margin-top:0;">
+              ❌ <em>"We took a roller to the mall."</em><br>
+              ✅ <strong>"We took a scooter to the mall."</strong><br>
+              As patinetes elétricas que se alugam na rua são chamadas de <em>scooter</em> em inglês. <em>Roller</em> não existe nesse contexto (roller skates = patins).
+            </p>
+
+            <p><strong>2. "Your" vs "Her" — pronomes de posse</strong></p>
+            <p style="color:var(--muted);font-size:0.94rem;margin-top:0;">
+              ❌ <em>"I researched your favourite food."</em> (falando da namorada)<br>
+              ✅ <strong>"I researched her favourite food."</strong><br>
+              <em>Your</em> = seu/sua (para quem está na conversa). <em>Her</em> = dela (para uma terceira pessoa, feminino).
+            </p>
+
+            <p><strong>3. "I really like it a lot" → pleonasmo</strong></p>
+            <p style="color:var(--muted);font-size:0.94ém;margin-top:0;">
+              ❌ <em>"I really like it a lot."</em> (really + a lot = redundante)<br>
+              ✅ <strong>"I really liked it."</strong> ou <strong>"I liked it a lot."</strong> ou simplesmente <strong>"I loved it."</strong><br>
+              Escolha um intensificador por vez. Juntos, <em>really</em> e <em>a lot</em> se anulam em elegância.
+            </p>
+
+            <p><strong>4. "High price" para "salgado" — não traduzir ao pé da letra</strong></p>
+            <p style="color:var(--muted);font-size:0.94rem;margin-top:0;">
+              ❌ Pensar em "salgado" e tentar traduzir diretamente<br>
+              ✅ <strong>"The Uber price is high."</strong> ou <strong>"It's expensive."</strong><br>
+              Em inglês, "caro" é <em>expensive</em> ou <em>high price</em>. <em>Salty</em> = com gosto de sal.
+            </p>
+
+            <p><strong>5. "Hand present" → "Handmade present"</strong></p>
+            <p style="color:var(--muted);font-size:0.94rem;margin-top:0;">
+              ❌ <em>"She gave me a hand present."</em><br>
+              ✅ <strong>"She gave me a handmade present."</strong><br>
+              <em>Handmade</em> = feito à mão. <em>Made</em> é o passado de <em>make</em> (fazer). Assim como <em>Made in China</em> = fabricado na China.
+            </p>
+
+            <p><strong>6. "Practice" — sílaba tônica no PRA, não no TIC</strong></p>
+            <p style="color:var(--muted);font-size:0.94rem;margin-top:0;">
+              ❌ <em>"arTICK"</em> (tônica no final)<br>
+              ✅ <strong>"PRActice"</strong> (tônica no início, no PRA)<br>
+              A sílaba tônica (tense) é o ponto mais alto da palavra. Em <em>practice</em>, a força fica no PRA.
+            </p>
+
+            <p><strong>7. "Every day" vs "All day" — não são sinônimos</strong></p>
+            <p style="color:var(--muted);font-size:0.94rem;margin-top:0;">
+              ✅ <strong>Every day</strong> = todos os dias (repetição: acontece dia após dia)<br>
+              ✅ <strong>All day</strong> = o dia inteiro (do momento que acorda ao momento que dorme, sem parar)<br>
+              Ex.: <em>"Every day I practice English"</em> ≠ <em>"I practice English all day"</em>.
+            </p>
+
+            <p><strong>8. "To get" = ficar (com adjetivo) — verbo de 3 letras para estados</strong></p>
+            <p style="color:var(--muted);font-size:0.94rem;margin-top:0;">
+              Para expressar "ficar + estado", use <strong>to get</strong>:<br>
+              ✅ <strong>She got tired.</strong> — Ela ficou cansada.<br>
+              ✅ <strong>I got hungry.</strong> — Eu fiquei com fome.<br>
+              ✅ <strong>He got angry.</strong> — Ele ficou bravo.<br>
+              O passado irregular: <em>get → got</em>.
+            </p>
+
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">🎥 Transcrição &amp; Gravação</h2>
+          <div class="media-row">
+            <a class="media-btn" href="#" role="button">📄 Acessar transcrição</a>
+
+            <a
+              class="media-btn"
+              href="https://youtu.be/3F3h_ZujULE"
+              target="_blank"
+              rel="noopener noreferrer"
+              role="button"
+              style="background:linear-gradient(180deg,#1f6fd1,#2f86e6);color:#fff;border:none;min-width:260px;"
+            >
+              🎥 Assistir gravação (acesso privado)
+            </a>
+          </div>
+        </section>
+
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>🗣️ Tempo de Fala (Talk Time)</h2>
+          <table class="talk-table">
+            <thead>
+              <tr>
+                <th>Quem falou</th>
+                <th>Porcentagem</th>
+                <th>Duração aproximada</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="row-teacher">
+                <td><span class="talk-label">César (Professor)</span></td>
+                <td><span class="talk-percent">50%</span></td>
+                <td class="talk-time">~22 minutos</td>
+              </tr>
+              <tr class="row-student">
+                <td><span class="talk-label">Gabriel Artur</span></td>
+                <td><span class="talk-percent">50%</span></td>
+                <td class="talk-time">~22 minutos</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📝 Homework</h2>
+          <div class="homework">
+            <p style="margin:0 0 8px 0;">
+              📌 <strong>Lição de casa:</strong>
+            </p>
+            <ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+              <li>Leia o pós-aula de <strong>2 a 3 vezes na semana</strong>.</li>
+            </ul>
+          </div>
+
+          <div style="margin-top:14px;">
+            <a class="btn" href="https://wa.me" style="background:#25D366;border-radius:10px;box-shadow:none;">
+              💬 Falar comigo no WhatsApp
+            </a>
+          </div>
+        </section>
+
+      </main>
+
+      <footer>
+        <p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">
+          © 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com
+        </p>
+      </footer>
+    </article>
+  </div>
+</body>
+</html>
