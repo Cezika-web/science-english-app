@@ -604,6 +604,7 @@
         try { await deleteSubcollection(uid, sub); } catch(e) { console.warn('sub', sub, e); }
       }
       await deleteDoc(doc(db, 'students', uid));
+      try { await deleteDoc(doc(db, 'niveis', uid)); } catch(e) {}
     }
 
     function populateStudentSelects(active) {
@@ -737,6 +738,17 @@
       const snap = await getDocs(collection(db, 'students'));
       allStudents = snap.docs.map(d => ({ uid: d.id, ...d.data() }))
         .sort((a, b) => (a.name || a.firstName || '').localeCompare(b.name || b.firstName || '', 'pt', { sensitivity: 'base' }));
+
+      // Mantém a lista pública "niveis" sincronizada (lida ao vivo pelo skill de atividades)
+      allStudents.filter(s => !s.archived).forEach(s => {
+        const nivel = ((s.level || '').match(/\(([^)]+)\)/) || [])[1] || s.level || '';
+        setDoc(doc(db, 'niveis', s.uid), {
+          slug: s.slug || '',
+          firstName: s.firstName || s.name || '',
+          nivel,
+          nivelFull: s.level || '',
+        }, { merge: true }).catch(() => {});
+      });
 
       const active   = allStudents.filter(s => !s.archived);
       const archived = allStudents.filter(s => s.archived);
