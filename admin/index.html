@@ -1030,6 +1030,8 @@
           ...(parsedCorrectionJson.summary && { summary: parsedCorrectionJson.summary }),
           ...(parsedCorrectionJson.report && { report: parsedCorrectionJson.report }),
           ...(parsedCorrectionJson.correcao && { correcao: parsedCorrectionJson.correcao }),
+          ...(parsedCorrectionJson.patterns && { patterns: parsedCorrectionJson.patterns }),
+          ...(parsedCorrectionJson.pedagogico && { pedagogico: parsedCorrectionJson.pedagogico }),
           correctedAt: serverTimestamp(),
         });
 
