@@ -1256,6 +1256,29 @@ function CorrecaoModal({ data, onClose }) {
             )
           ))}
 
+          {/* Bloco 5 e 6 — consolidados da semana (padrões + resumo pedagógico) */}
+          {(() => {
+            const patterns   = (acts.find(a => a.patterns)   || {}).patterns;
+            const pedagogico = (acts.find(a => a.pedagogico) || {}).pedagogico;
+            if (!patterns && !pedagogico) return null;
+            return (
+              <React.Fragment>
+                {patterns && (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', marginBottom: 8 }}>🔁 Padrões de erro</div>
+                    <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 12, padding: 14, fontSize: 13, lineHeight: 1.6, color: '#7C2D12', whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>{patterns}</div>
+                  </div>
+                )}
+                {pedagogico && (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', marginBottom: 8 }}>🎯 Resumo pedagógico</div>
+                    <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 12, padding: 14, fontSize: 13, lineHeight: 1.6, color: '#1E3A5F', whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>{pedagogico}</div>
+                  </div>
+                )}
+              </React.Fragment>
+            );
+          })()}
+
           {acts.length === 0 && (
             <div style={{ textAlign: 'center', color: '#64748B', fontSize: 13, padding: 24 }}>Relatório de correção ainda não disponível.</div>
           )}
