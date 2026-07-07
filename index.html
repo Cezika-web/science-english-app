@@ -982,7 +982,7 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) 
     return Object.entries(map).sort((a,b) => b[1].ord - a[1].ord);
   }, [posaulas]);
 
-  const pendingActs = activities.filter(a => (a.status||'') !== 'corrected').length;
+  const pendingActs = activities.filter(a => (a.status||'') !== 'corrected' && !a.finalizada).length;
 
   return (
     <div className="scroll-area" style={{ padding: '16px 16px 8px' }}>
@@ -1040,7 +1040,8 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) 
           <div style={{ fontSize: 12.5, color: '#64748B', marginTop: 2 }}>
             {activities.length === 0 ? 'Nenhuma atividade ainda'
               : pendingActs > 0 ? `${activities.length} atividade${activities.length !== 1 ? 's' : ''} · ${pendingActs} pendente${pendingActs !== 1 ? 's' : ''}`
-              : `${activities.length} atividade${activities.length !== 1 ? 's' : ''} · todas corrigidas ✓`}
+              : activities.every(a => (a.status||'') === 'corrected') ? `${activities.length} atividade${activities.length !== 1 ? 's' : ''} · todas corrigidas ✓`
+              : `${activities.length} atividade${activities.length !== 1 ? 's' : ''} · todas feitas ✓`}
           </div>
         </div>
         <span style={{ color: '#94A3B8', fontSize: 22, lineHeight: 1 }}>&#8250;</span>
@@ -1094,6 +1095,8 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) 
 // ── AulasTab ─────────────────────────────────────────────────────
 function ActivityRow({ act, onOpenActivity }) {
   const isCorrected = act.status === 'corrected';
+  const isFinished  = !isCorrected && !!act.finalizada;   // aluno fez todas as partes, aguardando correção
+  const isGreen     = isCorrected || isFinished;
   const partsN = (act.parts || []).length;
   const actPct = act.conclusao?.atividadePct;
   return (
@@ -1108,8 +1111,8 @@ function ActivityRow({ act, onOpenActivity }) {
             : (typeof actPct === 'number' && actPct > 0 && <span> · {act.finalizada ? 'Finalizada ✓' : actPct + '% concluída'}</span>)}
         </div>
       </div>
-      <span style={{ fontSize: 11.5, fontWeight: 700, padding: '4px 10px', borderRadius: 999, flexShrink: 0, background: isCorrected ? 'rgba(22,163,74,0.12)' : 'rgba(245,158,11,0.12)', color: isCorrected ? '#064E3B' : '#92400E' }}>
-        {isCorrected ? '✓ Corrigida' : 'Pendente'}
+      <span style={{ fontSize: 11.5, fontWeight: 700, padding: '4px 10px', borderRadius: 999, flexShrink: 0, background: isGreen ? 'rgba(22,163,74,0.12)' : 'rgba(245,158,11,0.12)', color: isGreen ? '#064E3B' : '#92400E' }}>
+        {isCorrected ? '✓ Corrigida' : isFinished ? '✓ Finalizada' : 'Pendente'}
       </span>
     </GlassCard>
   );
