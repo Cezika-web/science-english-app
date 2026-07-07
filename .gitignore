@@ -1,0 +1,13 @@
+# Ferramentas / config local do Claude (não fazem parte do app)
+.claude/
+CLAUDE.md
+
+# Dependências e artefatos locais
+node_modules/
+__pycache__/
+*.pyc
+
+# Credenciais — NUNCA versionar
+*service-account*.json
+*firebase-adminsdk*.json
+.firebase/
