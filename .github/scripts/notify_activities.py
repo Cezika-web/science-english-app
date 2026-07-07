@@ -1,25 +1,29 @@
 #!/usr/bin/env python3
 """
-Envia notificação push "Novas atividades" para um aluno (pelo slug) ou para todos.
-Uso: python notify_activities.py <slug|todos>
-Ex:  python notify_activities.py gu
-     python notify_activities.py isabelle-bueno
-     python notify_activities.py todos
+Notifica alunos quando novas ATIVIDADES são publicadas no app (pelo painel admin).
+
+Diferente do pós-aula (que é acionado por um arquivo no Git), as atividades são
+gravadas direto no Firestore pelo navegador. Por isso este script roda em intervalos
+(GitHub Action agendada): ele varre as atividades marcadas com `notified: false`,
+envia UMA notificação por aluno (mesmo que tenha publicado várias de uma vez) e
+marca cada atividade como `notified: true` para não repetir.
+
+Uso: python notify_activities.py
 """
 
 import json
 import os
 import sys
+
 import requests
 from google.oauth2 import service_account
 import google.auth.transport.requests
 
-TITLE = "Novas atividades para você! 📚"
-BODY = "Abra sua área e confira as atividades novas."
+ICON = "https://cezika-web.github.io/science-english-app/icons/icon-192.png"
 APP_URL = "https://cezika-web.github.io/science-english-app/"
 
 
-def get_auth():
+def get_headers():
     sa_info = json.loads(os.environ["FIREBASE_SERVICE_ACCOUNT"])
     project_id = sa_info["project_id"]
     credentials = service_account.Credentials.from_service_account_info(
@@ -31,104 +35,136 @@ def get_auth():
     )
     auth_req = google.auth.transport.requests.Request()
     credentials.refresh(auth_req)
-    return credentials.token, project_id
-
-
-def collect_tokens(fields):
-    tokens = []
-    ft = fields.get("fcmToken", {}).get("stringValue", "")
-    if ft:
-        tokens.append(ft)
-    for v in fields.get("fcmTokens", {}).get("arrayValue", {}).get("values", []):
-        t = v.get("stringValue", "")
-        if t and t not in tokens:
-            tokens.append(t)
-    return tokens
-
-
-def send_push(auth_token, project_id, fcm_token):
-    msg = {
-        "message": {
-            "token": fcm_token,
-            "data": {"url": APP_URL, "title": TITLE, "body": BODY},
-            "webpush": {
-                "headers": {"Urgency": "high"},
-                "data": {"url": APP_URL, "title": TITLE, "body": BODY},
-                "fcm_options": {"link": APP_URL},
-            },
-        }
+    headers = {
+        "Authorization": f"Bearer {credentials.token}",
+        "Content-Type": "application/json",
     }
-    return requests.post(
-        f"https://fcm.googleapis.com/v1/projects/{project_id}/messages:send",
-        headers={"Authorization": f"Bearer {auth_token}", "Content-Type": "application/json"},
-        json=msg,
+    return headers, project_id
+
+
+def list_students(base_url, headers):
+    """Retorna [(uid, first_name, fcm_token), ...] de todos os alunos."""
+    students = []
+    page_token = None
+    while True:
+        params = {"pageSize": 300}
+        if page_token:
+            params["pageToken"] = page_token
+        resp = requests.get(f"{base_url}/students", headers=headers, params=params)
+        data = resp.json()
+        for doc in data.get("documents", []):
+            uid = doc["name"].split("/")[-1]
+            fields = doc.get("fields", {})
+            first_name = fields.get("firstName", {}).get("stringValue", "Aluno")
+            fcm_token = fields.get("fcmToken", {}).get("stringValue", "")
+            students.append((uid, first_name, fcm_token))
+        page_token = data.get("nextPageToken")
+        if not page_token:
+            break
+    return students
+
+
+def pending_activities(base_url, headers, uid):
+    """Atividades desse aluno com notified == false. Retorna [(doc_id, title), ...]."""
+    resp = requests.post(
+        f"{base_url}/students/{uid}:runQuery",
+        headers=headers,
+        json={
+            "structuredQuery": {
+                "from": [{"collectionId": "activities"}],
+                "where": {
+                    "fieldFilter": {
+                        "field": {"fieldPath": "notified"},
+                        "op": "EQUAL",
+                        "value": {"booleanValue": False},
+                    }
+                },
+            }
+        },
+    )
+    out = []
+    for row in resp.json():
+        doc = row.get("document")
+        if not doc:
+            continue
+        doc_id = doc["name"].split("/")[-1]
+        title = doc.get("fields", {}).get("title", {}).get("stringValue", "Atividade")
+        out.append((doc_id, title))
+    return out
+
+
+def mark_notified(base_url, headers, uid, doc_id):
+    requests.patch(
+        f"{base_url}/students/{uid}/activities/{doc_id}",
+        headers=headers,
+        params={"updateMask.fieldPaths": "notified"},
+        json={"fields": {"notified": {"booleanValue": True}}},
     )
 
 
-def main():
-    target = (sys.argv[1] if len(sys.argv) > 1 else "todos").strip().lower()
-    print(f"Alvo: {target}")
+def send_push(project_id, headers, fcm_token, title, body):
+    resp = requests.post(
+        f"https://fcm.googleapis.com/v1/projects/{project_id}/messages:send",
+        headers=headers,
+        json={
+            "message": {
+                "token": fcm_token,
+                "notification": {"title": title, "body": body},
+                "webpush": {
+                    "notification": {
+                        "title": title,
+                        "body": body,
+                        "icon": ICON,
+                        "badge": ICON,
+                    },
+                    "data": {"url": APP_URL},
+                    "fcm_options": {"link": APP_URL},
+                },
+            }
+        },
+    )
+    return resp
 
-    auth_token, project_id = get_auth()
-    headers = {"Authorization": f"Bearer {auth_token}", "Content-Type": "application/json"}
+
+def main():
+    headers, project_id = get_headers()
     base_url = (
         f"https://firestore.googleapis.com/v1/projects/{project_id}"
         "/databases/(default)/documents"
     )
 
-    students = []
-    if target in ("todos", "all", "*"):
-        url = f"{base_url}/students?pageSize=300"
-        while url:
-            resp = requests.get(url, headers=headers).json()
-            students.extend(resp.get("documents", []))
-            nxt = resp.get("nextPageToken")
-            url = f"{base_url}/students?pageSize=300&pageToken={nxt}" if nxt else None
-    else:
-        resp = requests.post(
-            f"{base_url}:runQuery",
-            headers=headers,
-            json={
-                "structuredQuery": {
-                    "from": [{"collectionId": "students"}],
-                    "where": {
-                        "fieldFilter": {
-                            "field": {"fieldPath": "slug"},
-                            "op": "EQUAL",
-                            "value": {"stringValue": target},
-                        }
-                    },
-                    "limit": 1,
-                }
-            },
-        )
-        for row in resp.json():
-            if "document" in row:
-                students.append(row["document"])
-
-    if not students:
-        print(f"Nenhum aluno encontrado para '{target}'.")
-        sys.exit(0)
+    students = list_students(base_url, headers)
+    print(f"Checking {len(students)} student(s) for new activities...")
 
     total_sent = 0
-    for doc in students:
-        fields = doc.get("fields", {})
-        if fields.get("archived", {}).get("booleanValue", False):
-            continue  # pula ex-alunos
-        first_name = fields.get("firstName", {}).get("stringValue", "Aluno")
-        tokens = collect_tokens(fields)
-        if not tokens:
-            print(f"- {first_name}: sem token de notificação, pulando.")
+    for uid, first_name, fcm_token in students:
+        acts = pending_activities(base_url, headers, uid)
+        if not acts:
             continue
-        for t in tokens:
-            r = send_push(auth_token, project_id, t)
-            if r.status_code == 200:
-                total_sent += 1
-                print(f"✅ Enviado para {first_name}")
-            else:
-                print(f"❌ Erro ({first_name}): {r.status_code} {r.text[:200]}")
 
-    print(f"Total de notificações enviadas: {total_sent}")
+        n = len(acts)
+        print(f"── {first_name} ({uid}): {n} new activity(ies)")
+
+        # Envia UMA notificação resumindo, se o aluno já autorizou push.
+        if fcm_token:
+            if n == 1:
+                body = f"{first_name}, você tem uma nova atividade: {acts[0][1]}"
+            else:
+                body = f"{first_name}, você tem {n} novas atividades para fazer!"
+            resp = send_push(project_id, headers, fcm_token, "Nova atividade! 📝", body)
+            if resp.status_code == 200:
+                total_sent += 1
+                print(f"   ✅ Push enviado para {first_name}")
+            else:
+                print(f"   ❌ FCM {resp.status_code}: {resp.text[:200]}")
+        else:
+            print("   ℹ️  Sem token FCM — o aluno ainda não autorizou notificações.")
+
+        # Marca como notificada (dispara uma vez, igual ao pós-aula).
+        for doc_id, _title in acts:
+            mark_notified(base_url, headers, uid, doc_id)
+
+    print(f"Done. {total_sent} push(es) sent.")
 
 
 if __name__ == "__main__":

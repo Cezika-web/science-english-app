@@ -53,6 +53,10 @@
     .read-badge { font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; flex-shrink: 0; }
     .read-badge.read { background: #d1fae5; color: #065f46; }
     .read-badge.unread { background: #fff3cd; color: #92400e; }
+    .badge-stack { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+    .act-badge { font-size: 0.72rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; flex-shrink: 0; white-space: nowrap; }
+    .act-badge.tocorrect { background: #d1fae5; color: #065f46; box-shadow: 0 0 0 3px rgba(6,95,70,0.10); }
+    .act-badge.pending { background: #fff3cd; color: #92400e; }
     .btn-detail { background: #f0f7ff; border: none; color: var(--accent); padding: 7px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; flex-shrink: 0; }
 
     .kebab-wrap { position: relative; flex-shrink: 0; }
@@ -524,11 +528,18 @@
     // ── LOAD STUDENTS ───────────────────────────────────────────────────
     function studentRowHtml(s, archived) {
       const nm = esc(s.name || s.firstName || 'Aluno');
-      const badge = archived
+      const posBadge = archived
         ? `<span class="read-badge" style="background:#f3f4f6;color:var(--muted)">Ex-aluno</span>`
         : (s.latestTitle
             ? `<span class="read-badge ${s.latestRead ? 'read' : 'unread'}">${s.latestRead ? '✓ Lido' : '⏳ Não lido'}</span>`
             : `<span class="read-badge" style="background:#f3f4f6;color:var(--muted)">Sem pós-aula</span>`);
+      // Badge de atividade: prioriza "prontas p/ corrigir" (verde). Se não houver, mostra pendentes (amarelo).
+      let actBadge = '';
+      if (!archived) {
+        if (s.actToCorrect > 0)      actBadge = `<span class="act-badge tocorrect">✅ ${s.actToCorrect} p/ corrigir</span>`;
+        else if (s.actPending > 0)   actBadge = `<span class="act-badge pending">📝 ${s.actPending} pendente${s.actPending !== 1 ? 's' : ''}</span>`;
+      }
+      const badge = `<div class="badge-stack">${posBadge}${actBadge}</div>`;
       const menuItem = `<button class="kebab-item" data-action="mirror" data-uid="${s.uid}" data-name="${nm}">🪞 Espelho (ver área do aluno)</button>`
         + `<button class="kebab-item" data-action="edit" data-uid="${s.uid}" data-name="${nm}">✏️ Editar dados</button>`
         + (archived
@@ -755,11 +766,18 @@
 
       let readCount = 0;
       const rows = await Promise.all(active.map(async s => {
-        const posSnap = await getDocs(query(collection(db, 'students', s.uid, 'posaulas'), orderBy('createdAt', 'desc')));
+        const [posSnap, actSnap] = await Promise.all([
+          getDocs(query(collection(db, 'students', s.uid, 'posaulas'), orderBy('createdAt', 'desc'))),
+          getDocs(query(collection(db, 'students', s.uid, 'activities'), orderBy('createdAt', 'desc'))).catch(() => ({ docs: [] })),
+        ]);
         const latest  = posSnap.docs[0]?.data();
         const isRead  = !!latest?.readAt;
         if (isRead) readCount++;
-        return { ...s, latestRead: isRead, latestTitle: latest?.title || null };
+        // Atividades atuais (não corrigidas): quantas o aluno já finalizou (prontas p/ corrigir) e quantas ainda estão pendentes
+        const currentActs = actSnap.docs.map(d => d.data()).filter(a => a.status !== 'corrected');
+        const actToCorrect = currentActs.filter(a => a.finalizada).length;
+        const actPending   = currentActs.filter(a => !a.finalizada).length;
+        return { ...s, latestRead: isRead, latestTitle: latest?.title || null, actToCorrect, actPending };
       }));
 
       populateStudentSelects(active);
@@ -813,12 +831,16 @@
       const actHtml = actSnap.docs.length ? actSnap.docs.map(d => {
         const a = d.data();
         const parts = (a.parts || []).length;
-        const status = a.status === 'corrected' ? '✓ Corrigida' : 'Pendente';
+        const done = a.status === 'corrected';
+        const finished = !done && !!a.finalizada;
+        const status = done ? '✓ Corrigida' : finished ? '✅ Finalizada — aguardando correção' : '⏳ Pendente';
+        const statusCls = (done || finished) ? 'read' : 'unread';
         return `<div class="posaula-item">
           <div style="display:flex;align-items:flex-start;gap:10px;">
             <div style="flex:1;">
               <div class="p-title">${a.emoji || '📚'} ${esc(a.title || 'Atividade')}</div>
-              <div class="p-meta">Semana: ${esc(a.week || '—')} · ${parts} parte(s) · ${status}</div>
+              <div class="p-meta">Semana: ${esc(a.week || '—')} · ${parts} parte(s)</div>
+              <div class="p-status ${statusCls}">${status}</div>
             </div>
             <button class="btn-del-item" data-type="activities" data-id="${d.id}" data-label="${esc(a.title || 'Atividade')}">🗑️ Excluir</button>
           </div>
@@ -920,6 +942,7 @@
             emoji:     act.emoji || '📚',
             parts:     act.parts || [],
             status:    'pending',
+            notified:  false,   // a GitHub Action agendada notifica o aluno e marca como true
             createdAt: serverTimestamp(),
           });
         }
