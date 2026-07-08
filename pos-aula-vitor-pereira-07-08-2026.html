@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Vitor Pereira — CZK English</title>
+  <style>
+    :root{
+      --page-bg: #f4f7fa;
+      --card-bg: #fff;
+      --accent: #2f86e6;
+      --accent-dark: #1f6fd1;
+      --green: #36b37e;
+      --muted: #6b7280;
+      --border: #e6eef8;
+      --card-width: 720px;
+    }
+    html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+    .wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+    .card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+    header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+    .badge{ background:linear-gradient(180deg,#fff,#f2fbff); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+    h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+    .meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+    .actions{ display:flex; gap:10px; }
+    .btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(47,134,230,0.12); }
+    main{ margin-top:18px; }
+    section{ margin-top:18px; }
+    .panel{ background:#fbfdff; border-radius:12px; padding:16px; border:1px solid var(--border); }
+    .outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+    .vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+    .vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #dfeefe; background:#fff; }
+    .vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+    .vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+    .vocab h3{ margin:0; font-size:1rem; color:#154360; }
+    .vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+    .media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+    .media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+    .homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+    .speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#fbfdff); border:1px solid var(--border); max-width:640px; }
+    .speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+    .talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #e1e9f5; font-size:0.9rem; }
+    .talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+    .talk-table th{ background:#eef4ff; color:#1b3556; font-weight:700; border-bottom:1px solid #dde6fa; }
+    .row-teacher{ background:#e7f2ff; }
+    .row-student{ background:#e8f7ef; }
+    .talk-label{ font-weight:700; }
+    .talk-percent{ font-weight:700; color:#0f1724; }
+    .talk-time{ color:var(--muted); }
+    footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+    @media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Auxiliares &amp; Perguntas: Do, Does, Did, Will + Verbo To Be</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Vitor Pereira &nbsp;•&nbsp;
+            <strong>Data:</strong> 07/08/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" onclick="window.print();return false;">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+
+        <!-- PAINEL INTRO -->
+        <section class="panel">
+          <p style="margin:0;font-weight:600;color:#08325a;">Aula dedicada a corrigir as atividades da área do aluno e reforçar o ponto que mais gerou erros: <em>quando usar auxiliar (do / does / did / will) e quando usar o verbo to be</em>. Também revisamos vocabulário de estado civil e família, e treinamos formação de perguntas e short answers.</p>
+        </section>
+
+        <!-- RESUMO DETALHADO -->
+        <section>
+          <h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 8px 0;">Começamos revisando a <strong>correção das atividades</strong>. O padrão de erro que apareceu para os dois foi em perguntas com <strong>do, does, did e will</strong>: faltou inverter o sujeito, faltou o pronome (<em>it / you</em>) e às vezes o verbo foi conjugado quando não devia. Reforçamos que, na pergunta, começamos pelo auxiliar (ou pelo <em>WH</em> + auxiliar) e o verbo principal fica na forma base.</p>
+            <p style="margin:0 0 8px 0;">Depois de um <strong>puzzle de aquecimento</strong> (revisão de alfabeto, chegando na palavra <em>excuse me</em>), fizemos uma leitura sobre as <strong>Top 10 invenções mais importantes</strong>: airplane, electricity, penicillin, vaccines, airbag, wheel, compass, printing press, internet e o automóvel. Aproveitamos para separar <strong>invent</strong> (inventar) de <strong>discover</strong> (descobrir) — eletricidade foi descoberta, não inventada.</p>
+            <p style="margin:0 0 8px 0;">Revisamos o vocabulário de <strong>estado civil e família</strong>: single, engaged (fiancé), married, divorced, separated, widowed, além de in-laws (sister-in-law), aunt/uncle, niece/nephew e cousin. Ouvimos quatro áudios curtos para identificar o estado civil pelo contexto.</p>
+            <p style="margin:0;">O foco principal foi o <strong>do / does</strong> e as <strong>3 condições</strong> para conjugar o verbo no presente (adicionar -s): tem que estar no <strong>presente</strong>, ser <strong>he / she / it</strong> e ser <strong>afirmativa</strong>. Terminamos com um treino oral: César perguntava em português e vocês montavam a pergunta em inglês (presente, passado, futuro e verbo to be).</p>
+          </div>
+        </section>
+
+        <!-- FRASES MODELO -->
+        <section>
+          <h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2>
+          <div class="outline-card">
+            <ul>
+              <li><strong>Did you go to the gym yesterday?</strong> → Você foi à academia ontem?</li>
+              <li><strong>Will you travel next year?</strong> → Você vai viajar no ano que vem?</li>
+              <li><strong>Will it rain tomorrow?</strong> → Vai chover amanhã?</li>
+              <li><strong>Do you have kids?</strong> → Você tem filhos?</li>
+              <li><strong>Does he have grandkids?</strong> → Ele tem netos?</li>
+              <li><strong>She is not a doctor.</strong> → Ela não é médica.</li>
+              <li><strong>Where do your aunts and uncles live?</strong> → Onde seus tios e tias moram?</li>
+              <li><strong>How many grandkids does she have?</strong> → Quantos netos ela tem?</li>
+              <li><strong>Were you home yesterday?</strong> → Você estava em casa ontem?</li>
+              <li><strong>Is your family big?</strong> → Sua família é grande?</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- KEY VOCABULARY -->
+        <section>
+          <h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <h3>Auxiliar vs. Verbo To Be</h3>
+              <p><em>(pt) quando usar do/does e quando não usar</em><br><small>Verbo comum → precisa de auxiliar (do/does/did/will) para pergunta e negativa. Verbo <strong>to be</strong> (am/is/are/was/were) → <strong>não</strong> usa auxiliar. Ex.: <em>Is your family big?</em> (não "Do your family...").</small></p>
+            </div>
+            <div class="vocab green">
+              <h3>go + to</h3>
+              <p><em>(pt) ir para um lugar</em><br><small>Sempre que fala o destino, use <strong>to</strong>. Ex.: <em>Did you go <strong>to</strong> the gym?</em></small></p>
+            </div>
+            <div class="vocab yellow">
+              <h3>Invent × Discover</h3>
+              <p><em>(pt) inventar × descobrir</em><br><small><strong>invent</strong> = criar algo novo; <strong>discover</strong> = descobrir algo que já existia. Ex.: <em>We discovered electricity.</em></small></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- VOCABULÁRIO COMPLETO -->
+        <section>
+          <h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2>
+          <div class="outline-card">
+            <h3 style="margin-top:0;">Estado civil</h3>
+            <ul>
+              <li><strong>single</strong> – solteiro(a)</li>
+              <li><strong>engaged</strong> – noivo(a) &nbsp;•&nbsp; <strong>fiancé</strong> – o noivo / a noiva (palavra de origem francesa)</li>
+              <li><strong>married</strong> – casado(a)</li>
+              <li><strong>divorced</strong> – divorciado(a)</li>
+              <li><strong>separated</strong> – separado(a)</li>
+              <li><strong>widowed / widow</strong> – viúvo(a)</li>
+            </ul>
+            <h3>Família</h3>
+            <ul>
+              <li><strong>in-laws</strong> – parentes por casamento (sogros etc.)</li>
+              <li><strong>sister-in-law</strong> – cunhada</li>
+              <li><strong>aunt / uncle</strong> – tia / tio</li>
+              <li><strong>niece / nephew</strong> – sobrinha / sobrinho</li>
+              <li><strong>cousin</strong> – primo(a) &nbsp;<em style="color:var(--muted);font-size:0.88rem;">(man cousin / woman cousin se precisar especificar)</em></li>
+              <li><strong>grandkids</strong> – netos &nbsp;•&nbsp; <strong>couple</strong> – casal (<em>a cute couple</em>)</li>
+            </ul>
+            <h3>Invenções (leitura)</h3>
+            <ul>
+              <li><strong>invention</strong> – invenção</li>
+              <li><strong>compass</strong> – bússola</li>
+              <li><strong>printing press</strong> – prensa / impressora antiga</li>
+              <li><strong>vaccine</strong> – vacina &nbsp;•&nbsp; <strong>penicillin</strong> – penicilina</li>
+              <li><strong>airbag / airplane / wheel</strong> – airbag / avião / roda</li>
+            </ul>
+            <h3>Perguntas e frequência</h3>
+            <ul>
+              <li><strong>how often</strong> – com que frequência</li>
+              <li><strong>how many</strong> – quantos(as) &nbsp;•&nbsp; <strong>how much</strong> – quanto (incontável)</li>
+              <li><strong>nearby</strong> – perto (= close, como adjetivo)</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- CORREÇÕES -->
+        <section>
+          <h2 style="margin-bottom:8px;">🚨 Correções importantes</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 10px 0;"><strong>1. go + to + lugar</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "Did you go the gym yesterday?"</p>
+            <p style="margin:0 0 12px 0;color:#276749;">✅ <strong>"Did you go to the gym yesterday?"</strong> — sempre que diz o destino, use <em>to</em>.</p>
+
+            <p style="margin:0 0 10px 0;"><strong>2. Pergunta com Will</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "You will travel next year?" / "Will you will travel?"</p>
+            <p style="margin:0 0 12px 0;color:#276749;">✅ <strong>"Will you travel next year?"</strong> — inverte o sujeito, começa com <em>Will</em>, verbo na base (sem "go").</p>
+
+            <p style="margin:0 0 10px 0;"><strong>3. Verbo to be não usa auxiliar</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "She doesn't a doctor." / "Do your family is big?"</p>
+            <p style="margin:0 0 12px 0;color:#276749;">✅ <strong>"She is not a doctor."</strong> / <strong>"Is your family big?"</strong> — com o verbo <em>to be</em> não entra do/does.</p>
+
+            <p style="margin:0 0 10px 0;"><strong>4. Passado do verbo to be</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "Did you are home yesterday?"</p>
+            <p style="margin:0 0 12px 0;color:#276749;">✅ <strong>"Were you home yesterday?"</strong> — passado de <em>are</em> é <em>were</em>; não usa <em>did</em>.</p>
+
+            <p style="margin:0 0 10px 0;"><strong>5. Negar precisa de auxiliar</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "He not like hip hop."</p>
+            <p style="margin:0 0 12px 0;color:#276749;">✅ <strong>"He doesn't like hip hop."</strong> — para negar no presente com he/she/it, use <em>doesn't</em> + verbo base.</p>
+
+            <p style="margin:0 0 10px 0;"><strong>6. Frequência: how often</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "How much do you visit your niece?"</p>
+            <p style="margin:0;color:#276749;">✅ <strong>"How often do you visit your niece?"</strong> — para frequência é <em>how often</em>, não how much/how many. 💡 Resposta com always, never, sometimes...</p>
+          </div>
+        </section>
+
+        <!-- GRAVAÇÃO -->
+        <section>
+          <h2 style="margin-bottom:8px;">🎥 Transcrição &amp; Gravação</h2>
+          <div class="media-row">
+            <a class="media-btn" href="#" role="button">📄 Acessar transcrição</a>
+            <a class="media-btn" href="https://youtu.be/IpZCJ" target="_blank" rel="noopener noreferrer" role="button"
+               style="background:linear-gradient(180deg,#1f6fd1,#2f86e6);color:#fff;border:none;min-width:260px;">
+              🎥 Assistir gravação (acesso privado)
+            </a>
+          </div>
+        </section>
+
+        <!-- TALK TIME -->
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>🗣️ Tempo de Fala (Talk Time)</h2>
+          <table class="talk-table">
+            <thead>
+              <tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr>
+            </thead>
+            <tbody>
+              <tr class="row-teacher">
+                <td><span class="talk-label">César (Professor)</span></td>
+                <td><span class="talk-percent">58%</span></td>
+                <td class="talk-time">~47 minutos</td>
+              </tr>
+              <tr class="row-student">
+                <td><span class="talk-label">Karlla &amp; Vitor</span></td>
+                <td><span class="talk-percent">42%</span></td>
+                <td class="talk-time">~34 minutos</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin:10px 0 0 0;color:var(--muted);font-size:0.85rem;">Aula em dupla (Karlla e Vitor). Talk time combinado dos alunos.</p>
+        </section>
+
+        <!-- HOMEWORK -->
+        <section>
+          <h2 style="margin-bottom:8px;">📝 Homework</h2>
+          <div class="homework">
+            <p style="margin:0 0 8px 0;">📌 <strong>Lição de casa:</strong></p>
+            <ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+              <li>Faça as <strong>3 atividades novas</strong> da sua área do aluno (foco em do/does/did/will).</li>
+              <li>Treine a tabela: <em>WH + auxiliar + sujeito + verbo base</em> e as short answers (do→do, be→be, will→will).</li>
+              <li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana.</li>
+            </ul>
+          </div>
+          <div style="margin-top:14px;">
+            <a class="btn" href="https://wa.me" style="background:#25D366;border-radius:10px;box-shadow:none;">
+              💬 Falar comigo no WhatsApp
+            </a>
+          </div>
+        </section>
+
+      </main>
+
+      <footer>
+        <p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">
+          © 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com
+        </p>
+      </footer>
+
+    </article>
+  </div>
+</body>
+</html>
