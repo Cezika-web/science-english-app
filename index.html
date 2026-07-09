@@ -234,6 +234,24 @@ function monthOrder(ts) {
   return d.getFullYear() * 100 + d.getMonth();
 }
 
+// Descobre o mês/ano a partir do rótulo de semana (ex: "SEMANA 16 DE JUNHO 2026").
+// Usado no histórico: meses passados viram pasta; o mês atual fica solto.
+const MESES_PT = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const semAcento = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+function weekMonthInfo(wk) {
+  if (!wk) return null;
+  const low = semAcento(wk);
+  let mi = -1;
+  for (let i = 0; i < MESES_PT.length; i++) {
+    if (low.includes(semAcento(MESES_PT[i]))) { mi = i; break; }
+  }
+  if (mi < 0) return null;
+  const ym = low.match(/(20\d{2})/);
+  const year = ym ? Number(ym[1]) : new Date().getFullYear();
+  const label = MESES_PT[mi].charAt(0).toUpperCase() + MESES_PT[mi].slice(1) + ' ' + year;
+  return { mi, year, key: year * 100 + mi, label };
+}
+
 function isIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -1288,7 +1306,7 @@ function CorrecaoModal({ data, onClose }) {
   );
 }
 
-function ExtraModal({ extra, onClose, onFinish }) {
+function ExtraModal({ extra, onClose, onFinish, onSaveDraft }) {
   const contentRef = useRef(null);
   const valuesRef  = useRef({});
   const [stats, setStats]   = useState({ total: 0, filled: 0 });
@@ -1301,6 +1319,13 @@ function ExtraModal({ extra, onClose, onFinish }) {
     const values = {};
     valuesRef.current = values;
     container.innerHTML = extra.content || '<p style="color:#94A3B8">Sem questões — use o link acima.</p>';
+    const exId = extra.id;
+    let touched = false, draftTimer = null;
+    const flushDraft = () => {
+      if (!touched || !onSaveDraft) return;
+      if (Object.keys(valuesRef.current).length === 0) return;
+      onSaveDraft(exId, { ...valuesRef.current });
+    };
     const recount = () => {
       let filled = 0;
       Object.keys(values).forEach(k => {
@@ -1308,10 +1333,15 @@ function ExtraModal({ extra, onClose, onFinish }) {
         if (typeof v === 'string' ? v.trim() !== '' : !!v) filled++;
       });
       setStats({ total: ctx.keyc.n, filled });
+      if (touched && onSaveDraft) {
+        clearTimeout(draftTimer);
+        draftTimer = setTimeout(flushDraft, 1200);
+      }
     };
-    const ctx = { build: true, saved, values, onChange: recount, keyc: { n: 0 } };
+    const ctx = { build: true, saved, values, onChange: () => { touched = true; recount(); }, keyc: { n: 0 } };
     processExercises(container, ctx);
     recount();
+    return () => { clearTimeout(draftTimer); flushDraft(); };
   }, [extra]);
 
   const total     = stats.total;
@@ -1380,6 +1410,7 @@ function ExtraModal({ extra, onClose, onFinish }) {
 function AulasTab({ activities, onOpenActivity, extras, onOpenExtra, onOpenCorrecao }) {
   const [sub, setSub] = useState('atividades');
   const [openHist, setOpenHist] = useState({});
+  const [openMonth, setOpenMonth] = useState({});
 
   const groupByWeek = (list) => {
     const map = {}, order = [];
@@ -1395,6 +1426,83 @@ function AulasTab({ activities, onOpenActivity, extras, onOpenExtra, onOpenCorre
   const histByWeek   = React.useMemo(() => groupByWeek(activities.filter(a => a.status === 'corrected')), [activities]);
   const temHistorico = histByWeek.length > 0;
   const temAtuais    = atuaisByWeek.length > 0;
+
+  // Histórico: mês atual fica solto (semanas soltas); meses passados viram pasta.
+  const histGroups = React.useMemo(() => {
+    const now = new Date();
+    const curKey = now.getFullYear() * 100 + now.getMonth();
+    const loose = [];
+    const monthMap = {};
+    histByWeek.forEach(w => {
+      const info = weekMonthInfo(w.wk);
+      if (!info || info.key >= curKey) { loose.push(w); return; }
+      if (!monthMap[info.key]) monthMap[info.key] = { key: info.key, label: info.label, weeks: [] };
+      monthMap[info.key].weeks.push(w);
+    });
+    const months = Object.values(monthMap).sort((a, b) => b.key - a.key);
+    return { loose, months };
+  }, [histByWeek]);
+
+  // Renderiza um card de semana (accordion) — reusado solto e dentro da pasta do mês.
+  const renderWeekCard = ({ wk, acts }) => {
+    const open = openHist[wk] === true;
+    return (
+      <div key={wk} style={{ marginBottom: 8 }}>
+        <button onClick={() => setOpenHist(o => ({ ...o, [wk]: !open }))} style={{
+          width: '100%', background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(22,163,74,0.12)', borderRadius: 14,
+          padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontFamily: 'inherit',
+        }}>
+          <span style={{ fontSize: 12.5, fontWeight: 800, color: '#7C4A21', textTransform: 'capitalize' }}>{wk}</span>
+          <span style={{ fontSize: 11, color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>{acts.length} corrigida{acts.length !== 1 ? 's' : ''}</span>
+            <span style={{ fontSize: 14 }}>{open ? '▾' : '▸'}</span>
+          </span>
+        </button>
+        {open && (
+          <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {acts.map(act => <ActivityRow key={act.id} act={act} onOpenActivity={onOpenActivity} />)}
+            {acts.some(a => a.report || a.summary || a.correcao) && (
+              <GlassCard tappable onClick={() => onOpenCorrecao(wk, acts)} style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid rgba(22,163,74,0.25)' }}>
+                <div style={{ fontSize: 24, width: 46, height: 46, borderRadius: 14, background: 'rgba(22,163,74,0.12)', border: '1px solid rgba(22,163,74,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>📋</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: '#064E3B', marginBottom: 2 }}>Correção</div>
+                  <div style={{ fontSize: 12, color: '#64748B' }}>Relatório completo — erros, padrões e resumo</div>
+                </div>
+                <span style={{ color: '#94A3B8', fontSize: 20, lineHeight: 1 }}>›</span>
+              </GlassCard>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Renderiza a pasta de um mês passado, com as semanas dentro.
+  const renderMonthFolder = (m) => {
+    const open = openMonth[m.key] === true;
+    const totalCorr = m.weeks.reduce((n, w) => n + w.acts.length, 0);
+    return (
+      <div key={m.key} style={{ marginBottom: 8 }}>
+        <button onClick={() => setOpenMonth(o => ({ ...o, [m.key]: !open }))} style={{
+          width: '100%', background: 'rgba(124,74,33,0.06)', border: '1px solid rgba(124,74,33,0.18)', borderRadius: 14,
+          padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontFamily: 'inherit',
+        }}>
+          <span style={{ fontSize: 13, fontWeight: 800, color: '#7C4A21', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 16 }}>{open ? '📂' : '📁'}</span>{m.label}
+          </span>
+          <span style={{ fontSize: 11, color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>{m.weeks.length} semana{m.weeks.length !== 1 ? 's' : ''} · {totalCorr} corrigida{totalCorr !== 1 ? 's' : ''}</span>
+            <span style={{ fontSize: 14 }}>{open ? '▾' : '▸'}</span>
+          </span>
+        </button>
+        {open && (
+          <div style={{ marginTop: 8, paddingLeft: 12, borderLeft: '2px solid rgba(124,74,33,0.15)' }}>
+            {m.weeks.map(renderWeekCard)}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="scroll-area" style={{ padding: '16px 16px 8px' }}>
@@ -1437,38 +1545,8 @@ function AulasTab({ activities, onOpenActivity, extras, onOpenExtra, onOpenCorre
           {temHistorico && (
             <div style={{ marginTop: 8 }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: '#9A6438', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>&#128193; Historico de atividades</div>
-              {histByWeek.map(({ wk, acts }) => {
-                const open = openHist[wk] === true;
-                return (
-                  <div key={wk} style={{ marginBottom: 8 }}>
-                    <button onClick={() => setOpenHist(o => ({ ...o, [wk]: !open }))} style={{
-                      width: '100%', background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(22,163,74,0.12)', borderRadius: 14,
-                      padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontFamily: 'inherit',
-                    }}>
-                      <span style={{ fontSize: 12.5, fontWeight: 800, color: '#7C4A21', textTransform: 'capitalize' }}>{wk}</span>
-                      <span style={{ fontSize: 11, color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span>{acts.length} corrigida{acts.length !== 1 ? 's' : ''}</span>
-                        <span style={{ fontSize: 14 }}>{open ? '▾' : '▸'}</span>
-                      </span>
-                    </button>
-                    {open && (
-                      <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {acts.map(act => <ActivityRow key={act.id} act={act} onOpenActivity={onOpenActivity} />)}
-                        {acts.some(a => a.report || a.summary || a.correcao) && (
-                          <GlassCard tappable onClick={() => onOpenCorrecao(wk, acts)} style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid rgba(22,163,74,0.25)' }}>
-                            <div style={{ fontSize: 24, width: 46, height: 46, borderRadius: 14, background: 'rgba(22,163,74,0.12)', border: '1px solid rgba(22,163,74,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>📋</div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 15, fontWeight: 800, color: '#064E3B', marginBottom: 2 }}>Correção</div>
-                              <div style={{ fontSize: 12, color: '#64748B' }}>Relatório completo — erros, padrões e resumo</div>
-                            </div>
-                            <span style={{ color: '#94A3B8', fontSize: 20, lineHeight: 1 }}>›</span>
-                          </GlassCard>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {histGroups.loose.map(renderWeekCard)}
+              {histGroups.months.map(renderMonthFolder)}
             </div>
           )}
         </React.Fragment>
@@ -1799,7 +1877,7 @@ function ActivityModal({ activity, onClose, onOpenPart }) {
   );
 }
 
-function PartModal({ part, activity, onBack, onClose, onFinish }) {
+function PartModal({ part, activity, onBack, onClose, onFinish, onSaveDraft }) {
   const contentRef = useRef(null);
   const valuesRef  = useRef({});
   const [stats, setStats]   = useState({ total: 0, filled: 0 });
@@ -1817,6 +1895,14 @@ function PartModal({ part, activity, onBack, onClose, onFinish }) {
     const values = {};
     valuesRef.current = values;
     container.innerHTML = part.content || '<p style="color:#94A3B8">Conteudo nao disponivel.</p>';
+    // Autosave de rascunho: o que o aluno digitar é gravado sozinho, mesmo sem
+    // clicar em "Finalizei". Assim, se fechar no meio, não perde nada.
+    let touched = false, draftTimer = null;
+    const flushDraft = () => {
+      if (!touched || isCorrected || !onSaveDraft) return;
+      if (Object.keys(valuesRef.current).length === 0) return;
+      onSaveDraft(partId, { ...valuesRef.current });
+    };
     const recount = () => {
       let filled = 0;
       Object.keys(values).forEach(k => {
@@ -1824,14 +1910,19 @@ function PartModal({ part, activity, onBack, onClose, onFinish }) {
         if (typeof v === 'string' ? v.trim() !== '' : !!v) filled++;
       });
       setStats({ total: ctx.keyc.n, filled });
+      if (touched && !isCorrected && onSaveDraft) {
+        clearTimeout(draftTimer);
+        draftTimer = setTimeout(flushDraft, 1200);
+      }
     };
-    const ctx = { build: true, saved, values, onChange: recount, keyc: { n: 0 } };
+    const ctx = { build: true, saved, values, onChange: () => { touched = true; recount(); }, keyc: { n: 0 } };
     processExercises(container, ctx);
     recount();
     if (isCorrected && activity?.correcao && activity.correcao[partId]) {
       applyCorrection(container, activity.correcao[partId]);
     }
-  }, [part, activity]);
+    return () => { clearTimeout(draftTimer); flushDraft(); };
+  }, [part]);
 
   const total     = stats.total;
   const filled    = stats.filled;
@@ -2075,6 +2166,19 @@ function App() {
     setStudent(s => ({ ...s, ...patch }));
   }
 
+  // Rascunho de atividade extra (respostas parciais, sem finalizar).
+  async function handleSaveDraftExtra(exId, values) {
+    if (!user || mirror) return;
+    const cur = extras.find(x => x.id === exId);
+    if (!cur) return;
+    const merged = { ...(cur.respostas || {}), ...values };
+    const fb = await getFB();
+    try {
+      await fb.updateDoc(fb.doc(fb.db, 'students', user.uid, 'extras', exId), { respostas: merged });
+    } catch (e) { return; }
+    setExtras(prev => prev.map(x => x.id === exId ? { ...x, respostas: merged } : x));
+  }
+
   async function handleFinishExtra(extra, result) {
     if (!user) return;
     if (mirror) { showToast('👁 Modo espelho — somente leitura'); return; }
@@ -2112,6 +2216,22 @@ function App() {
   const handleClosePart    = ()     => setOpenPart(null);
   const handleCloseAll     = ()     => { setOpenPart(null); setOpenActivity(null); };
   const handleGoActivities = ()     => setTab('aulas');
+
+  // Grava o rascunho (respostas parciais) sem marcar a parte como finalizada.
+  async function handleSaveDraftPart(partId, values) {
+    if (!openActivity || !user || mirror) return;
+    if (openActivity.status === 'corrected') return;
+    const actId = openActivity.id;
+    const prev  = openActivity.respostas || {};
+    const merged = { ...prev, [partId]: { ...(prev[partId] || {}), ...values } };
+    const fb = await getFB();
+    try {
+      await fb.updateDoc(fb.doc(fb.db, 'students', user.uid, 'activities', actId), { respostas: merged });
+    } catch (e) { return; }
+    const updated = { ...openActivity, respostas: merged };
+    setActivities(prev2 => prev2.map(a => a.id === actId ? updated : a));
+    setOpenActivity(updated);
+  }
 
   async function handleFinishPart(partId, result) {
     if (!openActivity || !user) return;
@@ -2166,8 +2286,8 @@ function App() {
       <BottomNav active={tab} onChange={setTab} />
 
       <ActivityModal activity={openActivity} onClose={handleCloseAll} onOpenPart={handleOpenPart} />
-      <PartModal part={openPart} activity={openActivity} onBack={handleClosePart} onClose={handleCloseAll} onFinish={handleFinishPart} />
-      <ExtraModal extra={openExtra} onClose={() => setOpenExtra(null)} onFinish={handleFinishExtra} />
+      <PartModal part={openPart} activity={openActivity} onBack={handleClosePart} onClose={handleCloseAll} onFinish={handleFinishPart} onSaveDraft={handleSaveDraftPart} />
+      <ExtraModal extra={openExtra} onClose={() => setOpenExtra(null)} onFinish={handleFinishExtra} onSaveDraft={handleSaveDraftExtra} />
       <CorrecaoModal data={openCorrecao} onClose={() => setOpenCorrecao(null)} />
 
       <Celebration show={celebrate} onDone={() => setCelebrate(false)} />
