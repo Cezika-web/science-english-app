@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Anna — CZK English</title>
+  <style>
+    :root{
+      --page-bg: #f4f7fa;
+      --card-bg: #fff;
+      --accent: #2f86e6;
+      --accent-dark: #1f6fd1;
+      --green: #36b37e;
+      --muted: #6b7280;
+      --border: #e6eef8;
+      --card-width: 720px;
+    }
+    html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+    .wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+    .card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+    header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+    .badge{ background:linear-gradient(180deg,#fff,#f2fbff); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+    h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+    .meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+    .actions{ display:flex; gap:10px; }
+    .btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(47,134,230,0.12); }
+    main{ margin-top:18px; }
+    section{ margin-top:18px; }
+    .panel{ background:#fbfdff; border-radius:12px; padding:16px; border:1px solid var(--border); }
+    .outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+    .vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+    .vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #dfeefe; background:#fff; }
+    .vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+    .vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+    .vocab h3{ margin:0; font-size:1rem; color:#154360; }
+    .vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+    .media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+    .media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+    .homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+    .speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#fbfdff); border:1px solid var(--border); max-width:640px; }
+    .speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+    .talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #e1e9f5; font-size:0.9rem; }
+    .talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+    .talk-table th{ background:#eef4ff; color:#1b3556; font-weight:700; border-bottom:1px solid #dde6fa; }
+    .row-teacher{ background:#e7f2ff; }
+    .row-student{ background:#e8f7ef; }
+    .talk-label{ font-weight:700; }
+    .talk-percent{ font-weight:700; color:#0f1724; }
+    .talk-time{ color:var(--muted); }
+    footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+    ul{ margin:8px 0 0 18px; padding:0; }
+    li{ margin-bottom:6px; }
+    @media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Aula 1 — Saudações, Despedidas &amp; Primeiro Vocabulário</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Anna &nbsp;•&nbsp;
+            <strong>Data:</strong> 07/10/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" onclick="window.print();return false;">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+
+        <section class="panel">
+          <p style="margin:0;font-weight:600;color:#08325a;">Bem-vinda ao CZK English, Anna! 🎉 Nesta primeira aula conhecemos seu aplicativo, jogamos o jogo de vocabulário (você acertou 22 de 30 palavras!) e aprendemos o essencial: como <strong>cumprimentar</strong>, <strong>responder</strong> e <strong>se despedir</strong> em inglês.</p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 8px 0;">Começamos apresentando o seu <strong>aplicativo (Science English)</strong>. Nele você define uma meta anual de aulas — você escolheu <strong>20 aulas</strong> até o fim do ano (19 de dezembro). O app também vai guardar suas <strong>atividades</strong> (5 blocos de 10 = 100 exercícios, um por dia) e todos os seus pós-aulas.</p>
+            <p style="margin:0 0 8px 0;">Depois jogamos o <strong>jogo de vocabulário</strong> (30 palavras com imagem + 4 opções). Ele mede seu vocabulário e treina <strong>pronúncia</strong> — vamos repeti-lo a cada 3 meses para ver sua evolução. Resultado de hoje: <strong>22 acertos e 8 erros</strong>, um ótimo começo! Não tem problema errar; é assim que se aprende.</p>
+            <p style="margin:0 0 8px 0;">O coração da aula foram as <strong>saudações</strong>: <em>Good morning / Good afternoon / Good evening</em>, e as três formas de perguntar "como vai": <em>How are you? / How is everything? / How's it going?</em>. Treinamos as <strong>respostas</strong> (<em>I'm fine / Not bad / Great</em>) e as <strong>despedidas</strong> (<em>Goodbye / See you later / Take care / Good night</em>).</p>
+            <p style="margin:0;">Também vimos dois conceitos de pronúncia importantes: a <strong>sílaba tônica</strong> (o som mais forte da palavra — ex.: re-<strong>PEAT</strong>, não <strong>RE</strong>-peat) e a <strong>ligação de sons</strong> (juntar a consoante final com a vogal seguinte — ex.: <em>Good afternoon</em> vira "goo-dafternoon"). No fim, aprendemos o vocabulário de sala (<em>listen, read, write, repeat</em>) e de objetos (<em>table, desk, chair, pen, pencil, book, notebook</em>).</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <h3>How's it going?</h3>
+              <p><em>(pt) Como vai? / E aí, como é que estão as coisas?</em><br><small>A forma mais informal de cumprimentar. Na fala rápida o "t" some: "how's it going" → "how-zit going".</small></p>
+            </div>
+            <div class="vocab green">
+              <h3>Not bad</h3>
+              <p><em>(pt) Nada mal / Vou bem</em><br><small>Resposta a "how are you?". É <strong>not</strong> + bad (nunca "no bad"). Na fala, o "t" quase some: "no'bad".</small></p>
+            </div>
+            <div class="vocab yellow">
+              <h3>Nice to meet you</h3>
+              <p><em>(pt) Prazer em te conhecer</em><br><small>= <strong>Glad</strong> to meet you (mesmo sentido). Para responder: <em>Nice to meet you too</em>.</small></p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2>
+          <div class="outline-card">
+            <h3 style="margin-top:0;">👋 Saudações (greetings)</h3>
+            <ul>
+              <li><strong>Good morning</strong> – bom dia</li>
+              <li><strong>Good afternoon</strong> – boa tarde (depois do meio-dia)</li>
+              <li><strong>Good evening</strong> – boa noite ao chegar (vespertino, ~18h à meia-noite)</li>
+              <li><strong>How are you?</strong> – como você está?</li>
+              <li><strong>How is everything?</strong> – como está tudo? / como vão as coisas?</li>
+              <li><strong>How's it going?</strong> – como vai? (informal)</li>
+              <li><strong>Nice to meet you</strong> / <strong>Glad to meet you</strong> – prazer em te conhecer</li>
+            </ul>
+
+            <h3>💬 Respostas</h3>
+            <ul>
+              <li><strong>Fine</strong> / <strong>I'm fine</strong> – bem / estou bem</li>
+              <li><strong>Not bad</strong> – nada mal</li>
+              <li><strong>Great</strong> – ótimo <em style="color:var(--muted);font-size:0.88rem;">(um degrau acima de "good" = bom)</em></li>
+              <li><strong>And you?</strong> – e você?</li>
+            </ul>
+
+            <h3>👋 Despedidas (farewells)</h3>
+            <ul>
+              <li><strong>Goodbye</strong> – tchau / adeus</li>
+              <li><strong>See you later</strong> – até mais / vejo você depois</li>
+              <li><strong>Take care</strong> – se cuida <em style="color:var(--muted);font-size:0.88rem;">(também em skincare, homecare, daycare)</em></li>
+              <li><strong>Good night</strong> – boa noite (ao se despedir)</li>
+            </ul>
+
+            <h3>✏️ Vocabulário de sala</h3>
+            <ul>
+              <li><strong>Listen</strong> – escutar <em style="color:var(--muted);font-size:0.88rem;">(o "t" é mudo: "líssen")</em></li>
+              <li><strong>Read</strong> – ler</li>
+              <li><strong>Write</strong> – escrever <em style="color:var(--muted);font-size:0.88rem;">(soa igual a "right"; W é mudo)</em></li>
+              <li><strong>Repeat</strong> – repetir</li>
+            </ul>
+
+            <h3>📦 Objetos</h3>
+            <ul>
+              <li><strong>Table</strong> – mesa</li>
+              <li><strong>Desk</strong> – mesa de estudo / escrivaninha</li>
+              <li><strong>Chair</strong> – cadeira</li>
+              <li><strong>Pen</strong> – caneta</li>
+              <li><strong>Pencil</strong> – lápis</li>
+              <li><strong>Book</strong> – livro</li>
+              <li><strong>Notebook</strong> – caderno <em style="color:var(--muted);font-size:0.88rem;">(atenção! "notebook de computador" = laptop)</em></li>
+              <li><strong>Laptop</strong> – notebook (computador)</li>
+              <li><strong>New</strong> – novo</li>
+            </ul>
+
+            <h3>🎮 Palavras do jogo de vocabulário</h3>
+            <ul>
+              <li><strong>Miner</strong> – minerador &nbsp;•&nbsp; <strong>Goldfish</strong> – peixe dourado (gold + fish) &nbsp;•&nbsp; <strong>Safe</strong> – cofre</li>
+              <li><strong>Raft / rafting</strong> – bote / rafting &nbsp;•&nbsp; <strong>Hippie</strong> – hippie &nbsp;•&nbsp; <strong>Badger</strong> – texugo</li>
+              <li><strong>Sandbox</strong> – caixa de areia (sand = areia) &nbsp;•&nbsp; <strong>Beach</strong> – praia &nbsp;•&nbsp; <strong>Cowboy</strong> – vaqueiro</li>
+              <li><strong>Church</strong> – igreja &nbsp;•&nbsp; <strong>War bonnet</strong> – cocar &nbsp;•&nbsp; <strong>Thin</strong> – magro / fino</li>
+              <li><strong>Projector</strong> – projetor &nbsp;•&nbsp; <strong>Slingshot</strong> – estilingue &nbsp;•&nbsp; <strong>Cotton</strong> – algodão</li>
+              <li><strong>Peach</strong> – pêssego &nbsp;•&nbsp; <strong>Eye doctor</strong> – oftalmologista (eye = olho) &nbsp;•&nbsp; <strong>Stapler</strong> – grampeador</li>
+              <li><strong>Windowsill</strong> – peitoril da janela &nbsp;•&nbsp; <strong>Bird</strong> – pássaro &nbsp;•&nbsp; <strong>Scorpion</strong> – escorpião</li>
+              <li><strong>ATM</strong> – caixa eletrônico &nbsp;•&nbsp; <strong>Beekeeper</strong> – apicultor (bee = abelha) &nbsp;•&nbsp; <strong>Apple</strong> – maçã</li>
+              <li><strong>Children</strong> – crianças (= kids) &nbsp;•&nbsp; <strong>Calendar</strong> – calendário</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2>
+          <div class="outline-card">
+            <ul>
+              <li><strong>Good morning! How are you?</strong> → Bom dia! Como você está?</li>
+              <li><strong>I'm fine, thanks. And you?</strong> → Estou bem, obrigada. E você?</li>
+              <li><strong>How is everything?</strong> → Como está tudo?</li>
+              <li><strong>How's it going?</strong> → Como vai? (informal)</li>
+              <li><strong>Hi, I'm Anna. Glad to meet you.</strong> → Oi, sou a Anna. Prazer em te conhecer.</li>
+              <li><strong>Nice to meet you too.</strong> → Prazer em te conhecer também.</li>
+              <li><strong>See you later. Take care!</strong> → Até mais. Se cuida!</li>
+              <li><strong>Read here / Listen here / Repeat.</strong> → Leia aqui / Escute aqui / Repita. (comandos que César usará em inglês)</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">🚨 Correções importantes</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 10px 0;"><strong>1. "not bad" (não "no bad")</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "no bad"</p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong>"not bad"</strong> — usamos <em>not</em> com <em>bad</em>, nunca <em>no</em>. Na fala o "t" quase some ("no'bad"), mas a palavra é <strong>not</strong>.</p>
+
+            <p style="margin:0 0 10px 0;"><strong>2. Pronúncia de "repeat"</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "RE-peat" (força no começo)</p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong>"re-PEAT"</strong> — a sílaba tônica é a segunda. Toda palavra tem um som mais forte; acertar isso ajuda a ser entendida.</p>
+
+            <p style="margin:0 0 10px 0;"><strong>3. O "R" de "are"</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "how a-you" (R fraco)</p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong>"how <u>are</u> you"</strong> — o R é puxado pra dentro da garganta. É uma das palavras mais faladas do inglês, vale treinar.</p>
+
+            <p style="margin:0 0 10px 0;"><strong>4. Ligação de sons: "Good afternoon"</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "good · afternoon" (separado)</p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong>"goo-dafternoon"</strong> — quando uma palavra termina em consoante e a próxima começa com vogal, juntamos os sons. É o que você vai ouvir na vida real.</p>
+
+            <p style="margin:0 0 10px 0;"><strong>5. "notebook" ≠ notebook de computador</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ notebook = computador</p>
+            <p style="margin:0;color:#276749;">✅ Em inglês <strong>notebook = caderno</strong>. O notebook de computador chama-se <strong>laptop</strong>. 💡 Você já sabia essas duas palavras — só ganhou um novo significado!</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">🎥 Transcrição &amp; Gravação</h2>
+          <div class="media-row">
+            <a class="media-btn" href="#" role="button">📄 Acessar transcrição</a>
+            <a class="media-btn" href="https://youtu.be/eDj16U59c7U" target="_blank" rel="noopener noreferrer" role="button"
+               style="background:linear-gradient(180deg,#1f6fd1,#2f86e6);color:#fff;border:none;min-width:260px;">
+              🎥 Assistir gravação (acesso privado)
+            </a>
+          </div>
+          <p style="margin:10px 0 0 0;color:var(--muted);font-size:0.9rem;">Dica: as saudações estão por volta dos <strong>20–25 min</strong> e revisadas de novo aos <strong>~53 min</strong> — bom para conferir sua pronúncia.</p>
+        </section>
+
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>🗣️ Tempo de Fala (Talk Time)</h2>
+          <table class="talk-table">
+            <thead>
+              <tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr>
+            </thead>
+            <tbody>
+              <tr class="row-teacher">
+                <td><span class="talk-label">César (Professor)</span></td>
+                <td><span class="talk-percent">75%</span></td>
+                <td class="talk-time">~42 minutos</td>
+              </tr>
+              <tr class="row-student">
+                <td><span class="talk-label">Anna</span></td>
+                <td><span class="talk-percent">25%</span></td>
+                <td class="talk-time">~14 minutos</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin:10px 0 0 0;color:var(--muted);font-size:0.88rem;">Normal para a primeira aula (muita explicação). A partir das próximas, seu tempo de fala vai crescer bastante. 😉</p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📝 Homework</h2>
+          <div class="homework">
+            <p style="margin:0 0 8px 0;">📌 <strong>Lição de casa:</strong></p>
+            <ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+              <li>Repita em voz alta, várias vezes: <strong>How are you? / How is everything? / How's it going?</strong></li>
+              <li>Treine também as respostas (<em>I'm fine / Not bad / Great</em>) e as despedidas (<em>See you later / Take care</em>).</li>
+              <li>Faça <strong>uma atividade por dia</strong> no aplicativo.</li>
+              <li>Confira a atividade extra do <strong>jogo de vocabulário</strong> de hoje no app.</li>
+              <li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana, em voz alta.</li>
+            </ul>
+          </div>
+          <div style="margin-top:14px;">
+            <a class="btn" href="https://wa.me" style="background:#25D366;border-radius:10px;box-shadow:none;">
+              💬 Falar comigo no WhatsApp
+            </a>
+          </div>
+        </section>
+
+      </main>
+
+      <footer>
+        <p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">
+          © 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com
+        </p>
+      </footer>
+
+    </article>
+  </div>
+</body>
+</html>
