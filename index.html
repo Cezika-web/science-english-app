@@ -166,21 +166,25 @@ async function getFB() {
     { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential },
     { getFirestore, doc, getDoc, collection, query, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion },
     { getMessaging, getToken, onMessage, isSupported },
+    { getStorage, ref: storageRef, uploadBytes, getDownloadURL },
   ] = await Promise.all([
     import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
     import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'),
     import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'),
     import('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js'),
+    import('https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js'),
   ]);
   const app  = initializeApp(FB_CONFIG);
   const auth = getAuth(app);
   const db   = getFirestore(app);
+  const storage = getStorage(app);
   let messaging = null;
   try { if (await isSupported()) messaging = getMessaging(app); } catch(e) {}
-  _fb = { app, auth, db, messaging,
+  _fb = { app, auth, db, storage, messaging,
     signInWithEmailAndPassword, signOut, onAuthStateChanged,
     updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential,
     doc, getDoc, collection, query, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion,
+    storageRef, uploadBytes, getDownloadURL,
     getToken, onMessage };
   return _fb;
 }
@@ -1144,6 +1148,23 @@ const SKILLS = [
   { id: 'writing',   label: 'Writing',   icon: '✍️', desc: 'Escreva melhor' },
 ];
 
+// Converte um array de `questions` em HTML respondível pelo motor de exercícios.
+// Usado quando o extra não traz `content` HTML pronto (fallback).
+function questionsToHtml(questions) {
+  if (!Array.isArray(questions) || !questions.length) return '';
+  const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const items = questions.map(q => {
+    const prompt = esc(q.prompt || q.text || q.q || '');
+    const opts = q.options || q.choices;
+    if (Array.isArray(opts) && opts.length) {
+      const line = opts.map((o, i) => String.fromCharCode(97 + i) + ') ' + esc(o)).join(' ');
+      return '<li>' + prompt + ' ' + line + '</li>';
+    }
+    return '<li>' + prompt + ' &rarr; _______________________</li>';
+  }).join('');
+  return '<ol>' + items + '</ol>';
+}
+
 function ExtrasSection({ extras, onOpenExtra }) {
   const [skill, setSkill] = useState(null);
 
@@ -1180,7 +1201,11 @@ function ExtrasSection({ extras, onOpenExtra }) {
                 <div style={{ fontSize: 24, width: 46, height: 46, borderRadius: 14, background: 'rgba(139,94,52,0.1)', border: '1px solid rgba(139,94,52,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{skill.icon}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 2 }}>{e.title || 'Atividade'}</div>
-                  {e.intro && <div style={{ fontSize: 12, color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.intro}</div>}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    {e.level && <span style={{ fontSize: 10.5, fontWeight: 800, color: '#3730A3', background: 'rgba(99,102,241,0.12)', borderRadius: 999, padding: '1px 7px' }}>{e.level}</span>}
+                    {(e.responseType === 'audio' || e.responseType === 'both' || e.skill === 'speaking') && <span style={{ fontSize: 10.5, fontWeight: 800, color: '#9A3412', background: 'rgba(249,115,22,0.12)', borderRadius: 999, padding: '1px 7px' }}>🎤 áudio</span>}
+                    {e.source && <span style={{ fontSize: 11.5, color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.source}</span>}
+                  </div>
                 </div>
                 <span style={{ fontSize: 11.5, fontWeight: 700, padding: '4px 10px', borderRadius: 999, flexShrink: 0, background: e.finalizada ? 'rgba(22,163,74,0.12)' : 'rgba(245,158,11,0.12)', color: e.finalizada ? '#064E3B' : '#92400E' }}>
                   {e.finalizada ? '✓ Finalizada' : 'Pendente'}
@@ -1306,11 +1331,126 @@ function CorrecaoModal({ data, onClose }) {
   );
 }
 
-function ExtraModal({ extra, onClose, onFinish, onSaveDraft }) {
+// ── Gravador de áudio (Speaking) — grava no navegador e entrega o Blob ──
+function AudioRecorder({ existingUrl, readOnly, onBlob }) {
+  const [state, setState] = useState(existingUrl ? 'recorded' : 'idle'); // idle | recording | recorded
+  const [url, setUrl]     = useState(existingUrl || null);
+  const [secs, setSecs]   = useState(0);
+  const [err, setErr]     = useState('');
+  const mrRef     = useRef(null);
+  const chunksRef = useRef([]);
+  const streamRef = useRef(null);
+  const timerRef  = useRef(null);
+  const urlRef    = useRef(existingUrl || null);
+
+  useEffect(() => () => {
+    try { clearInterval(timerRef.current); } catch(e) {}
+    try { streamRef.current && streamRef.current.getTracks().forEach(t => t.stop()); } catch(e) {}
+    if (urlRef.current && urlRef.current.startsWith('blob:')) { try { URL.revokeObjectURL(urlRef.current); } catch(e) {} }
+  }, []);
+
+  const setObjUrl = (u) => {
+    if (urlRef.current && urlRef.current.startsWith('blob:')) { try { URL.revokeObjectURL(urlRef.current); } catch(e) {} }
+    urlRef.current = u; setUrl(u);
+  };
+
+  const pickMime = () => {
+    const cands = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/aac'];
+    for (const c of cands) { if (window.MediaRecorder && MediaRecorder.isTypeSupported(c)) return c; }
+    return '';
+  };
+
+  const start = async () => {
+    setErr('');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+      setErr('Seu navegador não suporta gravação. No iPhone, abra pelo app na tela inicial.'); return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mime = pickMime();
+      const mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      chunksRef.current = [];
+      mr.ondataavailable = e => { if (e.data && e.data.size) chunksRef.current.push(e.data); };
+      mr.onstop = () => {
+        const type = mr.mimeType || 'audio/webm';
+        const blob = new Blob(chunksRef.current, { type });
+        const ext  = (type.includes('mp4') || type.includes('aac')) ? 'm4a' : 'webm';
+        setObjUrl(URL.createObjectURL(blob));
+        setState('recorded');
+        onBlob && onBlob(blob, ext);
+        try { streamRef.current.getTracks().forEach(t => t.stop()); } catch(e) {}
+      };
+      mr.start(); mrRef.current = mr;
+      setState('recording'); setSecs(0);
+      timerRef.current = setInterval(() => setSecs(s => s + 1), 1000);
+    } catch(e) {
+      setErr('Não foi possível acessar o microfone. Toque em "Permitir" quando o navegador pedir.');
+    }
+  };
+
+  const stop = () => {
+    try { clearInterval(timerRef.current); } catch(e) {}
+    try { if (mrRef.current && mrRef.current.state !== 'inactive') mrRef.current.stop(); } catch(e) {}
+  };
+
+  const redo = () => {
+    setObjUrl(null); setState('idle'); setSecs(0);
+    onBlob && onBlob(null, null);
+  };
+
+  const fmt = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+
+  const box = { background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 14, padding: 14 };
+  const btn = (bg) => ({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: 13, border: 'none', borderRadius: 12, fontSize: 14.5, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer', color: '#fff', background: bg });
+
+  if (readOnly) {
+    return (
+      <div style={box}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: '#9A3412', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>🎤 Resposta em áudio</div>
+        {url ? <audio controls src={url} style={{ width: '100%' }} />
+             : <div style={{ fontSize: 13, color: '#94A3B8' }}>O aluno ainda não gravou.</div>}
+      </div>
+    );
+  }
+
+  return (
+    <div style={box}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: '#9A3412', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>🎤 Grave sua resposta</div>
+      {state === 'idle' && (
+        <button onClick={start} style={btn('linear-gradient(180deg,#F97316,#EA580C)')}>🎤 Gravar</button>
+      )}
+      {state === 'recording' && (
+        <div>
+          <div style={{ textAlign: 'center', fontSize: 22, fontWeight: 800, color: '#DC2626', marginBottom: 8 }}>● {fmt(secs)}</div>
+          <button onClick={stop} style={btn('linear-gradient(180deg,#EF4444,#DC2626)')}>⏹ Parar</button>
+        </div>
+      )}
+      {state === 'recorded' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <audio controls src={url} style={{ width: '100%' }} />
+          <button onClick={redo} style={{ ...btn('#fff'), color: '#9A3412', border: '1.5px solid #FDBA74', background: '#fff' }}>🗑 Regravar</button>
+        </div>
+      )}
+      {err && <div style={{ fontSize: 12.5, color: '#DC2626', marginTop: 8, fontWeight: 600 }}>{err}</div>}
+    </div>
+  );
+}
+
+function ExtraModal({ extra, onClose, onFinish, onSaveDraft, mirror }) {
   const contentRef = useRef(null);
   const valuesRef  = useRef({});
+  const audioRef   = useRef({ blob: null, ext: null });
   const [stats, setStats]   = useState({ total: 0, filled: 0 });
   const [saving, setSaving] = useState(false);
+
+  const savedAudioUrl = extra?.respostas?.audioUrl || null;
+  const rt        = extra?.responseType || (extra?.skill === 'speaking' ? 'audio' : 'text');
+  const needsAudio = rt === 'audio' || rt === 'both';
+  const [hasAudio, setHasAudio] = useState(!!savedAudioUrl);
+
+  // Reseta o estado de áudio ao trocar de atividade.
+  useEffect(() => { audioRef.current = { blob: null, ext: null }; setHasAudio(!!(extra?.respostas?.audioUrl)); }, [extra]);
 
   useEffect(() => {
     if (!extra || !contentRef.current) return;
@@ -1318,7 +1458,9 @@ function ExtraModal({ extra, onClose, onFinish, onSaveDraft }) {
     const saved  = extra.respostas || {};
     const values = {};
     valuesRef.current = values;
-    container.innerHTML = extra.content || '<p style="color:#94A3B8">Sem questões — use o link acima.</p>';
+    container.innerHTML = (extra.content && extra.content.trim())
+      ? extra.content
+      : (questionsToHtml(extra.questions) || '<p style="color:#94A3B8">Sem questões — use o link acima.</p>');
     const exId = extra.id;
     let touched = false, draftTimer = null;
     const flushDraft = () => {
@@ -1346,14 +1488,20 @@ function ExtraModal({ extra, onClose, onFinish, onSaveDraft }) {
 
   const total     = stats.total;
   const filled    = stats.filled;
-  const canFinish = total === 0 ? true : filled >= total;
+  const textOk    = total === 0 ? true : filled >= total;
+  const canFinish = textOk && (!needsAudio || hasAudio);
   const pct       = total === 0 ? 100 : Math.round((filled / total) * 100);
   const skillInfo = SKILLS.find(s => s.id === extra?.skill);
+  const link      = extra?.activityUrl || extra?.link;
+  const instruction = extra?.instruction || extra?.intro;
 
   const handleFinish = async () => {
     if (!canFinish || saving) return;
     setSaving(true);
-    await onFinish(extra, { values: { ...valuesRef.current }, respondidos: filled, total, pct });
+    await onFinish(extra, {
+      values: { ...valuesRef.current }, respondidos: filled, total, pct,
+      audioBlob: audioRef.current.blob, audioExt: audioRef.current.ext,
+    });
     setSaving(false);
   };
 
@@ -1372,25 +1520,48 @@ function ExtraModal({ extra, onClose, onFinish, onSaveDraft }) {
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto' }}>
-          {(extra?.link || extra?.intro) && (
-            <div style={{ padding: '14px 16px 0' }}>
-              {extra?.intro && <div style={{ fontSize: 13.5, color: '#374151', lineHeight: 1.6, marginBottom: 10 }}>{extra.intro}</div>}
-              {extra?.link && (
-                <a href={extra.link} target="_blank" rel="noopener noreferrer" style={{
-                  display: 'block', textAlign: 'center', background: 'linear-gradient(180deg,#22C55E,#16A34A)', color: '#fff',
-                  textDecoration: 'none', padding: '13px 18px', borderRadius: 14, fontWeight: 800, fontSize: 14,
-                  boxShadow: '0 6px 18px rgba(22,163,74,0.3)',
-                }}>&#9654; Assistir / Abrir</a>
-              )}
+          <div style={{ padding: '14px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {extra?.siteExplanation && (
+              <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 14, padding: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#1D4ED8', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
+                  &#8505; Como funciona{extra?.source ? ' — ' + extra.source : ''}
+                </div>
+                <div style={{ fontSize: 13.5, color: '#1E3A5F', lineHeight: 1.6 }}>{extra.siteExplanation}</div>
+              </div>
+            )}
+            {instruction && (
+              <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 14, padding: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#9A6438', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>&#128221; O que fazer</div>
+                <div style={{ fontSize: 13.5, color: '#374151', lineHeight: 1.6 }}>{instruction}</div>
+              </div>
+            )}
+            {link && (
+              <a href={link} target="_blank" rel="noopener noreferrer" style={{
+                display: 'block', textAlign: 'center', background: 'linear-gradient(180deg,#22C55E,#16A34A)', color: '#fff',
+                textDecoration: 'none', padding: '13px 18px', borderRadius: 14, fontWeight: 800, fontSize: 14,
+                boxShadow: '0 6px 18px rgba(22,163,74,0.3)',
+              }}>&#9654; Abrir a atividade</a>
+            )}
+          </div>
+          <div ref={contentRef} className="ex-root" style={{ padding: 16, fontSize: 14.5, lineHeight: 1.75, color: '#1F2937' }} />
+          {needsAudio && (
+            <div style={{ padding: '0 16px 16px' }}>
+              <AudioRecorder
+                key={extra?.id || 'rec'}
+                existingUrl={savedAudioUrl}
+                readOnly={mirror}
+                onBlob={(blob, ext) => { audioRef.current = { blob, ext }; setHasAudio(!!blob); }}
+              />
             </div>
           )}
-          <div ref={contentRef} className="ex-root" style={{ padding: 16, fontSize: 14.5, lineHeight: 1.75, color: '#1F2937' }} />
         </div>
 
         <div style={{ padding: '12px 16px', paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid #F1F5F9', flexShrink: 0 }}>
           {!canFinish && (
             <div style={{ fontSize: 12, color: '#D97706', marginBottom: 8, textAlign: 'center', fontWeight: 600 }}>
-              Responda todos os exercicios para finalizar ({filled}/{total})
+              {needsAudio && !hasAudio && textOk
+                ? 'Grave sua resposta em áudio para finalizar'
+                : `Responda todos os exercicios para finalizar (${filled}/${total})`}
             </div>
           )}
           <button onClick={handleFinish} disabled={!canFinish || saving} style={{
@@ -2184,13 +2355,29 @@ function App() {
     if (mirror) { showToast('👁 Modo espelho — somente leitura'); return; }
     const fb = await getFB();
     const conclusao = { respondidos: result.respondidos, total: result.total, pct: result.pct };
+    const respostas = { ...(result.values || {}) };
+    // Sobe o áudio (Speaking) para o Storage, se houver gravação nova.
+    if (result.audioBlob) {
+      try {
+        const ext  = result.audioExt || 'webm';
+        const path = `extras/${user.uid}/${extra.id}/${Date.now()}.${ext}`;
+        const sref = fb.storageRef(fb.storage, path);
+        await fb.uploadBytes(sref, result.audioBlob, { contentType: result.audioBlob.type || 'audio/webm' });
+        respostas.audioUrl  = await fb.getDownloadURL(sref);
+        respostas.audioPath = path;
+      } catch(e) { showToast('Erro ao enviar o áudio: ' + e.message); return; }
+    } else if (extra?.respostas?.audioUrl) {
+      // Mantém o áudio anterior se o aluno não regravou.
+      respostas.audioUrl  = extra.respostas.audioUrl;
+      respostas.audioPath = extra.respostas.audioPath;
+    }
     try {
       await fb.updateDoc(fb.doc(fb.db, 'students', user.uid, 'extras', extra.id), {
-        respostas: result.values, finalizada: true, conclusao,
+        respostas, finalizada: true, conclusao,
         finalizadaEm: fb.serverTimestamp(),
       });
     } catch(e) { showToast('Erro ao salvar: ' + e.message); return; }
-    const updated = { ...extra, respostas: result.values, finalizada: true, conclusao };
+    const updated = { ...extra, respostas, finalizada: true, conclusao };
     setExtras(prev => prev.map(x => x.id === extra.id ? updated : x));
     setOpenExtra(null);
     showToast('Atividade extra finalizada! 🎉');
@@ -2287,7 +2474,7 @@ function App() {
 
       <ActivityModal activity={openActivity} onClose={handleCloseAll} onOpenPart={handleOpenPart} />
       <PartModal part={openPart} activity={openActivity} onBack={handleClosePart} onClose={handleCloseAll} onFinish={handleFinishPart} onSaveDraft={handleSaveDraftPart} />
-      <ExtraModal extra={openExtra} onClose={() => setOpenExtra(null)} onFinish={handleFinishExtra} onSaveDraft={handleSaveDraftExtra} />
+      <ExtraModal extra={openExtra} onClose={() => setOpenExtra(null)} onFinish={handleFinishExtra} onSaveDraft={handleSaveDraftExtra} mirror={mirror} />
       <CorrecaoModal data={openCorrecao} onClose={() => setOpenCorrecao(null)} />
 
       <Celebration show={celebrate} onDone={() => setCelebrate(false)} />
