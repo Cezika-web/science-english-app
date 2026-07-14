@@ -317,12 +317,14 @@
         <div class="form-card">
           <h2>🎧 Adicionar à Biblioteca de Extras</h2>
           <p style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;">
-            Cole o JSON da atividade extra (gerado com o Claude a partir da transcrição do vídeo).
-            Depois de salvar, ela fica na biblioteca e você envia para quantos alunos quiser.
+            Cole o JSON da atividade extra (gerado com o Claude). Campos: <code>skill</code>, <code>level</code> (A1-A2 | B1-B2),
+            <code>title</code>, <code>source</code>, <code>siteExplanation</code> (como o site funciona), <code>activityUrl</code> (link direto do exercício),
+            <code>instruction</code>, <code>responseType</code> (text | audio | both), <code>content</code> (perguntas, opcional).
+            Depois de salvar, ela fica na biblioteca e você envia para quantos alunos quiser. <strong>Speaking → responseType "audio"</strong> (o aluno grava no app).
           </p>
           <div class="field">
             <label>JSON da atividade extra</label>
-            <textarea id="ex-json" placeholder='{"skill":"listening","level":"A2","title":"Daily Conversation","link":"https://youtu.be/...","intro":"Assista o vídeo e responda","content":"<ol><li>...</li></ol>"}'></textarea>
+            <textarea id="ex-json" placeholder='{"skill":"speaking","level":"A1-A2","title":"Shadowing","source":"YouTube","siteExplanation":"...","activityUrl":"https://youtu.be/...","instruction":"Ouça e repita imitando a fala. Grave e salve.","responseType":"audio","content":""}'></textarea>
           </div>
           <button class="btn-add" id="btn-parse-extra" type="button">Verificar JSON →</button>
           <div class="publish-preview" id="ex-preview">
@@ -992,13 +994,22 @@
         showMsg('cor-msg', 'Este aluno não tem atividades publicadas no app ainda.', 'err'); return;
       }
 
-      const acts = actsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Só mostra atividades que ainda NÃO foram corrigidas — as corrigidas somem daqui.
+      const acts = actsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .filter(a => a.status !== 'corrected');
+      if (acts.length === 0) {
+        document.getElementById('cor-activities-list').innerHTML = '';
+        document.getElementById('cor-activities-section').style.display = 'none';
+        selectedActivityId = null;
+        showMsg('cor-msg', '✅ Todas as atividades deste aluno já foram corrigidas. Nada para corrigir aqui.', 'info');
+        return;
+      }
       document.getElementById('cor-activities-list').innerHTML = acts.map(a => `
         <label class="act-select-row">
           <input type="radio" name="cor-act" value="${a.id}" />
           <div class="act-select-info">
             <div class="act-select-title">${a.emoji || '📚'} ${esc(a.title || 'Atividade')}</div>
-            <div class="act-select-meta">Semana: ${esc(a.week || '—')} · Status: ${a.status === 'corrected' ? '✓ Já corrigida' : 'Pendente'}</div>
+            <div class="act-select-meta">Semana: ${esc(a.week || '—')} · Status: ${a.finalizada ? '📝 Aguardando correção' : '⏳ Não finalizada'}</div>
           </div>
         </label>`).join('');
 
@@ -1011,7 +1022,7 @@
       });
 
       document.getElementById('cor-activities-section').style.display = 'block';
-      showMsg('cor-msg', `${acts.length} atividade(s) encontrada(s). Selecione qual corrigir.`, 'info');
+      showMsg('cor-msg', `${acts.length} atividade(s) a corrigir. Selecione qual corrigir.`, 'info');
     };
 
     document.getElementById('btn-apply-correction').onclick = async () => {
@@ -1111,14 +1122,17 @@
       if (!data.skill || !SKILL_LABELS[data.skill]) { showMsg('ex-msg', 'Campo "skill" deve ser listening, speaking, reading ou writing.', 'err'); return; }
       if (!data.title) { showMsg('ex-msg', 'Campo "title" obrigatório.', 'err'); return; }
       parsedExtraJson = data;
-      const nQ = countQuestions(data.content || '');
+      const nQ = countQuestions(data.content || '') || (Array.isArray(data.questions) ? data.questions.length : 0);
+      const url = data.activityUrl || data.link || '';
+      const rt  = data.responseType || (data.skill === 'speaking' ? 'audio' : 'text');
       document.getElementById('ex-preview-body').innerHTML = `
         <div class="prev-act">
           <div class="prev-act-head">${SKILL_LABELS[data.skill]} — ${esc(data.title)}</div>
-          <div class="prev-act-sub">Nível: ${esc(data.level || 'Todos')}${data.link ? ` · <a href="${esc(data.link)}" target="_blank">link</a>` : ''}</div>
-          ${data.intro ? `<div style="font-size:0.85rem;margin-bottom:8px;">${esc(data.intro)}</div>` : ''}
-          <div class="prev-part-body">${data.content || '<em>Sem questões (só o link)</em>'}</div>
-          <div class="prev-count">${nQ} exercício(s) que o aluno responde</div>
+          <div class="prev-act-sub">Faixa: ${esc(data.level || 'Todos')} · Resposta: ${esc(rt)}${data.source ? ` · ${esc(data.source)}` : ''}${url ? ` · <a href="${esc(url)}" target="_blank">link direto</a>` : ''}</div>
+          ${data.siteExplanation ? `<div style="font-size:0.82rem;margin-bottom:6px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px;"><strong>Como funciona:</strong> ${esc(data.siteExplanation)}</div>` : ''}
+          ${(data.instruction || data.intro) ? `<div style="font-size:0.85rem;margin-bottom:8px;"><strong>Instrução:</strong> ${esc(data.instruction || data.intro)}</div>` : ''}
+          <div class="prev-part-body">${data.content || '<em>Sem questões ainda (só link' + (rt !== 'text' ? ' + áudio' : '') + ')</em>'}</div>
+          <div class="prev-count">${nQ} exercício(s) de texto${rt !== 'text' ? ' + gravação de áudio' : ''}</div>
         </div>`;
       document.getElementById('ex-preview').style.display = 'block';
       showMsg('ex-msg', '', 'info');
@@ -1129,12 +1143,20 @@
       const btn = document.getElementById('btn-save-extra');
       btn.disabled = true; btn.textContent = 'Salvando...';
       try {
+        const _url = parsedExtraJson.activityUrl || parsedExtraJson.link || '';
+        const _instr = parsedExtraJson.instruction || parsedExtraJson.intro || '';
         await addDoc(collection(db, 'extras'), {
           skill: parsedExtraJson.skill,
           level: parsedExtraJson.level || '',
           title: parsedExtraJson.title,
-          link:  parsedExtraJson.link || '',
-          intro: parsedExtraJson.intro || '',
+          source: parsedExtraJson.source || '',
+          siteExplanation: parsedExtraJson.siteExplanation || '',
+          activityUrl: _url,
+          link:  _url,                 // espelho p/ compatibilidade
+          instruction: _instr,
+          intro: _instr,               // espelho p/ compatibilidade
+          responseType: parsedExtraJson.responseType || (parsedExtraJson.skill === 'speaking' ? 'audio' : 'text'),
+          questions: Array.isArray(parsedExtraJson.questions) ? parsedExtraJson.questions : [],
           content: parsedExtraJson.content || '',
           assigned: {},
           createdAt: serverTimestamp(),
@@ -1166,7 +1188,7 @@
           <div class="student-row" style="flex-wrap:wrap;">
             <div class="student-info" style="min-width:200px;">
               <div class="name">${SKILL_LABELS[e.skill] || e.skill} — ${esc(e.title || '')}</div>
-              <div class="email">Nível: ${esc(e.level || 'Todos')} · ${countQuestions(e.content || '')} questões · ${nAssigned} aluno(s)${e.link ? ` · <a href="${esc(e.link)}" target="_blank">link</a>` : ''}</div>
+              <div class="email">Faixa: ${esc(e.level || 'Todos')} · ${(e.responseType === 'audio' || e.responseType === 'both' || e.skill === 'speaking') ? '🎤 áudio · ' : ''}${countQuestions(e.content || '') || (Array.isArray(e.questions) ? e.questions.length : 0)} questões · ${nAssigned} aluno(s)${(e.activityUrl || e.link) ? ` · <a href="${esc(e.activityUrl || e.link)}" target="_blank">link</a>` : ''}</div>
             </div>
             <select class="ex-assign-sel" data-id="${e.id}" style="padding:8px;border:1.5px solid var(--border);border-radius:8px;font-size:0.82rem;">${opts}</select>
             <button class="btn-detail ex-send" data-id="${e.id}">📤 Enviar</button>
@@ -1188,9 +1210,16 @@
             }
             btn.disabled = true; btn.textContent = 'Enviando...';
             try {
+              const _u = lib.activityUrl || lib.link || '';
+              const _i = lib.instruction || lib.intro || '';
               const ref = await addDoc(collection(db, 'students', uid, 'extras'), {
                 libraryId: libId, skill: lib.skill, level: lib.level || '',
-                title: lib.title, link: lib.link || '', intro: lib.intro || '', content: lib.content || '',
+                title: lib.title, source: lib.source || '',
+                siteExplanation: lib.siteExplanation || '',
+                activityUrl: _u, link: _u, instruction: _i, intro: _i,
+                responseType: lib.responseType || (lib.skill === 'speaking' ? 'audio' : 'text'),
+                questions: Array.isArray(lib.questions) ? lib.questions : [],
+                content: lib.content || '',
                 status: 'pending', finalizada: false,
                 assignedAt: serverTimestamp(),
               });
@@ -1245,12 +1274,19 @@
         if (!r.data) return `<div class="posaula-item"><div class="p-title">${esc(r.name)}</div><div class="p-meta">Registro não encontrado (pode ter sido excluído).</div></div>`;
         const st = r.data.status === 'corrected' ? '✅ Corrigida' : r.data.finalizada ? '📝 Finalizada — aguardando correção' : '⏳ Pendente';
         const respostas = r.data.respostas || {};
-        const respKeys = Object.keys(respostas);
-        const respHtml = r.data.finalizada && respKeys.length
+        const respKeys = Object.keys(respostas).filter(k => k !== 'audioUrl' && k !== 'audioPath');
+        const audioHtml = respostas.audioUrl
+          ? `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px;margin-top:8px;">
+               <div style="font-size:0.75rem;font-weight:700;color:#9a3412;margin-bottom:6px;">🎤 Resposta em áudio</div>
+               <audio controls src="${esc(respostas.audioUrl)}" style="width:100%;"></audio>
+             </div>`
+          : '';
+        const textHtml = r.data.finalizada && respKeys.length
           ? `<div style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:8px;font-size:0.82rem;">
                ${respKeys.sort().map(k => `<div style="margin-bottom:4px;"><strong>${esc(k)}:</strong> ${esc(String(respostas[k]))}</div>`).join('')}
              </div>`
           : '';
+        const respHtml = audioHtml + textHtml;
         const corrigirHtml = r.data.finalizada && r.data.status !== 'corrected'
           ? `<div style="margin-top:8px;">
                <textarea class="ex-fb" data-uid="${r.uid}" data-docid="${r.docId}" placeholder="Feedback da correção (opcional)" style="width:100%;min-height:60px;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-size:0.85rem;font-family:inherit;"></textarea>
