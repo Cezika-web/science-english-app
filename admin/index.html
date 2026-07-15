@@ -34,6 +34,24 @@
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
 
+    /* Grupos dobráveis no detalhe do aluno (pós-aulas por quinzena, atividades por semana) */
+    .grp { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; overflow: hidden; background: white; }
+    .grp > summary {
+      cursor: pointer; padding: 10px 14px; font-size: 0.83rem; font-weight: 700; color: #7C4A21;
+      display: flex; align-items: center; gap: 8px; list-style: none; user-select: none;
+    }
+    .grp > summary::-webkit-details-marker { display: none; }
+    .grp > summary:hover { background: #fafcff; }
+    .grp .grp-label { flex: 1; }
+    .grp .grp-count { font-weight: 600; color: var(--muted); font-size: 0.75rem; }
+    .grp > summary::after { content: '▸'; color: var(--muted); font-size: 0.9rem; }
+    .grp[open] > summary::after { content: '▾'; }
+    .grp-body { padding: 0 10px 8px; }
+    .grp-badge { border-radius: 999px; padding: 2px 8px; font-size: 0.7rem; font-weight: 800; white-space: nowrap; }
+    .grp-badge.warn { background: #fef3c7; color: #92400e; }
+    .grp-badge.tocorrect { background: #e6fffa; color: #276749; }
+    .grp-badge.done { background: #f3f4f6; color: var(--muted); }
+
     /* Abas de habilidade da biblioteca de Extras */
     .ex-skill-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
     .ex-skill-tab {
@@ -823,6 +841,19 @@
       await renderDetail(uid, name);
     }
 
+    // Quinzena de um pós-aula: dias 1–15 = 1ª; 16 em diante = 2ª (igual ao app).
+    const MESES_PT_ADM = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+    function quinzenaInfoAdm(ts) {
+      if (!ts) return { key: 'Sem data', ord: -1 };
+      const d = ts.toDate ? ts.toDate() : new Date(ts);
+      if (isNaN(d)) return { key: 'Sem data', ord: -1 };
+      const q = d.getDate() <= 15 ? 1 : 2;
+      return {
+        key: `${q}ª quinzena de ${MESES_PT_ADM[d.getMonth()]} ${d.getFullYear()}`,
+        ord: d.getFullYear() * 100 + d.getMonth() * 2 + q,
+      };
+    }
+
     async function renderDetail(uid, name) {
       const body = document.getElementById('modal-body');
       const [posSnap, actSnap] = await Promise.all([
@@ -830,8 +861,18 @@
         getDocs(query(collection(db, 'students', uid, 'activities'), orderBy('createdAt', 'desc'))).catch(() => ({ docs: [] })),
       ]);
 
-      const posHtml = posSnap.docs.length ? posSnap.docs.map(d => {
-        const p = d.data(); const isRead = !!p.readAt;
+      // ── Pós-aulas agrupados por QUINZENA (mais recente primeiro) ──
+      const posGroups = {};
+      posSnap.docs.forEach(d => {
+        const p = d.data();
+        const { key, ord } = quinzenaInfoAdm(p.createdAt);
+        if (!posGroups[key]) posGroups[key] = { ord, items: [] };
+        posGroups[key].items.push({ id: d.id, ...p });
+      });
+      const posOrdered = Object.entries(posGroups).sort((a, b) => b[1].ord - a[1].ord);
+
+      const posItem = p => {
+        const isRead = !!p.readAt;
         return `<div class="posaula-item">
           <div style="display:flex;align-items:flex-start;gap:10px;">
             <div style="flex:1;">
@@ -839,13 +880,32 @@
               <div class="p-meta">Enviado: ${fmtDate(p.createdAt)}</div>
               <div class="p-status ${isRead ? 'read' : 'unread'}">${isRead ? `✓ Lido em ${fmtDate(p.readAt)}` : '⏳ Ainda não lido'}</div>
             </div>
-            <button class="btn-del-item" data-type="posaulas" data-id="${d.id}" data-label="${esc(p.title || 'Pós-Aula')}">🗑️ Excluir</button>
+            <button class="btn-del-item" data-type="posaulas" data-id="${p.id}" data-label="${esc(p.title || 'Pós-Aula')}">🗑️ Excluir</button>
           </div>
         </div>`;
+      };
+
+      const posHtml = posOrdered.length ? posOrdered.map(([label, g]) => {
+        const naoLidos = g.items.filter(p => !p.readAt).length;
+        const badge = naoLidos
+          ? `<span class="grp-badge warn">⏳ ${naoLidos} não lido${naoLidos !== 1 ? 's' : ''}</span>`
+          : `<span class="grp-badge done">✓ todos lidos</span>`;
+        return `<details class="grp" open>
+          <summary><span class="grp-label">${label} <span class="grp-count">· ${g.items.length} aula${g.items.length !== 1 ? 's' : ''}</span></span>${badge}</summary>
+          <div class="grp-body">${g.items.map(posItem).join('')}</div>
+        </details>`;
       }).join('') : '<div class="loading" style="padding:16px;">Nenhum pós-aula ainda.</div>';
 
-      const actHtml = actSnap.docs.length ? actSnap.docs.map(d => {
+      // ── Atividades agrupadas por SEMANA (ordem de publicação, mais recente primeiro) ──
+      const actGroups = {};
+      actSnap.docs.forEach(d => {
         const a = d.data();
+        const key = a.week || 'Sem semana';
+        if (!actGroups[key]) actGroups[key] = [];
+        actGroups[key].push({ id: d.id, ...a });
+      });
+
+      const actItem = a => {
         const parts = (a.parts || []).length;
         const done = a.status === 'corrected';
         const finished = !done && !!a.finalizada;
@@ -855,18 +915,33 @@
           <div style="display:flex;align-items:flex-start;gap:10px;">
             <div style="flex:1;">
               <div class="p-title">${a.emoji || '📚'} ${esc(a.title || 'Atividade')}</div>
-              <div class="p-meta">Semana: ${esc(a.week || '—')} · ${parts} parte(s)</div>
+              <div class="p-meta">${parts} parte(s)</div>
               <div class="p-status ${statusCls}">${status}</div>
             </div>
-            <button class="btn-del-item" data-type="activities" data-id="${d.id}" data-label="${esc(a.title || 'Atividade')}">🗑️ Excluir</button>
+            <button class="btn-del-item" data-type="activities" data-id="${a.id}" data-label="${esc(a.title || 'Atividade')}">🗑️ Excluir</button>
           </div>
         </div>`;
+      };
+
+      const actEntries = Object.entries(actGroups);
+      const actHtml = actEntries.length ? actEntries.map(([week, items]) => {
+        const toCorrect = items.filter(a => a.status !== 'corrected' && a.finalizada).length;
+        const pending   = items.filter(a => a.status !== 'corrected' && !a.finalizada).length;
+        const badge = toCorrect
+          ? `<span class="grp-badge tocorrect">✅ ${toCorrect} p/ corrigir</span>`
+          : pending
+            ? `<span class="grp-badge warn">📝 ${pending} pendente${pending !== 1 ? 's' : ''}</span>`
+            : `<span class="grp-badge done">✓ todas corrigidas</span>`;
+        return `<details class="grp" open>
+          <summary><span class="grp-label">${esc(week)} <span class="grp-count">· ${items.length} atividade${items.length !== 1 ? 's' : ''}</span></span>${badge}</summary>
+          <div class="grp-body">${items.map(actItem).join('')}</div>
+        </details>`;
       }).join('') : '<div class="loading" style="padding:16px;">Nenhuma atividade publicada.</div>';
 
       body.innerHTML = `
-        <div class="detail-section-title">📄 Pós-aulas</div>
+        <div class="detail-section-title">📄 Pós-aulas <span class="grp-count">(por quinzena)</span></div>
         ${posHtml}
-        <div class="detail-section-title" style="margin-top:18px;">✏️ Atividades publicadas</div>
+        <div class="detail-section-title" style="margin-top:18px;">✏️ Atividades publicadas <span class="grp-count">(por semana)</span></div>
         ${actHtml}`;
 
       body.querySelectorAll('.btn-del-item').forEach(btn => {
