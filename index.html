@@ -256,6 +256,19 @@ function weekMonthInfo(wk) {
   return { mi, year, key: year * 100 + mi, label };
 }
 
+// Quinzena de um pós-aula: dias 1–15 = 1ª quinzena; 16 em diante = 2ª.
+// Cada mês rende no máximo 2 grupos, então o histórico não vira uma lista solta.
+function quinzenaInfo(ts) {
+  if (!ts) return { key: 'Sem data', ord: -1 };
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  if (isNaN(d)) return { key: 'Sem data', ord: -1 };
+  const q = d.getDate() <= 15 ? 1 : 2;
+  return {
+    key: `${q}ª quinzena de ${MESES_PT[d.getMonth()]} ${d.getFullYear()}`,
+    ord: d.getFullYear() * 100 + d.getMonth() * 2 + q,
+  };
+}
+
 function isIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -1027,7 +1040,7 @@ function Celebration({ show, onDone }) {
 
 function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) {
   const latest = posaulas[0] || null;
-  const [openMonths, setOpenMonths] = useState({});
+  const [openGroups, setOpenGroups] = useState({});
   const [btnPressed, setBtnPressed] = useState(false);
 
   const currentYear = new Date().getFullYear();
@@ -1046,13 +1059,13 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) 
   const ativsComplete = atividadesTotal > 0 && atividadesFeitas === atividadesTotal;
   const aulasComplete = metaAnual > 0 && aulasAno >= metaAnual;
 
+  // Histórico de pós-aulas agrupado por QUINZENA (as atividades seguem por semana).
   const grouped = React.useMemo(() => {
     const map = {};
     posaulas.slice(1).forEach(p => {
-      const k = monthKey(p.createdAt);
-      const ord = monthOrder(p.createdAt);
-      if (!map[k]) map[k] = { posts: [], ord };
-      map[k].posts.push(p);
+      const { key, ord } = quinzenaInfo(p.createdAt);
+      if (!map[key]) map[key] = { posts: [], ord };
+      map[key].posts.push(p);
     });
     return Object.entries(map).sort((a,b) => b[1].ord - a[1].ord);
   }, [posaulas]);
@@ -1125,15 +1138,15 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) 
       {grouped.length > 0 && (
         <div>
           <div style={{ fontSize: 11, fontWeight: 800, color: '#9A6438', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Historico de pos-aulas</div>
-          {grouped.map(([month, { posts }]) => {
-            const open = openMonths[month] !== false;
+          {grouped.map(([label, { posts }]) => {
+            const open = openGroups[label] !== false;
             return (
-              <div key={month} style={{ marginBottom: 8 }}>
-                <button onClick={() => setOpenMonths(o => ({ ...o, [month]: !open }))} style={{
+              <div key={label} style={{ marginBottom: 8 }}>
+                <button onClick={() => setOpenGroups(o => ({ ...o, [label]: !open }))} style={{
                   width: '100%', background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(22,163,74,0.12)', borderRadius: 14,
                   padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontFamily: 'inherit',
                 }}>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: '#7C4A21', textTransform: 'capitalize' }}>{month}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: '#7C4A21' }}>{label}</span>
                   <span style={{ fontSize: 11, color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span>{posts.length} aula{posts.length !== 1 ? 's' : ''}</span>
                     <span style={{ fontSize: 14 }}>{open ? '▾' : '▸'}</span>
