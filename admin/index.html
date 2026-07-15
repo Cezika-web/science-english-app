@@ -34,6 +34,16 @@
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
 
+    /* Abas de habilidade da biblioteca de Extras */
+    .ex-skill-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .ex-skill-tab {
+      padding: 7px 12px; border-radius: 999px; border: 1.5px solid var(--border);
+      background: white; font-size: 0.82rem; font-weight: 700; color: var(--muted);
+      cursor: pointer; white-space: nowrap; font-family: inherit;
+    }
+    .ex-skill-tab:hover { border-color: var(--accent); }
+    .ex-skill-tab.active { background: var(--accent); border-color: var(--accent); color: white; }
+
     .students-grid { display: grid; gap: 10px; }
     .student-row {
       background: white; border-radius: 12px; padding: 14px 18px;
@@ -1177,82 +1187,173 @@
       }
     };
 
+    // Faixa do aluno a partir do nível ("Beginner (A1)" -> A1-A2, "Upper-Intermediate (B2)" -> B1-B2)
+    function levelBand(level) {
+      const L = String(level || '').toUpperCase();
+      if (/\bA1\b|\bA2\b/.test(L)) return 'A1-A2';
+      if (/\bB1\b|\bB2\b|\bC1\b|\bC2\b/.test(L)) return 'B1-B2';
+      return 'Outros';
+    }
+    const SKILL_ORDER = ['listening', 'speaking', 'reading', 'writing'];
+    let extrasSkillFilter = 'all';
+    let _extrasCache = [];
+
+    // Envia uma atividade da biblioteca para VÁRIOS alunos de uma vez.
+    async function sendExtraToMany(lib, uids) {
+      const _u = lib.activityUrl || lib.link || '';
+      const _i = lib.instruction || lib.intro || '';
+      const okd = [], failed = [];
+      for (const uid of uids) {
+        const stu = allStudents.find(s => s.uid === uid);
+        try {
+          const ref = await addDoc(collection(db, 'students', uid, 'extras'), {
+            libraryId: lib.id, skill: lib.skill, level: lib.level || '',
+            title: lib.title, source: lib.source || '',
+            siteExplanation: lib.siteExplanation || '',
+            activityUrl: _u, link: _u, instruction: _i, intro: _i,
+            responseType: lib.responseType || (lib.skill === 'speaking' ? 'audio' : 'text'),
+            questions: Array.isArray(lib.questions) ? lib.questions : [],
+            content: lib.content || '',
+            status: 'pending', finalizada: false,
+            assignedAt: serverTimestamp(),
+          });
+          await updateDoc(doc(db, 'extras', lib.id), {
+            [`assigned.${uid}`]: { name: (stu && (stu.name || stu.firstName)) || 'Aluno', extraDocId: ref.id },
+          });
+          okd.push(uid);
+        } catch (err) { failed.push((stu && stu.name) || uid); }
+      }
+      return { okd, failed };
+    }
+
+    // Modal de envio: alunos em checkbox, separados por faixa, com "selecionar todos".
+    function openSendExtra(lib) {
+      document.getElementById('modal-name').textContent = `📤 Enviar — ${lib.title || 'Atividade'}`;
+      const body = document.getElementById('modal-body');
+      document.getElementById('modal').classList.add('open');
+
+      const actives = allStudents.filter(s => !s.archived);
+      const bands = ['A1-A2', 'B1-B2', 'Outros'];
+      const byBand = {};
+      bands.forEach(b => byBand[b] = actives.filter(s => levelBand(s.level) === b)
+        .sort((a, b2) => (a.name || '').localeCompare(b2.name || '')));
+
+      const sections = bands.filter(b => byBand[b].length).map(b => `
+        <div style="margin-bottom:14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <div style="font-size:0.8rem;font-weight:800;color:#3730a3;">${b} · ${byBand[b].length} aluno(s)</div>
+            <button class="btn-detail band-all" data-band="${b}" style="padding:4px 10px;font-size:0.75rem;">Selecionar todos</button>
+          </div>
+          ${byBand[b].map(s => {
+            const already = !!(lib.assigned && lib.assigned[s.uid]);
+            return `<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;margin-bottom:4px;cursor:pointer;${already ? 'opacity:.65;' : ''}">
+              <input type="checkbox" class="send-uid" data-band="${b}" value="${s.uid}" />
+              <span style="flex:1;font-size:0.85rem;">${esc(s.name || s.firstName || 'Aluno')}
+                <span style="color:var(--muted);font-size:0.75rem;">· ${esc(s.level || '')}</span></span>
+              ${already ? '<span style="font-size:0.7rem;color:#92400e;background:#fef3c7;border-radius:999px;padding:1px 7px;">já recebeu</span>' : ''}
+            </label>`;
+          }).join('')}
+        </div>`).join('');
+
+      body.innerHTML = `
+        <div style="font-size:0.8rem;color:var(--muted);margin-bottom:10px;">
+          Atividade da faixa <strong>${esc(lib.level || 'Todos')}</strong>. Marque os alunos e envie de uma vez.
+        </div>
+        ${sections}
+        <div style="position:sticky;bottom:0;background:#fff;padding-top:10px;border-top:1px solid var(--border);">
+          <button class="btn-add" id="btn-send-many" type="button">📤 Enviar para os selecionados</button>
+          <div id="send-many-msg" style="font-size:0.8rem;margin-top:8px;"></div>
+        </div>`;
+
+      body.querySelectorAll('.band-all').forEach(btn => {
+        btn.onclick = () => {
+          const boxes = body.querySelectorAll(`.send-uid[data-band="${btn.dataset.band}"]`);
+          const allOn = Array.from(boxes).every(b => b.checked);
+          boxes.forEach(b => b.checked = !allOn);
+          btn.textContent = allOn ? 'Selecionar todos' : 'Desmarcar todos';
+        };
+      });
+
+      document.getElementById('btn-send-many').onclick = async () => {
+        const uids = Array.from(body.querySelectorAll('.send-uid:checked')).map(b => b.value);
+        if (!uids.length) { document.getElementById('send-many-msg').innerHTML = '<span style="color:#c53030;">Marque pelo menos um aluno.</span>'; return; }
+        const repeats = uids.filter(u => lib.assigned && lib.assigned[u]).length;
+        if (repeats && !confirm(`${repeats} aluno(s) já receberam esta atividade. Enviar de novo cria uma cópia nova para eles. Continuar?`)) return;
+        const btn = document.getElementById('btn-send-many');
+        btn.disabled = true; btn.textContent = `Enviando para ${uids.length}...`;
+        const { okd, failed } = await sendExtraToMany(lib, uids);
+        btn.disabled = false; btn.textContent = '📤 Enviar para os selecionados';
+        document.getElementById('send-many-msg').innerHTML =
+          `<span style="color:#276749;">✅ Enviado para ${okd.length} aluno(s).</span>` +
+          (failed.length ? `<br><span style="color:#c53030;">Falhou: ${esc(failed.join(', '))}</span>` : '');
+        loadExtras();
+      };
+    }
+
     async function loadExtras() {
       const list = document.getElementById('extras-list');
       try {
         const snap = await getDocs(collection(db, 'extras'));
-        const extras = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        if (extras.length === 0) { list.innerHTML = '<div class="loading">Biblioteca vazia. Adicione a primeira atividade acima.</div>'; return; }
-        const activeStudents = allStudents.filter(s => !s.archived);
-        const opts = '<option value="">Enviar para...</option>' +
-          activeStudents.map(s => `<option value="${s.uid}">${esc(s.name || s.firstName || 'Aluno')}</option>`).join('');
-        list.innerHTML = extras.map(e => {
-          const nAssigned = Object.keys(e.assigned || {}).length;
-          return `
-          <div class="student-row" style="flex-wrap:wrap;">
-            <div class="student-info" style="min-width:200px;">
-              <div class="name">${SKILL_LABELS[e.skill] || e.skill} — ${esc(e.title || '')}</div>
-              <div class="email">Faixa: ${esc(e.level || 'Todos')} · ${(e.responseType === 'audio' || e.responseType === 'both' || e.skill === 'speaking') ? '🎤 áudio · ' : ''}${countQuestions(e.content || '') || (Array.isArray(e.questions) ? e.questions.length : 0)} questões · ${nAssigned} aluno(s)${(e.activityUrl || e.link) ? ` · <a href="${esc(e.activityUrl || e.link)}" target="_blank">link</a>` : ''}</div>
-            </div>
-            <select class="ex-assign-sel" data-id="${e.id}" style="padding:8px;border:1.5px solid var(--border);border-radius:8px;font-size:0.82rem;">${opts}</select>
-            <button class="btn-detail ex-send" data-id="${e.id}">📤 Enviar</button>
-            <button class="btn-detail ex-ctrl" data-id="${e.id}" data-title="${esc(e.title || '')}" style="background:#eefaf5;color:#276749;">👁 Controle</button>
-            <button class="btn-del-item ex-del" data-id="${e.id}" data-title="${esc(e.title || '')}">🗑️</button>
-          </div>`;
-        }).join('');
-
-        list.querySelectorAll('.ex-send').forEach(btn => {
-          btn.onclick = async () => {
-            const libId = btn.dataset.id;
-            const sel = list.querySelector(`.ex-assign-sel[data-id="${libId}"]`);
-            const uid = sel.value;
-            if (!uid) { alert('Escolha o aluno no seletor ao lado.'); return; }
-            const lib = extras.find(x => x.id === libId);
-            const stu = activeStudents.find(s => s.uid === uid);
-            if (lib.assigned && lib.assigned[uid]) {
-              if (!confirm(`${stu.name} já recebeu esta atividade. Enviar de novo (cria uma cópia nova)?`)) return;
-            }
-            btn.disabled = true; btn.textContent = 'Enviando...';
-            try {
-              const _u = lib.activityUrl || lib.link || '';
-              const _i = lib.instruction || lib.intro || '';
-              const ref = await addDoc(collection(db, 'students', uid, 'extras'), {
-                libraryId: libId, skill: lib.skill, level: lib.level || '',
-                title: lib.title, source: lib.source || '',
-                siteExplanation: lib.siteExplanation || '',
-                activityUrl: _u, link: _u, instruction: _i, intro: _i,
-                responseType: lib.responseType || (lib.skill === 'speaking' ? 'audio' : 'text'),
-                questions: Array.isArray(lib.questions) ? lib.questions : [],
-                content: lib.content || '',
-                status: 'pending', finalizada: false,
-                assignedAt: serverTimestamp(),
-              });
-              await updateDoc(doc(db, 'extras', libId), {
-                [`assigned.${uid}`]: { name: stu.name || stu.firstName || 'Aluno', extraDocId: ref.id },
-              });
-              btn.textContent = '✅ Enviado';
-              setTimeout(() => { btn.disabled = false; btn.textContent = '📤 Enviar'; loadExtras(); }, 900);
-            } catch(err) {
-              btn.disabled = false; btn.textContent = '📤 Enviar';
-              alert('Erro: ' + err.message);
-            }
-          };
-        });
-
-        list.querySelectorAll('.ex-ctrl').forEach(btn => {
-          btn.onclick = () => openExtraControl(extras.find(x => x.id === btn.dataset.id));
-        });
-
-        list.querySelectorAll('.ex-del').forEach(btn => {
-          btn.onclick = async () => {
-            if (!confirm(`Excluir "${btn.dataset.title}" da biblioteca?\n(Não remove dos alunos que já receberam.)`)) return;
-            await deleteDoc(doc(db, 'extras', btn.dataset.id));
-            loadExtras();
-          };
-        });
+        _extrasCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (_extrasCache.length === 0) { list.innerHTML = '<div class="loading">Biblioteca vazia. Adicione a primeira atividade acima.</div>'; return; }
+        renderExtrasList();
       } catch(e) {
         list.innerHTML = `<div class="loading">Erro ao carregar: ${esc(e.message)}</div>`;
       }
+    }
+
+    function renderExtrasList() {
+      const list = document.getElementById('extras-list');
+      const extras = _extrasCache;
+      const counts = {};
+      SKILL_ORDER.forEach(s => counts[s] = extras.filter(e => e.skill === s).length);
+      const tabBtn = (id, label, n, active) =>
+        `<button class="ex-skill-tab${active ? ' active' : ''}" data-skill="${id}">${label} <span style="opacity:.7;">(${n})</span></button>`;
+      const tabs = `<div class="ex-skill-tabs">
+          ${tabBtn('all', 'Todas', extras.length, extrasSkillFilter === 'all')}
+          ${SKILL_ORDER.map(s => tabBtn(s, SKILL_LABELS[s], counts[s], extrasSkillFilter === s)).join('')}
+        </div>`;
+
+      const shown = extrasSkillFilter === 'all' ? extras : extras.filter(e => e.skill === extrasSkillFilter);
+      const rows = shown.length === 0
+        ? `<div class="loading">Nenhuma atividade de ${SKILL_LABELS[extrasSkillFilter] || 'nenhuma habilidade'} ainda.</div>`
+        : shown.map(e => {
+            const nAssigned = Object.keys(e.assigned || {}).length;
+            const isAudio = e.responseType === 'audio' || e.responseType === 'both' || e.skill === 'speaking';
+            const nQ = countQuestions(e.content || '') || (Array.isArray(e.questions) ? e.questions.length : 0);
+            return `
+            <div class="student-row" style="flex-wrap:wrap;">
+              <div class="student-info" style="min-width:200px;">
+                <div class="name">${SKILL_LABELS[e.skill] || e.skill} — ${esc(e.title || '')}</div>
+                <div class="email">Faixa: ${esc(e.level || 'Todos')} · ${isAudio ? '🎤 áudio · ' : ''}${nQ} questões · ${nAssigned} aluno(s)${(e.activityUrl || e.link) ? ` · <a href="${esc(e.activityUrl || e.link)}" target="_blank">link</a>` : ''}</div>
+              </div>
+              <button class="btn-detail ex-send" data-id="${e.id}">📤 Enviar</button>
+              <button class="btn-detail ex-ctrl" data-id="${e.id}" data-title="${esc(e.title || '')}" style="background:#eefaf5;color:#276749;">👁 Controle</button>
+              <button class="btn-del-item ex-del" data-id="${e.id}" data-title="${esc(e.title || '')}">🗑️</button>
+            </div>`;
+          }).join('');
+
+      list.innerHTML = tabs + rows;
+
+      list.querySelectorAll('.ex-skill-tab').forEach(btn => {
+        btn.onclick = () => { extrasSkillFilter = btn.dataset.skill; renderExtrasList(); };
+      });
+
+      list.querySelectorAll('.ex-send').forEach(btn => {
+        btn.onclick = () => openSendExtra(extras.find(x => x.id === btn.dataset.id));
+      });
+
+      list.querySelectorAll('.ex-ctrl').forEach(btn => {
+        btn.onclick = () => openExtraControl(extras.find(x => x.id === btn.dataset.id));
+      });
+
+      list.querySelectorAll('.ex-del').forEach(btn => {
+        btn.onclick = async () => {
+          if (!confirm(`Excluir "${btn.dataset.title}" da biblioteca?\n(Não remove dos alunos que já receberam.)`)) return;
+          await deleteDoc(doc(db, 'extras', btn.dataset.id));
+          loadExtras();
+        };
+      });
     }
 
     // Controle: quem recebeu, quem fez, respostas e correção
