@@ -632,10 +632,46 @@ function Spinner({ size = 28 }) {
 }
 
 // ── AppHeader ───────────────────────────────────────────────────
-function AppHeader({ student, onNotif, showNotifBtn, onLogout }) {
+function AppHeader({ student, onNotif, showNotifBtn, onLogout, onPatchStudent }) {
   const name    = student?.firstName || student?.name || 'Aluno';
   const level   = student?.level || '';
   const initial = name[0].toUpperCase();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const fileRef = useRef(null);
+
+  // Fecha o menu ao tocar fora.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = () => setMenuOpen(false);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [menuOpen]);
+
+  const onPhotoPick = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBusy(true);
+    try {
+      const dataUrl = await resizeImageFile(file, 256);
+      await onPatchStudent({ photo: dataUrl });
+      showToast('✅ Foto atualizada!');
+    } catch(err) { showToast('Erro ao enviar foto.'); }
+    setBusy(false);
+    e.target.value = '';
+    setMenuOpen(false);
+  };
+
+  const avatarStyle = {
+    width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
+    border: '1px solid rgba(22,163,74,0.25)', cursor: 'pointer',
+  };
+  const itemStyle = {
+    display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left',
+    background: 'none', border: 'none', padding: '11px 14px', fontSize: 13.5,
+    fontFamily: 'inherit', cursor: 'pointer', color: '#0F172A', whiteSpace: 'nowrap',
+  };
+
   return (
     <div style={{
       background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
@@ -668,19 +704,36 @@ function AppHeader({ student, onNotif, showNotifBtn, onLogout }) {
           <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', lineHeight: 1.1 }}>{name}</div>
           {level && <div style={{ fontSize: 10.5, color: '#16A34A', fontWeight: 600 }}>{level}</div>}
         </div>
-        {student?.photo ? (
-          <img src={student.photo} alt="" onClick={onLogout} title="Sair" style={{
-            width: 38, height: 38, borderRadius: '50%', flexShrink: 0, objectFit: 'cover',
-            border: '1px solid rgba(22,163,74,0.25)', cursor: 'pointer',
-          }} />
-        ) : (
-          <div style={{
-            width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
-            background: 'rgba(22,163,74,0.12)', border: '1px solid rgba(22,163,74,0.25)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#064E3B', fontWeight: 800, fontSize: 16, cursor: 'pointer',
-          }} onClick={onLogout} title="Sair">{initial}</div>
-        )}
+        <div style={{ position: 'relative', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+          {student?.photo ? (
+            <img src={student.photo} alt="" onClick={() => setMenuOpen(o => !o)} title="Opções"
+              style={{ ...avatarStyle, objectFit: 'cover' }} />
+          ) : (
+            <div onClick={() => setMenuOpen(o => !o)} title="Opções" style={{
+              ...avatarStyle,
+              background: 'rgba(22,163,74,0.12)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#064E3B', fontWeight: 800, fontSize: 16,
+            }}>{initial}</div>
+          )}
+          {menuOpen && (
+            <div style={{
+              position: 'absolute', top: 46, right: 0, minWidth: 190, zIndex: 200,
+              background: '#fff', borderRadius: 14, overflow: 'hidden',
+              border: '1px solid #E2E8F0', boxShadow: '0 12px 32px rgba(15,23,42,0.16)',
+            }}>
+              <button style={itemStyle} disabled={busy} onClick={() => fileRef.current?.click()}>
+                <span style={{ fontSize: 15 }}>📷</span>
+                {busy ? 'Enviando…' : (student?.photo ? 'Alterar foto' : 'Adicionar foto')}
+              </button>
+              <div style={{ height: 1, background: '#F1F5F9' }} />
+              <button style={{ ...itemStyle, color: '#DC2626', fontWeight: 700 }} onClick={onLogout}>
+                <span style={{ fontSize: 15 }}>🚪</span> Sair
+              </button>
+            </div>
+          )}
+          <input ref={fileRef} type="file" accept="image/*" onChange={onPhotoPick} style={{ display: 'none' }} />
+        </div>
       </div>
     </div>
   );
@@ -2461,7 +2514,7 @@ function App() {
           👁 Modo espelho — {student?.name || student?.firstName || 'aluno'} (somente leitura)
         </div>
       )}
-      <AppHeader student={student} onNotif={requestPush} showNotifBtn={showNotifBtn} onLogout={handleLogout} />
+      <AppHeader student={student} onNotif={requestPush} showNotifBtn={showNotifBtn} onLogout={handleLogout} onPatchStudent={patchStudent} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         {tab === 'home'   && <HomeTab   student={student} posaulas={posaulas} activities={activities} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} />}

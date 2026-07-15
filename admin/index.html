@@ -461,7 +461,7 @@
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import { getFirestore, collection, getDocs, getDoc, doc, setDoc, addDoc, updateDoc, deleteDoc,
-             query, orderBy, serverTimestamp, where }
+             query, orderBy, serverTimestamp, where, deleteField }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
     const firebaseConfig = {
@@ -544,6 +544,7 @@
       const badge = `<div class="badge-stack">${posBadge}${actBadge}</div>`;
       const menuItem = `<button class="kebab-item" data-action="mirror" data-uid="${s.uid}" data-name="${nm}">🪞 Espelho (ver área do aluno)</button>`
         + `<button class="kebab-item" data-action="edit" data-uid="${s.uid}" data-name="${nm}">✏️ Editar dados</button>`
+        + `<button class="kebab-item" data-action="extras" data-uid="${s.uid}" data-name="${nm}">🎧 Atividades Extras</button>`
         + (archived
           ? `<button class="kebab-item" data-action="reactivate" data-uid="${s.uid}" data-name="${nm}">↩️ Reativar aluno</button>`
           : `<button class="kebab-item" data-action="archive" data-uid="${s.uid}" data-name="${nm}">🗄️ Enviar para Ex-alunos</button>`)
@@ -590,6 +591,9 @@
             return;
           } else if (action === 'edit') {
             openEditStudent(uid);
+            return;
+          } else if (action === 'extras') {
+            openStudentExtras(uid, name);
             return;
           } else if (action === 'archive') {
             if (!confirm(`Enviar ${name} para Ex-alunos?`)) return;
@@ -1311,6 +1315,65 @@
             openExtraControl(lib);
           } catch(e) {
             btn.disabled = false; btn.textContent = '✅ Marcar como corrigida';
+            alert('Erro: ' + e.message);
+          }
+        };
+      });
+    }
+
+    // Atividades Extras DE UM ALUNO (kebab → 🎧). Exclui só do aluno; a
+    // biblioteca (acervo) continua intacta.
+    async function openStudentExtras(uid, name) {
+      document.getElementById('modal-name').textContent = `🎧 Atividades Extras — ${name}`;
+      const body = document.getElementById('modal-body');
+      body.innerHTML = '<div class="loading">Carregando...</div>';
+      document.getElementById('modal').classList.add('open');
+
+      let snap;
+      try {
+        snap = await getDocs(collection(db, 'students', uid, 'extras'));
+      } catch(e) {
+        body.innerHTML = `<div class="loading">Erro ao carregar: ${esc(e.message)}</div>`; return;
+      }
+      const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (items.length === 0) {
+        body.innerHTML = '<div class="loading">Este aluno ainda não recebeu nenhuma atividade extra.</div>'; return;
+      }
+
+      body.innerHTML = `<div style="font-size:0.8rem;color:var(--muted);margin-bottom:10px;">
+          Excluir aqui remove a atividade <strong>só deste aluno</strong>. Sua biblioteca de extras não é afetada.
+        </div>` + items.map(e => {
+        const st = e.status === 'corrected' ? '✅ Corrigida'
+                 : e.finalizada ? '📝 Finalizada — aguardando correção' : '⏳ Pendente';
+        const isAudio = e.responseType === 'audio' || e.responseType === 'both' || e.skill === 'speaking';
+        return `<div class="posaula-item" style="display:flex;align-items:center;gap:10px;">
+          <div style="flex:1;min-width:0;">
+            <div class="p-title">${SKILL_LABELS[e.skill] || e.skill || ''} — ${esc(e.title || 'Atividade')}</div>
+            <div class="p-meta">${esc(e.level || '—')}${isAudio ? ' · 🎤 áudio' : ''} · ${st}</div>
+          </div>
+          <button class="btn-del-item stu-ex-del" data-uid="${uid}" data-id="${e.id}"
+                  data-lib="${esc(e.libraryId || '')}" data-title="${esc(e.title || '')}">🗑️</button>
+        </div>`;
+      }).join('');
+
+      body.querySelectorAll('.stu-ex-del').forEach(btn => {
+        btn.onclick = async () => {
+          if (!confirm(`Excluir "${btn.dataset.title}" de ${name}?\n\nRemove só deste aluno — sua biblioteca continua intacta.`)) return;
+          btn.disabled = true; btn.textContent = '...';
+          try {
+            await deleteDoc(doc(db, 'students', btn.dataset.uid, 'extras', btn.dataset.id));
+            // Limpa o vínculo na biblioteca, pra contagem e reenvio ficarem certos.
+            if (btn.dataset.lib) {
+              try {
+                await updateDoc(doc(db, 'extras', btn.dataset.lib), {
+                  [`assigned.${btn.dataset.uid}`]: deleteField(),
+                });
+              } catch(e) {}
+            }
+            openStudentExtras(uid, name);
+            loadExtras();
+          } catch(e) {
+            btn.disabled = false; btn.textContent = '🗑️';
             alert('Erro: ' + e.message);
           }
         };
