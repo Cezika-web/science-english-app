@@ -2255,6 +2255,10 @@ function App() {
   const [readerPost, setReaderPost]     = useState(null);
   const [openActivity, setOpenActivity] = useState(null);
   const [openPart, setOpenPart]         = useState(null);
+  // Espelho sempre atualizado do openActivity, pro autosave de rascunho não
+  // gravar por cima com uma closure velha (bug do "finaliza mas fica pendente").
+  const openActivityRef = useRef(null);
+  openActivityRef.current = openActivity;
   const [showNotifBtn, setShowNotifBtn] = useState(false);
   const [celebrate, setCelebrate]       = useState(false);
   const pendingPostId = useRef(new URLSearchParams(window.location.search).get('post') || '');
@@ -2472,18 +2476,26 @@ function App() {
 
   // Grava o rascunho (respostas parciais) sem marcar a parte como finalizada.
   async function handleSaveDraftPart(partId, values) {
-    if (!openActivity || !user || mirror) return;
-    if (openActivity.status === 'corrected') return;
-    const actId = openActivity.id;
-    const prev  = openActivity.respostas || {};
+    // Usa o estado MAIS RECENTE (ref), não a closure — senão o autosave que
+    // dispara ao fechar a parte grava por cima de um snapshot antigo e reverte
+    // o partsDone/finalizada de partes já concluídas.
+    const act = openActivityRef.current;
+    if (!act || !user || mirror) return;
+    if (act.status === 'corrected') return;
+    const actId = act.id;
+    const prev  = act.respostas || {};
     const merged = { ...prev, [partId]: { ...(prev[partId] || {}), ...values } };
     const fb = await getFB();
     try {
       await fb.updateDoc(fb.doc(fb.db, 'students', user.uid, 'activities', actId), { respostas: merged });
     } catch (e) { return; }
-    const updated = { ...openActivity, respostas: merged };
-    setActivities(prev2 => prev2.map(a => a.id === actId ? updated : a));
-    setOpenActivity(updated);
+    // Updater funcional: mescla só as respostas desta parte no estado atual,
+    // preservando partsDone/finalizada de tudo que já foi finalizado.
+    const patch = a => (a && a.id === actId)
+      ? { ...a, respostas: { ...(a.respostas || {}), [partId]: { ...((a.respostas || {})[partId] || {}), ...values } } }
+      : a;
+    setActivities(prev2 => prev2.map(patch));
+    setOpenActivity(prev2 => patch(prev2));
   }
 
   async function handleFinishPart(partId, result) {
