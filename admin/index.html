@@ -498,6 +498,8 @@
     import { getFirestore, collection, getDocs, getDoc, doc, setDoc, addDoc, updateDoc, deleteDoc,
              query, orderBy, serverTimestamp, where, deleteField }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { getFunctions, httpsCallable }
+      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
 
     const firebaseConfig = {
       apiKey:            "AIzaSyDgDlLyU15p8wQ1YtCN8NebGes_oq3atU8",
@@ -511,6 +513,7 @@
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db   = getFirestore(app);
+    const fns  = getFunctions(app, 'southamerica-east1');
     const app2 = initializeApp({ ...firebaseConfig }, 'secondary');
     const auth2 = getAuth(app2);
 
@@ -988,11 +991,76 @@
         </details>`;
       }).join('') : '<div class="loading" style="padding:16px;">Nenhuma atividade publicada.</div>';
 
+      // O aluno respondeu alguma coisa nesta atividade? (áudio conta)
+      const temResposta = a => {
+        const r = a.respostas || {};
+        if (r.audioUrl) return true;
+        return Object.keys(r).some(k => k !== 'audioUrl' && k !== 'audioPath' && String(r[k] ?? '').trim() !== '');
+      };
+
+      const naoCorrigidas = actSnap.docs.map(d => d.data()).filter(a => a.status !== 'corrected');
+      const aguardando   = naoCorrigidas.filter(a => a.finalizada).length;
+      // Deixadas pela metade, mas com alguma resposta — dá pra corrigir o que ele fez.
+      const parciais     = naoCorrigidas.filter(a => !a.finalizada && temResposta(a)).length;
+
+      const btnCorrigirIA = (aguardando || parciais)
+        ? `<button id="btn-corrigir-ia" class="btn-add" style="margin:10px 0 6px;width:100%;">
+             🤖 Corrigir com IA
+           </button>
+           ${parciais ? `
+           <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--muted);margin-bottom:8px;cursor:pointer;">
+             <input type="checkbox" id="chk-parciais" ${aguardando ? '' : 'checked'}>
+             Incluir ${parciais} atividade${parciais !== 1 ? 's' : ''} não finalizada${parciais !== 1 ? 's' : ''} (corrigir só o que ele fez)
+           </label>` : ''}
+           <div id="corrigir-ia-msg" style="font-size:0.85rem;margin-bottom:10px;"></div>`
+        : '';
+
       body.innerHTML = `
         <div class="detail-section-title">📄 Pós-aulas <span class="grp-count">(mês → quinzena)</span></div>
         ${posHtml}
         <div class="detail-section-title" style="margin-top:18px;">✏️ Atividades publicadas <span class="grp-count">(mês → semana)</span></div>
+        ${btnCorrigirIA}
         ${actHtml}`;
+
+      const btnIA = document.getElementById('btn-corrigir-ia');
+      if (btnIA) {
+        btnIA.onclick = async () => {
+          const incluirParciais = !!document.getElementById('chk-parciais')?.checked;
+          const total = aguardando + (incluirParciais ? parciais : 0);
+          if (!total) { alert('Marque a opção de incluir as não finalizadas — não há atividade finalizada para corrigir.'); return; }
+
+          if (!confirm(`Corrigir ${total} atividade(s) de ${name} com IA?\n\nA correção fica visível para o aluno assim que terminar.`)) return;
+
+          const msg = document.getElementById('corrigir-ia-msg');
+          const textoOriginal = btnIA.textContent;
+          btnIA.disabled = true;
+          btnIA.textContent = '🤖 Corrigindo... (pode levar até 2 minutos)';
+          msg.textContent = '';
+          msg.style.color = 'var(--muted)';
+
+          try {
+            const corrigir = httpsCallable(fns, 'corrigirAluno');
+            const { data } = await corrigir({ uid, incluirNaoFinalizadas: incluirParciais });
+
+            if (!data.ok) {
+              msg.style.color = 'var(--muted)';
+              msg.textContent = data.motivo || 'Nada a corrigir.';
+              btnIA.disabled = false;
+              btnIA.textContent = textoOriginal;
+              return;
+            }
+
+            msg.style.color = 'green';
+            msg.textContent = `✅ ${data.atividadesCorrigidas} atividade(s) corrigida(s) — custo US$ ${data.custoUSD}. O aluno já pode ver.`;
+            setTimeout(() => renderDetail(uid, name), 1500);
+          } catch (e) {
+            msg.style.color = 'crimson';
+            msg.textContent = `Erro: ${e.message}`;
+            btnIA.disabled = false;
+            btnIA.textContent = textoOriginal;
+          }
+        };
+      }
 
       body.querySelectorAll('.btn-del-item').forEach(btn => {
         btn.onclick = async () => {
