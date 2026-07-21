@@ -1,0 +1,357 @@
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { defineSecret } from 'firebase-functions/params';
+import { initializeApp } from 'firebase-admin/app';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import Anthropic from '@anthropic-ai/sdk';
+
+initializeApp();
+const db = getFirestore();
+
+// A chave nunca fica no código — é lida do cofre do Firebase.
+// Para gravá-la:  firebase functions:secrets:set ANTHROPIC_API_KEY
+const ANTHROPIC_API_KEY = defineSecret('ANTHROPIC_API_KEY');
+
+// Mesmos e-mails das regras de segurança do Firestore.
+const ADMIN_EMAILS = ['cmo.sep@gmail.com', 'czkenglish@gmail.com'];
+
+// Trocar por 'claude-opus-4-8' se quiser mais qualidade a um custo maior.
+const MODEL = 'claude-sonnet-5';
+
+// US$ por milhão de tokens (preço cheio do Sonnet 5 — estimativa conservadora).
+const PRECO_ENTRADA = 3.0;
+const PRECO_SAIDA = 15.0;
+const PRECO_CACHE = 0.3;
+
+const REGRAS_DE_CORRECAO = `Você é o professor César, da Science English, corrigindo as atividades de inglês
+de um aluno. Escreva o feedback DIRETAMENTE PARA O ALUNO — use "sua resposta" e
+"resposta correta". Tom encorajador e direto, em português do Brasil.
+
+## Como classificar cada erro
+
+- "bobo"    → não compromete a compreensão: digitação, ortografia, plural
+              esquecido, artigo esquecido, pequenos deslizes.
+- "mediano" → gera alguma confusão, mas a mensagem é compreensível: tempo verbal
+              inadequado, preposição incorreta, vocabulário inadequado.
+- "grave"   → impede ou quase impede a compreensão: frases difíceis de entender,
+              construções que alteram o significado.
+- "ok"      → acertou.
+
+Questões em branco não contam como acerto nem como erro — entram em
+"Não respondidas". Marque-as com status "ok" no campo "correcao" (o app não
+pinta de vermelho o que o aluno não chegou a fazer).
+
+## Atividades incompletas
+
+Quando "finalizadaPeloAluno" for false, o aluno parou no meio — muitas vezes
+porque a aula acabou. Corrija normalmente o que ele fez e NÃO o repreenda pelo
+que ficou em branco. A porcentagem de acertos deve considerar apenas o que ele
+respondeu; o que ficou em branco aparece só em "Não respondidas". No comentário
+geral, reconheça o que ele fez e convide a terminar o resto.
+
+## O campo "correcao"
+
+Para cada parte da atividade, devolva um item por QUESTÃO, na MESMA ORDEM em que
+aparecem, de cima para baixo. Conte por linha/questão, não por lacuna: a questão 1
+é o primeiro item da lista, a 2 é o segundo, e assim por diante. Cada "_______" e
+cada "a) b) c)" conta como um item.
+
+Nos erros, preencha "correct" (a resposta certa) e "explain" (explicação curta,
+escrita para o aluno). Em "ok", deixe os dois vazios.
+
+## O campo "report" — relatório de 6 blocos
+
+Texto simples, com esta estrutura exata:
+
+━━━━━━━━━━━━━━━━━━━━
+BLOCO 1 - RESULTADO GERAL
+━━━━━━━━━━━━━━━━━━━━
+Total de questões:
+Respondidas:
+Não respondidas:
+Acertos:
+Erros:
+Porcentagem de acertos:
+Porcentagem de erros:
+Porcentagem não respondida:
+[Comentário geral — máximo 3 linhas, encorajador e direto]
+
+━━━━━━━━━━━━━━━━━━━━
+BLOCO 2 - ERROS BOBOS
+━━━━━━━━━━━━━━━━━━━━
+[Se não houver: "Nenhum erro bobo encontrado. ✅"]
+[Se houver, numerado:]
+1.
+Sua resposta: [o que o aluno escreveu]
+Resposta correta: [versão correta]
+Explicação: [breve e didática]
+
+Total de erros bobos:
+Porcentagem dos erros bobos em relação ao total de erros:
+
+━━━━━━━━━━━━━━━━━━━━
+BLOCO 3 - ERROS MEDIANOS
+━━━━━━━━━━━━━━━━━━━━
+[Mesmo formato do Bloco 2]
+
+━━━━━━━━━━━━━━━━━━━━
+BLOCO 4 - ERROS GRAVES
+━━━━━━━━━━━━━━━━━━━━
+[Mesmo formato do Bloco 2]
+
+## Os campos "patterns" e "pedagogico" — a SEMANA inteira
+
+São consolidados de TODAS as atividades juntas, não de uma só.
+
+- "patterns"   → padrões de erro do mais frequente ao menos frequente, com número
+                 de ocorrências. Ex: "* Ortografia: 4 ocorrências".
+- "pedagogico" → máximo 10 linhas: principais pontos fortes, principais
+                 dificuldades, e o que priorizar nas próximas aulas.`;
+
+// O schema obriga o modelo a devolver exatamente esta forma — sem risco de JSON quebrado.
+const SCHEMA = {
+  type: 'object',
+  properties: {
+    patterns: { type: 'string', description: 'BLOCO 5 consolidado da semana' },
+    pedagogico: { type: 'string', description: 'BLOCO 6 consolidado da semana' },
+    atividades: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          activityId: { type: 'string' },
+          report: { type: 'string' },
+          summary: {
+            type: 'object',
+            properties: {
+              total: { type: 'integer' },
+              answered: { type: 'integer' },
+              correct: { type: 'integer' },
+              errors: {
+                type: 'object',
+                properties: {
+                  bobo: { type: 'integer' },
+                  mediano: { type: 'integer' },
+                  grave: { type: 'integer' },
+                },
+                required: ['bobo', 'mediano', 'grave'],
+                additionalProperties: false,
+              },
+              score: { type: 'string' },
+            },
+            required: ['total', 'answered', 'correct', 'errors', 'score'],
+            additionalProperties: false,
+          },
+          feedback: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                part: { type: 'string', description: 'ex: part-1' },
+                comment: { type: 'string' },
+                score: { type: 'string', description: 'ex: 4/5' },
+              },
+              required: ['part', 'comment', 'score'],
+              additionalProperties: false,
+            },
+          },
+          correcao: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                part: { type: 'string', description: 'ex: part-1' },
+                itens: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      status: { type: 'string', enum: ['ok', 'bobo', 'mediano', 'grave'] },
+                      correct: { type: 'string' },
+                      explain: { type: 'string' },
+                    },
+                    required: ['status', 'correct', 'explain'],
+                    additionalProperties: false,
+                  },
+                },
+              },
+              required: ['part', 'itens'],
+              additionalProperties: false,
+            },
+          },
+        },
+        required: ['activityId', 'report', 'summary', 'feedback', 'correcao'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['patterns', 'pedagogico', 'atividades'],
+  additionalProperties: false,
+};
+
+/** O aluno respondeu ao menos uma coisa? (áudio conta) */
+function temAlgumaResposta(atividade) {
+  const respostas = atividade.respostas || {};
+  if (respostas.audioUrl) return true;
+  return Object.keys(respostas).some(
+    (chave) =>
+      chave !== 'audioUrl' &&
+      chave !== 'audioPath' &&
+      String(respostas[chave] ?? '').trim() !== ''
+  );
+}
+
+/** Converte [{part, ...}] para {part-1: {...}} — a forma que o app já lê. */
+function listaParaObjeto(lista, montarValor) {
+  const saida = {};
+  for (const item of lista || []) saida[item.part] = montarValor(item);
+  return saida;
+}
+
+export const corrigirAluno = onCall(
+  {
+    region: 'southamerica-east1',
+    secrets: [ANTHROPIC_API_KEY],
+    timeoutSeconds: 540,
+    memory: '512MiB',
+    // O admin é servido pelo GitHub Pages — origem diferente do Firebase.
+    cors: [
+      'https://cezika-web.github.io',
+      /^http:\/\/localhost(:\d+)?$/,
+      /^http:\/\/127\.0\.0\.1(:\d+)?$/,
+    ],
+  },
+  async (request) => {
+    const email = request.auth?.token?.email;
+    if (!email || !ADMIN_EMAILS.includes(email)) {
+      throw new HttpsError('permission-denied', 'Somente o administrador pode corrigir.');
+    }
+
+    const uid = request.data?.uid;
+    if (!uid) throw new HttpsError('invalid-argument', 'Faltou o uid do aluno.');
+
+    // Por padrão só corrige o que o aluno finalizou. Quando ligado, inclui também
+    // as atividades que ele deixou pela metade (desde que tenha respondido algo).
+    const incluirNaoFinalizadas = request.data?.incluirNaoFinalizadas === true;
+
+    const alunoSnap = await db.doc(`students/${uid}`).get();
+    if (!alunoSnap.exists) throw new HttpsError('not-found', 'Aluno não encontrado.');
+    const aluno = alunoSnap.data();
+
+    const atividadesSnap = await db.collection(`students/${uid}/activities`).get();
+    const paraCorrigir = atividadesSnap.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .filter((a) => {
+        if (a.status === 'corrected') return false;
+        if (a.finalizada) return true;
+        return incluirNaoFinalizadas && temAlgumaResposta(a);
+      });
+
+    if (paraCorrigir.length === 0) {
+      return { ok: false, motivo: 'Nenhuma atividade aguardando correção.' };
+    }
+
+    const entrada = paraCorrigir.map((a) => ({
+      activityId: a.id,
+      week: a.week || '',
+      title: a.title || '',
+      finalizadaPeloAluno: !!a.finalizada,
+      parts: a.parts || [],
+      respostasDoAluno: a.respostas || {},
+    }));
+
+    const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
+
+    let resposta;
+    try {
+      // Streaming: um aluno com várias atividades gera um relatório longo, e sem
+      // stream a requisição estoura o tempo limite antes de terminar.
+      const stream = client.messages.stream({
+        model: MODEL,
+        max_tokens: 32000,
+        system: [
+          { type: 'text', text: REGRAS_DE_CORRECAO, cache_control: { type: 'ephemeral' } },
+        ],
+        output_config: { format: { type: 'json_schema', schema: SCHEMA } },
+        messages: [
+          {
+            role: 'user',
+            content:
+              `Aluno: ${aluno.name || ''} (nível ${aluno.level || 'não informado'})\n\n` +
+              `Corrija todas as atividades abaixo. O campo "parts" traz os enunciados e ` +
+              `"respostasDoAluno" traz o que ele respondeu — alinhe cada resposta à sua questão.\n\n` +
+              JSON.stringify(entrada, null, 2),
+          },
+        ],
+      });
+      resposta = await stream.finalMessage();
+    } catch (erro) {
+      console.error('Falha na chamada à API:', erro);
+      throw new HttpsError('internal', `A correção não pôde ser gerada: ${erro.message}`);
+    }
+
+    if (resposta.stop_reason === 'max_tokens') {
+      throw new HttpsError('internal', 'A correção ficou longa demais e foi cortada. Tente corrigir menos atividades de uma vez.');
+    }
+
+    const blocoTexto = resposta.content.find((b) => b.type === 'text');
+    if (!blocoTexto) throw new HttpsError('internal', 'A API não devolveu correção.');
+    const dados = JSON.parse(blocoTexto.text);
+
+    // Grava cada atividade corrigida.
+    const lote = db.batch();
+    let gravadas = 0;
+
+    for (const item of dados.atividades) {
+      const original = paraCorrigir.find((a) => a.id === item.activityId);
+      if (!original) continue; // ignora id inventado
+
+      lote.update(db.doc(`students/${uid}/activities/${item.activityId}`), {
+        status: 'corrected',
+        summary: item.summary,
+        report: item.report,
+        patterns: dados.patterns,
+        pedagogico: dados.pedagogico,
+        feedback: listaParaObjeto(item.feedback, (f) => ({ comment: f.comment, score: f.score })),
+        correcao: listaParaObjeto(item.correcao, (c) =>
+          c.itens.map((i) =>
+            i.status === 'ok'
+              ? { status: 'ok' }
+              : { status: i.status, correct: i.correct, explain: i.explain }
+          )
+        ),
+        correctedAt: FieldValue.serverTimestamp(),
+        corrigidoPorIA: true,
+      });
+      gravadas++;
+    }
+
+    // Registra o consumo para você acompanhar a margem real.
+    const uso = resposta.usage;
+    const custoUSD =
+      ((uso.input_tokens || 0) * PRECO_ENTRADA +
+        (uso.output_tokens || 0) * PRECO_SAIDA +
+        (uso.cache_read_input_tokens || 0) * PRECO_CACHE) /
+      1_000_000;
+
+    lote.set(db.collection('_apiUsage').doc(), {
+      tipo: 'correcao',
+      uid,
+      alunoNome: aluno.name || '',
+      modelo: MODEL,
+      atividades: gravadas,
+      tokensEntrada: uso.input_tokens || 0,
+      tokensSaida: uso.output_tokens || 0,
+      tokensCache: uso.cache_read_input_tokens || 0,
+      custoUSD: Number(custoUSD.toFixed(6)),
+      criadoEm: FieldValue.serverTimestamp(),
+    });
+
+    await lote.commit();
+
+    return {
+      ok: true,
+      atividadesCorrigidas: gravadas,
+      custoUSD: Number(custoUSD.toFixed(4)),
+    };
+  }
+);
