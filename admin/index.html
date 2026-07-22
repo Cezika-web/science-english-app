@@ -231,6 +231,7 @@
 
       <div class="tabs">
         <button class="tab active" data-tab="students">👥 Alunos</button>
+        <button class="tab" data-tab="posaula">📄 Pós-aula</button>
         <button class="tab" data-tab="publish">📤 Atividades</button>
         <button class="tab" data-tab="correct">✅ Correção</button>
         <button class="tab" data-tab="vocab">📖 Vocabulário</button>
@@ -253,6 +254,55 @@
         </p>
         <div class="students-grid" id="exalunos-grid">
           <div class="loading">Carregando...</div>
+        </div>
+      </div>
+
+      <!-- GERAR PÓS-AULA -->
+      <div class="tab-panel" id="tab-posaula">
+        <div class="form-card">
+          <h2>📄 Gerar Pós-aula</h2>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;">
+            Cole a transcrição da aula e gere a pós-aula. Você confere a prévia antes de publicar —
+            o aluno só recebe quando você confirmar.
+          </p>
+
+          <div class="field">
+            <label>Aluno</label>
+            <select id="pa-student"></select>
+          </div>
+
+          <div class="field">
+            <label>Data da aula</label>
+            <input type="date" id="pa-date">
+          </div>
+
+          <div class="field">
+            <label>Link do vídeo no YouTube <span style="font-weight:400;color:var(--muted);">(opcional)</span></label>
+            <input type="url" id="pa-youtube" placeholder="https://youtu.be/...  — deixe vazio se não houver gravação">
+            <p style="font-size:0.8rem;color:var(--muted);margin:6px 0 0 0;">
+              Vazio: a pós-aula sai sem a seção de gravação. Preenchido: o aluno ganha o botão para assistir.
+            </p>
+          </div>
+
+          <div class="field">
+            <label>Transcrição da aula</label>
+            <textarea id="pa-transcript" style="min-height:220px;" placeholder="Cole aqui a transcrição completa da aula..."></textarea>
+          </div>
+
+          <button class="btn-add" id="btn-gerar-posaula" type="button" style="width:100%;">✨ Gerar pós-aula</button>
+          <div class="form-msg" id="pa-msg"></div>
+
+          <div id="pa-preview-wrap" style="display:none;margin-top:20px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+              <strong id="pa-preview-title" style="font-size:0.95rem;"></strong>
+              <span style="font-size:0.8rem;color:var(--muted);">Prévia — o aluno ainda não recebeu</span>
+            </div>
+            <iframe id="pa-preview" style="width:100%;height:520px;border:1px solid var(--border);border-radius:10px;background:#fff;"></iframe>
+            <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+              <button class="btn-add" id="btn-publicar-posaula" type="button" style="flex:1;min-width:200px;">🚀 Publicar para o aluno</button>
+              <button class="btn-add" id="btn-descartar-posaula" type="button" style="flex:0 0 auto;background:#e5e7eb;color:#374151;">Descartar</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -665,11 +715,117 @@
     function populateStudentSelects(active) {
       const opts = '<option value="">Selecione o aluno...</option>' +
         active.map(s => `<option value="${s.uid}">${esc(s.name || s.firstName || 'Aluno')}</option>`).join('');
-      ['pub-student', 'voc-student'].forEach(id => {
+      ['pub-student', 'voc-student', 'pa-student'].forEach(id => {
         const sel = document.getElementById(id);
         if (sel) { const prev = sel.value; sel.innerHTML = opts; sel.value = prev; }
       });
     }
+
+    // ── GERAR PÓS-AULA ──────────────────────────────────────────────────
+    let posaulaGerada = null;  // { html, titulo, data, uid }
+
+    (function iniciarPosAula() {
+      const btnGerar    = document.getElementById('btn-gerar-posaula');
+      const btnPublicar = document.getElementById('btn-publicar-posaula');
+      const btnDescartar= document.getElementById('btn-descartar-posaula');
+      if (!btnGerar) return;
+
+      const msg      = document.getElementById('pa-msg');
+      const wrap     = document.getElementById('pa-preview-wrap');
+      const iframe   = document.getElementById('pa-preview');
+      const tituloEl = document.getElementById('pa-preview-title');
+      const inputData= document.getElementById('pa-date');
+
+      inputData.value = new Date().toISOString().slice(0, 10);
+
+      const aviso = (texto, cor) => { msg.textContent = texto; msg.style.color = cor; };
+
+      const esconderPrevia = () => {
+        wrap.style.display = 'none';
+        iframe.srcdoc = '';
+        posaulaGerada = null;
+      };
+
+      btnGerar.onclick = async () => {
+        const uid         = document.getElementById('pa-student').value;
+        const transcricao = document.getElementById('pa-transcript').value.trim();
+        const youtubeUrl  = document.getElementById('pa-youtube').value.trim();
+
+        if (!uid)  return aviso('Escolha o aluno.', 'crimson');
+        if (transcricao.length < 200) return aviso('A transcrição está muito curta.', 'crimson');
+
+        // Data em pt-BR, sem depender do fuso do navegador.
+        const [a, m, d] = (inputData.value || '').split('-');
+        const dataAula = (a && m && d) ? `${d}/${m}/${a}` : '';
+
+        esconderPrevia();
+        btnGerar.disabled = true;
+
+        const inicio = Date.now();
+        const tick = () => {
+          const s = Math.floor((Date.now() - inicio) / 1000);
+          btnGerar.textContent = `✨ Gerando... ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+          aviso(s < 30 ? 'Lendo a transcrição...'
+              : s < 90 ? 'Montando o resumo e o vocabulário...'
+                       : 'Escrevendo as correções e o dever de casa...', 'var(--muted)');
+        };
+        tick();
+        const cronometro = setInterval(tick, 1000);
+
+        try {
+          const gerar = httpsCallable(fns, 'gerarPosAula', { timeout: 540000 });
+          const { data } = await gerar({ uid, transcricao, youtubeUrl, data: dataAula });
+
+          clearInterval(cronometro);
+          posaulaGerada = { html: data.html, titulo: data.titulo, data: data.data, uid };
+
+          tituloEl.textContent = data.titulo;
+          iframe.srcdoc = data.html;
+          wrap.style.display = 'block';
+          aviso(`Prévia pronta — custo US$ ${data.custoUSD}. Confira antes de publicar.`, 'green');
+          wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch (e) {
+          clearInterval(cronometro);
+          aviso(e.code === 'functions/deadline-exceeded'
+            ? 'A geração demorou mais que o esperado. Tente de novo com uma transcrição menor.'
+            : `Erro: ${e.message}`, 'crimson');
+        } finally {
+          clearInterval(cronometro);
+          btnGerar.disabled = false;
+          btnGerar.textContent = '✨ Gerar pós-aula';
+        }
+      };
+
+      btnPublicar.onclick = async () => {
+        if (!posaulaGerada) return;
+        if (!confirm('Publicar esta pós-aula? O aluno recebe a notificação na hora.')) return;
+
+        btnPublicar.disabled = true;
+        btnPublicar.textContent = 'Publicando...';
+        try {
+          const publicar = httpsCallable(fns, 'publicarPosAula', { timeout: 120000 });
+          const { data } = await publicar(posaulaGerada);
+
+          aviso(data.notificado
+            ? '✅ Publicada! O aluno já recebeu a notificação.'
+            : '✅ Publicada! (O aluno ainda não autorizou notificações — vai ver ao abrir o app.)', 'green');
+
+          esconderPrevia();
+          document.getElementById('pa-transcript').value = '';
+          document.getElementById('pa-youtube').value = '';
+        } catch (e) {
+          aviso(`Erro ao publicar: ${e.message}`, 'crimson');
+        } finally {
+          btnPublicar.disabled = false;
+          btnPublicar.textContent = '🚀 Publicar para o aluno';
+        }
+      };
+
+      btnDescartar.onclick = () => {
+        esconderPrevia();
+        aviso('Prévia descartada. Ajuste o que quiser e gere de novo.', 'var(--muted)');
+      };
+    })();
 
     // ── EDITAR DADOS DO ALUNO ───────────────────────────────────────────
     function toSlug(str) {

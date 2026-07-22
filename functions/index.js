@@ -2,7 +2,9 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getMessaging } from 'firebase-admin/messaging';
 import Anthropic from '@anthropic-ai/sdk';
+import { montarTemplate, REGRAS_POS_AULA } from './posaula.js';
 
 initializeApp();
 const db = getFirestore();
@@ -210,6 +212,58 @@ const SCHEMA = {
   additionalProperties: false,
 };
 
+/**
+ * Carrega o aluno e confere se quem chamou pode agir sobre ele.
+ * Admin global age sobre qualquer aluno; professor, só sobre os da escola dele.
+ */
+async function carregarAlunoEEscola(email, uid) {
+  const alunoSnap = await db.doc(`students/${uid}`).get();
+  if (!alunoSnap.exists) throw new HttpsError('not-found', 'Aluno não encontrado.');
+  const aluno = alunoSnap.data();
+
+  let escola = null;
+  if (aluno.schoolId) {
+    const escolaSnap = await db.doc(`schools/${aluno.schoolId}`).get();
+    if (escolaSnap.exists) escola = { id: escolaSnap.id, ...escolaSnap.data() };
+  }
+
+  const ehAdminGlobal = ADMIN_EMAILS.includes(email);
+  const ehDonoDaEscola = !!escola && escola.ownerEmail === email;
+  if (!ehAdminGlobal && !ehDonoDaEscola) {
+    throw new HttpsError('permission-denied', 'Você não tem acesso a este aluno.');
+  }
+
+  // Sem escola cadastrada (alunos antigos), usa a marca padrão.
+  return {
+    aluno,
+    escola: escola || { id: 'science-english', name: 'Science English', theme: {} },
+  };
+}
+
+/** Registra o consumo da API para acompanhar a margem real. */
+function registrarUso(lote, { tipo, uid, escolaId, uso, extra = {} }) {
+  const custoUSD =
+    ((uso.input_tokens || 0) * PRECO_ENTRADA +
+      (uso.output_tokens || 0) * PRECO_SAIDA +
+      (uso.cache_read_input_tokens || 0) * PRECO_CACHE) /
+    1_000_000;
+
+  lote.set(db.collection('_apiUsage').doc(), {
+    tipo,
+    uid,
+    escolaId,
+    modelo: MODEL,
+    tokensEntrada: uso.input_tokens || 0,
+    tokensSaida: uso.output_tokens || 0,
+    tokensCache: uso.cache_read_input_tokens || 0,
+    custoUSD: Number(custoUSD.toFixed(6)),
+    criadoEm: FieldValue.serverTimestamp(),
+    ...extra,
+  });
+
+  return Number(custoUSD.toFixed(4));
+}
+
 /** O aluno respondeu ao menos uma coisa? (áudio conta) */
 function temAlgumaResposta(atividade) {
   const respostas = atividade.respostas || {};
@@ -375,5 +429,152 @@ export const corrigirAluno = onCall(
       atividadesCorrigidas: gravadas,
       custoUSD: Number(custoUSD.toFixed(4)),
     };
+  }
+);
+
+/* ────────────────────────────────────────────────────────────────
+   PÓS-AULA — gerar a partir da transcrição e publicar para o aluno
+   ──────────────────────────────────────────────────────────────── */
+
+const OPCOES_PADRAO = {
+  region: 'southamerica-east1',
+  cors: [
+    'https://cezika-web.github.io',
+    /^http:\/\/localhost(:\d+)?$/,
+    /^http:\/\/127\.0\.0\.1(:\d+)?$/,
+  ],
+};
+
+/**
+ * Gera o HTML da pós-aula a partir da transcrição. NÃO publica —
+ * devolve para o professor conferir a prévia antes.
+ */
+export const gerarPosAula = onCall(
+  { ...OPCOES_PADRAO, secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 540, memory: '512MiB' },
+  async (request) => {
+    const email = request.auth?.token?.email;
+    if (!email) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
+
+    const { uid, transcricao, youtubeUrl = '', data } = request.data || {};
+    if (!uid) throw new HttpsError('invalid-argument', 'Faltou o aluno.');
+    if (!transcricao || transcricao.trim().length < 200) {
+      throw new HttpsError('invalid-argument', 'A transcrição está muito curta para gerar uma pós-aula.');
+    }
+
+    const { aluno, escola } = await carregarAlunoEEscola(email, uid);
+
+    const dataAula = data || new Date().toLocaleDateString('pt-BR');
+    const template = montarTemplate({ escola, aluno, data: dataAula, youtubeUrl: youtubeUrl.trim() });
+
+    const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
+
+    let resposta;
+    try {
+      const stream = client.messages.stream({
+        model: MODEL,
+        max_tokens: 32000,
+        system: [
+          { type: 'text', text: REGRAS_POS_AULA, cache_control: { type: 'ephemeral' } },
+        ],
+        messages: [
+          {
+            role: 'user',
+            content:
+              `Aluno: ${aluno.name || ''} (nível ${aluno.level || 'não informado'})\n` +
+              `Data da aula: ${dataAula}\n\n` +
+              `TEMPLATE A PREENCHER (devolva este HTML com o conteúdo real no lugar dos marcadores):\n\n` +
+              template +
+              `\n\n─────────────\nTRANSCRIÇÃO DA AULA:\n\n${transcricao}`,
+          },
+        ],
+      });
+      resposta = await stream.finalMessage();
+    } catch (erro) {
+      console.error('Falha ao gerar pós-aula:', erro);
+      throw new HttpsError('internal', `Não consegui gerar a pós-aula: ${erro.message}`);
+    }
+
+    if (resposta.stop_reason === 'max_tokens') {
+      throw new HttpsError('internal', 'A pós-aula ficou longa demais e foi cortada. Tente com uma transcrição menor.');
+    }
+
+    const blocoTexto = resposta.content.find((b) => b.type === 'text');
+    if (!blocoTexto) throw new HttpsError('internal', 'A API não devolveu a pós-aula.');
+
+    // O modelo às vezes embrulha em bloco de código — desembrulha.
+    let html = blocoTexto.text.trim();
+    const emBloco = html.match(/^```(?:html)?\s*\n([\s\S]*?)\n```$/);
+    if (emBloco) html = emBloco[1].trim();
+
+    if (!html.toLowerCase().startsWith('<!doctype html')) {
+      throw new HttpsError('internal', 'A pós-aula veio num formato inesperado. Tente gerar de novo.');
+    }
+
+    const tituloMatch = html.match(/<h1>([\s\S]*?)<\/h1>/i);
+    const titulo = tituloMatch
+      ? tituloMatch[1].replace(/<[^>]*>/g, '').trim()
+      : `Pós-aula ${dataAula}`;
+
+    const lote = db.batch();
+    const custoUSD = registrarUso(lote, {
+      tipo: 'posaula',
+      uid,
+      escolaId: escola.id,
+      uso: resposta.usage,
+      extra: { alunoNome: aluno.name || '', publicada: false },
+    });
+    await lote.commit();
+
+    return { ok: true, html, titulo, data: dataAula, custoUSD };
+  }
+);
+
+/**
+ * Publica a pós-aula já conferida: grava no Firestore e avisa o aluno.
+ * Recebe o HTML da prévia — não gera de novo, então não gasta tokens.
+ */
+export const publicarPosAula = onCall(
+  { ...OPCOES_PADRAO, timeoutSeconds: 120, memory: '256MiB' },
+  async (request) => {
+    const email = request.auth?.token?.email;
+    if (!email) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
+
+    const { uid, html, titulo, data } = request.data || {};
+    if (!uid || !html) throw new HttpsError('invalid-argument', 'Faltou o aluno ou o conteúdo.');
+    if (!String(html).toLowerCase().startsWith('<!doctype html')) {
+      throw new HttpsError('invalid-argument', 'Conteúdo da pós-aula inválido.');
+    }
+
+    const { aluno } = await carregarAlunoEEscola(email, uid);
+
+    const doc = await db.collection(`students/${uid}/posaulas`).add({
+      title: titulo || `Pós-aula ${data || ''}`.trim(),
+      html,
+      createdAt: FieldValue.serverTimestamp(),
+      readAt: null,
+      geradaPorIA: true,
+    });
+
+    // Notifica o aluno. Falha no push não invalida a publicação.
+    let notificado = false;
+    if (aluno.fcmToken) {
+      try {
+        await getMessaging().send({
+          token: aluno.fcmToken,
+          notification: {
+            title: 'Nova pós-aula disponível!',
+            body: titulo || 'Sua pós-aula já está no app.',
+          },
+          webpush: {
+            fcmOptions: { link: 'https://cezika-web.github.io/science-english-app/' },
+          },
+        });
+        notificado = true;
+      } catch (erro) {
+        console.error('Push falhou para', uid, erro.message);
+      }
+    }
+
+    return { ok: true, posaulaId: doc.id, notificado };
   }
 );
