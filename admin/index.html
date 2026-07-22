@@ -229,18 +229,12 @@
         <div class="stat-card"><div class="val" id="stat-unread">—</div><div class="lbl">Ainda não leram</div></div>
       </div>
 
-      <!-- Faixa do espelho: some quando o admin volta ao painel dele -->
-      <div id="espelho-bar" style="display:none;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding:12px 16px;border-radius:12px;background:#fff8e1;border:1px solid #fde68a;color:#7c5e10;">
-        <span style="font-size:0.88rem;font-weight:700;">👁️ Você está vendo o painel como o professor vê</span>
-        <span style="font-size:0.82rem;flex:1;min-width:200px;">As abas de correção, vocabulário e extras estão escondidas — é assim que ele encontra o painel.</span>
-        <button type="button" id="btn-sair-espelho" style="padding:7px 14px;border-radius:8px;border:1px solid #d9a441;background:#fff;color:#7c5e10;cursor:pointer;font-family:inherit;font-weight:700;font-size:0.82rem;">Voltar ao meu painel</button>
-      </div>
-
-      <!-- Seletor de escola: só aparece para quem administra mais de uma -->
+      <!-- Seletor de escola: só aparece para quem administra mais de uma.
+           Trocar de escola já mostra o painel como aquela escola o vê. -->
       <div id="school-bar" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:12px 14px;border-radius:12px;background:var(--card);border:1px solid var(--border);">
         <span style="font-size:0.85rem;color:var(--muted);font-weight:600;">Escola</span>
         <div id="school-chips" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
-        <button type="button" id="btn-espelho" style="margin-left:auto;padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;font-size:0.82rem;">👁️ Ver como o professor</button>
+        <span id="school-modo" style="margin-left:auto;font-size:0.78rem;color:var(--muted);"></span>
       </div>
 
       <div class="tabs">
@@ -324,7 +318,7 @@
       <div class="tab-panel" id="tab-publish">
 
         <!-- GERAR COM IA -->
-        <div class="form-card" style="margin-bottom:20px;">
+        <div class="form-card" id="card-gerar-atividades" style="margin-bottom:20px;">
           <h2>✨ Gerar Atividades com IA</h2>
           <p style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;">
             Escolha as pós-aulas que servem de base e quantas atividades quer.
@@ -471,7 +465,7 @@
 
       <!-- ATIVIDADES EXTRAS (biblioteca + atribuir + controle) -->
       <div class="tab-panel" id="tab-extras">
-        <div class="form-card">
+        <div class="form-card" id="card-criar-extra">
           <h2>🎧 Adicionar à Biblioteca de Extras</h2>
           <p style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;">
             Cole o JSON da atividade extra (gerado com o Claude). Campos: <code>skill</code>, <code>level</code> (A1-A2 | B1-B2),
@@ -684,15 +678,6 @@
 
       barra.style.display = 'flex';
 
-      // Espelho: só faz sentido para quem administra mais de uma escola.
-      const btnEspelho = document.getElementById('btn-espelho');
-      const btnSair    = document.getElementById('btn-sair-espelho');
-      if (btnEspelho && !btnEspelho.dataset.ligado) {
-        btnEspelho.dataset.ligado = '1';
-        btnEspelho.onclick = () => { verComoProfessor = true;  aplicarPapel(); };
-        btnSair.onclick    = () => { verComoProfessor = false; aplicarPapel(); };
-      }
-
       // Deixa explícito em qual escola o próximo aluno vai nascer.
       const aviso = document.getElementById('add-escola-aviso');
       if (aviso) {
@@ -756,32 +741,54 @@
       };
     });
 
-    // ── O QUE O PROFESSOR ENXERGA ───────────────────────────────────────
-    // Ele gera pós-aula e atividades e acompanha os alunos. Publicar JSON na
-    // mão, corrigir e o material de apoio ficam com o administrador.
-    const ABAS_DO_PROFESSOR = ['students', 'posaula', 'publish', 'add', 'exalunos'];
-    let verComoProfessor = false;   // espelho: o admin olhando o painel dele
+    // ── O QUE CADA ESCOLA ENXERGA ───────────────────────────────────────
+    // O painel muda conforme a ESCOLA selecionada, não conforme quem entrou.
+    //
+    //   manual    → a escola do César: material feito fora e colado em JSON,
+    //               sem gastar crédito de API.
+    //   assistido → escolas que pagam pelo serviço: tudo gerado no painel.
+    //
+    // Quem administra a escola vê a interface dela — inclusive o César, ao
+    // trocar de escola no seletor do topo.
+    const ABAS_POR_MODO = {
+      manual:    ['students', 'publish', 'correct', 'vocab', 'extras', 'add', 'exalunos'],
+      assistido: ['students', 'posaula', 'publish', 'extras', 'add', 'exalunos'],
+    };
 
-    function aplicarPapel() {
-      const ehProfessor = verComoProfessor || !ADMIN_EMAILS.includes(auth.currentUser?.email || '');
+    function modoDaEscolaAtual() {
+      return escolas.find(e => e.id === escolaAtual)?.modo || 'manual';
+    }
+
+    function aplicarModoDaEscola() {
+      const assistido = modoDaEscolaAtual() === 'assistido';
+      const permitidas = ABAS_POR_MODO[assistido ? 'assistido' : 'manual'];
 
       document.querySelectorAll('.tab').forEach(t => {
-        t.style.display = (!ehProfessor || ABAS_DO_PROFESSOR.includes(t.dataset.tab)) ? '' : 'none';
+        t.style.display = permitidas.includes(t.dataset.tab) ? '' : 'none';
       });
 
-      // A aba de atividades tem duas metades: o gerador (dele) e o
-      // "colar JSON" (do administrador).
+      // Aba Atividades: gerador no assistido, colar JSON no manual.
+      const gerador   = document.getElementById('card-gerar-atividades');
       const colarJson = document.getElementById('card-colar-json');
-      if (colarJson) colarJson.style.display = ehProfessor ? 'none' : '';
+      if (gerador)   gerador.style.display   = assistido ? '' : 'none';
+      if (colarJson) colarJson.style.display = assistido ? 'none' : '';
 
-      // Se a aba aberta sumiu, volta para os alunos.
+      // Extras: no assistido o professor só distribui o que já existe.
+      const criarExtra = document.getElementById('card-criar-extra');
+      if (criarExtra) criarExtra.style.display = assistido ? 'none' : '';
+
+      // Se a aba aberta sumiu na troca, volta para os alunos.
       const abaAtiva = document.querySelector('.tab.active');
       if (abaAtiva && abaAtiva.style.display === 'none') {
         document.querySelector('.tab[data-tab="students"]')?.click();
       }
 
-      const faixa = document.getElementById('espelho-bar');
-      if (faixa) faixa.style.display = verComoProfessor ? 'flex' : 'none';
+      const rotulo = document.getElementById('school-modo');
+      if (rotulo) {
+        rotulo.textContent = assistido
+          ? '✨ Modo assistido — material gerado no painel'
+          : '✍️ Modo manual — material colado em JSON';
+      }
     }
 
     // ── LOAD STUDENTS ───────────────────────────────────────────────────
@@ -1092,10 +1099,18 @@
           const gerar = httpsCallable(fns, 'gerarAtividades', { timeout: 540000 });
           const { data } = await gerar({ uid, posaulaIds, quantidade, observacoes });
 
-          atividadesGeradas = { uid, week: data.week, activities: data.activities };
+          const vocab = data.vocabulario || [];
+          atividadesGeradas = { uid, week: data.week, activities: data.activities, vocabulario: vocab };
 
-          tituloEl.textContent = `${data.activities.length} atividade(s) — ${data.week}`;
-          previa.innerHTML = data.activities.map((a, i) => `
+          tituloEl.textContent = `${data.activities.length} atividade(s) + ${vocab.length} palavra(s) — ${data.week}`;
+
+          const blocoVocab = vocab.length ? `
+            <div style="margin-bottom:16px;padding:12px;border-radius:8px;background:#f0f9ff;border:1px solid #bae6fd;">
+              <div style="font-weight:700;margin-bottom:8px;font-size:0.9rem;">📖 Vocabulário da aula</div>
+              ${vocab.map(v => `<div style="font-size:0.88rem;padding:3px 0;"><strong>${esc(v.en)}</strong> — ${esc(v.pt)}</div>`).join('')}
+            </div>` : '';
+
+          previa.innerHTML = blocoVocab + data.activities.map((a, i) => `
             <div style="margin-bottom:16px;padding-bottom:14px;${i < data.activities.length - 1 ? 'border-bottom:1px solid var(--border);' : ''}">
               <div style="font-weight:700;margin-bottom:8px;">${a.emoji || '📚'} ${esc(a.title || '')}</div>
               ${(a.parts || []).map(p => `
@@ -1135,7 +1150,8 @@
           const saldo = data.creditosRestantes === null
             ? ''
             : ` Restam ${data.creditosRestantes} crédito(s).`;
-          aviso(`✅ ${data.publicadas} atividade(s) publicada(s).${saldo}`, 'green');
+          const vocab = data.palavras ? ` e ${data.palavras} palavra(s) de vocabulário` : '';
+          aviso(`✅ ${data.publicadas} atividade(s)${vocab} publicada(s).${saldo}`, 'green');
 
           esconderPrevia();
           document.getElementById('ga-obs').value = '';
@@ -1282,7 +1298,7 @@
         console.error('Não consegui carregar as escolas:', e);
         document.getElementById('school-bar').style.display = 'none';
       }
-      aplicarPapel();
+      aplicarModoDaEscola();
 
       // O admin lê a coleção inteira; o professor só pode ler os alunos da
       // escola dele, então a consulta precisa vir filtrada.

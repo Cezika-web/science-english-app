@@ -680,7 +680,13 @@ export const gerarAtividades = onCall(
     });
     await lote.commit();
 
-    return { ok: true, week: dados.week, activities: dados.activities, custoUSD };
+    return {
+      ok: true,
+      week: dados.week,
+      activities: dados.activities,
+      vocabulario: dados.vocabulario || [],
+      custoUSD,
+    };
   }
 );
 
@@ -694,7 +700,7 @@ export const publicarAtividades = onCall(
     const email = request.auth?.token?.email;
     if (!email) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
 
-    const { uid, week, activities } = request.data || {};
+    const { uid, week, activities, vocabulario = [] } = request.data || {};
     if (!uid || !Array.isArray(activities) || !activities.length) {
       throw new HttpsError('invalid-argument', 'Faltou o aluno ou as atividades.');
     }
@@ -724,6 +730,18 @@ export const publicarAtividades = onCall(
         notified: true,   // a notificação sai aqui mesmo, não pelo cron
         geradaPorIA: true,
         createdAt: FieldValue.serverTimestamp(),
+      });
+    }
+
+    // O vocabulário da aula vai junto, na mesma leva.
+    const vocabRef = db.collection(`students/${uid}/vocabulario`);
+    for (const v of vocabulario) {
+      if (!v?.en || !v?.pt) continue;
+      lote.set(vocabRef.doc(), {
+        en: v.en,
+        pt: v.pt,
+        source: week || '',
+        date: FieldValue.serverTimestamp(),
       });
     }
 
@@ -769,6 +787,7 @@ export const publicarAtividades = onCall(
     return {
       ok: true,
       publicadas: activities.length,
+      palavras: vocabulario.filter((v) => v?.en && v?.pt).length,
       notificado,
       creditosRestantes: controlaCredito ? creditos - 1 : null,
     };
