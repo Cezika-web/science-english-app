@@ -1,0 +1,73 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Administradores do produto (mesma lista das Cloud Functions e do admin).
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.token.email == 'cmo.sep@gmail.com' ||
+        request.auth.token.email == 'czkenglish@gmail.com'
+      );
+    }
+
+    // Quem chamou é o professor dono desta escola?
+    function ehDonoDa(sid) {
+      return request.auth != null
+        && sid is string
+        && exists(/databases/$(database)/documents/schools/$(sid))
+        && get(/databases/$(database)/documents/schools/$(sid)).data.ownerEmail == request.auth.token.email;
+    }
+
+    function escolaDoAluno(userId) {
+      return get(/databases/$(database)/documents/students/$(userId)).data.schoolId;
+    }
+
+    // Lista pública de níveis (só slug, primeiro nome e nível).
+    match /niveis/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /extras/{extraId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Escolas: qualquer logado lê (o app precisa do nome e das cores).
+    // Só o administrador cria e edita — inclusive os créditos.
+    match /schools/{schoolId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    match /students/{userId} {
+      allow read: if request.auth != null && (
+        request.auth.uid == userId || isAdmin() || ehDonoDa(resource.data.schoolId)
+      );
+      // No create ainda não existe resource — o dado vem do request.
+      allow create: if request.auth != null && (
+        isAdmin() || ehDonoDa(request.resource.data.schoolId)
+      );
+      allow update, delete: if request.auth != null && (
+        request.auth.uid == userId || isAdmin() || ehDonoDa(resource.data.schoolId)
+      );
+    }
+
+    // Pós-aulas, atividades e o que mais pendurar no aluno.
+    match /students/{userId}/{document=**} {
+      allow read, write: if request.auth != null && (
+        request.auth.uid == userId || isAdmin() || ehDonoDa(escolaDoAluno(userId))
+      );
+    }
+
+    // Consumo de API e de créditos: só o servidor escreve, só o admin lê.
+    match /_apiUsage/{doc} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+    match /_creditos/{doc} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+  }
+}
