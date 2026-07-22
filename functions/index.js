@@ -5,6 +5,7 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 import Anthropic from '@anthropic-ai/sdk';
 import { montarTemplate, REGRAS_POS_AULA } from './posaula.js';
+import { REGRAS_ATIVIDADES, SCHEMA_ATIVIDADES, textoDaPosAula } from './atividades.js';
 
 initializeApp();
 const db = getFirestore();
@@ -576,5 +577,200 @@ export const publicarPosAula = onCall(
     }
 
     return { ok: true, posaulaId: doc.id, notificado };
+  }
+);
+
+/* ────────────────────────────────────────────────────────────────
+   ATIVIDADES — gerar a partir das pós-aulas e publicar
+   ──────────────────────────────────────────────────────────────── */
+
+/** Pega o conteúdo de uma pós-aula, venha ela do banco ou de um arquivo. */
+async function conteudoDaPosAula(uid, posaulaId) {
+  const snap = await db.doc(`students/${uid}/posaulas/${posaulaId}`).get();
+  if (!snap.exists) return null;
+  const p = snap.data();
+
+  if (p.html) return { titulo: p.title || '', texto: textoDaPosAula(p.html) };
+
+  if (p.url) {
+    try {
+      const r = await fetch(p.url);
+      if (!r.ok) return null;
+      return { titulo: p.title || '', texto: textoDaPosAula(await r.text()) };
+    } catch (e) {
+      console.error('Não consegui ler a pós-aula', p.url, e.message);
+      return null;
+    }
+  }
+  return null;
+}
+
+/**
+ * Gera as atividades a partir das pós-aulas escolhidas. NÃO publica —
+ * o professor confere a prévia antes. Gerar de novo não consome crédito.
+ */
+export const gerarAtividades = onCall(
+  { ...OPCOES_PADRAO, secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 540, memory: '512MiB' },
+  async (request) => {
+    const email = request.auth?.token?.email;
+    if (!email) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
+
+    const { uid, posaulaIds = [], quantidade = 3, observacoes = '' } = request.data || {};
+    if (!uid) throw new HttpsError('invalid-argument', 'Faltou o aluno.');
+    if (!posaulaIds.length) throw new HttpsError('invalid-argument', 'Escolha ao menos uma pós-aula.');
+
+    const qtd = Math.max(1, Math.min(20, Number(quantidade) || 3));
+
+    const { aluno, escola } = await carregarAlunoEEscola(email, uid);
+
+    const posaulas = (await Promise.all(
+      posaulaIds.slice(0, 6).map((id) => conteudoDaPosAula(uid, id))
+    )).filter(Boolean);
+
+    if (!posaulas.length) {
+      throw new HttpsError('not-found', 'Não consegui ler o conteúdo das pós-aulas escolhidas.');
+    }
+
+    const nivel = ((aluno.level || '').match(/\(([^)]+)\)/) || [])[1] || aluno.level || 'A1';
+
+    const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
+
+    let resposta;
+    try {
+      const stream = client.messages.stream({
+        model: MODEL,
+        max_tokens: 32000,
+        system: [
+          { type: 'text', text: REGRAS_ATIVIDADES, cache_control: { type: 'ephemeral' } },
+        ],
+        output_config: { format: { type: 'json_schema', schema: SCHEMA_ATIVIDADES } },
+        messages: [
+          {
+            role: 'user',
+            content:
+              `Aluno: ${aluno.name || ''} — nível ${nivel}\n` +
+              `Quantidade de atividades a gerar: ${qtd}\n` +
+              (observacoes.trim() ? `\nObservações do professor (prioridade sobre o padrão):\n${observacoes.trim()}\n` : '') +
+              `\nCONTEÚDO DAS PÓS-AULAS:\n\n` +
+              posaulas.map((p, i) => `── Pós-aula ${i + 1}: ${p.titulo} ──\n${p.texto}`).join('\n\n'),
+          },
+        ],
+      });
+      resposta = await stream.finalMessage();
+    } catch (erro) {
+      console.error('Falha ao gerar atividades:', erro);
+      throw new HttpsError('internal', `Não consegui gerar as atividades: ${erro.message}`);
+    }
+
+    if (resposta.stop_reason === 'max_tokens') {
+      throw new HttpsError('internal', 'As atividades ficaram longas demais. Tente gerar menos de uma vez.');
+    }
+
+    const blocoTexto = resposta.content.find((b) => b.type === 'text');
+    if (!blocoTexto) throw new HttpsError('internal', 'A API não devolveu as atividades.');
+    const dados = JSON.parse(blocoTexto.text);
+
+    const lote = db.batch();
+    const custoUSD = registrarUso(lote, {
+      tipo: 'atividades',
+      uid,
+      escolaId: escola.id,
+      uso: resposta.usage,
+      extra: { alunoNome: aluno.name || '', quantidade: dados.activities?.length || 0, publicada: false },
+    });
+    await lote.commit();
+
+    return { ok: true, week: dados.week, activities: dados.activities, custoUSD };
+  }
+);
+
+/**
+ * Publica a leva de atividades e desconta UM crédito — independente de
+ * quantas atividades tem a leva.
+ */
+export const publicarAtividades = onCall(
+  { ...OPCOES_PADRAO, timeoutSeconds: 120, memory: '256MiB' },
+  async (request) => {
+    const email = request.auth?.token?.email;
+    if (!email) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
+
+    const { uid, week, activities } = request.data || {};
+    if (!uid || !Array.isArray(activities) || !activities.length) {
+      throw new HttpsError('invalid-argument', 'Faltou o aluno ou as atividades.');
+    }
+
+    const { aluno, escola } = await carregarAlunoEEscola(email, uid);
+
+    // Crédito: número = controlado; null/ausente = ilimitado.
+    const creditos = escola.plan?.creditosAtividade;
+    const controlaCredito = typeof creditos === 'number';
+    if (controlaCredito && creditos < 1) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Seus créditos de atividade acabaram. Fale com o administrador para recarregar.'
+      );
+    }
+
+    const lote = db.batch();
+    const colecao = db.collection(`students/${uid}/activities`);
+
+    for (const act of activities) {
+      lote.set(colecao.doc(), {
+        week: week || '',
+        title: act.title || '',
+        emoji: act.emoji || '📚',
+        parts: act.parts || [],
+        status: 'pending',
+        notified: true,   // a notificação sai aqui mesmo, não pelo cron
+        geradaPorIA: true,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+    }
+
+    // Um crédito por leva, não por atividade.
+    if (controlaCredito) {
+      lote.update(db.doc(`schools/${escola.id}`), {
+        'plan.creditosAtividade': FieldValue.increment(-1),
+      });
+    }
+
+    lote.set(db.collection('_creditos').doc(), {
+      escolaId: escola.id,
+      tipo: 'atividade',
+      quantidade: 1,
+      atividadesNaLeva: activities.length,
+      uid,
+      alunoNome: aluno.name || '',
+      porEmail: email,
+      criadoEm: FieldValue.serverTimestamp(),
+    });
+
+    await lote.commit();
+
+    let notificado = false;
+    if (aluno.fcmToken) {
+      try {
+        await getMessaging().send({
+          token: aluno.fcmToken,
+          notification: {
+            title: 'Novas atividades disponíveis!',
+            body: `${activities.length} atividade${activities.length !== 1 ? 's' : ''} esperando por você.`,
+          },
+          webpush: {
+            fcmOptions: { link: 'https://cezika-web.github.io/science-english-app/' },
+          },
+        });
+        notificado = true;
+      } catch (erro) {
+        console.error('Push falhou para', uid, erro.message);
+      }
+    }
+
+    return {
+      ok: true,
+      publicadas: activities.length,
+      notificado,
+      creditosRestantes: controlaCredito ? creditos - 1 : null,
+    };
   }
 );

@@ -314,6 +314,64 @@
 
       <!-- PUBLICAR ATIVIDADES -->
       <div class="tab-panel" id="tab-publish">
+
+        <!-- GERAR COM IA -->
+        <div class="form-card" style="margin-bottom:20px;">
+          <h2>✨ Gerar Atividades com IA</h2>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;">
+            Escolha as pós-aulas que servem de base e quantas atividades quer.
+            Você confere a prévia antes de publicar — <strong>a leva inteira custa 1 crédito</strong>,
+            não importa quantas atividades tenha.
+          </p>
+
+          <div class="field">
+            <label>Aluno</label>
+            <select id="ga-student"></select>
+          </div>
+
+          <div class="field">
+            <label>Pós-aulas que servem de base</label>
+            <div id="ga-posaulas" style="border:1px solid var(--border);border-radius:10px;padding:12px;max-height:220px;overflow:auto;background:#fff;">
+              <div style="font-size:0.85rem;color:var(--muted);">Escolha o aluno para ver as pós-aulas.</div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Quantas atividades</label>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <div id="ga-qtd-chips" style="display:flex;gap:6px;">
+                <button type="button" data-qtd="1">1</button>
+                <button type="button" data-qtd="2">2</button>
+                <button type="button" data-qtd="3">3</button>
+                <button type="button" data-qtd="4">4</button>
+                <button type="button" data-qtd="5">5</button>
+              </div>
+              <span style="color:var(--muted);font-size:0.85rem;">ou</span>
+              <input type="number" id="ga-qtd" min="1" max="20" value="3" style="width:90px;">
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Observações <span style="font-weight:400;color:var(--muted);">(opcional)</span></label>
+            <input type="text" id="ga-obs" placeholder="Ex: reforçar past simple, ele travou em preposições">
+          </div>
+
+          <button class="btn-add" id="btn-gerar-atividades" type="button" style="width:100%;">✨ Gerar atividades</button>
+          <div class="form-msg" id="ga-msg"></div>
+
+          <div id="ga-preview-wrap" style="display:none;margin-top:20px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+              <strong id="ga-preview-title" style="font-size:0.95rem;"></strong>
+              <span style="font-size:0.8rem;color:var(--muted);">Prévia — o aluno ainda não recebeu</span>
+            </div>
+            <div id="ga-preview" style="border:1px solid var(--border);border-radius:10px;background:#fff;padding:14px;max-height:460px;overflow:auto;"></div>
+            <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+              <button class="btn-add" id="btn-publicar-atividades" type="button" style="flex:1;min-width:200px;">🚀 Publicar (1 crédito)</button>
+              <button class="btn-add" id="btn-descartar-atividades" type="button" style="flex:0 0 auto;background:#e5e7eb;color:#374151;">Descartar</button>
+            </div>
+          </div>
+        </div>
+
         <div class="form-card">
           <h2>📤 Publicar Atividades no App</h2>
           <p style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;">
@@ -781,7 +839,7 @@
     function populateStudentSelects(active) {
       const opts = '<option value="">Selecione o aluno...</option>' +
         active.map(s => `<option value="${s.uid}">${esc(s.name || s.firstName || 'Aluno')}</option>`).join('');
-      ['pub-student', 'voc-student', 'pa-student'].forEach(id => {
+      ['pub-student', 'voc-student', 'pa-student', 'ga-student'].forEach(id => {
         const sel = document.getElementById(id);
         if (sel) { const prev = sel.value; sel.innerHTML = opts; sel.value = prev; }
       });
@@ -890,6 +948,163 @@
       btnDescartar.onclick = () => {
         esconderPrevia();
         aviso('Prévia descartada. Ajuste o que quiser e gere de novo.', 'var(--muted)');
+      };
+    })();
+
+    // ── GERAR ATIVIDADES ────────────────────────────────────────────────
+    let atividadesGeradas = null;  // { week, activities, uid }
+
+    (function iniciarGerarAtividades() {
+      const btnGerar = document.getElementById('btn-gerar-atividades');
+      if (!btnGerar) return;
+
+      const selAluno  = document.getElementById('ga-student');
+      const listaPos  = document.getElementById('ga-posaulas');
+      const inputQtd  = document.getElementById('ga-qtd');
+      const chips     = document.getElementById('ga-qtd-chips');
+      const msg       = document.getElementById('ga-msg');
+      const wrap      = document.getElementById('ga-preview-wrap');
+      const previa    = document.getElementById('ga-preview');
+      const tituloEl  = document.getElementById('ga-preview-title');
+      const btnPub    = document.getElementById('btn-publicar-atividades');
+      const btnDesc   = document.getElementById('btn-descartar-atividades');
+
+      const aviso = (t, c) => { msg.textContent = t; msg.style.color = c; };
+
+      const pintarChips = () => {
+        const v = String(inputQtd.value);
+        chips.querySelectorAll('button').forEach(b => {
+          const ativo = b.dataset.qtd === v;
+          b.style.background  = ativo ? 'var(--green)' : 'transparent';
+          b.style.color       = ativo ? '#fff' : 'var(--muted)';
+          b.style.borderColor = ativo ? 'var(--green)' : 'var(--border)';
+        });
+      };
+      chips.querySelectorAll('button').forEach(b => {
+        b.style.cssText = 'padding:8px 14px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;font-weight:700;font-size:0.9rem;';
+        b.onclick = () => { inputQtd.value = b.dataset.qtd; pintarChips(); };
+      });
+      inputQtd.oninput = pintarChips;
+      pintarChips();
+
+      const esconderPrevia = () => {
+        wrap.style.display = 'none';
+        previa.innerHTML = '';
+        atividadesGeradas = null;
+      };
+
+      // Ao trocar de aluno, lista as pós-aulas dele para escolher a base.
+      selAluno.onchange = async () => {
+        esconderPrevia();
+        const uid = selAluno.value;
+        if (!uid) {
+          listaPos.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);">Escolha o aluno para ver as pós-aulas.</div>';
+          return;
+        }
+        listaPos.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);">Carregando...</div>';
+        try {
+          const snap = await getDocs(query(collection(db, 'students', uid, 'posaulas'), orderBy('createdAt', 'desc')));
+          const itens = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          if (!itens.length) {
+            listaPos.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);">Este aluno ainda não tem pós-aula.</div>';
+            return;
+          }
+          // A mais recente já vem marcada — é o caso mais comum.
+          listaPos.innerHTML = itens.map((p, i) => `
+            <label style="display:flex;gap:10px;align-items:flex-start;padding:7px 0;cursor:pointer;border-bottom:1px solid var(--border);">
+              <input type="checkbox" value="${p.id}" ${i === 0 ? 'checked' : ''} style="margin-top:3px;">
+              <span style="font-size:0.88rem;">${esc(p.title || 'Pós-aula')}</span>
+            </label>`).join('');
+        } catch (e) {
+          listaPos.innerHTML = `<div style="font-size:0.85rem;color:crimson;">Erro ao listar: ${esc(e.message)}</div>`;
+        }
+      };
+
+      btnGerar.onclick = async () => {
+        const uid = selAluno.value;
+        const posaulaIds = [...listaPos.querySelectorAll('input:checked')].map(c => c.value);
+        const quantidade = Number(inputQtd.value) || 3;
+        const observacoes = document.getElementById('ga-obs').value.trim();
+
+        if (!uid) return aviso('Escolha o aluno.', 'crimson');
+        if (!posaulaIds.length) return aviso('Marque ao menos uma pós-aula.', 'crimson');
+
+        esconderPrevia();
+        btnGerar.disabled = true;
+
+        const inicio = Date.now();
+        const tick = () => {
+          const s = Math.floor((Date.now() - inicio) / 1000);
+          btnGerar.textContent = `✨ Gerando... ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+          aviso(s < 30 ? 'Lendo as pós-aulas...'
+              : s < 90 ? 'Montando os exercícios...'
+                       : 'Variando os formatos e revisando...', 'var(--muted)');
+        };
+        tick();
+        const cron = setInterval(tick, 1000);
+
+        try {
+          const gerar = httpsCallable(fns, 'gerarAtividades', { timeout: 540000 });
+          const { data } = await gerar({ uid, posaulaIds, quantidade, observacoes });
+
+          atividadesGeradas = { uid, week: data.week, activities: data.activities };
+
+          tituloEl.textContent = `${data.activities.length} atividade(s) — ${data.week}`;
+          previa.innerHTML = data.activities.map((a, i) => `
+            <div style="margin-bottom:16px;padding-bottom:14px;${i < data.activities.length - 1 ? 'border-bottom:1px solid var(--border);' : ''}">
+              <div style="font-weight:700;margin-bottom:8px;">${a.emoji || '📚'} ${esc(a.title || '')}</div>
+              ${(a.parts || []).map(p => `
+                <div style="margin:10px 0 0 0;padding:10px;background:#f8fafc;border-radius:8px;">
+                  <div style="font-size:0.8rem;color:var(--muted);font-weight:700;margin-bottom:6px;">
+                    ${esc(p.title || p.id)} · ${esc(p.type || '')}
+                  </div>
+                  <div style="font-size:0.88rem;">${p.content || ''}</div>
+                </div>`).join('')}
+            </div>`).join('');
+
+          wrap.style.display = 'block';
+          aviso(`Prévia pronta — custo US$ ${data.custoUSD}. Gerar de novo não gasta crédito.`, 'green');
+          wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch (e) {
+          aviso(e.code === 'functions/deadline-exceeded'
+            ? 'A geração demorou mais que o esperado. Tente com menos atividades.'
+            : `Erro: ${e.message}`, 'crimson');
+        } finally {
+          clearInterval(cron);
+          btnGerar.disabled = false;
+          btnGerar.textContent = '✨ Gerar atividades';
+        }
+      };
+
+      btnPub.onclick = async () => {
+        if (!atividadesGeradas) return;
+        const n = atividadesGeradas.activities.length;
+        if (!confirm(`Publicar ${n} atividade(s)?\n\nIsso consome 1 crédito e o aluno recebe a notificação na hora.`)) return;
+
+        btnPub.disabled = true;
+        btnPub.textContent = 'Publicando...';
+        try {
+          const publicar = httpsCallable(fns, 'publicarAtividades', { timeout: 120000 });
+          const { data } = await publicar(atividadesGeradas);
+
+          const saldo = data.creditosRestantes === null
+            ? ''
+            : ` Restam ${data.creditosRestantes} crédito(s).`;
+          aviso(`✅ ${data.publicadas} atividade(s) publicada(s).${saldo}`, 'green');
+
+          esconderPrevia();
+          document.getElementById('ga-obs').value = '';
+        } catch (e) {
+          aviso(`Erro ao publicar: ${e.message}`, 'crimson');
+        } finally {
+          btnPub.disabled = false;
+          btnPub.textContent = '🚀 Publicar (1 crédito)';
+        }
+      };
+
+      btnDesc.onclick = () => {
+        esconderPrevia();
+        aviso('Prévia descartada. Ajuste o que quiser e gere de novo — sem custo de crédito.', 'var(--muted)');
       };
     })();
 
