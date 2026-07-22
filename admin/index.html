@@ -229,6 +229,12 @@
         <div class="stat-card"><div class="val" id="stat-unread">—</div><div class="lbl">Ainda não leram</div></div>
       </div>
 
+      <!-- Seletor de escola: só aparece para quem administra mais de uma -->
+      <div id="school-bar" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:12px 14px;border-radius:12px;background:var(--card);border:1px solid var(--border);">
+        <span style="font-size:0.85rem;color:var(--muted);font-weight:600;">Escola</span>
+        <div id="school-chips" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+      </div>
+
       <div class="tabs">
         <button class="tab active" data-tab="students">👥 Alunos</button>
         <button class="tab" data-tab="posaula">📄 Pós-aula</button>
@@ -434,6 +440,7 @@
       <div class="tab-panel" id="tab-add">
         <div class="form-card">
           <h2>Cadastrar novo aluno</h2>
+          <p id="add-escola-aviso" style="display:none;font-size:0.85rem;margin:0 0 16px 0;padding:10px 12px;border-radius:8px;background:#fff8e1;border:1px solid #fde68a;color:#7c5e10;"></p>
           <div class="field"><label>Nome completo</label><input type="text" id="f-name" placeholder="Mateus Richter" /></div>
           <div class="field"><label>E-mail (para login)</label><input type="email" id="f-email" placeholder="aluno@email.com" /></div>
           <div class="field"><label>Senha inicial</label><input type="password" id="f-pass" placeholder="Mínimo 6 caracteres" /></div>
@@ -569,6 +576,65 @@
 
     let adminUid = null;
     let allStudents = [];
+
+    // ── ESCOLAS ─────────────────────────────────────────────────────────
+    // Mesma lista das regras do Firestore e das Cloud Functions.
+    const ADMIN_EMAILS = ['cmo.sep@gmail.com', 'czkenglish@gmail.com'];
+    const ESCOLA_PADRAO = 'science-english';
+    let escolas = [];       // as que o usuário atual administra
+    let escolaAtual = localStorage.getItem('adminEscola') || ESCOLA_PADRAO;
+
+    /**
+     * Descobre quais escolas o usuário administra e desenha o seletor.
+     * Admin global vê todas; professor vê só a dele (e o seletor nem aparece).
+     */
+    async function carregarEscolas(todosAlunos) {
+      const email = auth.currentUser?.email || '';
+      const snap  = await getDocs(collection(db, 'schools'));
+      const todas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      const ehAdminGlobal = ADMIN_EMAILS.includes(email);
+      escolas = ehAdminGlobal ? todas : todas.filter(e => e.ownerEmail === email);
+
+      if (!escolas.length) escolas = [{ id: ESCOLA_PADRAO, name: 'Science English' }];
+      if (!escolas.some(e => e.id === escolaAtual)) escolaAtual = escolas[0].id;
+
+      const barra = document.getElementById('school-bar');
+      const chips = document.getElementById('school-chips');
+      if (escolas.length < 2) { barra.style.display = 'none'; return; }
+
+      const contar = id => todosAlunos.filter(s => (s.schoolId || ESCOLA_PADRAO) === id && !s.archived).length;
+
+      chips.innerHTML = escolas.map(e => {
+        const ativa = e.id === escolaAtual;
+        const cor   = e.theme?.accent || 'var(--green)';
+        return `<button type="button" data-escola="${e.id}" style="
+          padding:8px 14px;border-radius:999px;cursor:pointer;font-family:inherit;font-size:0.85rem;font-weight:700;
+          border:1.5px solid ${ativa ? cor : 'var(--border)'};
+          background:${ativa ? cor : 'transparent'};
+          color:${ativa ? '#fff' : 'var(--muted)'};
+        ">${esc(e.name || e.id)} <span style="opacity:0.75;font-weight:500;">· ${contar(e.id)}</span></button>`;
+      }).join('');
+
+      barra.style.display = 'flex';
+
+      // Deixa explícito em qual escola o próximo aluno vai nascer.
+      const aviso = document.getElementById('add-escola-aviso');
+      if (aviso) {
+        const nome = escolas.find(e => e.id === escolaAtual)?.name || escolaAtual;
+        aviso.textContent = `Este aluno será cadastrado na escola "${nome}". Para outra escola, troque no seletor no topo da página.`;
+        aviso.style.display = 'block';
+      }
+
+      chips.querySelectorAll('button[data-escola]').forEach(btn => {
+        btn.onclick = () => {
+          if (btn.dataset.escola === escolaAtual) return;
+          escolaAtual = btn.dataset.escola;
+          localStorage.setItem('adminEscola', escolaAtual);
+          loadStudents();
+        };
+      });
+    }
     let parsedActivityJson = null;
     let parsedCorrectionJson = null;
     let selectedActivityId = null;
@@ -947,8 +1013,14 @@
       const grid   = document.getElementById('students-grid');
       const exGrid = document.getElementById('exalunos-grid');
       const snap = await getDocs(collection(db, 'students'));
-      allStudents = snap.docs.map(d => ({ uid: d.id, ...d.data() }))
+
+      const todos = snap.docs.map(d => ({ uid: d.id, ...d.data() }))
         .sort((a, b) => (a.name || a.firstName || '').localeCompare(b.name || b.firstName || '', 'pt', { sensitivity: 'base' }));
+
+      await carregarEscolas(todos);
+
+      // Daqui pra baixo o admin enxerga só a escola selecionada.
+      allStudents = todos.filter(s => (s.schoolId || ESCOLA_PADRAO) === escolaAtual);
 
       // Mantém a lista pública "niveis" sincronizada (lida ao vivo pelo skill de atividades)
       allStudents.filter(s => !s.archived).forEach(s => {
@@ -1869,6 +1941,7 @@
           name, firstName: name.split(' ')[0],
           slug: name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-'),
           email, level: level || '', senha: pass,
+          schoolId: escolaAtual,   // nasce na escola que está selecionada no topo
           ...(meta > 0 && { metaAnual: meta }),
           ...(aula.texto && { diasAulas: aula.texto }),
           ...(aula.aulaDias.length && { aulaDias: aula.aulaDias }),
