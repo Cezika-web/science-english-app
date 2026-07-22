@@ -69,12 +69,31 @@ OU pelo menos uma lacuna \`_______\`. Nunca deixe uma frase sem resposta possív
 3. Emojis nos títulos (📚 🗺️ 🔤 ✍️ 🎯 🔁).
 4. Baseie tudo no conteúdo real das pós-aulas: o vocabulário que apareceu, a
    gramática trabalhada e os erros que o aluno cometeu. Não invente tema novo.
-5. Se o professor deixar observações, siga-as — elas têm prioridade sobre o padrão.`;
+5. Se o professor deixar observações, siga-as — elas têm prioridade sobre o padrão.
+
+## Vocabulário da aula
+
+Além das atividades, devolva em "vocabulario" as **3 palavras ou expressões
+mais importantes** da aula, cada uma com a tradução. São as que valem a pena o
+aluno guardar — não inclua palavras óbvias que ele já domina.`;
 
 export const SCHEMA_ATIVIDADES = {
   type: 'object',
   properties: {
     week: { type: 'string', description: 'Ex: 22 DE JULHO 2026' },
+    vocabulario: {
+      type: 'array',
+      description: 'As 3 palavras-chave da aula, para a lista de vocabulário do aluno',
+      items: {
+        type: 'object',
+        properties: {
+          en: { type: 'string', description: 'a palavra ou expressão em inglês' },
+          pt: { type: 'string', description: 'a tradução em português' },
+        },
+        required: ['en', 'pt'],
+        additionalProperties: false,
+      },
+    },
     activities: {
       type: 'array',
       items: {
@@ -102,7 +121,7 @@ export const SCHEMA_ATIVIDADES = {
       },
     },
   },
-  required: ['week', 'activities'],
+  required: ['week', 'vocabulario', 'activities'],
   additionalProperties: false,
 };
 
