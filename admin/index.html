@@ -229,10 +229,18 @@
         <div class="stat-card"><div class="val" id="stat-unread">—</div><div class="lbl">Ainda não leram</div></div>
       </div>
 
+      <!-- Faixa do espelho: some quando o admin volta ao painel dele -->
+      <div id="espelho-bar" style="display:none;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding:12px 16px;border-radius:12px;background:#fff8e1;border:1px solid #fde68a;color:#7c5e10;">
+        <span style="font-size:0.88rem;font-weight:700;">👁️ Você está vendo o painel como o professor vê</span>
+        <span style="font-size:0.82rem;flex:1;min-width:200px;">As abas de correção, vocabulário e extras estão escondidas — é assim que ele encontra o painel.</span>
+        <button type="button" id="btn-sair-espelho" style="padding:7px 14px;border-radius:8px;border:1px solid #d9a441;background:#fff;color:#7c5e10;cursor:pointer;font-family:inherit;font-weight:700;font-size:0.82rem;">Voltar ao meu painel</button>
+      </div>
+
       <!-- Seletor de escola: só aparece para quem administra mais de uma -->
       <div id="school-bar" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:12px 14px;border-radius:12px;background:var(--card);border:1px solid var(--border);">
         <span style="font-size:0.85rem;color:var(--muted);font-weight:600;">Escola</span>
         <div id="school-chips" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+        <button type="button" id="btn-espelho" style="margin-left:auto;padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;font-weight:600;font-size:0.82rem;">👁️ Ver como o professor</button>
       </div>
 
       <div class="tabs">
@@ -372,7 +380,7 @@
           </div>
         </div>
 
-        <div class="form-card">
+        <div class="form-card" id="card-colar-json">
           <h2>📤 Publicar Atividades no App</h2>
           <p style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;">
             Cole o JSON gerado pela skill <strong>alunos-app</strong>, escolha o aluno e clique em Publicar.
@@ -676,6 +684,15 @@
 
       barra.style.display = 'flex';
 
+      // Espelho: só faz sentido para quem administra mais de uma escola.
+      const btnEspelho = document.getElementById('btn-espelho');
+      const btnSair    = document.getElementById('btn-sair-espelho');
+      if (btnEspelho && !btnEspelho.dataset.ligado) {
+        btnEspelho.dataset.ligado = '1';
+        btnEspelho.onclick = () => { verComoProfessor = true;  aplicarPapel(); };
+        btnSair.onclick    = () => { verComoProfessor = false; aplicarPapel(); };
+      }
+
       // Deixa explícito em qual escola o próximo aluno vai nascer.
       const aviso = document.getElementById('add-escola-aviso');
       if (aviso) {
@@ -738,6 +755,34 @@
         document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
       };
     });
+
+    // ── O QUE O PROFESSOR ENXERGA ───────────────────────────────────────
+    // Ele gera pós-aula e atividades e acompanha os alunos. Publicar JSON na
+    // mão, corrigir e o material de apoio ficam com o administrador.
+    const ABAS_DO_PROFESSOR = ['students', 'posaula', 'publish', 'add', 'exalunos'];
+    let verComoProfessor = false;   // espelho: o admin olhando o painel dele
+
+    function aplicarPapel() {
+      const ehProfessor = verComoProfessor || !ADMIN_EMAILS.includes(auth.currentUser?.email || '');
+
+      document.querySelectorAll('.tab').forEach(t => {
+        t.style.display = (!ehProfessor || ABAS_DO_PROFESSOR.includes(t.dataset.tab)) ? '' : 'none';
+      });
+
+      // A aba de atividades tem duas metades: o gerador (dele) e o
+      // "colar JSON" (do administrador).
+      const colarJson = document.getElementById('card-colar-json');
+      if (colarJson) colarJson.style.display = ehProfessor ? 'none' : '';
+
+      // Se a aba aberta sumiu, volta para os alunos.
+      const abaAtiva = document.querySelector('.tab.active');
+      if (abaAtiva && abaAtiva.style.display === 'none') {
+        document.querySelector('.tab[data-tab="students"]')?.click();
+      }
+
+      const faixa = document.getElementById('espelho-bar');
+      if (faixa) faixa.style.display = verComoProfessor ? 'flex' : 'none';
+    }
 
     // ── LOAD STUDENTS ───────────────────────────────────────────────────
     function studentRowHtml(s, archived) {
@@ -1233,6 +1278,7 @@
         .sort((a, b) => (a.name || a.firstName || '').localeCompare(b.name || b.firstName || '', 'pt', { sensitivity: 'base' }));
 
       await carregarEscolas(todos);
+      aplicarPapel();
 
       // Daqui pra baixo o admin enxerga só a escola selecionada.
       allStudents = todos.filter(s => (s.schoolId || ESCOLA_PADRAO) === escolaAtual);
