@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CZK Admin</title>
+  <title>Painel Admin</title>
   <style>
     :root {
       --accent: #2f86e6; --accent-dark: #1f6fd1; --green: #36b37e;
@@ -203,9 +203,9 @@
   <!-- Admin Login -->
   <div id="admin-login">
     <div class="admin-login-card">
-      <h1>🔐 CZK Admin</h1>
+      <h1>🔐 Painel do Professor</h1>
       <p>Área exclusiva do professor</p>
-      <div class="field"><label>E-mail</label><input type="email" id="a-email" placeholder="cesar@czkenglish.com" /></div>
+      <div class="field"><label>E-mail</label><input type="email" id="a-email" placeholder="seu@email.com" /></div>
       <div class="field"><label>Senha</label><input type="password" id="a-pass" placeholder="••••••••" /></div>
       <button class="btn-add" style="width:100%" id="a-login-btn">Entrar</button>
       <div class="form-msg" id="a-login-err"></div>
@@ -215,7 +215,7 @@
   <!-- Admin Panel -->
   <div id="admin-panel" style="display:none;">
     <div class="header">
-      <h1>CZK English — Painel Admin</h1>
+      <h1 id="admin-titulo">Painel Admin</h1>
       <div style="display:flex;align-items:center;gap:12px;">
         <span id="admin-email-display"></span>
         <button class="btn-sm-danger" id="a-logout-btn">Sair</button>
@@ -788,6 +788,19 @@
         rotulo.textContent = assistido
           ? '✨ Modo assistido — material gerado no painel'
           : '✍️ Modo manual — material colado em JSON';
+      }
+
+      // O cabeçalho segue a escola: cada professor vê a marca dele.
+      const escola = escolas.find(e => e.id === escolaAtual);
+      const nome = escola?.name || 'Painel';
+      const titulo = document.getElementById('admin-titulo');
+      if (titulo) titulo.textContent = `${nome} — Painel`;
+      document.title = `${nome} — Admin`;
+
+      // Barra do topo na cor da escola.
+      const cabecalho = document.querySelector('.header');
+      if (cabecalho && escola?.theme?.accentDark) {
+        cabecalho.style.background = escola.theme.accentDark;
       }
     }
 
