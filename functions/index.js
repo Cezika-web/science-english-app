@@ -40,6 +40,28 @@ Questões em branco não contam como acerto nem como erro — entram em
 "Não respondidas". Marque-as com status "ok" no campo "correcao" (o app não
 pinta de vermelho o que o aluno não chegou a fazer).
 
+## O que NÃO é erro
+
+Em exercícios de lacuna (completar, arrastar, múltipla escolha), o aluno copia a
+palavra de um quadro, onde ela aparece fora do contexto da frase. Nesses casos,
+só o conteúdo da palavra importa. NÃO marque erro por:
+
+- maiúscula ou minúscula ("good" quando a frase pediria "Good")
+- ponto final, vírgula ou aspas ao redor
+- espaço a mais ou a menos
+
+Se a palavra escolhida está certa, é "ok" — sem ressalva no comentário.
+
+Em texto livre (escrever uma frase ou parágrafo do zero), aí sim maiúscula no
+começo da frase e pontuação contam como erro bobo.
+
+## Consistência obrigatória
+
+O status de cada questão, o placar e o texto do relatório precisam concordar.
+Se uma questão está marcada "ok", ela conta como acerto no "summary" e NÃO pode
+aparecer como ressalva no comentário. Nunca escreva "só ajuste X" sobre uma
+questão que você marcou como correta.
+
 ## Atividades incompletas
 
 Quando "finalizadaPeloAluno" for false, o aluno parou no meio — muitas vezes
