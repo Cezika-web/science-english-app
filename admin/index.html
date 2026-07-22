@@ -650,11 +650,8 @@
     let escolas = [];       // as que o usuário atual administra
     let escolaAtual = localStorage.getItem('adminEscola') || ESCOLA_PADRAO;
 
-    /**
-     * Descobre quais escolas o usuário administra e desenha o seletor.
-     * Admin global vê todas; professor vê só a dele (e o seletor nem aparece).
-     */
-    async function carregarEscolas(todosAlunos) {
+    /** Descobre quais escolas o usuário administra. Roda antes de buscar alunos. */
+    async function carregarEscolas() {
       const email = auth.currentUser?.email || '';
       const snap  = await getDocs(collection(db, 'schools'));
       const todas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -664,7 +661,10 @@
 
       if (!escolas.length) escolas = [{ id: ESCOLA_PADRAO, name: 'Science English' }];
       if (!escolas.some(e => e.id === escolaAtual)) escolaAtual = escolas[0].id;
+    }
 
+    /** Desenha o seletor de escolas, com a contagem de alunos de cada uma. */
+    function desenharEscolas(todosAlunos) {
       const barra = document.getElementById('school-bar');
       const chips = document.getElementById('school-chips');
       if (escolas.length < 2) { barra.style.display = 'none'; return; }
@@ -1272,13 +1272,28 @@
     async function loadStudents() {
       const grid   = document.getElementById('students-grid');
       const exGrid = document.getElementById('exalunos-grid');
-      const snap = await getDocs(collection(db, 'students'));
+      // As escolas vêm primeiro: elas decidem como buscar os alunos.
+      // Se falhar, o painel segue funcionando como antes, numa escola só.
+      let ehAdminGlobal = true;
+      try {
+        await carregarEscolas();
+        ehAdminGlobal = ADMIN_EMAILS.includes(auth.currentUser?.email || '');
+      } catch (e) {
+        console.error('Não consegui carregar as escolas:', e);
+        document.getElementById('school-bar').style.display = 'none';
+      }
+      aplicarPapel();
+
+      // O admin lê a coleção inteira; o professor só pode ler os alunos da
+      // escola dele, então a consulta precisa vir filtrada.
+      const snap = ehAdminGlobal
+        ? await getDocs(collection(db, 'students'))
+        : await getDocs(query(collection(db, 'students'), where('schoolId', '==', escolaAtual)));
 
       const todos = snap.docs.map(d => ({ uid: d.id, ...d.data() }))
         .sort((a, b) => (a.name || a.firstName || '').localeCompare(b.name || b.firstName || '', 'pt', { sensitivity: 'base' }));
 
-      await carregarEscolas(todos);
-      aplicarPapel();
+      try { desenharEscolas(todos); } catch (e) { console.error('Seletor de escolas:', e); }
 
       // Daqui pra baixo o admin enxerga só a escola selecionada.
       allStudents = todos.filter(s => (s.schoolId || ESCOLA_PADRAO) === escolaAtual);
