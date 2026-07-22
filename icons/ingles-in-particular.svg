@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="Inglês in Particular">
+  <defs>
+    <path id="arcoTopo" d="M 100,100 m -74,0 a 74,74 0 0 1 148,0" fill="none"/>
+    <path id="arcoBase" d="M 100,100 m -66,0 a 66,66 0 0 0 132,0" fill="none"/>
+  </defs>
+
+  <circle cx="100" cy="100" r="98" fill="#1B4F9C"/>
+  <circle cx="100" cy="100" r="80" fill="#fff"/>
+  <circle cx="100" cy="100" r="80" fill="none" stroke="#14396F" stroke-width="2"/>
+
+  <text font-family="Georgia, 'Times New Roman', serif" font-size="19" font-weight="700"
+        fill="#fff" letter-spacing="1.5">
+    <textPath href="#arcoTopo" startOffset="50%" text-anchor="middle">INGLÊS IN PARTICULAR</textPath>
+  </text>
+  <text font-family="Georgia, 'Times New Roman', serif" font-size="13" font-weight="600"
+        fill="#fff" letter-spacing="2">
+    <textPath href="#arcoBase" startOffset="50%" text-anchor="middle">ALCIR MANDACARÓ</textPath>
+  </text>
+
+  <text x="100" y="92" text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', serif" font-size="52" font-weight="700" fill="#1B4F9C">IP</text>
+  <line x1="62" y1="106" x2="138" y2="106" stroke="#1B4F9C" stroke-width="2"/>
+  <text x="100" y="130" text-anchor="middle"
+        font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="12" font-weight="600"
+        fill="#14396F" letter-spacing="1">ENGLISH TUTOR</text>
+</svg>
