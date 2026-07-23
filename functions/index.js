@@ -596,11 +596,27 @@ export const publicarPosAula = onCall(
       }
     }
 
+    // Todas as pós-aulas de uma turma são da mesma escola.
+    const { escola } = await carregarAlunoEEscola(email, lista[0].uid);
+
+    // 1 crédito de pós-aula por aluno — numa turma de 3, são 3.
+    const creditos = escola.plan?.creditosPosaula;
+    const controlaCredito = typeof creditos === 'number';
+    if (controlaCredito && creditos < lista.length) {
+      throw new HttpsError(
+        'failed-precondition',
+        `Você tem ${creditos} crédito(s) de pós-aula e esta publicação precisa de ${lista.length}. Compre mais créditos para continuar.`
+      );
+    }
+
+    const lote = db.batch();
     const publicadas = [];
+
     for (const { uid, html, titulo, nome } of lista) {
       const { aluno } = await carregarAlunoEEscola(email, uid);
 
-      const doc = await db.collection(`students/${uid}/posaulas`).add({
+      const ref = db.collection(`students/${uid}/posaulas`).doc();
+      lote.set(ref, {
         title: titulo || `Pós-aula ${data || ''}`.trim(),
         html,
         createdAt: FieldValue.serverTimestamp(),
@@ -609,34 +625,55 @@ export const publicarPosAula = onCall(
         ...(lista.length > 1 && { aulaEmGrupo: true }),
       });
 
-      // Falha no push não invalida a publicação — a pós-aula já está lá.
-      let notificado = false;
-      if (aluno.fcmToken) {
-        try {
-          await getMessaging().send({
-            token: aluno.fcmToken,
-            notification: {
-              title: 'Nova pós-aula disponível!',
-              body: titulo || 'Sua pós-aula já está no app.',
-            },
-            webpush: {
-              fcmOptions: { link: 'https://cezika-web.github.io/science-english-app/' },
-            },
-          });
-          notificado = true;
-        } catch (erro) {
-          console.error('Push falhou para', uid, erro.message);
-        }
-      }
+      lote.set(db.collection('_creditos').doc(), {
+        escolaId: escola.id,
+        tipo: 'posaula',
+        quantidade: 1,
+        uid,
+        alunoNome: nome || aluno.name || '',
+        porEmail: email,
+        criadoEm: FieldValue.serverTimestamp(),
+      });
 
-      publicadas.push({ uid, nome: nome || aluno.name || '', posaulaId: doc.id, notificado });
+      publicadas.push({ uid, nome: nome || aluno.name || '', posaulaId: ref.id, fcmToken: aluno.fcmToken || null });
+    }
+
+    if (controlaCredito) {
+      lote.update(db.doc(`schools/${escola.id}`), {
+        'plan.creditosPosaula': FieldValue.increment(-lista.length),
+      });
+    }
+
+    await lote.commit();
+
+    // Notifica depois de gravar: falha no push não desfaz a publicação.
+    let notificados = 0;
+    for (const p of publicadas) {
+      if (!p.fcmToken) continue;
+      try {
+        await getMessaging().send({
+          token: p.fcmToken,
+          notification: {
+            title: 'Nova pós-aula disponível!',
+            body: 'Sua pós-aula já está no app.',
+          },
+          webpush: {
+            fcmOptions: { link: 'https://cezika-web.github.io/science-english-app/' },
+          },
+        });
+        notificados++;
+      } catch (erro) {
+        console.error('Push falhou para', p.uid, erro.message);
+      }
+      delete p.fcmToken;
     }
 
     return {
       ok: true,
       publicadas,
       total: publicadas.length,
-      notificados: publicadas.filter((p) => p.notificado).length,
+      notificados,
+      creditosRestantes: controlaCredito ? creditos - lista.length : null,
     };
   }
 );
@@ -798,13 +835,17 @@ export const publicarAtividades = onCall(
     // Todas as levas de uma turma são da mesma escola: basta olhar a primeira.
     const { escola } = await carregarAlunoEEscola(email, lista[0].uid);
 
-    // Um crédito por aluno que recebe material — numa turma de 3, são 3.
+    // 1 crédito a cada 3 atividades, por aluno. 4 a 6 = 2 créditos, etc.
+    // O crédito cobre gerar E corrigir — a correção não cobra de novo.
+    const creditosPorLeva = (l) => Math.ceil(l.activities.length / 3);
+    const totalCreditos = lista.reduce((s, l) => s + creditosPorLeva(l), 0);
+
     const creditos = escola.plan?.creditosAtividade;
     const controlaCredito = typeof creditos === 'number';
-    if (controlaCredito && creditos < lista.length) {
+    if (controlaCredito && creditos < totalCreditos) {
       throw new HttpsError(
         'failed-precondition',
-        `Você tem ${creditos} crédito(s) e precisa de ${lista.length} para esta turma. Fale com o administrador para recarregar.`
+        `Você tem ${creditos} crédito(s) de atividade e esta publicação precisa de ${totalCreditos}. Compre mais créditos para continuar.`
       );
     }
 
@@ -839,10 +880,11 @@ export const publicarAtividades = onCall(
         });
       }
 
+      const creditosLeva = Math.ceil(activities.length / 3);
       lote.set(db.collection('_creditos').doc(), {
         escolaId: escola.id,
         tipo: 'atividade',
-        quantidade: 1,
+        quantidade: creditosLeva,
         atividadesNaLeva: activities.length,
         uid,
         alunoNome: nome || aluno.name || '',
@@ -861,7 +903,7 @@ export const publicarAtividades = onCall(
 
     if (controlaCredito) {
       lote.update(db.doc(`schools/${escola.id}`), {
-        'plan.creditosAtividade': FieldValue.increment(-lista.length),
+        'plan.creditosAtividade': FieldValue.increment(-totalCreditos),
       });
     }
 
@@ -894,8 +936,65 @@ export const publicarAtividades = onCall(
       publicadas,
       alunos: publicadas.length,
       notificados,
-      creditosUsados: lista.length,
-      creditosRestantes: controlaCredito ? creditos - lista.length : null,
+      creditosUsados: totalCreditos,
+      creditosRestantes: controlaCredito ? creditos - totalCreditos : null,
+    };
+  }
+);
+
+/* ────────────────────────────────────────────────────────────────
+   CRÉDITOS — só o administrador ajusta o saldo de uma escola
+   ──────────────────────────────────────────────────────────────── */
+export const ajustarCreditos = onCall(
+  { ...OPCOES_PADRAO, timeoutSeconds: 60, memory: '256MiB' },
+  async (request) => {
+    const email = request.auth?.token?.email;
+    if (!ADMIN_EMAILS.includes(email)) {
+      throw new HttpsError('permission-denied', 'Somente o administrador ajusta créditos.');
+    }
+
+    const { escolaId, posaula = 0, atividade = 0, motivo = '' } = request.data || {};
+    if (!escolaId) throw new HttpsError('invalid-argument', 'Faltou a escola.');
+
+    const pa = Math.trunc(Number(posaula) || 0);
+    const at = Math.trunc(Number(atividade) || 0);
+    if (!pa && !at) throw new HttpsError('invalid-argument', 'Informe quantos créditos adicionar.');
+
+    const ref = db.doc(`schools/${escolaId}`);
+    const snap = await ref.get();
+    if (!snap.exists) throw new HttpsError('not-found', 'Escola não encontrada.');
+
+    const plan = snap.data().plan || {};
+    const lote = db.batch();
+    const patch = {};
+
+    // Só mexe no saldo que já é controlado (número). Se está ilimitado
+    // (null, como no trial), adicionar crédito não faz sentido — ignora.
+    if (pa && typeof plan.creditosPosaula === 'number') {
+      patch['plan.creditosPosaula'] = FieldValue.increment(pa);
+    }
+    if (at && typeof plan.creditosAtividade === 'number') {
+      patch['plan.creditosAtividade'] = FieldValue.increment(at);
+    }
+    if (Object.keys(patch).length) lote.update(ref, patch);
+
+    lote.set(db.collection('_creditos').doc(), {
+      escolaId,
+      tipo: 'recarga',
+      posaula: pa,
+      atividade: at,
+      motivo,
+      porEmail: email,
+      criadoEm: FieldValue.serverTimestamp(),
+    });
+
+    await lote.commit();
+
+    const atual = (await ref.get()).data().plan || {};
+    return {
+      ok: true,
+      creditosPosaula: atual.creditosPosaula ?? null,
+      creditosAtividade: atual.creditosAtividade ?? null,
     };
   }
 );
