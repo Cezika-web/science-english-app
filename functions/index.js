@@ -451,82 +451,128 @@ const OPCOES_PADRAO = {
  * devolve para o professor conferir a prévia antes.
  */
 export const gerarPosAula = onCall(
-  { ...OPCOES_PADRAO, secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 540, memory: '512MiB' },
+  { ...OPCOES_PADRAO, secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 3600, memory: '512MiB' },
   async (request) => {
     const email = request.auth?.token?.email;
     if (!email) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
 
-    const { uid, transcricao, youtubeUrl = '', data } = request.data || {};
-    if (!uid) throw new HttpsError('invalid-argument', 'Faltou o aluno.');
+    const { uids = [], transcricao, youtubeUrl = '', data } = request.data || {};
+    const alunosIds = Array.isArray(uids) ? uids.filter(Boolean).slice(0, 12) : [];
+
+    if (!alunosIds.length) throw new HttpsError('invalid-argument', 'Escolha ao menos um aluno.');
     if (!transcricao || transcricao.trim().length < 200) {
       throw new HttpsError('invalid-argument', 'A transcrição está muito curta para gerar uma pós-aula.');
     }
 
-    const { aluno, escola } = await carregarAlunoEEscola(email, uid);
-
     const dataAula = data || new Date().toLocaleDateString('pt-BR');
-    const template = montarTemplate({ escola, aluno, data: dataAula, youtubeUrl: youtubeUrl.trim() });
+    const emGrupo = alunosIds.length > 1;
 
+    // Carrega todos antes de gerar: se um aluno não for acessível, o professor
+    // descobre agora e não depois de pagar por metade das pós-aulas.
+    const turma = [];
+    for (const uid of alunosIds) {
+      const { aluno, escola } = await carregarAlunoEEscola(email, uid);
+      turma.push({ uid, aluno, escola });
+    }
+
+    const nomes = turma.map((t) => t.aluno.name || '').filter(Boolean);
     const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
 
-    let resposta;
-    try {
-      const stream = client.messages.stream({
-        model: MODEL,
-        max_tokens: 32000,
-        system: [
-          { type: 'text', text: REGRAS_POS_AULA, cache_control: { type: 'ephemeral' } },
-        ],
-        messages: [
-          {
-            role: 'user',
-            content:
-              `Aluno: ${aluno.name || ''} (nível ${aluno.level || 'não informado'})\n` +
-              `Data da aula: ${dataAula}\n\n` +
-              `TEMPLATE A PREENCHER (devolva este HTML com o conteúdo real no lugar dos marcadores):\n\n` +
-              template +
-              `\n\n─────────────\nTRANSCRIÇÃO DA AULA:\n\n${transcricao}`,
-          },
-        ],
-      });
-      resposta = await stream.finalMessage();
-    } catch (erro) {
-      console.error('Falha ao gerar pós-aula:', erro);
-      throw new HttpsError('internal', `Não consegui gerar a pós-aula: ${erro.message}`);
-    }
-
-    if (resposta.stop_reason === 'max_tokens') {
-      throw new HttpsError('internal', 'A pós-aula ficou longa demais e foi cortada. Tente com uma transcrição menor.');
-    }
-
-    const blocoTexto = resposta.content.find((b) => b.type === 'text');
-    if (!blocoTexto) throw new HttpsError('internal', 'A API não devolveu a pós-aula.');
-
-    // O modelo às vezes embrulha em bloco de código — desembrulha.
-    let html = blocoTexto.text.trim();
-    const emBloco = html.match(/^```(?:html)?\s*\n([\s\S]*?)\n```$/);
-    if (emBloco) html = emBloco[1].trim();
-
-    if (!html.toLowerCase().startsWith('<!doctype html')) {
-      throw new HttpsError('internal', 'A pós-aula veio num formato inesperado. Tente gerar de novo.');
-    }
-
-    const tituloMatch = html.match(/<h1>([\s\S]*?)<\/h1>/i);
-    const titulo = tituloMatch
-      ? tituloMatch[1].replace(/<[^>]*>/g, '').trim()
-      : `Pós-aula ${dataAula}`;
-
+    const resultados = [];
+    let custoTotal = 0;
     const lote = db.batch();
-    const custoUSD = registrarUso(lote, {
-      tipo: 'posaula',
-      uid,
-      escolaId: escola.id,
-      uso: resposta.usage,
-      extra: { alunoNome: aluno.name || '', publicada: false },
-    });
+
+    // Uma pós-aula por aluno: mesmo conteúdo de aula, mas as correções, o
+    // tempo de fala e os exemplos são os daquele aluno.
+    for (const { uid, aluno, escola } of turma) {
+      const template = montarTemplate({ escola, aluno, data: dataAula, youtubeUrl: youtubeUrl.trim() });
+
+      const contextoGrupo = emGrupo
+        ? `Esta foi uma AULA EM GRUPO, com: ${nomes.join(', ')}.\n` +
+          `Você está escrevendo a pós-aula de ${aluno.name}, e só dele.\n` +
+          `- O conteúdo ensinado é comum a todos e vale para ele também.\n` +
+          `- Mas as CORREÇÕES devem ser apenas dos erros que ${aluno.name} cometeu.\n` +
+          `  Nunca mostre a ele o erro de um colega.\n` +
+          `- As FRASES MODELO devem priorizar o que ${aluno.name} disse ou tentou dizer.\n` +
+          `- No TEMPO DE FALA, compare o professor com ${aluno.name} apenas — a\n` +
+          `  porcentagem dele é sobre o total da aula, então numa aula em grupo é\n` +
+          `  naturalmente menor. Isso é normal e não deve ser comentado como problema.\n` +
+          `- Se ${aluno.name} falou pouco, escreva uma pós-aula mais curta e honesta,\n` +
+          `  em vez de encher com o que os outros disseram.\n\n`
+        : '';
+
+      let resposta;
+      try {
+        const stream = client.messages.stream({
+          model: MODEL,
+          max_tokens: 32000,
+          system: [
+            { type: 'text', text: REGRAS_POS_AULA, cache_control: { type: 'ephemeral' } },
+          ],
+          messages: [
+            {
+              role: 'user',
+              content:
+                `Aluno: ${aluno.name || ''} (nível ${aluno.level || 'não informado'})\n` +
+                `Data da aula: ${dataAula}\n\n` +
+                contextoGrupo +
+                `TEMPLATE A PREENCHER (devolva este HTML com o conteúdo real no lugar dos marcadores):\n\n` +
+                template +
+                `\n\n─────────────\nTRANSCRIÇÃO DA AULA:\n\n${transcricao}`,
+            },
+          ],
+        });
+        resposta = await stream.finalMessage();
+      } catch (erro) {
+        console.error(`Falha ao gerar pós-aula de ${aluno.name}:`, erro);
+        throw new HttpsError('internal', `Não consegui gerar a pós-aula de ${aluno.name}: ${erro.message}`);
+      }
+
+      if (resposta.stop_reason === 'max_tokens') {
+        throw new HttpsError('internal', `A pós-aula de ${aluno.name} ficou longa demais e foi cortada.`);
+      }
+
+      const blocoTexto = resposta.content.find((b) => b.type === 'text');
+      if (!blocoTexto) throw new HttpsError('internal', `A API não devolveu a pós-aula de ${aluno.name}.`);
+
+      let html = blocoTexto.text.trim();
+      const emBloco = html.match(/^```(?:html)?\s*\n([\s\S]*?)\n```$/);
+      if (emBloco) html = emBloco[1].trim();
+
+      if (!html.toLowerCase().startsWith('<!doctype html')) {
+        throw new HttpsError('internal', `A pós-aula de ${aluno.name} veio num formato inesperado.`);
+      }
+
+      const tituloMatch = html.match(/<h1>([\s\S]*?)<\/h1>/i);
+      const titulo = tituloMatch
+        ? tituloMatch[1].replace(/<[^>]*>/g, '').trim()
+        : `Pós-aula ${dataAula}`;
+
+      custoTotal += registrarUso(lote, {
+        tipo: 'posaula',
+        uid,
+        escolaId: escola.id,
+        uso: resposta.usage,
+        extra: {
+          alunoNome: aluno.name || '',
+          publicada: false,
+          emGrupo,
+          ...(emGrupo && { turma: nomes }),
+        },
+      });
+
+      resultados.push({ uid, nome: aluno.name || '', html, titulo });
+    }
+
     await lote.commit();
 
-    return { ok: true, html, titulo, data: dataAula, custoUSD };
+    return {
+      ok: true,
+      emGrupo,
+      data: dataAula,
+      posaulas: resultados,
+      custoUSD: Number(custoTotal.toFixed(4)),
+    };
   }
 );
 
@@ -535,48 +581,63 @@ export const gerarPosAula = onCall(
  * Recebe o HTML da prévia — não gera de novo, então não gasta tokens.
  */
 export const publicarPosAula = onCall(
-  { ...OPCOES_PADRAO, timeoutSeconds: 120, memory: '256MiB' },
+  { ...OPCOES_PADRAO, timeoutSeconds: 300, memory: '256MiB' },
   async (request) => {
     const email = request.auth?.token?.email;
     if (!email) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
 
-    const { uid, html, titulo, data } = request.data || {};
-    if (!uid || !html) throw new HttpsError('invalid-argument', 'Faltou o aluno ou o conteúdo.');
-    if (!String(html).toLowerCase().startsWith('<!doctype html')) {
-      throw new HttpsError('invalid-argument', 'Conteúdo da pós-aula inválido.');
-    }
+    const { posaulas = [], data } = request.data || {};
+    const lista = Array.isArray(posaulas) ? posaulas.filter((p) => p?.uid && p?.html) : [];
+    if (!lista.length) throw new HttpsError('invalid-argument', 'Faltou o conteúdo para publicar.');
 
-    const { aluno } = await carregarAlunoEEscola(email, uid);
-
-    const doc = await db.collection(`students/${uid}/posaulas`).add({
-      title: titulo || `Pós-aula ${data || ''}`.trim(),
-      html,
-      createdAt: FieldValue.serverTimestamp(),
-      readAt: null,
-      geradaPorIA: true,
-    });
-
-    // Notifica o aluno. Falha no push não invalida a publicação.
-    let notificado = false;
-    if (aluno.fcmToken) {
-      try {
-        await getMessaging().send({
-          token: aluno.fcmToken,
-          notification: {
-            title: 'Nova pós-aula disponível!',
-            body: titulo || 'Sua pós-aula já está no app.',
-          },
-          webpush: {
-            fcmOptions: { link: 'https://cezika-web.github.io/science-english-app/' },
-          },
-        });
-        notificado = true;
-      } catch (erro) {
-        console.error('Push falhou para', uid, erro.message);
+    for (const p of lista) {
+      if (!String(p.html).toLowerCase().startsWith('<!doctype html')) {
+        throw new HttpsError('invalid-argument', `Conteúdo inválido na pós-aula de ${p.nome || p.uid}.`);
       }
     }
 
-    return { ok: true, posaulaId: doc.id, notificado };
+    const publicadas = [];
+    for (const { uid, html, titulo, nome } of lista) {
+      const { aluno } = await carregarAlunoEEscola(email, uid);
+
+      const doc = await db.collection(`students/${uid}/posaulas`).add({
+        title: titulo || `Pós-aula ${data || ''}`.trim(),
+        html,
+        createdAt: FieldValue.serverTimestamp(),
+        readAt: null,
+        geradaPorIA: true,
+        ...(lista.length > 1 && { aulaEmGrupo: true }),
+      });
+
+      // Falha no push não invalida a publicação — a pós-aula já está lá.
+      let notificado = false;
+      if (aluno.fcmToken) {
+        try {
+          await getMessaging().send({
+            token: aluno.fcmToken,
+            notification: {
+              title: 'Nova pós-aula disponível!',
+              body: titulo || 'Sua pós-aula já está no app.',
+            },
+            webpush: {
+              fcmOptions: { link: 'https://cezika-web.github.io/science-english-app/' },
+            },
+          });
+          notificado = true;
+        } catch (erro) {
+          console.error('Push falhou para', uid, erro.message);
+        }
+      }
+
+      publicadas.push({ uid, nome: nome || aluno.name || '', posaulaId: doc.id, notificado });
+    }
+
+    return {
+      ok: true,
+      publicadas,
+      total: publicadas.length,
+      notificados: publicadas.filter((p) => p.notificado).length,
+    };
   }
 );
 
@@ -610,82 +671,110 @@ async function conteudoDaPosAula(uid, posaulaId) {
  * o professor confere a prévia antes. Gerar de novo não consome crédito.
  */
 export const gerarAtividades = onCall(
-  { ...OPCOES_PADRAO, secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 540, memory: '512MiB' },
+  { ...OPCOES_PADRAO, secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 3600, memory: '512MiB' },
   async (request) => {
     const email = request.auth?.token?.email;
     if (!email) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
 
-    const { uid, posaulaIds = [], quantidade = 3, observacoes = '' } = request.data || {};
-    if (!uid) throw new HttpsError('invalid-argument', 'Faltou o aluno.');
-    if (!posaulaIds.length) throw new HttpsError('invalid-argument', 'Escolha ao menos uma pós-aula.');
+    const { uids = [], posaulaIds = [], quantidade = 3, observacoes = '' } = request.data || {};
+    const alunosIds = Array.isArray(uids) ? uids.filter(Boolean).slice(0, 12) : [];
+    if (!alunosIds.length) throw new HttpsError('invalid-argument', 'Escolha ao menos um aluno.');
 
     const qtd = Math.max(1, Math.min(20, Number(quantidade) || 3));
-
-    const { aluno, escola } = await carregarAlunoEEscola(email, uid);
-
-    const posaulas = (await Promise.all(
-      posaulaIds.slice(0, 6).map((id) => conteudoDaPosAula(uid, id))
-    )).filter(Boolean);
-
-    if (!posaulas.length) {
-      throw new HttpsError('not-found', 'Não consegui ler o conteúdo das pós-aulas escolhidas.');
-    }
-
-    const nivel = ((aluno.level || '').match(/\(([^)]+)\)/) || [])[1] || aluno.level || 'A1';
+    const emGrupo = alunosIds.length > 1;
 
     const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
-
-    let resposta;
-    try {
-      const stream = client.messages.stream({
-        model: MODEL,
-        max_tokens: 32000,
-        system: [
-          { type: 'text', text: REGRAS_ATIVIDADES, cache_control: { type: 'ephemeral' } },
-        ],
-        output_config: { format: { type: 'json_schema', schema: SCHEMA_ATIVIDADES } },
-        messages: [
-          {
-            role: 'user',
-            content:
-              `Aluno: ${aluno.name || ''} — nível ${nivel}\n` +
-              `Quantidade de atividades a gerar: ${qtd}\n` +
-              (observacoes.trim() ? `\nObservações do professor (prioridade sobre o padrão):\n${observacoes.trim()}\n` : '') +
-              `\nCONTEÚDO DAS PÓS-AULAS:\n\n` +
-              posaulas.map((p, i) => `── Pós-aula ${i + 1}: ${p.titulo} ──\n${p.texto}`).join('\n\n'),
-          },
-        ],
-      });
-      resposta = await stream.finalMessage();
-    } catch (erro) {
-      console.error('Falha ao gerar atividades:', erro);
-      throw new HttpsError('internal', `Não consegui gerar as atividades: ${erro.message}`);
-    }
-
-    if (resposta.stop_reason === 'max_tokens') {
-      throw new HttpsError('internal', 'As atividades ficaram longas demais. Tente gerar menos de uma vez.');
-    }
-
-    const blocoTexto = resposta.content.find((b) => b.type === 'text');
-    if (!blocoTexto) throw new HttpsError('internal', 'A API não devolveu as atividades.');
-    const dados = JSON.parse(blocoTexto.text);
-
+    const resultados = [];
+    let custoTotal = 0;
     const lote = db.batch();
-    const custoUSD = registrarUso(lote, {
-      tipo: 'atividades',
-      uid,
-      escolaId: escola.id,
-      uso: resposta.usage,
-      extra: { alunoNome: aluno.name || '', quantidade: dados.activities?.length || 0, publicada: false },
-    });
+
+    for (const uid of alunosIds) {
+      const { aluno, escola } = await carregarAlunoEEscola(email, uid);
+
+      // Um aluno só: o professor escolheu as pós-aulas na tela.
+      // Turma: cada aluno tem a própria pós-aula, então usamos a mais recente dele.
+      let ids = emGrupo ? [] : posaulaIds.slice(0, 6);
+      if (!ids.length) {
+        const recentes = await db
+          .collection(`students/${uid}/posaulas`)
+          .orderBy('createdAt', 'desc')
+          .limit(1)
+          .get();
+        ids = recentes.docs.map((d) => d.id);
+      }
+
+      const posaulas = (await Promise.all(ids.map((id) => conteudoDaPosAula(uid, id)))).filter(Boolean);
+      if (!posaulas.length) {
+        throw new HttpsError('not-found', `${aluno.name || 'O aluno'} não tem pós-aula para servir de base.`);
+      }
+
+      const nivel = ((aluno.level || '').match(/\(([^)]+)\)/) || [])[1] || aluno.level || 'A1';
+
+      let resposta;
+      try {
+        const stream = client.messages.stream({
+          model: MODEL,
+          max_tokens: 32000,
+          system: [
+            { type: 'text', text: REGRAS_ATIVIDADES, cache_control: { type: 'ephemeral' } },
+          ],
+          output_config: { format: { type: 'json_schema', schema: SCHEMA_ATIVIDADES } },
+          messages: [
+            {
+              role: 'user',
+              content:
+                `Aluno: ${aluno.name || ''} — nível ${nivel}\n` +
+                `Quantidade de atividades a gerar: ${qtd}\n` +
+                (observacoes.trim() ? `\nObservações do professor (prioridade sobre o padrão):\n${observacoes.trim()}\n` : '') +
+                `\nCONTEÚDO DAS PÓS-AULAS:\n\n` +
+                posaulas.map((p, i) => `── Pós-aula ${i + 1}: ${p.titulo} ──\n${p.texto}`).join('\n\n'),
+            },
+          ],
+        });
+        resposta = await stream.finalMessage();
+      } catch (erro) {
+        console.error(`Falha ao gerar atividades de ${aluno.name}:`, erro);
+        throw new HttpsError('internal', `Não consegui gerar as atividades de ${aluno.name}: ${erro.message}`);
+      }
+
+      if (resposta.stop_reason === 'max_tokens') {
+        throw new HttpsError('internal', `As atividades de ${aluno.name} ficaram longas demais. Tente gerar menos de uma vez.`);
+      }
+
+      const blocoTexto = resposta.content.find((b) => b.type === 'text');
+      if (!blocoTexto) throw new HttpsError('internal', `A API não devolveu as atividades de ${aluno.name}.`);
+      const dados = JSON.parse(blocoTexto.text);
+
+      custoTotal += registrarUso(lote, {
+        tipo: 'atividades',
+        uid,
+        escolaId: escola.id,
+        uso: resposta.usage,
+        extra: {
+          alunoNome: aluno.name || '',
+          quantidade: dados.activities?.length || 0,
+          publicada: false,
+          emGrupo,
+        },
+      });
+
+      resultados.push({
+        uid,
+        nome: aluno.name || '',
+        nivel,
+        week: dados.week,
+        activities: dados.activities,
+        vocabulario: dados.vocabulario || [],
+      });
+    }
+
     await lote.commit();
 
     return {
       ok: true,
-      week: dados.week,
-      activities: dados.activities,
-      vocabulario: dados.vocabulario || [],
-      custoUSD,
+      emGrupo,
+      levas: resultados,
+      custoUSD: Number(custoTotal.toFixed(4)),
     };
   }
 );
@@ -695,101 +784,118 @@ export const gerarAtividades = onCall(
  * quantas atividades tem a leva.
  */
 export const publicarAtividades = onCall(
-  { ...OPCOES_PADRAO, timeoutSeconds: 120, memory: '256MiB' },
+  { ...OPCOES_PADRAO, timeoutSeconds: 300, memory: '256MiB' },
   async (request) => {
     const email = request.auth?.token?.email;
     if (!email) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
 
-    const { uid, week, activities, vocabulario = [] } = request.data || {};
-    if (!uid || !Array.isArray(activities) || !activities.length) {
-      throw new HttpsError('invalid-argument', 'Faltou o aluno ou as atividades.');
-    }
+    const { levas = [] } = request.data || {};
+    const lista = Array.isArray(levas)
+      ? levas.filter((l) => l?.uid && Array.isArray(l.activities) && l.activities.length)
+      : [];
+    if (!lista.length) throw new HttpsError('invalid-argument', 'Faltou o aluno ou as atividades.');
 
-    const { aluno, escola } = await carregarAlunoEEscola(email, uid);
+    // Todas as levas de uma turma são da mesma escola: basta olhar a primeira.
+    const { escola } = await carregarAlunoEEscola(email, lista[0].uid);
 
-    // Crédito: número = controlado; null/ausente = ilimitado.
+    // Um crédito por aluno que recebe material — numa turma de 3, são 3.
     const creditos = escola.plan?.creditosAtividade;
     const controlaCredito = typeof creditos === 'number';
-    if (controlaCredito && creditos < 1) {
+    if (controlaCredito && creditos < lista.length) {
       throw new HttpsError(
         'failed-precondition',
-        'Seus créditos de atividade acabaram. Fale com o administrador para recarregar.'
+        `Você tem ${creditos} crédito(s) e precisa de ${lista.length} para esta turma. Fale com o administrador para recarregar.`
       );
     }
 
     const lote = db.batch();
-    const colecao = db.collection(`students/${uid}/activities`);
+    const publicadas = [];
 
-    for (const act of activities) {
-      lote.set(colecao.doc(), {
-        week: week || '',
-        title: act.title || '',
-        emoji: act.emoji || '📚',
-        parts: act.parts || [],
-        status: 'pending',
-        notified: true,   // a notificação sai aqui mesmo, não pelo cron
-        geradaPorIA: true,
-        createdAt: FieldValue.serverTimestamp(),
+    for (const { uid, week, activities, vocabulario = [], nome } of lista) {
+      const { aluno } = await carregarAlunoEEscola(email, uid);
+
+      for (const act of activities) {
+        lote.set(db.collection(`students/${uid}/activities`).doc(), {
+          week: week || '',
+          title: act.title || '',
+          emoji: act.emoji || '📚',
+          parts: act.parts || [],
+          status: 'pending',
+          notified: true,   // a notificação sai aqui mesmo, não pelo cron
+          geradaPorIA: true,
+          ...(lista.length > 1 && { aulaEmGrupo: true }),
+          createdAt: FieldValue.serverTimestamp(),
+        });
+      }
+
+      // O vocabulário da aula vai junto, na mesma leva.
+      for (const v of vocabulario) {
+        if (!v?.en || !v?.pt) continue;
+        lote.set(db.collection(`students/${uid}/vocabulario`).doc(), {
+          en: v.en,
+          pt: v.pt,
+          source: week || '',
+          date: FieldValue.serverTimestamp(),
+        });
+      }
+
+      lote.set(db.collection('_creditos').doc(), {
+        escolaId: escola.id,
+        tipo: 'atividade',
+        quantidade: 1,
+        atividadesNaLeva: activities.length,
+        uid,
+        alunoNome: nome || aluno.name || '',
+        porEmail: email,
+        criadoEm: FieldValue.serverTimestamp(),
+      });
+
+      publicadas.push({
+        uid,
+        nome: nome || aluno.name || '',
+        atividades: activities.length,
+        palavras: vocabulario.filter((v) => v?.en && v?.pt).length,
+        fcmToken: aluno.fcmToken || null,
       });
     }
 
-    // O vocabulário da aula vai junto, na mesma leva.
-    const vocabRef = db.collection(`students/${uid}/vocabulario`);
-    for (const v of vocabulario) {
-      if (!v?.en || !v?.pt) continue;
-      lote.set(vocabRef.doc(), {
-        en: v.en,
-        pt: v.pt,
-        source: week || '',
-        date: FieldValue.serverTimestamp(),
-      });
-    }
-
-    // Um crédito por leva, não por atividade.
     if (controlaCredito) {
       lote.update(db.doc(`schools/${escola.id}`), {
-        'plan.creditosAtividade': FieldValue.increment(-1),
+        'plan.creditosAtividade': FieldValue.increment(-lista.length),
       });
     }
-
-    lote.set(db.collection('_creditos').doc(), {
-      escolaId: escola.id,
-      tipo: 'atividade',
-      quantidade: 1,
-      atividadesNaLeva: activities.length,
-      uid,
-      alunoNome: aluno.name || '',
-      porEmail: email,
-      criadoEm: FieldValue.serverTimestamp(),
-    });
 
     await lote.commit();
 
-    let notificado = false;
-    if (aluno.fcmToken) {
+    // Notifica depois de gravar: falha no push não desfaz a publicação.
+    let notificados = 0;
+    for (const p of publicadas) {
+      if (!p.fcmToken) continue;
       try {
         await getMessaging().send({
-          token: aluno.fcmToken,
+          token: p.fcmToken,
           notification: {
             title: 'Novas atividades disponíveis!',
-            body: `${activities.length} atividade${activities.length !== 1 ? 's' : ''} esperando por você.`,
+            body: `${p.atividades} atividade${p.atividades !== 1 ? 's' : ''} esperando por você.`,
           },
           webpush: {
             fcmOptions: { link: 'https://cezika-web.github.io/science-english-app/' },
           },
         });
-        notificado = true;
+        notificados++;
       } catch (erro) {
-        console.error('Push falhou para', uid, erro.message);
+        console.error('Push falhou para', p.uid, erro.message);
       }
+      delete p.fcmToken;
     }
 
     return {
       ok: true,
-      publicadas: activities.length,
-      palavras: vocabulario.filter((v) => v?.en && v?.pt).length,
-      notificado,
-      creditosRestantes: controlaCredito ? creditos - 1 : null,
+      publicadas,
+      alunos: publicadas.length,
+      notificados,
+      creditosUsados: lista.length,
+      creditosRestantes: controlaCredito ? creditos - lista.length : null,
     };
   }
 );
