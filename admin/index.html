@@ -239,6 +239,7 @@
 
       <div class="tabs">
         <button class="tab active" data-tab="students">👥 Alunos</button>
+        <button class="tab" data-tab="creditos">💳 Créditos</button>
         <button class="tab" data-tab="posaula">📄 Pós-aula</button>
         <button class="tab" data-tab="publish">📤 Atividades</button>
         <button class="tab" data-tab="correct">✅ Correção</button>
@@ -262,6 +263,53 @@
         </p>
         <div class="students-grid" id="exalunos-grid">
           <div class="loading">Carregando...</div>
+        </div>
+      </div>
+
+      <!-- CRÉDITOS -->
+      <div class="tab-panel" id="tab-creditos">
+        <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px;">
+          <div class="stat-card" style="flex:1;min-width:200px;">
+            <div class="val" id="cred-posaula" style="color:var(--brand,#16A34A);">—</div>
+            <div class="lbl">Créditos de pós-aula</div>
+          </div>
+          <div class="stat-card" style="flex:1;min-width:200px;">
+            <div class="val" id="cred-atividade" style="color:var(--brand,#16A34A);">—</div>
+            <div class="lbl">Créditos de atividade</div>
+          </div>
+        </div>
+
+        <div class="form-card" style="margin-bottom:18px;">
+          <h2>💳 Comprar créditos</h2>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;">
+            <strong>Pós-aula:</strong> 1 crédito por pós-aula publicada.<br>
+            <strong>Atividade:</strong> 1 crédito a cada 3 atividades (a correção está inclusa, não cobra à parte).
+          </p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn-add" id="btn-comprar-posaula" type="button" style="flex:1;min-width:180px;">Comprar pós-aula</button>
+            <button class="btn-add" id="btn-comprar-atividade" type="button" style="flex:1;min-width:180px;">Comprar atividade</button>
+          </div>
+          <div id="cred-trial" style="display:none;margin-top:14px;padding:10px 12px;border-radius:8px;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;font-size:0.85rem;"></div>
+        </div>
+
+        <!-- Só o administrador: recarregar o saldo de uma escola após o pagamento -->
+        <div class="form-card" id="card-admin-creditos" style="display:none;">
+          <h2>🔑 Recarregar (administrador)</h2>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;">
+            Depois que o professor pagar, adicione os créditos aqui. Vale para a escola selecionada no topo.
+          </p>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;">
+            <div class="field" style="flex:1;min-width:140px;margin:0;">
+              <label>+ Pós-aula</label>
+              <input type="number" id="rec-posaula" min="0" value="0">
+            </div>
+            <div class="field" style="flex:1;min-width:140px;margin:0;">
+              <label>+ Atividade</label>
+              <input type="number" id="rec-atividade" min="0" value="0">
+            </div>
+            <button class="btn-add" id="btn-recarregar" type="button" style="flex:0 0 auto;">Adicionar</button>
+          </div>
+          <div class="form-msg" id="rec-msg"></div>
         </div>
       </div>
 
@@ -766,7 +814,7 @@
     // trocar de escola no seletor do topo.
     const ABAS_POR_MODO = {
       manual:    ['students', 'publish', 'correct', 'vocab', 'extras', 'add', 'exalunos'],
-      assistido: ['students', 'posaula', 'publish', 'extras', 'add', 'exalunos'],
+      assistido: ['students', 'creditos', 'posaula', 'publish', 'extras', 'add', 'exalunos'],
     };
 
     function modoDaEscolaAtual() {
@@ -815,6 +863,84 @@
       const cabecalho = document.querySelector('.header');
       if (cabecalho && escola?.theme?.accentDark) {
         cabecalho.style.background = escola.theme.accentDark;
+      }
+
+      if (assistido) atualizarPainelCreditos(escola);
+    }
+
+    // ── PAINEL DE CRÉDITOS ──────────────────────────────────────────────
+    // Número de créditos → tem saldo; null/ausente → ilimitado (ex.: trial).
+    function textoSaldo(v) {
+      return typeof v === 'number' ? String(v) : '∞';
+    }
+
+    function atualizarPainelCreditos(escola) {
+      const plan = escola?.plan || {};
+      const pa = plan.creditosPosaula;
+      const at = plan.creditosAtividade;
+
+      const elPa = document.getElementById('cred-posaula');
+      const elAt = document.getElementById('cred-atividade');
+      if (elPa) elPa.textContent = textoSaldo(pa);
+      if (elAt) elAt.textContent = textoSaldo(at);
+
+      // Aviso de teste grátis, quando o saldo é ilimitado.
+      const trial = document.getElementById('cred-trial');
+      const ilimitado = typeof pa !== 'number' && typeof at !== 'number';
+      if (trial) {
+        if (ilimitado) {
+          const ate = plan.trialAte ? ` até ${plan.trialAte.split('-').reverse().join('/')}` : '';
+          trial.textContent = `🎁 Período de teste${ate}: créditos ilimitados. O consumo está sendo registrado.`;
+          trial.style.display = 'block';
+        } else {
+          trial.style.display = 'none';
+        }
+      }
+
+      // O botão de compra abre o WhatsApp do administrador com o pedido pronto.
+      const WHATS_ADMIN = '5515981426993'; // TODO: trocar pelo seu WhatsApp
+      const pedido = (tipo) => {
+        const nome = escola?.name || 'minha escola';
+        const txt = `Olá! Sou da escola "${nome}" e quero comprar créditos de ${tipo} no painel.`;
+        return `https://wa.me/${WHATS_ADMIN}?text=${encodeURIComponent(txt)}`;
+      };
+      const bpa = document.getElementById('btn-comprar-posaula');
+      const bat = document.getElementById('btn-comprar-atividade');
+      if (bpa) bpa.onclick = () => window.open(pedido('pós-aula'), '_blank');
+      if (bat) bat.onclick = () => window.open(pedido('atividade'), '_blank');
+
+      // Recarga: só o administrador global vê.
+      const cardAdmin = document.getElementById('card-admin-creditos');
+      const ehAdmin = ADMIN_EMAILS.includes(auth.currentUser?.email || '');
+      if (cardAdmin) cardAdmin.style.display = ehAdmin ? '' : 'none';
+
+      const btnRec = document.getElementById('btn-recarregar');
+      if (btnRec && ehAdmin && !btnRec.dataset.ligado) {
+        btnRec.dataset.ligado = '1';
+        btnRec.onclick = async () => {
+          const posaula   = Number(document.getElementById('rec-posaula').value) || 0;
+          const atividade = Number(document.getElementById('rec-atividade').value) || 0;
+          const recMsg = document.getElementById('rec-msg');
+          if (!posaula && !atividade) { recMsg.textContent = 'Informe quantos créditos adicionar.'; recMsg.style.color = 'crimson'; return; }
+
+          btnRec.disabled = true; btnRec.textContent = 'Adicionando...';
+          try {
+            const ajustar = httpsCallable(fns, 'ajustarCreditos', { timeout: 60000 });
+            const { data } = await ajustar({ escolaId: escolaAtual, posaula, atividade });
+            recMsg.style.color = 'green';
+            recMsg.textContent = `✅ Saldo atualizado — pós-aula: ${textoSaldo(data.creditosPosaula)}, atividade: ${textoSaldo(data.creditosAtividade)}.`;
+            document.getElementById('rec-posaula').value = 0;
+            document.getElementById('rec-atividade').value = 0;
+            // Reflete o novo saldo na tela sem recarregar tudo.
+            const esc = escolas.find(e => e.id === escolaAtual);
+            if (esc) { esc.plan = { ...(esc.plan||{}), creditosPosaula: data.creditosPosaula, creditosAtividade: data.creditosAtividade }; atualizarPainelCreditos(esc); }
+          } catch (e) {
+            recMsg.style.color = 'crimson';
+            recMsg.textContent = `Erro: ${e.message}`;
+          } finally {
+            btnRec.disabled = false; btnRec.textContent = 'Adicionar';
+          }
+        };
       }
     }
 
