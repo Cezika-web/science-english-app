@@ -275,8 +275,14 @@
           </p>
 
           <div class="field">
-            <label>Aluno</label>
-            <select id="pa-student"></select>
+            <label>Aluno(s) da aula</label>
+            <div id="pa-alunos" style="border:1px solid var(--border);border-radius:10px;padding:12px;max-height:200px;overflow:auto;background:#fff;">
+              <div style="font-size:0.85rem;color:var(--muted);">Carregando alunos...</div>
+            </div>
+            <p style="font-size:0.8rem;color:var(--muted);margin:6px 0 0 0;">
+              👥 Marque mais de um para aula em grupo. Cada aluno recebe a
+              <strong>própria pós-aula</strong>, com as correções e o tempo de fala dele.
+            </p>
           </div>
 
           <div class="field">
@@ -303,8 +309,9 @@
           <div id="pa-preview-wrap" style="display:none;margin-top:20px;">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
               <strong id="pa-preview-title" style="font-size:0.95rem;"></strong>
-              <span style="font-size:0.8rem;color:var(--muted);">Prévia — o aluno ainda não recebeu</span>
+              <span style="font-size:0.8rem;color:var(--muted);">Prévia — os alunos ainda não receberam</span>
             </div>
+            <div id="pa-abas" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
             <iframe id="pa-preview" style="width:100%;height:520px;border:1px solid var(--border);border-radius:10px;background:#fff;"></iframe>
             <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
               <button class="btn-add" id="btn-publicar-posaula" type="button" style="flex:1;min-width:200px;">🚀 Publicar para o aluno</button>
@@ -327,14 +334,20 @@
           </p>
 
           <div class="field">
-            <label>Aluno</label>
-            <select id="ga-student"></select>
+            <label>Aluno(s)</label>
+            <div id="ga-alunos" style="border:1px solid var(--border);border-radius:10px;padding:12px;max-height:200px;overflow:auto;background:#fff;">
+              <div style="font-size:0.85rem;color:var(--muted);">Carregando alunos...</div>
+            </div>
+            <p style="font-size:0.8rem;color:var(--muted);margin:6px 0 0 0;">
+              👥 Marque mais de um para aula em grupo. Cada aluno recebe atividades
+              <strong>no nível dele</strong>, a partir da própria pós-aula.
+            </p>
           </div>
 
-          <div class="field">
+          <div class="field" id="ga-campo-posaulas">
             <label>Pós-aulas que servem de base</label>
             <div id="ga-posaulas" style="border:1px solid var(--border);border-radius:10px;padding:12px;max-height:220px;overflow:auto;background:#fff;">
-              <div style="font-size:0.85rem;color:var(--muted);">Escolha o aluno para ver as pós-aulas.</div>
+              <div style="font-size:0.85rem;color:var(--muted);">Marque um aluno para ver as pós-aulas.</div>
             </div>
           </div>
 
@@ -366,6 +379,7 @@
               <strong id="ga-preview-title" style="font-size:0.95rem;"></strong>
               <span style="font-size:0.8rem;color:var(--muted);">Prévia — o aluno ainda não recebeu</span>
             </div>
+            <div id="ga-abas" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
             <div id="ga-preview" style="border:1px solid var(--border);border-radius:10px;background:#fff;padding:14px;max-height:460px;overflow:auto;"></div>
             <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
               <button class="btn-add" id="btn-publicar-atividades" type="button" style="flex:1;min-width:200px;">🚀 Publicar (1 crédito)</button>
@@ -904,10 +918,29 @@
     function populateStudentSelects(active) {
       const opts = '<option value="">Selecione o aluno...</option>' +
         active.map(s => `<option value="${s.uid}">${esc(s.name || s.firstName || 'Aluno')}</option>`).join('');
-      ['pub-student', 'voc-student', 'pa-student', 'ga-student'].forEach(id => {
+      ['pub-student', 'voc-student'].forEach(id => {
         const sel = document.getElementById(id);
         if (sel) { const prev = sel.value; sel.innerHTML = opts; sel.value = prev; }
       });
+
+      // Pós-aula e atividades aceitam turma, então usam caixas de marcar.
+      const listas = [
+        { id: 'pa-alunos', vazio: 'Nenhum aluno cadastrado nesta escola.' },
+        { id: 'ga-alunos', vazio: 'Nenhum aluno cadastrado nesta escola.' },
+      ];
+      for (const { id, vazio } of listas) {
+        const cx = document.getElementById(id);
+        if (!cx) continue;
+        const marcados = new Set([...cx.querySelectorAll('input:checked')].map(c => c.value));
+        cx.innerHTML = active.length
+          ? active.map(s => `
+            <label style="display:flex;gap:10px;align-items:center;padding:6px 0;cursor:pointer;">
+              <input type="checkbox" value="${s.uid}" ${marcados.has(s.uid) ? 'checked' : ''}>
+              <span style="font-size:0.9rem;">${esc(s.name || s.firstName || 'Aluno')}</span>
+              ${s.level ? `<span style="font-size:0.78rem;color:var(--muted);">${esc(s.level)}</span>` : ''}
+            </label>`).join('')
+          : `<div style="font-size:0.85rem;color:var(--muted);">${vazio}</div>`;
+      }
     }
 
     // ── GERAR PÓS-AULA ──────────────────────────────────────────────────
@@ -922,6 +955,7 @@
       const msg      = document.getElementById('pa-msg');
       const wrap     = document.getElementById('pa-preview-wrap');
       const iframe   = document.getElementById('pa-preview');
+      const abas     = document.getElementById('pa-abas');
       const tituloEl = document.getElementById('pa-preview-title');
       const inputData= document.getElementById('pa-date');
 
@@ -932,15 +966,28 @@
       const esconderPrevia = () => {
         wrap.style.display = 'none';
         iframe.srcdoc = '';
+        abas.innerHTML = '';
         posaulaGerada = null;
       };
 
+      // Mostra a pós-aula de um aluno e destaca a aba dele.
+      const mostrar = (i) => {
+        const p = posaulaGerada.posaulas[i];
+        iframe.srcdoc = p.html;
+        abas.querySelectorAll('button').forEach((b, j) => {
+          const ativo = j === i;
+          b.style.background  = ativo ? 'var(--green)' : 'transparent';
+          b.style.color       = ativo ? '#fff' : 'var(--muted)';
+          b.style.borderColor = ativo ? 'var(--green)' : 'var(--border)';
+        });
+      };
+
       btnGerar.onclick = async () => {
-        const uid         = document.getElementById('pa-student').value;
+        const uids = [...document.querySelectorAll('#pa-alunos input:checked')].map(c => c.value);
         const transcricao = document.getElementById('pa-transcript').value.trim();
         const youtubeUrl  = document.getElementById('pa-youtube').value.trim();
 
-        if (!uid)  return aviso('Escolha o aluno.', 'crimson');
+        if (!uids.length) return aviso('Marque ao menos um aluno.', 'crimson');
         if (transcricao.length < 200) return aviso('A transcrição está muito curta.', 'crimson');
 
         // Data em pt-BR, sem depender do fuso do navegador.
@@ -951,32 +998,44 @@
         btnGerar.disabled = true;
 
         const inicio = Date.now();
+        const emGrupo = uids.length > 1;
         const tick = () => {
           const s = Math.floor((Date.now() - inicio) / 1000);
           btnGerar.textContent = `✨ Gerando... ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-          aviso(s < 30 ? 'Lendo a transcrição...'
+          aviso(emGrupo
+            ? `Gerando ${uids.length} pós-aulas, uma para cada aluno. Leva alguns minutos.`
+            : (s < 30 ? 'Lendo a transcrição...'
               : s < 90 ? 'Montando o resumo e o vocabulário...'
-                       : 'Escrevendo as correções e o dever de casa...', 'var(--muted)');
+                       : 'Escrevendo as correções e o dever de casa...'), 'var(--muted)');
         };
         tick();
         const cronometro = setInterval(tick, 1000);
 
         try {
-          const gerar = httpsCallable(fns, 'gerarPosAula', { timeout: 540000 });
-          const { data } = await gerar({ uid, transcricao, youtubeUrl, data: dataAula });
+          const gerar = httpsCallable(fns, 'gerarPosAula', { timeout: 3600000 });
+          const { data } = await gerar({ uids, transcricao, youtubeUrl, data: dataAula });
 
-          clearInterval(cronometro);
-          posaulaGerada = { html: data.html, titulo: data.titulo, data: data.data, uid };
+          posaulaGerada = { posaulas: data.posaulas, data: data.data };
 
-          tituloEl.textContent = data.titulo;
-          iframe.srcdoc = data.html;
+          tituloEl.textContent = data.posaulas.length > 1
+            ? `${data.posaulas.length} pós-aulas — aula em grupo`
+            : data.posaulas[0].titulo;
+
+          // Com turma, uma aba por aluno para conferir cada uma.
+          abas.innerHTML = data.posaulas.length > 1
+            ? data.posaulas.map((p, i) => `<button type="button" data-i="${i}" style="padding:7px 13px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;font-weight:700;font-size:0.82rem;">${esc(p.nome)}</button>`).join('')
+            : '';
+          abas.querySelectorAll('button').forEach(b => {
+            b.onclick = () => mostrar(Number(b.dataset.i));
+          });
+
+          mostrar(0);
           wrap.style.display = 'block';
           aviso(`Prévia pronta — custo US$ ${data.custoUSD}. Confira antes de publicar.`, 'green');
           wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         } catch (e) {
-          clearInterval(cronometro);
           aviso(e.code === 'functions/deadline-exceeded'
-            ? 'A geração demorou mais que o esperado. Tente de novo com uma transcrição menor.'
+            ? 'A geração demorou mais que o esperado. Tente com menos alunos por vez.'
             : `Erro: ${e.message}`, 'crimson');
         } finally {
           clearInterval(cronometro);
@@ -987,17 +1046,16 @@
 
       btnPublicar.onclick = async () => {
         if (!posaulaGerada) return;
-        if (!confirm('Publicar esta pós-aula? O aluno recebe a notificação na hora.')) return;
+        const n = posaulaGerada.posaulas.length;
+        if (!confirm(`Publicar ${n} pós-aula${n !== 1 ? 's' : ''}?\n\nCada aluno recebe a dele e a notificação sai na hora.`)) return;
 
         btnPublicar.disabled = true;
         btnPublicar.textContent = 'Publicando...';
         try {
-          const publicar = httpsCallable(fns, 'publicarPosAula', { timeout: 120000 });
+          const publicar = httpsCallable(fns, 'publicarPosAula', { timeout: 300000 });
           const { data } = await publicar(posaulaGerada);
 
-          aviso(data.notificado
-            ? '✅ Publicada! O aluno já recebeu a notificação.'
-            : '✅ Publicada! (O aluno ainda não autorizou notificações — vai ver ao abrir o app.)', 'green');
+          aviso(`✅ ${data.total} pós-aula(s) publicada(s) — ${data.notificados} aluno(s) notificado(s).`, 'green');
 
           esconderPrevia();
           document.getElementById('pa-transcript').value = '';
@@ -1023,18 +1081,21 @@
       const btnGerar = document.getElementById('btn-gerar-atividades');
       if (!btnGerar) return;
 
-      const selAluno  = document.getElementById('ga-student');
-      const listaPos  = document.getElementById('ga-posaulas');
-      const inputQtd  = document.getElementById('ga-qtd');
-      const chips     = document.getElementById('ga-qtd-chips');
-      const msg       = document.getElementById('ga-msg');
-      const wrap      = document.getElementById('ga-preview-wrap');
-      const previa    = document.getElementById('ga-preview');
-      const tituloEl  = document.getElementById('ga-preview-title');
-      const btnPub    = document.getElementById('btn-publicar-atividades');
-      const btnDesc   = document.getElementById('btn-descartar-atividades');
+      const listaAlunos = document.getElementById('ga-alunos');
+      const campoPos    = document.getElementById('ga-campo-posaulas');
+      const listaPos    = document.getElementById('ga-posaulas');
+      const inputQtd    = document.getElementById('ga-qtd');
+      const chips       = document.getElementById('ga-qtd-chips');
+      const msg         = document.getElementById('ga-msg');
+      const wrap        = document.getElementById('ga-preview-wrap');
+      const previa      = document.getElementById('ga-preview');
+      const tituloEl    = document.getElementById('ga-preview-title');
+      const abas        = document.getElementById('ga-abas');
+      const btnPub      = document.getElementById('btn-publicar-atividades');
+      const btnDesc     = document.getElementById('btn-descartar-atividades');
 
       const aviso = (t, c) => { msg.textContent = t; msg.style.color = c; };
+      const marcados = () => [...listaAlunos.querySelectorAll('input:checked')].map(c => c.value);
 
       const pintarChips = () => {
         const v = String(inputQtd.value);
@@ -1055,92 +1116,125 @@
       const esconderPrevia = () => {
         wrap.style.display = 'none';
         previa.innerHTML = '';
+        abas.innerHTML = '';
         atividadesGeradas = null;
       };
 
-      // Ao trocar de aluno, lista as pós-aulas dele para escolher a base.
-      selAluno.onchange = async () => {
+      // Com um aluno só, o professor escolhe as pós-aulas. Com turma, cada
+      // aluno tem a própria pós-aula, então o servidor usa a mais recente
+      // de cada um — não faz sentido escolher a de um para todos.
+      async function atualizarPosaulas() {
         esconderPrevia();
-        const uid = selAluno.value;
-        if (!uid) {
-          listaPos.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);">Escolha o aluno para ver as pós-aulas.</div>';
+        const uids = marcados();
+
+        if (uids.length !== 1) {
+          campoPos.style.display = uids.length > 1 ? 'none' : '';
+          if (!uids.length) {
+            listaPos.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);">Marque um aluno para ver as pós-aulas.</div>';
+          }
           return;
         }
+
+        campoPos.style.display = '';
         listaPos.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);">Carregando...</div>';
         try {
-          const snap = await getDocs(query(collection(db, 'students', uid, 'posaulas'), orderBy('createdAt', 'desc')));
+          const snap = await getDocs(query(collection(db, 'students', uids[0], 'posaulas'), orderBy('createdAt', 'desc')));
           const itens = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-          if (!itens.length) {
-            listaPos.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);">Este aluno ainda não tem pós-aula.</div>';
-            return;
-          }
-          // A mais recente já vem marcada — é o caso mais comum.
-          listaPos.innerHTML = itens.map((p, i) => `
-            <label style="display:flex;gap:10px;align-items:flex-start;padding:7px 0;cursor:pointer;border-bottom:1px solid var(--border);">
-              <input type="checkbox" value="${p.id}" ${i === 0 ? 'checked' : ''} style="margin-top:3px;">
-              <span style="font-size:0.88rem;">${esc(p.title || 'Pós-aula')}</span>
-            </label>`).join('');
+          listaPos.innerHTML = itens.length
+            ? itens.map((p, i) => `
+              <label style="display:flex;gap:10px;align-items:flex-start;padding:7px 0;cursor:pointer;border-bottom:1px solid var(--border);">
+                <input type="checkbox" value="${p.id}" ${i === 0 ? 'checked' : ''} style="margin-top:3px;">
+                <span style="font-size:0.88rem;">${esc(p.title || 'Pós-aula')}</span>
+              </label>`).join('')
+            : '<div style="font-size:0.85rem;color:var(--muted);">Este aluno ainda não tem pós-aula.</div>';
         } catch (e) {
           listaPos.innerHTML = `<div style="font-size:0.85rem;color:crimson;">Erro ao listar: ${esc(e.message)}</div>`;
         }
+      }
+
+      listaAlunos.addEventListener('change', atualizarPosaulas);
+
+      const mostrar = (i) => {
+        const leva = atividadesGeradas.levas[i];
+        const vocab = leva.vocabulario || [];
+        const blocoVocab = vocab.length ? `
+          <div style="margin-bottom:16px;padding:12px;border-radius:8px;background:#f0f9ff;border:1px solid #bae6fd;">
+            <div style="font-weight:700;margin-bottom:8px;font-size:0.9rem;">📖 Vocabulário da aula</div>
+            ${vocab.map(v => `<div style="font-size:0.88rem;padding:3px 0;"><strong>${esc(v.en)}</strong> — ${esc(v.pt)}</div>`).join('')}
+          </div>` : '';
+
+        previa.innerHTML = blocoVocab + leva.activities.map((a, k) => `
+          <div style="margin-bottom:16px;padding-bottom:14px;${k < leva.activities.length - 1 ? 'border-bottom:1px solid var(--border);' : ''}">
+            <div style="font-weight:700;margin-bottom:8px;">${a.emoji || '📚'} ${esc(a.title || '')}</div>
+            ${(a.parts || []).map(p => `
+              <div style="margin:10px 0 0 0;padding:10px;background:#f8fafc;border-radius:8px;">
+                <div style="font-size:0.8rem;color:var(--muted);font-weight:700;margin-bottom:6px;">
+                  ${esc(p.title || p.id)} · ${esc(p.type || '')}
+                </div>
+                <div style="font-size:0.88rem;">${p.content || ''}</div>
+              </div>`).join('')}
+          </div>`).join('');
+
+        abas.querySelectorAll('button').forEach((b, j) => {
+          const ativo = j === i;
+          b.style.background  = ativo ? 'var(--green)' : 'transparent';
+          b.style.color       = ativo ? '#fff' : 'var(--muted)';
+          b.style.borderColor = ativo ? 'var(--green)' : 'var(--border)';
+        });
       };
 
       btnGerar.onclick = async () => {
-        const uid = selAluno.value;
+        const uids = marcados();
         const posaulaIds = [...listaPos.querySelectorAll('input:checked')].map(c => c.value);
         const quantidade = Number(inputQtd.value) || 3;
         const observacoes = document.getElementById('ga-obs').value.trim();
 
-        if (!uid) return aviso('Escolha o aluno.', 'crimson');
-        if (!posaulaIds.length) return aviso('Marque ao menos uma pós-aula.', 'crimson');
+        if (!uids.length) return aviso('Marque ao menos um aluno.', 'crimson');
+        if (uids.length === 1 && !posaulaIds.length) return aviso('Marque ao menos uma pós-aula.', 'crimson');
 
         esconderPrevia();
         btnGerar.disabled = true;
 
         const inicio = Date.now();
+        const emGrupo = uids.length > 1;
         const tick = () => {
           const s = Math.floor((Date.now() - inicio) / 1000);
           btnGerar.textContent = `✨ Gerando... ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-          aviso(s < 30 ? 'Lendo as pós-aulas...'
+          aviso(emGrupo
+            ? `Gerando atividades para ${uids.length} alunos, cada um no nível dele. Leva alguns minutos.`
+            : (s < 30 ? 'Lendo as pós-aulas...'
               : s < 90 ? 'Montando os exercícios...'
-                       : 'Variando os formatos e revisando...', 'var(--muted)');
+                       : 'Variando os formatos e revisando...'), 'var(--muted)');
         };
         tick();
         const cron = setInterval(tick, 1000);
 
         try {
-          const gerar = httpsCallable(fns, 'gerarAtividades', { timeout: 540000 });
-          const { data } = await gerar({ uid, posaulaIds, quantidade, observacoes });
+          const gerar = httpsCallable(fns, 'gerarAtividades', { timeout: 3600000 });
+          const { data } = await gerar({ uids, posaulaIds, quantidade, observacoes });
 
-          const vocab = data.vocabulario || [];
-          atividadesGeradas = { uid, week: data.week, activities: data.activities, vocabulario: vocab };
+          atividadesGeradas = { levas: data.levas };
 
-          tituloEl.textContent = `${data.activities.length} atividade(s) + ${vocab.length} palavra(s) — ${data.week}`;
+          const totalAtiv = data.levas.reduce((n, l) => n + l.activities.length, 0);
+          tituloEl.textContent = data.levas.length > 1
+            ? `${totalAtiv} atividades para ${data.levas.length} alunos`
+            : `${totalAtiv} atividade(s) — ${data.levas[0].week}`;
 
-          const blocoVocab = vocab.length ? `
-            <div style="margin-bottom:16px;padding:12px;border-radius:8px;background:#f0f9ff;border:1px solid #bae6fd;">
-              <div style="font-weight:700;margin-bottom:8px;font-size:0.9rem;">📖 Vocabulário da aula</div>
-              ${vocab.map(v => `<div style="font-size:0.88rem;padding:3px 0;"><strong>${esc(v.en)}</strong> — ${esc(v.pt)}</div>`).join('')}
-            </div>` : '';
+          abas.innerHTML = data.levas.length > 1
+            ? data.levas.map((l, i) => `<button type="button" data-i="${i}" style="padding:7px 13px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;font-weight:700;font-size:0.82rem;">${esc(l.nome)} <span style="opacity:0.7;font-weight:500;">${esc(l.nivel || '')}</span></button>`).join('')
+            : '';
+          abas.querySelectorAll('button').forEach(b => {
+            b.onclick = () => mostrar(Number(b.dataset.i));
+          });
 
-          previa.innerHTML = blocoVocab + data.activities.map((a, i) => `
-            <div style="margin-bottom:16px;padding-bottom:14px;${i < data.activities.length - 1 ? 'border-bottom:1px solid var(--border);' : ''}">
-              <div style="font-weight:700;margin-bottom:8px;">${a.emoji || '📚'} ${esc(a.title || '')}</div>
-              ${(a.parts || []).map(p => `
-                <div style="margin:10px 0 0 0;padding:10px;background:#f8fafc;border-radius:8px;">
-                  <div style="font-size:0.8rem;color:var(--muted);font-weight:700;margin-bottom:6px;">
-                    ${esc(p.title || p.id)} · ${esc(p.type || '')}
-                  </div>
-                  <div style="font-size:0.88rem;">${p.content || ''}</div>
-                </div>`).join('')}
-            </div>`).join('');
-
+          mostrar(0);
           wrap.style.display = 'block';
+          btnPub.textContent = `🚀 Publicar (${data.levas.length} crédito${data.levas.length !== 1 ? 's' : ''})`;
           aviso(`Prévia pronta — custo US$ ${data.custoUSD}. Gerar de novo não gasta crédito.`, 'green');
           wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         } catch (e) {
           aviso(e.code === 'functions/deadline-exceeded'
-            ? 'A geração demorou mais que o esperado. Tente com menos atividades.'
+            ? 'A geração demorou mais que o esperado. Tente com menos alunos ou menos atividades.'
             : `Erro: ${e.message}`, 'crimson');
         } finally {
           clearInterval(cron);
@@ -1151,20 +1245,20 @@
 
       btnPub.onclick = async () => {
         if (!atividadesGeradas) return;
-        const n = atividadesGeradas.activities.length;
-        if (!confirm(`Publicar ${n} atividade(s)?\n\nIsso consome 1 crédito e o aluno recebe a notificação na hora.`)) return;
+        const n = atividadesGeradas.levas.length;
+        const totalAtiv = atividadesGeradas.levas.reduce((s, l) => s + l.activities.length, 0);
+        if (!confirm(`Publicar ${totalAtiv} atividade(s) para ${n} aluno(s)?\n\nIsso consome ${n} crédito(s) e a notificação sai na hora.`)) return;
 
         btnPub.disabled = true;
         btnPub.textContent = 'Publicando...';
         try {
-          const publicar = httpsCallable(fns, 'publicarAtividades', { timeout: 120000 });
-          const { data } = await publicar(atividadesGeradas);
+          const publicar = httpsCallable(fns, 'publicarAtividades', { timeout: 300000 });
+          const { data } = await publicar({ levas: atividadesGeradas.levas });
 
           const saldo = data.creditosRestantes === null
             ? ''
             : ` Restam ${data.creditosRestantes} crédito(s).`;
-          const vocab = data.palavras ? ` e ${data.palavras} palavra(s) de vocabulário` : '';
-          aviso(`✅ ${data.publicadas} atividade(s)${vocab} publicada(s).${saldo}`, 'green');
+          aviso(`✅ Publicado para ${data.alunos} aluno(s) — ${data.notificados} notificado(s).${saldo}`, 'green');
 
           esconderPrevia();
           document.getElementById('ga-obs').value = '';
@@ -1172,7 +1266,7 @@
           aviso(`Erro ao publicar: ${e.message}`, 'crimson');
         } finally {
           btnPub.disabled = false;
-          btnPub.textContent = '🚀 Publicar (1 crédito)';
+          btnPub.textContent = '🚀 Publicar';
         }
       };
 
