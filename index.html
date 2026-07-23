@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <meta name="theme-color" content="#16A34A" />
+  <meta name="theme-color" content="var(--brand)" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Science English" />
@@ -17,6 +17,14 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <style>
+    :root {
+      /* Cores da escola. Trocadas em tempo de execução pelo tema do aluno. */
+      --brand: #16A34A;
+      --brand-rgb: 22,163,74;
+      --brand-dark: #064E3B;
+      --brand-dark-rgb: 6,78,59;
+      --brand-light: #22C55E;
+    }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
     html, body {
@@ -85,7 +93,7 @@
     .ex-root li { margin-bottom: 16px; padding-left: 2px; }
     .ex-root p { margin-bottom: 12px; }
     .ex-stem { font-size: 14.5px; line-height: 1.7; color: #1F2937; margin-bottom: 10px; }
-    .ex-gap { color: #16A34A; font-weight: 700; letter-spacing: 1px; }
+    .ex-gap { color: var(--brand); font-weight: 700; letter-spacing: 1px; }
     .ex-opts { display: flex; flex-direction: column; gap: 8px; }
     .ex-opt {
       display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
@@ -102,18 +110,18 @@
     .ex-opt.sel { background: rgba(37,99,235,0.1); border-color: #2563EB; color: #1E40AF; font-weight: 600; }
     .ex-opt.sel .ex-letter { background: #2563EB; color: #fff; }
     .ex-input {
-      border: none; border-bottom: 2px solid #16A34A; background: rgba(22,163,74,0.06);
+      border: none; border-bottom: 2px solid var(--brand); background: rgba(var(--brand-rgb),0.06);
       font-size: 14.5px; font-family: inherit; color: #0F172A; padding: 2px 6px;
       margin: 0 2px; outline: none; border-radius: 6px 6px 0 0; min-width: 60px;
       max-width: 100%;
     }
-    .ex-input:focus { background: rgba(22,163,74,0.14); }
+    .ex-input:focus { background: rgba(var(--brand-rgb),0.14); }
     .ex-textarea {
       width: 100%; border: 1.5px solid #E2E8F0; border-radius: 12px; background: #F8FAFC;
       font-size: 15px; font-family: inherit; color: #0F172A; padding: 12px 14px;
       outline: none; resize: none; line-height: 1.6; margin-top: 6px;
     }
-    .ex-textarea:focus { border-color: #16A34A; background: #fff; }
+    .ex-textarea:focus { border-color: var(--brand); background: #fff; }
 
     /* ── Arrastar (matching) ── */
     .ex-match { margin: 4px 0 10px; }
@@ -131,7 +139,7 @@
       padding-top: 10px; border-top: 1px dashed #E2E8F0;
     }
     .ex-match-chip {
-      background: #fff; border: 1.5px solid #16A34A; color: #064E3B;
+      background: #fff; border: 1.5px solid var(--brand); color: var(--brand-dark);
       border-radius: 12px; padding: 8px 13px; font-size: 13.5px; font-weight: 600;
       cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none;
     }
@@ -597,7 +605,7 @@ const GLASS = {
   background: 'rgba(255,255,255,0.78)',
   backdropFilter: 'blur(18px)',
   WebkitBackdropFilter: 'blur(18px)',
-  border: '1px solid rgba(22,163,74,0.15)',
+  border: '1px solid rgba(var(--brand-rgb),0.15)',
   boxShadow: '0 12px 35px rgba(15,23,42,0.08)',
   borderRadius: 28,
 };
@@ -637,8 +645,8 @@ function Spinner({ size = 28 }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%',
-      border: '3px solid rgba(22,163,74,0.15)',
-      borderTopColor: '#16A34A',
+      border: '3px solid rgba(var(--brand-rgb),0.15)',
+      borderTopColor: 'var(--brand)',
       animation: 'spin 0.8s linear infinite',
     }} />
   );
@@ -677,7 +685,7 @@ function AppHeader({ student, onNotif, showNotifBtn, onLogout, onPatchStudent })
 
   const avatarStyle = {
     width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
-    border: '1px solid rgba(22,163,74,0.25)', cursor: 'pointer',
+    border: '1px solid rgba(var(--brand-rgb),0.25)', cursor: 'pointer',
   };
   const itemStyle = {
     display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left',
@@ -688,18 +696,18 @@ function AppHeader({ student, onNotif, showNotifBtn, onLogout, onPatchStudent })
   return (
     <div style={{
       background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)',
-      borderBottom: '1px solid rgba(22,163,74,0.12)',
+      borderBottom: '1px solid rgba(var(--brand-rgb),0.12)',
       padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
       position: 'sticky', top: 0, zIndex: 100, flexShrink: 0,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{
           width: 42, height: 42, borderRadius: 13, flexShrink: 0,
-          background: 'linear-gradient(145deg,#16A34A,#064E3B)',
+          background: 'linear-gradient(145deg,var(--brand),var(--brand-dark))',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 6px 16px rgba(22,163,74,0.35)',
+          boxShadow: '0 6px 16px rgba(var(--brand-rgb),0.35)',
         }}>
-          <ChatBubble w={22} fill="#fff" dot="#16A34A" />
+          <ChatBubble w={22} fill="#fff" dot="var(--brand)" />
         </div>
         <div>
           <div style={{ fontSize: 15, fontWeight: 800, color: '#0F172A', lineHeight: 1.1 }}>Science English</div>
@@ -709,13 +717,13 @@ function AppHeader({ student, onNotif, showNotifBtn, onLogout, onPatchStudent })
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {showNotifBtn && (
           <button onClick={onNotif} title="Ativar notificacoes" style={{
-            background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.25)',
-            color: '#16A34A', borderRadius: 10, padding: '6px 10px', fontSize: 16, cursor: 'pointer', lineHeight: 1,
+            background: 'rgba(var(--brand-rgb),0.1)', border: '1px solid rgba(var(--brand-rgb),0.25)',
+            color: 'var(--brand)', borderRadius: 10, padding: '6px 10px', fontSize: 16, cursor: 'pointer', lineHeight: 1,
           }}>&#128276;</button>
         )}
         <div style={{ textAlign: 'right', marginRight: 4 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', lineHeight: 1.1 }}>{name}</div>
-          {level && <div style={{ fontSize: 10.5, color: '#16A34A', fontWeight: 600 }}>{level}</div>}
+          {level && <div style={{ fontSize: 10.5, color: 'var(--brand)', fontWeight: 600 }}>{level}</div>}
         </div>
         <div style={{ position: 'relative', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
           {student?.photo ? (
@@ -724,9 +732,9 @@ function AppHeader({ student, onNotif, showNotifBtn, onLogout, onPatchStudent })
           ) : (
             <div onClick={() => setMenuOpen(o => !o)} title="Opções" style={{
               ...avatarStyle,
-              background: 'rgba(22,163,74,0.12)',
+              background: 'rgba(var(--brand-rgb),0.12)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#064E3B', fontWeight: 800, fontSize: 16,
+              color: 'var(--brand-dark)', fontWeight: 800, fontSize: 16,
             }}>{initial}</div>
           )}
           {menuOpen && (
@@ -766,7 +774,7 @@ function BottomNav({ active, onChange }) {
       position: 'sticky', bottom: 0, left: 0, right: 0, zIndex: 200,
       background: 'rgba(255,255,255,0.93)',
       backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-      borderTop: '1px solid rgba(22,163,74,0.12)',
+      borderTop: '1px solid rgba(var(--brand-rgb),0.12)',
       display: 'flex',
       paddingBottom: 'env(safe-area-inset-bottom, 8px)',
       flexShrink: 0,
@@ -781,13 +789,13 @@ function BottomNav({ active, onChange }) {
           }}>
             <div style={{
               width: 44, height: 36, borderRadius: 12,
-              background: isActive ? 'rgba(22,163,74,0.14)' : 'transparent',
+              background: isActive ? 'rgba(var(--brand-rgb),0.14)' : 'transparent',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'background 0.2s', fontSize: 19,
             }}>{t.icon}</div>
             <span style={{
               fontSize: 10, fontWeight: isActive ? 700 : 500,
-              color: isActive ? '#064E3B' : '#94A3B8',
+              color: isActive ? 'var(--brand-dark)' : '#94A3B8',
               transition: 'color 0.2s', lineHeight: 1,
             }}>{t.label}</span>
           </button>
@@ -799,7 +807,7 @@ function BottomNav({ active, onChange }) {
 
 // ── Login ───────────────────────────────────────────────────────
 // ── Marca "science english" (estilo balão de chat) ──────────────
-function ChatBubble({ w = 44, fill = '#A7F3D0', dot = '#064E3B' }) {
+function ChatBubble({ w = 44, fill = '#A7F3D0', dot = 'var(--brand-dark)' }) {
   const h = w * 0.82;
   return (
     <svg width={w} height={h} viewBox="0 0 46 38" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -819,7 +827,7 @@ function BrandLogo({ scale = 1, dark = false }) {
     <div style={{ textAlign: 'center' }}>
       <div style={{ position: 'relative', display: 'inline-block', paddingTop: 16 * scale }}>
         <div style={{ position: 'absolute', top: -4 * scale, right: -8 * scale }}>
-          <ChatBubble w={38 * scale} fill="#E6BD8C" dot="#064E3B" />
+          <ChatBubble w={38 * scale} fill="#E6BD8C" dot="var(--brand-dark)" />
         </div>
         <div style={{ fontSize: 46 * scale, fontWeight: 800, color: main, letterSpacing: -1.5 * scale, lineHeight: 1 }}>Science</div>
       </div>
@@ -863,7 +871,7 @@ function AnimatedTagline() {
 
 function LoadingSplash() {
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'radial-gradient(120% 75% at 50% 0%, rgba(154,100,52,0.28) 0%, rgba(0,0,0,0) 48%), linear-gradient(165deg,#053C2E 0%,#064E3B 45%,#0C6B45 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 22, overflow: 'hidden', zIndex: 9999 }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'radial-gradient(120% 75% at 50% 0%, rgba(154,100,52,0.28) 0%, rgba(0,0,0,0) 48%), linear-gradient(165deg,#053C2E 0%,var(--brand-dark) 45%,#0C6B45 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 22, overflow: 'hidden', zIndex: 9999 }}>
       <BrandLogo scale={1} />
       <div style={{ marginTop: 10 }}><AnimatedTagline /></div>
       <Waves />
@@ -903,7 +911,7 @@ function LoginScreen() {
       position: 'relative', flex: 1, minHeight: '100vh',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       padding: 24, overflow: 'hidden',
-      background: 'radial-gradient(120% 75% at 50% 0%, rgba(154,100,52,0.28) 0%, rgba(0,0,0,0) 48%), linear-gradient(165deg,#053C2E 0%,#064E3B 45%,#0C6B45 100%)',
+      background: 'radial-gradient(120% 75% at 50% 0%, rgba(154,100,52,0.28) 0%, rgba(0,0,0,0) 48%), linear-gradient(165deg,#053C2E 0%,var(--brand-dark) 45%,#0C6B45 100%)',
     }}>
       <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 340, display: 'flex', flexDirection: 'column' }}>
         <div style={{ marginBottom: 26 }}><BrandLogo scale={0.95} /></div>
@@ -927,10 +935,10 @@ function LoginScreen() {
         )}
         <button onClick={handleLogin} style={{
           width: '100%', padding: 16, marginTop: 4,
-          background: 'linear-gradient(180deg,#22C55E,#16A34A)',
+          background: 'linear-gradient(180deg,var(--brand-light),var(--brand))',
           color: '#fff', border: 'none', borderRadius: 14,
           fontSize: 16, fontWeight: 800, cursor: 'pointer',
-          boxShadow: '0 10px 24px rgba(6,78,59,0.4)', fontFamily: 'inherit',
+          boxShadow: '0 10px 24px rgba(var(--brand-dark-rgb),0.4)', fontFamily: 'inherit',
         }}>Entrar</button>
       </div>
       <Waves />
@@ -950,16 +958,16 @@ function InstallBanner() {
   const base = {
     display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
     borderRadius: 16, marginBottom: 12,
-    background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.2)',
+    background: 'rgba(var(--brand-rgb),0.1)', border: '1px solid rgba(var(--brand-rgb),0.2)',
   };
   const xBtn = { background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', fontSize: 18, lineHeight: 1, flexShrink: 0, padding: 0 };
-  const actBtn = { background: '#16A34A', color: '#fff', border: 'none', borderRadius: 10, padding: '7px 12px', fontWeight: 700, fontSize: 12, cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit' };
+  const actBtn = { background: 'var(--brand)', color: '#fff', border: 'none', borderRadius: 10, padding: '7px 12px', fontWeight: 700, fontSize: 12, cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit' };
 
   if (showInstall) return (
     <div style={base}>
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: '#064E3B' }}>&#128242; Instalar app</div>
-        <div style={{ fontSize: 12, color: '#16A34A', marginTop: 2 }}>Adicione a tela inicial para acesso rapido.</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-dark)' }}>&#128242; Instalar app</div>
+        <div style={{ fontSize: 12, color: 'var(--brand)', marginTop: 2 }}>Adicione a tela inicial para acesso rapido.</div>
       </div>
       <button style={actBtn} onClick={async () => { if (!_deferredPrompt) return; _deferredPrompt.prompt(); await _deferredPrompt.userChoice; localStorage.setItem('installDismissed','1'); setShowInstall(false); _deferredPrompt = null; }}>Instalar</button>
       <button style={xBtn} onClick={() => { setShowInstall(false); localStorage.setItem('installDismissed','1'); }}>&#x2715;</button>
@@ -968,8 +976,8 @@ function InstallBanner() {
   if (showIos) return (
     <div style={base}>
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: '#064E3B' }}>&#128242; Instalar app</div>
-        <div style={{ fontSize: 12, color: '#16A34A', marginTop: 2 }}>No iPhone: Compartilhar &#8594; Adicionar a Tela de Inicio.</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-dark)' }}>&#128242; Instalar app</div>
+        <div style={{ fontSize: 12, color: 'var(--brand)', marginTop: 2 }}>No iPhone: Compartilhar &#8594; Adicionar a Tela de Inicio.</div>
       </div>
       <button style={xBtn} onClick={() => { setShowIos(false); localStorage.setItem('iosInstallDismissed','1'); }}>&#x2715;</button>
     </div>
@@ -977,8 +985,8 @@ function InstallBanner() {
   if (showNotif) return (
     <div style={base}>
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: '#064E3B' }}>&#128276; Ativar notificacoes</div>
-        <div style={{ fontSize: 12, color: '#16A34A', marginTop: 2 }}>Receba os pos-aulas neste celular.</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-dark)' }}>&#128276; Ativar notificacoes</div>
+        <div style={{ fontSize: 12, color: 'var(--brand)', marginTop: 2 }}>Receba os pos-aulas neste celular.</div>
       </div>
       <button style={actBtn} onClick={() => { setShowNotif(false); window.dispatchEvent(new CustomEvent('request-notif')); }}>Ativar</button>
       <button style={xBtn} onClick={() => { setShowNotif(false); localStorage.setItem('notifDismissed','1'); }}>&#x2715;</button>
@@ -993,12 +1001,12 @@ function ProgressRing({ value, goal, label, sublabel }) {
   const pct = goal > 0 ? Math.min(value / goal, 1) : 0;
   const off = c - pct * c;
   const complete = goal > 0 && value >= goal;
-  const ringColor = complete ? '#F59E0B' : '#16A34A';
+  const ringColor = complete ? '#F59E0B' : 'var(--brand)';
   return (
     <GlassCard style={{ padding: 16, flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, borderRadius: 24, border: complete ? '1px solid rgba(245,158,11,0.4)' : GLASS.border, animation: complete ? 'ringpop 1.4s ease-in-out infinite' : 'none' }}>
       <div style={{ position: 'relative', width: size, height: size }}>
         <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={complete ? 'rgba(245,158,11,0.15)' : 'rgba(22,163,74,0.12)'} strokeWidth={stroke} />
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={complete ? 'rgba(245,158,11,0.15)' : 'rgba(var(--brand-rgb),0.12)'} strokeWidth={stroke} />
           <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={ringColor} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={off} style={{ transition: 'stroke-dashoffset 1s ease' }} />
         </svg>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
@@ -1008,8 +1016,8 @@ function ProgressRing({ value, goal, label, sublabel }) {
         </div>
       </div>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: 12.5, fontWeight: 800, color: complete ? '#B45309' : '#064E3B' }}>{label}</div>
-        <div style={{ fontSize: 11.5, fontWeight: 800, color: complete ? '#D97706' : '#16A34A', marginTop: 2 }}>{Math.round(pct * 100)}% da meta</div>
+        <div style={{ fontSize: 12.5, fontWeight: 800, color: complete ? '#B45309' : 'var(--brand-dark)' }}>{label}</div>
+        <div style={{ fontSize: 11.5, fontWeight: 800, color: complete ? '#D97706' : 'var(--brand)', marginTop: 2 }}>{Math.round(pct * 100)}% da meta</div>
         {sublabel && <div style={{ fontSize: 10.5, color: complete ? '#D97706' : '#64748B', marginTop: 1, fontWeight: complete ? 700 : 500 }}>{sublabel}</div>}
       </div>
     </GlassCard>
@@ -1090,11 +1098,11 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) 
               <div style={{ fontSize: 20, fontWeight: 800, color: '#0F172A', marginTop: 12, lineHeight: 1.2 }}>{latest.title || 'Pos-Aula'}</div>
               <div style={{ fontSize: 13, color: '#64748B', marginTop: 4, fontWeight: 500 }}>{fmtDate(latest.createdAt)}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 12 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: latest.readAt ? '#16A34A' : '#F59E0B', boxShadow: latest.readAt ? '0 0 0 4px rgba(22,163,74,0.15)' : '0 0 0 4px rgba(245,158,11,0.15)', flexShrink: 0 }} />
-                <span style={{ fontSize: 12, fontWeight: 600, color: latest.readAt ? '#16A34A' : '#D97706' }}>{latest.readAt ? 'Lido em ' + fmtDate(latest.readAt) : 'Ainda nao lido'}</span>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: latest.readAt ? 'var(--brand)' : '#F59E0B', boxShadow: latest.readAt ? '0 0 0 4px rgba(var(--brand-rgb),0.15)' : '0 0 0 4px rgba(245,158,11,0.15)', flexShrink: 0 }} />
+                <span style={{ fontSize: 12, fontWeight: 600, color: latest.readAt ? 'var(--brand)' : '#D97706' }}>{latest.readAt ? 'Lido em ' + fmtDate(latest.readAt) : 'Ainda nao lido'}</span>
               </div>
             </div>
-            <div style={{ width: 68, height: 68, borderRadius: 20, flexShrink: 0, background: 'linear-gradient(160deg,#A7F3D0,#16A34A)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 24px rgba(22,163,74,0.3)', fontSize: 30 }}>&#128218;</div>
+            <div style={{ width: 68, height: 68, borderRadius: 20, flexShrink: 0, background: 'linear-gradient(160deg,#A7F3D0,var(--brand))', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 24px rgba(var(--brand-rgb),0.3)', fontSize: 30 }}>&#128218;</div>
           </div>
           <button
             onPointerDown={() => setBtnPressed(true)}
@@ -1105,8 +1113,8 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) 
               marginTop: 18, width: '100%', border: 'none', cursor: 'pointer',
               padding: '14px 20px', borderRadius: 16, color: '#fff',
               fontSize: 15, fontWeight: 800,
-              background: 'linear-gradient(180deg,#34D399,#22C55E)',
-              boxShadow: '0 8px 24px rgba(22,163,74,0.3)',
+              background: 'linear-gradient(180deg,#34D399,var(--brand-light))',
+              boxShadow: '0 8px 24px rgba(var(--brand-rgb),0.3)',
               transition: 'transform .15s ease',
               transform: btnPressed ? 'scale(0.98)' : 'scale(1)',
               fontFamily: 'inherit',
@@ -1143,7 +1151,7 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) 
             return (
               <div key={label} style={{ marginBottom: 8 }}>
                 <button onClick={() => setOpenGroups(o => ({ ...o, [label]: !open }))} style={{
-                  width: '100%', background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(22,163,74,0.12)', borderRadius: 14,
+                  width: '100%', background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(var(--brand-rgb),0.12)', borderRadius: 14,
                   padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontFamily: 'inherit',
                 }}>
                   <span style={{ fontSize: 13, fontWeight: 800, color: '#7C4A21' }}>{label}</span>
@@ -1156,16 +1164,16 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) 
                   <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {posts.map(p => (
                       <div key={p.id} onClick={() => onOpenPost(p)} style={{
-                        background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(22,163,74,0.1)',
+                        background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(var(--brand-rgb),0.1)',
                         borderRadius: 12, padding: '11px 14px',
                         display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer',
                       }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(22,163,74,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14 }}>&#128196;</div>
+                        <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(var(--brand-rgb),0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14 }}>&#128196;</div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 13.5, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title || 'Pos-Aula'}</div>
                           <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>{fmtDate(p.createdAt)}</div>
                         </div>
-                        <span style={{ fontSize: 11.5, fontWeight: 700, color: p.readAt ? '#16A34A' : '#D97706', flexShrink: 0 }}>{p.readAt ? '✓ Lido' : 'Nao lido'}</span>
+                        <span style={{ fontSize: 11.5, fontWeight: 700, color: p.readAt ? 'var(--brand)' : '#D97706', flexShrink: 0 }}>{p.readAt ? '✓ Lido' : 'Nao lido'}</span>
                       </div>
                     ))}
                   </div>
@@ -1199,7 +1207,7 @@ function ActivityRow({ act, onOpenActivity }) {
             : (typeof actPct === 'number' && actPct > 0 && <span> · {act.finalizada ? 'Finalizada ✓' : actPct + '% concluída'}</span>)}
         </div>
       </div>
-      <span style={{ fontSize: 11.5, fontWeight: 700, padding: '4px 10px', borderRadius: 999, flexShrink: 0, background: isGreen ? 'rgba(22,163,74,0.12)' : 'rgba(245,158,11,0.12)', color: isGreen ? '#064E3B' : '#92400E' }}>
+      <span style={{ fontSize: 11.5, fontWeight: 700, padding: '4px 10px', borderRadius: 999, flexShrink: 0, background: isGreen ? 'rgba(var(--brand-rgb),0.12)' : 'rgba(245,158,11,0.12)', color: isGreen ? 'var(--brand-dark)' : '#92400E' }}>
         {isCorrected ? '✓ Corrigida' : isFinished ? '✓ Finalizada' : 'Pendente'}
       </span>
     </GlassCard>
@@ -1244,7 +1252,7 @@ function ExtrasSection({ extras, onOpenExtra }) {
       <div>
         <button onClick={() => setSkill(null)} style={{
           display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none',
-          color: '#064E3B', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
+          color: 'var(--brand-dark)', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
           padding: '4px 0', marginBottom: 12,
         }}>&#8249; Voltar</button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
@@ -1273,7 +1281,7 @@ function ExtrasSection({ extras, onOpenExtra }) {
                     {e.source && <span style={{ fontSize: 11.5, color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.source}</span>}
                   </div>
                 </div>
-                <span style={{ fontSize: 11.5, fontWeight: 700, padding: '4px 10px', borderRadius: 999, flexShrink: 0, background: e.finalizada ? 'rgba(22,163,74,0.12)' : 'rgba(245,158,11,0.12)', color: e.finalizada ? '#064E3B' : '#92400E' }}>
+                <span style={{ fontSize: 11.5, fontWeight: 700, padding: '4px 10px', borderRadius: 999, flexShrink: 0, background: e.finalizada ? 'rgba(var(--brand-rgb),0.12)' : 'rgba(245,158,11,0.12)', color: e.finalizada ? 'var(--brand-dark)' : '#92400E' }}>
                   {e.finalizada ? '✓ Finalizada' : 'Pendente'}
                 </span>
               </GlassCard>
@@ -1581,7 +1589,7 @@ function ExtraModal({ extra, onClose, onFinish, onSaveDraft, mirror }) {
             <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{extra?.title || 'Atividade'}</div>
           </div>
           {total > 0 && (
-            <div style={{ fontSize: 12, fontWeight: 800, color: pct === 100 ? '#16A34A' : '#9A6438', flexShrink: 0 }}>{pct}%</div>
+            <div style={{ fontSize: 12, fontWeight: 800, color: pct === 100 ? 'var(--brand)' : '#9A6438', flexShrink: 0 }}>{pct}%</div>
           )}
         </div>
 
@@ -1603,9 +1611,9 @@ function ExtraModal({ extra, onClose, onFinish, onSaveDraft, mirror }) {
             )}
             {link && (
               <a href={link} target="_blank" rel="noopener noreferrer" style={{
-                display: 'block', textAlign: 'center', background: 'linear-gradient(180deg,#22C55E,#16A34A)', color: '#fff',
+                display: 'block', textAlign: 'center', background: 'linear-gradient(180deg,var(--brand-light),var(--brand))', color: '#fff',
                 textDecoration: 'none', padding: '13px 18px', borderRadius: 14, fontWeight: 800, fontSize: 14,
-                boxShadow: '0 6px 18px rgba(22,163,74,0.3)',
+                boxShadow: '0 6px 18px rgba(var(--brand-rgb),0.3)',
               }}>&#9654; Abrir a atividade</a>
             )}
           </div>
@@ -1633,8 +1641,8 @@ function ExtraModal({ extra, onClose, onFinish, onSaveDraft, mirror }) {
           <button onClick={handleFinish} disabled={!canFinish || saving} style={{
             width: '100%', padding: 14, border: 'none', borderRadius: 14, fontSize: 15, fontWeight: 800, fontFamily: 'inherit',
             cursor: canFinish && !saving ? 'pointer' : 'not-allowed',
-            background: canFinish ? 'linear-gradient(180deg,#22C55E,#16A34A)' : '#CBD5E1',
-            color: '#fff', boxShadow: canFinish ? '0 8px 20px rgba(22,163,74,0.3)' : 'none',
+            background: canFinish ? 'linear-gradient(180deg,var(--brand-light),var(--brand))' : '#CBD5E1',
+            color: '#fff', boxShadow: canFinish ? '0 8px 20px rgba(var(--brand-rgb),0.3)' : 'none',
           }}>
             {saving ? 'Salvando...' : extra?.finalizada ? '✓ Salvar alteracoes' : 'Finalizei'}
           </button>
@@ -1686,7 +1694,7 @@ function AulasTab({ activities, onOpenActivity, extras, onOpenExtra, onOpenCorre
     return (
       <div key={wk} style={{ marginBottom: 8 }}>
         <button onClick={() => setOpenHist(o => ({ ...o, [wk]: !open }))} style={{
-          width: '100%', background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(22,163,74,0.12)', borderRadius: 14,
+          width: '100%', background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(var(--brand-rgb),0.12)', borderRadius: 14,
           padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontFamily: 'inherit',
         }}>
           <span style={{ fontSize: 12.5, fontWeight: 800, color: '#7C4A21', textTransform: 'capitalize' }}>{wk}</span>
@@ -1699,10 +1707,10 @@ function AulasTab({ activities, onOpenActivity, extras, onOpenExtra, onOpenCorre
           <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 8 }}>
             {acts.map(act => <ActivityRow key={act.id} act={act} onOpenActivity={onOpenActivity} />)}
             {acts.some(a => a.report || a.summary || a.correcao) && (
-              <GlassCard tappable onClick={() => onOpenCorrecao(wk, acts)} style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid rgba(22,163,74,0.25)' }}>
-                <div style={{ fontSize: 24, width: 46, height: 46, borderRadius: 14, background: 'rgba(22,163,74,0.12)', border: '1px solid rgba(22,163,74,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>📋</div>
+              <GlassCard tappable onClick={() => onOpenCorrecao(wk, acts)} style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid rgba(var(--brand-rgb),0.25)' }}>
+                <div style={{ fontSize: 24, width: 46, height: 46, borderRadius: 14, background: 'rgba(var(--brand-rgb),0.12)', border: '1px solid rgba(var(--brand-rgb),0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>📋</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: '#064E3B', marginBottom: 2 }}>Correção</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--brand-dark)', marginBottom: 2 }}>Correção</div>
                   <div style={{ fontSize: 12, color: '#64748B' }}>Relatório completo — erros, padrões e resumo</div>
                 </div>
                 <span style={{ color: '#94A3B8', fontSize: 20, lineHeight: 1 }}>›</span>
@@ -1743,11 +1751,11 @@ function AulasTab({ activities, onOpenActivity, extras, onOpenExtra, onOpenCorre
 
   return (
     <div className="scroll-area" style={{ padding: '16px 16px 8px' }}>
-      <div style={{ display: 'flex', background: 'rgba(255,255,255,0.6)', borderRadius: 14, padding: 4, marginBottom: 16, border: '1px solid rgba(22,163,74,0.12)' }}>
+      <div style={{ display: 'flex', background: 'rgba(255,255,255,0.6)', borderRadius: 14, padding: 4, marginBottom: 16, border: '1px solid rgba(var(--brand-rgb),0.12)' }}>
         {['atividades', 'extras'].map(s => (
           <button key={s} onClick={() => setSub(s)} style={{
             flex: 1, padding: '9px 0', borderRadius: 11, border: 'none', cursor: 'pointer',
-            background: sub === s ? 'linear-gradient(180deg,#22C55E,#16A34A)' : 'transparent',
+            background: sub === s ? 'linear-gradient(180deg,var(--brand-light),var(--brand))' : 'transparent',
             color: sub === s ? '#fff' : '#64748B', fontWeight: sub === s ? 800 : 600, fontSize: 13,
             transition: 'background 0.2s, color 0.2s', fontFamily: 'inherit',
           }}>{s === 'atividades' ? 'Atividades' : 'Extras'}</button>
@@ -1836,7 +1844,7 @@ function VocabTab({ vocab }) {
         return (
           <div key={month} style={{ marginBottom: 10 }}>
             <button onClick={() => setOpenMonths(o => ({ ...o, [month]: !open }))} style={{
-              width: '100%', background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(22,163,74,0.12)', borderRadius: 14,
+              width: '100%', background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(var(--brand-rgb),0.12)', borderRadius: 14,
               padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontFamily: 'inherit',
             }}>
               <span style={{ fontSize: 13, fontWeight: 800, color: '#7C4A21', textTransform: 'capitalize' }}>{month}</span>
@@ -1849,7 +1857,7 @@ function VocabTab({ vocab }) {
               <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {words.map((v, i) => (
                   <div key={i} style={{
-                    background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(22,163,74,0.1)',
+                    background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(var(--brand-rgb),0.1)',
                     borderRadius: 14, padding: '12px 16px',
                     display: 'flex', alignItems: 'center', gap: 12,
                   }}>
@@ -1857,7 +1865,7 @@ function VocabTab({ vocab }) {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
                         <span style={{ fontSize: 14.5, fontWeight: 700, color: '#0F172A' }}>{v.en}</span>
-                        <span style={{ fontSize: 13, color: '#16A34A', fontWeight: 600 }}>{v.pt}</span>
+                        <span style={{ fontSize: 13, color: 'var(--brand)', fontWeight: 600 }}>{v.pt}</span>
                       </div>
                       {v.source && <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{v.source}</div>}
                     </div>
@@ -1947,20 +1955,20 @@ function PerfilTab({ student, onLogout, onPatchStudent }) {
   };
 
   const inp = { width: '100%', padding: '12px 14px', border: '1.5px solid #E2E8F0', borderRadius: 12, fontSize: 14, outline: 'none', background: '#F8FAFC', color: '#0F172A', marginBottom: 8, fontFamily: 'inherit' };
-  const actBtn = (color = '#16A34A') => ({ width: 92, padding: '10px 0', textAlign: 'center', borderRadius: 12, border: 'none', cursor: 'pointer', background: color, color: '#fff', fontWeight: 700, fontSize: 13, marginRight: 6, marginTop: 4, fontFamily: 'inherit', flexShrink: 0 });
+  const actBtn = (color = 'var(--brand)') => ({ width: 92, padding: '10px 0', textAlign: 'center', borderRadius: 12, border: 'none', cursor: 'pointer', background: color, color: '#fff', fontWeight: 700, fontSize: 13, marginRight: 6, marginTop: 4, fontFamily: 'inherit', flexShrink: 0 });
 
   return (
     <div className="scroll-area" style={{ padding: '16px 16px 8px' }}>
       <GlassCard style={{ padding: '28px 20px', textAlign: 'center', marginBottom: 14 }}>
         <div style={{ position: 'relative', width: 88, height: 88, margin: '0 auto 12px' }}>
           {student?.photo ? (
-            <img src={student.photo} alt="" style={{ width: 88, height: 88, borderRadius: '50%', objectFit: 'cover', boxShadow: '0 8px 24px rgba(22,163,74,0.3)' }} />
+            <img src={student.photo} alt="" style={{ width: 88, height: 88, borderRadius: '50%', objectFit: 'cover', boxShadow: '0 8px 24px rgba(var(--brand-rgb),0.3)' }} />
           ) : (
-            <div style={{ width: 88, height: 88, borderRadius: '50%', background: 'linear-gradient(145deg,#16A34A,#064E3B)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, fontWeight: 800, color: '#fff', boxShadow: '0 8px 24px rgba(22,163,74,0.3)' }}>{initial}</div>
+            <div style={{ width: 88, height: 88, borderRadius: '50%', background: 'linear-gradient(145deg,var(--brand),var(--brand-dark))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, fontWeight: 800, color: '#fff', boxShadow: '0 8px 24px rgba(var(--brand-rgb),0.3)' }}>{initial}</div>
           )}
           <button onClick={() => fileRef.current?.click()} disabled={photoSaving} title="Alterar foto" style={{
             position: 'absolute', bottom: 0, right: 0, width: 30, height: 30, borderRadius: '50%',
-            background: '#16A34A', color: '#fff', border: '2px solid #fff', cursor: 'pointer',
+            background: 'var(--brand)', color: '#fff', border: '2px solid #fff', cursor: 'pointer',
             fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
           }}>{photoSaving ? '…' : '📷'}</button>
           <input ref={fileRef} type="file" accept="image/*" onChange={onPhotoPick} style={{ display: 'none' }} />
@@ -1977,9 +1985,9 @@ function PerfilTab({ student, onLogout, onPatchStudent }) {
           <div style={{ fontSize: 20, flexShrink: 0 }}>🎥</div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>Sala do Zoom</div>
-            <div style={{ fontSize: 13.5, color: '#16A34A', fontWeight: 700, marginTop: 1 }}>Entrar na aula</div>
+            <div style={{ fontSize: 13.5, color: 'var(--brand)', fontWeight: 700, marginTop: 1 }}>Entrar na aula</div>
           </div>
-          <a href={ZOOM_LINK} target="_blank" rel="noopener noreferrer" style={{ width: 92, textAlign: 'center', boxSizing: 'border-box', background: '#16A34A', color: '#fff', textDecoration: 'none', padding: '10px 0', borderRadius: 12, fontWeight: 700, fontSize: 13, flexShrink: 0 }}>Abrir</a>
+          <a href={ZOOM_LINK} target="_blank" rel="noopener noreferrer" style={{ width: 92, textAlign: 'center', boxSizing: 'border-box', background: 'var(--brand)', color: '#fff', textDecoration: 'none', padding: '10px 0', borderRadius: 12, fontWeight: 700, fontSize: 13, flexShrink: 0 }}>Abrir</a>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: student?.diasAulas ? 14 : 0 }}>
@@ -1988,7 +1996,7 @@ function PerfilTab({ student, onLogout, onPatchStudent }) {
             <div style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>Pix para pagamento</div>
             <div style={{ fontSize: 13.5, color: '#0F172A', fontWeight: 600, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{PIX_KEY}</div>
           </div>
-          <button onClick={copyPix} style={{ width: 92, padding: '10px 0', textAlign: 'center', background: '#16A34A', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 13, flexShrink: 0, cursor: 'pointer', fontFamily: 'inherit' }}>Copiar</button>
+          <button onClick={copyPix} style={{ width: 92, padding: '10px 0', textAlign: 'center', background: 'var(--brand)', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 13, flexShrink: 0, cursor: 'pointer', fontFamily: 'inherit' }}>Copiar</button>
         </div>
 
         {student?.diasAulas && (
@@ -2055,7 +2063,7 @@ function PerfilTab({ student, onLogout, onPatchStudent }) {
       </GlassCard>
 
       {msg && (
-        <div style={{ padding: '12px 16px', borderRadius: 12, marginBottom: 12, background: msg.startsWith('✅') ? 'rgba(22,163,74,0.1)' : 'rgba(220,38,38,0.08)', color: msg.startsWith('✅') ? '#064E3B' : '#991B1B', fontSize: 13, fontWeight: 600 }}>{msg}</div>
+        <div style={{ padding: '12px 16px', borderRadius: 12, marginBottom: 12, background: msg.startsWith('✅') ? 'rgba(var(--brand-rgb),0.1)' : 'rgba(220,38,38,0.08)', color: msg.startsWith('✅') ? 'var(--brand-dark)' : '#991B1B', fontSize: 13, fontWeight: 600 }}>{msg}</div>
       )}
 
       <GlassCard style={{ padding: 18 }}>
@@ -2093,13 +2101,13 @@ function ActivityModal({ activity, onClose, onOpenPart }) {
               background: '#F8FAFC', border: '1.5px solid #E2E8F0', borderRadius: 14,
               padding: 16, marginBottom: 10, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
             }}>
-              <div style={{ width: 34, height: 34, background: pdone ? 'linear-gradient(145deg,#16A34A,#064E3B)' : 'linear-gradient(145deg,#22C55E,#16A34A)', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, flexShrink: 0 }}>{pdone ? '✓' : i+1}</div>
+              <div style={{ width: 34, height: 34, background: pdone ? 'linear-gradient(145deg,var(--brand),var(--brand-dark))' : 'linear-gradient(145deg,var(--brand-light),var(--brand))', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, flexShrink: 0 }}>{pdone ? '✓' : i+1}</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{part.title || 'Parte ' + (i+1)}</div>
                 {part.type && <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>{part.type}</div>}
               </div>
               {pdone ? (
-                <span style={{ fontSize: 11.5, fontWeight: 800, color: '#16A34A', flexShrink: 0 }}>Feita</span>
+                <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--brand)', flexShrink: 0 }}>Feita</span>
               ) : pconcl ? (
                 <span style={{ fontSize: 11.5, fontWeight: 800, color: '#9A6438', flexShrink: 0 }}>{pconcl.pct}%</span>
               ) : (
@@ -2183,7 +2191,7 @@ function PartModal({ part, activity, onBack, onClose, onFinish, onSaveDraft }) {
             <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{part?.title || 'Parte'}</div>
           </div>
           {total > 0 && !isCorrected && (
-            <div style={{ fontSize: 12, fontWeight: 800, color: pct === 100 ? '#16A34A' : '#9A6438', flexShrink: 0 }}>{pct}%</div>
+            <div style={{ fontSize: 12, fontWeight: 800, color: pct === 100 ? 'var(--brand)' : '#9A6438', flexShrink: 0 }}>{pct}%</div>
           )}
           <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: '#F1F5F9', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', flexShrink: 0, fontFamily: 'inherit' }}>&#x2715;</button>
         </div>
@@ -2191,10 +2199,10 @@ function PartModal({ part, activity, onBack, onClose, onFinish, onSaveDraft }) {
         <div ref={contentRef} className="ex-root" style={{ flex: 1, overflowY: 'auto', padding: 16, fontSize: 14.5, lineHeight: 1.75, color: '#1F2937' }} />
 
         {fb_item && (
-          <div style={{ margin: '0 16px 16px', background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: 14, padding: 16, flexShrink: 0 }}>
-            <div style={{ fontWeight: 700, color: '#064E3B', marginBottom: 8, fontSize: 13 }}>
+          <div style={{ margin: '0 16px 16px', background: 'rgba(var(--brand-rgb),0.08)', border: '1px solid rgba(var(--brand-rgb),0.2)', borderRadius: 14, padding: 16, flexShrink: 0 }}>
+            <div style={{ fontWeight: 700, color: 'var(--brand-dark)', marginBottom: 8, fontSize: 13 }}>
               &#128221; Correcao do professor
-              {fb_item.score && <span style={{ display: 'inline-block', background: '#064E3B', color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 999, marginLeft: 8 }}>{fb_item.score}</span>}
+              {fb_item.score && <span style={{ display: 'inline-block', background: 'var(--brand-dark)', color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 999, marginLeft: 8 }}>{fb_item.score}</span>}
             </div>
             <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.6 }}>{typeof fb_item === 'string' ? fb_item : (fb_item.comment || '')}</div>
           </div>
@@ -2210,8 +2218,8 @@ function PartModal({ part, activity, onBack, onClose, onFinish, onSaveDraft }) {
             <button onClick={handleFinish} disabled={!canFinish || saving} style={{
               width: '100%', padding: 14, border: 'none', borderRadius: 14, fontSize: 15, fontWeight: 800, fontFamily: 'inherit',
               cursor: canFinish && !saving ? 'pointer' : 'not-allowed',
-              background: canFinish ? 'linear-gradient(180deg,#22C55E,#16A34A)' : '#CBD5E1',
-              color: '#fff', boxShadow: canFinish ? '0 8px 20px rgba(22,163,74,0.3)' : 'none',
+              background: canFinish ? 'linear-gradient(180deg,var(--brand-light),var(--brand))' : '#CBD5E1',
+              color: '#fff', boxShadow: canFinish ? '0 8px 20px rgba(var(--brand-rgb),0.3)' : 'none',
             }}>
               {saving ? 'Salvando...' : alreadyDone ? '✓ Salvar alteracoes' : 'Finalizei esta parte'}
             </button>
@@ -2226,7 +2234,7 @@ function PartModal({ part, activity, onBack, onClose, onFinish, onSaveDraft }) {
 function ReaderView({ post, onBack }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ background: 'linear-gradient(180deg,#16A34A,#064E3B)', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+      <div style={{ background: 'linear-gradient(180deg,var(--brand),var(--brand-dark))', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
         <button onClick={onBack} style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'inherit' }}>&#8249;</button>
         <div style={{ fontSize: 14.5, fontWeight: 700, color: '#fff', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{post?.title || 'Pos-Aula'}</div>
       </div>
@@ -2324,6 +2332,49 @@ function App() {
     return () => { unsub?.(); window.removeEventListener('request-notif', handleRequestNotif); };
   }, []);
 
+  // ── TEMA DA ESCOLA ────────────────────────────────────────────────
+  // O app é um só; as cores vêm da escola do aluno. Sem escola (alunos
+  // antigos) ou se der erro, fica o verde padrão do :root.
+  function hexParaRgb(hex) {
+    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(String(hex || '').trim());
+    return m ? [parseInt(m[1],16), parseInt(m[2],16), parseInt(m[3],16)].join(',') : null;
+  }
+
+  // Clareia uma cor para o tom de destaque (o "--brand-light").
+  function clarear(hex, fator = 0.28) {
+    const rgb = hexParaRgb(hex);
+    if (!rgb) return null;
+    const [r,g,b] = rgb.split(',').map(Number);
+    const mix = v => Math.round(v + (255 - v) * fator);
+    return `#${[mix(r),mix(g),mix(b)].map(v => v.toString(16).padStart(2,'0')).join('')}`;
+  }
+
+  async function aplicarTemaDaEscola(schoolId, fb) {
+    if (!schoolId) return;
+    try {
+      const snap = await fb.getDoc(fb.doc(fb.db, 'schools', schoolId));
+      if (!snap.exists()) return;
+      const { theme = {}, name } = snap.data();
+      if (!theme.accent) return;
+
+      const claro = theme.accentLight || clarear(theme.accent);
+      const raiz = document.documentElement.style;
+      raiz.setProperty('--brand', theme.accent);
+      raiz.setProperty('--brand-rgb', hexParaRgb(theme.accent) || '22,163,74');
+      if (theme.accentDark) {
+        raiz.setProperty('--brand-dark', theme.accentDark);
+        raiz.setProperty('--brand-dark-rgb', hexParaRgb(theme.accentDark) || '6,78,59');
+      }
+      if (claro) raiz.setProperty('--brand-light', claro);
+
+      // Cor da barra do navegador no celular.
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme.accent);
+      if (name) document.title = name;
+    } catch (e) {
+      console.error('Tema da escola:', e);   // segue no padrão
+    }
+  }
+
   async function loadData(uid, fb) {
     const [snap, posSnaps, actSnaps, vocSnaps, extSnaps] = await Promise.all([
       fb.getDoc(fb.doc(fb.db, 'students', uid)),
@@ -2333,7 +2384,9 @@ function App() {
       fb.getDocs(fb.collection(fb.db, 'students', uid, 'extras')).catch(() => ({ docs: [] })),
     ]);
     if (!snap.exists()) return;
-    setStudent({ ...snap.data(), uid });
+    const dadosAluno = snap.data();
+    setStudent({ ...dadosAluno, uid });
+    aplicarTemaDaEscola(dadosAluno.schoolId, fb);
     const posts = posSnaps.docs.map(d => ({ id: d.id, ...d.data() }));
     setPosaulas(posts);
     setActivities(actSnaps.docs.map(d => ({ id: d.id, ...d.data() })));

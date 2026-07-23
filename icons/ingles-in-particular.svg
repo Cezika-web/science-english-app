@@ -1,26 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="Inglês in Particular">
   <defs>
-    <path id="arcoTopo" d="M 100,100 m -74,0 a 74,74 0 0 1 148,0" fill="none"/>
-    <path id="arcoBase" d="M 100,100 m -66,0 a 66,66 0 0 0 132,0" fill="none"/>
+    <path id="arcoTopo" d="M 100,100 m -76,0 a 76,76 0 0 1 152,0" fill="none"/>
+    <path id="arcoBase" d="M 100,100 m -76,0 a 76,76 0 0 0 152,0" fill="none"/>
+    <clipPath id="miolo"><circle cx="100" cy="100" r="60"/></clipPath>
   </defs>
 
-  <circle cx="100" cy="100" r="98" fill="#1B4F9C"/>
-  <circle cx="100" cy="100" r="80" fill="#fff"/>
-  <circle cx="100" cy="100" r="80" fill="none" stroke="#14396F" stroke-width="2"/>
+  <!-- anel externo -->
+  <circle cx="100" cy="100" r="99" fill="#fff"/>
+  <circle cx="100" cy="100" r="95" fill="#1B4F9C"/>
 
-  <text font-family="Georgia, 'Times New Roman', serif" font-size="19" font-weight="700"
-        fill="#fff" letter-spacing="1.5">
-    <textPath href="#arcoTopo" startOffset="50%" text-anchor="middle">INGLÊS IN PARTICULAR</textPath>
+  <!-- texto no anel -->
+  <text font-family="Georgia, 'Times New Roman', serif" font-size="17" font-weight="700"
+        fill="#fff" letter-spacing="1.2">
+    <textPath href="#arcoTopo" startOffset="50%" text-anchor="middle">Inglês in Particular</textPath>
   </text>
-  <text font-family="Georgia, 'Times New Roman', serif" font-size="13" font-weight="600"
-        fill="#fff" letter-spacing="2">
-    <textPath href="#arcoBase" startOffset="50%" text-anchor="middle">ALCIR MANDACARÓ</textPath>
+  <text font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="13" font-weight="700"
+        fill="#fff" letter-spacing="1.6">
+    <textPath href="#arcoBase" startOffset="50%" text-anchor="middle">(15) 98142-6993</textPath>
   </text>
 
-  <text x="100" y="92" text-anchor="middle"
-        font-family="Georgia, 'Times New Roman', serif" font-size="52" font-weight="700" fill="#1B4F9C">IP</text>
-  <line x1="62" y1="106" x2="138" y2="106" stroke="#1B4F9C" stroke-width="2"/>
-  <text x="100" y="130" text-anchor="middle"
-        font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="12" font-weight="600"
-        fill="#14396F" letter-spacing="1">ENGLISH TUTOR</text>
+  <!-- miolo: bandeira estilizada em azul e branco -->
+  <circle cx="100" cy="100" r="62" fill="#fff"/>
+  <g clip-path="url(#miolo)">
+    <rect x="38" y="38" width="124" height="124" fill="#1B4F9C"/>
+    <!-- cruz diagonal -->
+    <path d="M38,38 L162,162 M162,38 L38,162" stroke="#fff" stroke-width="16"/>
+    <!-- cruz reta -->
+    <path d="M100,38 V162 M38,100 H162" stroke="#fff" stroke-width="30"/>
+    <path d="M100,38 V162 M38,100 H162" stroke="#1B4F9C" stroke-width="16"/>
+  </g>
+  <circle cx="100" cy="100" r="62" fill="none" stroke="#14396F" stroke-width="3"/>
+
+  <!-- iniciais sobre o miolo -->
+  <circle cx="100" cy="100" r="27" fill="#fff" stroke="#1B4F9C" stroke-width="2.5"/>
+  <text x="100" y="110" text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', serif" font-size="27" font-weight="700"
+        fill="#1B4F9C" letter-spacing="1">IP</text>
 </svg>
