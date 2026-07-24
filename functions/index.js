@@ -38,10 +38,10 @@ de um aluno. Escreva o feedback DIRETAMENTE PARA O ALUNO — use "sua resposta" 
 - "grave"   → impede ou quase impede a compreensão: frases difíceis de entender,
               construções que alteram o significado.
 - "ok"      → acertou.
+- "branco"  → o aluno não respondeu nada nesta questão.
 
-Questões em branco não contam como acerto nem como erro — entram em
-"Não respondidas". Marque-as com status "ok" no campo "correcao" (o app não
-pinta de vermelho o que o aluno não chegou a fazer).
+Questão em branco NÃO é acerto e NÃO é erro. Use "branco" — nunca "ok". Ela
+entra só em "Não respondidas" e fica fora da conta de acertos e de erros.
 
 ## O que NÃO é erro
 
@@ -65,13 +65,12 @@ Se uma questão está marcada "ok", ela conta como acerto no "summary" e NÃO po
 aparecer como ressalva no comentário. Nunca escreva "só ajuste X" sobre uma
 questão que você marcou como correta.
 
-## Atividades incompletas
+## Questões deixadas em branco
 
-Quando "finalizadaPeloAluno" for false, o aluno parou no meio — muitas vezes
-porque a aula acabou. Corrija normalmente o que ele fez e NÃO o repreenda pelo
-que ficou em branco. A porcentagem de acertos deve considerar apenas o que ele
-respondeu; o que ficou em branco aparece só em "Não respondidas". No comentário
-geral, reconheça o que ele fez e convide a terminar o resto.
+Mesmo tendo finalizado, o aluno pode ter pulado questões. Marque cada uma
+dessas como "branco" e NÃO o repreenda por elas. A porcentagem de acertos
+considera apenas o que ele respondeu; o que ficou em branco aparece só em
+"Não respondidas". No comentário geral, reconheça o que ele fez.
 
 ## O campo "correcao"
 
@@ -190,7 +189,7 @@ const SCHEMA = {
                   items: {
                     type: 'object',
                     properties: {
-                      status: { type: 'string', enum: ['ok', 'bobo', 'mediano', 'grave'] },
+                      status: { type: 'string', enum: ['ok', 'bobo', 'mediano', 'grave', 'branco'] },
                       correct: { type: 'string' },
                       explain: { type: 'string' },
                     },
@@ -265,17 +264,6 @@ function registrarUso(lote, { tipo, uid, escolaId, uso, extra = {} }) {
   return Number(custoUSD.toFixed(4));
 }
 
-/** O aluno respondeu ao menos uma coisa? (áudio conta) */
-function temAlgumaResposta(atividade) {
-  const respostas = atividade.respostas || {};
-  if (respostas.audioUrl) return true;
-  return Object.keys(respostas).some(
-    (chave) =>
-      chave !== 'audioUrl' &&
-      chave !== 'audioPath' &&
-      String(respostas[chave] ?? '').trim() !== ''
-  );
-}
 
 /** Converte [{part, ...}] para {part-1: {...}} — a forma que o app já lê. */
 function listaParaObjeto(lista, montarValor) {
@@ -306,32 +294,31 @@ export const corrigirAluno = onCall(
     const uid = request.data?.uid;
     if (!uid) throw new HttpsError('invalid-argument', 'Faltou o uid do aluno.');
 
-    // Por padrão só corrige o que o aluno finalizou. Quando ligado, inclui também
-    // as atividades que ele deixou pela metade (desde que tenha respondido algo).
-    const incluirNaoFinalizadas = request.data?.incluirNaoFinalizadas === true;
-
     const alunoSnap = await db.doc(`students/${uid}`).get();
     if (!alunoSnap.exists) throw new HttpsError('not-found', 'Aluno não encontrado.');
     const aluno = alunoSnap.data();
 
+    // Só entra o que o aluno FINALIZOU. Atividade começada mas não finalizada
+    // continua pendente e acumula para a próxima correção — corrigir pela
+    // metade tiraria dele a chance de terminar.
     const atividadesSnap = await db.collection(`students/${uid}/activities`).get();
-    const paraCorrigir = atividadesSnap.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
-      .filter((a) => {
-        if (a.status === 'corrected') return false;
-        if (a.finalizada) return true;
-        return incluirNaoFinalizadas && temAlgumaResposta(a);
-      });
+    const todas = atividadesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const paraCorrigir = todas.filter((a) => a.status !== 'corrected' && a.finalizada);
+    const emAndamento = todas.filter((a) => a.status !== 'corrected' && !a.finalizada).length;
 
     if (paraCorrigir.length === 0) {
-      return { ok: false, motivo: 'Nenhuma atividade aguardando correção.' };
+      return {
+        ok: false,
+        motivo: emAndamento
+          ? `Nenhuma atividade finalizada. ${emAndamento} ainda em andamento — elas ficam pendentes até o aluno finalizar.`
+          : 'Nenhuma atividade aguardando correção.',
+      };
     }
 
     const entrada = paraCorrigir.map((a) => ({
       activityId: a.id,
       week: a.week || '',
       title: a.title || '',
-      finalizadaPeloAluno: !!a.finalizada,
       parts: a.parts || [],
       respostasDoAluno: a.respostas || {},
     }));

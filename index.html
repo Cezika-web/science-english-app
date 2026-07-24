@@ -536,6 +536,8 @@ const CORR_COLORS = {
   bobo:    { bg: '#FEFCE8', bd: '#CA8A04', tx: '#854F0B', label: 'Erro bobo' },
   mediano: { bg: '#FFF7ED', bd: '#EA580C', tx: '#9A3412', label: 'Erro mediano' },
   grave:   { bg: '#FEF2F2', bd: '#DC2626', tx: '#991B1B', label: 'Erro grave' },
+  // Deixada em branco: nao e acerto nem erro, entao fica cinza e neutra.
+  branco:  { bg: '#F9FAFB', bd: '#D1D5DB', tx: '#6B7280', label: 'Não respondida' },
 };
 function applyCorrection(container, arr) {
   const qs = [...container.querySelectorAll('li, p')].filter(el =>
@@ -548,7 +550,8 @@ function applyCorrection(container, arr) {
     el.style.borderRadius = '0 10px 10px 0';
     el.style.padding = '8px 10px';
     el.style.marginBottom = '10px';
-    if (c.status !== 'ok' && (c.correct || c.explain)) {
+    const semNota = c.status === 'ok' || c.status === 'branco';
+    if (!semNota && (c.correct || c.explain)) {
       const box = document.createElement('div');
       box.style.cssText = 'margin-top:6px;font-size:12px;line-height:1.5;color:' + st.tx + ';';
       box.innerHTML =
@@ -556,7 +559,7 @@ function applyCorrection(container, arr) {
         (c.correct ? '<div><strong>Resposta correta:</strong> ' + escHtml(c.correct) + '</div>' : '') +
         (c.explain ? '<div>' + escHtml(c.explain) + '</div>' : '');
       el.appendChild(box);
-    } else if (c.status === 'ok') {
+    } else if (semNota) {
       const tag = document.createElement('div');
       tag.style.cssText = 'margin-top:4px;font-size:11px;font-weight:800;color:' + st.tx + ';';
       tag.textContent = st.label;
