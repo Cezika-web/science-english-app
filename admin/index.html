@@ -1744,29 +1744,25 @@
         </details>`;
       }).join('') : '<div class="loading" style="padding:16px;">Nenhuma atividade publicada.</div>';
 
-      // O aluno respondeu alguma coisa nesta atividade? (áudio conta)
-      const temResposta = a => {
-        const r = a.respostas || {};
-        if (r.audioUrl) return true;
-        return Object.keys(r).some(k => k !== 'audioUrl' && k !== 'audioPath' && String(r[k] ?? '').trim() !== '');
-      };
-
+      // Só se corrige o que o aluno finalizou. O que ele começou e não
+      // finalizou continua pendente e acumula para a próxima correção.
       const naoCorrigidas = actSnap.docs.map(d => d.data()).filter(a => a.status !== 'corrected');
-      const aguardando   = naoCorrigidas.filter(a => a.finalizada).length;
-      // Deixadas pela metade, mas com alguma resposta — dá pra corrigir o que ele fez.
-      const parciais     = naoCorrigidas.filter(a => !a.finalizada && temResposta(a)).length;
+      const aguardando  = naoCorrigidas.filter(a => a.finalizada).length;
+      const emAndamento = naoCorrigidas.filter(a => !a.finalizada).length;
 
-      const btnCorrigirIA = (aguardando || parciais)
+      const btnCorrigirIA = aguardando
         ? `<button id="btn-corrigir-ia" class="btn-add" style="margin:10px 0 6px;width:100%;">
-             🤖 Corrigir com IA
+             🤖 Corrigir ${aguardando} atividade${aguardando !== 1 ? 's' : ''} finalizada${aguardando !== 1 ? 's' : ''}
            </button>
-           ${parciais ? `
-           <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--muted);margin-bottom:8px;cursor:pointer;">
-             <input type="checkbox" id="chk-parciais" ${aguardando ? '' : 'checked'}>
-             Incluir ${parciais} atividade${parciais !== 1 ? 's' : ''} não finalizada${parciais !== 1 ? 's' : ''} (corrigir só o que ele fez)
-           </label>` : ''}
+           ${emAndamento ? `<div style="font-size:0.82rem;color:var(--muted);margin-bottom:8px;">
+             ⏳ ${emAndamento} atividade${emAndamento !== 1 ? 's' : ''} em andamento — fica${emAndamento !== 1 ? 'm' : ''} pendente${emAndamento !== 1 ? 's' : ''} até o aluno finalizar.
+           </div>` : ''}
            <div id="corrigir-ia-msg" style="font-size:0.85rem;margin-bottom:10px;"></div>`
-        : '';
+        : (emAndamento
+            ? `<div style="font-size:0.85rem;color:var(--muted);margin:10px 0;">
+                 ⏳ ${emAndamento} atividade${emAndamento !== 1 ? 's' : ''} em andamento. A correção libera quando o aluno finalizar.
+               </div>`
+            : '');
 
       body.innerHTML = `
         <div class="detail-section-title">📄 Pós-aulas <span class="grp-count">(mês → quinzena)</span></div>
@@ -1778,11 +1774,7 @@
       const btnIA = document.getElementById('btn-corrigir-ia');
       if (btnIA) {
         btnIA.onclick = async () => {
-          const incluirParciais = !!document.getElementById('chk-parciais')?.checked;
-          const total = aguardando + (incluirParciais ? parciais : 0);
-          if (!total) { alert('Marque a opção de incluir as não finalizadas — não há atividade finalizada para corrigir.'); return; }
-
-          if (!confirm(`Corrigir ${total} atividade(s) de ${name} com IA?\n\nA correção fica visível para o aluno assim que terminar.`)) return;
+          if (!confirm(`Corrigir ${aguardando} atividade(s) finalizada(s) de ${name} com IA?\n\nA correção fica visível para o aluno assim que terminar.`)) return;
 
           const msg = document.getElementById('corrigir-ia-msg');
           const textoOriginal = btnIA.textContent;
@@ -1809,7 +1801,7 @@
             // A correção leva 2-3 min; o padrão do SDK é 70s e cortava a espera
             // com erro enquanto a função seguia rodando e concluía normalmente.
             const corrigir = httpsCallable(fns, 'corrigirAluno', { timeout: 540000 });
-            const { data } = await corrigir({ uid, incluirNaoFinalizadas: incluirParciais });
+            const { data } = await corrigir({ uid });
 
             pararCronometro();
 
