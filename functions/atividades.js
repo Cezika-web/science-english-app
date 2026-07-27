@@ -71,6 +71,12 @@ OU pelo menos uma lacuna \`_______\`. Nunca deixe uma frase sem resposta possív
    gramática trabalhada e os erros que o aluno cometeu. Não invente tema novo.
 5. Se o professor deixar observações, siga-as — elas têm prioridade sobre o padrão.
 
+## De qual pós-aula veio cada atividade (obrigatório)
+
+Para cada atividade, preencha \`sourceIndex\` com o número da pós-aula de onde veio
+o conteúdo dela. As pós-aulas chegam numeradas como "Pós-aula 1", "Pós-aula 2",
+etc. Se a atividade combinar conteúdo de mais de uma, use a que mais contribuiu.
+
 ## Vocabulário da aula
 
 Além das atividades, devolva em "vocabulario" as **3 palavras ou expressões
@@ -101,6 +107,10 @@ export const SCHEMA_ATIVIDADES = {
         properties: {
           emoji: { type: 'string' },
           title: { type: 'string' },
+          sourceIndex: {
+            type: 'integer',
+            description: 'Número da pós-aula que originou esta atividade (1 = a primeira do prompt)',
+          },
           parts: {
             type: 'array',
             items: {
@@ -116,7 +126,7 @@ export const SCHEMA_ATIVIDADES = {
             },
           },
         },
-        required: ['emoji', 'title', 'parts'],
+        required: ['emoji', 'title', 'sourceIndex', 'parts'],
         additionalProperties: false,
       },
     },
