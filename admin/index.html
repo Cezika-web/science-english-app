@@ -434,6 +434,15 @@
               <button class="btn-add" id="btn-descartar-atividades" type="button" style="flex:0 0 auto;background:#e5e7eb;color:#374151;">Descartar</button>
             </div>
           </div>
+
+          <!-- Só aparece nas escolas com plan.modoBatch: true -->
+          <div id="ga-jobs-wrap" style="display:none;margin-top:22px;padding-top:16px;border-top:1px solid var(--border);">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+              <strong style="font-size:0.95rem;">⏳ Gerações em processamento</strong>
+              <button class="btn-sm-danger" id="btn-atualizar-jobs" type="button" style="background:#e5e7eb;color:#374151;">Atualizar</button>
+            </div>
+            <div id="ga-jobs"></div>
+          </div>
         </div>
 
         <div class="form-card" id="card-colar-json">
@@ -679,6 +688,10 @@
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { getFunctions, httpsCallable }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
+    import { getMessaging, getToken, isSupported }
+      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
+    import { arrayUnion }
+      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
     const firebaseConfig = {
       apiKey:            "AIzaSyDgDlLyU15p8wQ1YtCN8NebGes_oq3atU8",
@@ -698,6 +711,34 @@
 
     let adminUid = null;
     let allStudents = [];
+
+    // ── PUSH DO PROFESSOR ───────────────────────────────────────────────
+    // Mesmo padrão do app do aluno: token FCM salvo no Firestore e usado pelo
+    // servidor. Aqui ele vai na escola, para avisar quando um lote em batch
+    // fica pronto para revisão.
+    const VAPID_KEY = "BB-SFzT1aH1SQUX6H44tjzoLq2-xxgj4GLxXVa4JKehDBD8PXy-JUvrmN3LftOJbqRtTvl9NRqhZSDXVBu0BoHs";
+
+    async function registrarPushDoProfessor() {
+      try {
+        if (!(await isSupported())) return;
+        if (typeof Notification === 'undefined') return;
+        const perm = Notification.permission === 'granted'
+          ? 'granted'
+          : await Notification.requestPermission();
+        if (perm !== 'granted') return;
+
+        const reg   = await navigator.serviceWorker.register('../firebase-messaging-sw.js');
+        const token = await getToken(getMessaging(app), { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+        if (!token) return;
+
+        // A regra do Firestore deixa o dono da escola gravar só este campo.
+        for (const e of escolas) {
+          try { await updateDoc(doc(db, 'schools', e.id), { fcmTokens: arrayUnion(token) }); } catch (err) {}
+        }
+      } catch (e) {
+        console.warn('Push do professor não ativado:', e.message);
+      }
+    }
 
     // ── ESCOLAS ─────────────────────────────────────────────────────────
     // Mesma lista das regras do Firestore e das Cloud Functions.
@@ -800,6 +841,7 @@
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
         tab.classList.add('active');
         document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+        if (tab.dataset.tab === 'publish') recarregarJobsBatch();
       };
     });
 
@@ -1202,6 +1244,7 @@
 
     // ── GERAR ATIVIDADES ────────────────────────────────────────────────
     let atividadesGeradas = null;  // { week, activities, uid }
+    let recarregarJobsBatch = async () => {};   // preenchido pelo bloco abaixo
 
     (function iniciarGerarAtividades() {
       const btnGerar = document.getElementById('btn-gerar-atividades');
@@ -1239,11 +1282,16 @@
       inputQtd.oninput = pintarChips;
       pintarChips();
 
+      // Preenchido quando a prévia veio de um job em batch — a publicação
+      // avisa o servidor para o job não ser publicado duas vezes.
+      let jobDaPrevia = null;
+
       const esconderPrevia = () => {
         wrap.style.display = 'none';
         previa.innerHTML = '';
         abas.innerHTML = '';
         atividadesGeradas = null;
+        jobDaPrevia = null;
       };
 
       // Com um aluno só, o professor escolhe as pós-aulas. Com turma, cada
@@ -1339,25 +1387,16 @@
           const gerar = httpsCallable(fns, 'gerarAtividades', { timeout: 3600000 });
           const { data } = await gerar({ uids, posaulaIds, quantidade, observacoes });
 
-          atividadesGeradas = { levas: data.levas };
+          // Escola em modo batch: a API responde na hora, o resultado vem
+          // depois. Nada de prévia agora — o job aparece na lista abaixo.
+          if (data.modo === 'batch') {
+            aviso(`✅ Enviado para processamento (${data.alunos} aluno(s)). Fica pronto em algumas horas — você recebe um aviso e revisa aqui embaixo antes de publicar.`, 'green');
+            await recarregarJobsBatch();
+            return;
+          }
 
-          const totalAtiv = data.levas.reduce((n, l) => n + l.activities.length, 0);
-          tituloEl.textContent = data.levas.length > 1
-            ? `${totalAtiv} atividades para ${data.levas.length} alunos`
-            : `${totalAtiv} atividade(s) — ${data.levas[0].week}`;
-
-          abas.innerHTML = data.levas.length > 1
-            ? data.levas.map((l, i) => `<button type="button" data-i="${i}" style="padding:7px 13px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;font-weight:700;font-size:0.82rem;">${esc(l.nome)} <span style="opacity:0.7;font-weight:500;">${esc(l.nivel || '')}</span></button>`).join('')
-            : '';
-          abas.querySelectorAll('button').forEach(b => {
-            b.onclick = () => mostrar(Number(b.dataset.i));
-          });
-
-          mostrar(0);
-          wrap.style.display = 'block';
-          btnPub.textContent = `🚀 Publicar (${data.levas.length} crédito${data.levas.length !== 1 ? 's' : ''})`;
+          abrirLeva(data.levas);
           aviso(`Prévia pronta — custo US$ ${data.custoUSD}. Gerar de novo não gasta crédito.`, 'green');
-          wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         } catch (e) {
           aviso(e.code === 'functions/deadline-exceeded'
             ? 'A geração demorou mais que o esperado. Tente com menos alunos ou menos atividades.'
@@ -1379,7 +1418,7 @@
         btnPub.textContent = 'Publicando...';
         try {
           const publicar = httpsCallable(fns, 'publicarAtividades', { timeout: 300000 });
-          const { data } = await publicar({ levas: atividadesGeradas.levas });
+          const { data } = await publicar({ levas: atividadesGeradas.levas, batchJobId: jobDaPrevia });
 
           const saldo = data.creditosRestantes === null
             ? ''
@@ -1388,6 +1427,7 @@
 
           esconderPrevia();
           document.getElementById('ga-obs').value = '';
+          recarregarJobsBatch();
         } catch (e) {
           aviso(`Erro ao publicar: ${e.message}`, 'crimson');
         } finally {
@@ -1400,6 +1440,89 @@
         esconderPrevia();
         aviso('Prévia descartada. Ajuste o que quiser e gere de novo — sem custo de crédito.', 'var(--muted)');
       };
+
+      // ── Gerações em batch ─────────────────────────────────────────────
+      // A escola em modo batch não recebe a prévia na hora: o job fica aqui
+      // até a função agendada trazer o resultado. Publicar continua manual.
+      const jobsWrap = document.getElementById('ga-jobs-wrap');
+      const jobsBox  = document.getElementById('ga-jobs');
+      const btnJobs  = document.getElementById('btn-atualizar-jobs');
+
+      const SELO = {
+        em_preparo: ['#fff8e1', '#7c5e10', '⏳ Em preparo'],
+        pronto:     ['#f0fdf4', '#166534', '✅ Pronto para revisar'],
+        publicado:  ['#eff6ff', '#1e40af', '🚀 Publicado'],
+        erro:       ['#fef2f2', '#991b1b', '⚠️ Erro'],
+      };
+
+      const abrirLeva = (levas, jobId = null) => {
+        atividadesGeradas = { levas };
+        jobDaPrevia = jobId;
+        const totalAtiv = levas.reduce((n, l) => n + l.activities.length, 0);
+        tituloEl.textContent = levas.length > 1
+          ? `${totalAtiv} atividades para ${levas.length} alunos`
+          : `${totalAtiv} atividade(s) — ${levas[0].week}`;
+
+        abas.innerHTML = levas.length > 1
+          ? levas.map((l, i) => `<button type="button" data-i="${i}" style="padding:7px 13px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;font-weight:700;font-size:0.82rem;">${esc(l.nome)} <span style="opacity:0.7;font-weight:500;">${esc(l.nivel || '')}</span></button>`).join('')
+          : '';
+        abas.querySelectorAll('button').forEach(b => { b.onclick = () => mostrar(Number(b.dataset.i)); });
+
+        mostrar(0);
+        wrap.style.display = 'block';
+        btnPub.textContent = `🚀 Publicar (${levas.length} crédito${levas.length !== 1 ? 's' : ''})`;
+        wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      };
+
+      recarregarJobsBatch = async () => {
+        const escola = escolas.find(e => e.id === escolaAtual);
+        if (!escola || escola.plan?.modoBatch !== true) { jobsWrap.style.display = 'none'; return; }
+        jobsWrap.style.display = 'block';
+        jobsBox.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);">Carregando...</div>';
+
+        let jobs = [];
+        try {
+          // Sem orderBy: filtrar por escola e ordenar aqui evita precisar de
+          // índice composto no Firestore.
+          const snap = await getDocs(query(collection(db, '_batchJobs'), where('escolaId', '==', escolaAtual)));
+          jobs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+            .sort((a, b) => (b.criadoEm?.seconds || 0) - (a.criadoEm?.seconds || 0))
+            .slice(0, 15);
+        } catch (e) {
+          jobsBox.innerHTML = `<div style="font-size:0.85rem;color:crimson;">Erro ao listar: ${esc(e.message)}</div>`;
+          return;
+        }
+
+        if (!jobs.length) {
+          jobsBox.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);">Nenhuma geração em processamento.</div>';
+          return;
+        }
+
+        jobsBox.innerHTML = jobs.map(j => {
+          const [bg, cor, texto] = SELO[j.status] || ['#f1f5f9', '#475569', j.status];
+          const quando = j.criadoEm?.seconds ? new Date(j.criadoEm.seconds * 1000).toLocaleString('pt-BR') : '';
+          const nomes  = (j.alunos || []).map(a => a.nome).filter(Boolean).join(', ');
+          return `<div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;background:#fff;">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <span style="background:${bg};color:${cor};font-size:0.78rem;font-weight:700;padding:3px 9px;border-radius:999px;">${texto}</span>
+              <span style="font-size:0.85rem;font-weight:600;">${esc(nomes || j.uids?.join(', ') || '')}</span>
+              <span style="margin-left:auto;font-size:0.75rem;color:var(--muted);">${esc(quando)}</span>
+            </div>
+            ${j.status === 'erro' ? `<div style="font-size:0.8rem;color:#991b1b;margin-top:8px;">${esc(j.erro || '')}</div>` : ''}
+            ${j.status === 'pronto' ? `<button class="btn-add" type="button" data-job="${j.id}" style="margin-top:10px;padding:8px 14px;font-size:0.85rem;">Revisar e publicar</button>
+              <span style="font-size:0.75rem;color:var(--muted);margin-left:8px;">custo US$ ${j.custoUSD ?? '—'}</span>` : ''}
+          </div>`;
+        }).join('');
+
+        jobsBox.querySelectorAll('button[data-job]').forEach(b => {
+          b.onclick = () => {
+            const job = jobs.find(j => j.id === b.dataset.job);
+            if (job?.levas?.length) abrirLeva(job.levas, job.id);
+          };
+        });
+      };
+
+      btnJobs.onclick = () => recarregarJobsBatch();
     })();
 
     // ── EDITAR DADOS DO ALUNO ───────────────────────────────────────────
@@ -1532,6 +1655,10 @@
         document.getElementById('school-bar').style.display = 'none';
       }
       aplicarModoDaEscola();
+
+      // Só pede notificação a quem gera em batch — é o único aviso que sai daqui.
+      if (escolas.some(e => e.plan?.modoBatch === true)) registrarPushDoProfessor();
+      recarregarJobsBatch();
 
       // O admin lê a coleção inteira; o professor só pode ler os alunos da
       // escola dele, então a consulta precisa vir filtrada.

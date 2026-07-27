@@ -1,4 +1,5 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { defineSecret } from 'firebase-functions/params';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
@@ -240,12 +241,17 @@ async function carregarAlunoEEscola(email, uid) {
   };
 }
 
-/** Registra o consumo da API para acompanhar a margem real. */
-function registrarUso(lote, { tipo, uid, escolaId, uso, extra = {} }) {
+/**
+ * Registra o consumo da API para acompanhar a margem real.
+ * `fator` é o multiplicador de preço do modo de envio: 1 no tempo real,
+ * 0.5 na Batch API (metade do preço, mesmo modelo).
+ */
+function registrarUso(lote, { tipo, uid, escolaId, uso, fator = 1, extra = {} }) {
   const custoUSD =
-    ((uso.input_tokens || 0) * PRECO_ENTRADA +
+    (((uso.input_tokens || 0) * PRECO_ENTRADA +
       (uso.output_tokens || 0) * PRECO_SAIDA +
-      (uso.cache_read_input_tokens || 0) * PRECO_CACHE) /
+      (uso.cache_read_input_tokens || 0) * PRECO_CACHE) *
+      fator) /
     1_000_000;
 
   lote.set(db.collection('_apiUsage').doc(), {
@@ -739,6 +745,9 @@ const referenciaDasPosaulas = (posaulas) =>
 /**
  * Gera as atividades a partir das pós-aulas escolhidas. NÃO publica —
  * o professor confere a prévia antes. Gerar de novo não consome crédito.
+ *
+ * Escola com `plan.modoBatch: true` usa a Batch API (metade do preço, resposta
+ * em algumas horas). Sem o campo, ou com ele em false, tudo segue em tempo real.
  */
 export const gerarAtividades = onCall(
   { ...OPCOES_PADRAO, secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 3600, memory: '512MiB' },
@@ -753,8 +762,8 @@ export const gerarAtividades = onCall(
     const qtd = Math.max(1, Math.min(20, Number(quantidade) || 3));
     const emGrupo = alunosIds.length > 1;
 
-    // Carrega tudo antes de chamar a API: assim o pedido de cada aluno fica
-    // montado num lugar só.
+    // Carrega tudo antes de chamar a API: o pedido de cada aluno é o mesmo nos
+    // dois modos, então monta uma vez só.
     const preparos = [];
     for (const uid of alunosIds) {
       const { aluno, escola } = await carregarAlunoEEscola(email, uid);
@@ -784,12 +793,51 @@ export const gerarAtividades = onCall(
         nome,
         nivel,
         escolaId: escola.id,
+        modoBatch: escola.plan?.modoBatch === true,
         posaulas: referenciaDasPosaulas(posaulas),
         params: pedidoDeAtividades({ nome, nivel, qtd, observacoes, posaulas }),
       });
     }
 
     const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
+
+    // ── Modo batch (opção da escola) ────────────────────────────────────
+    // Todas as levas de uma chamada são da mesma escola: basta olhar a primeira.
+    if (preparos[0].modoBatch) {
+      let batch;
+      try {
+        batch = await client.messages.batches.create({
+          requests: preparos.map((p) => ({ custom_id: p.uid, params: p.params })),
+        });
+      } catch (erro) {
+        console.error('Falha ao enviar o lote para a Batch API:', erro);
+        throw new HttpsError('internal', `Não consegui enviar as atividades para processamento: ${erro.message}`);
+      }
+
+      await db.doc(`_batchJobs/${batch.id}`).set({
+        batchId: batch.id,
+        escolaId: preparos[0].escolaId,
+        uids: preparos.map((p) => p.uid),
+        alunos: preparos.map(({ uid, nome, nivel, posaulas }) => ({ uid, nome, nivel, posaulas })),
+        quantidade: qtd,
+        observacoes: observacoes.trim(),
+        emGrupo,
+        porEmail: email,
+        status: 'em_preparo',
+        criadoEm: FieldValue.serverTimestamp(),
+      });
+
+      return {
+        ok: true,
+        modo: 'batch',
+        batchId: batch.id,
+        status: 'em_preparo',
+        emGrupo,
+        alunos: preparos.length,
+      };
+    }
+
+    // ── Modo síncrono (padrão) ──────────────────────────────────────────
     const resultados = [];
     let custoTotal = 0;
     const lote = db.batch();
@@ -822,6 +870,7 @@ export const gerarAtividades = onCall(
           quantidade: dados.activities?.length || 0,
           publicada: false,
           emGrupo,
+          modo: 'sincrono',
         },
       });
 
@@ -840,6 +889,7 @@ export const gerarAtividades = onCall(
 
     return {
       ok: true,
+      modo: 'sincrono',
       emGrupo,
       levas: resultados,
       custoUSD: Number(custoTotal.toFixed(4)),
@@ -857,7 +907,7 @@ export const publicarAtividades = onCall(
     const email = request.auth?.token?.email;
     if (!email) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
 
-    const { levas = [] } = request.data || {};
+    const { levas = [], batchJobId = null } = request.data || {};
     const lista = Array.isArray(levas)
       ? levas.filter((l) => l?.uid && Array.isArray(l.activities) && l.activities.length)
       : [];
@@ -947,6 +997,15 @@ export const publicarAtividades = onCall(
       });
     }
 
+    // Leva vinda de um job em batch: marca o job para não ser publicado
+    // (e cobrado) duas vezes.
+    if (batchJobId) {
+      lote.update(db.doc(`_batchJobs/${batchJobId}`), {
+        status: 'publicado',
+        publicadoEm: FieldValue.serverTimestamp(),
+      });
+    }
+
     await lote.commit();
 
     // Notifica depois de gravar: falha no push não desfaz a publicação.
@@ -979,6 +1038,195 @@ export const publicarAtividades = onCall(
       creditosUsados: totalCreditos,
       creditosRestantes: controlaCredito ? creditos - totalCreditos : null,
     };
+  }
+);
+
+/* ────────────────────────────────────────────────────────────────
+   BATCH — conclui as gerações enviadas à Batch API
+
+   Roda como scheduled function do Firebase (e não como cron no GitHub
+   Actions, igual ao notify-activities.yml) porque aqui é preciso falar com a
+   Anthropic: a ANTHROPIC_API_KEY vive no cofre do Firebase e o SDK já está
+   instalado em functions/. Um workflow do GitHub exigiria duplicar a chave
+   como secret do repositório e reescrever tudo em Python.
+   ──────────────────────────────────────────────────────────────── */
+
+/** Avisa o professor que a leva ficou pronta. Mesmo padrão de push do publicarAtividades. */
+async function avisarProfessor(escolaId, alunos) {
+  const snap = await db.doc(`schools/${escolaId}`).get();
+  const tokens = (snap.exists && snap.data().fcmTokens) || [];
+  if (!tokens.length) return 0;
+
+  let enviados = 0;
+  for (const token of tokens) {
+    try {
+      await getMessaging().send({
+        token,
+        notification: {
+          title: 'Suas atividades estão prontas para revisão',
+          body: `${alunos} aluno${alunos !== 1 ? 's' : ''} — abra o painel para revisar e publicar.`,
+        },
+        webpush: {
+          fcmOptions: { link: 'https://cezika-web.github.io/science-english-app/admin/' },
+        },
+      });
+      enviados++;
+    } catch (erro) {
+      console.error('Push do batch falhou para a escola', escolaId, erro.message);
+    }
+  }
+  return enviados;
+}
+
+/** Lê um job pendente na Anthropic e, se terminou, grava o resultado. */
+async function concluirJob(client, doc) {
+  const job = doc.data();
+
+  let batch;
+  try {
+    batch = await client.messages.batches.retrieve(job.batchId);
+  } catch (erro) {
+    console.error('Não consegui consultar o batch', job.batchId, erro.message);
+    return false;
+  }
+
+  if (batch.processing_status !== 'ended') return false;
+
+  // Os resultados voltam fora de ordem — indexa por custom_id (o uid).
+  const porUid = new Map();
+  for await (const item of await client.messages.batches.results(job.batchId)) {
+    porUid.set(item.custom_id, item.result);
+  }
+
+  const lote = db.batch();
+  const levas = [];
+  const falhas = [];
+  let custoTotal = 0;
+
+  for (const aluno of job.alunos || []) {
+    const resultado = porUid.get(aluno.uid);
+
+    if (!resultado || resultado.type !== 'succeeded') {
+      falhas.push(`${aluno.nome || aluno.uid}: ${resultado?.type || 'sem resposta'}`);
+      continue;
+    }
+
+    const resposta = resultado.message;
+    if (resposta.stop_reason === 'max_tokens') {
+      falhas.push(`${aluno.nome || aluno.uid}: a resposta ficou longa demais e foi cortada.`);
+      continue;
+    }
+
+    const blocoTexto = resposta.content.find((b) => b.type === 'text');
+    if (!blocoTexto) {
+      falhas.push(`${aluno.nome || aluno.uid}: a API não devolveu as atividades.`);
+      continue;
+    }
+
+    let dados;
+    try {
+      dados = JSON.parse(blocoTexto.text);
+    } catch (erro) {
+      falhas.push(`${aluno.nome || aluno.uid}: resposta em formato inesperado.`);
+      continue;
+    }
+
+    // O custo continua medido — é o que mostra a economia do batch.
+    custoTotal += registrarUso(lote, {
+      tipo: 'atividades',
+      uid: aluno.uid,
+      escolaId: job.escolaId,
+      uso: resposta.usage,
+      fator: 0.5,
+      extra: {
+        alunoNome: aluno.nome || '',
+        quantidade: dados.activities?.length || 0,
+        publicada: false,
+        emGrupo: !!job.emGrupo,
+        modo: 'batch',
+        batchId: job.batchId,
+      },
+    });
+
+    levas.push({
+      uid: aluno.uid,
+      nome: aluno.nome || '',
+      nivel: aluno.nivel || '',
+      week: dados.week,
+      activities: dados.activities,
+      vocabulario: dados.vocabulario || [],
+      posaulas: aluno.posaulas || [],
+    });
+  }
+
+  // Nenhuma leva saiu → job em erro. Crédito não é debitado aqui de qualquer
+  // forma: quem debita é a publicação.
+  if (!levas.length) {
+    lote.update(doc.ref, {
+      status: 'erro',
+      erro: falhas.join(' · ') || 'O batch terminou sem resultados.',
+      concluidoEm: FieldValue.serverTimestamp(),
+    });
+    await lote.commit();
+    return true;
+  }
+
+  // O resultado inteiro vai no doc do job, e doc do Firestore tem 1 MB. Uma
+  // leva normal tem poucos KB, mas uma turma grande com muitas atividades
+  // pode estourar — melhor avisar do que falhar sem explicação na gravação.
+  if (Buffer.byteLength(JSON.stringify(levas), 'utf8') > 900_000) {
+    lote.update(doc.ref, {
+      status: 'erro',
+      erro: 'O resultado ficou grande demais para ser guardado. Gere menos atividades ou menos alunos por vez.',
+      concluidoEm: FieldValue.serverTimestamp(),
+    });
+    await lote.commit();
+    return true;
+  }
+
+  lote.update(doc.ref, {
+    status: 'pronto',
+    levas,
+    custoUSD: Number(custoTotal.toFixed(4)),
+    ...(falhas.length && { avisos: falhas }),
+    concluidoEm: FieldValue.serverTimestamp(),
+  });
+  await lote.commit();
+
+  await avisarProfessor(job.escolaId, levas.length);
+  return true;
+}
+
+export const concluirAtividadesEmBatch = onSchedule(
+  {
+    region: 'southamerica-east1',
+    schedule: 'every 5 minutes',
+    timeZone: 'America/Sao_Paulo',
+    secrets: [ANTHROPIC_API_KEY],
+    timeoutSeconds: 540,
+    memory: '512MiB',
+  },
+  async () => {
+    const pendentes = await db
+      .collection('_batchJobs')
+      .where('status', '==', 'em_preparo')
+      .limit(20)
+      .get();
+
+    if (pendentes.empty) return;
+
+    const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
+    let concluidos = 0;
+
+    for (const doc of pendentes.docs) {
+      try {
+        if (await concluirJob(client, doc)) concluidos++;
+      } catch (erro) {
+        console.error('Falha ao concluir o job', doc.id, erro);
+      }
+    }
+
+    console.log(`Batch: ${pendentes.size} pendente(s), ${concluidos} concluído(s).`);
   }
 );
 
