@@ -669,19 +669,23 @@ export const publicarPosAula = onCall(
    ATIVIDADES — gerar a partir das pós-aulas e publicar
    ──────────────────────────────────────────────────────────────── */
 
-/** Pega o conteúdo de uma pós-aula, venha ela do banco ou de um arquivo. */
+/**
+ * Pega o conteúdo de uma pós-aula, venha ela do banco ou de um arquivo.
+ * Devolve também id/título/url — é isso que liga a atividade à aula que a originou.
+ */
 async function conteudoDaPosAula(uid, posaulaId) {
   const snap = await db.doc(`students/${uid}/posaulas/${posaulaId}`).get();
   if (!snap.exists) return null;
   const p = snap.data();
+  const base = { id: snap.id, titulo: p.title || '', url: p.url || '' };
 
-  if (p.html) return { titulo: p.title || '', texto: textoDaPosAula(p.html) };
+  if (p.html) return { ...base, texto: textoDaPosAula(p.html) };
 
   if (p.url) {
     try {
       const r = await fetch(p.url);
       if (!r.ok) return null;
-      return { titulo: p.title || '', texto: textoDaPosAula(await r.text()) };
+      return { ...base, texto: textoDaPosAula(await r.text()) };
     } catch (e) {
       console.error('Não consegui ler a pós-aula', p.url, e.message);
       return null;
@@ -689,6 +693,48 @@ async function conteudoDaPosAula(uid, posaulaId) {
   }
   return null;
 }
+
+/**
+ * Resolve o `sourceIndex` que o modelo devolveu contra as pós-aulas da leva.
+ * Índice ausente, fora do intervalo ou leva de uma pós-aula só → a primeira.
+ * Nunca lança: publicar não pode quebrar por causa disso.
+ */
+function posaulaDaAtividade(lista, sourceIndex) {
+  if (!Array.isArray(lista) || !lista.length) return null;
+  const i = Math.trunc(Number(sourceIndex));
+  if (!Number.isFinite(i) || i < 1 || i > lista.length) return lista[0];
+  return lista[i - 1] || lista[0];
+}
+
+/**
+ * Monta a requisição de um aluno. É a MESMA para o modo síncrono e para o
+ * batch — muda só o meio de envio, nunca o conteúdo.
+ */
+function pedidoDeAtividades({ nome, nivel, qtd, observacoes, posaulas }) {
+  return {
+    model: MODEL,
+    max_tokens: 32000,
+    system: [
+      { type: 'text', text: REGRAS_ATIVIDADES, cache_control: { type: 'ephemeral' } },
+    ],
+    output_config: { format: { type: 'json_schema', schema: SCHEMA_ATIVIDADES } },
+    messages: [
+      {
+        role: 'user',
+        content:
+          `Aluno: ${nome} — nível ${nivel}\n` +
+          `Quantidade de atividades a gerar: ${qtd}\n` +
+          (observacoes.trim() ? `\nObservações do professor (prioridade sobre o padrão):\n${observacoes.trim()}\n` : '') +
+          `\nCONTEÚDO DAS PÓS-AULAS:\n\n` +
+          posaulas.map((p, i) => `── Pós-aula ${i + 1}: ${p.titulo} ──\n${p.texto}`).join('\n\n'),
+      },
+    ],
+  };
+}
+
+/** Só o que a atividade precisa saber da pós-aula — o texto não vai para o Firestore. */
+const referenciaDasPosaulas = (posaulas) =>
+  posaulas.map((p, i) => ({ index: i + 1, id: p.id, titulo: p.titulo, url: p.url || '' }));
 
 /**
  * Gera as atividades a partir das pós-aulas escolhidas. NÃO publica —
@@ -707,11 +753,9 @@ export const gerarAtividades = onCall(
     const qtd = Math.max(1, Math.min(20, Number(quantidade) || 3));
     const emGrupo = alunosIds.length > 1;
 
-    const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
-    const resultados = [];
-    let custoTotal = 0;
-    const lote = db.batch();
-
+    // Carrega tudo antes de chamar a API: assim o pedido de cada aluno fica
+    // montado num lugar só.
+    const preparos = [];
     for (const uid of alunosIds) {
       const { aluno, escola } = await carregarAlunoEEscola(email, uid);
 
@@ -732,50 +776,49 @@ export const gerarAtividades = onCall(
         throw new HttpsError('not-found', `${aluno.name || 'O aluno'} não tem pós-aula para servir de base.`);
       }
 
+      const nome = aluno.name || '';
       const nivel = ((aluno.level || '').match(/\(([^)]+)\)/) || [])[1] || aluno.level || 'A1';
 
+      preparos.push({
+        uid,
+        nome,
+        nivel,
+        escolaId: escola.id,
+        posaulas: referenciaDasPosaulas(posaulas),
+        params: pedidoDeAtividades({ nome, nivel, qtd, observacoes, posaulas }),
+      });
+    }
+
+    const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
+    const resultados = [];
+    let custoTotal = 0;
+    const lote = db.batch();
+
+    for (const { uid, nome, nivel, escolaId, posaulas, params } of preparos) {
       let resposta;
       try {
-        const stream = client.messages.stream({
-          model: MODEL,
-          max_tokens: 32000,
-          system: [
-            { type: 'text', text: REGRAS_ATIVIDADES, cache_control: { type: 'ephemeral' } },
-          ],
-          output_config: { format: { type: 'json_schema', schema: SCHEMA_ATIVIDADES } },
-          messages: [
-            {
-              role: 'user',
-              content:
-                `Aluno: ${aluno.name || ''} — nível ${nivel}\n` +
-                `Quantidade de atividades a gerar: ${qtd}\n` +
-                (observacoes.trim() ? `\nObservações do professor (prioridade sobre o padrão):\n${observacoes.trim()}\n` : '') +
-                `\nCONTEÚDO DAS PÓS-AULAS:\n\n` +
-                posaulas.map((p, i) => `── Pós-aula ${i + 1}: ${p.titulo} ──\n${p.texto}`).join('\n\n'),
-            },
-          ],
-        });
+        const stream = client.messages.stream(params);
         resposta = await stream.finalMessage();
       } catch (erro) {
-        console.error(`Falha ao gerar atividades de ${aluno.name}:`, erro);
-        throw new HttpsError('internal', `Não consegui gerar as atividades de ${aluno.name}: ${erro.message}`);
+        console.error(`Falha ao gerar atividades de ${nome}:`, erro);
+        throw new HttpsError('internal', `Não consegui gerar as atividades de ${nome}: ${erro.message}`);
       }
 
       if (resposta.stop_reason === 'max_tokens') {
-        throw new HttpsError('internal', `As atividades de ${aluno.name} ficaram longas demais. Tente gerar menos de uma vez.`);
+        throw new HttpsError('internal', `As atividades de ${nome} ficaram longas demais. Tente gerar menos de uma vez.`);
       }
 
       const blocoTexto = resposta.content.find((b) => b.type === 'text');
-      if (!blocoTexto) throw new HttpsError('internal', `A API não devolveu as atividades de ${aluno.name}.`);
+      if (!blocoTexto) throw new HttpsError('internal', `A API não devolveu as atividades de ${nome}.`);
       const dados = JSON.parse(blocoTexto.text);
 
       custoTotal += registrarUso(lote, {
         tipo: 'atividades',
         uid,
-        escolaId: escola.id,
+        escolaId,
         uso: resposta.usage,
         extra: {
-          alunoNome: aluno.name || '',
+          alunoNome: nome,
           quantidade: dados.activities?.length || 0,
           publicada: false,
           emGrupo,
@@ -784,11 +827,12 @@ export const gerarAtividades = onCall(
 
       resultados.push({
         uid,
-        nome: aluno.name || '',
+        nome,
         nivel,
         week: dados.week,
         activities: dados.activities,
         vocabulario: dados.vocabulario || [],
+        posaulas,
       });
     }
 
@@ -839,15 +883,24 @@ export const publicarAtividades = onCall(
     const lote = db.batch();
     const publicadas = [];
 
-    for (const { uid, week, activities, vocabulario = [], nome } of lista) {
+    for (const { uid, week, activities, vocabulario = [], nome, posaulas = [] } of lista) {
       const { aluno } = await carregarAlunoEEscola(email, uid);
 
       for (const act of activities) {
+        // De qual pós-aula saiu esta atividade — é o que o botão "Consultar
+        // pós-aula" do aluno usa. Índice ruim cai na primeira, nunca quebra.
+        const origem = posaulaDaAtividade(posaulas, act.sourceIndex);
+
         lote.set(db.collection(`students/${uid}/activities`).doc(), {
           week: week || '',
           title: act.title || '',
           emoji: act.emoji || '📚',
           parts: act.parts || [],
+          ...(origem && {
+            posaulaId: origem.id || '',
+            posaulaUrl: origem.url || '',
+            posaulaTitulo: origem.titulo || '',
+          }),
           status: 'pending',
           notified: true,   // a notificação sai aqui mesmo, não pelo cron
           geradaPorIA: true,

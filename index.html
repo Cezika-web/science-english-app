@@ -2125,11 +2125,76 @@ function ActivityModal({ activity, onClose, onOpenPart }) {
   );
 }
 
-function PartModal({ part, activity, onBack, onClose, onFinish, onSaveDraft }) {
+// ── Consulta rápida da pós-aula que originou a atividade ─────────
+// Abre por CIMA da atividade: a parte continua montada, então nada do que o
+// aluno já digitou se perde. Atividades antigas não têm posaulaId/posaulaUrl —
+// nesse caso cai na lista de pós-aulas do aluno, nunca em erro.
+function PosaulaPeek({ open, activity, posaulas, onClose }) {
+  const lista = posaulas || [];
+
+  const alvo = React.useMemo(() => {
+    if (!activity) return null;
+    const doBanco = activity.posaulaId ? lista.find(p => p.id === activity.posaulaId) : null;
+    if (doBanco) return doBanco;
+    if (activity.posaulaUrl) return { id: '', title: activity.posaulaTitulo || 'Pos-aula', url: activity.posaulaUrl };
+    return null;
+  }, [activity, lista]);
+
+  const [sel, setSel] = useState(null);
+  useEffect(() => { if (open) setSel(alvo); }, [open, alvo]);
+
+  if (!open) return null;
+  const podeVoltar = !alvo && !!sel;
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 700, background: 'rgba(10,20,40,0.55)', display: 'flex', flexDirection: 'column' }}
+         onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ marginTop: 'auto', height: '92%', background: '#fff', borderRadius: '20px 20px 0 0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderBottom: '1px solid #F1F5F9', flexShrink: 0 }}>
+          {podeVoltar && (
+            <button onClick={() => setSel(null)} style={{ width: 30, height: 30, borderRadius: '50%', border: 'none', background: '#F1F5F9', cursor: 'pointer', fontSize: 17, color: '#374151', fontFamily: 'inherit', flexShrink: 0 }}>&#8249;</button>
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 10.5, color: '#9A6438', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>Consulta</div>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {sel ? (sel.title || 'Pos-aula') : 'Suas pos-aulas'}
+            </div>
+          </div>
+          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: '50%', border: 'none', background: '#F1F5F9', cursor: 'pointer', fontSize: 15, color: '#374151', fontFamily: 'inherit', flexShrink: 0 }}>&#x2715;</button>
+        </div>
+
+        {sel ? (
+          sel.html
+            ? <iframe className="reader-frame" srcDoc={sel.html} allowFullScreen />
+            : <iframe className="reader-frame" src={sel.url || 'about:blank'} allowFullScreen />
+        ) : (
+          <div style={{ flex: 1, overflowY: 'auto', padding: 14 }}>
+            {lista.length === 0 ? (
+              <div style={{ fontSize: 13, color: '#64748B', textAlign: 'center', padding: '30px 10px' }}>
+                Voce ainda nao tem pos-aulas por aqui.
+              </div>
+            ) : lista.map(p => (
+              <button key={p.id} onClick={() => setSel(p)} style={{
+                display: 'block', width: '100%', textAlign: 'left', background: '#F8FAFC',
+                border: '1.5px solid #E2E8F0', borderRadius: 12, padding: 13, marginBottom: 8,
+                cursor: 'pointer', fontFamily: 'inherit', fontSize: 13.5, fontWeight: 600, color: '#0F172A',
+              }}>
+                {p.title || 'Pos-aula'}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PartModal({ part, activity, posaulas, onBack, onClose, onFinish, onSaveDraft }) {
   const contentRef = useRef(null);
   const valuesRef  = useRef({});
   const [stats, setStats]   = useState({ total: 0, filled: 0 });
   const [saving, setSaving] = useState(false);
+  const [peek, setPeek]     = useState(false);
 
   const partId    = part ? (part.id || part.title || '') : '';
   const fb_item   = activity?.feedback && part ? (activity.feedback[part.id || part.title]) : null;
@@ -2199,7 +2264,18 @@ function PartModal({ part, activity, onBack, onClose, onFinish, onSaveDraft }) {
           <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: '#F1F5F9', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', flexShrink: 0, fontFamily: 'inherit' }}>&#x2715;</button>
         </div>
 
-        <div ref={contentRef} className="ex-root" style={{ flex: 1, overflowY: 'auto', padding: 16, fontSize: 14.5, lineHeight: 1.75, color: '#1F2937' }} />
+        <div className="ex-root" style={{ flex: 1, overflowY: 'auto', padding: 16, fontSize: 14.5, lineHeight: 1.75, color: '#1F2937' }}>
+          {/* Sticky no topo da rolagem: a duvida aparece no meio do preenchimento,
+              e aqui o botao nunca cobre lacuna nem o botao de enviar. */}
+          <div style={{ position: 'sticky', top: -16, zIndex: 2, display: 'flex', justifyContent: 'flex-end', background: '#fff', margin: '-16px -16px 8px', padding: '10px 16px 6px' }}>
+            <button onClick={() => setPeek(true)} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5, background: '#F8FAFC',
+              border: '1px solid #E2E8F0', borderRadius: 999, padding: '5px 11px',
+              fontSize: 11.5, fontWeight: 700, color: '#64748B', cursor: 'pointer', fontFamily: 'inherit',
+            }}>&#128196; Consultar pos-aula</button>
+          </div>
+          <div ref={contentRef} />
+        </div>
 
         {fb_item && (
           <div style={{ margin: '0 16px 16px', background: 'rgba(var(--brand-rgb),0.08)', border: '1px solid rgba(var(--brand-rgb),0.2)', borderRadius: 14, padding: 16, flexShrink: 0 }}>
@@ -2228,6 +2304,8 @@ function PartModal({ part, activity, onBack, onClose, onFinish, onSaveDraft }) {
             </button>
           </div>
         )}
+
+        <PosaulaPeek open={peek} activity={activity} posaulas={posaulas} onClose={() => setPeek(false)} />
       </div>
     </div>
   );
@@ -2610,7 +2688,7 @@ function App() {
       <BottomNav active={tab} onChange={setTab} />
 
       <ActivityModal activity={openActivity} onClose={handleCloseAll} onOpenPart={handleOpenPart} />
-      <PartModal part={openPart} activity={openActivity} onBack={handleClosePart} onClose={handleCloseAll} onFinish={handleFinishPart} onSaveDraft={handleSaveDraftPart} />
+      <PartModal part={openPart} activity={openActivity} posaulas={posaulas} onBack={handleClosePart} onClose={handleCloseAll} onFinish={handleFinishPart} onSaveDraft={handleSaveDraftPart} />
       <ExtraModal extra={openExtra} onClose={() => setOpenExtra(null)} onFinish={handleFinishExtra} onSaveDraft={handleSaveDraftExtra} mirror={mirror} />
       <CorrecaoModal data={openCorrecao} onClose={() => setOpenCorrecao(null)} />
 
