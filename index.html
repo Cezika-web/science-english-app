@@ -540,11 +540,50 @@ const CORR_COLORS = {
   branco:  { bg: '#F9FAFB', bd: '#D1D5DB', tx: '#6B7280', label: 'Não respondida' },
 };
 function applyCorrection(container, arr) {
-  const qs = [...container.querySelectorAll('li, p')].filter(el =>
-    el.tagName === 'LI' || el.querySelector('.ex-textarea'));
+  // Cada linha do arrastar e uma questao, igual a um <li>. Ela entra na lista
+  // na ordem em que aparece na tela — que e a ordem em que a correcao vem.
+  const qs = [...container.querySelectorAll('.ex-match-row, li, p')].filter(el =>
+    el.classList.contains('ex-match-row') || el.tagName === 'LI' || el.querySelector('.ex-textarea'));
   (arr || []).forEach((c, i) => {
     const el = qs[i]; if (!el) return;
     const st = CORR_COLORS[c.status] || CORR_COLORS.ok;
+
+    // ── Arrastar: o aluno precisa enxergar QUAL par errou, entao as duas
+    // palavras da linha ficam em vermelho, com o par certo logo abaixo.
+    if (el.classList.contains('ex-match-row')) {
+      const esquerda = el.querySelector('.ex-match-left');
+      const chip     = el.querySelector('.ex-match-chip');
+      const errou    = c.status !== 'ok' && c.status !== 'branco';
+
+      el.style.flexWrap     = 'wrap';
+      el.style.borderLeft   = '4px solid ' + st.bd;
+      el.style.background   = st.bg;
+      el.style.borderRadius = '0 10px 10px 0';
+      el.style.padding      = '8px 10px';
+
+      if (errou) {
+        if (esquerda) { esquerda.style.color = '#DC2626'; esquerda.style.fontWeight = '800'; }
+        if (chip) {
+          chip.style.color       = '#DC2626';
+          chip.style.borderColor = '#DC2626';
+          chip.style.background  = '#FEF2F2';
+          chip.style.fontWeight  = '800';
+        }
+      } else if (c.status === 'ok' && chip) {
+        chip.style.borderColor = st.bd;
+      }
+
+      const nota = document.createElement('div');
+      nota.style.cssText = 'flex:0 0 100%;margin-top:6px;font-size:12px;line-height:1.5;color:' + st.tx + ';';
+      nota.innerHTML = errou
+        ? '<span style="font-weight:800;">' + st.label + '</span>' +
+          (c.correct ? ' · <strong>Certo:</strong> ' + escHtml(c.correct) : '') +
+          (c.explain ? '<div>' + escHtml(c.explain) + '</div>' : '')
+        : '<span style="font-weight:800;">' + st.label + '</span>';
+      el.appendChild(nota);
+      return;
+    }
+
     el.style.borderLeft = '4px solid ' + st.bd;
     el.style.background = st.bg;
     el.style.borderRadius = '0 10px 10px 0';
