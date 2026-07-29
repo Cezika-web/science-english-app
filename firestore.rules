@@ -43,6 +43,14 @@ service cloud.firestore {
         ehDonoDa(schoolId) &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmTokens'])
       );
+
+      // Avisos: recado do professor para os alunos dele. Qualquer aluno
+      // logado lê (não há nada sigiloso num aviso de feriado); escrever, só
+      // o administrador e o dono da escola.
+      match /avisos/{avisoId} {
+        allow read: if request.auth != null;
+        allow write: if isAdmin() || ehDonoDa(schoolId);
+      }
     }
 
     match /students/{userId} {

@@ -245,6 +245,7 @@
         <button class="tab" data-tab="correct">✅ Correção</button>
         <button class="tab" data-tab="vocab">📖 Vocabulário</button>
         <button class="tab" data-tab="extras">🎧 Extras</button>
+        <button class="tab" data-tab="avisos">📣 Avisos</button>
         <button class="tab" data-tab="add">➕ Novo Aluno</button>
         <button class="tab" data-tab="exalunos">🗄️ Ex-alunos</button>
       </div>
@@ -568,6 +569,36 @@
       </div>
 
       <!-- NOVO ALUNO -->
+      <!-- AVISOS — mensagem que aparece para todos os alunos da escola -->
+      <div class="tab-panel" id="tab-avisos">
+        <div class="form-card">
+          <h2>📣 Enviar aviso para todos os alunos</h2>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;">
+            O aviso aparece assim que o aluno abre o app, por cima de tudo, e só sai quando ele confirma que leu.
+            Vale para <strong>todos os alunos ativos da escola selecionada no topo</strong>. Use para o que não precisa de aula:
+            feriado, mudança de horário, aula cancelada.
+          </p>
+          <div class="field">
+            <label>Título (opcional)</label>
+            <input type="text" id="av-titulo" placeholder="Ex: Não teremos aula na quinta" maxlength="80">
+          </div>
+          <div class="field">
+            <label>Mensagem</label>
+            <textarea id="av-msg" style="min-height:120px;" placeholder="Ex: Pessoal, quinta é feriado e não teremos aula. Voltamos na terça no horário de sempre."></textarea>
+          </div>
+          <button class="btn-add" id="btn-enviar-aviso" type="button" style="width:100%;">📣 Enviar aviso</button>
+          <div class="form-msg" id="av-form-msg"></div>
+        </div>
+
+        <div class="form-card">
+          <h2>Avisos enviados</h2>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;">
+            Arquivar tira o aviso da tela de quem ainda não leu. Quem já confirmou não vê de novo.
+          </p>
+          <div id="av-lista"></div>
+        </div>
+      </div>
+
       <div class="tab-panel" id="tab-add">
         <div class="form-card">
           <h2>Cadastrar novo aluno</h2>
@@ -842,6 +873,7 @@
         tab.classList.add('active');
         document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
         if (tab.dataset.tab === 'publish') recarregarJobsBatch();
+        if (tab.dataset.tab === 'avisos')  recarregarAvisos();
       };
     });
 
@@ -855,8 +887,8 @@
     // Quem administra a escola vê a interface dela — inclusive o César, ao
     // trocar de escola no seletor do topo.
     const ABAS_POR_MODO = {
-      manual:    ['students', 'publish', 'correct', 'vocab', 'extras', 'add', 'exalunos'],
-      assistido: ['students', 'creditos', 'posaula', 'publish', 'extras', 'add', 'exalunos'],
+      manual:    ['students', 'publish', 'correct', 'vocab', 'extras', 'avisos', 'add', 'exalunos'],
+      assistido: ['students', 'creditos', 'posaula', 'publish', 'extras', 'avisos', 'add', 'exalunos'],
     };
 
     function modoDaEscolaAtual() {
@@ -1523,6 +1555,93 @@
       };
 
       btnJobs.onclick = () => recarregarJobsBatch();
+    })();
+
+    // ── AVISOS ──────────────────────────────────────────────────────────
+    // Recado do professor para todos os alunos da escola. Fica em
+    // schools/{escola}/avisos e o app mostra por cima de tudo até o aluno
+    // confirmar que leu.
+    let recarregarAvisos = async () => {};
+
+    (function iniciarAvisos() {
+      const btn    = document.getElementById('btn-enviar-aviso');
+      if (!btn) return;
+      const titulo = document.getElementById('av-titulo');
+      const msg    = document.getElementById('av-msg');
+      const aviso  = document.getElementById('av-form-msg');
+      const lista  = document.getElementById('av-lista');
+
+      const dizer = (t, c) => { aviso.textContent = t; aviso.style.color = c; };
+
+      recarregarAvisos = async () => {
+        lista.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);">Carregando...</div>';
+        let itens = [];
+        try {
+          const snap = await getDocs(collection(db, 'schools', escolaAtual, 'avisos'));
+          itens = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+            .sort((a, b) => (b.criadoEm?.seconds || 0) - (a.criadoEm?.seconds || 0));
+        } catch (e) {
+          lista.innerHTML = `<div style="font-size:0.85rem;color:crimson;">Erro ao listar: ${esc(e.message)}</div>`;
+          return;
+        }
+
+        if (!itens.length) {
+          lista.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);">Nenhum aviso enviado ainda.</div>';
+          return;
+        }
+
+        lista.innerHTML = itens.map(a => {
+          const quando = a.criadoEm?.seconds ? new Date(a.criadoEm.seconds * 1000).toLocaleString('pt-BR') : '';
+          const ativo  = a.ativo !== false;
+          return `<div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;background:${ativo ? '#fff' : '#f8fafc'};">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
+              <span style="background:${ativo ? '#f0fdf4' : '#f1f5f9'};color:${ativo ? '#166534' : '#64748b'};font-size:0.75rem;font-weight:700;padding:3px 9px;border-radius:999px;">
+                ${ativo ? 'No ar' : 'Arquivado'}
+              </span>
+              ${a.titulo ? `<strong style="font-size:0.9rem;">${esc(a.titulo)}</strong>` : ''}
+              <span style="margin-left:auto;font-size:0.75rem;color:var(--muted);">${esc(quando)}</span>
+            </div>
+            <div style="font-size:0.88rem;white-space:pre-wrap;color:#334155;">${esc(a.mensagem || '')}</div>
+            ${ativo ? `<button class="btn-sm-danger" type="button" data-arquivar="${a.id}" style="margin-top:10px;background:#e5e7eb;color:#374151;">Arquivar</button>` : ''}
+          </div>`;
+        }).join('');
+
+        lista.querySelectorAll('button[data-arquivar]').forEach(b => {
+          b.onclick = async () => {
+            b.disabled = true;
+            try {
+              await updateDoc(doc(db, 'schools', escolaAtual, 'avisos', b.dataset.arquivar), { ativo: false });
+              await recarregarAvisos();
+            } catch (e) { alert('Erro ao arquivar: ' + e.message); b.disabled = false; }
+          };
+        });
+      };
+
+      btn.onclick = async () => {
+        const texto = msg.value.trim();
+        if (!texto) return dizer('Escreva a mensagem antes de enviar.', 'crimson');
+
+        const alunos = allStudents.filter(s => !s.archived).length;
+        if (!confirm(`Enviar este aviso para ${alunos} aluno(s)?\n\nEle aparece na abertura do app e só sai quando cada um confirmar que leu.`)) return;
+
+        btn.disabled = true;
+        try {
+          await addDoc(collection(db, 'schools', escolaAtual, 'avisos'), {
+            titulo: titulo.value.trim(),
+            mensagem: texto,
+            ativo: true,
+            porEmail: auth.currentUser?.email || '',
+            criadoEm: serverTimestamp(),
+          });
+          titulo.value = ''; msg.value = '';
+          dizer('✅ Aviso enviado. Aparece na próxima vez que o aluno abrir o app.', 'green');
+          await recarregarAvisos();
+        } catch (e) {
+          dizer('Erro ao enviar: ' + e.message, 'crimson');
+        } finally {
+          btn.disabled = false;
+        }
+      };
     })();
 
     // ── EDITAR DADOS DO ALUNO ───────────────────────────────────────────
