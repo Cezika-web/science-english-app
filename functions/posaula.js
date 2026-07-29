@@ -13,18 +13,27 @@ function esc(s) {
   ));
 }
 
+// Só existe quando o professor informou o link. Sem link, a seção inteira
+// some — nada de botão morto para quem não grava aula.
 const SECAO_GRAVACAO = `
-        <!-- GRAVAÇÃO — só existe quando há link do YouTube -->
         <section>
           <h2 style="margin-bottom:8px;">Gravação da aula</h2>
           <div class="media-row">
             <a class="media-btn" href="[YOUTUBE_LINK]" target="_blank" rel="noopener noreferrer" role="button"
-               style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;min-width:260px;">
+               style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">
               🎥 Assistir gravação
             </a>
           </div>
         </section>
 `;
+
+/** Tom clarinho da cor da escola — é o que deixa a página "verde e branca" ou "azul e branca". */
+function tom(hex, alpha) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(String(hex || '').trim());
+  if (!m) return `rgba(47,134,230,${alpha})`;
+  const [r, g, b] = [m[1], m[2], m[3]].map((h) => parseInt(h, 16));
+  return `rgba(${r},${g},${b},${alpha})`;
+}
 
 /**
  * Monta o template já com a marca da escola preenchida — assim o modelo só
@@ -40,6 +49,14 @@ export function montarTemplate({ escola, aluno, data, youtubeUrl }) {
   const gravacao = youtubeUrl
     ? SECAO_GRAVACAO.replace('[YOUTUBE_LINK]', esc(youtubeUrl))
     : '';
+
+  // Toda a página é branca + a cor da escola. Nada de azul fixo: quem define
+  // é o theme.accent, então a mesma pós-aula sai verde para uma escola e azul
+  // para outra.
+  const t04 = tom(accent, 0.04);
+  const t08 = tom(accent, 0.08);
+  const t16 = tom(accent, 0.16);
+  const t30 = tom(accent, 0.30);
 
   const whatsapp = escola.whatsapp
     ? `
@@ -58,44 +75,44 @@ export function montarTemplate({ escola, aluno, data, youtubeUrl }) {
   <title>Resumo Pós-Aula — ${esc(aluno.name)} — ${nomeEscola}</title>
   <style>
 :root{
-  --page-bg: #f4f7fa;
+  --page-bg: #f6f8fa;
   --card-bg: #fff;
   --accent: ${accent};
   --accent-dark: ${accentDark};
   --green: #36b37e;
   --muted: #6b7280;
-  --border: #e6eef8;
+  --border: ${t16};
   --card-width: 720px;
 }
 html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
 .wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
 .card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
 header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
-.badge{ background:linear-gradient(180deg,#fff,#f2fbff); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+.badge{ background:linear-gradient(180deg,#fff,${t08}); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
 h1{ margin:0; font-size:1.3rem; color:#0f1724; }
 .meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
 .actions{ display:flex; gap:10px; }
 .btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; }
 main{ margin-top:18px; }
 section{ margin-top:18px; }
-.panel{ background:#fbfdff; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.panel{ background:${t04}; border-radius:12px; padding:16px; border:1px solid var(--border); }
 .outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
 .vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
-.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #dfeefe; background:#fff; }
-.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
-.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
-.vocab h3{ margin:0; font-size:1rem; color:#154360; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid ${t30}; background:#fff; }
+.vocab.green{ border-color:${t30}; background:${t04}; }
+.vocab.yellow{ border-color:${t16}; background:${t08}; }
+.vocab h3{ margin:0; font-size:1rem; color:var(--accent-dark); }
 .vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
 .media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
 .media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
-.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
-.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#fbfdff); border:1px solid var(--border); max-width:640px; }
+.homework{ background:${t08}; border:1px solid ${t30}; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,${t04}); border:1px solid var(--border); max-width:640px; }
 .speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
-.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #e1e9f5; font-size:0.9rem; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid ${t16}; font-size:0.9rem; }
 .talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
-.talk-table th{ background:#eef4ff; color:#1b3556; font-weight:700; border-bottom:1px solid #dde6fa; }
-.row-teacher{ background:#e7f2ff; }
-.row-student{ background:#e8f7ef; }
+.talk-table th{ background:${t16}; color:var(--accent-dark); font-weight:700; border-bottom:1px solid ${t30}; }
+.row-teacher{ background:${t08}; }
+.row-student{ background:#F3F4F6; }
 .talk-label{ font-weight:700; }
 .talk-percent{ font-weight:700; color:#0f1724; }
 .talk-time{ color:var(--muted); }
@@ -127,7 +144,7 @@ footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center
       <main>
 
         <section class="panel">
-          <p style="margin:0;font-weight:600;color:#08325a;">[RESUMO CURTO — 1 ou 2 linhas]</p>
+          <p style="margin:0;font-weight:600;color:var(--accent-dark);">[RESUMO CURTO — 1 ou 2 linhas]</p>
         </section>
 
         <section>
