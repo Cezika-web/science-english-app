@@ -286,6 +286,56 @@ function isStandalone() {
   return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 }
 
+// ── MARCA DA ESCOLA ──────────────────────────────────────────────
+// O app e um so, mas cada escola tem cor, nome e logo proprios. A marca da
+// ultima escola usada fica guardada aqui para a tela de login ja aparecer
+// certa — antes do login o app ainda nao sabe de qual aluno se trata.
+const MARCA_KEY = 'marcaEscola';
+
+function marcaDaEscola() {
+  try { return JSON.parse(localStorage.getItem(MARCA_KEY)) || {}; } catch (e) { return {}; }
+}
+
+function hexParaRgb(hex) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(String(hex || '').trim());
+  return m ? [parseInt(m[1],16), parseInt(m[2],16), parseInt(m[3],16)].join(',') : null;
+}
+
+/** Clareia uma cor para o tom de destaque (o "--brand-light"). */
+function clarear(hex, fator = 0.28) {
+  const rgb = hexParaRgb(hex);
+  if (!rgb) return null;
+  const [r,g,b] = rgb.split(',').map(Number);
+  const mix = v => Math.round(v + (255 - v) * fator);
+  return `#${[mix(r),mix(g),mix(b)].map(v => v.toString(16).padStart(2,'0')).join('')}`;
+}
+
+function pintarTema(theme = {}) {
+  if (!theme.accent) return;
+  const raiz = document.documentElement.style;
+  raiz.setProperty('--brand', theme.accent);
+  raiz.setProperty('--brand-rgb', hexParaRgb(theme.accent) || '22,163,74');
+  if (theme.accentDark) {
+    raiz.setProperty('--brand-dark', theme.accentDark);
+    raiz.setProperty('--brand-dark-rgb', hexParaRgb(theme.accentDark) || '6,78,59');
+  }
+  const claro = theme.accentLight || clarear(theme.accent);
+  if (claro) raiz.setProperty('--brand-light', claro);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme.accent);
+}
+
+function guardarMarca({ id, name, theme = {} }) {
+  const marca = { id, name: name || '', logoUrl: theme.logoUrl || '', theme };
+  try { localStorage.setItem(MARCA_KEY, JSON.stringify(marca)); } catch (e) {}
+  window.dispatchEvent(new Event('marca-da-escola'));
+  return marca;
+}
+
+// Na abertura, pinta com a marca lembrada — assim o login ja nasce na cor da
+// escola, sem esperar o Firestore.
+pintarTema(marcaDaEscola().theme || {});
+if (marcaDaEscola().name) document.title = marcaDaEscola().name;
+
 let _swReg = null;
 async function getSW() {
   if (!('serviceWorker' in navigator)) return undefined;
@@ -862,7 +912,31 @@ function ChatBubble({ w = 44, fill = '#A7F3D0', dot = 'var(--brand-dark)' }) {
   );
 }
 
+// Logo da escola. Se a escola tem imagem (theme.logoUrl), e ela que aparece;
+// sem imagem, fica a marca escrita da Science English, como sempre foi.
 function BrandLogo({ scale = 1, dark = false }) {
+  const [logo, setLogo] = useState(() => marcaDaEscola().logoUrl || '');
+  const [nome, setNome] = useState(() => marcaDaEscola().name || '');
+
+  useEffect(() => {
+    const ler = () => { const m = marcaDaEscola(); setLogo(m.logoUrl || ''); setNome(m.name || ''); };
+    window.addEventListener('marca-da-escola', ler);
+    return () => window.removeEventListener('marca-da-escola', ler);
+  }, []);
+
+  if (logo) {
+    return (
+      <div style={{ textAlign: 'center' }}>
+        <img src={logo} alt={nome || 'Logo da escola'}
+             style={{ width: 150 * scale, height: 150 * scale, objectFit: 'contain', display: 'block', margin: '0 auto' }} />
+        {nome && (
+          <div style={{ marginTop: 10 * scale, fontSize: 19 * scale, fontWeight: 800, letterSpacing: -0.3,
+                        color: dark ? '#0F172A' : '#fff' }}>{nome}</div>
+        )}
+      </div>
+    );
+  }
+
   const main = dark ? '#0F172A' : '#fff';
   const sub  = dark ? '#9A6438' : '#E6BD8C';  // marrom / caramelo
   return (
@@ -2453,43 +2527,19 @@ function App() {
   }, []);
 
   // ── TEMA DA ESCOLA ────────────────────────────────────────────────
-  // O app é um só; as cores vêm da escola do aluno. Sem escola (alunos
-  // antigos) ou se der erro, fica o verde padrão do :root.
-  function hexParaRgb(hex) {
-    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(String(hex || '').trim());
-    return m ? [parseInt(m[1],16), parseInt(m[2],16), parseInt(m[3],16)].join(',') : null;
-  }
-
-  // Clareia uma cor para o tom de destaque (o "--brand-light").
-  function clarear(hex, fator = 0.28) {
-    const rgb = hexParaRgb(hex);
-    if (!rgb) return null;
-    const [r,g,b] = rgb.split(',').map(Number);
-    const mix = v => Math.round(v + (255 - v) * fator);
-    return `#${[mix(r),mix(g),mix(b)].map(v => v.toString(16).padStart(2,'0')).join('')}`;
-  }
-
+  // O app é um só; a cor, o nome e o logo vêm da escola do aluno. Sem escola
+  // (alunos antigos) ou se der erro, fica a marca padrão do :root.
   async function aplicarTemaDaEscola(schoolId, fb) {
     if (!schoolId) return;
     try {
       const snap = await fb.getDoc(fb.doc(fb.db, 'schools', schoolId));
       if (!snap.exists()) return;
       const { theme = {}, name } = snap.data();
-      if (!theme.accent) return;
 
-      const claro = theme.accentLight || clarear(theme.accent);
-      const raiz = document.documentElement.style;
-      raiz.setProperty('--brand', theme.accent);
-      raiz.setProperty('--brand-rgb', hexParaRgb(theme.accent) || '22,163,74');
-      if (theme.accentDark) {
-        raiz.setProperty('--brand-dark', theme.accentDark);
-        raiz.setProperty('--brand-dark-rgb', hexParaRgb(theme.accentDark) || '6,78,59');
-      }
-      if (claro) raiz.setProperty('--brand-light', claro);
-
-      // Cor da barra do navegador no celular.
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme.accent);
+      pintarTema(theme);
       if (name) document.title = name;
+      // Guarda para a próxima abertura já nascer com a marca certa.
+      guardarMarca({ id: schoolId, name, theme });
     } catch (e) {
       console.error('Tema da escola:', e);   // segue no padrão
     }
