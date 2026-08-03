@@ -2488,6 +2488,27 @@ function LoadingScreen() {
   return <LoadingSplash />;
 }
 
+// Aluno logado mas sem dados: rede caiu, permissão negada ou cadastro
+// incompleto. Mostra a saída em vez de deixar a tela de carregar rodando.
+function BootErrorScreen({ erro, onRetry, onLogout }) {
+  const btn = {
+    width: '100%', maxWidth: 300, padding: 14, borderRadius: 14, border: 'none',
+    fontSize: 14.5, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer', marginTop: 10,
+  };
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 28, textAlign: 'center', background: 'linear-gradient(180deg,var(--brand),var(--brand-dark))', color: '#fff' }}>
+      <div style={{ fontSize: 40 }}>😕</div>
+      <div style={{ fontSize: 18, fontWeight: 800, marginTop: 10 }}>Não consegui carregar seus dados</div>
+      <div style={{ fontSize: 14, opacity: 0.9, marginTop: 8, lineHeight: 1.5, maxWidth: 320 }}>
+        Verifique sua conexão e tente de novo. Se continuar assim, avise o professor.
+      </div>
+      {erro?.code && <div style={{ fontSize: 12, opacity: 0.7, marginTop: 10 }}>({erro.code})</div>}
+      <button onClick={onRetry} style={{ ...btn, background: '#fff', color: 'var(--brand-dark)' }}>Tentar de novo</button>
+      <button onClick={onLogout} style={{ ...btn, background: 'rgba(255,255,255,0.18)', color: '#fff' }}>Sair e entrar de novo</button>
+    </div>
+  );
+}
+
 // ── ROOT APP ─────────────────────────────────────────────────────
 function App() {
   const [loading, setLoading]           = useState(true);
@@ -2500,6 +2521,7 @@ function App() {
   const [openExtra, setOpenExtra]       = useState(null);
   const [openCorrecao, setOpenCorrecao] = useState(null);
   const [avisos, setAvisos]             = useState([]);
+  const [bootError, setBootError]       = useState(null);
   const [tab, setTab]                   = useState('home');
   const [readerPost, setReaderPost]     = useState(null);
   const [openActivity, setOpenActivity] = useState(null);
@@ -2545,24 +2567,32 @@ function App() {
     (async () => {
       const fb = await getFB();
       unsub = fb.onAuthStateChanged(fb.auth, async u => {
-        if (u) {
-          setUser(u);
-          const dataUid = mirror ? mirrorUid.current : u.uid;
-          await loadData(dataUid, fb);
-          if (!mirror) {
-            updateNotifBtn();
-            syncPushIfGranted(u.uid, fb);
-            if (fb.messaging) {
-              fb.onMessage(fb.messaging, payload => {
-                showToast('&#128196; ' + (payload.notification?.body || 'Novo pos-aula disponivel!'));
-                loadData(u.uid, fb);
-              });
+        try {
+          if (u) {
+            setUser(u);
+            const dataUid = mirror ? mirrorUid.current : u.uid;
+            await loadData(dataUid, fb);
+            if (!mirror) {
+              updateNotifBtn();
+              syncPushIfGranted(u.uid, fb);
+              if (fb.messaging) {
+                fb.onMessage(fb.messaging, payload => {
+                  showToast('&#128196; ' + (payload.notification?.body || 'Novo pos-aula disponivel!'));
+                  loadData(u.uid, fb);
+                });
+              }
             }
+          } else {
+            setUser(null); setStudent(null); setPosaulas([]); setActivities([]);
           }
-        } else {
-          setUser(null); setStudent(null); setPosaulas([]); setActivities([]);
+        } catch (e) {
+          // Falhar aqui já prendeu o app na tela de carregar para todo mundo:
+          // o erro pulava o setLoading(false) e não havia saída.
+          console.error('Carga inicial:', e);
+          setBootError(e);
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
       });
     })();
     window.addEventListener('request-notif', handleRequestNotif);
@@ -2592,7 +2622,8 @@ function App() {
   async function loadData(uid, fb) {
     const [snap, posSnaps, actSnaps, vocSnaps, extSnaps] = await Promise.all([
       fb.getDoc(fb.doc(fb.db, 'students', uid)),
-      fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'posaulas'), fb.orderBy('createdAt','desc'))),
+      fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'posaulas'), fb.orderBy('createdAt','desc')))
+        .catch(e => { console.error('Pós-aulas:', e); return { docs: [] }; }),
       fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'activities'), fb.orderBy('createdAt','desc'))).catch(() => ({ docs: [] })),
       fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'vocabulario'), fb.orderBy('date','desc'))).catch(() => ({ docs: [] })),
       fb.getDocs(fb.collection(fb.db, 'students', uid, 'extras')).catch(() => ({ docs: [] })),
@@ -2699,6 +2730,20 @@ function App() {
     await fb.signOut(fb.auth);
   }
 
+  async function recarregar() {
+    setBootError(null);
+    setLoading(true);
+    try {
+      const fb = await getFB();
+      await loadData(mirror ? mirrorUid.current : user.uid, fb);
+    } catch (e) {
+      console.error('Carga inicial:', e);
+      setBootError(e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function patchStudent(patch) {
     if (!user || mirror) return;
     const fb = await getFB();
@@ -2754,6 +2799,7 @@ function App() {
 
   if (loading) return <LoadingScreen />;
   if (!user)   return <LoginScreen />;
+  if (!student) return <BootErrorScreen erro={bootError} onRetry={recarregar} onLogout={handleLogout} />;
 
   if (readerPost) {
     return (
