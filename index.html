@@ -2562,6 +2562,20 @@ function App() {
     if (fire) setCelebrate(true);
   }, [student, posaulas, activities]);
 
+  // Vigia da abertura: se em 20s o app ainda não saiu do "carregando" — SDK que
+  // não baixou, sessão que não resolveu, leitura pendurada —, mostra a saída em
+  // vez de deixar o aluno olhando a tela de carregar sem fim.
+  const abriuRef = useRef(false);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (abriuRef.current) return;
+      console.error('Abertura: passou de 20s sem responder.');
+      setBootError({ code: 'demorou-demais' });
+      setLoading(false);
+    }, 20000);
+    return () => clearTimeout(t);
+  }, []);
+
   useEffect(() => {
     let unsub;
     (async () => {
@@ -2591,6 +2605,7 @@ function App() {
           console.error('Carga inicial:', e);
           setBootError(e);
         } finally {
+          abriuRef.current = true;
           setLoading(false);
         }
       });
