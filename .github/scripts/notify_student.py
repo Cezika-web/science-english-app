@@ -15,6 +15,36 @@ from google.oauth2 import service_account
 import google.auth.transport.requests
 
 
+def parse_class_date(parts):
+    """
+    Converte os 3 últimos pedaços do nome do arquivo na data da aula.
+
+    O padrão atual é MM-DD-YYYY (`pos-aula-fatima-silva-07-28-2026.html`), mas
+    existem arquivos antigos em DD-MM-YYYY. Quando o primeiro número passa de 12
+    ele só pode ser o dia, então dá para desambiguar sem chutar.
+
+    Devolve (datetime, "DD/MM/YYYY") ou (None, texto cru) se não der para ler.
+    """
+    raw = "-".join(parts)
+    try:
+        a, b, year = (int(p) for p in parts)
+    except ValueError:
+        return None, raw
+
+    if a > 12 and b <= 12:
+        day, month = a, b          # DD-MM-YYYY (formato antigo)
+    else:
+        month, day = a, b          # MM-DD-YYYY (padrão)
+
+    try:
+        # Meio-dia UTC = 09h no Brasil: o dia não vira para trás em nenhum fuso.
+        d = datetime.datetime(year, month, day, 12, 0, 0, tzinfo=datetime.timezone.utc)
+    except ValueError:
+        return None, raw
+
+    return d, d.strftime("%d/%m/%Y")
+
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: notify_student.py <filename>")
@@ -40,11 +70,13 @@ def main():
         print(f"Cannot parse filename: {filename}")
         sys.exit(1)
 
-    date_str = "-".join(parts[-3:])   # e.g. 20-06-2026
+    class_date, date_str = parse_class_date(parts[-3:])   # e.g. 28/07/2026
     slug = "-".join(parts[:-3])       # e.g. mateus-richter
     post_id = filename[:-5]
 
     print(f"Slug: {slug} | Date: {date_str} | Post ID: {post_id}")
+    if class_date is None:
+        print("⚠️  Data ilegível no nome do arquivo — usando a hora do envio.")
 
     # Load service account from env
     sa_info = json.loads(os.environ["FIREBASE_SERVICE_ACCOUNT"])
@@ -117,21 +149,29 @@ def main():
         "https://cezika-web.github.io/science-english-app/"
         f"?post={quote(post_id)}"
     )
-    now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    now = datetime.datetime.now(datetime.timezone.utc)
+
+    # O app agrupa por mês e por quinzena olhando o `createdAt`. Se ele fosse a
+    # hora do envio, uma aula de 31/07 subida em 01/08 cairia em agosto. Vale a
+    # data que está no nome do arquivo — a data real da aula.
+    created_at = (class_date or now).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    fields = {
+        "filename": {"stringValue": filename},
+        "url": {"stringValue": posaula_url},
+        "appUrl": {"stringValue": app_url},
+        "title": {"stringValue": f"Pós-aula {date_str}"},
+        "createdAt": {"timestampValue": created_at},
+        "publishedAt": {"timestampValue": now.strftime("%Y-%m-%dT%H:%M:%SZ")},
+        "readAt": {"nullValue": None},
+    }
+    if class_date:
+        fields["classDate"] = {"timestampValue": created_at}
 
     resp = requests.patch(
         f"{base_url}/students/{uid}/posaulas/{post_id}",
         headers=headers,
-        json={
-            "fields": {
-                "filename": {"stringValue": filename},
-                "url": {"stringValue": posaula_url},
-                "appUrl": {"stringValue": app_url},
-                "title": {"stringValue": f"Pós-aula {date_str}"},
-                "createdAt": {"timestampValue": now},
-                "readAt": {"nullValue": None},
-            }
-        },
+        json={"fields": fields},
     )
 
     if resp.status_code in (200, 201):
