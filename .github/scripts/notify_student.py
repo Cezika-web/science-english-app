@@ -7,12 +7,50 @@ Ex:  python notify_student.py pos-aula-mateus-richter-20-06-2026.html
 
 import json
 import os
+import re
 import sys
 import datetime
 from urllib.parse import quote
 import requests
 from google.oauth2 import service_account
 import google.auth.transport.requests
+
+
+def parse_talk_time(filename):
+    """Extrai percentuais/minutos do bloco padronizado de Talk Time."""
+    try:
+        with open(filename, "r", encoding="utf-8") as file:
+            html = file.read()
+    except OSError:
+        return None
+
+    def row(css_class):
+        found = re.search(
+            rf'<tr[^>]*class=["\'][^"\']*{css_class}[^"\']*["\'][^>]*>(.*?)</tr>',
+            html,
+            re.IGNORECASE | re.DOTALL,
+        )
+        return found.group(1) if found else ""
+
+    def number(fragment, css_class):
+        found = re.search(
+            rf'class=["\'][^"\']*{css_class}[^"\']*["\'][^>]*>(.*?)<',
+            fragment,
+            re.IGNORECASE | re.DOTALL,
+        )
+        if not found:
+            return None
+        value = re.search(r'\d+(?:[.,]\d+)?', found.group(1))
+        return float(value.group(0).replace(",", ".")) if value else None
+
+    student, teacher = row("row-student"), row("row-teacher")
+    values = {
+        "studentPct": number(student, "talk-percent"),
+        "teacherPct": number(teacher, "talk-percent"),
+        "studentMinutes": number(student, "talk-time"),
+        "teacherMinutes": number(teacher, "talk-time"),
+    }
+    return {key: value for key, value in values.items() if value is not None} or None
 
 
 def parse_class_date(parts):
@@ -167,6 +205,13 @@ def main():
     }
     if class_date:
         fields["classDate"] = {"timestampValue": created_at}
+    talk_time = parse_talk_time(filename)
+    if talk_time:
+        fields["talkTime"] = {
+            "mapValue": {
+                "fields": {key: {"doubleValue": value} for key, value in talk_time.items()}
+            }
+        }
 
     resp = requests.patch(
         f"{base_url}/students/{uid}/posaulas/{post_id}",

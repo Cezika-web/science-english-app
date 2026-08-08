@@ -219,6 +219,73 @@ const SCHEMA = {
   additionalProperties: false,
 };
 
+const SCHEMA_RELATORIO_REVISAO90 = {
+  type: 'object',
+  properties: {
+    learned: { type: 'array', items: { type: 'string' }, description: 'Conteúdos que o aluno demonstrou ter aprendido' },
+    strengths: { type: 'array', items: { type: 'string' }, description: 'Pontos fortes observados' },
+    reviewNext: { type: 'array', items: { type: 'string' }, description: 'Poucos pontos prioritários para revisar' },
+    studentSummary: { type: 'string', description: 'Resumo positivo e direto para o aluno, máximo 8 linhas' },
+    teacherGuidance: { type: 'string', description: 'Orientação pedagógica objetiva para o professor, máximo 10 linhas' },
+  },
+  required: ['learned', 'strengths', 'reviewNext', 'studentSummary', 'teacherGuidance'],
+  additionalProperties: false,
+};
+
+async function gerarRelatorioFinalRevisao90(client, aluno, atividades) {
+  let total = 0, answered = 0, correct = 0, wrong = 0;
+  const consolidado = atividades.map((activity) => {
+    const summary = activity.summary || {};
+    const errors = summary.errors || {};
+    const activityWrong = Number(errors.bobo || 0) + Number(errors.mediano || 0) + Number(errors.grave || 0);
+    total += Number(summary.total || 0);
+    answered += Number(summary.answered || 0);
+    correct += Number(summary.correct || 0);
+    wrong += activityWrong;
+    return {
+      week: activity.review90Phase || null,
+      title: activity.title || '',
+      summary,
+      patterns: activity.patterns || '',
+      pedagogico: activity.pedagogico || '',
+      report: activity.report || '',
+    };
+  });
+  const accuracy = correct + wrong ? Math.round(correct / (correct + wrong) * 100) : 0;
+
+  const stream = client.messages.stream({
+    model: MODEL,
+    max_tokens: 8000,
+    system: [{
+      type: 'text',
+      text: `Você consolida o resultado pedagógico de um desafio de revisão de inglês de 90 dias. ` +
+        `O objetivo é incentivar estudo, não dar um veredito de prova. Destaque primeiro o que foi aprendido ` +
+        `e os pontos fortes. Depois escolha apenas os pontos mais importantes para revisar. Não invente conteúdo ` +
+        `que não esteja nas correções. Escreva em português do Brasil, com clareza e tom encorajador.`,
+    }],
+    output_config: { format: { type: 'json_schema', schema: SCHEMA_RELATORIO_REVISAO90 } },
+    messages: [{
+      role: 'user',
+      content:
+        `Aluno: ${aluno.name || ''} (nível ${aluno.level || 'não informado'})\n` +
+        `Resultado numérico: ${correct} acertos, ${wrong} erros, ${accuracy}% de aproveitamento.\n\n` +
+        `CORREÇÕES DAS ATIVIDADES DE REVISÃO:\n${JSON.stringify(consolidado, null, 2)}`,
+    }],
+  });
+  const response = await stream.finalMessage();
+  if (response.stop_reason === 'max_tokens') throw new Error('O relatório final ficou longo demais.');
+  const text = response.content.find((block) => block.type === 'text')?.text;
+  if (!text) throw new Error('A API não devolveu o relatório final.');
+  return {
+    report: {
+      ...JSON.parse(text),
+      totals: { total, answered, correct, wrong, accuracy },
+      activityCount: atividades.length,
+    },
+    usage: response.usage,
+  };
+}
+
 /**
  * Carrega o aluno e confere se quem chamou pode agir sobre ele.
  * Admin global age sobre qualquer aluno; professor, só sobre os da escola dele.
@@ -291,6 +358,29 @@ function dataDaAulaEmDate(texto) {
   const d = new Date(Date.UTC(ano, mes - 1, dia, 12));
   const valida = d.getUTCFullYear() === ano && d.getUTCMonth() === mes - 1 && d.getUTCDate() === dia;
   return valida ? d : null;
+}
+
+/** Extrai do HTML os números do bloco padronizado de Talk Time. */
+function extrairTalkTime(html) {
+  const linha = (classe) => String(html || '').match(new RegExp(`<tr[^>]*class=["'][^"']*${classe}[^"']*["'][^>]*>([\\s\\S]*?)<\\/tr>`, 'i'))?.[1] || '';
+  const numero = (texto) => {
+    const match = String(texto || '').replace(',', '.').match(/\d+(?:\.\d+)?/);
+    return match ? Number(match[0]) : null;
+  };
+  const valor = (trecho, classe) => numero(trecho.match(new RegExp(`class=["'][^"']*${classe}[^"']*["'][^>]*>([\\s\\S]*?)<`, 'i'))?.[1]);
+  const aluno = linha('row-student');
+  const professor = linha('row-teacher');
+  const studentPct = valor(aluno, 'talk-percent');
+  const teacherPct = valor(professor, 'talk-percent');
+  const studentMinutes = valor(aluno, 'talk-time');
+  const teacherMinutes = valor(professor, 'talk-time');
+  if (studentPct === null && teacherPct === null) return null;
+  return {
+    ...(studentPct !== null && { studentPct }),
+    ...(teacherPct !== null && { teacherPct }),
+    ...(studentMinutes !== null && { studentMinutes }),
+    ...(teacherMinutes !== null && { teacherMinutes }),
+  };
 }
 
 /** Converte [{part, ...}] para {part-1: {...}} — a forma que o app já lê. */
@@ -389,6 +479,44 @@ export const corrigirAluno = onCall(
     if (!blocoTexto) throw new HttpsError('internal', 'A API não devolveu correção.');
     const dados = JSON.parse(blocoTexto.text);
 
+    // Se esta correção encerra a última fase do desafio, consolida todas as
+    // revisões do ciclo em um relatório permanente para aluno e professor.
+    const correctionById = new Map((dados.atividades || []).map((item) => [item.activityId, item]));
+    const cycleId = aluno.review90?.cycleId || '';
+    const reviewActivities = todas
+      .filter((activity) => activity.review90 && (!cycleId || !activity.review90CycleId || activity.review90CycleId === cycleId))
+      .map((activity) => {
+        const correction = correctionById.get(activity.id);
+        return correction ? {
+          ...activity,
+          status: 'corrected',
+          summary: correction.summary,
+          report: correction.report,
+          patterns: dados.patterns,
+          pedagogico: dados.pedagogico,
+        } : activity;
+      });
+    const allReviewCorrected = reviewActivities.length > 0 && reviewActivities.every((activity) => activity.status === 'corrected');
+    const reachedLastPhase = reviewActivities.some((activity) => Number(activity.review90Phase || 0) >= 4);
+    const challengeEnded = (() => {
+      const end = aluno.review90?.endsAt?.toDate ? aluno.review90.endsAt.toDate() : new Date(aluno.review90?.endsAt || 0);
+      return !isNaN(end) && new Date() >= end;
+    })();
+    const finalReportId = cycleId || `review90-${uid}`;
+    const finalReportRef = db.doc(`students/${uid}/review90Reports/${finalReportId}`);
+    let finalReport = null;
+    let finalReportUsage = null;
+    if (allReviewCorrected && (reachedLastPhase || challengeEnded) && !(await finalReportRef.get()).exists) {
+      try {
+        const generated = await gerarRelatorioFinalRevisao90(client, aluno, reviewActivities);
+        finalReport = generated.report;
+        finalReportUsage = generated.usage;
+      } catch (error) {
+        console.error('Relatório final da revisão de 90 dias:', error);
+        throw new HttpsError('internal', `As atividades foram analisadas, mas o relatório final não pôde ser gerado: ${error.message}`);
+      }
+    }
+
     // Grava cada atividade corrigida.
     const lote = db.batch();
     let gravadas = 0;
@@ -417,6 +545,33 @@ export const corrigirAluno = onCall(
       gravadas++;
     }
 
+    if (finalReport) {
+      lote.set(finalReportRef, {
+        ...finalReport,
+        cycleId: finalReportId,
+        title: 'Resultado do Desafio de 90 Dias',
+        sourceActivityIds: reviewActivities.map((activity) => activity.id),
+        createdAt: FieldValue.serverTimestamp(),
+        studentViewedAt: null,
+        teacherViewedAt: null,
+      });
+      lote.update(db.doc(`students/${uid}`), {
+        'review90.active': false,
+        'review90.completedAt': FieldValue.serverTimestamp(),
+        'review90.reportId': finalReportId,
+      });
+      lote.set(db.collection('_apiUsage').doc(), {
+        tipo: 'review90_report',
+        uid,
+        alunoNome: aluno.name || '',
+        modelo: MODEL,
+        tokensEntrada: finalReportUsage?.input_tokens || 0,
+        tokensSaida: finalReportUsage?.output_tokens || 0,
+        tokensCache: finalReportUsage?.cache_read_input_tokens || 0,
+        criadoEm: FieldValue.serverTimestamp(),
+      });
+    }
+
     // Registra o consumo para você acompanhar a margem real.
     const uso = resposta.usage;
     const custoUSD =
@@ -443,6 +598,7 @@ export const corrigirAluno = onCall(
     return {
       ok: true,
       atividadesCorrigidas: gravadas,
+      relatorioRevisao90: !!finalReport,
       custoUSD: Number(custoUSD.toFixed(4)),
     };
   }
@@ -576,7 +732,7 @@ export const gerarPosAula = onCall(
         },
       });
 
-      resultados.push({ uid, nome: aluno.name || '', html, titulo });
+      resultados.push({ uid, nome: aluno.name || '', html, titulo, talkTime: extrairTalkTime(html) });
     }
 
     await lote.commit();
@@ -628,7 +784,7 @@ export const publicarPosAula = onCall(
     const publicadas = [];
     const dataAula = dataDaAulaEmDate(data);
 
-    for (const { uid, html, titulo, nome } of lista) {
+    for (const { uid, html, titulo, nome, talkTime } of lista) {
       const { aluno } = await carregarAlunoEEscola(email, uid);
 
       const ref = db.collection(`students/${uid}/posaulas`).doc();
@@ -640,6 +796,7 @@ export const publicarPosAula = onCall(
         publishedAt: FieldValue.serverTimestamp(),
         readAt: null,
         geradaPorIA: true,
+        ...(talkTime || extrairTalkTime(html) ? { talkTime: talkTime || extrairTalkTime(html) } : {}),
         ...(lista.length > 1 && { aulaEmGrupo: true }),
       });
 
@@ -708,7 +865,7 @@ async function conteudoDaPosAula(uid, posaulaId) {
   const snap = await db.doc(`students/${uid}/posaulas/${posaulaId}`).get();
   if (!snap.exists) return null;
   const p = snap.data();
-  const base = { id: snap.id, titulo: p.title || '', url: p.url || '' };
+  const base = { id: snap.id, titulo: p.title || '', url: p.url || '', data: p.classDate || p.createdAt || null };
 
   if (p.html) return { ...base, texto: textoDaPosAula(p.html) };
 
@@ -741,21 +898,39 @@ function posaulaDaAtividade(lista, sourceIndex) {
  * Monta a requisição de um aluno. É a MESMA para o modo síncrono e para o
  * batch — muda só o meio de envio, nunca o conteúdo.
  */
-function pedidoDeAtividades({ nome, nivel, qtd, observacoes, posaulas }) {
+function pedidoDeAtividades({ nome, nivel, qtd, observacoes, posaulas, revisao90 = null }) {
+  const total = qtd + (revisao90 ? 1 : 0);
+  const schemaComQuantidade = {
+    ...SCHEMA_ATIVIDADES,
+    properties: {
+      ...SCHEMA_ATIVIDADES.properties,
+      activities: { ...SCHEMA_ATIVIDADES.properties.activities, minItems: total, maxItems: total },
+    },
+  };
+  const instrucaoRevisao = revisao90
+    ? `\nDESAFIO DE REVISÃO DE 90 DIAS — obrigatório:\n` +
+      `- Gere ${qtd} atividade(s) regular(es) usando prioritariamente as pós-aulas atuais.\n` +
+      `- Gere MAIS UMA atividade extra como a ÚLTIMA da lista, totalizando ${total}.\n` +
+      `- Essa última atividade se chama "Desafio 90 dias · Semana ${revisao90.phase}" e usa somente as pós-aulas ${revisao90.sourceIndexes.join(', ')}.\n` +
+      `- Ela é revisão guiada, não prova: desafie a memória, mas permita consultar os pós-aulas.\n` +
+      `- Misture recuperação de vocabulário, aplicação de gramática e produção própria, sempre no nível do aluno.\n` +
+      `- Não revele respostas e não repita literalmente os exercícios regulares.\n`
+    : '';
   return {
     model: MODEL,
     max_tokens: 32000,
     system: [
       { type: 'text', text: REGRAS_ATIVIDADES, cache_control: { type: 'ephemeral' } },
     ],
-    output_config: { format: { type: 'json_schema', schema: SCHEMA_ATIVIDADES } },
+    output_config: { format: { type: 'json_schema', schema: schemaComQuantidade } },
     messages: [
       {
         role: 'user',
         content:
           `Aluno: ${nome} — nível ${nivel}\n` +
-          `Quantidade de atividades a gerar: ${qtd}\n` +
+          `Quantidade total de atividades a gerar: ${total}\n` +
           (observacoes.trim() ? `\nObservações do professor (prioridade sobre o padrão):\n${observacoes.trim()}\n` : '') +
+          instrucaoRevisao +
           `\nCONTEÚDO DAS PÓS-AULAS:\n\n` +
           posaulas.map((p, i) => `── Pós-aula ${i + 1}: ${p.titulo} ──\n${p.texto}`).join('\n\n'),
       },
@@ -766,6 +941,77 @@ function pedidoDeAtividades({ nome, nivel, qtd, observacoes, posaulas }) {
 /** Só o que a atividade precisa saber da pós-aula — o texto não vai para o Firestore. */
 const referenciaDasPosaulas = (posaulas) =>
   posaulas.map((p, i) => ({ index: i + 1, id: p.id, titulo: p.titulo, url: p.url || '' }));
+
+const dataDoCampo = (value) => {
+  if (!value) return null;
+  if (typeof value.toDate === 'function') return value.toDate();
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const somarDias = (date, days) => new Date(date.getTime() + days * 86400000);
+
+/** Conteúdo cronológico da fase atual do ciclo de revisão de 30 dias. */
+async function prepararRevisao90(uid, aluno) {
+  const cfg = aluno.review90 || {};
+  if (cfg.active !== true) return null;
+  const activatedAt = dataDoCampo(cfg.activatedAt);
+  const endsAt = dataDoCampo(cfg.endsAt);
+  const now = new Date();
+  if (!activatedAt || !endsAt || now > endsAt) return null;
+
+  const courseStart = dataDoCampo(cfg.courseStart || aluno.inicioCurso);
+  if (!courseStart) return null;
+  const first90End = dataDoCampo(cfg.first90End) || somarDias(courseStart, 90);
+  const phase = Math.min(4, Math.max(1, Math.floor((now - activatedAt) / (7 * 86400000)) + 1));
+  const phaseStart = somarDias(courseStart, (phase - 1) * 22.5);
+  const phaseEnd = phase === 4 ? first90End : somarDias(courseStart, phase * 22.5);
+
+  const snap = await db.collection(`students/${uid}/posaulas`).orderBy('createdAt', 'asc').get();
+  const within90 = snap.docs.filter((doc) => {
+    const p = doc.data();
+    const date = dataDoCampo(p.classDate || p.createdAt);
+    return date && date >= courseStart && date <= first90End;
+  });
+  if (!within90.length) return null;
+
+  let selected = within90.filter((doc) => {
+    const p = doc.data();
+    const date = dataDoCampo(p.classDate || p.createdAt);
+    return date >= phaseStart && (phase === 4 ? date <= phaseEnd : date < phaseEnd);
+  });
+  if (!selected.length) {
+    const middle = new Date((phaseStart.getTime() + phaseEnd.getTime()) / 2);
+    selected = [...within90].sort((a, b) => {
+      const da = dataDoCampo(a.data().classDate || a.data().createdAt);
+      const dbb = dataDoCampo(b.data().classDate || b.data().createdAt);
+      return Math.abs(da - middle) - Math.abs(dbb - middle);
+    }).slice(0, 3).sort((a, b) => {
+      const da = dataDoCampo(a.data().classDate || a.data().createdAt);
+      const dbb = dataDoCampo(b.data().classDate || b.data().createdAt);
+      return da - dbb;
+    });
+  }
+
+  const contents = (await Promise.all(selected.slice(0, 6).map((doc) => conteudoDaPosAula(uid, doc.id)))).filter(Boolean);
+  const cycleId = cfg.cycleId || `review90-${activatedAt.getTime()}`;
+  return contents.length ? { phase, cycleId, posaulas: contents } : null;
+}
+
+function marcarAtividadeDeRevisao(activities, qtdRegular, revisao90) {
+  const list = Array.isArray(activities) ? activities : [];
+  if (!revisao90 || list.length <= qtdRegular) return list;
+  const index = list.length - 1;
+  return list.map((act, i) => i === index ? {
+    ...act,
+    review90: true,
+    review90Phase: revisao90.phase,
+    review90CycleId: revisao90.cycleId || '',
+    reviewPosaulas: referenciaDasPosaulas(revisao90.posaulas),
+    emoji: '🧭',
+    title: `Desafio 90 dias · Semana ${revisao90.phase}`,
+  } : act);
+}
 
 /**
  * Gera as atividades a partir das pós-aulas escolhidas. NÃO publica —
@@ -810,6 +1056,16 @@ export const gerarAtividades = onCall(
         throw new HttpsError('not-found', `${aluno.name || 'O aluno'} não tem pós-aula para servir de base.`);
       }
 
+      const revisao90 = await prepararRevisao90(uid, aluno);
+      const todasPosaulas = [...posaulas];
+      for (const reviewPost of revisao90?.posaulas || []) {
+        if (!todasPosaulas.some((p) => p.id === reviewPost.id)) todasPosaulas.push(reviewPost);
+      }
+      const revisaoPrompt = revisao90 ? {
+        phase: revisao90.phase,
+        sourceIndexes: revisao90.posaulas.map((p) => todasPosaulas.findIndex((item) => item.id === p.id) + 1),
+      } : null;
+
       const nome = aluno.name || '';
       const nivel = ((aluno.level || '').match(/\(([^)]+)\)/) || [])[1] || aluno.level || 'A1';
 
@@ -819,8 +1075,10 @@ export const gerarAtividades = onCall(
         nivel,
         escolaId: escola.id,
         modoBatch: escola.plan?.modoBatch === true,
-        posaulas: referenciaDasPosaulas(posaulas),
-        params: pedidoDeAtividades({ nome, nivel, qtd, observacoes, posaulas }),
+        qtdRegular: qtd,
+        revisao90: revisao90 ? { phase: revisao90.phase, cycleId: revisao90.cycleId, posaulas: referenciaDasPosaulas(revisao90.posaulas) } : null,
+        posaulas: referenciaDasPosaulas(todasPosaulas),
+        params: pedidoDeAtividades({ nome, nivel, qtd, observacoes, posaulas: todasPosaulas, revisao90: revisaoPrompt }),
       });
     }
 
@@ -843,7 +1101,7 @@ export const gerarAtividades = onCall(
         batchId: batch.id,
         escolaId: preparos[0].escolaId,
         uids: preparos.map((p) => p.uid),
-        alunos: preparos.map(({ uid, nome, nivel, posaulas }) => ({ uid, nome, nivel, posaulas })),
+        alunos: preparos.map(({ uid, nome, nivel, posaulas, qtdRegular, revisao90 }) => ({ uid, nome, nivel, posaulas, qtdRegular, revisao90 })),
         quantidade: qtd,
         observacoes: observacoes.trim(),
         emGrupo,
@@ -867,7 +1125,7 @@ export const gerarAtividades = onCall(
     let custoTotal = 0;
     const lote = db.batch();
 
-    for (const { uid, nome, nivel, escolaId, posaulas, params } of preparos) {
+    for (const { uid, nome, nivel, escolaId, posaulas, qtdRegular, revisao90, params } of preparos) {
       let resposta;
       try {
         const stream = client.messages.stream(params);
@@ -904,7 +1162,7 @@ export const gerarAtividades = onCall(
         nome,
         nivel,
         week: dados.week,
-        activities: dados.activities,
+        activities: marcarAtividadeDeRevisao(dados.activities, qtdRegular, revisao90),
         vocabulario: dados.vocabulario || [],
         posaulas,
       });
@@ -943,7 +1201,9 @@ export const publicarAtividades = onCall(
 
     // 1 crédito a cada 3 atividades, por aluno. 4 a 6 = 2 créditos, etc.
     // O crédito cobre gerar E corrigir — a correção não cobra de novo.
-    const creditosPorLeva = (l) => Math.ceil(l.activities.length / 3);
+    // A revisão de 90 dias é um bônus pedagógico e não aumenta o crédito da
+    // leva que o professor escolheu gerar.
+    const creditosPorLeva = (l) => Math.ceil(l.activities.filter((a) => !a.review90).length / 3);
     const totalCreditos = lista.reduce((s, l) => s + creditosPorLeva(l), 0);
 
     const creditos = escola.plan?.creditosAtividade;
@@ -976,6 +1236,12 @@ export const publicarAtividades = onCall(
             posaulaUrl: origem.url || '',
             posaulaTitulo: origem.titulo || '',
           }),
+          ...(act.review90 && {
+            review90: true,
+            review90Phase: Number(act.review90Phase || 1),
+            review90CycleId: act.review90CycleId || '',
+            reviewPosaulas: Array.isArray(act.reviewPosaulas) ? act.reviewPosaulas : [],
+          }),
           status: 'pending',
           notified: true,   // a notificação sai aqui mesmo, não pelo cron
           geradaPorIA: true,
@@ -995,12 +1261,14 @@ export const publicarAtividades = onCall(
         });
       }
 
-      const creditosLeva = Math.ceil(activities.length / 3);
+      const atividadesCobradas = activities.filter((a) => !a.review90).length;
+      const creditosLeva = Math.ceil(atividadesCobradas / 3);
       lote.set(db.collection('_creditos').doc(), {
         escolaId: escola.id,
         tipo: 'atividade',
         quantidade: creditosLeva,
         atividadesNaLeva: activities.length,
+        atividadesCobradas,
         uid,
         alunoNome: nome || aluno.name || '',
         porEmail: email,
@@ -1178,7 +1446,7 @@ async function concluirJob(client, doc) {
       nome: aluno.nome || '',
       nivel: aluno.nivel || '',
       week: dados.week,
-      activities: dados.activities,
+      activities: marcarAtividadeDeRevisao(dados.activities, Number(aluno.qtdRegular || job.quantidade || 0), aluno.revisao90 || null),
       vocabulario: dados.vocabulario || [],
       posaulas: aluno.posaulas || [],
     });
