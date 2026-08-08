@@ -821,9 +821,35 @@
       return new Set([...fixed, ...[-48,-47,-2,60].map(days => adminDateKey(adminAddDays(easter,days)))]);
     }
 
+    function adminLessonDays(student, posts = []) {
+      const days = new Set((student?.aulaDias || []).map(Number).filter(day => day >= 0 && day <= 6));
+      if (days.size) return days;
+      const text = String(student?.diasAulas || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+      const names = [
+        [0,['domingo','sunday']], [1,['segunda','monday']], [2,['terca','tuesday']],
+        [3,['quarta','wednesday']], [4,['quinta','thursday']], [5,['sexta','friday']],
+        [6,['sabado','saturday']],
+      ];
+      names.forEach(([day,aliases]) => { if (aliases.some(alias => text.includes(alias))) days.add(day); });
+      if (!days.size) {
+        const counts = {};
+        posts.forEach(post => {
+          const date = adminDate(post.classDate || post.createdAt);
+          if (date) counts[date.getDay()] = (counts[date.getDay()] || 0) + 1;
+        });
+        Object.entries(counts).forEach(([day,count]) => { if (count >= 2) days.add(Number(day)); });
+      }
+      return days;
+    }
+
     function adminAttendanceStats(student, posts) {
-      const lessonDays = new Set((student?.aulaDias || []).map(Number));
-      const start = adminDate(student?.inicioCurso);
+      const lessonDays = adminLessonDays(student, posts);
+      const courseStart = adminDate(student?.inicioCurso);
+      const postDates = (posts || []).map(post => adminDate(post.classDate || post.createdAt)).filter(Boolean).sort((a,b)=>a-b);
+      const legacyStart = postDates.length ? adminAddDays(postDates[0],-3) : null;
+      const start = courseStart && legacyStart
+        ? new Date(Math.min(courseStart.getTime(),legacyStart.getTime()))
+        : courseStart || legacyStart;
       const cutoff = adminAddDays(new Date(), -1);
       const candidateKeys = new Set();
       if (start && lessonDays.size) {
