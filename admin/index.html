@@ -822,15 +822,19 @@
     }
 
     function adminLessonDays(student, posts = []) {
-      const days = new Set((student?.aulaDias || []).map(Number).filter(day => day >= 0 && day <= 6));
-      if (days.size) return days;
-      const text = String(student?.diasAulas || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+      const rawStructured = student?.aulaDias;
+      const structuredValues = Array.isArray(rawStructured) ? rawStructured : String(rawStructured ?? '').split(/[,;|\s]+/);
+      const days = new Set(structuredValues.map(Number).filter(day => day >= 0 && day <= 6));
+      const text = [student?.diasAulas, student?.diasDaAula, student?.diasSemana, student?.diaAula]
+        .filter(Boolean).join(' ').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
       const names = [
-        [0,['domingo','sunday']], [1,['segunda','monday']], [2,['terca','tuesday']],
-        [3,['quarta','wednesday']], [4,['quinta','thursday']], [5,['sexta','friday']],
-        [6,['sabado','saturday']],
+        [0,['domingo','dom','sunday','sun']], [1,['segunda','seg','monday','mon']], [2,['terca','ter','tuesday','tue']],
+        [3,['quarta','qua','wednesday','wed']], [4,['quinta','qui','thursday','thu']], [5,['sexta','sex','friday','fri']],
+        [6,['sabado','sab','saturday','sat']],
       ];
-      names.forEach(([day,aliases]) => { if (aliases.some(alias => text.includes(alias))) days.add(day); });
+      names.forEach(([day,aliases]) => {
+        if (aliases.some(alias => new RegExp(`(^|[^a-z])${alias}([^a-z]|$)`).test(text))) days.add(day);
+      });
       if (!days.size) {
         const counts = {};
         posts.forEach(post => {
@@ -875,7 +879,7 @@
           presentKeys.add(explicit);
           return;
         }
-        const reference = post.geradaPorIA && explicit ? null : adminDate(post.classDate || post.createdAt);
+        const reference = adminDate(post.classDate || post.createdAt);
         const matched = matchScheduledDate(reference);
         if (matched) presentKeys.add(matched);
         else {
@@ -2084,7 +2088,7 @@
       document.getElementById('e-email').value = s.email || '';
       document.getElementById('e-level').value = s.level || '';
       document.getElementById('e-meta').value  = s.metaAnual || '';
-      fillAula('e-dias-week', 'e-hora', s.aulaDias, s.aulaHora);
+      fillAula('e-dias-week', 'e-hora', [...adminLessonDays(s)], s.aulaHora);
       document.getElementById('e-inicio').value = s.inicioCurso || '';
       document.getElementById('e-slug').value  = s.slug || toSlug(s.name || s.firstName || '');
       document.getElementById('e-photo-preview').src = editPhoto || '';
