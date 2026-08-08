@@ -10,6 +10,7 @@
   <title>Science English</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&amp;display=swap" rel="stylesheet" />
 
   <!-- React + Babel via CDN -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -89,6 +90,11 @@
     .scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
     /* ── Interactive exercises ── */
+    .ex-root, .ex-root *:not(svg):not(path) {
+      font-family: "Nunito", ui-rounded, "Avenir Next Rounded", "Segoe UI", sans-serif !important;
+    }
+    .ex-root { letter-spacing: 0.005em; }
+    .ex-root h1, .ex-root h2, .ex-root h3, .ex-root strong { letter-spacing: -0.01em; }
     .ex-root ol, .ex-root ul { padding-left: 30px; margin: 0 0 4px; }
     .ex-root li { margin-bottom: 16px; padding-left: 2px; }
     .ex-root p { margin-bottom: 12px; }
@@ -111,11 +117,12 @@
     .ex-opt.sel .ex-letter { background: #2563EB; color: #fff; }
     .ex-input {
       border: none; border-bottom: 2px solid var(--brand); background: rgba(var(--brand-rgb),0.06);
-      font-size: 14.5px; font-family: inherit; color: #0F172A; padding: 2px 6px;
-      margin: 0 2px; outline: none; border-radius: 6px 6px 0 0; min-width: 60px;
+      font-size: 14.5px; font-family: inherit; font-weight: 600; color: #0F172A; padding: 4px 7px;
+      margin: 0 2px; outline: none; border-radius: 8px 8px 2px 2px; min-width: 60px;
       max-width: 100%;
+      box-shadow: inset 0 -1px 0 rgba(var(--brand-rgb),0.08);
     }
-    .ex-input:focus { background: rgba(var(--brand-rgb),0.14); }
+    .ex-input:focus { background: rgba(var(--brand-rgb),0.14); box-shadow: 0 0 0 3px rgba(var(--brand-rgb),0.09); }
     .ex-textarea {
       width: 100%; border: 1.5px solid #E2E8F0; border-radius: 12px; background: #F8FAFC;
       font-size: 15px; font-family: inherit; color: #0F172A; padding: 12px 14px;
@@ -283,6 +290,31 @@ function dateFrom(value) {
   return isNaN(d) ? null : d;
 }
 
+// Nos registros legados, createdAt pode ser a data da importação. O nome do
+// HTML preserva a data real de publicação (ex.: ...-07-31-2026.html).
+function postFilenameDate(post) {
+  const sources = [post?.filename, post?.url, post?.id].filter(Boolean).map(String);
+  for (const source of sources) {
+    let value = source;
+    try { value = decodeURIComponent(source); } catch (_) {}
+    let match = value.match(/(?:^|[^\d])(\d{2})[-_](\d{2})[-_](20\d{2})(?=[^\d]|$)/);
+    let year, month, day;
+    if (match) [, month, day, year] = match;
+    else {
+      match = value.match(/(?:^|[^\d])(20\d{2})[-_](\d{2})[-_](\d{2})(?=[^\d]|$)/);
+      if (match) [, year, month, day] = match;
+    }
+    if (!match) continue;
+    const parsed = new Date(Number(year), Number(month)-1, Number(day));
+    if (parsed.getFullYear() === Number(year) && parsed.getMonth() === Number(month)-1 && parsed.getDate() === Number(day)) return parsed;
+  }
+  return null;
+}
+
+function postReferenceDate(post) {
+  return postFilenameDate(post) || dateFrom(post?.classDate || post?.createdAt);
+}
+
 function dateKey(value) {
   const d = dateFrom(value);
   if (!d) return '';
@@ -350,7 +382,7 @@ function lessonDaysFromStudent(student, posts = []) {
   if (!structured.size) {
     const counts = {};
     posts.forEach(post => {
-      const date = dateFrom(post.classDate || post.createdAt);
+      const date = postReferenceDate(post);
       if (date) counts[date.getDay()] = (counts[date.getDay()] || 0) + 1;
     });
     Object.entries(counts).forEach(([day,count]) => { if (count >= 2) structured.add(Number(day)); });
@@ -1306,6 +1338,42 @@ function BarChart({ points, suffix = '%' }) {
   );
 }
 
+function AttendanceChart({ type, points, pieSegments, pieCenter }) {
+  if (type === 'pie') return <PieChart segments={pieSegments || []} center={pieCenter} />;
+  const shown = (points || []).slice(-12);
+  if (!shown.length) return <EmptyChart />;
+  const status = point => point.present ?? point.value > 0;
+
+  if (type === 'bar') return (
+    <div role="list" aria-label="Histórico de presença por aula" style={{ display:'grid', gridTemplateColumns:'repeat(4,minmax(0,1fr))', gap:8, padding:'12px 0 2px' }}>
+      {shown.map(point => {
+        const present = status(point);
+        return <div role="listitem" key={point.key} style={{ padding:'10px 4px', borderRadius:12, textAlign:'center', background:present?'#F0FDF4':'#FEF2F2', border:`1px solid ${present?'#BBF7D0':'#FECACA'}` }}>
+          <div style={{ width:27, height:27, borderRadius:'50%', margin:'0 auto 6px', display:'flex', alignItems:'center', justifyContent:'center', background:present?PROGRESS_COLORS.good:PROGRESS_COLORS.low, color:'#fff', fontSize:15, fontWeight:900 }}>{present?'✓':'×'}</div>
+          <div style={{ fontSize:10.5, fontWeight:800, color:present?'#166534':'#991B1B', textTransform:'capitalize' }}>{point.weekday || ''}</div>
+          <div style={{ fontSize:10.5, color:'#64748B', marginTop:1 }}>{point.label}</div>
+        </div>;
+      })}
+    </div>
+  );
+
+  return (
+    <div role="list" aria-label="Linha do tempo de presença" style={{ overflowX:'auto', padding:'15px 2px 6px' }}>
+      <div style={{ display:'flex', minWidth:shown.length * 66 }}>
+        {shown.map((point,index) => {
+          const present = status(point);
+          return <div role="listitem" key={point.key} style={{ width:66, flexShrink:0, textAlign:'center', position:'relative' }}>
+            {index < shown.length-1 && <span style={{ position:'absolute', top:15, left:'50%', width:'100%', height:3, background:'#E2E8F0' }} />}
+            <span style={{ position:'relative', zIndex:1, width:32, height:32, borderRadius:'50%', margin:'0 auto 7px', display:'flex', alignItems:'center', justifyContent:'center', background:present?PROGRESS_COLORS.good:PROGRESS_COLORS.low, color:'#fff', border:'3px solid #fff', boxShadow:'0 0 0 1px #E2E8F0', fontSize:16, fontWeight:900 }}>{present?'✓':'×'}</span>
+            <div style={{ fontSize:10.5, fontWeight:800, color:present?'#166534':'#991B1B', textTransform:'capitalize' }}>{point.weekday || ''}</div>
+            <div style={{ fontSize:10, color:'#64748B', marginTop:1 }}>{point.label}</div>
+          </div>;
+        })}
+      </div>
+    </div>
+  );
+}
+
 function PieChart({ segments, center }) {
   const clean = segments.filter(s => s.value > 0);
   const total = clean.reduce((n,s) => n+s.value,0);
@@ -1356,7 +1424,7 @@ function calculateAttendance(student, posaulas) {
   const courseStart = startRaw
     ? (typeof startRaw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(startRaw) ? new Date(`${startRaw}T00:00:00`) : dateFrom(startRaw))
     : null;
-  const postDates = (posaulas || []).map(post => dateFrom(post.classDate || post.createdAt)).filter(Boolean).sort((a,b)=>a-b);
+  const postDates = (posaulas || []).map(postReferenceDate).filter(Boolean).sort((a,b)=>a-b);
   const legacyStart = postDates.length ? addDays(postDates[0],-3) : null;
   const start = courseStart && legacyStart
     ? new Date(Math.min(courseStart.getTime(),legacyStart.getTime()))
@@ -1392,7 +1460,7 @@ function calculateAttendance(student, posaulas) {
     }
     // classDate/createdAt pode representar o envio, não a aula. Se a data não
     // coincidir com a grade, procura a aula prevista nos três dias anteriores.
-    const reference = dateFrom(post.classDate || post.createdAt);
+    const reference = postReferenceDate(post);
     const matched = matchScheduledDate(reference);
     if (matched) presentKeys.add(matched);
     else {
@@ -1405,22 +1473,21 @@ function calculateAttendance(student, posaulas) {
   // ainda existe uma certeza: cada pós-aula representa uma aula realizada.
   // Sem calendário suficiente para provar uma ausência, não inventamos faltas.
   if (held && (!start || !lessonDays.size || !presentKeys.size)) {
-    const weeks = {};
-    (posaulas || []).forEach(post => {
-      const date = dateFrom(post.classDate || post.createdAt);
-      const key = dateKey(weekStart(date));
-      if (!key) return;
-      weeks[key] ||= { key, label:shortWeekLabel(date), total:0, present:0, value:100, color:PROGRESS_COLORS.good };
-      weeks[key].total++;
-      weeks[key].present++;
-    });
+    const points = (posaulas || []).map(postReferenceDate).filter(Boolean).sort((a,b)=>a-b).map(date => ({
+      key:dateKey(date),
+      label:date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),
+      weekday:date.toLocaleDateString('pt-BR',{weekday:'short'}).replace('.',''),
+      present:true,
+      value:100,
+      color:PROGRESS_COLORS.good,
+    }));
     return {
       held,
       misses:0,
       scheduled:held,
       attendedScheduled:held,
       rate:100,
-      points:Object.values(weeks).sort((a,b)=>a.key.localeCompare(b.key)),
+      points,
       currentStreak:held,
       maxStreak:held,
       missedDates:[],
@@ -1458,6 +1525,8 @@ function calculateAttendance(student, posaulas) {
   const points = scheduled.map(item => ({
     key:item.key,
     label:item.date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),
+    weekday:item.date.toLocaleDateString('pt-BR',{weekday:'short'}).replace('.',''),
+    present:item.present,
     value:item.present ? 100 : 0,
     color:item.present ? PROGRESS_COLORS.good : PROGRESS_COLORS.low,
   }));
@@ -1493,7 +1562,7 @@ function calculateExerciseProgress(activities) {
 }
 
 function calculateTalkProgress(posaulas) {
-  const entries = (posaulas || []).map(p => ({ key:dateKey(p.classDate || p.createdAt), date:dateFrom(p.classDate || p.createdAt), value:talkTimeFromPost(p) }))
+  const entries = (posaulas || []).map(p => ({ key:dateKey(postReferenceDate(p)), date:postReferenceDate(p), value:talkTimeFromPost(p) }))
     .filter(x => x.date && Number.isFinite(x.value)).sort((a,b)=>a.date-b.date)
     .map(x => ({ ...x, label:x.date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}), color:metricTone(x.value,'talk').color }));
   const values = entries.map(x=>x.value);
@@ -1614,6 +1683,7 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
   const attendanceTone = metricTone(attendance.rate,'rate');
   const exerciseTone = metricTone(exercise.accuracy,'rate');
   const talkTone = metricTone(talk.average,'talk');
+  const talkStudentName = student?.firstName || student?.name || 'aluno';
   const attendanceStartLabel = attendance.trackingStartKey
     ? new Date(`${attendance.trackingStartKey}T00:00:00`).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})
     : '';
@@ -1624,14 +1694,14 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
       <div style={{ fontSize:13, color:'#64748B', marginTop:4 }}>Escolha como prefere acompanhar sua evolução.</div>
       <ChartChoice value={chartType} onChange={chooseChart} />
 
-      <ProgressSection title="Presença" subtitle={attendance.inferredOnly ? "Cada pós-aula conta como aula realizada. Sem calendário completo, nenhuma falta é presumida." : `Presença calculada desde ${attendanceStartLabel}, primeiro pós-aula registrado.`}>
+      <ProgressSection title="Presença">
         <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
           <ProgressStat label="Realizadas" value={attendance.held} detail="com pós-aula" tone={PROGRESS_COLORS.good} />
           <ProgressStat label="Sequência atual" value={attendance.currentStreak} detail="aulas sem falta" tone={attendance.currentStreak >= 10 ? PROGRESS_COLORS.good : PROGRESS_COLORS.blue} />
           <ProgressStat label="Faltas" value={attendance.misses} detail={attendanceStartLabel ? `desde ${attendanceStartLabel}` : 'aulas previstas'} tone={attendance.misses ? PROGRESS_COLORS.low : PROGRESS_COLORS.good} />
           <ProgressStat label="Presença" value={attendance.rate == null?'—':`${attendance.rate}%`} detail={attendanceTone.label} tone={attendanceTone.color} />
         </div>
-        <div style={{ marginTop:10 }}><EvolutionChart type={chartType} points={attendance.points} pieSegments={[
+        <div style={{ marginTop:10 }}><AttendanceChart type={chartType} points={attendance.points} pieSegments={[
           {label:'presenças',value:attendance.attendedScheduled,color:PROGRESS_COLORS.good},
           {label:'faltas',value:attendance.misses,color:PROGRESS_COLORS.low}
         ]} pieCenter={attendance.rate == null?'—':`${attendance.rate}%`} /></div>
@@ -1640,8 +1710,9 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
         </div>}
       </ProgressSection>
 
-      <ProgressSection title="Exercícios" subtitle="Acertos e erros das atividades que já foram corrigidas.">
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+      <ProgressSection title="Exercícios">
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
+          <ProgressStat label="Total" value={exercise.answered} detail="respostas" tone={PROGRESS_COLORS.blue} />
           <ProgressStat label="Acertos" value={exercise.correct} detail="respostas" tone={PROGRESS_COLORS.good} />
           <ProgressStat label="Erros" value={exercise.wrong} detail="respostas" tone={exercise.wrong?PROGRESS_COLORS.low:PROGRESS_COLORS.good} />
           <ProgressStat label="Aproveitamento" value={exercise.accuracy==null?'—':`${exercise.accuracy}%`} detail={exerciseTone.label} tone={exerciseTone.color} />
@@ -1652,14 +1723,14 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
         ]} pieCenter={exercise.accuracy==null?'—':`${exercise.accuracy}%`} /></div>
       </ProgressSection>
 
-      <ProgressSection title="Talk time" subtitle="Sua porcentagem de fala em cada aula. Verde: 40% ou mais · amarelo: 30% a 39% · vermelho: abaixo de 30%.">
+      <ProgressSection title="Talk time">
         <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
           <ProgressStat label="Média" value={talk.average==null?'—':`${talk.average}%`} detail={talkTone.label} tone={talkTone.color} />
           <ProgressStat label="Maior" value={talk.best==null?'—':`${talk.best}%`} detail="melhor aula" tone={metricTone(talk.best,'talk').color} />
           <ProgressStat label="Menor" value={talk.worst==null?'—':`${talk.worst}%`} detail="aula mais baixa" tone={metricTone(talk.worst,'talk').color} />
         </div>
         <div style={{ marginTop:10 }}><EvolutionChart type={chartType} points={talk.entries} pieSegments={talk.average==null?[]:[
-          {label:'fala do aluno',value:talk.average,color:talkTone.color},
+          {label:`fala de ${talkStudentName}`,value:talk.average,color:talkTone.color},
           {label:'outras falas',value:100-talk.average,color:PROGRESS_COLORS.soft}
         ]} pieCenter={talk.average==null?'—':`${talk.average}%`} /></div>
       </ProgressSection>
@@ -1758,7 +1829,7 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) 
   const grouped = React.useMemo(() => {
     const months = {};
     posaulas.slice(1).forEach(p => {
-      const d = dateFrom(p.createdAt);
+      const d = postReferenceDate(p);
       const monthKey = d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` : 'sem-data';
       const monthLabel = d ? `${MESES_PT[d.getMonth()].charAt(0).toUpperCase()}${MESES_PT[d.getMonth()].slice(1)} ${d.getFullYear()}` : 'Sem data';
       const monthOrd = d ? d.getFullYear() * 100 + d.getMonth() : -1;
@@ -1799,7 +1870,7 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) 
                 <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(var(--brand-rgb),0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14 }}>&#128196;</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title || 'Pos-Aula'}</div>
-                  <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>{fmtDate(p.createdAt)}</div>
+                  <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 1 }}>{fmtDate(postReferenceDate(p) || p.createdAt)}</div>
                 </div>
                 <span style={{ fontSize: 11.5, fontWeight: 700, color: p.readAt ? 'var(--brand)' : '#D97706', flexShrink: 0 }}>{p.readAt ? '✓ Lido' : 'Nao lido'}</span>
               </div>
@@ -1828,7 +1899,7 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) 
             <div style={{ flex: 1 }}>
               <Pill>POS-AULA DA SEMANA</Pill>
               <div style={{ fontSize: 20, fontWeight: 800, color: '#0F172A', marginTop: 12, lineHeight: 1.2 }}>{latest.title || 'Pos-Aula'}</div>
-              <div style={{ fontSize: 13, color: '#64748B', marginTop: 4, fontWeight: 500 }}>{fmtDate(latest.createdAt)}</div>
+              <div style={{ fontSize: 13, color: '#64748B', marginTop: 4, fontWeight: 500 }}>{fmtDate(postReferenceDate(latest) || latest.createdAt)}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 12 }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: latest.readAt ? 'var(--brand)' : '#F59E0B', boxShadow: latest.readAt ? '0 0 0 4px rgba(var(--brand-rgb),0.15)' : '0 0 0 4px rgba(245,158,11,0.15)', flexShrink: 0 }} />
                 <span style={{ fontSize: 12, fontWeight: 600, color: latest.readAt ? 'var(--brand)' : '#D97706' }}>{latest.readAt ? 'Lido em ' + fmtDate(latest.readAt) : 'Ainda nao lido'}</span>
@@ -2526,9 +2597,49 @@ function AulasTab({ activities, onOpenActivity, extras, onOpenExtra, onOpenCorre
   );
 }
 
+// Lista-base compartilhada por todos os alunos.
+const IRREGULAR_VERBS = [
+  ['be','was / were','been','ser / estar'], ['become','became','become','tornar-se'],
+  ['begin','began','begun','começar'], ['break','broke','broken','quebrar'],
+  ['bring','brought','brought','trazer'], ['build','built','built','construir'],
+  ['buy','bought','bought','comprar'], ['catch','caught','caught','pegar'],
+  ['choose','chose','chosen','escolher'], ['come','came','come','vir'],
+  ['cost','cost','cost','custar'], ['cut','cut','cut','cortar'],
+  ['do','did','done','fazer'], ['draw','drew','drawn','desenhar'],
+  ['drink','drank','drunk','beber'], ['drive','drove','driven','dirigir'],
+  ['eat','ate','eaten','comer'], ['fall','fell','fallen','cair'],
+  ['feel','felt','felt','sentir'], ['find','found','found','encontrar'],
+  ['fly','flew','flown','voar'], ['forget','forgot','forgotten','esquecer'],
+  ['get','got','gotten','obter / conseguir'], ['give','gave','given','dar'],
+  ['go','went','gone','ir'], ['grow','grew','grown','crescer'],
+  ['have','had','had','ter'], ['hear','heard','heard','ouvir'],
+  ['hold','held','held','segurar'], ['keep','kept','kept','manter'],
+  ['know','knew','known','saber / conhecer'], ['lead','led','led','liderar'],
+  ['leave','left','left','sair / deixar'], ['lend','lent','lent','emprestar'],
+  ['let','let','let','deixar / permitir'], ['lose','lost','lost','perder'],
+  ['make','made','made','fazer / criar'], ['mean','meant','meant','significar'],
+  ['meet','met','met','encontrar / conhecer'], ['pay','paid','paid','pagar'],
+  ['put','put','put','colocar'], ['read','read','read','ler'],
+  ['ride','rode','ridden','andar / pedalar'], ['run','ran','run','correr'],
+  ['say','said','said','dizer'], ['see','saw','seen','ver'],
+  ['sell','sold','sold','vender'], ['send','sent','sent','enviar'],
+  ['show','showed','shown','mostrar'], ['shut','shut','shut','fechar'],
+  ['sing','sang','sung','cantar'], ['sit','sat','sat','sentar'],
+  ['sleep','slept','slept','dormir'], ['speak','spoke','spoken','falar'],
+  ['spend','spent','spent','gastar / passar'], ['stand','stood','stood','ficar em pé'],
+  ['steal','stole','stolen','roubar'], ['swim','swam','swum','nadar'],
+  ['take','took','taken','pegar / levar'], ['teach','taught','taught','ensinar'],
+  ['tell','told','told','contar / dizer'], ['think','thought','thought','pensar'],
+  ['throw','threw','thrown','jogar / arremessar'], ['understand','understood','understood','entender'],
+  ['wake','woke','woken','acordar'], ['wear','wore','worn','vestir / usar'],
+  ['win','won','won','vencer'], ['write','wrote','written','escrever'],
+];
+
 // ── VocabTab ─────────────────────────────────────────────────────
 function VocabTab({ vocab }) {
   const [openMonths, setOpenMonths] = useState({});
+  const [listView, setListView] = useState('vocab');
+  const [verbSearch, setVerbSearch] = useState('');
 
   const grouped = React.useMemo(() => {
     const map = {};
@@ -2541,28 +2652,58 @@ function VocabTab({ vocab }) {
     return Object.entries(map).sort((a,b) => b[1].ord - a[1].ord);
   }, [vocab]);
 
-  if (vocab.length === 0) return (
-    <div className="scroll-area" style={{ padding: '16px 16px 8px' }}>
-      <GlassCard style={{ padding: 36, textAlign: 'center' }}>
-        <div style={{ fontSize: 42, marginBottom: 12 }}>&#128292;</div>
-        <div style={{ fontSize: 17, fontWeight: 800, color: '#0F172A', marginBottom: 6 }}>Vocabulario</div>
-        <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.5 }}>Aqui aparecerao as palavras das suas pos-aulas, agrupadas por mes.</div>
-      </GlassCard>
-    </div>
-  );
+  const filteredVerbs = React.useMemo(() => {
+    const search = semAcento(verbSearch.trim());
+    if (!search) return IRREGULAR_VERBS;
+    return IRREGULAR_VERBS.filter(row => semAcento(row.join(' ')).includes(search));
+  }, [verbSearch]);
 
   return (
     <div className="scroll-area" style={{ padding: '16px 16px 8px' }}>
-      <GlassCard style={{ padding: '16px 18px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 14 }}>
-        <div style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(139,94,52,0.1)', border: '1px solid rgba(139,94,52,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>&#128292;</div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: '#0F172A' }}>Meu Vocabulario</div>
-          <div style={{ fontSize: 12.5, color: '#64748B', marginTop: 2 }}>{vocab.length} palavra{vocab.length !== 1 ? 's' : ''} · direto das suas pos-aulas</div>
-        </div>
-        <Pill style={{ fontSize: 10, padding: '4px 10px' }}>MEU VOCABULARIO</Pill>
-      </GlassCard>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:9, position:'sticky', top:0, zIndex:3, background:'#F6F1EA', paddingBottom:10, marginBottom:4 }}>
+        {[
+          ['vocab','🔤','Meu vocabulário',`${vocab.length} palavra${vocab.length !== 1 ? 's' : ''}`],
+          ['verbs','🔁','Verbos irregulares',`${IRREGULAR_VERBS.length} verbos`],
+        ].map(([id,icon,title,count]) => {
+          const active = listView === id;
+          return <button key={id} onClick={() => setListView(id)} style={{
+            minHeight:88, border:active?'2px solid var(--brand)':'1px solid rgba(var(--brand-rgb),.16)',
+            borderRadius:18, padding:'12px 16px', background:active?'rgba(var(--brand-rgb),.1)':'rgba(255,255,255,.68)',
+            boxShadow:active?'0 8px 22px rgba(var(--brand-rgb),.14)':'none', cursor:'pointer', fontFamily:'inherit',
+            display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center'
+          }}>
+            <span style={{ fontSize:28, marginBottom:7 }}>{icon}</span>
+            <strong style={{ color:active?'var(--brand-dark)':'#334155', fontSize:13.5, lineHeight:1.2 }}>{title}</strong>
+            <span style={{ color:'#64748B', fontSize:11.5, marginTop:4 }}>{count}</span>
+          </button>;
+        })}
+      </div>
 
-      {grouped.map(([month, { words }]) => {
+      {listView === 'verbs' && <div style={{ marginBottom:14, border:'1px solid #DBEAFE', borderRadius:14, background:'rgba(255,255,255,.7)', overflow:'hidden' }}>
+          <div style={{ padding:10 }}>
+            <input value={verbSearch} onChange={e => setVerbSearch(e.target.value)} placeholder="Buscar verbo ou tradução" style={{ width:'100%', boxSizing:'border-box', border:'1px solid #CBD5E1', borderRadius:10, padding:'10px 12px', fontFamily:'inherit', fontSize:13, outline:'none' }} />
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1.15fr', gap:6, padding:'8px 10px', background:'#EFF6FF', color:'#475569', fontSize:9.5, fontWeight:800, textTransform:'uppercase' }}>
+            <span>Verbo</span><span>Passado</span><span>Particípio</span><span>Tradução</span>
+          </div>
+          <div style={{ maxHeight:390, overflowY:'auto' }}>
+            {filteredVerbs.map(([base,past,participle,translation]) => <div key={base} style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1.15fr', gap:6, padding:'10px', borderTop:'1px solid #EFF6FF', alignItems:'center' }}>
+              <strong style={{ color:'#0F172A', fontSize:12.5 }}>{base}</strong>
+              <span style={{ color:'#1D4ED8', fontSize:12 }}>{past}</span>
+              <span style={{ color:'#1D4ED8', fontSize:12 }}>{participle}</span>
+              <span style={{ color:'#64748B', fontSize:11.5 }}>{translation}</span>
+            </div>)}
+            {!filteredVerbs.length && <div style={{ padding:22, textAlign:'center', color:'#94A3B8', fontSize:12.5 }}>Nenhum verbo encontrado.</div>}
+          </div>
+        </div>}
+
+      {listView === 'vocab' && vocab.length === 0 && <GlassCard style={{ padding:28, textAlign:'center', marginBottom:12 }}>
+        <div style={{ fontSize:30, marginBottom:8 }}>🔤</div>
+        <div style={{ fontSize:14, fontWeight:700, color:'#0F172A' }}>Nenhuma palavra ainda</div>
+        <div style={{ fontSize:12.5, color:'#64748B', marginTop:3 }}>As palavras dos seus pós-aulas aparecerão aqui.</div>
+      </GlassCard>}
+
+      {listView === 'vocab' && grouped.map(([month, { words }]) => {
         const open = openMonths[month] !== false;
         return (
           <div key={month} style={{ marginBottom: 10 }}>

@@ -797,6 +797,25 @@
           : new Date(value);
       return isNaN(date) ? null : date;
     };
+    const adminPostFilenameDate = post => {
+      const sources = [post?.filename, post?.url, post?.id].filter(Boolean).map(String);
+      for (const source of sources) {
+        let value = source;
+        try { value = decodeURIComponent(source); } catch (_) {}
+        let match = value.match(/(?:^|[^\d])(\d{2})[-_](\d{2})[-_](20\d{2})(?=[^\d]|$)/);
+        let year, month, day;
+        if (match) [, month, day, year] = match;
+        else {
+          match = value.match(/(?:^|[^\d])(20\d{2})[-_](\d{2})[-_](\d{2})(?=[^\d]|$)/);
+          if (match) [, year, month, day] = match;
+        }
+        if (!match) continue;
+        const parsed = new Date(Number(year), Number(month)-1, Number(day));
+        if (parsed.getFullYear() === Number(year) && parsed.getMonth() === Number(month)-1 && parsed.getDate() === Number(day)) return parsed;
+      }
+      return null;
+    };
+    const adminPostReferenceDate = post => adminPostFilenameDate(post) || adminDate(post?.classDate || post?.createdAt);
     const adminAddDays = (date, days) => new Date(date.getTime() + days * 86400000);
 
     const adminDateKey = value => {
@@ -838,7 +857,7 @@
       if (!days.size) {
         const counts = {};
         posts.forEach(post => {
-          const date = adminDate(post.classDate || post.createdAt);
+          const date = adminPostReferenceDate(post);
           if (date) counts[date.getDay()] = (counts[date.getDay()] || 0) + 1;
         });
         Object.entries(counts).forEach(([day,count]) => { if (count >= 2) days.add(Number(day)); });
@@ -849,7 +868,7 @@
     function adminAttendanceStats(student, posts) {
       const lessonDays = adminLessonDays(student, posts);
       const courseStart = adminDate(student?.inicioCurso);
-      const postDates = (posts || []).map(post => adminDate(post.classDate || post.createdAt)).filter(Boolean).sort((a,b)=>a-b);
+      const postDates = (posts || []).map(adminPostReferenceDate).filter(Boolean).sort((a,b)=>a-b);
       const legacyStart = postDates.length ? adminAddDays(postDates[0],-3) : null;
       const start = courseStart && legacyStart
         ? new Date(Math.min(courseStart.getTime(),legacyStart.getTime()))
@@ -879,7 +898,7 @@
           presentKeys.add(explicit);
           return;
         }
-        const reference = adminDate(post.classDate || post.createdAt);
+        const reference = adminPostReferenceDate(post);
         const matched = matchScheduledDate(reference);
         if (matched) presentKeys.add(matched);
         else {
@@ -2318,6 +2337,7 @@
       const progressOverviewHtml = `<div class="progress-overview">
         <div class="progress-chip"><span class="pc-label">Presença</span><span class="pc-value" style="color:${adminMetricColor(detailAttendance.rate)}">${detailAttendance.rate == null ? '—' : `${detailAttendance.rate}%`}</span></div>
         <div class="progress-chip"><span class="pc-label">Sequência atual</span><span class="pc-value" style="color:${detailAttendance.currentStreak >= 10 ? '#16a34a' : '#2563eb'}">${detailAttendance.currentStreak} aulas</span></div>
+        <div class="progress-chip"><span class="pc-label">Respostas</span><span class="pc-value" style="color:#2563eb">${detailExercise.answered}</span></div>
         <div class="progress-chip"><span class="pc-label">Atividades</span><span class="pc-value" style="color:${adminMetricColor(detailExercise.accuracy)}">${detailExercise.accuracy == null ? '—' : `${detailExercise.accuracy}%`}</span></div>
         <div class="progress-chip"><span class="pc-label">Talk time médio</span><span class="pc-value" style="color:${adminMetricColor(detailTalk.average,'talk')}">${detailTalk.average == null ? '—' : `${detailTalk.average}%`}</span></div>
       </div>`;
@@ -2325,13 +2345,13 @@
       // ── Pós-aulas: MÊS → QUINZENA (mais recente primeiro) ──
       const posByMonth = {};
       posSnap.docs.forEach(d => {
-        const p = d.data();
-        const dt = dateOfAdm(p.createdAt);
+        const p = { id:d.id, ...d.data() };
+        const dt = adminPostReferenceDate(p);
         const m = monthInfoAdm(dt);
         const q = quinzenaInfoAdm(dt);
         if (!posByMonth[m.label]) posByMonth[m.label] = { ord: m.ord, quinz: {} };
         if (!posByMonth[m.label].quinz[q.short]) posByMonth[m.label].quinz[q.short] = { ord: q.ord, items: [] };
-        posByMonth[m.label].quinz[q.short].items.push({ id: d.id, ...p });
+        posByMonth[m.label].quinz[q.short].items.push(p);
       });
       const posMonths = Object.entries(posByMonth).sort((a, b) => b[1].ord - a[1].ord);
 
@@ -2341,7 +2361,7 @@
           <div style="display:flex;align-items:flex-start;gap:10px;">
             <div style="flex:1;">
               <div class="p-title">${esc(p.title || 'Pós-Aula')}</div>
-              <div class="p-meta">Enviado: ${fmtDate(p.createdAt)}</div>
+              <div class="p-meta">Data do pós-aula: ${fmtDate(adminPostReferenceDate(p) || p.createdAt)}</div>
               <div class="p-status ${isRead ? 'read' : 'unread'}">${isRead ? `✓ Lido em ${fmtDate(p.readAt)}` : '⏳ Ainda não lido'}</div>
             </div>
             <button class="btn-del-item" data-type="posaulas" data-id="${p.id}" data-label="${esc(p.title || 'Pós-Aula')}">🗑️ Excluir</button>
