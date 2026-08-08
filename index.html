@@ -348,12 +348,14 @@ async function hydrateLegacyTalkTimes(posts) {
   return Promise.all((posts || []).map(async post => {
     const direct = talkTimeFromPost(post);
     if (Number.isFinite(direct)) return post;
-    if (!post?.url) return post;
+    const filename = post?.filename || (String(post?.id || '').startsWith('pos-aula-') ? `${post.id}.html` : '');
+    const contentUrl = post?.url || (filename ? new URL(filename, document.baseURI).href : '');
+    if (!contentUrl) return post;
     const cacheKey = `talk-time-${post.id || post.filename || post.url}`;
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached != null && Number.isFinite(Number(cached))) return { ...post, studentTalkPct:Number(cached) };
-      const response = await fetch(post.url, { cache:'force-cache' });
+      const response = await fetch(contentUrl, { cache:'force-cache' });
       if (!response.ok) return post;
       const value = talkTimeFromPost({ html:await response.text() });
       if (!Number.isFinite(value)) return post;
@@ -1340,6 +1342,7 @@ function calculateAttendance(student, posaulas) {
   // próxima, até três dias antes. Cada registro ocupa no máximo uma aula.
   const presentKeys = new Set();
   const extraClassKeys = new Set();
+  const held = (posaulas || []).length;
   const matchScheduledDate = date => {
     if (!date) return '';
     for (let daysBack = 0; daysBack <= 3; daysBack++) {
@@ -1364,6 +1367,34 @@ function calculateAttendance(student, posaulas) {
       if (extraKey) extraClassKeys.add(extraKey);
     }
   });
+
+  // Sem data de início/dias fixos (ou com cadastro incompatível com o legado),
+  // ainda existe uma certeza: cada pós-aula representa uma aula realizada.
+  // Sem calendário suficiente para provar uma ausência, não inventamos faltas.
+  if (held && (!start || !lessonDays.size || !presentKeys.size)) {
+    const weeks = {};
+    (posaulas || []).forEach(post => {
+      const date = dateFrom(post.classDate || post.createdAt);
+      const key = dateKey(weekStart(date));
+      if (!key) return;
+      weeks[key] ||= { key, label:shortWeekLabel(date), total:0, present:0, value:100, color:PROGRESS_COLORS.good };
+      weeks[key].total++;
+      weeks[key].present++;
+    });
+    return {
+      held,
+      misses:0,
+      scheduled:held,
+      attendedScheduled:held,
+      rate:100,
+      points:Object.values(weeks).sort((a,b)=>a.key.localeCompare(b.key)),
+      currentStreak:held,
+      maxStreak:held,
+      untracked:0,
+      trackingStartKey:'',
+      inferredOnly:true,
+    };
+  }
   const trackingStartKey = [...presentKeys].sort()[0] || '';
   const untracked = trackingStartKey ? [...candidateKeys].filter(key => key < trackingStartKey).length : candidateKeys.size;
   const scheduled = [];
@@ -1387,7 +1418,6 @@ function calculateAttendance(student, posaulas) {
   });
   const misses = scheduled.filter(x => !x.present).length;
   const attendedScheduled = scheduled.length - misses;
-  const held = presentKeys.size + extraClassKeys.size;
   const rate = scheduled.length ? Math.round(attendedScheduled/scheduled.length*100) : null;
   const weeks = {};
   scheduled.forEach(item => {
@@ -1396,7 +1426,7 @@ function calculateAttendance(student, posaulas) {
     weeks[wk].total++; if (item.present) weeks[wk].present++;
   });
   const points = Object.values(weeks).sort((a,b)=>a.key.localeCompare(b.key)).map(w => ({ ...w, value:Math.round(w.present/w.total*100), color:metricTone(Math.round(w.present/w.total*100),'rate').color }));
-  return { held, misses, scheduled:scheduled.length, attendedScheduled, rate, points, currentStreak, maxStreak, untracked, trackingStartKey };
+  return { held, misses, scheduled:scheduled.length, attendedScheduled, rate, points, currentStreak, maxStreak, untracked, trackingStartKey, inferredOnly:false };
 }
 
 function calculateExerciseProgress(activities) {
@@ -1552,7 +1582,7 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
       <div style={{ fontSize:13, color:'#64748B', marginTop:4 }}>Escolha como prefere acompanhar sua evolução.</div>
       <ChartChoice value={chartType} onChange={chooseChart} />
 
-      <ProgressSection title="Presença" subtitle="Faltas calculadas a partir do primeiro pós-aula registrado; o período anterior ao aplicativo fica como sem dados.">
+      <ProgressSection title="Presença" subtitle={attendance.inferredOnly ? "Cada pós-aula conta como aula realizada. Sem calendário completo, nenhuma falta é presumida." : "Faltas calculadas a partir do primeiro pós-aula registrado; o período anterior ao aplicativo fica como sem dados."}>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
           <ProgressStat label="Realizadas" value={attendance.held} detail="com pós-aula" tone={PROGRESS_COLORS.good} />
           <ProgressStat label="Sequência atual" value={attendance.currentStreak} detail="aulas sem falta" tone={attendance.currentStreak >= 10 ? PROGRESS_COLORS.good : PROGRESS_COLORS.blue} />
