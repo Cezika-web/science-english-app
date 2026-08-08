@@ -2820,14 +2820,23 @@ function App() {
     return (
       <ReaderView post={readerPost} onBack={async () => {
         setReaderPost(null);
+        // No espelho, o logado é o admin: ler de user.uid traz zero pós-aula e
+        // limpava a tela ao voltar do leitor (só o F5 trazia de volta).
+        const uid = mirror ? mirrorUid.current : user.uid;
         const fb = await getFB();
-        const snaps = await fb.getDocs(fb.query(fb.collection(fb.db, 'students', user.uid, 'posaulas'), fb.orderBy('createdAt','desc')));
-        setPosaulas(snaps.docs.map(d => ({ id: d.id, ...d.data() })));
+        try {
+          const snaps = await fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'posaulas'), fb.orderBy('createdAt','desc')));
+          setPosaulas(snaps.docs.map(d => ({ id: d.id, ...d.data() })));
+        } catch (e) {
+          // Recarregar a lista é só para atualizar o "lido": se falhar, fica o
+          // que já estava na tela — nunca esvazia.
+          console.error('Pós-aulas ao voltar do leitor:', e);
+        }
       }} />
     );
   }
 
-  const handleOpenPost     = (post) => { getFB().then(fb => openPost(post, fb, user.uid)); };
+  const handleOpenPost     = (post) => { getFB().then(fb => openPost(post, fb, mirror ? mirrorUid.current : user.uid)); };
   const handleOpenActivity = (act)  => setOpenActivity(act);
   const handleOpenPart     = (part) => setOpenPart(part);
   const handleClosePart    = ()     => setOpenPart(null);
