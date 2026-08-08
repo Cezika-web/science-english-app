@@ -1342,11 +1342,18 @@ function AttendanceChart({ type, points, pieSegments, pieCenter }) {
   // Presença é sempre binária e cronológica. O histórico cresce apenas para o
   // lado e não muda de formato com o seletor dos outros dois gráficos.
   const shown = points || [];
+  const timelineRef = useRef(null);
+  useEffect(() => {
+    const timeline = timelineRef.current;
+    if (!timeline) return;
+    const frame = requestAnimationFrame(() => { timeline.scrollLeft = timeline.scrollWidth; });
+    return () => cancelAnimationFrame(frame);
+  }, [shown.length]);
   if (!shown.length) return <EmptyChart />;
   const status = point => point.present ?? point.value > 0;
 
   return (
-    <div role="list" aria-label="Linha do tempo de presença" style={{ overflowX:'auto', padding:'15px 2px 6px' }}>
+    <div ref={timelineRef} role="list" aria-label="Linha do tempo de presença" style={{ overflowX:'auto', padding:'15px 2px 6px', scrollBehavior:'smooth' }}>
       <div style={{ display:'flex', minWidth:shown.length * 66 }}>
         {shown.map((point,index) => {
           const present = status(point);
@@ -2748,17 +2755,17 @@ function VocabTab({ vocab }) {
   if (!listView) return (
     <div className="scroll-area" style={{ padding:'16px', display:'flex', flexDirection:'column', gap:12, overflow:'hidden' }}>
       {[
-        ['vocab','🔤','Meu vocabulário',`${vocab.length} palavra${vocab.length !== 1 ? 's' : ''}`,'rgba(var(--brand-rgb),.1)','var(--brand)'],
-        ['verbs','🔁','Verbos irregulares',`${IRREGULAR_VERBS.length} verbos`,'#EFF6FF','#2563EB'],
+        ['vocab','ABC','Meu vocabulário',`${vocab.length} palavra${vocab.length !== 1 ? 's' : ''}`,'rgba(var(--brand-rgb),.1)','var(--brand)'],
+        ['verbs','↻','Verbos irregulares',`${IRREGULAR_VERBS.length} verbos`,'#FBF7F1','#8B5E34'],
       ].map(([id,icon,title,count,background,border]) => <button key={id} onClick={() => setListView(id)} style={{
         flex:1, minHeight:0, width:'100%', border:`2px solid ${border}`, borderRadius:24, padding:'20px',
         background, cursor:'pointer', fontFamily:'inherit', display:'flex', flexDirection:'column',
         alignItems:'center', justifyContent:'center', textAlign:'center', boxShadow:'0 10px 28px rgba(15,23,42,.07)'
       }}>
-        <span style={{ fontSize:48, marginBottom:14 }}>{icon}</span>
-        <strong style={{ color:id === 'vocab'?'var(--brand-dark)':'#1E3A8A', fontSize:19 }}>{title}</strong>
+        <span style={{ width:62, height:62, borderRadius:18, marginBottom:14, display:'flex', alignItems:'center', justifyContent:'center', background:id === 'vocab'?'rgba(var(--brand-rgb),.12)':'#F1E5D5', border:`1px solid ${id === 'vocab'?'rgba(var(--brand-rgb),.24)':'#D9C1A3'}`, color:id === 'vocab'?'var(--brand-dark)':'#7C4A21', fontSize:id === 'vocab'?18:38, fontWeight:900 }}>{icon}</span>
+        <strong style={{ color:id === 'vocab'?'var(--brand-dark)':'#7C4A21', fontSize:19 }}>{title}</strong>
         <span style={{ color:'#64748B', fontSize:13, marginTop:6 }}>{count}</span>
-        <span style={{ color:id === 'vocab'?'var(--brand)':'#2563EB', fontSize:12, fontWeight:800, marginTop:14 }}>ABRIR LISTA ›</span>
+        <span style={{ color:id === 'vocab'?'var(--brand)':'#8B5E34', fontSize:12, fontWeight:800, marginTop:14 }}>ABRIR LISTA ›</span>
       </button>)}
     </div>
   );
@@ -2773,19 +2780,23 @@ function VocabTab({ vocab }) {
         </button>
       </div>
 
-      {listView === 'verbs' && <div style={{ marginBottom:14, border:'1px solid #DBEAFE', borderRadius:14, background:'rgba(255,255,255,.7)', overflow:'hidden' }}>
+      {listView === 'verbs' && <div style={{ marginBottom:14, border:'1px solid rgba(139,94,52,.2)', borderRadius:16, background:'rgba(255,255,255,.72)', overflow:'hidden' }}>
           <div style={{ padding:10 }}>
-            <input value={verbSearch} onChange={e => setVerbSearch(e.target.value)} placeholder="Buscar verbo ou tradução" style={{ width:'100%', boxSizing:'border-box', border:'1px solid #CBD5E1', borderRadius:10, padding:'10px 12px', fontFamily:'inherit', fontSize:13, outline:'none' }} />
+            <input value={verbSearch} onChange={e => setVerbSearch(e.target.value)} placeholder="Buscar verbo ou tradução" style={{ width:'100%', boxSizing:'border-box', border:'1.5px solid #D9C1A3', borderRadius:12, padding:'11px 13px', background:'#FFFCF8', color:'#0F172A', fontFamily:'inherit', fontSize:13, outline:'none' }} />
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1.15fr', gap:6, padding:'8px 10px', background:'#EFF6FF', color:'#475569', fontSize:9.5, fontWeight:800, textTransform:'uppercase' }}>
-            <span>Verbo</span><span>Passado</span><span>Particípio</span><span>Tradução</span>
+          <div style={{ padding:'9px 12px', background:'#F7EFE5', color:'#7C4A21', fontSize:11, fontWeight:800, textTransform:'uppercase', letterSpacing:.5 }}>
+            Infinitivo · passado · particípio
           </div>
-          <div style={{ maxHeight:390, overflowY:'auto' }}>
-            {filteredVerbs.map(([base,past,participle,translation]) => <div key={base} style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1.15fr', gap:6, padding:'10px', borderTop:'1px solid #EFF6FF', alignItems:'center' }}>
-              <strong style={{ color:'#0F172A', fontSize:12.5 }}>{base}</strong>
-              <span style={{ color:'#1D4ED8', fontSize:12 }}>{past}</span>
-              <span style={{ color:'#1D4ED8', fontSize:12 }}>{participle}</span>
-              <span style={{ color:'#64748B', fontSize:11.5 }}>{translation}</span>
+          <div style={{ padding:'8px', display:'grid', gap:7 }}>
+            {filteredVerbs.map(([base,past,participle,translation]) => <div key={base} style={{ padding:'12px', border:'1px solid rgba(var(--brand-rgb),.13)', borderRadius:14, background:'#FFFEFC' }}>
+              <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:10 }}>
+                <strong style={{ color:'var(--brand-dark)', fontSize:15 }}>{base}</strong>
+                <span style={{ color:'#8B5E34', fontSize:12, fontWeight:700, textAlign:'right' }}>{translation}</span>
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:7, marginTop:9 }}>
+                <div style={{ padding:'8px 9px', borderRadius:10, background:'rgba(var(--brand-rgb),.08)' }}><span style={{ display:'block', color:'#64748B', fontSize:9, fontWeight:800, textTransform:'uppercase' }}>Passado</span><strong style={{ display:'block', color:'var(--brand-dark)', fontSize:12.5, marginTop:2 }}>{past}</strong></div>
+                <div style={{ padding:'8px 9px', borderRadius:10, background:'#F7EFE5' }}><span style={{ display:'block', color:'#7C4A21', fontSize:9, fontWeight:800, textTransform:'uppercase' }}>Particípio</span><strong style={{ display:'block', color:'#7C4A21', fontSize:12.5, marginTop:2 }}>{participle}</strong></div>
+              </div>
             </div>)}
             {!filteredVerbs.length && <div style={{ padding:22, textAlign:'center', color:'#94A3B8', fontSize:12.5 }}>Nenhum verbo encontrado.</div>}
           </div>
