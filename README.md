@@ -1,6 +1,6 @@
 # Science English App
 
-PWA da Science English para alunos acessarem pós-aulas, atividades no Notion e receberem notificações no celular. O projeto é estático e roda em GitHub Pages, com Firebase para autenticação, Firestore e Firebase Cloud Messaging.
+PWA da Science English para alunos acessarem pós-aulas, fazerem as atividades e receberem notificações no celular. O projeto é estático e roda em GitHub Pages, com Firebase para autenticação, Firestore e Firebase Cloud Messaging.
 
 Versão atual: `v1.0.1`
 
@@ -147,7 +147,7 @@ Ele permite:
 - listar alunos
 - ver status de leitura
 - cadastrar novos alunos
-- cadastrar nível e link do Notion
+- cadastrar nível do aluno
 
 ## Verificações Locais
 

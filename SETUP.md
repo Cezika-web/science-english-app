@@ -79,7 +79,7 @@ Deploy e feito ao enviar mudancas para `main`; o GitHub Pages publica a nova ver
 
 1. Acesse `/admin/`.
 2. Entre com a conta admin do Firebase Authentication.
-3. Cadastre nome, e-mail, senha inicial, nivel e link do Notion.
+3. Cadastre nome, e-mail, senha inicial e nivel.
 4. O painel cria o aluno e salva o perfil em `students/{uid}`.
 
 ## PWA e Notificacoes
