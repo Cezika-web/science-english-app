@@ -172,7 +172,7 @@ async function getFB() {
   const [
     { initializeApp },
     { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential },
-    { getFirestore, doc, getDoc, collection, query, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion },
+    { getFirestore, doc, getDoc, collection, query, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion, deleteField },
     { getMessaging, getToken, onMessage, isSupported },
     { getStorage, ref: storageRef, uploadBytes, getDownloadURL },
   ] = await Promise.all([
@@ -191,7 +191,7 @@ async function getFB() {
   _fb = { app, auth, db, storage, messaging,
     signInWithEmailAndPassword, signOut, onAuthStateChanged,
     updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential,
-    doc, getDoc, collection, query, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion,
+    doc, getDoc, collection, query, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion, deleteField,
     storageRef, uploadBytes, getDownloadURL,
     getToken, onMessage };
   return _fb;
@@ -275,6 +275,73 @@ function quinzenaInfo(ts) {
     key: `${q}ª quinzena de ${MESES_PT[d.getMonth()]} ${d.getFullYear()}`,
     ord: d.getFullYear() * 100 + d.getMonth() * 2 + q,
   };
+}
+
+function dateFrom(value) {
+  if (!value) return null;
+  const d = value.toDate ? value.toDate() : new Date(value);
+  return isNaN(d) ? null : d;
+}
+
+function dateKey(value) {
+  const d = dateFrom(value);
+  if (!d) return '';
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function addDays(date, days) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+// Feriados nacionais e datas em que normalmente não há aula de idiomas.
+// Datas locais/municipais poderão entrar depois como exceções da escola.
+function easterDate(year) {
+  const a = year % 19, b = Math.floor(year / 100), c = year % 100;
+  const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3), h = (19*a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4), k = c % 4, l = (32 + 2*e + 2*i - h - k) % 7;
+  const m = Math.floor((a + 11*h + 22*l) / 451);
+  const month = Math.floor((h + l - 7*m + 114) / 31) - 1;
+  const day = ((h + l - 7*m + 114) % 31) + 1;
+  return new Date(year, month, day);
+}
+
+function nationalHolidayKeys(year) {
+  const fixed = [[0,1],[3,21],[4,1],[8,7],[9,12],[10,2],[10,15],[10,20],[11,25]];
+  const easter = easterDate(year);
+  const moving = [addDays(easter,-48), addDays(easter,-47), addDays(easter,-2), addDays(easter,60)];
+  return new Set([
+    ...fixed.map(([m,d]) => dateKey(new Date(year,m,d))),
+    ...moving.map(dateKey),
+  ]);
+}
+
+function weekStart(value) {
+  const d = dateFrom(value);
+  if (!d) return null;
+  const copy = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const delta = (copy.getDay() + 6) % 7;
+  copy.setDate(copy.getDate() - delta);
+  return copy;
+}
+
+function shortWeekLabel(value) {
+  const d = weekStart(value);
+  return d ? d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) : '';
+}
+
+function talkTimeFromPost(post) {
+  const structured = Number(post?.talkTime?.studentPct ?? post?.studentTalkPct);
+  if (Number.isFinite(structured)) return Math.max(0, Math.min(100, structured));
+  if (!post?.html) return null;
+  try {
+    const doc = new DOMParser().parseFromString(post.html, 'text/html');
+    const raw = doc.querySelector('.row-student .talk-percent')?.textContent || '';
+    const n = Number(raw.replace(',', '.').match(/[\d.]+/)?.[0]);
+    return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : null;
+  } catch (e) { return null; }
 }
 
 function isIOS() {
@@ -856,6 +923,7 @@ function AppHeader({ student, onNotif, showNotifBtn, onLogout, onPatchStudent })
 const TABS = [
   { id: 'home',   label: 'Inicio',      icon: '🏠' },
   { id: 'aulas',  label: 'Aulas',       icon: '📚' },
+  { id: 'progresso', label: 'Progresso', icon: '📈' },
   { id: 'vocab',  label: 'Vocabulario', icon: '🔤' },
   { id: 'perfil', label: 'Perfil',      icon: '👤' },
 ];
@@ -1111,6 +1179,400 @@ function InstallBanner() {
   return null;
 }
 
+// ── Progresso e estatísticas ────────────────────────────────────
+const PROGRESS_COLORS = {
+  good: '#16A34A', attention: '#D97706', low: '#DC2626', neutral: '#64748B', soft: '#E2E8F0', blue: '#2563EB'
+};
+
+function metricTone(value, kind) {
+  if (!Number.isFinite(value)) return { color: PROGRESS_COLORS.neutral, label: 'Sem dados' };
+  if (kind === 'talk') {
+    if (value >= 40) return { color: PROGRESS_COLORS.good, label: 'Muito bom' };
+    if (value >= 30) return { color: PROGRESS_COLORS.attention, label: 'Pode crescer' };
+    return { color: PROGRESS_COLORS.low, label: 'Precisa de atenção' };
+  }
+  if (value >= 80) return { color: PROGRESS_COLORS.good, label: 'Muito bom' };
+  if (value >= 60) return { color: PROGRESS_COLORS.attention, label: 'Pode crescer' };
+  return { color: PROGRESS_COLORS.low, label: 'Precisa de atenção' };
+}
+
+function ProgressStat({ label, value, detail, tone = PROGRESS_COLORS.neutral }) {
+  return (
+    <GlassCard style={{ padding: '14px 15px', minWidth: 0 }}>
+      <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: .45 }}>{label}</div>
+      <div style={{ fontSize: 25, color: tone, fontWeight: 800, marginTop: 5, lineHeight: 1 }}>{value}</div>
+      {detail && <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 6, lineHeight: 1.3 }}>{detail}</div>}
+    </GlassCard>
+  );
+}
+
+function ChartChoice({ value, onChange }) {
+  const choices = [['line','〽','Linha'], ['bar','▥','Barras'], ['pie','◕','Pizza']];
+  return (
+    <div role="group" aria-label="Formato dos gráficos" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:7, marginTop:12 }}>
+      {choices.map(([id,icon,label]) => {
+        const active = value === id;
+        return <button key={id} onClick={() => onChange(id)} aria-pressed={active} style={{
+          border: active ? '1.5px solid var(--brand)' : '1px solid #E2E8F0', borderRadius:12,
+          padding:'9px 5px', background: active ? 'rgba(var(--brand-rgb),0.12)' : 'rgba(255,255,255,.72)',
+          color: active ? 'var(--brand-dark)' : '#64748B', fontFamily:'inherit', fontSize:12,
+          fontWeight: active ? 800 : 600, cursor:'pointer'
+        }}><span aria-hidden="true" style={{ marginRight:5 }}>{icon}</span>{label}</button>;
+      })}
+    </div>
+  );
+}
+
+function LineChart({ points, suffix = '%' }) {
+  const shown = points.slice(-8);
+  if (!shown.length) return <EmptyChart />;
+  const w = 320, h = 154, left = 31, right = 12, top = 18, bottom = 34;
+  const maxValue = Math.max(100, ...shown.map(p => p.value));
+  const x = i => shown.length === 1 ? (left + w-right)/2 : left + i * ((w-left-right)/(shown.length-1));
+  const y = v => top + (maxValue-v) * ((h-top-bottom)/maxValue);
+  const coords = shown.map((p,i) => `${x(i)},${y(p.value)}`).join(' ');
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label="Gráfico de evolução" style={{ width:'100%', display:'block' }}>
+      {[0,50,100].map(v => <g key={v}><line x1={left} x2={w-right} y1={y(v)} y2={y(v)} stroke="#E2E8F0" /><text x={left-6} y={y(v)+4} textAnchor="end" fontSize="9.5" fill="#64748B">{v}{suffix}</text></g>)}
+      <polyline points={coords} fill="none" stroke="var(--brand)" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+      {shown.map((p,i) => <g key={p.key || i}>
+        <circle cx={x(i)} cy={y(p.value)} r="5" fill={p.color || 'var(--brand)'} stroke="#fff" strokeWidth="2" />
+        <text x={x(i)} y={h-12} textAnchor="middle" fontSize="9.5" fill="#64748B">{p.label}</text>
+      </g>)}
+    </svg>
+  );
+}
+
+function BarChart({ points, suffix = '%' }) {
+  const shown = points.slice(-8);
+  if (!shown.length) return <EmptyChart />;
+  return (
+    <div role="img" aria-label="Gráfico de barras da evolução" style={{ display:'flex', gap:8, height:150, alignItems:'flex-end', padding:'12px 2px 0' }}>
+      {shown.map((p,i) => <div key={p.key || i} style={{ flex:1, minWidth:0, height:'100%', display:'flex', flexDirection:'column', justifyContent:'flex-end', alignItems:'center' }}>
+        <div style={{ fontSize:9.5, color:'#475569', fontWeight:700, marginBottom:4 }}>{Math.round(p.value)}{suffix}</div>
+        <div style={{ width:'72%', minWidth:12, maxWidth:30, height:`${Math.max(4,Math.min(100,p.value))}%`, borderRadius:'7px 7px 2px 2px', background:p.color || 'var(--brand)', transition:'height .25s ease' }} />
+        <div style={{ height:25, fontSize:9.5, color:'#64748B', marginTop:5, whiteSpace:'nowrap' }}>{p.label}</div>
+      </div>)}
+    </div>
+  );
+}
+
+function PieChart({ segments, center }) {
+  const clean = segments.filter(s => s.value > 0);
+  const total = clean.reduce((n,s) => n+s.value,0);
+  if (!total) return <EmptyChart />;
+  let cursor = 0;
+  const stops = clean.map(s => {
+    const start = cursor; cursor += (s.value/total)*360;
+    return `${s.color} ${start}deg ${cursor}deg`;
+  }).join(',');
+  return (
+    <div role="img" aria-label={clean.map(s => `${s.label}: ${s.value}`).join(', ')} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:24, padding:'16px 4px', flexWrap:'wrap' }}>
+      <div style={{ width:132, height:132, borderRadius:'50%', background:`conic-gradient(${stops})`, position:'relative', flexShrink:0 }}>
+        <div style={{ position:'absolute', inset:26, borderRadius:'50%', background:'#F6F1EA', display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center', color:'#0F172A', fontSize:17, fontWeight:800 }}>{center}</div>
+      </div>
+      <div style={{ display:'grid', gap:8 }}>
+        {clean.map(s => <div key={s.label} style={{ display:'flex', alignItems:'center', gap:8, fontSize:12, color:'#475569' }}>
+          <span style={{ width:10, height:10, borderRadius:3, background:s.color }} />
+          <span><strong>{s.value}</strong> {s.label}</span>
+        </div>)}
+      </div>
+    </div>
+  );
+}
+
+function EmptyChart() {
+  return <div style={{ padding:'28px 12px', textAlign:'center', color:'#94A3B8', fontSize:12.5 }}>Os dados aparecerão aqui conforme o histórico for sendo registrado.</div>;
+}
+
+function EvolutionChart({ type, points, pieSegments, pieCenter, suffix = '%' }) {
+  if (type === 'pie') return <PieChart segments={pieSegments || []} center={pieCenter} />;
+  if (type === 'bar') return <BarChart points={points} suffix={suffix} />;
+  return <LineChart points={points} suffix={suffix} />;
+}
+
+function ProgressSection({ title, subtitle, children }) {
+  return (
+    <section style={{ marginTop:20 }}>
+      <div style={{ fontSize:16, fontWeight:800, color:'#0F172A' }}>{title}</div>
+      {subtitle && <div style={{ fontSize:12, color:'#64748B', marginTop:3, lineHeight:1.4 }}>{subtitle}</div>}
+      <GlassCard style={{ padding:'12px 14px', marginTop:10 }}>{children}</GlassCard>
+    </section>
+  );
+}
+
+function calculateAttendance(student, posaulas) {
+  const lessonDays = new Set((student?.aulaDias || []).map(Number));
+  const startRaw = student?.inicioCurso;
+  const start = startRaw ? new Date(`${startRaw}T00:00:00`) : null;
+  const cutoff = addDays(new Date(), -1); // o pós-aula normalmente chega no dia seguinte
+  const exceptions = new Set((student?.aulaExcecoes || []).map(String));
+  const candidateKeys = new Set();
+  if (start && !isNaN(start) && lessonDays.size) {
+    for (let d = new Date(start); d <= cutoff; d = addDays(d,1)) {
+      if (lessonDays.has(d.getDay())) candidateKeys.add(dateKey(d));
+    }
+  }
+
+  // Registros novos têm classDate e entram exatamente no dia da aula. Nos
+  // antigos, createdAt pode ser a data de publicação: nesse caso associamos o
+  // pós-aula ao dia agendado da própria data ou do dia anterior. Cada registro
+  // ocupa no máximo uma aula, evitando presença duplicada.
+  const presentKeys = new Set();
+  const extraClassKeys = new Set();
+  (posaulas || []).forEach(post => {
+    const explicitKey = dateKey(post.classDate);
+    if (explicitKey) {
+      (candidateKeys.has(explicitKey) ? presentKeys : extraClassKeys).add(explicitKey);
+      return;
+    }
+    const published = dateFrom(post.createdAt);
+    if (!published) return;
+    const sameDay = dateKey(published);
+    const previousDay = dateKey(addDays(published,-1));
+    if (candidateKeys.has(sameDay) && !presentKeys.has(sameDay)) presentKeys.add(sameDay);
+    else if (candidateKeys.has(previousDay) && !presentKeys.has(previousDay)) presentKeys.add(previousDay);
+    else extraClassKeys.add(sameDay);
+  });
+  const scheduled = [];
+  if (start && !isNaN(start) && lessonDays.size) {
+    const holidayCache = {};
+    for (let d = new Date(start); d <= cutoff; d = addDays(d,1)) {
+      if (!lessonDays.has(d.getDay())) continue;
+      const key = dateKey(d);
+      holidayCache[d.getFullYear()] ||= nationalHolidayKeys(d.getFullYear());
+      // Feriado/cancelamento só sai da conta quando realmente não houve aula.
+      // Se existe pós-aula, a aula aconteceu e vale para a sequência.
+      if (!presentKeys.has(key) && (holidayCache[d.getFullYear()].has(key) || exceptions.has(key))) continue;
+      scheduled.push({ date:new Date(d), key, present:presentKeys.has(key) });
+    }
+  }
+  let currentStreak = 0, maxStreak = 0;
+  scheduled.forEach(item => {
+    currentStreak = item.present ? currentStreak + 1 : 0;
+    maxStreak = Math.max(maxStreak, currentStreak);
+  });
+  const misses = scheduled.filter(x => !x.present).length;
+  const attendedScheduled = scheduled.length - misses;
+  const held = presentKeys.size + extraClassKeys.size;
+  const rate = scheduled.length ? Math.round(attendedScheduled/scheduled.length*100) : null;
+  const weeks = {};
+  scheduled.forEach(item => {
+    const wk = dateKey(weekStart(item.date));
+    weeks[wk] ||= { key:wk, label:shortWeekLabel(item.date), total:0, present:0 };
+    weeks[wk].total++; if (item.present) weeks[wk].present++;
+  });
+  const points = Object.values(weeks).sort((a,b)=>a.key.localeCompare(b.key)).map(w => ({ ...w, value:Math.round(w.present/w.total*100), color:metricTone(Math.round(w.present/w.total*100),'rate').color }));
+  return { held, misses, scheduled:scheduled.length, attendedScheduled, rate, points, currentStreak, maxStreak };
+}
+
+function calculateExerciseProgress(activities) {
+  const corrected = (activities || []).filter(a => a.status === 'corrected' && a.summary);
+  let correct = 0, wrong = 0;
+  const weeks = {};
+  corrected.forEach(a => {
+    const c = Number(a.summary?.correct || 0);
+    const errs = a.summary?.errors || {};
+    const e = Number(errs.bobo||0)+Number(errs.mediano||0)+Number(errs.grave||0);
+    correct += c; wrong += e;
+    const when = dateFrom(a.correctedAt || a.createdAt);
+    const key = dateKey(weekStart(when));
+    if (!key) return;
+    weeks[key] ||= { key, label:shortWeekLabel(when), correct:0, wrong:0 };
+    weeks[key].correct += c; weeks[key].wrong += e;
+  });
+  const answered = correct + wrong;
+  const accuracy = answered ? Math.round(correct/answered*100) : null;
+  const points = Object.values(weeks).sort((a,b)=>a.key.localeCompare(b.key)).map(w => {
+    const total = w.correct+w.wrong, value = total ? Math.round(w.correct/total*100) : 0;
+    return { ...w, value, color:metricTone(value,'rate').color };
+  });
+  return { correct, wrong, answered, accuracy, points, corrected:corrected.length };
+}
+
+function calculateTalkProgress(posaulas) {
+  const entries = (posaulas || []).map(p => ({ key:dateKey(p.classDate || p.createdAt), date:dateFrom(p.classDate || p.createdAt), value:talkTimeFromPost(p) }))
+    .filter(x => x.date && Number.isFinite(x.value)).sort((a,b)=>a.date-b.date)
+    .map(x => ({ ...x, label:x.date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}), color:metricTone(x.value,'talk').color }));
+  const values = entries.map(x=>x.value);
+  const average = values.length ? Math.round(values.reduce((n,v)=>n+v,0)/values.length) : null;
+  return { entries, average, best:values.length?Math.max(...values):null, worst:values.length?Math.min(...values):null };
+}
+
+function collectProgressMilestones(student, posaulas, activities) {
+  const attendance = calculateAttendance(student, posaulas);
+  const exercise = calculateExerciseProgress(activities);
+  const talk = calculateTalkProgress(posaulas);
+  const reached = [];
+
+  const streakLevel = Math.floor(attendance.currentStreak / 10) * 10;
+  for (let level = 10; level <= streakLevel; level += 10) {
+    reached.push({ key:`attendance_streak_${level}`, group:'streak', level, icon:'🔥', title:`${level} presenças seguidas!`, message:`Parabéns! Você completou ${level} aulas consecutivas sem nenhuma falta.` });
+  }
+
+  if (attendance.scheduled >= 10 && attendance.rate != null) {
+    [70,80,90,95,100].filter(level => attendance.rate >= level).forEach(level => {
+      reached.push({ key:`attendance_rate_${level}`, group:'attendance', level, icon:'🏆', title:`${level}% de presença!`, message:`Sua frequência chegou a ${level}%. Continue mantendo esse ritmo.` });
+    });
+  }
+
+  if (talk.average != null) {
+    [50,60,70,80,90,100].filter(level => talk.average >= level).forEach(level => {
+      reached.push({ key:`talk_time_${level}`, group:'talk', level, icon:'🎤', title:`Talk time de ${level}%!`, message:`Sua média de fala chegou ao nível de ${level}%. Você está usando cada vez mais o inglês.` });
+    });
+  }
+
+  if (exercise.answered >= 10 && exercise.accuracy != null) {
+    [50,60,70,80,90,95,100].filter(level => exercise.accuracy >= level).forEach(level => {
+      reached.push({ key:`exercise_accuracy_${level}`, group:'exercise', level, icon:'✅', title:`${level}% de acerto!`, message:`Seu aproveitamento nas atividades chegou a ${level}%. Excelente evolução.` });
+    });
+  }
+
+  return reached;
+}
+
+function AchievementModal({ items, onView, onClose }) {
+  if (!items?.length) return null;
+  return (
+    <div role="dialog" aria-modal="true" aria-label="Nova conquista" style={{ position:'fixed', inset:0, zIndex:10020, background:'rgba(15,23,42,.55)', display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+      <div style={{ width:'100%', maxWidth:390, background:'#FFFDF9', borderRadius:26, padding:'26px 22px 20px', boxShadow:'0 24px 70px rgba(15,23,42,.28)', textAlign:'center', border:'1px solid rgba(var(--brand-rgb),.16)' }}>
+        <div style={{ fontSize:48, lineHeight:1 }}>{items[0].icon}</div>
+        <div style={{ fontSize:12, fontWeight:800, color:'var(--brand)', letterSpacing:1, textTransform:'uppercase', marginTop:12 }}>Nova conquista</div>
+        <div style={{ fontSize:23, fontWeight:800, color:'#0F172A', marginTop:7 }}>{items[0].title}</div>
+        <div style={{ fontSize:14, color:'#475569', lineHeight:1.55, marginTop:9 }}>{items[0].message}</div>
+        {items.length > 1 && (
+          <div style={{ marginTop:14, padding:'10px 12px', borderRadius:12, background:'rgba(var(--brand-rgb),.08)', color:'var(--brand-dark)', fontSize:12.5, fontWeight:700 }}>
+            + {items.length-1} nova{items.length>2?'s':''} conquista{items.length>2?'s':''}: {items.slice(1).map(i=>i.title).join(' · ')}
+          </div>
+        )}
+        <button onClick={onView} style={{ width:'100%', border:'none', borderRadius:14, padding:'13px 18px', marginTop:18, background:'var(--brand)', color:'#fff', fontFamily:'inherit', fontSize:14.5, fontWeight:800, cursor:'pointer' }}>Ver meu progresso</button>
+        <button onClick={onClose} style={{ width:'100%', border:'none', background:'transparent', color:'#64748B', padding:'11px', fontFamily:'inherit', fontSize:13, fontWeight:600, cursor:'pointer' }}>Agora não</button>
+      </div>
+    </div>
+  );
+}
+
+function ReviewReadyModal({ report, onView, onClose }) {
+  if (!report) return null;
+  return (
+    <div role="dialog" aria-modal="true" aria-label="Desafio finalizado" style={{ position:'fixed', inset:0, zIndex:10030, background:'rgba(15,23,42,.58)', display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+      <div style={{ width:'100%', maxWidth:390, background:'#FFFDF9', borderRadius:26, padding:'27px 22px 20px', boxShadow:'0 24px 70px rgba(15,23,42,.3)', textAlign:'center', border:'1px solid #C4B5FD' }}>
+        <div style={{ fontSize:46 }}>🧭</div>
+        <div style={{ fontSize:12, fontWeight:800, color:'#6D28D9', letterSpacing:1, textTransform:'uppercase', marginTop:8 }}>Desafio finalizado</div>
+        <div style={{ fontSize:22, fontWeight:800, color:'#0F172A', marginTop:7 }}>Seu resultado está pronto!</div>
+        <div style={{ fontSize:14, color:'#475569', lineHeight:1.55, marginTop:9 }}>Veja o que você aprendeu, seus pontos fortes e o que vale revisar agora.</div>
+        <button onClick={onView} style={{ width:'100%', border:'none', borderRadius:14, padding:'13px 18px', marginTop:18, background:'#7C3AED', color:'#fff', fontFamily:'inherit', fontSize:14.5, fontWeight:800, cursor:'pointer' }}>Ver resultado</button>
+        <button onClick={onClose} style={{ width:'100%', border:'none', background:'transparent', color:'#64748B', padding:'11px', fontFamily:'inherit', fontSize:13, fontWeight:600, cursor:'pointer' }}>Ver depois</button>
+      </div>
+    </div>
+  );
+}
+
+function ReviewReportModal({ report, onClose }) {
+  if (!report) return null;
+  const totals = report.totals || {};
+  const list = (title, items, color, icon) => Array.isArray(items) && items.length ? (
+    <div style={{ marginTop:18 }}>
+      <div style={{ fontSize:14, fontWeight:800, color, marginBottom:8 }}>{icon} {title}</div>
+      <div style={{ display:'grid', gap:7 }}>
+        {items.map((item,i) => <div key={i} style={{ padding:'10px 12px', borderRadius:11, background:'#F8FAFC', color:'#334155', fontSize:13, lineHeight:1.45 }}>{item}</div>)}
+      </div>
+    </div>
+  ) : null;
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:10040, background:'rgba(10,20,40,.58)', display:'flex', flexDirection:'column' }} onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={{ marginTop:'auto', maxHeight:'94%', background:'#FFFDF9', borderRadius:'24px 24px 0 0', overflowY:'auto', padding:'18px 18px 30px' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <div style={{ fontSize:30 }}>🧭</div>
+          <div style={{ flex:1 }}><div style={{ fontSize:11, color:'#6D28D9', fontWeight:800, textTransform:'uppercase' }}>Revisão concluída</div><div style={{ fontSize:18, fontWeight:800, color:'#0F172A' }}>{report.title || 'Resultado do Desafio de 90 Dias'}</div></div>
+          <button onClick={onClose} style={{ width:34,height:34,borderRadius:'50%',border:'none',background:'#F1F5F9',fontSize:16,cursor:'pointer' }}>✕</button>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginTop:17 }}>
+          <ProgressStat label="Acertos" value={totals.correct ?? '—'} tone={PROGRESS_COLORS.good} />
+          <ProgressStat label="Erros" value={totals.wrong ?? '—'} tone={totals.wrong?PROGRESS_COLORS.low:PROGRESS_COLORS.good} />
+          <ProgressStat label="Resultado" value={Number.isFinite(totals.accuracy)?`${totals.accuracy}%`:'—'} tone={metricTone(totals.accuracy,'rate').color} />
+        </div>
+        {report.studentSummary && <div style={{ marginTop:17, padding:'14px', borderRadius:14, background:'#F5F3FF', border:'1px solid #DDD6FE', color:'#4C1D95', fontSize:13.5, lineHeight:1.55 }}>{report.studentSummary}</div>}
+        {list('O que você aprendeu', report.learned, PROGRESS_COLORS.good, '✓')}
+        {list('Seus pontos fortes', report.strengths, '#2563EB', '★')}
+        {list('Vale revisar agora', report.reviewNext, PROGRESS_COLORS.attention, '↻')}
+      </div>
+    </div>
+  );
+}
+
+function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpenReview }) {
+  const [chartType, setChartType] = useState(() => localStorage.getItem('progressChartType') || 'line');
+  const chooseChart = type => { setChartType(type); localStorage.setItem('progressChartType', type); };
+
+  const attendance = React.useMemo(() => calculateAttendance(student, posaulas), [student, posaulas]);
+  const exercise = React.useMemo(() => calculateExerciseProgress(activities), [activities]);
+  const talk = React.useMemo(() => calculateTalkProgress(posaulas), [posaulas]);
+
+  const attendanceTone = metricTone(attendance.rate,'rate');
+  const exerciseTone = metricTone(exercise.accuracy,'rate');
+  const talkTone = metricTone(talk.average,'talk');
+
+  return (
+    <div className="scroll-area" style={{ padding:'18px 16px 28px' }}>
+      <div style={{ fontSize:22, fontWeight:800, color:'#0F172A' }}>Meu progresso</div>
+      <div style={{ fontSize:13, color:'#64748B', marginTop:4 }}>Escolha como prefere acompanhar sua evolução.</div>
+      <ChartChoice value={chartType} onChange={chooseChart} />
+
+      <ProgressSection title="Presença" subtitle="Aulas previstas desde o início do curso, sem contar feriados nacionais.">
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
+          <ProgressStat label="Realizadas" value={attendance.held} detail="com pós-aula" tone={PROGRESS_COLORS.good} />
+          <ProgressStat label="Sequência atual" value={attendance.currentStreak} detail="aulas sem falta" tone={attendance.currentStreak >= 10 ? PROGRESS_COLORS.good : PROGRESS_COLORS.blue} />
+          <ProgressStat label="Faltas" value={attendance.misses} detail="aulas previstas" tone={attendance.misses ? PROGRESS_COLORS.low : PROGRESS_COLORS.good} />
+          <ProgressStat label="Presença" value={attendance.rate == null?'—':`${attendance.rate}%`} detail={attendanceTone.label} tone={attendanceTone.color} />
+        </div>
+        <div style={{ marginTop:10 }}><EvolutionChart type={chartType} points={attendance.points} pieSegments={[
+          {label:'presenças',value:attendance.attendedScheduled,color:PROGRESS_COLORS.good},
+          {label:'faltas',value:attendance.misses,color:PROGRESS_COLORS.low}
+        ]} pieCenter={attendance.rate == null?'—':`${attendance.rate}%`} /></div>
+      </ProgressSection>
+
+      <ProgressSection title="Exercícios" subtitle="Acertos e erros das atividades que já foram corrigidas.">
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+          <ProgressStat label="Acertos" value={exercise.correct} detail="respostas" tone={PROGRESS_COLORS.good} />
+          <ProgressStat label="Erros" value={exercise.wrong} detail="respostas" tone={exercise.wrong?PROGRESS_COLORS.low:PROGRESS_COLORS.good} />
+          <ProgressStat label="Aproveitamento" value={exercise.accuracy==null?'—':`${exercise.accuracy}%`} detail={exerciseTone.label} tone={exerciseTone.color} />
+        </div>
+        <div style={{ marginTop:10 }}><EvolutionChart type={chartType} points={exercise.points} pieSegments={[
+          {label:'acertos',value:exercise.correct,color:PROGRESS_COLORS.good},
+          {label:'erros',value:exercise.wrong,color:PROGRESS_COLORS.low}
+        ]} pieCenter={exercise.accuracy==null?'—':`${exercise.accuracy}%`} /></div>
+      </ProgressSection>
+
+      <ProgressSection title="Talk time" subtitle="Sua porcentagem de fala em cada aula. Verde: 40% ou mais · amarelo: 30% a 39% · vermelho: abaixo de 30%.">
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+          <ProgressStat label="Média" value={talk.average==null?'—':`${talk.average}%`} detail={talkTone.label} tone={talkTone.color} />
+          <ProgressStat label="Maior" value={talk.best==null?'—':`${talk.best}%`} detail="melhor aula" tone={metricTone(talk.best,'talk').color} />
+          <ProgressStat label="Menor" value={talk.worst==null?'—':`${talk.worst}%`} detail="aula mais baixa" tone={metricTone(talk.worst,'talk').color} />
+        </div>
+        <div style={{ marginTop:10 }}><EvolutionChart type={chartType} points={talk.entries} pieSegments={talk.average==null?[]:[
+          {label:'fala do aluno',value:talk.average,color:talkTone.color},
+          {label:'outras falas',value:100-talk.average,color:PROGRESS_COLORS.soft}
+        ]} pieCenter={talk.average==null?'—':`${talk.average}%`} /></div>
+      </ProgressSection>
+
+      {reviewReports.length > 0 && (
+        <ProgressSection title="Minhas revisões" subtitle="Resultados dos seus desafios de revisão.">
+          <div style={{ display:'grid', gap:8 }}>
+            {reviewReports.map(report => (
+              <button key={report.id} onClick={() => onOpenReview?.(report)} style={{ width:'100%', display:'flex', alignItems:'center', gap:12, padding:'12px', border:'1px solid #DDD6FE', borderRadius:12, background:'#FAF5FF', textAlign:'left', cursor:'pointer', fontFamily:'inherit' }}>
+                <span style={{ fontSize:24 }}>🧭</span>
+                <span style={{ flex:1 }}><strong style={{ display:'block', color:'#4C1D95', fontSize:13.5 }}>{report.title || 'Resultado do Desafio de 90 Dias'}</strong><span style={{ color:'#7C3AED', fontSize:11.5 }}>{report.totals?.accuracy ?? '—'}% de aproveitamento · {report.activityCount || 0} atividades</span></span>
+                <span style={{ color:'#7C3AED', fontSize:20 }}>›</span>
+              </button>
+            ))}
+          </div>
+        </ProgressSection>
+      )}
+    </div>
+  );
+}
+
 // ── HomeTab ─────────────────────────────────────────────────────
 function ProgressRing({ value, goal, label, sublabel }) {
   const size = 118, stroke = 11, r = (size - stroke) / 2, c = 2 * Math.PI * r;
@@ -1307,14 +1769,16 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) 
 // ── AulasTab ─────────────────────────────────────────────────────
 function ActivityRow({ act, onOpenActivity }) {
   const isCorrected = act.status === 'corrected';
+  const isReview90  = act.review90 === true;
   const isFinished  = !isCorrected && !!act.finalizada;   // aluno fez todas as partes, aguardando correção
   const isGreen     = isCorrected || isFinished;
   const partsN = (act.parts || []).length;
   const actPct = act.conclusao?.atividadePct;
   return (
-    <GlassCard tappable onClick={() => onOpenActivity(act)} style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
-      <div style={{ fontSize: 24, width: 46, height: 46, borderRadius: 14, background: 'rgba(139,94,52,0.1)', border: '1px solid rgba(139,94,52,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{act.emoji || '📚'}</div>
+    <GlassCard tappable onClick={() => onOpenActivity(act)} style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14, background:isReview90?'linear-gradient(145deg,#FAF5FF,#F5F3FF)':undefined, border:isReview90?'1.5px solid #C4B5FD':undefined }}>
+      <div style={{ fontSize: 24, width: 46, height: 46, borderRadius: 14, background: isReview90?'#EDE9FE':'rgba(139,94,52,0.1)', border: isReview90?'1px solid #C4B5FD':'1px solid rgba(139,94,52,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{act.emoji || '📚'}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
+        {isReview90 && <div style={{ fontSize:9.5, color:'#6D28D9', fontWeight:800, textTransform:'uppercase', letterSpacing:.5, marginBottom:3 }}>Desafio 90 dias · Semana {act.review90Phase || 1}</div>}
         <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 2 }}>{act.title || 'Atividade'}</div>
         <div style={{ fontSize: 12, color: '#64748B' }}>
           {partsN} parte{partsN !== 1 ? 's' : ''}
@@ -2011,7 +2475,6 @@ function PerfilTab({ student, onLogout, onPatchStudent }) {
   const [saving, setSaving]       = useState(false);
   const [msg, setMsg]             = useState('');
   const [photoSaving, setPhotoSaving] = useState(false);
-  const [pwVisible, setPwVisible]     = useState(false);
   const fileRef = useRef(null);
 
   const onPhotoPick = async (e) => {
@@ -2061,7 +2524,6 @@ function PerfilTab({ student, onLogout, onPatchStudent }) {
       const fb = await getFB();
       try { await fb.updatePassword(fb.auth.currentUser, newPass); }
       catch(e) { if (e.code === 'auth/requires-recent-login') { await doReauth(fb); await fb.updatePassword(fb.auth.currentUser, newPass); } else throw e; }
-      await onPatchStudent({ senha: newPass }).catch(() => {});
       setMsg('✅ Senha atualizada!'); setShowPass(false); setNewPass(''); setConfPass(''); setCurrPass('');
     } catch(e) {
       if (e.code === 'need-currpass') setMsg('Digite sua senha atual no campo abaixo.');
@@ -2158,20 +2620,15 @@ function PerfilTab({ student, onLogout, onPatchStudent }) {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>Senha</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
-              <span style={{ fontSize: 12.5, color: '#64748B' }}>
-                {pwVisible ? (student?.senha || 'Senha não registrada — defina uma nova') : '••••••••'}
-              </span>
-              <button type="button" onClick={() => setPwVisible(v => !v)} title={pwVisible ? 'Ocultar senha' : 'Mostrar senha'} style={{
-                background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, padding: 0, lineHeight: 1,
-              }}>{pwVisible ? '🙈' : '👁️'}</button>
+              <span style={{ fontSize: 12.5, color: '#64748B' }}>Protegida pelo Firebase</span>
             </div>
           </div>
           <button onClick={() => { setShowPass(!showPass); setShowEmail(false); setMsg(''); }} style={actBtn()}>{showPass ? 'Cancelar' : 'Alterar'}</button>
         </div>
         {showPass && (
           <div>
-            <input type="text" value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="Nova senha" style={inp} autoCapitalize="off" autoCorrect="off" />
-            <input type="text" value={confPass} onChange={e => setConfPass(e.target.value)} placeholder="Confirmar nova senha" style={inp} autoCapitalize="off" autoCorrect="off" />
+            <input type="password" value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="Nova senha" style={inp} autoCapitalize="off" autoCorrect="off" />
+            <input type="password" value={confPass} onChange={e => setConfPass(e.target.value)} placeholder="Confirmar nova senha" style={inp} autoCapitalize="off" autoCorrect="off" />
             <input type="password" value={currPass} onChange={e => setCurrPass(e.target.value)} placeholder="Senha atual (se solicitado)" style={inp} />
             <button onClick={updatePassFn} disabled={saving} style={actBtn()}>Salvar</button>
           </div>
@@ -2245,18 +2702,28 @@ function ActivityModal({ activity, onClose, onOpenPart }) {
 function PosaulaPeek({ open, activity, posaulas, onClose }) {
   const lista = posaulas || [];
 
+  const fontesRevisao = React.useMemo(() => {
+    if (!activity?.review90 || !Array.isArray(activity.reviewPosaulas)) return [];
+    return activity.reviewPosaulas.map(ref => {
+      const post = lista.find(p => p.id === ref.id);
+      return post || { id:ref.id || '', title:ref.titulo || 'Pós-aula', url:ref.url || '' };
+    }).filter(Boolean);
+  }, [activity, lista]);
+
   const alvo = React.useMemo(() => {
     if (!activity) return null;
+    if (activity.review90 && fontesRevisao.length) return null;
     const doBanco = activity.posaulaId ? lista.find(p => p.id === activity.posaulaId) : null;
     if (doBanco) return doBanco;
     if (activity.posaulaUrl) return { id: '', title: activity.posaulaTitulo || 'Pos-aula', url: activity.posaulaUrl };
     return null;
-  }, [activity, lista]);
+  }, [activity, lista, fontesRevisao]);
 
   const [sel, setSel] = useState(null);
   useEffect(() => { if (open) setSel(alvo); }, [open, alvo]);
 
   if (!open) return null;
+  const listaConsulta = fontesRevisao.length ? fontesRevisao : lista;
   const podeVoltar = !alvo && !!sel;
 
   return (
@@ -2270,7 +2737,7 @@ function PosaulaPeek({ open, activity, posaulas, onClose }) {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 10.5, color: '#9A6438', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>Consulta</div>
             <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {sel ? (sel.title || 'Pos-aula') : 'Suas pos-aulas'}
+              {sel ? (sel.title || 'Pós-aula') : (fontesRevisao.length ? 'Pós-aulas desta revisão' : 'Suas pós-aulas')}
             </div>
           </div>
           <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: '50%', border: 'none', background: '#F1F5F9', cursor: 'pointer', fontSize: 15, color: '#374151', fontFamily: 'inherit', flexShrink: 0 }}>&#x2715;</button>
@@ -2282,11 +2749,11 @@ function PosaulaPeek({ open, activity, posaulas, onClose }) {
             : <iframe className="reader-frame" src={sel.url || 'about:blank'} allowFullScreen />
         ) : (
           <div style={{ flex: 1, overflowY: 'auto', padding: 14 }}>
-            {lista.length === 0 ? (
+            {listaConsulta.length === 0 ? (
               <div style={{ fontSize: 13, color: '#64748B', textAlign: 'center', padding: '30px 10px' }}>
                 Voce ainda nao tem pos-aulas por aqui.
               </div>
-            ) : lista.map(p => (
+            ) : listaConsulta.map(p => (
               <button key={p.id} onClick={() => setSel(p)} style={{
                 display: 'block', width: '100%', textAlign: 'left', background: '#F8FAFC',
                 border: '1.5px solid #E2E8F0', borderRadius: 12, padding: 13, marginBottom: 8,
@@ -2385,7 +2852,7 @@ function PartModal({ part, activity, posaulas, onBack, onClose, onFinish, onSave
               display: 'inline-flex', alignItems: 'center', gap: 5, background: '#F8FAFC',
               border: '1px solid #E2E8F0', borderRadius: 999, padding: '5px 11px',
               fontSize: 11.5, fontWeight: 700, color: '#64748B', cursor: 'pointer', fontFamily: 'inherit',
-            }}>&#128196; Consultar pos-aula</button>
+            }}>&#128196; {activity?.review90 ? 'Revisar pós-aulas desta atividade' : 'Consultar pós-aula'}</button>
           </div>
           <div ref={contentRef} />
         </div>
@@ -2518,6 +2985,9 @@ function App() {
   const [activities, setActivities]     = useState([]);
   const [vocab, setVocab]               = useState([]);
   const [extras, setExtras]             = useState([]);
+  const [reviewReports, setReviewReports] = useState([]);
+  const [reviewReady, setReviewReady]   = useState(null);
+  const [openReviewReport, setOpenReviewReport] = useState(null);
   const [openExtra, setOpenExtra]       = useState(null);
   const [openCorrecao, setOpenCorrecao] = useState(null);
   const [avisos, setAvisos]             = useState([]);
@@ -2532,6 +3002,8 @@ function App() {
   openActivityRef.current = openActivity;
   const [showNotifBtn, setShowNotifBtn] = useState(false);
   const [celebrate, setCelebrate]       = useState(false);
+  const [achievementItems, setAchievementItems] = useState(null);
+  const achievementCheckingRef = useRef(false);
   const pendingPostId = useRef(new URLSearchParams(window.location.search).get('post') || '');
   const mirrorUid = useRef(new URLSearchParams(window.location.search).get('mirror') || '');
   const mirror = !!mirrorUid.current;
@@ -2561,6 +3033,42 @@ function App() {
     }
     if (fire) setCelebrate(true);
   }, [student, posaulas, activities]);
+
+  // Conquistas ficam no documento do aluno: aparecem uma vez, inclusive se ele
+  // trocar de celular. Uma falta zera a sequência; feriados nem entram na lista.
+  useEffect(() => {
+    if (!student || !user || mirror || achievementCheckingRef.current) return;
+    const reached = collectProgressMilestones(student, posaulas, activities);
+    const seen = student.progressMilestones || {};
+    const unseen = reached.filter(item => !seen[item.key]);
+    if (!unseen.length) return;
+
+    achievementCheckingRef.current = true;
+    const nextSeen = { ...seen };
+    reached.forEach(item => { nextSeen[item.key] = true; });
+    const newestByGroup = {};
+    unseen.forEach(item => {
+      if (!newestByGroup[item.group] || item.level > newestByGroup[item.group].level) newestByGroup[item.group] = item;
+    });
+
+    (async () => {
+      try {
+        await patchStudent({ progressMilestones: nextSeen });
+        setAchievementItems(Object.values(newestByGroup));
+        setCelebrate(true);
+      } catch (e) {
+        console.error('Conquistas de progresso:', e);
+      } finally {
+        achievementCheckingRef.current = false;
+      }
+    })();
+  }, [student, user, mirror, posaulas, activities]);
+
+  useEffect(() => {
+    if (mirror || reviewReady || openReviewReport) return;
+    const unread = reviewReports.find(report => !report.studentViewedAt && sessionStorage.getItem(`review90-later-${report.id}`) !== '1');
+    if (unread) setReviewReady(unread);
+  }, [reviewReports, mirror, reviewReady, openReviewReport]);
 
   // Vigia da abertura: se em 20s o app ainda não saiu do "carregando" — SDK que
   // não baixou, sessão que não resolveu, leitura pendurada —, mostra a saída em
@@ -2597,7 +3105,7 @@ function App() {
               }
             }
           } else {
-            setUser(null); setStudent(null); setPosaulas([]); setActivities([]);
+            setUser(null); setStudent(null); setPosaulas([]); setActivities([]); setReviewReports([]);
           }
         } catch (e) {
           // Falhar aqui já prendeu o app na tela de carregar para todo mundo:
@@ -2635,24 +3143,33 @@ function App() {
   }
 
   async function loadData(uid, fb) {
-    const [snap, posSnaps, actSnaps, vocSnaps, extSnaps] = await Promise.all([
+    const [snap, posSnaps, actSnaps, vocSnaps, extSnaps, reviewSnaps] = await Promise.all([
       fb.getDoc(fb.doc(fb.db, 'students', uid)),
       fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'posaulas'), fb.orderBy('createdAt','desc')))
         .catch(e => { console.error('Pós-aulas:', e); return { docs: [] }; }),
       fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'activities'), fb.orderBy('createdAt','desc'))).catch(() => ({ docs: [] })),
       fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'vocabulario'), fb.orderBy('date','desc'))).catch(() => ({ docs: [] })),
       fb.getDocs(fb.collection(fb.db, 'students', uid, 'extras')).catch(() => ({ docs: [] })),
+      fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'review90Reports'), fb.orderBy('createdAt','desc'))).catch(() => ({ docs: [] })),
     ]);
     if (!snap.exists()) return;
     const dadosAluno = snap.data();
-    setStudent({ ...dadosAluno, uid });
-    aplicarTemaDaEscola(dadosAluno.schoolId, fb);
-    carregarAvisos(dadosAluno, fb);
+    const { senha: _senhaLegada, ...dadosSeguros } = dadosAluno;
+    setStudent({ ...dadosSeguros, uid });
+    aplicarTemaDaEscola(dadosSeguros.schoolId, fb);
+    carregarAvisos(dadosSeguros, fb);
+    // Versões antigas copiavam a senha do Firebase Auth para o Firestore.
+    // Ela não é necessária: remove o campo legado quando o próprio aluno entra.
+    if (!mirror && Object.prototype.hasOwnProperty.call(dadosAluno, 'senha')) {
+      fb.updateDoc(fb.doc(fb.db, 'students', uid), { senha: fb.deleteField() })
+        .catch(e => console.warn('Não foi possível remover a senha legada:', e));
+    }
     const posts = posSnaps.docs.map(d => ({ id: d.id, ...d.data() }));
     setPosaulas(posts);
     setActivities(actSnaps.docs.map(d => ({ id: d.id, ...d.data() })));
     setVocab(vocSnaps.docs.map(d => ({ id: d.id, ...d.data() })));
     setExtras(extSnaps.docs.map(d => ({ id: d.id, ...d.data() })));
+    setReviewReports(reviewSnaps.docs.map(d => ({ id: d.id, ...d.data() })));
     if (pendingPostId.current && posts.length > 0) {
       const target = posts.find(p => p.id === pendingPostId.current || p.filename === pendingPostId.current);
       if (target) {
@@ -2764,6 +3281,18 @@ function App() {
     const fb = await getFB();
     await fb.setDoc(fb.doc(fb.db, 'students', user.uid), patch, { merge: true });
     setStudent(s => ({ ...s, ...patch }));
+  }
+
+  async function openReviewResult(report) {
+    if (!report) return;
+    setReviewReady(null);
+    setOpenReviewReport(report);
+    if (mirror || report.studentViewedAt || !user) return;
+    try {
+      const fb = await getFB();
+      await fb.updateDoc(fb.doc(fb.db, 'students', user.uid, 'review90Reports', report.id), { studentViewedAt: fb.serverTimestamp() });
+      setReviewReports(list => list.map(item => item.id === report.id ? { ...item, studentViewedAt:new Date() } : item));
+    } catch (e) { console.error('Leitura do resultado da revisão:', e); }
   }
 
   // Rascunho de atividade extra (respostas parciais, sem finalizar).
@@ -2913,6 +3442,7 @@ function App() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         {tab === 'home'   && <HomeTab   student={student} posaulas={posaulas} activities={activities} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} />}
         {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} />}
+        {tab === 'progresso' && <ProgressTab student={student} posaulas={posaulas} activities={activities} reviewReports={reviewReports} onOpenReview={openReviewResult} />}
         {tab === 'vocab'  && <VocabTab vocab={vocab} />}
         {tab === 'perfil' && <PerfilTab student={student} onLogout={handleLogout} onPatchStudent={patchStudent} />}
       </div>
@@ -2925,6 +3455,19 @@ function App() {
       <CorrecaoModal data={openCorrecao} onClose={() => setOpenCorrecao(null)} />
 
       <AvisoModal aviso={avisos[0] || null} onConfirmar={confirmarAviso} />
+
+      <AchievementModal
+        items={achievementItems}
+        onView={() => { setAchievementItems(null); setTab('progresso'); }}
+        onClose={() => setAchievementItems(null)}
+      />
+
+      <ReviewReadyModal
+        report={reviewReady}
+        onView={() => { setTab('progresso'); openReviewResult(reviewReady); }}
+        onClose={() => { if (reviewReady) sessionStorage.setItem(`review90-later-${reviewReady.id}`, '1'); setReviewReady(null); }}
+      />
+      <ReviewReportModal report={openReviewReport} onClose={() => setOpenReviewReport(null)} />
 
       <Celebration show={celebrate} onDone={() => setCelebrate(false)} />
     </div>
