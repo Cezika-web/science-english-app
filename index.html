@@ -344,6 +344,27 @@ function talkTimeFromPost(post) {
   } catch (e) { return null; }
 }
 
+async function hydrateLegacyTalkTimes(posts) {
+  return Promise.all((posts || []).map(async post => {
+    const direct = talkTimeFromPost(post);
+    if (Number.isFinite(direct)) return post;
+    if (!post?.url) return post;
+    const cacheKey = `talk-time-${post.id || post.filename || post.url}`;
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached != null && Number.isFinite(Number(cached))) return { ...post, studentTalkPct:Number(cached) };
+      const response = await fetch(post.url, { cache:'force-cache' });
+      if (!response.ok) return post;
+      const value = talkTimeFromPost({ html:await response.text() });
+      if (!Number.isFinite(value)) return post;
+      try { localStorage.setItem(cacheKey, String(value)); } catch (e) {}
+      return { ...post, studentTalkPct:value };
+    } catch (e) {
+      return post;
+    }
+  }));
+}
+
 function isIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -1315,31 +1336,43 @@ function calculateAttendance(student, posaulas) {
   }
 
   // Registros novos têm classDate e entram exatamente no dia da aula. Nos
-  // antigos, createdAt pode ser a data de publicação: nesse caso associamos o
-  // pós-aula ao dia agendado da própria data ou do dia anterior. Cada registro
-  // ocupa no máximo uma aula, evitando presença duplicada.
+  // antigos, a data pode ser a da publicação: procuramos a aula agendada mais
+  // próxima, até três dias antes. Cada registro ocupa no máximo uma aula.
   const presentKeys = new Set();
   const extraClassKeys = new Set();
+  const matchScheduledDate = date => {
+    if (!date) return '';
+    for (let daysBack = 0; daysBack <= 3; daysBack++) {
+      const key = dateKey(addDays(date,-daysBack));
+      if (candidateKeys.has(key) && !presentKeys.has(key)) return key;
+    }
+    return '';
+  };
   (posaulas || []).forEach(post => {
     const explicitKey = dateKey(post.classDate);
-    if (explicitKey) {
-      (candidateKeys.has(explicitKey) ? presentKeys : extraClassKeys).add(explicitKey);
+    if (explicitKey && candidateKeys.has(explicitKey) && !presentKeys.has(explicitKey)) {
+      presentKeys.add(explicitKey);
       return;
     }
-    const published = dateFrom(post.createdAt);
-    if (!published) return;
-    const sameDay = dateKey(published);
-    const previousDay = dateKey(addDays(published,-1));
-    if (candidateKeys.has(sameDay) && !presentKeys.has(sameDay)) presentKeys.add(sameDay);
-    else if (candidateKeys.has(previousDay) && !presentKeys.has(previousDay)) presentKeys.add(previousDay);
-    else extraClassKeys.add(sameDay);
+    // Arquivo legado: classDate/createdAt podia representar o envio, não a aula.
+    // Para pós-aula novo gerado pelo app, classDate continua sendo autoritativo.
+    const reference = post.geradaPorIA && explicitKey ? null : dateFrom(post.classDate || post.createdAt);
+    const matched = matchScheduledDate(reference);
+    if (matched) presentKeys.add(matched);
+    else {
+      const extraKey = explicitKey || dateKey(post.createdAt);
+      if (extraKey) extraClassKeys.add(extraKey);
+    }
   });
+  const trackingStartKey = [...presentKeys].sort()[0] || '';
+  const untracked = trackingStartKey ? [...candidateKeys].filter(key => key < trackingStartKey).length : candidateKeys.size;
   const scheduled = [];
-  if (start && !isNaN(start) && lessonDays.size) {
+  if (start && !isNaN(start) && lessonDays.size && trackingStartKey) {
     const holidayCache = {};
     for (let d = new Date(start); d <= cutoff; d = addDays(d,1)) {
       if (!lessonDays.has(d.getDay())) continue;
       const key = dateKey(d);
+      if (key < trackingStartKey) continue; // antes do app: sem dados, nunca falta
       holidayCache[d.getFullYear()] ||= nationalHolidayKeys(d.getFullYear());
       // Feriado/cancelamento só sai da conta quando realmente não houve aula.
       // Se existe pós-aula, a aula aconteceu e vale para a sequência.
@@ -1363,7 +1396,7 @@ function calculateAttendance(student, posaulas) {
     weeks[wk].total++; if (item.present) weeks[wk].present++;
   });
   const points = Object.values(weeks).sort((a,b)=>a.key.localeCompare(b.key)).map(w => ({ ...w, value:Math.round(w.present/w.total*100), color:metricTone(Math.round(w.present/w.total*100),'rate').color }));
-  return { held, misses, scheduled:scheduled.length, attendedScheduled, rate, points, currentStreak, maxStreak };
+  return { held, misses, scheduled:scheduled.length, attendedScheduled, rate, points, currentStreak, maxStreak, untracked, trackingStartKey };
 }
 
 function calculateExerciseProgress(activities) {
@@ -1519,11 +1552,11 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
       <div style={{ fontSize:13, color:'#64748B', marginTop:4 }}>Escolha como prefere acompanhar sua evolução.</div>
       <ChartChoice value={chartType} onChange={chooseChart} />
 
-      <ProgressSection title="Presença" subtitle="Aulas previstas desde o início do curso, sem contar feriados nacionais.">
+      <ProgressSection title="Presença" subtitle="Faltas calculadas a partir do primeiro pós-aula registrado; o período anterior ao aplicativo fica como sem dados.">
         <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
           <ProgressStat label="Realizadas" value={attendance.held} detail="com pós-aula" tone={PROGRESS_COLORS.good} />
           <ProgressStat label="Sequência atual" value={attendance.currentStreak} detail="aulas sem falta" tone={attendance.currentStreak >= 10 ? PROGRESS_COLORS.good : PROGRESS_COLORS.blue} />
-          <ProgressStat label="Faltas" value={attendance.misses} detail="aulas previstas" tone={attendance.misses ? PROGRESS_COLORS.low : PROGRESS_COLORS.good} />
+          <ProgressStat label="Faltas" value={attendance.misses} detail={attendance.untracked ? `${attendance.untracked} aula${attendance.untracked!==1?'s':''} anterior${attendance.untracked!==1?'es':''} sem dados` : 'aulas previstas'} tone={attendance.misses ? PROGRESS_COLORS.low : PROGRESS_COLORS.good} />
           <ProgressStat label="Presença" value={attendance.rate == null?'—':`${attendance.rate}%`} detail={attendanceTone.label} tone={attendanceTone.color} />
         </div>
         <div style={{ marginTop:10 }}><EvolutionChart type={chartType} points={attendance.points} pieSegments={[
@@ -3164,7 +3197,7 @@ function App() {
       fb.updateDoc(fb.doc(fb.db, 'students', uid), { senha: fb.deleteField() })
         .catch(e => console.warn('Não foi possível remover a senha legada:', e));
     }
-    const posts = posSnaps.docs.map(d => ({ id: d.id, ...d.data() }));
+    const posts = await hydrateLegacyTalkTimes(posSnaps.docs.map(d => ({ id: d.id, ...d.data() })));
     setPosaulas(posts);
     setActivities(actSnaps.docs.map(d => ({ id: d.id, ...d.data() })));
     setVocab(vocSnaps.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -3355,7 +3388,7 @@ function App() {
         const fb = await getFB();
         try {
           const snaps = await fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'posaulas'), fb.orderBy('createdAt','desc')));
-          setPosaulas(snaps.docs.map(d => ({ id: d.id, ...d.data() })));
+          setPosaulas(await hydrateLegacyTalkTimes(snaps.docs.map(d => ({ id: d.id, ...d.data() }))));
         } catch (e) {
           // Recarregar a lista é só para atualizar o "lido": se falhar, fica o
           // que já estava na tela — nunca esvazia.
