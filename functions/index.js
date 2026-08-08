@@ -46,18 +46,24 @@ entra só em "Não respondidas" e fica fora da conta de acertos e de erros.
 
 ## O que NÃO é erro
 
-Em exercícios de lacuna (completar, arrastar, múltipla escolha), o aluno copia a
-palavra de um quadro, onde ela aparece fora do contexto da frase. Nesses casos,
-só o conteúdo da palavra importa. NÃO marque erro por:
+Estas regras valem para TODOS os tipos de exercício, inclusive tradução e texto
+livre. NUNCA marque erro por:
 
-- maiúscula ou minúscula ("good" quando a frase pediria "Good")
-- ponto final, vírgula ou aspas ao redor
-- espaço a mais ou a menos
+- maiúscula ou minúscula, em qualquer posição — inclusive no começo da frase.
+  "what time is it?" está CERTO, é "ok".
+- ponto final ausente (ou sobrando) no fim da frase. "It's midnight" sem ponto
+  está CERTO.
+- vírgula, aspas ou apóstrofo ao redor
+- espaçamento: espaço a mais, a menos ou fora de lugar entre as palavras.
+  "I ' am late" é "I am late" — está CERTO.
 
-Se a palavra escolhida está certa, é "ok" — sem ressalva no comentário.
+A ÚNICA exceção de maiúscula é o pronome "I", que sempre se escreve maiúsculo.
+"i am late" é erro bobo; "what time is it?" não é.
 
-Em texto livre (escrever uma frase ou parágrafo do zero), aí sim maiúscula no
-começo da frase e pontuação contam como erro bobo.
+Quando a resposta só difere da correta por maiúscula/minúscula, ponto final ou
+espaçamento, é "ok" — sem ressalva no comentário, sem citar no relatório e sem entrar
+em "patterns". Nesses casos, escreva o campo "correct" na mesma forma que o
+aluno usou, para não sugerir que ele errou.
 
 ## Consistência obrigatória
 

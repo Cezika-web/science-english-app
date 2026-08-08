@@ -61,7 +61,6 @@ self.addEventListener('fetch', e => {
   if (url.hostname.includes('firebase') ||
       url.hostname.includes('gstatic') ||
       url.hostname.includes('unpkg') ||
-      url.hostname.includes('notion.so') ||
       url.hostname.includes('github.io')) {
     e.respondWith(fetch(req).catch(() => caches.match(req)));
     return;
