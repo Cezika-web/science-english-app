@@ -834,28 +834,39 @@
 
       const presentKeys = new Set();
       const extraKeys = new Set();
+      const matchScheduledDate = date => {
+        if (!date) return '';
+        for (let daysBack = 0; daysBack <= 3; daysBack++) {
+          const key = adminDateKey(adminAddDays(date,-daysBack));
+          if (candidateKeys.has(key) && !presentKeys.has(key)) return key;
+        }
+        return '';
+      };
       (posts || []).forEach(post => {
         const explicit = adminDateKey(post.classDate);
-        if (explicit) {
-          (candidateKeys.has(explicit) ? presentKeys : extraKeys).add(explicit);
+        if (explicit && candidateKeys.has(explicit) && !presentKeys.has(explicit)) {
+          presentKeys.add(explicit);
           return;
         }
-        const published = adminDate(post.createdAt);
-        if (!published) return;
-        const sameDay = adminDateKey(published);
-        const previousDay = adminDateKey(adminAddDays(published,-1));
-        if (candidateKeys.has(sameDay) && !presentKeys.has(sameDay)) presentKeys.add(sameDay);
-        else if (candidateKeys.has(previousDay) && !presentKeys.has(previousDay)) presentKeys.add(previousDay);
-        else extraKeys.add(sameDay);
+        const reference = post.geradaPorIA && explicit ? null : adminDate(post.classDate || post.createdAt);
+        const matched = matchScheduledDate(reference);
+        if (matched) presentKeys.add(matched);
+        else {
+          const extra = explicit || adminDateKey(post.createdAt);
+          if (extra) extraKeys.add(extra);
+        }
       });
+      const trackingStartKey = [...presentKeys].sort()[0] || '';
+      const untracked = trackingStartKey ? [...candidateKeys].filter(key => key < trackingStartKey).length : candidateKeys.size;
 
       const exceptions = new Set((student?.aulaExcecoes || []).map(String));
       const scheduled = [];
       const holidayCache = {};
-      if (start && lessonDays.size) {
+      if (start && lessonDays.size && trackingStartKey) {
         for (let date = new Date(start); date <= cutoff; date = adminAddDays(date,1)) {
           if (!lessonDays.has(date.getDay())) continue;
           const key = adminDateKey(date);
+          if (key < trackingStartKey) continue;
           holidayCache[date.getFullYear()] ||= adminHolidayKeys(date.getFullYear());
           if (!presentKeys.has(key) && (holidayCache[date.getFullYear()].has(key) || exceptions.has(key))) continue;
           scheduled.push({ key, present:presentKeys.has(key) });
@@ -871,6 +882,8 @@
         misses,
         currentStreak,
         rate: scheduled.length ? Math.round(attended / scheduled.length * 100) : null,
+        untracked,
+        trackingStartKey,
       };
     }
 
@@ -885,16 +898,37 @@
       return { answered, accuracy:answered ? Math.round(correct / answered * 100) : null };
     }
 
+    function adminTalkValue(post) {
+      const structured = Number(post?.talkTime?.studentPct ?? post?.studentTalkPct);
+      if (Number.isFinite(structured)) return structured;
+      if (!post?.html) return null;
+      const parsed = new DOMParser().parseFromString(post.html, 'text/html');
+      const raw = parsed.querySelector('.row-student .talk-percent')?.textContent || '';
+      const number = Number(raw.replace(',', '.').match(/[\d.]+/)?.[0]);
+      return Number.isFinite(number) ? Math.max(0,Math.min(100,number)) : null;
+    }
+
+    async function adminHydrateTalkTimes(posts) {
+      return Promise.all((posts || []).map(async post => {
+        if (Number.isFinite(adminTalkValue(post)) || !post?.url) return post;
+        const cacheKey = `talk-time-${post.id || post.filename || post.url}`;
+        try {
+          const cached = localStorage.getItem(cacheKey);
+          if (cached != null && Number.isFinite(Number(cached))) return { ...post, studentTalkPct:Number(cached) };
+          const response = await fetch(post.url, { cache:'force-cache' });
+          if (!response.ok) return post;
+          const value = adminTalkValue({ html:await response.text() });
+          if (!Number.isFinite(value)) return post;
+          try { localStorage.setItem(cacheKey,String(value)); } catch (e) {}
+          return { ...post, studentTalkPct:value };
+        } catch (e) {
+          return post;
+        }
+      }));
+    }
+
     function adminTalkStats(posts) {
-      const values = (posts || []).map(post => {
-        const structured = Number(post?.talkTime?.studentPct ?? post?.studentTalkPct);
-        if (Number.isFinite(structured)) return structured;
-        if (!post?.html) return null;
-        const parsed = new DOMParser().parseFromString(post.html, 'text/html');
-        const raw = parsed.querySelector('.row-student .talk-percent')?.textContent || '';
-        const number = Number(raw.replace(',', '.').match(/[\d.]+/)?.[0]);
-        return Number.isFinite(number) ? number : null;
-      }).filter(Number.isFinite);
+      const values = (posts || []).map(adminTalkValue).filter(Number.isFinite);
       return { average:values.length ? Math.round(values.reduce((sum,value) => sum + value,0) / values.length) : null };
     }
 
@@ -2140,7 +2174,7 @@
           getDocs(query(collection(db, 'students', s.uid, 'activities'), orderBy('createdAt', 'desc'))).catch(() => ({ docs: [] })),
           getDocs(query(collection(db, 'students', s.uid, 'review90Reports'), orderBy('createdAt', 'desc'))).catch(() => ({ docs: [] })),
         ]);
-        const posts = posSnap.docs.map(d => ({ id:d.id, ...d.data() }));
+        const posts = await adminHydrateTalkTimes(posSnap.docs.map(d => ({ id:d.id, ...d.data() })));
         const activities = actSnap.docs.map(d => ({ id:d.id, ...d.data() }));
         const latest  = posts[0];
         const isRead  = !!latest?.readAt;
@@ -2225,9 +2259,10 @@
         getDocs(query(collection(db, 'students', uid, 'review90Reports'), orderBy('createdAt', 'desc'))).catch(() => ({ docs: [] })),
       ]);
       const detailStudent = allStudents.find(student => student.uid === uid) || {};
+      const detailPosts = await adminHydrateTalkTimes(posSnap.docs.map(d => ({ id:d.id, ...d.data() })));
       const detailProgress = adminProgressSummary(
         detailStudent,
-        posSnap.docs.map(d => ({ id:d.id, ...d.data() })),
+        detailPosts,
         actSnap.docs.map(d => ({ id:d.id, ...d.data() })),
       );
       const detailAttendance = detailProgress.attendance;
