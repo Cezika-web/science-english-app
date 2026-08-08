@@ -11,3 +11,7 @@ __pycache__/
 *service-account*.json
 *firebase-adminsdk*.json
 .firebase/
+
+# Pós-aulas pertencem ao Firestore autenticado, nunca ao site público.
+pos-aula-*.html
+pos_aula*.html

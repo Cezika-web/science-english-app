@@ -1,0 +1,6 @@
+# Os pós-aulas legados continuam no Git apenas como arquivo recuperável.
+# O aplicativo lê as cópias autenticadas no Firestore; o GitHub Pages não deve
+# publicar páginas individuais com dados de alunos.
+exclude:
+  - "pos-aula-*.html"
+  - "pos_aula*.html"

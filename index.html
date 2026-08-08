@@ -168,11 +168,6 @@ const FB_CONFIG = {
 };
 const VAPID_KEY = "BB-SFzT1aH1SQUX6H44tjzoLq2-xxgj4GLxXVa4JKehDBD8PXy-JUvrmN3LftOJbqRtTvl9NRqhZSDXVBu0BoHs";
 
-// ── Informações fixas do curso (iguais para todos os alunos) ──
-// Ajuste aqui o link da sala do Zoom e a chave Pix do professor.
-const ZOOM_LINK = "https://us06web.zoom.us/j/3832929474?pwd=REMOVED_ZOOM_PASSWORD";
-const PIX_KEY   = "64.105.235/0001-20";
-
 let _fb = null;
 async function getFB() {
   if (_fb) return _fb;
@@ -501,6 +496,28 @@ const { useState, useEffect, useRef } = React;
 //   - a paragraph that is only blanks -> a growing writing textarea
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function sanitizeActivityHtml(html) {
+  const parsed = new DOMParser().parseFromString(String(html || ''), 'text/html');
+  parsed.querySelectorAll('script,iframe,object,embed,link,meta,base,form').forEach(el => el.remove());
+  parsed.body.querySelectorAll('*').forEach(el => {
+    [...el.attributes].forEach(attr => {
+      const name = attr.name.toLowerCase();
+      const value = attr.value.trim().toLowerCase();
+      if (name.startsWith('on') || name === 'srcdoc') el.removeAttribute(attr.name);
+      if (['href','src','action','formaction','xlink:href'].includes(name)
+          && /^(javascript|vbscript):/.test(value)) el.removeAttribute(attr.name);
+      if (name === 'style' && /(expression\s*\(|url\s*\(\s*['"]?\s*(javascript|vbscript):)/i.test(attr.value)) {
+        el.removeAttribute('style');
+      }
+    });
+    if (el.tagName === 'A') {
+      el.setAttribute('rel', 'noopener noreferrer');
+      el.setAttribute('target', '_blank');
+    }
+  });
+  return parsed.body.innerHTML;
 }
 
 function parseChoice(text) {
@@ -2421,7 +2438,7 @@ function ExtraModal({ extra, onClose, onFinish, onSaveDraft, mirror }) {
     const values = {};
     valuesRef.current = values;
     container.innerHTML = (extra.content && extra.content.trim())
-      ? extra.content
+      ? sanitizeActivityHtml(extra.content)
       : (questionsToHtml(extra.questions) || '<p style="color:#94A3B8">Sem questões — use o link acima.</p>');
     const exId = extra.id;
     let touched = false, draftTimer = null;
@@ -2881,7 +2898,8 @@ function PerfilTab({ student, onLogout, onPatchStudent }) {
   };
 
   const copyPix = () => {
-    navigator.clipboard?.writeText(PIX_KEY).then(() => showToast('✅ Pix copiado!'));
+    if (!student?.pixKey) return;
+    navigator.clipboard?.writeText(student.pixKey).then(() => showToast('✅ Pix copiado!'));
   };
 
   const doReauth = async (fb) => {
@@ -2948,23 +2966,23 @@ function PerfilTab({ student, onLogout, onPatchStudent }) {
       <GlassCard style={{ padding: 18, marginBottom: 12 }}>
         <div style={{ fontSize: 11, fontWeight: 800, color: '#9A6438', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 12 }}>Informações do curso</div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+        {student?.zoomLink && <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
           <div style={{ fontSize: 20, flexShrink: 0 }}>🎥</div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>Sala do Zoom</div>
             <div style={{ fontSize: 13.5, color: 'var(--brand)', fontWeight: 700, marginTop: 1 }}>Entrar na aula</div>
           </div>
-          <a href={ZOOM_LINK} target="_blank" rel="noopener noreferrer" style={{ width: 92, textAlign: 'center', boxSizing: 'border-box', background: 'var(--brand)', color: '#fff', textDecoration: 'none', padding: '10px 0', borderRadius: 12, fontWeight: 700, fontSize: 13, flexShrink: 0 }}>Abrir</a>
-        </div>
+          <a href={student.zoomLink} target="_blank" rel="noopener noreferrer" style={{ width: 92, textAlign: 'center', boxSizing: 'border-box', background: 'var(--brand)', color: '#fff', textDecoration: 'none', padding: '10px 0', borderRadius: 12, fontWeight: 700, fontSize: 13, flexShrink: 0 }}>Abrir</a>
+        </div>}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: student?.diasAulas ? 14 : 0 }}>
+        {student?.pixKey && <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: student?.diasAulas ? 14 : 0 }}>
           <div style={{ fontSize: 20, flexShrink: 0 }}>💰</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>Pix para pagamento</div>
-            <div style={{ fontSize: 13.5, color: '#0F172A', fontWeight: 600, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{PIX_KEY}</div>
+            <div style={{ fontSize: 13.5, color: '#0F172A', fontWeight: 600, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{student.pixKey}</div>
           </div>
           <button onClick={copyPix} style={{ width: 92, padding: '10px 0', textAlign: 'center', background: 'var(--brand)', color: '#fff', border: 'none', borderRadius: 12, fontWeight: 700, fontSize: 13, flexShrink: 0, cursor: 'pointer', fontFamily: 'inherit' }}>Copiar</button>
-        </div>
+        </div>}
 
         {student?.diasAulas && (
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: student?.inicioCurso ? 14 : 0 }}>
@@ -3134,8 +3152,8 @@ function PosaulaPeek({ open, activity, posaulas, onClose }) {
 
         {sel ? (
           sel.html
-            ? <iframe className="reader-frame" srcDoc={sel.html} allowFullScreen />
-            : <iframe className="reader-frame" src={sel.url || 'about:blank'} allowFullScreen />
+            ? <iframe className="reader-frame" srcDoc={sel.html} sandbox="allow-scripts allow-popups allow-presentation" referrerPolicy="no-referrer" allowFullScreen />
+            : <iframe className="reader-frame" src={sel.url || 'about:blank'} sandbox="allow-scripts allow-popups allow-presentation" referrerPolicy="no-referrer" allowFullScreen />
         ) : (
           <div style={{ flex: 1, overflowY: 'auto', padding: 14 }}>
             {listaConsulta.length === 0 ? (
@@ -3176,7 +3194,7 @@ function PartModal({ part, activity, posaulas, onBack, onClose, onFinish, onSave
     const saved  = (activity?.respostas && activity.respostas[partId]) || {};
     const values = {};
     valuesRef.current = values;
-    container.innerHTML = part.content || '<p style="color:#94A3B8">Conteudo nao disponivel.</p>';
+    container.innerHTML = sanitizeActivityHtml(part.content || '<p style="color:#94A3B8">Conteudo nao disponivel.</p>');
     // Autosave de rascunho: o que o aluno digitar é gravado sozinho, mesmo sem
     // clicar em "Finalizei". Assim, se fechar no meio, não perde nada.
     let touched = false, draftTimer = null;
@@ -3333,8 +3351,8 @@ function ReaderView({ post, onBack }) {
       </div>
       {/* Pos-aulas antigas vem por URL; as geradas no admin vem no proprio doc. */}
       {post?.html
-        ? <iframe className="reader-frame" srcDoc={post.html} allowFullScreen />
-        : <iframe className="reader-frame" src={post?.url || 'about:blank'} allowFullScreen />}
+        ? <iframe className="reader-frame" srcDoc={post.html} sandbox="allow-scripts allow-popups allow-presentation" referrerPolicy="no-referrer" allowFullScreen />
+        : <iframe className="reader-frame" src={post?.url || 'about:blank'} sandbox="allow-scripts allow-popups allow-presentation" referrerPolicy="no-referrer" allowFullScreen />}
     </div>
   );
 }
@@ -3516,18 +3534,21 @@ function App() {
   // O app é um só; a cor, o nome e o logo vêm da escola do aluno. Sem escola
   // (alunos antigos) ou se der erro, fica a marca padrão do :root.
   async function aplicarTemaDaEscola(schoolId, fb) {
-    if (!schoolId) return;
+    if (!schoolId) return null;
     try {
       const snap = await fb.getDoc(fb.doc(fb.db, 'schools', schoolId));
-      if (!snap.exists()) return;
-      const { theme = {}, name } = snap.data();
+      if (!snap.exists()) return null;
+      const school = snap.data();
+      const { theme = {}, name } = school;
 
       pintarTema(theme);
       if (name) document.title = name;
       // Guarda para a próxima abertura já nascer com a marca certa.
       guardarMarca({ id: schoolId, name, theme });
+      return school;
     } catch (e) {
       console.error('Tema da escola:', e);   // segue no padrão
+      return null;
     }
   }
 
@@ -3545,7 +3566,14 @@ function App() {
     const dadosAluno = snap.data();
     const { senha: _senhaLegada, ...dadosSeguros } = dadosAluno;
     setStudent({ ...dadosSeguros, uid });
-    aplicarTemaDaEscola(dadosSeguros.schoolId, fb);
+    const dadosEscola = await aplicarTemaDaEscola(dadosSeguros.schoolId, fb);
+    if (dadosEscola) {
+      setStudent(current => ({
+        ...current,
+        zoomLink: dadosEscola.zoomLink || '',
+        pixKey: dadosEscola.pixKey || '',
+      }));
+    }
     carregarAvisos(dadosSeguros, fb);
     // Versões antigas copiavam a senha do Firebase Auth para o Firestore.
     // Ela não é necessária: remove o campo legado quando o próprio aluno entra.

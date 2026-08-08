@@ -1,0 +1,41 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function email() {
+      return signedIn() && request.auth.token.email is string
+        ? request.auth.token.email
+        : '';
+    }
+
+    function isAdmin() {
+      return email() == 'cmo.sep@gmail.com' || email() == 'czkenglish@gmail.com';
+    }
+
+    function ownsStudent(uid) {
+      let student = firestore.get(/databases/(default)/documents/students/$(uid));
+      let school = firestore.get(/databases/(default)/documents/schools/$(student.data.schoolId));
+      return signedIn() && school.data.ownerEmail == email();
+    }
+
+    match /extras/{uid}/{extraId}/{fileName} {
+      allow read: if signedIn()
+        && (request.auth.uid == uid || isAdmin() || ownsStudent(uid));
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.size < 20 * 1024 * 1024
+        && request.resource.contentType.matches('audio/.*');
+      allow update: if false;
+      allow delete: if signedIn()
+        && (request.auth.uid == uid || isAdmin() || ownsStudent(uid));
+    }
+
+    // Qualquer caminho não previsto fica fechado.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

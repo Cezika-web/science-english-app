@@ -373,7 +373,7 @@
               <span style="font-size:0.8rem;color:var(--muted);">Prévia — os alunos ainda não receberam</span>
             </div>
             <div id="pa-abas" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
-            <iframe id="pa-preview" style="width:100%;height:520px;border:1px solid var(--border);border-radius:10px;background:#fff;"></iframe>
+            <iframe id="pa-preview" sandbox="allow-scripts allow-popups allow-presentation" referrerpolicy="no-referrer" style="width:100%;height:520px;border:1px solid var(--border);border-radius:10px;background:#fff;"></iframe>
             <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
               <button class="btn-add" id="btn-publicar-posaula" type="button" style="flex:1;min-width:200px;">🚀 Publicar para o aluno</button>
               <button class="btn-add" id="btn-descartar-posaula" type="button" style="flex:0 0 auto;background:#e5e7eb;color:#374151;">Descartar</button>
@@ -1169,14 +1169,16 @@
 
     /** Descobre quais escolas o usuário administra. Roda antes de buscar alunos. */
     async function carregarEscolas() {
-      const email = auth.currentUser?.email || '';
-      const snap  = await getDocs(collection(db, 'schools'));
+      const email = (auth.currentUser?.email || '').toLowerCase();
+      const ehAdminGlobal = ADMIN_EMAILS.includes(email);
+      const snap = ehAdminGlobal
+        ? await getDocs(collection(db, 'schools'))
+        : await getDocs(query(collection(db, 'schools'), where('ownerEmail', '==', email)));
       const todas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-      const ehAdminGlobal = ADMIN_EMAILS.includes(email);
-      escolas = ehAdminGlobal ? todas : todas.filter(e => e.ownerEmail === email);
+      escolas = todas;
 
-      if (!escolas.length) escolas = [{ id: ESCOLA_PADRAO, name: 'Science English' }];
+      if (!escolas.length) throw new Error('Usuário sem escola administrada.');
       if (!escolas.some(e => e.id === escolaAtual)) escolaAtual = escolas[0].id;
     }
 
@@ -1223,14 +1225,25 @@
     let selectedActivityId = null;
 
     // ── AUTH ────────────────────────────────────────────────────────────
-    onAuthStateChanged(auth, user => {
+    onAuthStateChanged(auth, async user => {
       if (user) {
-        adminUid = user.uid;
-        document.getElementById('admin-login').style.display = 'none';
-        document.getElementById('admin-panel').style.display = 'block';
-        document.getElementById('admin-email-display').textContent = user.email;
-        loadStudents();
-        loadExtras();
+        try {
+          await carregarEscolas();
+          adminUid = user.uid;
+          document.getElementById('admin-login').style.display = 'none';
+          document.getElementById('admin-panel').style.display = 'block';
+          document.getElementById('admin-email-display').textContent = user.email;
+          await loadStudents();
+          loadExtras();
+        } catch (e) {
+          console.error('Acesso administrativo recusado:', e);
+          adminUid = null;
+          await signOut(auth);
+          const err = document.getElementById('a-login-err');
+          err.textContent = 'Este usuário não tem acesso ao painel administrativo.';
+          err.className = 'form-msg err';
+          err.style.display = 'block';
+        }
       } else {
         adminUid = null;
         document.getElementById('admin-login').style.display = 'flex';
@@ -1787,7 +1800,7 @@
                 <div style="font-size:0.8rem;color:var(--muted);font-weight:700;margin-bottom:6px;">
                   ${esc(p.title || p.id)} · ${esc(p.type || '')}
                 </div>
-                <div style="font-size:0.88rem;">${p.content || ''}</div>
+                <div style="font-size:0.88rem;">${sanitizeActivityHtml(p.content || '')}</div>
               </div>`).join('')}
           </div>`).join('');
 
@@ -2227,6 +2240,7 @@
           firstName: s.firstName || s.name || '',
           nivel,
           nivelFull: s.level || '',
+          schoolId: s.schoolId || escolaAtual,
         }, { merge: true }).catch(() => {});
       });
 
@@ -2599,7 +2613,7 @@
           ${(a.parts || []).map((p, i) => `
             <div class="prev-part">
               <div class="prev-part-head">Part ${i + 1} — ${esc(p.title || '')}${p.type ? ` (${esc(p.type)})` : ''}</div>
-              <div class="prev-part-body">${p.content || '<em>Sem conteúdo</em>'}</div>
+              <div class="prev-part-body">${sanitizeActivityHtml(p.content || '<em>Sem conteúdo</em>')}</div>
               <div class="prev-count">${countQuestions(p.content)} exercício(s) que o aluno responde</div>
             </div>`).join('')}
         </div>`).join('');
@@ -2865,7 +2879,7 @@
           <div class="prev-act-sub">Faixa: ${esc(data.level || 'Todos')} · Resposta: ${esc(rt)}${data.source ? ` · ${esc(data.source)}` : ''}${url ? ` · <a href="${esc(url)}" target="_blank">link direto</a>` : ''}</div>
           ${data.siteExplanation ? `<div style="font-size:0.82rem;margin-bottom:6px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px;"><strong>Como funciona:</strong> ${esc(data.siteExplanation)}</div>` : ''}
           ${(data.instruction || data.intro) ? `<div style="font-size:0.85rem;margin-bottom:8px;"><strong>Instrução:</strong> ${esc(data.instruction || data.intro)}</div>` : ''}
-          <div class="prev-part-body">${data.content || '<em>Sem questões ainda (só link' + (rt !== 'text' ? ' + áudio' : '') + ')</em>'}</div>
+          <div class="prev-part-body">${sanitizeActivityHtml(data.content || '<em>Sem questões ainda (só link' + (rt !== 'text' ? ' + áudio' : '') + ')</em>')}</div>
           <div class="prev-count">${nQ} exercício(s) de texto${rt !== 'text' ? ' + gravação de áudio' : ''}</div>
         </div>`;
       document.getElementById('ex-preview').style.display = 'block';
@@ -3259,6 +3273,28 @@
 
     function esc(s = '') {
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function sanitizeActivityHtml(html = '') {
+      const parsed = new DOMParser().parseFromString(String(html), 'text/html');
+      parsed.querySelectorAll('script,iframe,object,embed,link,meta,base,form').forEach(el => el.remove());
+      parsed.body.querySelectorAll('*').forEach(el => {
+        [...el.attributes].forEach(attr => {
+          const name = attr.name.toLowerCase();
+          const value = attr.value.trim().toLowerCase();
+          if (name.startsWith('on') || name === 'srcdoc') el.removeAttribute(attr.name);
+          if (['href','src','action','formaction','xlink:href'].includes(name)
+              && /^(javascript|vbscript):/.test(value)) el.removeAttribute(attr.name);
+          if (name === 'style' && /(expression\s*\(|url\s*\(\s*['"]?\s*(javascript|vbscript):)/i.test(attr.value)) {
+            el.removeAttribute('style');
+          }
+        });
+        if (el.tagName === 'A') {
+          el.setAttribute('rel', 'noopener noreferrer');
+          el.setAttribute('target', '_blank');
+        }
+      });
+      return parsed.body.innerHTML;
     }
 
     // Conta quantos exercícios o aluno responde (mesma lógica do motor do app):

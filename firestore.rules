@@ -2,78 +2,173 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Administradores do produto (mesma lista das Cloud Functions e do admin).
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function email() {
+      return signedIn() && request.auth.token.email is string
+        ? request.auth.token.email
+        : '';
+    }
+
+    // Administradores do produto. O e-mail vem do token assinado pelo Firebase
+    // Authentication; não é aceito nenhum valor enviado pelo navegador.
     function isAdmin() {
-      return request.auth != null && (
-        request.auth.token.email == 'cmo.sep@gmail.com' ||
-        request.auth.token.email == 'czkenglish@gmail.com'
-      );
+      return email() == 'cmo.sep@gmail.com' || email() == 'czkenglish@gmail.com';
     }
 
-    // Quem chamou é o professor dono desta escola?
-    function ehDonoDa(sid) {
-      return request.auth != null
-        && sid is string
-        && exists(/databases/$(database)/documents/schools/$(sid))
-        && get(/databases/$(database)/documents/schools/$(sid)).data.ownerEmail == request.auth.token.email;
+    function schoolExists(sid) {
+      return sid is string
+        && exists(/databases/$(database)/documents/schools/$(sid));
     }
 
-    function escolaDoAluno(userId) {
-      return get(/databases/$(database)/documents/students/$(userId)).data.schoolId;
+    function ownsSchool(sid) {
+      return signedIn()
+        && schoolExists(sid)
+        && get(/databases/$(database)/documents/schools/$(sid)).data.ownerEmail == email();
     }
 
-    // Lista pública de níveis (só slug, primeiro nome e nível).
-    match /niveis/{doc} {
-      allow read: if true;
-      allow write: if isAdmin();
+    function studentExists(uid) {
+      return exists(/databases/$(database)/documents/students/$(uid));
     }
 
+    function studentSchool(uid) {
+      return get(/databases/$(database)/documents/students/$(uid)).data.schoolId;
+    }
+
+    function isOwnStudent(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function managesStudent(uid) {
+      return isAdmin() || (studentExists(uid) && ownsSchool(studentSchool(uid)));
+    }
+
+    function belongsToSchool(sid) {
+      return signedIn()
+        && studentExists(request.auth.uid)
+        && studentSchool(request.auth.uid) == sid;
+    }
+
+    function studentProfileUpdateIsSafe() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      return changed.hasOnly([
+          'photo', 'avisosLidos', 'fcmToken', 'fcmTokens',
+          'progressMilestones', 'senha'
+        ])
+        // A senha legada pode ser apagada, nunca criada nem alterada.
+        && (!changed.hasAny(['senha']) || !request.resource.data.keys().hasAny(['senha']));
+    }
+
+    function activityUpdateIsSafe() {
+      return resource.data.status != 'corrected'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'respostas', 'partsDone', 'conclusao', 'finalizada'
+        ]);
+    }
+
+    function extraUpdateIsSafe() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'respostas', 'finalizada', 'conclusao', 'finalizadaEm'
+      ]);
+    }
+
+    // Diretório interno de níveis. Deixou de ser público: contém nome e nível
+    // de alunos e só é necessário ao próprio aluno ou à equipe da escola.
+    match /niveis/{uid} {
+      allow get: if isOwnStudent(uid)
+        || isAdmin()
+        || (resource.data.schoolId is string && ownsSchool(resource.data.schoolId));
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        || (request.resource.data.schoolId is string && ownsSchool(request.resource.data.schoolId));
+      allow update, delete: if isAdmin()
+        || (resource.data.schoolId is string
+          && ownsSchool(resource.data.schoolId)
+          && (request.method == 'delete'
+            || request.resource.data.schoolId == resource.data.schoolId));
+    }
+
+    // Biblioteca de atividades extras: não é conteúdo global para alunos.
     match /extras/{extraId} {
-      allow read: if request.auth != null;
+      allow read: if signedIn();
       allow write: if isAdmin();
     }
 
-    // Escolas: qualquer logado lê (o app precisa do nome e das cores).
-    // Só o administrador cria e edita — inclusive os créditos. A única
-    // exceção é o dono, que pode gravar o próprio token de push (e só ele).
     match /schools/{schoolId} {
-      allow read: if request.auth != null;
+      // Aluno só lê a própria escola; professor só a escola que administra.
+      allow get: if isAdmin()
+        || resource.data.ownerEmail == email()
+        || belongsToSchool(schoolId);
+      allow list: if isAdmin() || resource.data.ownerEmail == email();
       allow create, delete: if isAdmin();
       allow update: if isAdmin() || (
-        ehDonoDa(schoolId) &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmTokens'])
+        resource.data.ownerEmail == email()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmTokens'])
       );
 
-      // Avisos: recado do professor para os alunos dele. Qualquer aluno
-      // logado lê (não há nada sigiloso num aviso de feriado); escrever, só
-      // o administrador e o dono da escola.
       match /avisos/{avisoId} {
-        allow read: if request.auth != null;
-        allow write: if isAdmin() || ehDonoDa(schoolId);
+        allow read: if isAdmin() || ownsSchool(schoolId) || belongsToSchool(schoolId);
+        allow write: if isAdmin() || ownsSchool(schoolId);
       }
     }
 
-    match /students/{userId} {
-      allow read: if request.auth != null && (
-        request.auth.uid == userId || isAdmin() || ehDonoDa(resource.data.schoolId)
-      );
-      // No create ainda não existe resource — o dado vem do request.
-      allow create: if request.auth != null && (
-        isAdmin() || ehDonoDa(request.resource.data.schoolId)
-      );
-      allow update, delete: if request.auth != null && (
-        request.auth.uid == userId || isAdmin() || ehDonoDa(resource.data.schoolId)
-      );
+    match /students/{uid} {
+      allow read: if isOwnStudent(uid) || managesStudent(uid);
+      allow create: if isAdmin()
+        || (request.resource.data.schoolId is string && ownsSchool(request.resource.data.schoolId));
+      allow update: if isAdmin()
+        || (ownsSchool(resource.data.schoolId)
+          && request.resource.data.schoolId == resource.data.schoolId)
+        || (isOwnStudent(uid) && studentProfileUpdateIsSafe());
+      allow delete: if managesStudent(uid);
+
+      match /posaulas/{postId} {
+        allow read: if isOwnStudent(uid) || managesStudent(uid);
+        allow create, delete: if managesStudent(uid);
+        allow update: if managesStudent(uid) || (
+          isOwnStudent(uid)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAt'])
+        );
+      }
+
+      match /activities/{activityId} {
+        allow read: if isOwnStudent(uid) || managesStudent(uid);
+        allow create, delete: if managesStudent(uid);
+        allow update: if managesStudent(uid)
+          || (isOwnStudent(uid) && activityUpdateIsSafe());
+      }
+
+      match /extras/{extraId} {
+        allow read: if isOwnStudent(uid) || managesStudent(uid);
+        allow create, delete: if managesStudent(uid);
+        allow update: if managesStudent(uid)
+          || (isOwnStudent(uid) && extraUpdateIsSafe());
+      }
+
+      match /vocabulario/{wordId} {
+        allow read: if isOwnStudent(uid) || managesStudent(uid);
+        allow write: if managesStudent(uid);
+      }
+
+      match /review90Reports/{reportId} {
+        allow read: if isOwnStudent(uid) || managesStudent(uid);
+        allow create, delete: if managesStudent(uid);
+        allow update: if managesStudent(uid) || (
+          isOwnStudent(uid)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['studentViewedAt'])
+        );
+      }
+
+      // Toda subcoleção nova nasce fechada para o aluno até ganhar uma regra
+      // explícita. A equipe da escola continua podendo administrá-la.
+      match /{document=**} {
+        allow read, write: if managesStudent(uid);
+      }
     }
 
-    // Pós-aulas, atividades e o que mais pendurar no aluno.
-    match /students/{userId}/{document=**} {
-      allow read, write: if request.auth != null && (
-        request.auth.uid == userId || isAdmin() || ehDonoDa(escolaDoAluno(userId))
-      );
-    }
-
-    // Consumo de API e de créditos: só o servidor escreve, só o admin lê.
+    // Contabilidade e filas são gravadas apenas pelo Admin SDK (servidor).
     match /_apiUsage/{doc} {
       allow read: if isAdmin();
       allow write: if false;
@@ -82,11 +177,9 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if false;
     }
-
-    // Gerações em batch: só o servidor escreve. O professor lê as da escola
-    // dele para acompanhar e publicar quando ficarem prontas.
     match /_batchJobs/{doc} {
-      allow read: if isAdmin() || ehDonoDa(resource.data.escolaId);
+      allow read: if isAdmin()
+        || (resource.data.escolaId is string && ownsSchool(resource.data.escolaId));
       allow write: if false;
     }
   }
