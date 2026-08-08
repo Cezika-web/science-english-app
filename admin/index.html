@@ -834,6 +834,7 @@
 
       const presentKeys = new Set();
       const extraKeys = new Set();
+      const held = (posts || []).length;
       const matchScheduledDate = date => {
         if (!date) return '';
         for (let daysBack = 0; daysBack <= 3; daysBack++) {
@@ -856,6 +857,18 @@
           if (extra) extraKeys.add(extra);
         }
       });
+
+      if (held && (!start || !lessonDays.size || !presentKeys.size)) {
+        return {
+          held,
+          misses:0,
+          currentStreak:held,
+          rate:100,
+          untracked:0,
+          trackingStartKey:'',
+          inferredOnly:true,
+        };
+      }
       const trackingStartKey = [...presentKeys].sort()[0] || '';
       const untracked = trackingStartKey ? [...candidateKeys].filter(key => key < trackingStartKey).length : candidateKeys.size;
 
@@ -878,12 +891,13 @@
       const attended = scheduled.filter(item => item.present).length;
       const misses = scheduled.length - attended;
       return {
-        held: presentKeys.size + extraKeys.size,
+        held,
         misses,
         currentStreak,
         rate: scheduled.length ? Math.round(attended / scheduled.length * 100) : null,
         untracked,
         trackingStartKey,
+        inferredOnly:false,
       };
     }
 
@@ -910,12 +924,15 @@
 
     async function adminHydrateTalkTimes(posts) {
       return Promise.all((posts || []).map(async post => {
-        if (Number.isFinite(adminTalkValue(post)) || !post?.url) return post;
+        if (Number.isFinite(adminTalkValue(post))) return post;
+        const filename = post?.filename || (String(post?.id || '').startsWith('pos-aula-') ? `${post.id}.html` : '');
+        const contentUrl = post?.url || (filename ? new URL(`../${filename}`, document.baseURI).href : '');
+        if (!contentUrl) return post;
         const cacheKey = `talk-time-${post.id || post.filename || post.url}`;
         try {
           const cached = localStorage.getItem(cacheKey);
           if (cached != null && Number.isFinite(Number(cached))) return { ...post, studentTalkPct:Number(cached) };
-          const response = await fetch(post.url, { cache:'force-cache' });
+          const response = await fetch(contentUrl, { cache:'force-cache' });
           if (!response.ok) return post;
           const value = adminTalkValue({ html:await response.text() });
           if (!Number.isFinite(value)) return post;
