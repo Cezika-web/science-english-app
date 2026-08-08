@@ -1339,23 +1339,11 @@ function BarChart({ points, suffix = '%' }) {
 }
 
 function AttendanceChart({ type, points, pieSegments, pieCenter }) {
-  if (type === 'pie') return <PieChart segments={pieSegments || []} center={pieCenter} />;
-  const shown = (points || []).slice(-12);
+  // Presença é sempre binária e cronológica. O histórico cresce apenas para o
+  // lado e não muda de formato com o seletor dos outros dois gráficos.
+  const shown = points || [];
   if (!shown.length) return <EmptyChart />;
   const status = point => point.present ?? point.value > 0;
-
-  if (type === 'bar') return (
-    <div role="list" aria-label="Histórico de presença por aula" style={{ display:'grid', gridTemplateColumns:'repeat(4,minmax(0,1fr))', gap:8, padding:'12px 0 2px' }}>
-      {shown.map(point => {
-        const present = status(point);
-        return <div role="listitem" key={point.key} style={{ padding:'10px 4px', borderRadius:12, textAlign:'center', background:present?'#F0FDF4':'#FEF2F2', border:`1px solid ${present?'#BBF7D0':'#FECACA'}` }}>
-          <div style={{ width:27, height:27, borderRadius:'50%', margin:'0 auto 6px', display:'flex', alignItems:'center', justifyContent:'center', background:present?PROGRESS_COLORS.good:PROGRESS_COLORS.low, color:'#fff', fontSize:15, fontWeight:900 }}>{present?'✓':'×'}</div>
-          <div style={{ fontSize:10.5, fontWeight:800, color:present?'#166534':'#991B1B', textTransform:'capitalize' }}>{point.weekday || ''}</div>
-          <div style={{ fontSize:10.5, color:'#64748B', marginTop:1 }}>{point.label}</div>
-        </div>;
-      })}
-    </div>
-  );
 
   return (
     <div role="list" aria-label="Linha do tempo de presença" style={{ overflowX:'auto', padding:'15px 2px 6px' }}>
@@ -1561,6 +1549,82 @@ function calculateExerciseProgress(activities) {
   return { correct, wrong, answered, accuracy, points, corrected:corrected.length };
 }
 
+const ERROR_TYPES = {
+  bobo:{ label:'Bobos', color:'#F59E0B' },
+  mediano:{ label:'Medianos', color:'#F97316' },
+  grave:{ label:'Graves', color:'#DC2626' },
+};
+
+function calculateErrorProgress(activities) {
+  const corrected = (activities || []).filter(a => a.status === 'corrected' && a.summary);
+  const totals = { bobo:0, mediano:0, grave:0 };
+  const weeks = {};
+  corrected.forEach(activity => {
+    const errors = activity.summary?.errors || {};
+    const values = {
+      bobo:Number(errors.bobo || 0),
+      mediano:Number(errors.mediano || 0),
+      grave:Number(errors.grave || 0),
+    };
+    Object.keys(totals).forEach(type => { totals[type] += values[type]; });
+    const when = dateFrom(activity.correctedAt || activity.createdAt);
+    const key = dateKey(weekStart(when));
+    if (!key) return;
+    weeks[key] ||= { key, label:shortWeekLabel(when), bobo:0, mediano:0, grave:0 };
+    Object.keys(totals).forEach(type => { weeks[key][type] += values[type]; });
+  });
+  const divisor = corrected.length || 1;
+  const averages = Object.fromEntries(Object.keys(totals).map(type => [type, Math.round(totals[type] / divisor * 10) / 10]));
+  return {
+    totals,
+    averages,
+    total:totals.bobo + totals.mediano + totals.grave,
+    activityCount:corrected.length,
+    weeks:Object.values(weeks).sort((a,b) => a.key.localeCompare(b.key)),
+  };
+}
+
+function ErrorTrendChart({ type, data, filter }) {
+  if (!data.activityCount) return <EmptyChart />;
+  const keys = filter === 'all' ? ['bobo','mediano','grave'] : [filter];
+  if (type === 'pie') return <PieChart segments={Object.keys(ERROR_TYPES).map(key => ({
+    label:`erros ${ERROR_TYPES[key].label.toLowerCase()}`,
+    value:data.totals[key],
+    color:filter === 'all' || filter === key ? ERROR_TYPES[key].color : '#E2E8F0',
+  }))} center={data.total} />;
+
+  const shown = data.weeks.slice(-8);
+  if (!shown.length) return <EmptyChart />;
+
+  if (type === 'bar') return (
+    <div role="img" aria-label="Erros por semana" style={{ display:'flex', gap:7, height:168, alignItems:'flex-end', padding:'15px 2px 0' }}>
+      {shown.map(week => {
+        const max = Math.max(1, ...shown.flatMap(item => keys.map(key => item[key])));
+        return <div key={week.key} style={{ flex:1, minWidth:0, height:'100%', display:'flex', flexDirection:'column', justifyContent:'flex-end', alignItems:'center' }}>
+          <div style={{ flex:1, width:'100%', display:'flex', alignItems:'flex-end', justifyContent:'center', gap:2 }}>
+            {keys.map(key => <div key={key} title={`${ERROR_TYPES[key].label}: ${week[key]}`} style={{ width:keys.length === 1?'58%':'25%', minWidth:5, maxWidth:22, height:`${Math.max(4, week[key] / max * 100)}%`, borderRadius:'5px 5px 2px 2px', background:ERROR_TYPES[key].color }} />)}
+          </div>
+          <div style={{ height:24, fontSize:9.5, color:'#64748B', marginTop:5, whiteSpace:'nowrap' }}>{week.label}</div>
+        </div>;
+      })}
+    </div>
+  );
+
+  const w=320, h=170, left=30, right=12, top=20, bottom=36;
+  const max=Math.max(1,...shown.flatMap(week => keys.map(key => week[key])));
+  const x=index => shown.length === 1 ? (left+w-right)/2 : left + index*((w-left-right)/(shown.length-1));
+  const y=value => top + (max-value)*((h-top-bottom)/max);
+  const ticks=[0,Math.ceil(max/2),max].filter((value,index,array) => array.indexOf(value) === index);
+  return <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label="Evolução semanal dos tipos de erro" style={{ width:'100%', display:'block' }}>
+    {ticks.map(value => <g key={value}><line x1={left} x2={w-right} y1={y(value)} y2={y(value)} stroke="#E2E8F0"/><text x={left-6} y={y(value)+4} textAnchor="end" fontSize="9.5" fill="#64748B">{value}</text></g>)}
+    {keys.map(key => <g key={key}>
+      <polyline points={shown.map((week,index) => `${x(index)},${y(week[key])}`).join(' ')} fill="none" stroke={ERROR_TYPES[key].color} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+      {shown.map((week,index) => <circle key={week.key} cx={x(index)} cy={y(week[key])} r="4" fill={ERROR_TYPES[key].color} stroke="#fff" strokeWidth="2" />)}
+    </g>)}
+    {shown.map((week,index) => <text key={week.key} x={x(index)} y={h-12} textAnchor="middle" fontSize="9.5" fill="#64748B">{week.label}</text>)}
+  </svg>;
+}
+
 function calculateTalkProgress(posaulas) {
   const entries = (posaulas || []).map(p => ({ key:dateKey(postReferenceDate(p)), date:postReferenceDate(p), value:talkTimeFromPost(p) }))
     .filter(x => x.date && Number.isFinite(x.value)).sort((a,b)=>a.date-b.date)
@@ -1674,10 +1738,12 @@ function ReviewReportModal({ report, onClose }) {
 
 function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpenReview }) {
   const [chartType, setChartType] = useState(() => localStorage.getItem('progressChartType') || 'line');
+  const [errorFilter, setErrorFilter] = useState('all');
   const chooseChart = type => { setChartType(type); localStorage.setItem('progressChartType', type); };
 
   const attendance = React.useMemo(() => calculateAttendance(student, posaulas), [student, posaulas]);
   const exercise = React.useMemo(() => calculateExerciseProgress(activities), [activities]);
+  const errors = React.useMemo(() => calculateErrorProgress(activities), [activities]);
   const talk = React.useMemo(() => calculateTalkProgress(posaulas), [posaulas]);
 
   const attendanceTone = metricTone(attendance.rate,'rate');
@@ -1691,8 +1757,6 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
   return (
     <div className="scroll-area" style={{ padding:'18px 16px 28px' }}>
       <div style={{ fontSize:22, fontWeight:800, color:'#0F172A' }}>Meu progresso</div>
-      <div style={{ fontSize:13, color:'#64748B', marginTop:4 }}>Escolha como prefere acompanhar sua evolução.</div>
-      <ChartChoice value={chartType} onChange={chooseChart} />
 
       <ProgressSection title="Presença">
         <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
@@ -1705,10 +1769,19 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
           {label:'presenças',value:attendance.attendedScheduled,color:PROGRESS_COLORS.good},
           {label:'faltas',value:attendance.misses,color:PROGRESS_COLORS.low}
         ]} pieCenter={attendance.rate == null?'—':`${attendance.rate}%`} /></div>
+        <div style={{ marginTop:10, padding:'10px 12px', borderRadius:12, background:'#FFFBEB', border:'1px solid #FDE68A', display:'flex', alignItems:'center', gap:9, color:'#92400E' }}>
+          <span style={{ fontSize:19 }}>🏆</span>
+          <span style={{ fontSize:12.5 }}><strong>Melhor sequência:</strong> {attendance.maxStreak} aula{attendance.maxStreak !== 1 ? 's' : ''} sem faltar</span>
+        </div>
         {attendance.missedDates?.length > 0 && <div style={{ marginTop:10, padding:'10px 12px', borderRadius:12, background:'#FEF2F2', border:'1px solid #FECACA', color:'#991B1B', fontSize:12, lineHeight:1.55 }}>
           <strong>Datas das faltas:</strong> {attendance.missedDates.map(item => item.label).join(' · ')}
         </div>}
       </ProgressSection>
+
+      <div style={{ marginTop:20 }}>
+        <div style={{ fontSize:12, color:'#64748B', fontWeight:700 }}>Formato dos gráficos abaixo</div>
+        <ChartChoice value={chartType} onChange={chooseChart} />
+      </div>
 
       <ProgressSection title="Exercícios">
         <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
@@ -1721,6 +1794,20 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
           {label:'acertos',value:exercise.correct,color:PROGRESS_COLORS.good},
           {label:'erros',value:exercise.wrong,color:PROGRESS_COLORS.low}
         ]} pieCenter={exercise.accuracy==null?'—':`${exercise.accuracy}%`} /></div>
+      </ProgressSection>
+
+      <ProgressSection title="Análise de erros">
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+          {Object.entries(ERROR_TYPES).map(([key,meta]) => <ProgressStat key={key} label={meta.label} value={errors.averages[key]} detail="média por atividade" tone={meta.color} />)}
+        </div>
+        <div role="group" aria-label="Filtrar tipo de erro" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:6, marginTop:12 }}>
+          {[['all','Todos'],...Object.entries(ERROR_TYPES).map(([key,meta]) => [key,meta.label])].map(([key,label]) => {
+            const active = errorFilter === key;
+            const color = key === 'all' ? '#475569' : ERROR_TYPES[key].color;
+            return <button key={key} onClick={() => setErrorFilter(key)} aria-pressed={active} style={{ border:`1.5px solid ${active?color:'#E2E8F0'}`, borderRadius:999, padding:'7px 3px', background:active?`${color}18`:'#fff', color:active?color:'#64748B', fontSize:10.5, fontWeight:800, cursor:'pointer', fontFamily:'inherit' }}>{label}</button>;
+          })}
+        </div>
+        <div style={{ marginTop:8 }}><ErrorTrendChart type={chartType} data={errors} filter={errorFilter} /></div>
       </ProgressSection>
 
       <ProgressSection title="Talk time">
@@ -2638,7 +2725,7 @@ const IRREGULAR_VERBS = [
 // ── VocabTab ─────────────────────────────────────────────────────
 function VocabTab({ vocab }) {
   const [openMonths, setOpenMonths] = useState({});
-  const [listView, setListView] = useState('vocab');
+  const [listView, setListView] = useState(null);
   const [verbSearch, setVerbSearch] = useState('');
 
   const grouped = React.useMemo(() => {
@@ -2658,25 +2745,32 @@ function VocabTab({ vocab }) {
     return IRREGULAR_VERBS.filter(row => semAcento(row.join(' ')).includes(search));
   }, [verbSearch]);
 
+  if (!listView) return (
+    <div className="scroll-area" style={{ padding:'16px', display:'flex', flexDirection:'column', gap:12, overflow:'hidden' }}>
+      {[
+        ['vocab','🔤','Meu vocabulário',`${vocab.length} palavra${vocab.length !== 1 ? 's' : ''}`,'rgba(var(--brand-rgb),.1)','var(--brand)'],
+        ['verbs','🔁','Verbos irregulares',`${IRREGULAR_VERBS.length} verbos`,'#EFF6FF','#2563EB'],
+      ].map(([id,icon,title,count,background,border]) => <button key={id} onClick={() => setListView(id)} style={{
+        flex:1, minHeight:0, width:'100%', border:`2px solid ${border}`, borderRadius:24, padding:'20px',
+        background, cursor:'pointer', fontFamily:'inherit', display:'flex', flexDirection:'column',
+        alignItems:'center', justifyContent:'center', textAlign:'center', boxShadow:'0 10px 28px rgba(15,23,42,.07)'
+      }}>
+        <span style={{ fontSize:48, marginBottom:14 }}>{icon}</span>
+        <strong style={{ color:id === 'vocab'?'var(--brand-dark)':'#1E3A8A', fontSize:19 }}>{title}</strong>
+        <span style={{ color:'#64748B', fontSize:13, marginTop:6 }}>{count}</span>
+        <span style={{ color:id === 'vocab'?'var(--brand)':'#2563EB', fontSize:12, fontWeight:800, marginTop:14 }}>ABRIR LISTA ›</span>
+      </button>)}
+    </div>
+  );
+
   return (
     <div className="scroll-area" style={{ padding: '16px 16px 8px' }}>
-      <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:9, position:'sticky', top:0, zIndex:3, background:'#F6F1EA', paddingBottom:10, marginBottom:4 }}>
-        {[
-          ['vocab','🔤','Meu vocabulário',`${vocab.length} palavra${vocab.length !== 1 ? 's' : ''}`],
-          ['verbs','🔁','Verbos irregulares',`${IRREGULAR_VERBS.length} verbos`],
-        ].map(([id,icon,title,count]) => {
-          const active = listView === id;
-          return <button key={id} onClick={() => setListView(id)} style={{
-            minHeight:88, border:active?'2px solid var(--brand)':'1px solid rgba(var(--brand-rgb),.16)',
-            borderRadius:18, padding:'12px 16px', background:active?'rgba(var(--brand-rgb),.1)':'rgba(255,255,255,.68)',
-            boxShadow:active?'0 8px 22px rgba(var(--brand-rgb),.14)':'none', cursor:'pointer', fontFamily:'inherit',
-            display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center'
-          }}>
-            <span style={{ fontSize:28, marginBottom:7 }}>{icon}</span>
-            <strong style={{ color:active?'var(--brand-dark)':'#334155', fontSize:13.5, lineHeight:1.2 }}>{title}</strong>
-            <span style={{ color:'#64748B', fontSize:11.5, marginTop:4 }}>{count}</span>
-          </button>;
-        })}
+      <div style={{ position:'sticky', top:0, zIndex:3, background:'#F6F1EA', paddingBottom:10, marginBottom:4 }}>
+        <button onClick={() => setListView(null)} style={{ width:'100%', border:'1px solid rgba(var(--brand-rgb),.16)', borderRadius:14, padding:'12px 14px', background:'rgba(255,255,255,.78)', cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:12, textAlign:'left' }}>
+          <span style={{ width:32, height:32, borderRadius:'50%', background:'#F1F5F9', display:'flex', alignItems:'center', justifyContent:'center', color:'#475569', fontSize:18 }}>‹</span>
+          <span style={{ flex:1 }}><strong style={{ display:'block', color:'#0F172A', fontSize:14.5 }}>{listView === 'vocab' ? 'Meu vocabulário' : 'Verbos irregulares'}</strong><span style={{ color:'#64748B', fontSize:11.5 }}>{listView === 'vocab' ? `${vocab.length} palavra${vocab.length !== 1 ? 's' : ''}` : `${IRREGULAR_VERBS.length} verbos`}</span></span>
+          <span style={{ color:'#64748B', fontSize:11.5 }}>Trocar lista</span>
+        </button>
       </div>
 
       {listView === 'verbs' && <div style={{ marginBottom:14, border:'1px solid #DBEAFE', borderRadius:14, background:'rgba(255,255,255,.7)', overflow:'hidden' }}>
