@@ -277,6 +277,22 @@ function registrarUso(lote, { tipo, uid, escolaId, uso, fator = 1, extra = {} })
 }
 
 
+/**
+ * Converte a data da aula ("DD/MM/YYYY", como o painel envia) na data que vai
+ * para o `createdAt`. O app agrupa o histórico por mês e por quinzena olhando
+ * esse campo: gravar a hora da publicação jogaria a aula de 31/07 publicada em
+ * 01/08 para dentro de agosto. Meio-dia UTC = 09h no Brasil, então o dia não
+ * vira para trás em nenhum fuso. Data inválida devolve null (cai no relógio).
+ */
+function dataDaAulaEmDate(texto) {
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(texto || '').trim());
+  if (!m) return null;
+  const [, dia, mes, ano] = m.map(Number);
+  const d = new Date(Date.UTC(ano, mes - 1, dia, 12));
+  const valida = d.getUTCFullYear() === ano && d.getUTCMonth() === mes - 1 && d.getUTCDate() === dia;
+  return valida ? d : null;
+}
+
 /** Converte [{part, ...}] para {part-1: {...}} — a forma que o app já lê. */
 function listaParaObjeto(lista, montarValor) {
   const saida = {};
@@ -610,6 +626,7 @@ export const publicarPosAula = onCall(
 
     const lote = db.batch();
     const publicadas = [];
+    const dataAula = dataDaAulaEmDate(data);
 
     for (const { uid, html, titulo, nome } of lista) {
       const { aluno } = await carregarAlunoEEscola(email, uid);
@@ -618,7 +635,9 @@ export const publicarPosAula = onCall(
       lote.set(ref, {
         title: titulo || `Pós-aula ${data || ''}`.trim(),
         html,
-        createdAt: FieldValue.serverTimestamp(),
+        createdAt: dataAula || FieldValue.serverTimestamp(),
+        ...(dataAula && { classDate: dataAula }),
+        publishedAt: FieldValue.serverTimestamp(),
         readAt: null,
         geradaPorIA: true,
         ...(lista.length > 1 && { aulaEmGrupo: true }),
