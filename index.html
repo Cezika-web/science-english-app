@@ -332,6 +332,27 @@ function shortWeekLabel(value) {
   return d ? d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) : '';
 }
 
+function lessonDaysFromStudent(student, posts = []) {
+  const structured = new Set((student?.aulaDias || []).map(Number).filter(day => day >= 0 && day <= 6));
+  if (structured.size) return structured;
+  const text = semAcento(String(student?.diasAulas || ''));
+  const names = [
+    [0,['domingo','sunday']], [1,['segunda','monday']], [2,['terca','tuesday']],
+    [3,['quarta','wednesday']], [4,['quinta','thursday']], [5,['sexta','friday']],
+    [6,['sabado','saturday']],
+  ];
+  names.forEach(([day,aliases]) => { if (aliases.some(alias => text.includes(alias))) structured.add(day); });
+  if (!structured.size) {
+    const counts = {};
+    posts.forEach(post => {
+      const date = dateFrom(post.classDate || post.createdAt);
+      if (date) counts[date.getDay()] = (counts[date.getDay()] || 0) + 1;
+    });
+    Object.entries(counts).forEach(([day,count]) => { if (count >= 2) structured.add(Number(day)); });
+  }
+  return structured;
+}
+
 function talkTimeFromPost(post) {
   const structured = Number(post?.talkTime?.studentPct ?? post?.studentTalkPct);
   if (Number.isFinite(structured)) return Math.max(0, Math.min(100, structured));
@@ -1325,9 +1346,16 @@ function ProgressSection({ title, subtitle, children }) {
 }
 
 function calculateAttendance(student, posaulas) {
-  const lessonDays = new Set((student?.aulaDias || []).map(Number));
+  const lessonDays = lessonDaysFromStudent(student, posaulas);
   const startRaw = student?.inicioCurso;
-  const start = startRaw ? new Date(`${startRaw}T00:00:00`) : null;
+  const courseStart = startRaw
+    ? (typeof startRaw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(startRaw) ? new Date(`${startRaw}T00:00:00`) : dateFrom(startRaw))
+    : null;
+  const postDates = (posaulas || []).map(post => dateFrom(post.classDate || post.createdAt)).filter(Boolean).sort((a,b)=>a-b);
+  const legacyStart = postDates.length ? addDays(postDates[0],-3) : null;
+  const start = courseStart && legacyStart
+    ? new Date(Math.min(courseStart.getTime(),legacyStart.getTime()))
+    : courseStart || legacyStart;
   const cutoff = addDays(new Date(), -1); // o pós-aula normalmente chega no dia seguinte
   const exceptions = new Set((student?.aulaExcecoes || []).map(String));
   const candidateKeys = new Set();
@@ -1575,6 +1603,9 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
   const attendanceTone = metricTone(attendance.rate,'rate');
   const exerciseTone = metricTone(exercise.accuracy,'rate');
   const talkTone = metricTone(talk.average,'talk');
+  const attendanceStartLabel = attendance.trackingStartKey
+    ? new Date(`${attendance.trackingStartKey}T00:00:00`).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})
+    : '';
 
   return (
     <div className="scroll-area" style={{ padding:'18px 16px 28px' }}>
@@ -1582,11 +1613,11 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
       <div style={{ fontSize:13, color:'#64748B', marginTop:4 }}>Escolha como prefere acompanhar sua evolução.</div>
       <ChartChoice value={chartType} onChange={chooseChart} />
 
-      <ProgressSection title="Presença" subtitle={attendance.inferredOnly ? "Cada pós-aula conta como aula realizada. Sem calendário completo, nenhuma falta é presumida." : "Faltas calculadas a partir do primeiro pós-aula registrado; o período anterior ao aplicativo fica como sem dados."}>
+      <ProgressSection title="Presença" subtitle={attendance.inferredOnly ? "Cada pós-aula conta como aula realizada. Sem calendário completo, nenhuma falta é presumida." : `Presença calculada desde ${attendanceStartLabel}, primeiro pós-aula registrado.`}>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
           <ProgressStat label="Realizadas" value={attendance.held} detail="com pós-aula" tone={PROGRESS_COLORS.good} />
           <ProgressStat label="Sequência atual" value={attendance.currentStreak} detail="aulas sem falta" tone={attendance.currentStreak >= 10 ? PROGRESS_COLORS.good : PROGRESS_COLORS.blue} />
-          <ProgressStat label="Faltas" value={attendance.misses} detail={attendance.untracked ? `${attendance.untracked} aula${attendance.untracked!==1?'s':''} anterior${attendance.untracked!==1?'es':''} sem dados` : 'aulas previstas'} tone={attendance.misses ? PROGRESS_COLORS.low : PROGRESS_COLORS.good} />
+          <ProgressStat label="Faltas" value={attendance.misses} detail={attendanceStartLabel ? `desde ${attendanceStartLabel}` : 'aulas previstas'} tone={attendance.misses ? PROGRESS_COLORS.low : PROGRESS_COLORS.good} />
           <ProgressStat label="Presença" value={attendance.rate == null?'—':`${attendance.rate}%`} detail={attendanceTone.label} tone={attendanceTone.color} />
         </div>
         <div style={{ marginTop:10 }}><EvolutionChart type={chartType} points={attendance.points} pieSegments={[
