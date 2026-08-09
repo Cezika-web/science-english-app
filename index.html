@@ -1296,8 +1296,8 @@ function metricTone(value, kind) {
 
 function ProgressStat({ label, value, detail, tone = PROGRESS_COLORS.neutral }) {
   return (
-    <GlassCard style={{ padding: '14px 15px', minWidth: 0 }}>
-      <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: .45 }}>{label}</div>
+    <GlassCard style={{ padding: '14px 12px', minWidth: 0, width:'100%', boxSizing:'border-box', overflow:'hidden' }}>
+      <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: .35, overflowWrap:'anywhere' }}>{label}</div>
       <div style={{ fontSize: 25, color: tone, fontWeight: 800, marginTop: 5, lineHeight: 1 }}>{value}</div>
       {detail && <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 6, lineHeight: 1.3 }}>{detail}</div>}
     </GlassCard>
@@ -1307,14 +1307,14 @@ function ProgressStat({ label, value, detail, tone = PROGRESS_COLORS.neutral }) 
 function ChartChoice({ value, onChange }) {
   const choices = [['line','〽','Linha'], ['bar','▥','Barras'], ['pie','◕','Pizza']];
   return (
-    <div role="group" aria-label="Formato dos gráficos" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:7, marginTop:12 }}>
+    <div role="group" aria-label="Formato dos gráficos" style={{ display:'grid', gridTemplateColumns:'repeat(3,minmax(0,1fr))', gap:7, marginTop:12, width:'100%' }}>
       {choices.map(([id,icon,label]) => {
         const active = value === id;
         return <button key={id} onClick={() => onChange(id)} aria-pressed={active} style={{
           border: active ? '1.5px solid var(--brand)' : '1px solid #E2E8F0', borderRadius:12,
           padding:'9px 5px', background: active ? 'rgba(var(--brand-rgb),0.12)' : 'rgba(255,255,255,.72)',
           color: active ? 'var(--brand-dark)' : '#64748B', fontFamily:'inherit', fontSize:12,
-          fontWeight: active ? 800 : 600, cursor:'pointer'
+          fontWeight: active ? 800 : 600, cursor:'pointer', minWidth:0, overflow:'hidden'
         }}><span aria-hidden="true" style={{ marginRight:5 }}>{icon}</span>{label}</button>;
       })}
     </div>
@@ -1422,10 +1422,10 @@ function EvolutionChart({ type, points, pieSegments, pieCenter, suffix = '%' }) 
 
 function ProgressSection({ title, subtitle, children }) {
   return (
-    <section style={{ marginTop:20 }}>
+    <section style={{ marginTop:20, width:'100%', maxWidth:'100%', minWidth:0, boxSizing:'border-box' }}>
       <div style={{ fontSize:16, fontWeight:800, color:'#0F172A' }}>{title}</div>
       {subtitle && <div style={{ fontSize:12, color:'#64748B', marginTop:3, lineHeight:1.4 }}>{subtitle}</div>}
-      <GlassCard style={{ padding:'12px 14px', marginTop:10 }}>{children}</GlassCard>
+      <GlassCard style={{ padding:'12px', marginTop:10, width:'100%', maxWidth:'100%', minWidth:0, boxSizing:'border-box', overflow:'hidden' }}>{children}</GlassCard>
     </section>
   );
 }
@@ -1464,19 +1464,43 @@ function calculateAttendance(student, posaulas) {
     }
     return '';
   };
-  (posaulas || []).forEach(post => {
-    const explicitKey = dateKey(post.classDate);
+  const orderedPosts = (posaulas || []).map(post => ({ post, reference:postReferenceDate(post) }))
+    .sort((a,b) => (a.reference?.getTime() || 0) - (b.reference?.getTime() || 0));
+  const unmatchedPosts = [];
+
+  // Reserva primeiro as datas exatas para um registro legado próximo não
+  // ocupar a aula que já possui classDate confiável.
+  orderedPosts.forEach(entry => {
+    const explicitKey = dateKey(entry.post.classDate);
     if (explicitKey && candidateKeys.has(explicitKey) && !presentKeys.has(explicitKey)) {
       presentKeys.add(explicitKey);
-      return;
+      entry.exactMatch = true;
     }
+  });
+  orderedPosts.forEach(({ post, reference, exactMatch }) => {
+    const explicitKey = dateKey(post.classDate);
+    if (exactMatch) return;
     // classDate/createdAt pode representar o envio, não a aula. Se a data não
     // coincidir com a grade, procura a aula prevista nos três dias anteriores.
-    const reference = postReferenceDate(post);
     const matched = matchScheduledDate(reference);
     if (matched) presentKeys.add(matched);
-    else {
-      const extraKey = explicitKey || dateKey(post.createdAt);
+    else unmatchedPosts.push({ post, reference, explicitKey });
+  });
+
+  // Semanas intensivas podem ter mais pós-aulas que dias fixos na grade. Cada
+  // registro adicional comprova uma aula e preenche, em ordem, a próxima aula
+  // prevista ainda livre, limitada a duas semanas da data do registro.
+  const availableKeys = [...candidateKeys].filter(key => !presentKeys.has(key)).sort();
+  unmatchedPosts.forEach(({ post, reference, explicitKey }) => {
+    const referenceKey = dateKey(reference);
+    const limitKey = reference ? dateKey(addDays(reference,14)) : '';
+    const availableIndex = referenceKey
+      ? availableKeys.findIndex(key => key >= referenceKey && (!limitKey || key <= limitKey))
+      : -1;
+    if (availableIndex >= 0) {
+      presentKeys.add(availableKeys.splice(availableIndex,1)[0]);
+    } else {
+      const extraKey = explicitKey || dateKey(post.createdAt) || referenceKey;
       if (extraKey) extraClassKeys.add(extraKey);
     }
   });
@@ -1779,11 +1803,11 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
     : '';
 
   return (
-    <div className="scroll-area" style={{ padding:'18px 16px 28px' }}>
+    <div className="scroll-area" style={{ padding:'18px 14px 28px', width:'100%', maxWidth:'100%', minWidth:0, boxSizing:'border-box', overflowX:'hidden' }}>
       <div style={{ fontSize:22, fontWeight:800, color:'#0F172A' }}>Meu progresso</div>
 
       <ProgressSection title="Presença">
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:8, width:'100%' }}>
           <ProgressStat label="Realizadas" value={attendance.held} detail="com pós-aula" tone={PROGRESS_COLORS.good} />
           <ProgressStat label="Sequência atual" value={attendance.currentStreak} detail="aulas sem falta" tone={attendance.currentStreak >= 10 ? PROGRESS_COLORS.good : PROGRESS_COLORS.blue} />
           <ProgressStat label="Faltas" value={attendance.misses} detail={attendanceStartLabel ? `desde ${attendanceStartLabel}` : 'aulas previstas'} tone={attendance.misses ? PROGRESS_COLORS.low : PROGRESS_COLORS.good} />
@@ -1808,7 +1832,7 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
       </div>
 
       <ProgressSection title="Exercícios">
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:8, width:'100%' }}>
           <ProgressStat label="Total" value={exercise.answered} detail="respostas" tone={PROGRESS_COLORS.blue} />
           <ProgressStat label="Acertos" value={exercise.correct} detail="respostas" tone={PROGRESS_COLORS.good} />
           <ProgressStat label="Erros" value={exercise.wrong} detail="respostas" tone={exercise.wrong?PROGRESS_COLORS.low:PROGRESS_COLORS.good} />
@@ -1821,21 +1845,21 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
       </ProgressSection>
 
       <ProgressSection title="Análise de erros">
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,minmax(0,1fr))', gap:8, width:'100%' }}>
           {Object.entries(ERROR_TYPES).map(([key,meta]) => <ProgressStat key={key} label={meta.label} value={errors.averages[key]} detail="média por atividade" tone={meta.color} />)}
         </div>
-        <div role="group" aria-label="Filtrar tipo de erro" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:6, marginTop:12 }}>
+        <div role="group" aria-label="Filtrar tipo de erro" style={{ display:'grid', gridTemplateColumns:'repeat(4,minmax(0,1fr))', gap:6, marginTop:12, width:'100%' }}>
           {[['all','Todos'],...Object.entries(ERROR_TYPES).map(([key,meta]) => [key,meta.label])].map(([key,label]) => {
             const active = errorFilter === key;
             const color = key === 'all' ? '#475569' : ERROR_TYPES[key].color;
-            return <button key={key} onClick={() => setErrorFilter(key)} aria-pressed={active} style={{ border:`1.5px solid ${active?color:'#E2E8F0'}`, borderRadius:999, padding:'7px 3px', background:active?`${color}18`:'#fff', color:active?color:'#64748B', fontSize:10.5, fontWeight:800, cursor:'pointer', fontFamily:'inherit' }}>{label}</button>;
+            return <button key={key} onClick={() => setErrorFilter(key)} aria-pressed={active} style={{ border:`1.5px solid ${active?color:'#E2E8F0'}`, borderRadius:999, padding:'7px 3px', background:active?`${color}18`:'#fff', color:active?color:'#64748B', fontSize:10.5, fontWeight:800, cursor:'pointer', fontFamily:'inherit', minWidth:0, overflow:'hidden', textOverflow:'ellipsis' }}>{label}</button>;
           })}
         </div>
         <div style={{ marginTop:8 }}><ErrorTrendChart type={chartType} data={errors} filter={errorFilter} /></div>
       </ProgressSection>
 
       <ProgressSection title="Talk time">
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,minmax(0,1fr))', gap:8, width:'100%' }}>
           <ProgressStat label="Média" value={talk.average==null?'—':`${talk.average}%`} detail={talkTone.label} tone={talkTone.color} />
           <ProgressStat label="Maior" value={talk.best==null?'—':`${talk.best}%`} detail="melhor aula" tone={metricTone(talk.best,'talk').color} />
           <ProgressStat label="Menor" value={talk.worst==null?'—':`${talk.worst}%`} detail="aula mais baixa" tone={metricTone(talk.worst,'talk').color} />
