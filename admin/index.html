@@ -1603,7 +1603,7 @@
       // Mostra a pós-aula de um aluno e destaca a aba dele.
       const mostrar = (i) => {
         const p = posaulaGerada.posaulas[i];
-        iframe.srcdoc = p.html;
+        iframe.srcdoc = sanitizeReaderHtml(p.html);
         abas.querySelectorAll('button').forEach((b, j) => {
           const ativo = j === i;
           b.style.background  = ativo ? 'var(--green)' : 'transparent';
@@ -3290,6 +3290,125 @@
 
     function esc(s = '') {
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // Prévia da pós-aula: tira script/onclick do HTML e devolve o áudio pela
+    // própria prévia (sem parent, então fala local). Mesma proteção do app.
+    const PREVIEW_AUDIO_SCRIPT = `
+(function(){
+  var active = null, audioEl = null;
+
+  function mark(btn, on){
+    if(!btn) return;
+    btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+  function clearActive(){ mark(active, false); active = null; }
+
+  function warn(msg){
+    var box = document.getElementById('czk-audio-msg');
+    if(!box){
+      box = document.createElement('div');
+      box.id = 'czk-audio-msg';
+      box.setAttribute('role', 'status');
+      box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+        + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+        + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+      document.body.appendChild(box);
+    }
+    box.textContent = msg;
+    box.style.display = 'block';
+    clearTimeout(warn._t);
+    warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+  }
+
+  function stopAll(){
+    if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+    try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+    clearActive();
+  }
+
+  function speak(text, btn){
+    var synth = window.speechSynthesis;
+    if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+      warn('Este aparelho ainda não tem voz em inglês.');
+      clearActive();
+      return;
+    }
+    synth.cancel();
+    var u = new SpeechSynthesisUtterance(text);
+    var isPhrase = text.trim().split(/\s+/).length > 1;
+    u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+    function score(v){
+      var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+      if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+      if(/samantha|ava/i.test(v.name)) n += 65;
+      if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+      if(/zira/i.test(v.name)) n += 35;
+      if(v.localService) n += 5;
+      return n;
+    }
+    var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+    var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+    if(pick) u.voice = pick;
+    u.onstart = function(){ mark(btn, true); };
+    u.onend = function(){ if(active === btn) clearActive(); };
+    u.onerror = function(ev){
+      if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+      if(active === btn) clearActive();
+    };
+    synth.speak(u);
+  }
+
+  function play(btn){
+    var text = (btn.getAttribute('data-czk-say') || '').trim();
+    if(!text) return;
+    var wasActive = (active === btn);
+    stopAll();
+    if(wasActive) return;
+    active = btn; mark(btn, true);
+    var url = btn.getAttribute('data-czk-audio');
+    if(url && /^https:\\/\\//i.test(url)){
+      audioEl = new Audio(url);
+      audioEl.onended = function(){ if(active === btn) clearActive(); };
+      audioEl.onerror = function(){ if(active === btn) speak(text, btn); };
+      var p = audioEl.play();
+      if(p && p.catch) p.catch(function(){ if(active === btn) speak(text, btn); });
+      return;
+    }
+    speak(text, btn);
+  }
+
+  document.addEventListener('click', function(ev){
+    var t = ev.target;
+    if(!t || !t.closest) return;
+    var btn = t.closest('[data-czk-say]');
+    if(btn){ ev.preventDefault(); play(btn); return; }
+    var pr = t.closest('[data-czk-action="print"]');
+    if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+  });
+})();
+`;
+
+    function sanitizeReaderHtml(html = '') {
+      const doc = new DOMParser().parseFromString(String(html), 'text/html');
+      doc.querySelectorAll('script,iframe,object,embed,link,base,form,meta[http-equiv]').forEach(el => el.remove());
+      doc.querySelectorAll('*').forEach(el => {
+        [...el.attributes].forEach(attr => {
+          const name = attr.name.toLowerCase();
+          const value = attr.value.trim().toLowerCase();
+          if (name.startsWith('on') || name === 'srcdoc') el.removeAttribute(attr.name);
+          if (['href','src','action','formaction','xlink:href'].includes(name)
+              && /^(javascript|vbscript):/.test(value)) el.removeAttribute(attr.name);
+          if (name === 'style' && /(expression\s*\(|url\s*\(\s*['"]?\s*(javascript|vbscript):)/i.test(attr.value)) {
+            el.removeAttribute('style');
+          }
+        });
+      });
+      const audio = doc.createElement('script');
+      audio.textContent = PREVIEW_AUDIO_SCRIPT;
+      doc.body.appendChild(audio);
+      return '<!DOCTYPE html>' + doc.documentElement.outerHTML;
     }
 
     function sanitizeActivityHtml(html = '') {

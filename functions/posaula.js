@@ -101,8 +101,17 @@ section{ margin-top:18px; }
 .vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid ${t30}; background:#fff; }
 .vocab.green{ border-color:${t30}; background:${t04}; }
 .vocab.yellow{ border-color:${t16}; background:${t08}; }
-.vocab h3{ margin:0; font-size:1rem; color:var(--accent-dark); }
+.vocab h3{ margin:0; font-size:1rem; color:var(--accent-dark); min-width:0; overflow-wrap:anywhere; }
 .vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid ${t30}; background:${t08}; color:var(--accent-dark); font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:${t16}; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
 .media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
 .media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
 .homework{ background:${t08}; border:1px solid ${t30}; border-radius:10px; padding:14px; margin-top:10px; }
@@ -137,7 +146,7 @@ footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center
           </div>
         </div>
         <div class="actions">
-          <a class="btn" href="#" onclick="window.print();return false;">Imprimir / Salvar PDF</a>
+          <a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a>
         </div>
       </header>
 
@@ -160,15 +169,30 @@ footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center
           <h2 style="margin-bottom:8px;">Key Vocabulary</h2>
           <div class="vocab-grid">
             <div class="vocab">
-              <h3>[Palavra 1]</h3>
+              <div class="vocab-head">
+                <h3>[Palavra 1]</h3>
+                <button type="button" class="vocab-say" data-czk-say="[Palavra 1]"
+                        aria-label="Ouvir a pronúncia de [Palavra 1]" aria-pressed="false"
+                        title="Ouvir [Palavra 1]">&#128266;</button>
+              </div>
               <p><em>(pt) [tradução]</em><br><small>[definição e exemplo]</small></p>
             </div>
             <div class="vocab green">
-              <h3>[Palavra 2]</h3>
+              <div class="vocab-head">
+                <h3>[Palavra 2]</h3>
+                <button type="button" class="vocab-say" data-czk-say="[Palavra 2]"
+                        aria-label="Ouvir a pronúncia de [Palavra 2]" aria-pressed="false"
+                        title="Ouvir [Palavra 2]">&#128266;</button>
+              </div>
               <p><em>(pt) [tradução]</em><br><small>[definição e exemplo]</small></p>
             </div>
             <div class="vocab yellow">
-              <h3>[Palavra 3]</h3>
+              <div class="vocab-head">
+                <h3>[Palavra 3]</h3>
+                <button type="button" class="vocab-say" data-czk-say="[Palavra 3]"
+                        aria-label="Ouvir a pronúncia de [Palavra 3]" aria-pressed="false"
+                        title="Ouvir [Palavra 3]">&#128266;</button>
+              </div>
               <p><em>(pt) [tradução]</em><br><small>[definição e exemplo]</small></p>
             </div>
           </div>
@@ -244,6 +268,129 @@ ${gravacao}
 
     </article>
   </div>
+
+  <!-- ÁUDIO DAS PALAVRAS-CHAVE — uma única função para o pós-aula inteiro.
+       Aberto direto: fala aqui mesmo. Dentro do app: pede ao app e quem fala é ele
+       (o app remove este script e injeta o próprio, então nada daqui roda por lá). -->
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\\/\\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
 </body>
 </html>`;
 }
@@ -264,7 +411,7 @@ conteúdo real extraído da aula. Não invente conteúdo que não aconteceu.
 - **Resumo curto** — 1 ou 2 linhas, o que a aula cobriu.
 - **Resumo detalhado** — 2 ou 3 parágrafos narrando o que foi ensinado,
   na ordem em que aconteceu.
-- **Key Vocabulary** — 2 ou 3 palavras/expressões centrais da aula, com
+- **Key Vocabulary** — 3 palavras/expressões centrais da aula, com
   tradução, definição curta e exemplo.
 - **Vocabulário da aula** — lista completa agrupada por categoria ou tema.
   Crie quantas categorias fizerem sentido; use os nomes que couberem à aula.
@@ -281,6 +428,14 @@ conteúdo real extraído da aula. Não invente conteúdo que não aconteceu.
   seus, sem blocos de código, sem explicação antes ou depois.
 - Preserve o CSS, as classes e a estrutura do template exatamente como estão.
   Mude só o conteúdo dentro das tags.
+- Cada palavra do Key Vocabulary tem um botão de áudio. Ao trocar [Palavra N]
+  pela palavra real, troque também no data-czk-say, no aria-label e no title
+  do botão daquela caixa. O data-czk-say leva **somente o inglês** (a
+  expressão inteira, se for mais de uma palavra) — nunca a tradução.
+- Não apague nem mexa no bloco <script> do fim do <body>: é ele que faz os
+  botões de áudio funcionarem. Um só por pós-aula.
+- Nunca escreva onclick nem qualquer atributo on...: o app remove esses
+  atributos ao exibir a pós-aula.
 - Não altere nome do professor, nome do aluno, data, cores nem rodapé — já
   vêm preenchidos corretamente.
 - Repita os blocos que precisarem de mais itens (mais palavras de

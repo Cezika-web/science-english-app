@@ -2843,12 +2843,20 @@ function pronounceEnglish(text, { onStart, onEnd, onError } = {}) {
   synth.cancel();
   const utterance = new SpeechSynthesisUtterance(String(text || '').trim());
   utterance.lang = 'en-US';
-  utterance.rate = 0.82;
+  const isPhrase = String(text || '').trim().split(/\s+/).length > 1;
+  utterance.rate = isPhrase ? 0.95 : 0.88;
   utterance.pitch = 1;
   const englishVoices = synth.getVoices().filter(voice => /^en[-_]/i.test(voice.lang));
-  const preferred = englishVoices.find(voice => /natural|google|aria|samantha|ava|zira/i.test(voice.name))
-    || englishVoices.find(voice => /^en[-_]US/i.test(voice.lang))
-    || englishVoices[0];
+  const voiceScore = voice => {
+    let score = /^en[-_]US/i.test(voice.lang) ? 100 : 0;
+    if (/natural|neural|premium|enhanced/i.test(voice.name)) score += 80;
+    if (/samantha|ava/i.test(voice.name)) score += 65;
+    if (/google.*(us|english)|aria/i.test(voice.name)) score += 55;
+    if (/zira/i.test(voice.name)) score += 35;
+    if (voice.localService) score += 5;
+    return score;
+  };
+  const preferred = [...englishVoices].sort((a, b) => voiceScore(b) - voiceScore(a))[0];
   if (preferred) utterance.voice = preferred;
   utterance.onstart = () => onStart?.();
   utterance.onend = () => onEnd?.();
@@ -2859,6 +2867,176 @@ function pronounceEnglish(text, { onStart, onEnd, onError } = {}) {
   synth.speak(utterance);
   return true;
 }
+
+// ── Áudio das pós-aulas ──────────────────────────────────────────
+// A pós-aula nunca fala sozinha dentro do app: ela só pede, por postMessage,
+// e quem pronuncia é o próprio aplicativo (pronounceEnglish). Assim o leitor
+// continua sem allow-same-origin e sem rodar script vindo do conteúdo salvo.
+// Este script é injetado pelo app depois da sanitização — é o único que sobra.
+const READER_AUDIO_BRIDGE = `
+(function(){
+  var host = (window.CZK_NO_HOST || window.parent === window) ? null : window.parent;
+  var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+  function mark(btn, on){
+    if(!btn) return;
+    btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+  function clearActive(){ mark(active, false); active = null; }
+
+  function warn(msg){
+    var box = document.getElementById('czk-audio-msg');
+    if(!box){
+      box = document.createElement('div');
+      box.id = 'czk-audio-msg';
+      box.setAttribute('role', 'status');
+      box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+        + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+        + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+      document.body.appendChild(box);
+    }
+    box.textContent = msg;
+    box.style.display = 'block';
+    clearTimeout(warn._t);
+    warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+  }
+
+  function stopAll(){
+    if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+    if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+    try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+    if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+    clearActive();
+  }
+
+  function localSpeak(text, btn){
+    var synth = window.speechSynthesis;
+    if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+      warn('Este aparelho ainda não tem voz em inglês.');
+      clearActive();
+      return;
+    }
+    synth.cancel();
+    var u = new SpeechSynthesisUtterance(text);
+    var isPhrase = text.trim().split(/\s+/).length > 1;
+    u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+    function score(v){
+      var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+      if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+      if(/samantha|ava/i.test(v.name)) n += 65;
+      if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+      if(/zira/i.test(v.name)) n += 35;
+      if(v.localService) n += 5;
+      return n;
+    }
+    var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+    var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+    if(pick) u.voice = pick;
+    u.onstart = function(){ mark(btn, true); };
+    u.onend = function(){ if(active === btn) clearActive(); };
+    u.onerror = function(ev){
+      if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+      if(active === btn) clearActive();
+    };
+    synth.speak(u);
+  }
+
+  function requestSpeech(text, btn){
+    if(!host){ localSpeak(text, btn); return; }
+    acked = false;
+    var id = ++pendingId;
+    try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+    catch(e){ localSpeak(text, btn); return; }
+    fallbackTimer = setTimeout(function(){
+      if(!acked && active === btn) localSpeak(text, btn);
+    }, 700);
+  }
+
+  function play(btn){
+    var text = (btn.getAttribute('data-czk-say') || '').trim();
+    if(!text) return;
+    var wasActive = (active === btn);
+    stopAll();
+    if(wasActive) return;
+    active = btn; mark(btn, true);
+    // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+    var url = btn.getAttribute('data-czk-audio');
+    if(url && /^https:\\/\\//i.test(url)){
+      audioEl = new Audio(url);
+      audioEl.onended = function(){ if(active === btn) clearActive(); };
+      audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+      var p = audioEl.play();
+      if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+      return;
+    }
+    requestSpeech(text, btn);
+  }
+
+  window.addEventListener('message', function(ev){
+    var d = ev.data;
+    if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+    if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+    if(d.type === 'speak-start'){ mark(active, true); return; }
+    if(d.type === 'speak-end'){ clearActive(); return; }
+    if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+  });
+
+  document.addEventListener('click', function(ev){
+    var t = ev.target;
+    if(!t || !t.closest) return;
+    var btn = t.closest('[data-czk-say]');
+    if(btn){ ev.preventDefault(); play(btn); return; }
+    var pr = t.closest('[data-czk-action="print"]');
+    if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+  });
+})();
+`;
+
+// Tira script, onclick e javascript: do HTML salvo e devolve o documento
+// completo (o <style> do cabeçalho continua valendo) já com a ponte de áudio.
+function sanitizeReaderHtml(html) {
+  const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
+  doc.querySelectorAll('script,iframe,object,embed,link,base,form,meta[http-equiv]').forEach(el => el.remove());
+  doc.querySelectorAll('*').forEach(el => {
+    [...el.attributes].forEach(attr => {
+      const name = attr.name.toLowerCase();
+      const value = attr.value.trim().toLowerCase();
+      if (name.startsWith('on') || name === 'srcdoc') el.removeAttribute(attr.name);
+      if (['href','src','action','formaction','xlink:href'].includes(name)
+          && /^(javascript|vbscript):/.test(value)) el.removeAttribute(attr.name);
+      if (name === 'style' && /(expression\s*\(|url\s*\(\s*['"]?\s*(javascript|vbscript):)/i.test(attr.value)) {
+        el.removeAttribute('style');
+      }
+    });
+  });
+  const bridge = doc.createElement('script');
+  bridge.textContent = READER_AUDIO_BRIDGE;
+  doc.body.appendChild(bridge);
+  return '<!DOCTYPE html>' + doc.documentElement.outerHTML;
+}
+
+// Só atende quem é mesmo um leitor de pós-aula desta página.
+window.addEventListener('message', event => {
+  const data = event.data;
+  if (!data || data.source !== 'czk-posaula') return;
+  const frames = [...document.querySelectorAll('iframe.reader-frame')];
+  if (!frames.some(frame => frame.contentWindow === event.source)) return;
+  if (data.type === 'stop') { window.speechSynthesis?.cancel(); return; }
+  if (data.type !== 'speak') return;
+  const text = String(data.text || '').trim().slice(0, 120);
+  if (!text) return;
+  const reply = (type) => {
+    try { event.source.postMessage({ source:'czk-app', type, id:data.id }, '*'); } catch (_) {}
+  };
+  reply('speak-ack');
+  const ok = pronounceEnglish(text, {
+    onStart:() => reply('speak-start'),
+    onEnd:() => reply('speak-end'),
+    onError:() => reply('speak-error'),
+  });
+  if (!ok) reply('speak-error');
+});
 
 function VocabTab({ vocab }) {
   const [openMonths, setOpenMonths] = useState({});
@@ -3287,7 +3465,7 @@ function PosaulaPeek({ open, activity, posaulas, onClose }) {
 
         {sel ? (
           sel.html
-            ? <iframe className="reader-frame" srcDoc={sel.html} sandbox="allow-scripts allow-popups allow-presentation" referrerPolicy="no-referrer" allowFullScreen />
+            ? <iframe className="reader-frame" srcDoc={sanitizeReaderHtml(sel.html)} sandbox="allow-scripts allow-popups allow-presentation" referrerPolicy="no-referrer" allowFullScreen />
             : <iframe className="reader-frame" src={sel.url || 'about:blank'} sandbox="allow-scripts allow-popups allow-presentation" referrerPolicy="no-referrer" allowFullScreen />
         ) : (
           <div style={{ flex: 1, overflowY: 'auto', padding: 14 }}>
@@ -3486,7 +3664,7 @@ function ReaderView({ post, onBack }) {
       </div>
       {/* Pos-aulas antigas vem por URL; as geradas no admin vem no proprio doc. */}
       {post?.html
-        ? <iframe className="reader-frame" srcDoc={post.html} sandbox="allow-scripts allow-popups allow-presentation" referrerPolicy="no-referrer" allowFullScreen />
+        ? <iframe className="reader-frame" srcDoc={sanitizeReaderHtml(post.html)} sandbox="allow-scripts allow-popups allow-presentation" referrerPolicy="no-referrer" allowFullScreen />
         : <iframe className="reader-frame" src={post?.url || 'about:blank'} sandbox="allow-scripts allow-popups allow-presentation" referrerPolicy="no-referrer" allowFullScreen />}
     </div>
   );
