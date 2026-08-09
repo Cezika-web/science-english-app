@@ -1020,7 +1020,7 @@ function AppHeader({ student, onNotif, showNotifBtn, onLogout, onPatchStudent })
 // ── BottomNav ───────────────────────────────────────────────────
 const TABS = [
   { id: 'home',   label: 'Inicio',      icon: '🏠' },
-  { id: 'aulas',  label: 'Aulas',       icon: '📚' },
+  { id: 'aulas',  label: 'Atividades',  icon: '📚' },
   { id: 'progresso', label: 'Progresso', icon: '📈' },
   { id: 'vocab',  label: 'Vocabulario', icon: '🔤' },
   { id: 'perfil', label: 'Perfil',      icon: '👤' },
@@ -2642,7 +2642,38 @@ function ExtraModal({ extra, onClose, onFinish, onSaveDraft, mirror }) {
   );
 }
 
-function AulasTab({ activities, onOpenActivity, extras, onOpenExtra, onOpenCorrecao }) {
+function nextActivityStep(activities) {
+  const temProgresso = act => {
+    const partesFeitas = Object.values(act.partsDone || {}).some(Boolean);
+    const percentual = Number(act.conclusao?.atividadePct || 0) > 0;
+    const respostas = Object.values(act.respostas || {}).some(value =>
+      value && typeof value === 'object' ? Object.keys(value).length > 0 : value != null && value !== ''
+    );
+    return partesFeitas || percentual || respostas;
+  };
+  const candidatos = activities
+    .filter(a => a.status !== 'corrected' && !a.finalizada)
+    .map(activity => {
+      const parts = activity.parts || [];
+      const isDone = part => !!activity.partsDone?.[part.id || part.title];
+      const hasDraft = part => {
+        const saved = activity.respostas?.[part.id || part.title];
+        return saved && typeof saved === 'object' ? Object.keys(saved).length > 0 : saved != null && saved !== '';
+      };
+      const part = parts.find(p => !isDone(p) && hasDraft(p))
+        || parts.find(p => !isDone(p))
+        || null;
+      return { activity, part };
+    })
+    // Registros legados podem ter todas as partes feitas e finalizada=false.
+    // Eles não devem bloquear o avanço para a próxima atividade.
+    .filter(item => item.part);
+  const escolhido = candidatos.find(item => temProgresso(item.activity)) || candidatos[0] || null;
+  if (!escolhido) return null;
+  return { ...escolhido, hasProgress:temProgresso(escolhido.activity) };
+}
+
+function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOpenExtra, onOpenCorrecao }) {
   const [sub, setSub] = useState('atividades');
   const [openHist, setOpenHist] = useState({});
   const [openMonth, setOpenMonth] = useState({});
@@ -2661,6 +2692,8 @@ function AulasTab({ activities, onOpenActivity, extras, onOpenExtra, onOpenCorre
   const histByWeek   = React.useMemo(() => groupByWeek(activities.filter(a => a.status === 'corrected')), [activities]);
   const temHistorico = histByWeek.length > 0;
   const temAtuais    = atuaisByWeek.length > 0;
+
+  const continuar = React.useMemo(() => nextActivityStep(activities), [activities]);
 
   // Histórico: mês atual fica solto (semanas soltas); meses passados viram pasta.
   const histGroups = React.useMemo(() => {
@@ -2751,6 +2784,24 @@ function AulasTab({ activities, onOpenActivity, extras, onOpenExtra, onOpenCorre
           }}>{s === 'atividades' ? 'Atividades' : 'Extras'}</button>
         ))}
       </div>
+
+      {sub === 'atividades' && (
+        <button type="button" disabled={!continuar} onClick={() => continuar && onContinueActivity(continuar.activity, continuar.part)} style={{
+          width:'100%', boxSizing:'border-box', border:`1px solid ${continuar ? 'rgba(var(--brand-rgb),.3)' : '#D8CFC3'}`, borderRadius:16,
+          padding:'14px 16px', marginBottom:16, background:continuar ? 'linear-gradient(145deg,var(--brand),var(--brand-dark))' : '#EDE7DF',
+          color:continuar ? '#fff' : '#7C6F62', cursor:continuar ? 'pointer' : 'default', fontFamily:'inherit', display:'flex', alignItems:'center', gap:12,
+          textAlign:'left', boxShadow:continuar ? '0 8px 20px rgba(var(--brand-rgb),.18)' : 'none', opacity:continuar ? 1 : .82
+        }} aria-label={continuar ? `Continuar ${continuar.activity.title || 'atividade'}, ${continuar.part.title || 'próxima parte'}` : 'Tudo concluído por enquanto'}>
+          <span style={{ width:42, height:42, borderRadius:13, background:continuar ? 'rgba(255,255,255,.18)' : 'rgba(124,111,98,.1)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:21, flexShrink:0 }}>{continuar ? '▶' : '✓'}</span>
+          <span style={{ flex:1, minWidth:0 }}>
+            <span style={{ display:'block', fontSize:15, fontWeight:800 }}>{continuar ? 'Continuar de onde parei' : 'Tudo concluído por enquanto'}</span>
+            <span style={{ display:'block', marginTop:3, fontSize:12, color:continuar ? 'rgba(255,255,255,.84)' : '#8B7D6D', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+              {continuar ? `${continuar.activity.title || 'Atividade'} · ${continuar.part.title || 'Próxima parte'}` : 'Quando chegar uma atividade nova, o botão será liberado.'}
+            </span>
+          </span>
+          {continuar && <span aria-hidden="true" style={{ fontSize:22, lineHeight:1 }}>›</span>}
+        </button>
+      )}
 
       {sub === 'atividades' && (activities.length === 0 ? (
         <GlassCard style={{ padding: 32, textAlign: 'center' }}>
@@ -4097,6 +4148,11 @@ function App() {
 
   const handleOpenPost     = (post) => { getFB().then(fb => openPost(post, fb, mirror ? mirrorUid.current : user.uid)); };
   const handleOpenActivity = (act)  => setOpenActivity(act);
+  const handleContinueActivity = (act, part) => {
+    if (!act || !part) return;
+    setOpenActivity(act);
+    setOpenPart(part);
+  };
   const handleOpenPart     = (part) => setOpenPart(part);
   const handleClosePart    = ()     => setOpenPart(null);
   const handleCloseAll     = ()     => { setOpenPart(null); setOpenActivity(null); };
@@ -4171,7 +4227,7 @@ function App() {
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         {tab === 'home'   && <HomeTab   student={student} posaulas={posaulas} activities={activities} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} />}
-        {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} />}
+        {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} />}
         {tab === 'progresso' && <ProgressTab student={student} posaulas={posaulas} activities={activities} reviewReports={reviewReports} onOpenReview={openReviewResult} />}
         {tab === 'vocab'  && <VocabTab vocab={vocab} />}
         {tab === 'perfil' && <PerfilTab student={student} onLogout={handleLogout} onPatchStudent={patchStudent} />}
