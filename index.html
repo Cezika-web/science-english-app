@@ -30,6 +30,9 @@
 
     html, body {
       height: 100%;
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
       font-family: -apple-system, "SF Pro Display", Inter, "Segoe UI", Roboto, Arial, sans-serif;
       background: #F6F1EA;
       color: #0F172A;
@@ -37,7 +40,7 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    #root { height: 100%; display: flex; flex-direction: column; }
+    #root { height: 100%; width: 100%; max-width: 100%; min-width: 0; display: flex; flex-direction: column; overflow-x: hidden; }
 
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
@@ -93,7 +96,11 @@
     .ex-root, .ex-root *:not(svg):not(path) {
       font-family: "Nunito", ui-rounded, "Avenir Next Rounded", "Segoe UI", sans-serif !important;
     }
-    .ex-root { letter-spacing: 0.005em; }
+    .ex-root { width: 100%; max-width: 100%; min-width: 0; overflow-x: hidden; overflow-wrap: anywhere; letter-spacing: 0.005em; }
+    .ex-root img, .ex-root video, .ex-root iframe, .ex-root svg, .ex-root canvas { max-width: 100% !important; height: auto; }
+    .ex-root table { width: 100% !important; max-width: 100%; table-layout: fixed; border-collapse: collapse; }
+    .ex-root td, .ex-root th { min-width: 0 !important; overflow-wrap: anywhere; }
+    .ex-root pre, .ex-root code { max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; }
     .ex-root h1, .ex-root h2, .ex-root h3, .ex-root strong { letter-spacing: -0.01em; }
     .ex-root ol, .ex-root ul { padding-left: 30px; margin: 0 0 4px; }
     .ex-root li { margin-bottom: 16px; padding-left: 2px; }
@@ -133,10 +140,10 @@
     /* ── Arrastar (matching) ── */
     .ex-match { margin: 4px 0 10px; }
     .ex-match-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
-    .ex-match-row { display: flex; align-items: center; gap: 10px; }
-    .ex-match-left { flex: 1; font-size: 14.5px; color: #1F2937; }
+    .ex-match-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .ex-match-left { flex: 1 1 0; min-width: 0; font-size: 14.5px; color: #1F2937; overflow-wrap: anywhere; }
     .ex-match-slot {
-      width: 130px; min-height: 40px; flex-shrink: 0;
+      width: min(130px, 42%); min-width: 0; min-height: 40px; flex: 0 1 130px;
       border: 1.5px dashed #C7B29A; border-radius: 12px; background: #FBF7F1;
       display: flex; align-items: center; justify-content: center; padding: 3px;
     }
@@ -151,6 +158,11 @@
       cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none;
     }
     .ex-match-chip.dragging { box-shadow: 0 10px 24px rgba(0,0,0,0.22); opacity: 0.95; }
+    @media (max-width: 380px) {
+      .ex-root { padding-left: 12px !important; padding-right: 12px !important; }
+      .ex-match-row { align-items: stretch; flex-direction: column; gap: 6px; }
+      .ex-match-slot { width: 100%; flex-basis: auto; }
+    }
   </style>
 </head>
 <body>
