@@ -182,5 +182,10 @@ service cloud.firestore {
         || (resource.data.escolaId is string && ownsSchool(resource.data.escolaId));
       allow write: if false;
     }
+    match /_posaulaJobs/{doc} {
+      allow read: if isAdmin()
+        || (resource.data.escolaId is string && ownsSchool(resource.data.escolaId));
+      allow write: if false;
+    }
   }
 }

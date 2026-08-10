@@ -253,6 +253,7 @@
         <button class="tab active" data-tab="students">👥 Alunos</button>
         <button class="tab" data-tab="creditos">💳 Créditos</button>
         <button class="tab" data-tab="posaula">📄 Pós-aula</button>
+        <button class="tab" data-tab="processos">⏳ Processos <span id="processos-count"></span></button>
         <button class="tab" data-tab="publish">📤 Atividades</button>
         <button class="tab" data-tab="correct">✅ Correção</button>
         <button class="tab" data-tab="vocab">📖 Vocabulário</button>
@@ -395,12 +396,26 @@
               <span style="font-size:0.8rem;color:var(--muted);">Prévia — os alunos ainda não receberam</span>
             </div>
             <div id="pa-abas" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
-            <iframe id="pa-preview" sandbox="allow-scripts allow-popups allow-presentation" referrerpolicy="no-referrer" style="width:100%;height:520px;border:1px solid var(--border);border-radius:10px;background:#fff;"></iframe>
+            <iframe id="pa-preview" sandbox="allow-same-origin allow-popups allow-presentation" referrerpolicy="no-referrer" style="width:100%;height:520px;border:1px solid var(--border);border-radius:10px;background:#fff;"></iframe>
             <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+              <button class="btn-add" id="btn-editar-posaula" type="button" style="flex:0 0 auto;background:#fff;color:var(--brand);border:1px solid var(--brand);">✏️ Editar texto</button>
               <button class="btn-add" id="btn-publicar-posaula" type="button" style="flex:1;min-width:200px;">🚀 Publicar para o aluno</button>
               <button class="btn-add" id="btn-descartar-posaula" type="button" style="flex:0 0 auto;background:#e5e7eb;color:#374151;">Descartar</button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-processos">
+        <div class="form-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+            <div>
+              <h2>⏳ Processos de publicação</h2>
+              <p style="font-size:0.85rem;color:var(--muted);margin:4px 0 0;">Pode fechar esta tela. A publicação continua no servidor e o andamento fica salvo aqui.</p>
+            </div>
+            <button class="btn-add" id="btn-atualizar-processos" type="button">Atualizar</button>
+          </div>
+          <div id="posaula-processos" style="margin-top:16px;"><div class="loading">Carregando...</div></div>
         </div>
       </div>
 
@@ -1316,6 +1331,7 @@
         if (tab.dataset.tab === 'publish') recarregarJobsBatch();
         if (tab.dataset.tab === 'avisos')  recarregarAvisos();
         if (tab.dataset.tab === 'creditos') carregarConsumoApi();
+        if (tab.dataset.tab === 'processos') recarregarProcessosPosAula();
       };
     });
 
@@ -1329,8 +1345,8 @@
     // Quem administra a escola vê a interface dela — inclusive o César, ao
     // trocar de escola no seletor do topo.
     const ABAS_POR_MODO = {
-      manual:    ['students', 'creditos', 'posaula', 'publish', 'correct', 'vocab', 'extras', 'avisos', 'add', 'exalunos'],
-      assistido: ['students', 'creditos', 'posaula', 'publish', 'extras', 'avisos', 'add', 'exalunos'],
+      manual:    ['students', 'creditos', 'posaula', 'processos', 'publish', 'correct', 'vocab', 'extras', 'avisos', 'add', 'exalunos'],
+      assistido: ['students', 'creditos', 'posaula', 'processos', 'publish', 'extras', 'avisos', 'add', 'exalunos'],
     };
 
     function modoDaEscolaAtual() {
@@ -1507,6 +1523,66 @@
 
     document.getElementById('btn-atualizar-usage')?.addEventListener('click', carregarConsumoApi);
 
+    let recarregarProcessosPosAula = async () => {};
+    (function iniciarProcessosPosAula() {
+      const box = document.getElementById('posaula-processos');
+      const btn = document.getElementById('btn-atualizar-processos');
+      if (!box) return;
+      const ETAPAS = [
+        ['analisado', 'Analisando o pós-aula'],
+        ['salvo', 'Pós-aula enviada para o aplicativo'],
+        ['notificado', 'Notificação enviada para o aluno'],
+      ];
+
+      recarregarProcessosPosAula = async () => {
+        try {
+          const snap = await getDocs(query(collection(db, '_posaulaJobs'), where('escolaId', '==', escolaAtual)));
+          const jobs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+            .sort((a,b) => (b.criadoEm?.seconds || 0) - (a.criadoEm?.seconds || 0)).slice(0, 20);
+          const ativos = jobs.filter(j => j.status === 'processando' || j.status === 'erro').length;
+          const count = document.getElementById('processos-count');
+          if (count) count.textContent = ativos ? `(${ativos})` : '';
+          if (!jobs.length) { box.innerHTML = '<div class="loading">Nenhuma publicação registrada.</div>'; return; }
+
+          box.innerHTML = jobs.map(j => {
+            const nomes = (j.alunos || []).map(a => a.nome).filter(Boolean).join(', ');
+            const quando = j.criadoEm?.seconds ? new Date(j.criadoEm.seconds * 1000).toLocaleString('pt-BR') : '';
+            const concluido = j.status === 'concluido', erro = j.status === 'erro';
+            const travado = j.status === 'processando' && j.atualizadoEm?.seconds && (Date.now()/1000 - j.atualizadoEm.seconds > 300);
+            const etapas = ETAPAS.map(([key, label]) => {
+              const semToken = key === 'notificado' && concluido && Number(j.resultado?.semToken) > 0;
+              const ok = !!j.etapas?.[key] || (concluido && !semToken);
+              const ativa = !ok && !erro && ((key === 'analisado' && j.etapa === 'analisando') || (key === 'salvo' && j.etapa === 'salvando') || (key === 'notificado' && j.etapa === 'notificando'));
+              return `<div style="display:flex;align-items:center;gap:9px;padding:5px 0;color:${ok ? '#166534' : (ativa || semToken) ? '#92400e' : '#64748b'};"><span style="width:22px;text-align:center;">${ok ? '✅' : ativa ? '⏳' : semToken ? '⚠️' : '○'}</span><span>${semToken ? 'Aluno sem notificações ativadas' : label}${ativa ? '…' : ''}</span></div>`;
+            }).join('');
+            return `<div style="border:1px solid ${erro ? '#fecaca' : concluido ? '#bbf7d0' : 'var(--border)'};border-radius:12px;padding:14px;margin-bottom:10px;background:#fff;">
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;"><strong>${esc(nomes || 'Pós-aula')}</strong><span style="font-size:0.75rem;color:var(--muted);margin-left:auto;">${esc(quando)}</span></div>
+              ${etapas}
+              ${concluido ? '<div style="margin-top:8px;color:#166534;font-weight:700;">✅ Pós-aula enviada</div>' : ''}
+              ${erro ? `<div style="margin-top:8px;padding:9px;border-radius:8px;background:#fef2f2;color:#991b1b;font-size:0.82rem;">${esc(j.erro || 'Falha na publicação.')}</div>` : ''}
+              ${travado ? '<div style="margin-top:8px;color:#92400e;font-size:0.82rem;">Este processo está demorando mais que o normal.</div>' : ''}
+              ${(erro || travado) ? `<button class="btn-add" data-retry-job="${j.id}" type="button" style="margin-top:9px;padding:8px 12px;">Tentar novamente</button>` : ''}
+            </div>`;
+          }).join('');
+
+          box.querySelectorAll('[data-retry-job]').forEach(b => b.onclick = async () => {
+            b.disabled = true; b.textContent = 'Tentando novamente...';
+            try {
+              const publicar = httpsCallable(fns, 'publicarPosAula', { timeout: 300000 });
+              await publicar({ jobId: b.dataset.retryJob });
+            } catch (_) {}
+            await recarregarProcessosPosAula();
+          });
+        } catch (e) {
+          box.innerHTML = `<div style="color:crimson;">Erro ao carregar processos: ${esc(e.message)}</div>`;
+        }
+      };
+      btn?.addEventListener('click', recarregarProcessosPosAula);
+      setInterval(() => {
+        if (document.getElementById('tab-processos')?.classList.contains('active')) recarregarProcessosPosAula();
+      }, 10000);
+    })();
+
     // ── LOAD STUDENTS ───────────────────────────────────────────────────
     function studentRowHtml(s, archived) {
       const nm = esc(s.name || s.firstName || 'Aluno');
@@ -1650,6 +1726,7 @@
       const btnGerar    = document.getElementById('btn-gerar-posaula');
       const btnPublicar = document.getElementById('btn-publicar-posaula');
       const btnDescartar= document.getElementById('btn-descartar-posaula');
+      const btnEditar   = document.getElementById('btn-editar-posaula');
       if (!btnGerar) return;
 
       const msg      = document.getElementById('pa-msg');
@@ -1658,6 +1735,8 @@
       const abas     = document.getElementById('pa-abas');
       const tituloEl = document.getElementById('pa-preview-title');
       const inputData= document.getElementById('pa-date');
+      let indiceAtual = 0;
+      let editando = false;
 
       inputData.value = new Date().toISOString().slice(0, 10);
 
@@ -1668,10 +1747,32 @@
         iframe.srcdoc = '';
         abas.innerHTML = '';
         posaulaGerada = null;
+        editando = false;
+        btnEditar.textContent = '✏️ Editar texto';
+      };
+
+      const salvarEdicao = () => {
+        if (!editando || !posaulaGerada) return;
+        const docPreview = iframe.contentDocument;
+        if (!docPreview?.documentElement) return;
+        docPreview.designMode = 'off';
+        docPreview.body.style.removeProperty('outline');
+        docPreview.body.style.removeProperty('outline-offset');
+        docPreview.querySelectorAll('script').forEach(el => el.remove());
+        const atual = posaulaGerada.posaulas[indiceAtual];
+        atual.html = '<!DOCTYPE html>' + docPreview.documentElement.outerHTML;
+        const h1 = docPreview.querySelector('h1')?.textContent?.trim();
+        if (h1) atual.titulo = h1;
+        editando = false;
+        btnEditar.textContent = '✏️ Editar texto';
+        aviso('Alterações manuais salvas — sem novo custo de IA.', 'green');
+        iframe.srcdoc = sanitizeReaderHtml(posaulaGerada.posaulas[indiceAtual].html);
       };
 
       // Mostra a pós-aula de um aluno e destaca a aba dele.
       const mostrar = (i) => {
+        salvarEdicao();
+        indiceAtual = i;
         const p = posaulaGerada.posaulas[i];
         iframe.srcdoc = sanitizeReaderHtml(p.html);
         abas.querySelectorAll('button').forEach((b, j) => {
@@ -1680,6 +1781,19 @@
           b.style.color       = ativo ? '#fff' : 'var(--muted)';
           b.style.borderColor = ativo ? 'var(--green)' : 'var(--border)';
         });
+      };
+
+      btnEditar.onclick = () => {
+        if (!posaulaGerada) return;
+        if (editando) { salvarEdicao(); return; }
+        const docPreview = iframe.contentDocument;
+        if (!docPreview?.body) return aviso('A prévia ainda está carregando. Tente novamente.', 'crimson');
+        docPreview.designMode = 'on';
+        docPreview.body.style.outline = '3px dashed #16A34A';
+        docPreview.body.style.outlineOffset = '-4px';
+        editando = true;
+        btnEditar.textContent = '💾 Salvar alterações';
+        aviso('Modo de edição: clique nos textos e altere o que quiser. Isso não usa IA e não gera custo.', 'var(--muted)');
       };
 
       btnGerar.onclick = async () => {
@@ -1731,7 +1845,7 @@
 
           mostrar(0);
           wrap.style.display = 'block';
-          aviso(`Prévia pronta — custo US$ ${data.custoUSD}. Confira antes de publicar.`, 'green');
+          aviso(`Prévia pronta — custo técnico da geração: US$ ${data.custoUSD}. Editar manualmente é grátis; gerar novamente usa IA outra vez.`, 'green');
           wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         } catch (e) {
           aviso(e.code === 'functions/deadline-exceeded'
@@ -1746,16 +1860,21 @@
 
       btnPublicar.onclick = async () => {
         if (!posaulaGerada) return;
+        salvarEdicao();
         const n = posaulaGerada.posaulas.length;
         if (!confirm(`Publicar ${n} pós-aula${n !== 1 ? 's' : ''}?\n\nCada aluno recebe a dele e a notificação sai na hora.`)) return;
 
         btnPublicar.disabled = true;
         btnPublicar.textContent = 'Publicando...';
+        const jobId = doc(collection(db, '_posaulaJobs')).id;
         try {
           const publicar = httpsCallable(fns, 'publicarPosAula', { timeout: 300000 });
-          const { data } = await publicar(posaulaGerada);
+          const publicacao = publicar({ ...posaulaGerada, jobId });
+          document.querySelector('.tab[data-tab="processos"]')?.click();
+          const { data } = await publicacao;
 
           aviso(`✅ ${data.total} pós-aula(s) publicada(s) — ${data.notificados} aluno(s) notificado(s).`, 'green');
+          await recarregarProcessosPosAula();
 
           esconderPrevia();
           document.getElementById('pa-transcript').value = '';
