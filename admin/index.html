@@ -292,6 +292,28 @@
           </div>
         </div>
 
+        <div class="form-card" id="card-api-usage" style="display:none;margin-bottom:18px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+            <div>
+              <h2 style="margin-bottom:4px;">📊 Consumo real da IA</h2>
+              <p style="font-size:0.8rem;color:var(--muted);margin:0;">Custo técnico registrado pela API — não é o preço cobrado do professor.</p>
+            </div>
+            <button class="btn-add" id="btn-atualizar-usage" type="button" style="padding:8px 12px;font-size:0.82rem;">Atualizar</button>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;">
+            <div class="stat-card" style="flex:1;min-width:150px;">
+              <div class="val" id="usage-total-usd">—</div>
+              <div class="lbl">Custo acumulado (USD)</div>
+            </div>
+            <div class="stat-card" style="flex:1;min-width:150px;">
+              <div class="val" id="usage-total-geracoes">—</div>
+              <div class="lbl">Gerações registradas</div>
+            </div>
+          </div>
+          <div id="usage-por-tipo" style="font-size:0.85rem;color:var(--muted);margin-top:12px;line-height:1.7;"></div>
+          <div class="form-msg" id="usage-msg"></div>
+        </div>
+
         <div class="form-card" style="margin-bottom:18px;">
           <h2>💳 Comprar créditos</h2>
           <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;">
@@ -1293,6 +1315,7 @@
         document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
         if (tab.dataset.tab === 'publish') recarregarJobsBatch();
         if (tab.dataset.tab === 'avisos')  recarregarAvisos();
+        if (tab.dataset.tab === 'creditos') carregarConsumoApi();
       };
     });
 
@@ -1306,7 +1329,7 @@
     // Quem administra a escola vê a interface dela — inclusive o César, ao
     // trocar de escola no seletor do topo.
     const ABAS_POR_MODO = {
-      manual:    ['students', 'publish', 'correct', 'vocab', 'extras', 'avisos', 'add', 'exalunos'],
+      manual:    ['students', 'creditos', 'posaula', 'publish', 'correct', 'vocab', 'extras', 'avisos', 'add', 'exalunos'],
       assistido: ['students', 'creditos', 'posaula', 'publish', 'extras', 'avisos', 'add', 'exalunos'],
     };
 
@@ -1358,7 +1381,7 @@
         cabecalho.style.background = escola.theme.accentDark;
       }
 
-      if (assistido) atualizarPainelCreditos(escola);
+      atualizarPainelCreditos(escola);
     }
 
     // ── PAINEL DE CRÉDITOS ──────────────────────────────────────────────
@@ -1383,7 +1406,9 @@
       if (trial) {
         if (ilimitado) {
           const ate = plan.trialAte ? ` até ${plan.trialAte.split('-').reverse().join('/')}` : '';
-          trial.textContent = `🎁 Período de teste${ate}: créditos ilimitados. O consumo está sendo registrado.`;
+          trial.textContent = plan.trial
+            ? `🎁 Período de teste${ate}: créditos ilimitados. O consumo está sendo registrado.`
+            : 'Uso sem limite de créditos. O custo real da API continua sendo registrado abaixo.';
           trial.style.display = 'block';
         } else {
           trial.style.display = 'none';
@@ -1436,6 +1461,51 @@
         };
       }
     }
+
+    async function carregarConsumoApi() {
+      const card = document.getElementById('card-api-usage');
+      const ehAdmin = ADMIN_EMAILS.includes(auth.currentUser?.email || '');
+      if (!card || !ehAdmin) return;
+      card.style.display = '';
+
+      const msg = document.getElementById('usage-msg');
+      const btn = document.getElementById('btn-atualizar-usage');
+      msg.textContent = 'Carregando consumo...';
+      msg.style.color = 'var(--muted)';
+      if (btn) btn.disabled = true;
+
+      try {
+        const snap = await getDocs(collection(db, '_apiUsage'));
+        const registros = snap.docs.map(d => d.data()).filter(u =>
+          u.escolaId === escolaAtual || (escolaAtual === 'science-english' && !u.escolaId)
+        );
+        const total = registros.reduce((s, u) => s + (Number(u.custoUSD) || 0), 0);
+        const porTipo = registros.reduce((acc, u) => {
+          const tipo = u.tipo || 'outro';
+          const atual = acc[tipo] || { n: 0, usd: 0 };
+          atual.n += 1;
+          atual.usd += Number(u.custoUSD) || 0;
+          acc[tipo] = atual;
+          return acc;
+        }, {});
+
+        document.getElementById('usage-total-usd').textContent = `US$ ${total.toFixed(4)}`;
+        document.getElementById('usage-total-geracoes').textContent = String(registros.length);
+        document.getElementById('usage-por-tipo').innerHTML = Object.entries(porTipo)
+          .sort((a, b) => b[1].usd - a[1].usd)
+          .map(([tipo, v]) => `<div><strong>${esc(tipo)}:</strong> ${v.n} registro(s) · US$ ${v.usd.toFixed(4)}</div>`)
+          .join('') || 'Nenhum consumo registrado para esta escola.';
+        msg.textContent = 'Valores atualizados.';
+        msg.style.color = 'green';
+      } catch (e) {
+        msg.textContent = `Não foi possível carregar o consumo: ${e.message}`;
+        msg.style.color = 'crimson';
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    document.getElementById('btn-atualizar-usage')?.addEventListener('click', carregarConsumoApi);
 
     // ── LOAD STUDENTS ───────────────────────────────────────────────────
     function studentRowHtml(s, archived) {

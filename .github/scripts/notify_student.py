@@ -158,11 +158,14 @@ def main():
             }
         },
     )
+    if not resp.ok:
+        print(f"Firestore query error: {resp.status_code} {resp.text}")
+        sys.exit(1)
     results = resp.json()
 
     if not results or "document" not in results[0]:
         print(f"Student with slug '{slug}' not found — skipping.")
-        sys.exit(0)
+        sys.exit(1)
 
     student_doc = results[0]["document"]
     uid = student_doc["name"].split("/")[-1]
@@ -194,11 +197,19 @@ def main():
     # data que está no nome do arquivo — a data real da aula.
     created_at = (class_date or now).strftime("%Y-%m-%dT%H:%M:%SZ")
 
+    try:
+        with open(filename, "r", encoding="utf-8") as post_file:
+            post_html = post_file.read()
+    except OSError as exc:
+        print(f"Cannot read post HTML: {exc}")
+        sys.exit(1)
+
     fields = {
         "filename": {"stringValue": filename},
         "url": {"stringValue": posaula_url},
         "appUrl": {"stringValue": app_url},
         "title": {"stringValue": f"Pós-aula {date_str}"},
+        "html": {"stringValue": post_html},
         "createdAt": {"timestampValue": created_at},
         "publishedAt": {"timestampValue": now.strftime("%Y-%m-%dT%H:%M:%SZ")},
         "readAt": {"nullValue": None},

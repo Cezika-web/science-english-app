@@ -44,18 +44,19 @@ jobs:
           else
             BASE_SHA="${{ github.event.before }}"
             if [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
-              NEW_FILES=$(git diff-tree --no-commit-id --name-only --diff-filter=A -r "$GITHUB_SHA" | grep '^pos-aula-.*\.html$' || true)
+              NEW_FILES=$(git diff-tree --no-commit-id --name-only --diff-filter=ACMR -r "$GITHUB_SHA" | grep '^pos-aula-.*\.html$' || true)
             else
-              NEW_FILES=$(git diff --name-only --diff-filter=A "$BASE_SHA" "$GITHUB_SHA" | grep '^pos-aula-.*\.html$' || true)
+              NEW_FILES=$(git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$GITHUB_SHA" | grep '^pos-aula-.*\.html$' || true)
             fi
           fi
 
           if [ -z "$NEW_FILES" ]; then
             echo "No new pós-aula files in this push."
-            exit 0
+            exit 1
           fi
 
-          for FILE in $NEW_FILES; do
+          while IFS= read -r FILE; do
+            [ -z "$FILE" ] && continue
             echo "── Processing: $FILE ──"
             python .github/scripts/notify_student.py "$FILE"
-          done
+          done <<< "$NEW_FILES"
