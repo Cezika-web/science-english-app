@@ -387,6 +387,15 @@
             <textarea id="pa-transcript" style="min-height:220px;" placeholder="Cole aqui a transcrição completa da aula..."></textarea>
           </div>
 
+          <div class="field">
+            <label>Observações para esta aula <span style="font-weight:400;color:var(--muted);">(opcional)</span></label>
+            <textarea id="pa-observacoes" style="min-height:100px;" placeholder="Ex.: dê mais atenção ao present perfect, inclua a viagem que o aluno comentou, não coloque homework..."></textarea>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:7px;flex-wrap:wrap;">
+              <button class="btn-add" id="btn-mic-observacoes" type="button" style="padding:8px 12px;background:#fff;color:var(--brand);border:1px solid var(--brand);">🎙️ Ditar observações</button>
+              <span style="font-size:0.78rem;color:var(--muted);">O ditado do navegador não consome seus créditos de IA.</span>
+            </div>
+          </div>
+
           <button class="btn-add" id="btn-gerar-posaula" type="button" style="width:100%;">✨ Gerar pós-aula</button>
           <div class="form-msg" id="pa-msg"></div>
 
@@ -401,6 +410,16 @@
               <button class="btn-add" id="btn-editar-posaula" type="button" style="flex:0 0 auto;background:#fff;color:var(--brand);border:1px solid var(--brand);">✏️ Editar texto</button>
               <button class="btn-add" id="btn-publicar-posaula" type="button" style="flex:1;min-width:200px;">🚀 Publicar para o aluno</button>
               <button class="btn-add" id="btn-descartar-posaula" type="button" style="flex:0 0 auto;background:#e5e7eb;color:#374151;">Descartar</button>
+            </div>
+            <div id="pa-revisao-wrap" style="margin-top:14px;padding:14px;border:1px solid var(--border);border-radius:12px;background:#f8fafc;">
+              <div style="font-weight:700;margin-bottom:5px;">✨ Revisão com IA — uma vez</div>
+              <p style="font-size:0.8rem;color:var(--muted);margin-bottom:10px;">Descreva a mudança. A tentativa só é consumida quando a revisão termina com sucesso.</p>
+              <textarea id="pa-revisao" style="width:100%;min-height:86px;padding:10px;border:1.5px solid var(--border);border-radius:9px;font-family:inherit;" placeholder="Ex.: desenvolva melhor a explicação sobre viagens e troque o homework..."></textarea>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:9px;">
+                <button class="btn-add" id="btn-mic-revisao" type="button" style="padding:8px 12px;background:#fff;color:var(--brand);border:1px solid var(--brand);">🎙️ Ditar</button>
+                <button class="btn-add" id="btn-revisar-posaula" type="button" style="flex:1;min-width:180px;">Revisar pós-aula</button>
+              </div>
+              <div class="form-msg" id="pa-revisao-msg"></div>
             </div>
           </div>
         </div>
@@ -1720,6 +1739,32 @@
     }
 
     // ── GERAR PÓS-AULA ──────────────────────────────────────────────────
+    function ligarDitado(btn, campo) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        btn.disabled = true;
+        btn.title = 'Ditado não disponível neste navegador';
+        btn.textContent = '🎙️ Ditado indisponível';
+        return;
+      }
+      let recognition = null;
+      btn.onclick = () => {
+        if (recognition) { recognition.stop(); return; }
+        recognition = new SpeechRecognition();
+        recognition.lang = 'pt-BR';
+        recognition.continuous = true;
+        recognition.interimResults = false;
+        recognition.onresult = e => {
+          const texto = [...e.results].slice(e.resultIndex).map(r => r[0].transcript).join(' ').trim();
+          if (texto) campo.value = `${campo.value.trim()}${campo.value.trim() ? ' ' : ''}${texto}`;
+        };
+        recognition.onerror = () => { btn.textContent = '🎙️ Ditar'; recognition = null; };
+        recognition.onend = () => { btn.textContent = '🎙️ Ditar'; recognition = null; };
+        btn.textContent = '⏹️ Parar ditado';
+        recognition.start();
+      };
+    }
+
     let posaulaGerada = null;  // { html, titulo, data, uid }
 
     (function iniciarPosAula() {
@@ -1727,6 +1772,7 @@
       const btnPublicar = document.getElementById('btn-publicar-posaula');
       const btnDescartar= document.getElementById('btn-descartar-posaula');
       const btnEditar   = document.getElementById('btn-editar-posaula');
+      const btnRevisar  = document.getElementById('btn-revisar-posaula');
       if (!btnGerar) return;
 
       const msg      = document.getElementById('pa-msg');
@@ -1735,10 +1781,16 @@
       const abas     = document.getElementById('pa-abas');
       const tituloEl = document.getElementById('pa-preview-title');
       const inputData= document.getElementById('pa-date');
+      const observacoes = document.getElementById('pa-observacoes');
+      const revisaoInput = document.getElementById('pa-revisao');
+      const revisaoMsg = document.getElementById('pa-revisao-msg');
+      const revisaoWrap = document.getElementById('pa-revisao-wrap');
       let indiceAtual = 0;
       let editando = false;
 
       inputData.value = new Date().toISOString().slice(0, 10);
+      ligarDitado(document.getElementById('btn-mic-observacoes'), observacoes);
+      ligarDitado(document.getElementById('btn-mic-revisao'), revisaoInput);
 
       const aviso = (texto, cor) => { msg.textContent = texto; msg.style.color = cor; };
 
@@ -1749,6 +1801,11 @@
         posaulaGerada = null;
         editando = false;
         btnEditar.textContent = '✏️ Editar texto';
+        revisaoInput.value = '';
+        revisaoMsg.textContent = '';
+        btnRevisar.disabled = false;
+        btnRevisar.textContent = 'Revisar pós-aula';
+        revisaoWrap.style.opacity = '1';
       };
 
       const salvarEdicao = () => {
@@ -1800,6 +1857,7 @@
         const uids = [...document.querySelectorAll('#pa-alunos input:checked')].map(c => c.value);
         const transcricao = document.getElementById('pa-transcript').value.trim();
         const youtubeUrl  = document.getElementById('pa-youtube').value.trim();
+        const observacoesTexto = observacoes.value.trim();
 
         if (!uids.length) return aviso('Marque ao menos um aluno.', 'crimson');
         if (transcricao.length < 200) return aviso('A transcrição está muito curta.', 'crimson');
@@ -1827,9 +1885,9 @@
 
         try {
           const gerar = httpsCallable(fns, 'gerarPosAula', { timeout: 3600000 });
-          const { data } = await gerar({ uids, transcricao, youtubeUrl, data: dataAula });
+          const { data } = await gerar({ uids, transcricao, youtubeUrl, data: dataAula, observacoes: observacoesTexto });
 
-          posaulaGerada = { posaulas: data.posaulas, data: data.data };
+          posaulaGerada = { posaulas: data.posaulas, data: data.data, draftId: data.draftId, revisaoUsada: false };
 
           tituloEl.textContent = data.posaulas.length > 1
             ? `${data.posaulas.length} pós-aulas — aula em grupo`
@@ -1858,6 +1916,38 @@
         }
       };
 
+      btnRevisar.onclick = async () => {
+        if (!posaulaGerada || posaulaGerada.revisaoUsada) return;
+        salvarEdicao();
+        const instrucao = revisaoInput.value.trim();
+        if (instrucao.length < 10) {
+          revisaoMsg.textContent = 'Explique com um pouco mais de detalhe o que deve mudar.';
+          revisaoMsg.style.color = 'crimson';
+          return;
+        }
+        if (!confirm('Usar a única revisão com IA deste rascunho? Se houver erro técnico, a tentativa será devolvida.')) return;
+        btnRevisar.disabled = true;
+        btnRevisar.textContent = 'Revisando...';
+        revisaoMsg.textContent = 'Lendo sua orientação e adaptando a prévia...';
+        revisaoMsg.style.color = 'var(--muted)';
+        try {
+          const revisar = httpsCallable(fns, 'revisarPosAula', { timeout: 900000 });
+          const { data } = await revisar({ draftId: posaulaGerada.draftId, posaulas: posaulaGerada.posaulas, instrucao });
+          posaulaGerada.posaulas = data.posaulas;
+          posaulaGerada.revisaoUsada = true;
+          mostrar(indiceAtual);
+          revisaoMsg.textContent = `✅ Revisão concluída — custo técnico adicional: US$ ${data.custoUSD}.`;
+          revisaoMsg.style.color = 'green';
+          btnRevisar.textContent = '✓ Revisão utilizada';
+          revisaoWrap.style.opacity = '0.72';
+        } catch (e) {
+          revisaoMsg.textContent = `Erro: ${e.message}. A tentativa não foi consumida; você pode tentar novamente.`;
+          revisaoMsg.style.color = 'crimson';
+          btnRevisar.disabled = false;
+          btnRevisar.textContent = 'Tentar revisão novamente';
+        }
+      };
+
       btnPublicar.onclick = async () => {
         if (!posaulaGerada) return;
         salvarEdicao();
@@ -1879,6 +1969,7 @@
           esconderPrevia();
           document.getElementById('pa-transcript').value = '';
           document.getElementById('pa-youtube').value = '';
+          observacoes.value = '';
         } catch (e) {
           aviso(`Erro ao publicar: ${e.message}`, 'crimson');
         } finally {

@@ -627,7 +627,7 @@ export const gerarPosAula = onCall(
     const email = request.auth?.token?.email;
     if (!email) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
 
-    const { uids = [], transcricao, youtubeUrl = '', data } = request.data || {};
+    const { uids = [], transcricao, youtubeUrl = '', data, observacoes = '' } = request.data || {};
     const alunosIds = Array.isArray(uids) ? uids.filter(Boolean).slice(0, 12) : [];
 
     if (!alunosIds.length) throw new HttpsError('invalid-argument', 'Escolha ao menos um aluno.');
@@ -652,6 +652,8 @@ export const gerarPosAula = onCall(
     const resultados = [];
     let custoTotal = 0;
     const lote = db.batch();
+    const draftRef = db.collection('_posaulaDrafts').doc();
+    const orientacoesProfessor = String(observacoes || '').trim().slice(0, 4000);
 
     // Uma pós-aula por aluno: mesmo conteúdo de aula, mas as correções, o
     // tempo de fala e os exemplos são os daquele aluno.
@@ -687,6 +689,10 @@ export const gerarPosAula = onCall(
                 `Aluno: ${aluno.name || ''} (nível ${aluno.level || 'não informado'})\n` +
                 `Data da aula: ${dataAula}\n\n` +
                 contextoGrupo +
+                (orientacoesProfessor
+                  ? `OBSERVAÇÕES DO PROFESSOR PARA ESTA PÓS-AULA:\n${orientacoesProfessor}\n` +
+                    `Trate estas observações como contexto autorizado pelo professor e dê prioridade a elas.\n\n`
+                  : '') +
                 `TEMPLATE A PREENCHER (devolva este HTML com o conteúdo real no lugar dos marcadores):\n\n` +
                 template +
                 `\n\n─────────────\nTRANSCRIÇÃO DA AULA:\n\n${transcricao}`,
@@ -735,6 +741,15 @@ export const gerarPosAula = onCall(
       resultados.push({ uid, nome: aluno.name || '', html, titulo, talkTime: extrairTalkTime(html) });
     }
 
+    lote.set(draftRef, {
+      escolaId: turma[0].escola.id,
+      porEmail: email,
+      uids: resultados.map(r => r.uid),
+      revisaoUsada: false,
+      statusRevisao: 'disponivel',
+      criadoEm: FieldValue.serverTimestamp(),
+    });
+
     await lote.commit();
 
     return {
@@ -742,8 +757,76 @@ export const gerarPosAula = onCall(
       emGrupo,
       data: dataAula,
       posaulas: resultados,
+      draftId: draftRef.id,
       custoUSD: Number(custoTotal.toFixed(4)),
     };
+  }
+);
+
+/** Uma única revisão por rascunho. Falha técnica devolve a tentativa. */
+export const revisarPosAula = onCall(
+  { ...OPCOES_PADRAO, secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 900, memory: '512MiB' },
+  async (request) => {
+    const email = request.auth?.token?.email;
+    if (!email) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
+    const draftId = String(request.data?.draftId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 100);
+    const instrucao = String(request.data?.instrucao || '').trim().slice(0, 4000);
+    const posaulas = Array.isArray(request.data?.posaulas) ? request.data.posaulas.filter(p => p?.uid && p?.html) : [];
+    if (!draftId || !instrucao || !posaulas.length) throw new HttpsError('invalid-argument', 'Informe a alteração desejada.');
+
+    const draftRef = db.doc(`_posaulaDrafts/${draftId}`);
+    await db.runTransaction(async tx => {
+      const snap = await tx.get(draftRef);
+      if (!snap.exists) throw new HttpsError('not-found', 'Rascunho não encontrado. Gere uma nova prévia.');
+      const draft = snap.data();
+      if (draft.porEmail !== email && !ADMIN_EMAILS.includes(email)) throw new HttpsError('permission-denied', 'Este rascunho pertence a outro professor.');
+      if (draft.revisaoUsada) throw new HttpsError('failed-precondition', 'A revisão com IA deste rascunho já foi utilizada.');
+      const inicio = draft.revisaoIniciadaEm?.toMillis?.() || 0;
+      if (draft.statusRevisao === 'revisando' && Date.now() - inicio < 20 * 60 * 1000) {
+        throw new HttpsError('already-exists', 'A revisão já está em andamento.');
+      }
+      const permitidos = new Set(draft.uids || []);
+      if (posaulas.some(p => !permitidos.has(p.uid))) throw new HttpsError('permission-denied', 'Aluno inválido neste rascunho.');
+      tx.update(draftRef, { statusRevisao: 'revisando', revisaoIniciadaEm: FieldValue.serverTimestamp() });
+    });
+
+    try {
+      const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
+      const revisadas = [];
+      const lote = db.batch();
+      let custoTotal = 0;
+      for (const p of posaulas) {
+        const { escola } = await carregarAlunoEEscola(email, p.uid);
+        const resposta = await client.messages.create({
+          model: MODEL,
+          max_tokens: 32000,
+          system: 'Você revisa um HTML de pós-aula. Preserve integralmente o CSS, a estrutura, botões, atributos e scripts. Faça somente as alterações solicitadas pelo professor. Devolva apenas o HTML completo começando em <!DOCTYPE html>.',
+          messages: [{ role: 'user', content: `ALTERAÇÃO SOLICITADA:\n${instrucao}\n\nHTML ATUAL:\n${p.html}` }],
+        });
+        if (resposta.stop_reason === 'max_tokens') throw new Error('A revisão ficou longa demais e foi cortada.');
+        const bloco = resposta.content.find(b => b.type === 'text');
+        let html = bloco?.text?.trim() || '';
+        const cercado = html.match(/^```(?:html)?\s*\n([\s\S]*?)\n```$/);
+        if (cercado) html = cercado[1].trim();
+        if (!html.toLowerCase().startsWith('<!doctype html')) throw new Error(`A revisão de ${p.nome || 'um aluno'} veio em formato inválido.`);
+        if (html.replace(/\s+/g, ' ') === String(p.html).trim().replace(/\s+/g, ' ')) {
+          throw new Error(`A revisão de ${p.nome || 'um aluno'} não aplicou nenhuma alteração.`);
+        }
+        const tituloMatch = html.match(/<h1>([\s\S]*?)<\/h1>/i);
+        revisadas.push({ ...p, html, titulo: tituloMatch ? tituloMatch[1].replace(/<[^>]*>/g, '').trim() : p.titulo, talkTime: extrairTalkTime(html) });
+        custoTotal += registrarUso(lote, {
+          tipo: 'revisao_posaula', uid: p.uid, escolaId: escola.id, uso: resposta.usage,
+          extra: { draftId, alunoNome: p.nome || '' },
+        });
+      }
+      lote.update(draftRef, { revisaoUsada: true, statusRevisao: 'concluida', revisadoEm: FieldValue.serverTimestamp() });
+      await lote.commit();
+      return { ok: true, posaulas: revisadas, custoUSD: Number(custoTotal.toFixed(4)) };
+    } catch (erro) {
+      await draftRef.set({ statusRevisao: 'disponivel', erroRevisao: erro.message || String(erro) }, { merge: true }).catch(() => {});
+      if (erro instanceof HttpsError) throw erro;
+      throw new HttpsError('internal', `Não consegui revisar: ${erro.message}`);
+    }
   }
 );
 
