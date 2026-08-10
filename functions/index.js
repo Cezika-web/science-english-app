@@ -757,7 +757,16 @@ export const publicarPosAula = onCall(
     const email = request.auth?.token?.email;
     if (!email) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
 
-    const { posaulas = [], data } = request.data || {};
+    const requestedJobId = String(request.data?.jobId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 100);
+    const jobRef = requestedJobId ? db.doc(`_posaulaJobs/${requestedJobId}`) : db.collection('_posaulaJobs').doc();
+    const existingJobSnap = await jobRef.get();
+    const existingJob = existingJobSnap.exists ? existingJobSnap.data() : null;
+    if (existingJob && existingJob.porEmail !== email && !ADMIN_EMAILS.includes(email)) {
+      throw new HttpsError('permission-denied', 'Este processo pertence a outro professor.');
+    }
+    if (existingJob?.status === 'concluido') return { ok: true, jobId: jobRef.id, ...existingJob.resultado };
+
+    const { posaulas = [], data } = existingJob || request.data || {};
     const lista = Array.isArray(posaulas) ? posaulas.filter((p) => p?.uid && p?.html) : [];
     if (!lista.length) throw new HttpsError('invalid-argument', 'Faltou o conteúdo para publicar.');
 
@@ -769,11 +778,22 @@ export const publicarPosAula = onCall(
 
     // Todas as pós-aulas de uma turma são da mesma escola.
     const { escola } = await carregarAlunoEEscola(email, lista[0].uid);
+    if (!existingJob) {
+      await jobRef.set({
+        escolaId: escola.id, porEmail: email, posaulas: lista, data,
+        alunos: lista.map(p => ({ uid: p.uid, nome: p.nome || '' })),
+        status: 'processando', etapa: 'analisando', salvo: false,
+        notificadosUids: [], criadoEm: FieldValue.serverTimestamp(), atualizadoEm: FieldValue.serverTimestamp(),
+      });
+    } else {
+      await jobRef.set({ status: 'processando', etapa: existingJob.salvo ? 'notificando' : 'analisando', erro: FieldValue.delete(), atualizadoEm: FieldValue.serverTimestamp() }, { merge: true });
+    }
 
     // 1 crédito de pós-aula por aluno — numa turma de 3, são 3.
     const creditos = escola.plan?.creditosPosaula;
     const controlaCredito = typeof creditos === 'number';
-    if (controlaCredito && creditos < lista.length) {
+    if (!existingJob?.salvo && controlaCredito && creditos < lista.length) {
+      await jobRef.set({ status: 'erro', etapa: 'erro', erro: 'Créditos insuficientes para publicar.', atualizadoEm: FieldValue.serverTimestamp() }, { merge: true });
       throw new HttpsError(
         'failed-precondition',
         `Você tem ${creditos} crédito(s) de pós-aula e esta publicação precisa de ${lista.length}. Compre mais créditos para continuar.`
@@ -781,13 +801,17 @@ export const publicarPosAula = onCall(
     }
 
     const lote = db.batch();
-    const publicadas = [];
+    let publicadas = existingJob?.publicadas || [];
     const dataAula = dataDaAulaEmDate(data);
 
-    for (const { uid, html, titulo, nome, talkTime } of lista) {
+    if (!existingJob?.salvo) {
+      await jobRef.set({ etapa: 'salvando', 'etapas.analisado': true, atualizadoEm: FieldValue.serverTimestamp() }, { merge: true });
+    }
+
+    if (!existingJob?.salvo) for (const { uid, html, titulo, nome, talkTime } of lista) {
       const { aluno } = await carregarAlunoEEscola(email, uid);
 
-      const ref = db.collection(`students/${uid}/posaulas`).doc();
+      const ref = db.doc(`students/${uid}/posaulas/${jobRef.id}-${uid}`);
       lote.set(ref, {
         title: titulo || `Pós-aula ${data || ''}`.trim(),
         html,
@@ -796,11 +820,12 @@ export const publicarPosAula = onCall(
         publishedAt: FieldValue.serverTimestamp(),
         readAt: null,
         geradaPorIA: true,
+        publicationJobId: jobRef.id,
         ...(talkTime || extrairTalkTime(html) ? { talkTime: talkTime || extrairTalkTime(html) } : {}),
         ...(lista.length > 1 && { aulaEmGrupo: true }),
       });
 
-      lote.set(db.collection('_creditos').doc(), {
+      lote.set(db.doc(`_creditos/${jobRef.id}-${uid}`), {
         escolaId: escola.id,
         tipo: 'posaula',
         quantidade: 1,
@@ -813,18 +838,28 @@ export const publicarPosAula = onCall(
       publicadas.push({ uid, nome: nome || aluno.name || '', posaulaId: ref.id, fcmToken: aluno.fcmToken || null });
     }
 
-    if (controlaCredito) {
+    if (!existingJob?.salvo && controlaCredito) {
       lote.update(db.doc(`schools/${escola.id}`), {
         'plan.creditosPosaula': FieldValue.increment(-lista.length),
       });
     }
 
-    await lote.commit();
+    if (!existingJob?.salvo) {
+      lote.set(jobRef, {
+        status: 'processando', etapa: 'notificando', salvo: true, publicadas,
+        creditosRestantes: controlaCredito ? creditos - lista.length : null,
+        'etapas.analisado': true, 'etapas.salvo': true, atualizadoEm: FieldValue.serverTimestamp(),
+      }, { merge: true });
+      await lote.commit();
+    }
 
     // Notifica depois de gravar: falha no push não desfaz a publicação.
-    let notificados = 0;
+    const notificadosUids = new Set(existingJob?.notificadosUids || []);
+    const semTokenUids = new Set(existingJob?.semTokenUids || []);
+    const falhasPush = [];
     for (const p of publicadas) {
-      if (!p.fcmToken) continue;
+      if (notificadosUids.has(p.uid) || semTokenUids.has(p.uid)) continue;
+      if (!p.fcmToken) { semTokenUids.add(p.uid); continue; }
       try {
         await getMessaging().send({
           token: p.fcmToken,
@@ -836,19 +871,40 @@ export const publicarPosAula = onCall(
             fcmOptions: { link: 'https://cezika-web.github.io/science-english-app/' },
           },
         });
-        notificados++;
+        notificadosUids.add(p.uid);
+        await jobRef.set({ notificadosUids: [...notificadosUids], atualizadoEm: FieldValue.serverTimestamp() }, { merge: true });
       } catch (erro) {
         console.error('Push falhou para', p.uid, erro.message);
+        falhasPush.push(`${p.nome || p.uid}: ${erro.message}`);
       }
       delete p.fcmToken;
     }
 
+    if (falhasPush.length) {
+      const erro = `Pós-aula salva, mas a notificação falhou. ${falhasPush.join(' | ')}`;
+      await jobRef.set({ status: 'erro', etapa: 'erro', erro, semTokenUids: [...semTokenUids], atualizadoEm: FieldValue.serverTimestamp() }, { merge: true });
+      throw new HttpsError('internal', erro);
+    }
+
+    const resultado = {
+      publicadas: publicadas.map(({ fcmToken, ...p }) => p),
+      total: publicadas.length,
+      notificados: notificadosUids.size,
+      semToken: semTokenUids.size,
+      creditosRestantes: existingJob?.salvo
+        ? (existingJob.creditosRestantes ?? null)
+        : (controlaCredito ? creditos - lista.length : null),
+    };
+    await jobRef.set({
+      status: 'concluido', etapa: 'concluido', resultado, publicadas: resultado.publicadas,
+      semTokenUids: [...semTokenUids], 'etapas.notificado': semTokenUids.size === 0,
+      concluidoEm: FieldValue.serverTimestamp(), atualizadoEm: FieldValue.serverTimestamp(),
+    }, { merge: true });
+
     return {
       ok: true,
-      publicadas,
-      total: publicadas.length,
-      notificados,
-      creditosRestantes: controlaCredito ? creditos - lista.length : null,
+      jobId: jobRef.id,
+      ...resultado,
     };
   }
 );
