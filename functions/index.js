@@ -831,6 +831,161 @@ export const revisarPosAula = onCall(
 );
 
 /**
+ * Envia a geração para a Batch API e devolve imediatamente. O crédito comercial
+ * do professor continua sendo descontado somente na publicação, nunca aqui.
+ */
+export const enfileirarPosAula = onCall(
+  { ...OPCOES_PADRAO, secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 120, memory: '512MiB' },
+  async (request) => {
+    const email = request.auth?.token?.email;
+    if (!email) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
+
+    const { uids = [], transcricao, youtubeUrl = '', data, observacoes = '' } = request.data || {};
+    const alunosIds = Array.isArray(uids) ? uids.filter(Boolean).slice(0, 12) : [];
+    if (!alunosIds.length) throw new HttpsError('invalid-argument', 'Escolha ao menos um aluno.');
+    if (!transcricao || transcricao.trim().length < 200) {
+      throw new HttpsError('invalid-argument', 'A transcrição está muito curta para gerar uma pós-aula.');
+    }
+
+    const dataAula = data || new Date().toLocaleDateString('pt-BR');
+    const emGrupo = alunosIds.length > 1;
+    const turma = [];
+    for (const uid of alunosIds) {
+      const { aluno, escola } = await carregarAlunoEEscola(email, uid);
+      turma.push({ uid, aluno, escola });
+    }
+
+    const nomes = turma.map((t) => t.aluno.name || '').filter(Boolean);
+    const orientacoesProfessor = String(observacoes || '').trim().slice(0, 4000);
+    const requests = turma.map(({ uid, aluno, escola }) => {
+      const template = montarTemplate({ escola, aluno, data: dataAula, youtubeUrl: youtubeUrl.trim() });
+      const contextoGrupo = emGrupo
+        ? `Esta foi uma AULA EM GRUPO, com: ${nomes.join(', ')}.\n` +
+          `Você está escrevendo a pós-aula de ${aluno.name}, e só dele.\n` +
+          `- O conteúdo ensinado é comum a todos e vale para ele também.\n` +
+          `- Mas as CORREÇÕES devem ser apenas dos erros que ${aluno.name} cometeu. Nunca mostre a ele o erro de um colega.\n` +
+          `- As FRASES MODELO devem priorizar o que ${aluno.name} disse ou tentou dizer.\n` +
+          `- No TEMPO DE FALA, compare o professor com ${aluno.name} apenas.\n` +
+          `- Se ${aluno.name} falou pouco, escreva uma pós-aula mais curta e honesta.\n\n`
+        : '';
+      return {
+        custom_id: uid,
+        params: {
+          model: MODEL,
+          max_tokens: 32000,
+          system: [{ type: 'text', text: REGRAS_POS_AULA, cache_control: { type: 'ephemeral' } }],
+          messages: [{
+            role: 'user',
+            content:
+              `Aluno: ${aluno.name || ''} (nível ${aluno.level || 'não informado'})\n` +
+              `Data da aula: ${dataAula}\n\n` + contextoGrupo +
+              (orientacoesProfessor
+                ? `OBSERVAÇÕES DO PROFESSOR PARA ESTA PÓS-AULA:\n${orientacoesProfessor}\n` +
+                  `Trate estas observações como contexto autorizado pelo professor e dê prioridade a elas.\n\n`
+                : '') +
+              `TEMPLATE A PREENCHER (devolva este HTML com o conteúdo real no lugar dos marcadores):\n\n${template}` +
+              `\n\n─────────────\nTRANSCRIÇÃO DA AULA:\n\n${transcricao}`,
+          }],
+        },
+      };
+    });
+
+    const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
+    let batch;
+    try {
+      batch = await client.messages.batches.create({ requests });
+    } catch (erro) {
+      console.error('Falha ao enfileirar pós-aula:', erro);
+      throw new HttpsError('internal', `Não consegui enviar a pós-aula para Processos: ${erro.message}`);
+    }
+
+    await db.doc(`_posaulaJobs/${batch.id}`).set({
+      tipo: 'geracao',
+      batchId: batch.id,
+      escolaId: turma[0].escola.id,
+      porEmail: email,
+      data: dataAula,
+      emGrupo,
+      alunos: turma.map(({ uid, aluno }) => ({ uid, nome: aluno.name || '' })),
+      status: 'gerando',
+      etapa: 'gerando',
+      prontoVisto: false,
+      creditoProfessorDebitado: false,
+      criadoEm: FieldValue.serverTimestamp(),
+      atualizadoEm: FieldValue.serverTimestamp(),
+    });
+
+    return { ok: true, jobId: batch.id, alunos: turma.length, status: 'gerando' };
+  }
+);
+
+/** Cancela uma geração. Como a cobrança comercial só ocorre ao publicar, não usa crédito do professor. */
+export const cancelarProcessoPosAula = onCall(
+  { ...OPCOES_PADRAO, secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 90, memory: '256MiB' },
+  async (request) => {
+    const email = request.auth?.token?.email;
+    if (!email) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
+    const jobId = String(request.data?.jobId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 100);
+    if (!jobId) throw new HttpsError('invalid-argument', 'Processo inválido.');
+    const ref = db.doc(`_posaulaJobs/${jobId}`);
+    const snap = await ref.get();
+    if (!snap.exists) throw new HttpsError('not-found', 'Processo não encontrado.');
+    const job = snap.data();
+    if (job.porEmail !== email && !ADMIN_EMAILS.includes(email)) throw new HttpsError('permission-denied', 'Este processo pertence a outro professor.');
+    if (job.tipo !== 'geracao') throw new HttpsError('failed-precondition', 'Somente uma geração pendente pode ser cancelada.');
+    if (job.status === 'publicado') throw new HttpsError('failed-precondition', 'Esta pós-aula já foi publicada.');
+
+    if (job.batchId && ['gerando', 'cancelando'].includes(job.status)) {
+      const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
+      try { await client.messages.batches.cancel(job.batchId); }
+      catch (erro) { console.warn('O batch pode já ter terminado ao cancelar', job.batchId, erro.message); }
+    }
+
+    await ref.set({
+      status: 'cancelado', etapa: 'cancelado', creditoProfessorDebitado: false,
+      posaulas: FieldValue.delete(), canceladoEm: FieldValue.serverTimestamp(), atualizadoEm: FieldValue.serverTimestamp(),
+    }, { merge: true });
+    return { ok: true, creditoProfessorDebitado: false };
+  }
+);
+
+/** Limpa uma pasta da tela de Processos sem apagar pós-aulas já entregues aos alunos. */
+export const limparProcessosPosAula = onCall(
+  { ...OPCOES_PADRAO, secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 180, memory: '256MiB' },
+  async (request) => {
+    const email = request.auth?.token?.email;
+    if (!email) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
+    const escolaId = String(request.data?.escolaId || '').slice(0, 100);
+    const pasta = request.data?.pasta === 'enviados' ? 'enviados' : 'andamento';
+    if (!escolaId) throw new HttpsError('invalid-argument', 'Faltou a escola.');
+    const escola = await db.doc(`schools/${escolaId}`).get();
+    if (!escola.exists) throw new HttpsError('not-found', 'Escola não encontrada.');
+    const dataEscola = escola.data();
+    const permitido = ADMIN_EMAILS.includes(email) || dataEscola.ownerEmail === email;
+    if (!permitido) throw new HttpsError('permission-denied', 'Você não administra esta escola.');
+
+    const snap = await db.collection('_posaulaJobs').where('escolaId', '==', escolaId).limit(200).get();
+    const selecionados = snap.docs.filter((doc) => {
+      const job = doc.data();
+      const geracao = job.tipo === 'geracao';
+      return pasta === 'enviados' ? (!geracao || job.status === 'publicado') : geracao && job.status !== 'publicado';
+    });
+    const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
+    const lote = db.batch();
+    for (const doc of selecionados) {
+      const job = doc.data();
+      if (pasta === 'andamento' && job.batchId && ['gerando', 'cancelando'].includes(job.status)) {
+        try { await client.messages.batches.cancel(job.batchId); } catch (_) {}
+      }
+      if (job.draftId) lote.delete(db.doc(`_posaulaDrafts/${job.draftId}`));
+      lote.delete(doc.ref);
+    }
+    await lote.commit();
+    return { ok: true, excluidos: selecionados.length };
+  }
+);
+
+/**
  * Publica a pós-aula já conferida: grava no Firestore e avisa o aluno.
  * Recebe o HTML da prévia — não gera de novo, então não gasta tokens.
  */
@@ -844,6 +999,8 @@ export const publicarPosAula = onCall(
     const jobRef = requestedJobId ? db.doc(`_posaulaJobs/${requestedJobId}`) : db.collection('_posaulaJobs').doc();
     const existingJobSnap = await jobRef.get();
     const existingJob = existingJobSnap.exists ? existingJobSnap.data() : null;
+    const origemGeracaoId = String(existingJob?.origemGeracaoId || request.data?.origemGeracaoId || '')
+      .replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 100);
     if (existingJob && existingJob.porEmail !== email && !ADMIN_EMAILS.includes(email)) {
       throw new HttpsError('permission-denied', 'Este processo pertence a outro professor.');
     }
@@ -864,6 +1021,7 @@ export const publicarPosAula = onCall(
     if (!existingJob) {
       await jobRef.set({
         escolaId: escola.id, porEmail: email, posaulas: lista, data,
+        tipo: 'publicacao', ...(origemGeracaoId && { origemGeracaoId }),
         alunos: lista.map(p => ({ uid: p.uid, nome: p.nome || '' })),
         status: 'processando', etapa: 'analisando', salvo: false,
         notificadosUids: [], criadoEm: FieldValue.serverTimestamp(), atualizadoEm: FieldValue.serverTimestamp(),
@@ -942,10 +1100,16 @@ export const publicarPosAula = onCall(
     const falhasPush = [];
     for (const p of publicadas) {
       if (notificadosUids.has(p.uid) || semTokenUids.has(p.uid)) continue;
-      if (!p.fcmToken) { semTokenUids.add(p.uid); continue; }
+      // O token salvo no job pode ter expirado entre a publicação e uma nova
+      // tentativa. Sempre consulte o cadastro atual do aluno antes de enviar.
+      const alunoRef = db.doc(`students/${p.uid}`);
+      const alunoAtualSnap = await alunoRef.get();
+      const alunoAtual = alunoAtualSnap.exists ? alunoAtualSnap.data() : {};
+      const fcmToken = alunoAtual.fcmToken || p.fcmToken;
+      if (!fcmToken) { semTokenUids.add(p.uid); continue; }
       try {
         await getMessaging().send({
-          token: p.fcmToken,
+          token: fcmToken,
           notification: {
             title: 'Nova pós-aula disponível!',
             body: 'Sua pós-aula já está no app.',
@@ -958,7 +1122,21 @@ export const publicarPosAula = onCall(
         await jobRef.set({ notificadosUids: [...notificadosUids], atualizadoEm: FieldValue.serverTimestamp() }, { merge: true });
       } catch (erro) {
         console.error('Push falhou para', p.uid, erro.message);
-        falhasPush.push(`${p.nome || p.uid}: ${erro.message}`);
+        const codigo = String(erro?.code || '');
+        const mensagem = String(erro?.message || '');
+        const tokenInvalido = codigo.includes('registration-token-not-registered')
+          || mensagem.includes('NotRegistered')
+          || mensagem.toLowerCase().includes('registration token is not registered');
+        if (tokenInvalido) {
+          // A pós-aula foi entregue no app. Um token expirado significa apenas
+          // que este dispositivo não pode receber o push até se registrar de novo.
+          semTokenUids.add(p.uid);
+          const limpeza = { fcmTokens: FieldValue.arrayRemove(fcmToken) };
+          if (alunoAtual.fcmToken === fcmToken) limpeza.fcmToken = FieldValue.delete();
+          await alunoRef.set(limpeza, { merge: true });
+        } else {
+          falhasPush.push(`${p.nome || p.uid}: ${mensagem}`);
+        }
       }
       delete p.fcmToken;
     }
@@ -969,11 +1147,15 @@ export const publicarPosAula = onCall(
       throw new HttpsError('internal', erro);
     }
 
+    const semNotificacao = publicadas
+      .filter((p) => semTokenUids.has(p.uid))
+      .map((p) => ({ uid: p.uid, nome: p.nome || p.uid }));
     const resultado = {
       publicadas: publicadas.map(({ fcmToken, ...p }) => p),
       total: publicadas.length,
       notificados: notificadosUids.size,
       semToken: semTokenUids.size,
+      semNotificacao,
       creditosRestantes: existingJob?.salvo
         ? (existingJob.creditosRestantes ?? null)
         : (controlaCredito ? creditos - lista.length : null),
@@ -983,6 +1165,14 @@ export const publicarPosAula = onCall(
       semTokenUids: [...semTokenUids], 'etapas.notificado': semTokenUids.size === 0,
       concluidoEm: FieldValue.serverTimestamp(), atualizadoEm: FieldValue.serverTimestamp(),
     }, { merge: true });
+
+    if (origemGeracaoId) {
+      const origemRef = db.doc(`_posaulaJobs/${origemGeracaoId}`);
+      const origem = await origemRef.get();
+      if (origem.exists && origem.data().porEmail === email) {
+        await origemRef.set({ status: 'publicado', etapa: 'publicado', publicadoEm: FieldValue.serverTimestamp(), atualizadoEm: FieldValue.serverTimestamp() }, { merge: true });
+      }
+    }
 
     return {
       ok: true,
@@ -1509,6 +1699,107 @@ async function avisarProfessor(escolaId, alunos) {
   }
   return enviados;
 }
+
+/** Conclui uma geração assíncrona de pós-aula sem publicar nem descontar crédito. */
+async function concluirJobPosAula(client, doc) {
+  const job = doc.data();
+  let batch;
+  try { batch = await client.messages.batches.retrieve(job.batchId); }
+  catch (erro) {
+    console.error('Não consegui consultar o batch de pós-aula', job.batchId, erro.message);
+    return false;
+  }
+  if (batch.processing_status !== 'ended') return false;
+
+  const porUid = new Map();
+  for await (const item of await client.messages.batches.results(job.batchId)) {
+    porUid.set(item.custom_id, item.result);
+  }
+
+  const lote = db.batch();
+  const posaulas = [];
+  const falhas = [];
+  let custoTotal = 0;
+  for (const aluno of job.alunos || []) {
+    const resultado = porUid.get(aluno.uid);
+    if (!resultado || resultado.type !== 'succeeded') {
+      falhas.push(`${aluno.nome || aluno.uid}: ${resultado?.type || 'sem resposta'}`);
+      continue;
+    }
+    const resposta = resultado.message;
+    if (resposta.stop_reason === 'max_tokens') {
+      falhas.push(`${aluno.nome || aluno.uid}: a resposta ficou longa demais e foi cortada.`);
+      continue;
+    }
+    const bloco = resposta.content.find((item) => item.type === 'text');
+    let html = bloco?.text?.trim() || '';
+    const cercado = html.match(/^```(?:html)?\s*\n([\s\S]*?)\n```$/);
+    if (cercado) html = cercado[1].trim();
+    if (!html.toLowerCase().startsWith('<!doctype html')) {
+      falhas.push(`${aluno.nome || aluno.uid}: resposta em formato inesperado.`);
+      continue;
+    }
+    const tituloMatch = html.match(/<h1>([\s\S]*?)<\/h1>/i);
+    const titulo = tituloMatch ? tituloMatch[1].replace(/<[^>]*>/g, '').trim() : `Pós-aula ${job.data || ''}`.trim();
+    posaulas.push({ uid: aluno.uid, nome: aluno.nome || '', html, titulo, talkTime: extrairTalkTime(html) });
+    custoTotal += registrarUso(lote, {
+      tipo: 'posaula', uid: aluno.uid, escolaId: job.escolaId, uso: resposta.usage, fator: 0.5,
+      extra: { alunoNome: aluno.nome || '', publicada: false, emGrupo: !!job.emGrupo, modo: 'batch', batchId: job.batchId },
+    });
+  }
+
+  if (!posaulas.length) {
+    lote.update(doc.ref, {
+      status: 'erro', etapa: 'erro', erro: falhas.join(' · ') || 'A geração terminou sem resultados.',
+      creditoProfessorDebitado: false, concluidoEm: FieldValue.serverTimestamp(), atualizadoEm: FieldValue.serverTimestamp(),
+    });
+    await lote.commit();
+    return true;
+  }
+  if (Buffer.byteLength(JSON.stringify(posaulas), 'utf8') > 900_000) {
+    lote.update(doc.ref, {
+      status: 'erro', etapa: 'erro', erro: 'O resultado ficou grande demais para ser guardado. Gere menos alunos por vez.',
+      creditoProfessorDebitado: false, concluidoEm: FieldValue.serverTimestamp(), atualizadoEm: FieldValue.serverTimestamp(),
+    });
+    await lote.commit();
+    return true;
+  }
+
+  // Evita que um cancelamento feito enquanto os resultados eram lidos seja sobrescrito.
+  const atual = await doc.ref.get();
+  if (!atual.exists || atual.data().status !== 'gerando') return true;
+
+  const draftRef = db.collection('_posaulaDrafts').doc();
+  lote.set(draftRef, {
+    escolaId: job.escolaId, porEmail: job.porEmail, uids: posaulas.map((p) => p.uid),
+    revisaoUsada: false, statusRevisao: 'disponivel', criadoEm: FieldValue.serverTimestamp(),
+  });
+  lote.update(doc.ref, {
+    status: 'pronto', etapa: 'pronto', posaulas, draftId: draftRef.id,
+    custoUSD: Number(custoTotal.toFixed(4)), prontoVisto: false, creditoProfessorDebitado: false,
+    ...(falhas.length && { avisos: falhas }), concluidoEm: FieldValue.serverTimestamp(), atualizadoEm: FieldValue.serverTimestamp(),
+  });
+  await lote.commit();
+  return true;
+}
+
+export const concluirPosAulasEmBatch = onSchedule(
+  {
+    region: 'southamerica-east1', schedule: 'every 1 minutes', timeZone: 'America/Sao_Paulo',
+    secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 540, memory: '512MiB',
+  },
+  async () => {
+    const pendentes = await db.collection('_posaulaJobs').where('status', '==', 'gerando').limit(20).get();
+    if (pendentes.empty) return;
+    const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
+    let concluidos = 0;
+    for (const doc of pendentes.docs) {
+      try { if (await concluirJobPosAula(client, doc)) concluidos++; }
+      catch (erro) { console.error('Falha ao concluir pós-aula', doc.id, erro); }
+    }
+    console.log(`Pós-aulas em batch: ${pendentes.size} pendente(s), ${concluidos} concluído(s).`);
+  }
+);
 
 /** Lê um job pendente na Anthropic e, se terminou, grava o resultado. */
 async function concluirJob(client, doc) {

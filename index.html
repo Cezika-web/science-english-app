@@ -1333,6 +1333,21 @@ function ChartChoice({ value, onChange }) {
   );
 }
 
+function HistoryScroller({ count, children, label = 'Histórico completo; arraste para os lados' }) {
+  const scrollerRef = useRef(null);
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const frame = requestAnimationFrame(() => { scroller.scrollLeft = scroller.scrollWidth; });
+    return () => cancelAnimationFrame(frame);
+  }, [count]);
+  return (
+    <div ref={scrollerRef} role="region" aria-label={label} style={{ width:'100%', overflowX:'auto', overscrollBehaviorX:'contain', WebkitOverflowScrolling:'touch', touchAction:'pan-x pan-y', scrollBehavior:'smooth' }}>
+      {children}
+    </div>
+  );
+}
+
 function LineChart({ points, suffix = '%' }) {
   const shown = points || [];
   if (!shown.length) return <EmptyChart />;
@@ -1342,7 +1357,7 @@ function LineChart({ points, suffix = '%' }) {
   const y = v => top + (maxValue-v) * ((h-top-bottom)/maxValue);
   const coords = shown.map((p,i) => `${x(i)},${y(p.value)}`).join(' ');
   return (
-    <div style={{ width:'100%', overflowX:'auto', overscrollBehaviorX:'contain' }}>
+    <HistoryScroller count={shown.length}>
     <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label="Gráfico de evolução" style={{ width:w, minWidth:'100%', display:'block' }}>
       {[0,50,100].map(v => <g key={v}><line x1={left} x2={w-right} y1={y(v)} y2={y(v)} stroke="#E2E8F0" /><text x={left-6} y={y(v)+4} textAnchor="end" fontSize="9.5" fill="#64748B">{v}{suffix}</text></g>)}
       <polyline points={coords} fill="none" stroke="var(--brand)" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
@@ -1351,7 +1366,7 @@ function LineChart({ points, suffix = '%' }) {
         <text x={x(i)} y={h-12} textAnchor="middle" fontSize="9.5" fill="#64748B">{p.label}</text>
       </g>)}
     </svg>
-    </div>
+    </HistoryScroller>
   );
 }
 
@@ -1359,7 +1374,7 @@ function BarChart({ points, suffix = '%' }) {
   const shown = points || [];
   if (!shown.length) return <EmptyChart />;
   return (
-    <div style={{ width:'100%', overflowX:'auto', overscrollBehaviorX:'contain' }}>
+    <HistoryScroller count={shown.length}>
     <div role="img" aria-label="Gráfico de barras da evolução" style={{ display:'flex', gap:8, height:150, alignItems:'flex-end', padding:'12px 2px 0', minWidth:Math.max(300,shown.length*46) }}>
       {shown.map((p,i) => <div key={p.key || i} style={{ flex:1, minWidth:0, height:'100%', display:'flex', flexDirection:'column', justifyContent:'flex-end', alignItems:'center' }}>
         <div style={{ fontSize:9.5, color:'#475569', fontWeight:700, marginBottom:4 }}>{Math.round(p.value)}{suffix}</div>
@@ -1367,7 +1382,7 @@ function BarChart({ points, suffix = '%' }) {
         <div style={{ height:25, fontSize:9.5, color:'#64748B', marginTop:5, whiteSpace:'nowrap' }}>{p.label}</div>
       </div>)}
     </div>
-    </div>
+    </HistoryScroller>
   );
 }
 
@@ -1690,7 +1705,7 @@ function ErrorTrendChart({ type, data, filter }) {
   if (!shown.length) return <EmptyChart />;
 
   if (type === 'bar') return (
-    <div style={{ width:'100%', overflowX:'auto', overscrollBehaviorX:'contain' }}>
+    <HistoryScroller count={shown.length}>
     <div role="img" aria-label="Erros por semana" style={{ display:'flex', gap:7, height:168, alignItems:'flex-end', padding:'15px 2px 0', minWidth:Math.max(300,shown.length*46) }}>
       {shown.map(week => {
         const max = Math.max(1, ...shown.flatMap(item => keys.map(key => item[key])));
@@ -1702,7 +1717,7 @@ function ErrorTrendChart({ type, data, filter }) {
         </div>;
       })}
     </div>
-    </div>
+    </HistoryScroller>
   );
 
   const w=Math.max(320,shown.length*46), h=170, left=30, right=12, top=20, bottom=36;
@@ -1710,14 +1725,14 @@ function ErrorTrendChart({ type, data, filter }) {
   const x=index => shown.length === 1 ? (left+w-right)/2 : left + index*((w-left-right)/(shown.length-1));
   const y=value => top + (max-value)*((h-top-bottom)/max);
   const ticks=[0,Math.ceil(max/2),max].filter((value,index,array) => array.indexOf(value) === index);
-  return <div style={{ width:'100%', overflowX:'auto', overscrollBehaviorX:'contain' }}><svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label="Evolução semanal dos tipos de erro" style={{ width:w, minWidth:'100%', display:'block' }}>
+  return <HistoryScroller count={shown.length}><svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label="Evolução semanal dos tipos de erro" style={{ width:w, minWidth:'100%', display:'block' }}>
     {ticks.map(value => <g key={value}><line x1={left} x2={w-right} y1={y(value)} y2={y(value)} stroke="#E2E8F0"/><text x={left-6} y={y(value)+4} textAnchor="end" fontSize="9.5" fill="#64748B">{value}</text></g>)}
     {keys.map(key => <g key={key}>
       <polyline points={shown.map((week,index) => `${x(index)},${y(week[key])}`).join(' ')} fill="none" stroke={ERROR_TYPES[key].color} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
       {shown.map((week,index) => <circle key={week.key} cx={x(index)} cy={y(week[key])} r="4" fill={ERROR_TYPES[key].color} stroke="#fff" strokeWidth="2" />)}
     </g>)}
     {shown.map((week,index) => <text key={week.key} x={x(index)} y={h-12} textAnchor="middle" fontSize="9.5" fill="#64748B">{week.label}</text>)}
-  </svg></div>;
+  </svg></HistoryScroller>;
 }
 
 function calculateTalkProgress(posaulas) {
@@ -1842,7 +1857,7 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
   const exercise = React.useMemo(() => calculateExerciseProgress(activities), [activities]);
   const errors = React.useMemo(() => calculateErrorProgress(activities), [activities]);
   const talk = React.useMemo(() => calculateTalkProgress(posaulas), [posaulas]);
-  const attendancePoints = React.useMemo(() => pointsInPeriod(attendance.points, periodMonths), [attendance.points, periodMonths]);
+  const attendancePoints = attendance.points;
   const periodExercise = React.useMemo(() => {
     const points = pointsInPeriod(exercise.points, periodMonths);
     const correct = points.reduce((total,point) => total + Number(point.correct || 0), 0);
@@ -1874,11 +1889,6 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
   return (
     <div className="scroll-area" style={{ padding:'18px 14px 28px', width:'100%', maxWidth:'100%', minWidth:0, boxSizing:'border-box', overflowX:'hidden' }}>
       <div style={{ fontSize:22, fontWeight:800, color:'#0F172A' }}>Meu progresso</div>
-      <div style={{ marginTop:14 }}>
-        <div style={{ fontSize:12, color:'#64748B', fontWeight:700 }}>Período dos gráficos</div>
-        <PeriodChoice value={periodMonths} onChange={choosePeriod} />
-      </div>
-
       <ProgressSection title="Presença">
         <div style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:8, width:'100%' }}>
           <ProgressStat label="Realizadas" value={attendance.held} detail="com pós-aula" tone={PROGRESS_COLORS.good} />
@@ -1902,6 +1912,11 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
       <div style={{ marginTop:20 }}>
         <div style={{ fontSize:12, color:'#64748B', fontWeight:700 }}>Formato dos gráficos abaixo</div>
         <ChartChoice value={chartType} onChange={chooseChart} />
+        {chartType === 'pie' && <div style={{ marginTop:13 }}>
+          <div style={{ fontSize:12, color:'#64748B', fontWeight:700 }}>Período resumido nas pizzas</div>
+          <PeriodChoice value={periodMonths} onChange={choosePeriod} />
+        </div>}
+        {chartType !== 'pie' && <div style={{ marginTop:9, color:'#64748B', fontSize:11.5, textAlign:'center' }}>Histórico completo · arraste os gráficos para os lados</div>}
       </div>
 
       <ProgressSection title="Exercícios">
@@ -1911,7 +1926,7 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
           <ProgressStat label="Erros" value={exercise.wrong} detail="respostas" tone={exercise.wrong?PROGRESS_COLORS.low:PROGRESS_COLORS.good} />
           <ProgressStat label="Aproveitamento" value={exercise.accuracy==null?'—':`${exercise.accuracy}%`} detail={exerciseTone.label} tone={exerciseTone.color} />
         </div>
-        <div style={{ marginTop:10 }}><EvolutionChart type={chartType} points={periodExercise.points} pieSegments={[
+        <div style={{ marginTop:10 }}><EvolutionChart type={chartType} points={chartType === 'pie' ? periodExercise.points : exercise.points} pieSegments={[
           {label:'acertos',value:periodExercise.correct,color:PROGRESS_COLORS.good},
           {label:'erros',value:periodExercise.wrong,color:PROGRESS_COLORS.low}
         ]} pieCenter={periodExercise.accuracy==null?'—':`${periodExercise.accuracy}%`} /></div>
@@ -1928,7 +1943,7 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
             return <button key={key} onClick={() => setErrorFilter(key)} aria-pressed={active} style={{ border:`1.5px solid ${active?color:'#E2E8F0'}`, borderRadius:999, padding:'7px 3px', background:active?`${color}18`:'#fff', color:active?color:'#64748B', fontSize:10.5, fontWeight:800, cursor:'pointer', fontFamily:'inherit', minWidth:0, overflow:'hidden', textOverflow:'ellipsis' }}>{label}</button>;
           })}
         </div>
-        <div style={{ marginTop:8 }}><ErrorTrendChart type={chartType} data={periodErrors} filter={errorFilter} /></div>
+        <div style={{ marginTop:8 }}><ErrorTrendChart type={chartType} data={chartType === 'pie' ? periodErrors : errors} filter={errorFilter} /></div>
       </ProgressSection>
 
       <ProgressSection title="Talk time">
@@ -1937,7 +1952,7 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
           <ProgressStat label="Maior" value={talk.best==null?'—':`${talk.best}%`} detail="melhor aula" tone={metricTone(talk.best,'talk').color} />
           <ProgressStat label="Menor" value={talk.worst==null?'—':`${talk.worst}%`} detail="aula mais baixa" tone={metricTone(talk.worst,'talk').color} />
         </div>
-        <div style={{ marginTop:10 }}><EvolutionChart type={chartType} points={periodTalk.entries} pieSegments={periodTalk.average==null?[]:[
+        <div style={{ marginTop:10 }}><EvolutionChart type={chartType} points={chartType === 'pie' ? periodTalk.entries : talk.entries} pieSegments={periodTalk.average==null?[]:[
           {label:`fala de ${talkStudentName}`,value:periodTalk.average,color:metricTone(periodTalk.average,'talk').color},
           {label:'outras falas',value:100-periodTalk.average,color:PROGRESS_COLORS.soft}
         ]} pieCenter={periodTalk.average==null?'—':`${periodTalk.average}%`} /></div>

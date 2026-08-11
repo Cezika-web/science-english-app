@@ -30,6 +30,17 @@
     .tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
     .tab { padding: 8px 14px; border-radius: 8px; border: none; background: none; font-size: 0.85rem; cursor: pointer; color: var(--muted); font-weight: 600; white-space: nowrap; }
     .tab.active { background: var(--accent); color: white; }
+    .process-dot { display:none; min-width:18px; height:18px; padding:0 5px; margin-left:4px; border-radius:999px; background:#dc2626; color:#fff; font-size:.68rem; font-weight:800; line-height:18px; text-align:center; vertical-align:1px; box-shadow:0 0 0 2px #fff; }
+    .tab.active .process-dot { box-shadow:0 0 0 2px var(--accent); }
+    .process-folder { border:1px solid var(--border); border-radius:12px; overflow:hidden; background:#fff; margin-top:12px; }
+    .process-folder > summary { list-style:none; cursor:pointer; padding:13px 14px; display:flex; align-items:center; gap:9px; font-weight:800; color:#1f2937; background:#f8fafc; }
+    .process-folder > summary::-webkit-details-marker { display:none; }
+    .process-folder > summary::after { content:'⌄'; margin-left:auto; color:var(--muted); }
+    .process-folder:not([open]) > summary::after { transform:rotate(-90deg); }
+    .process-folder-body { padding:12px; border-top:1px solid var(--border); }
+    .resume-banner { display:none; align-items:center; gap:10px; flex-wrap:wrap; margin:-8px 0 16px; padding:11px 13px; border:1px solid #bfdbfe; border-radius:11px; background:#eff6ff; color:#1e3a8a; font-size:.84rem; }
+    .resume-banner strong { flex:1; min-width:220px; }
+    .resume-banner button { border:0; border-radius:8px; padding:7px 10px; background:#2563eb; color:#fff; font:inherit; font-weight:700; cursor:pointer; }
 
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
@@ -130,6 +141,34 @@
     }
     .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
     .field textarea { resize: vertical; min-height: 160px; font-family: monospace; font-size: 0.82rem; }
+    .student-picker { position: relative; }
+    .student-picker-trigger {
+      width: 100%; min-height: 44px; padding: 10px 12px; border: 1.5px solid var(--border);
+      border-radius: 9px; background: #fff; color: #0f1724; font: inherit; cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: left;
+    }
+    .student-picker-trigger:hover, .student-picker-trigger[aria-expanded="true"] { border-color: var(--accent); }
+    .student-picker-trigger .picker-placeholder { color: var(--muted); }
+    .student-picker-trigger .picker-chevron { color: var(--muted); transition: transform .15s ease; }
+    .student-picker-trigger[aria-expanded="true"] .picker-chevron { transform: rotate(180deg); }
+    .student-picker-menu {
+      position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; right: 0;
+      padding: 10px; border: 1px solid var(--border); border-radius: 12px; background: #fff;
+      box-shadow: 0 16px 36px rgba(15, 23, 42, .16);
+    }
+    .student-picker-menu[hidden] { display: none; }
+    .student-picker-search { position: relative; margin-bottom: 8px; }
+    .student-picker-search span { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+    .field .student-picker-search input { padding-left: 34px; }
+    .student-picker-options { max-height: 230px; overflow-y: auto; overscroll-behavior: contain; }
+    .student-picker-option {
+      display: flex !important; align-items: center; gap: 10px; margin: 0 !important; padding: 9px 8px;
+      border-radius: 8px; cursor: pointer;
+    }
+    .student-picker-option:hover { background: #f0f7ff; }
+    .field .student-picker-option input { width: 17px; height: 17px; flex: 0 0 auto; accent-color: var(--accent); }
+    .student-picker-option .picker-name { flex: 1; min-width: 0; font-size: .9rem; font-weight: 600; }
+    .student-picker-option .picker-level { color: var(--muted); font-size: .76rem; font-weight: 500; }
     .btn-add { background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 10px; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: background 0.2s; }
     .btn-add:hover { background: var(--accent-dark); }
     .btn-add:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -253,7 +292,7 @@
         <button class="tab active" data-tab="students">👥 Alunos</button>
         <button class="tab" data-tab="creditos">💳 Créditos</button>
         <button class="tab" data-tab="posaula">📄 Pós-aula</button>
-        <button class="tab" data-tab="processos">⏳ Processos <span id="processos-count"></span></button>
+        <button class="tab" data-tab="processos">⏳ Processos <span id="processos-count" class="process-dot" aria-label="Processos prontos"></span></button>
         <button class="tab" data-tab="publish">📤 Atividades</button>
         <button class="tab" data-tab="correct">✅ Correção</button>
         <button class="tab" data-tab="vocab">📖 Vocabulário</button>
@@ -261,6 +300,10 @@
         <button class="tab" data-tab="avisos">📣 Avisos</button>
         <button class="tab" data-tab="add">➕ Novo Aluno</button>
         <button class="tab" data-tab="exalunos">🗄️ Ex-alunos</button>
+      </div>
+      <div id="processos-resume-banner" class="resume-banner" role="status">
+        <strong id="processos-resume-text"></strong>
+        <button id="processos-resume-open" type="button">Ver andamento</button>
       </div>
 
       <!-- ALUNOS -->
@@ -360,8 +403,21 @@
 
           <div class="field">
             <label>Aluno(s) da aula</label>
-            <div id="pa-alunos" style="border:1px solid var(--border);border-radius:10px;padding:12px;max-height:200px;overflow:auto;background:#fff;">
-              <div style="font-size:0.85rem;color:var(--muted);">Carregando alunos...</div>
+            <div class="student-picker" id="pa-picker">
+              <button class="student-picker-trigger" id="pa-picker-trigger" type="button" aria-expanded="false" aria-controls="pa-picker-menu">
+                <span id="pa-picker-summary" class="picker-placeholder">Selecionar aluno</span>
+                <span class="picker-chevron" aria-hidden="true">⌄</span>
+              </button>
+              <div class="student-picker-menu" id="pa-picker-menu" hidden>
+                <div class="student-picker-search">
+                  <span aria-hidden="true">⌕</span>
+                  <input id="pa-alunos-busca" type="search" placeholder="Buscar pelo nome do aluno" autocomplete="off" aria-label="Buscar aluno">
+                </div>
+                <div id="pa-alunos" class="student-picker-options">
+                  <div style="font-size:0.85rem;color:var(--muted);padding:8px;">Carregando alunos...</div>
+                </div>
+                <div id="pa-alunos-vazio" style="display:none;font-size:0.85rem;color:var(--muted);padding:10px 8px;">Nenhum aluno encontrado.</div>
+              </div>
             </div>
             <p style="font-size:0.8rem;color:var(--muted);margin:6px 0 0 0;">
               👥 Marque mais de um para aula em grupo. Cada aluno recebe a
@@ -396,7 +452,7 @@
             </div>
           </div>
 
-          <button class="btn-add" id="btn-gerar-posaula" type="button" style="width:100%;">✨ Gerar pós-aula</button>
+          <button class="btn-add" id="btn-gerar-posaula" type="button" style="width:100%;">⏳ Enviar para Processos e começar outra</button>
           <div class="form-msg" id="pa-msg"></div>
 
           <div id="pa-preview-wrap" style="display:none;margin-top:20px;">
@@ -429,8 +485,8 @@
         <div class="form-card">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
             <div>
-              <h2>⏳ Processos de publicação</h2>
-              <p style="font-size:0.85rem;color:var(--muted);margin:4px 0 0;">Pode fechar esta tela. A publicação continua no servidor e o andamento fica salvo aqui.</p>
+              <h2>⏳ Processos de pós-aula</h2>
+              <p style="font-size:0.85rem;color:var(--muted);margin:4px 0 0;">As gerações continuam no servidor. Quando ficarem prontas, revise, altere e publique por aqui.</p>
             </div>
             <button class="btn-add" id="btn-atualizar-processos" type="button">Atualizar</button>
           </div>
@@ -1239,6 +1295,15 @@
     const ESCOLA_PADRAO = 'science-english';
     let escolas = [];       // as que o usuário atual administra
     let escolaAtual = localStorage.getItem('adminEscola') || ESCOLA_PADRAO;
+    let entregasAoServidorPendentes = 0;
+
+    // Depois que o servidor devolve o jobId, atualizar/fechar é seguro. O aviso
+    // existe apenas durante a curta entrega inicial ou numa geração sem fila.
+    window.addEventListener('beforeunload', event => {
+      if (entregasAoServidorPendentes <= 0) return;
+      event.preventDefault();
+      event.returnValue = '';
+    });
 
     /** Descobre quais escolas o usuário administra. Roda antes de buscar alunos. */
     async function carregarEscolas() {
@@ -1350,7 +1415,7 @@
         if (tab.dataset.tab === 'publish') recarregarJobsBatch();
         if (tab.dataset.tab === 'avisos')  recarregarAvisos();
         if (tab.dataset.tab === 'creditos') carregarConsumoApi();
-        if (tab.dataset.tab === 'processos') recarregarProcessosPosAula();
+        if (tab.dataset.tab === 'processos') { marcarProcessosPosAulaVistos(); recarregarProcessosPosAula(); }
       };
     });
 
@@ -1543,9 +1608,14 @@
     document.getElementById('btn-atualizar-usage')?.addEventListener('click', carregarConsumoApi);
 
     let recarregarProcessosPosAula = async () => {};
+    let marcarProcessosPosAulaVistos = () => {};
+    let abrirPosAulaDoProcesso = () => {};
     (function iniciarProcessosPosAula() {
       const box = document.getElementById('posaula-processos');
       const btn = document.getElementById('btn-atualizar-processos');
+      const resumeBanner = document.getElementById('processos-resume-banner');
+      const resumeText = document.getElementById('processos-resume-text');
+      const resumeOpen = document.getElementById('processos-resume-open');
       if (!box) return;
       const ETAPAS = [
         ['analisado', 'Analisando o pós-aula'],
@@ -1553,36 +1623,146 @@
         ['notificado', 'Notificação enviada para o aluno'],
       ];
 
-      recarregarProcessosPosAula = async () => {
-        try {
-          const snap = await getDocs(query(collection(db, '_posaulaJobs'), where('escolaId', '==', escolaAtual)));
-          const jobs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-            .sort((a,b) => (b.criadoEm?.seconds || 0) - (a.criadoEm?.seconds || 0)).slice(0, 20);
-          const ativos = jobs.filter(j => j.status === 'processando' || j.status === 'erro').length;
-          const count = document.getElementById('processos-count');
-          if (count) count.textContent = ativos ? `(${ativos})` : '';
-          if (!jobs.length) { box.innerHTML = '<div class="loading">Nenhuma publicação registrada.</div>'; return; }
+      const vistosKey = () => `posaulaProcessosVistos:${escolaAtual}`;
+      const lerVistos = () => new Set(JSON.parse(localStorage.getItem(vistosKey()) || '[]'));
+      const salvarVistos = ids => localStorage.setItem(vistosKey(), JSON.stringify([...ids].slice(-200)));
+      let ultimosJobs = [];
 
-          box.innerHTML = jobs.map(j => {
-            const nomes = (j.alunos || []).map(a => a.nome).filter(Boolean).join(', ');
-            const quando = j.criadoEm?.seconds ? new Date(j.criadoEm.seconds * 1000).toLocaleString('pt-BR') : '';
+      marcarProcessosPosAulaVistos = () => {
+        const vistos = lerVistos();
+        ultimosJobs.filter(j => ['pronto', 'erro'].includes(j.status)).forEach(j => vistos.add(j.id));
+        salvarVistos(vistos);
+        const count = document.getElementById('processos-count');
+        if (count) { count.style.display = 'none'; count.textContent = ''; }
+      };
+
+      const nomesDoJob = j => (j.alunos || []).map(a => a.nome).filter(Boolean).join(', ') || 'Pós-aula';
+      const quandoDoJob = j => j.criadoEm?.seconds ? new Date(j.criadoEm.seconds * 1000).toLocaleString('pt-BR') : '';
+
+      recarregarProcessosPosAula = async () => {
+        if (!auth.currentUser || !escolaAtual) return;
+        try {
+          const [snap, atividadesSnap] = await Promise.all([
+            getDocs(query(collection(db, '_posaulaJobs'), where('escolaId', '==', escolaAtual))),
+            getDocs(query(collection(db, '_batchJobs'), where('escolaId', '==', escolaAtual))).catch(() => ({ docs: [] })),
+          ]);
+          const jobs = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+            .sort((a,b) => (b.criadoEm?.seconds || 0) - (a.criadoEm?.seconds || 0)).slice(0, 100);
+          ultimosJobs = jobs;
+          const vistos = lerVistos();
+          if (document.getElementById('tab-processos')?.classList.contains('active')) {
+            jobs.filter(j => ['pronto', 'erro'].includes(j.status)).forEach(j => vistos.add(j.id));
+            salvarVistos(vistos);
+          }
+          const atualizacoes = jobs.filter(j => ['pronto', 'erro'].includes(j.status) && !vistos.has(j.id)).length;
+          const count = document.getElementById('processos-count');
+          if (count) { count.textContent = atualizacoes ? String(atualizacoes) : ''; count.style.display = atualizacoes ? 'inline-block' : 'none'; }
+
+          const andamento = jobs.filter(j => j.tipo === 'geracao' && j.status !== 'publicado');
+          const enviados = jobs.filter(j => j.tipo !== 'geracao');
+          const posGerando = andamento.filter(j => j.status === 'gerando').length;
+          const atividadesGerando = atividadesSnap.docs.filter(d => d.data().status === 'em_preparo').length;
+          const totalGerando = posGerando + atividadesGerando;
+          if (resumeBanner && resumeText && resumeOpen) {
+            resumeBanner.style.display = totalGerando ? 'flex' : 'none';
+            if (totalGerando) {
+              const partes = [];
+              if (posGerando) partes.push(`${posGerando} pós-aula${posGerando !== 1 ? 's' : ''}`);
+              if (atividadesGerando) partes.push(`${atividadesGerando} geração${atividadesGerando !== 1 ? 'ões' : ''} de atividades`);
+              resumeText.textContent = `${partes.join(' e ')} em andamento. Pode atualizar ou fechar a página: o servidor continuará trabalhando.`;
+              resumeOpen.onclick = () => document.querySelector(`.tab[data-tab="${posGerando ? 'processos' : 'publish'}"]`)?.click();
+            }
+          }
+
+          const cardGeracao = j => {
+            const pronto = j.status === 'pronto', erro = j.status === 'erro', cancelado = j.status === 'cancelado';
+            const cor = erro ? '#fecaca' : pronto ? '#bbf7d0' : cancelado ? '#e5e7eb' : '#bfdbfe';
+            const icone = erro ? '❌' : pronto ? '✅' : cancelado ? '⊘' : '⏳';
+            const status = erro ? 'Falhou' : pronto ? 'Pronto para revisar' : cancelado ? 'Cancelado — nenhum crédito usado' : 'Gerando no servidor…';
+            return `<div style="border:1px solid ${cor};border-radius:12px;padding:14px;margin-bottom:10px;background:#fff;">
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><strong>${icone} ${esc(nomesDoJob(j))}</strong><span style="font-size:0.75rem;color:var(--muted);margin-left:auto;">${esc(quandoDoJob(j))}</span></div>
+              <div style="margin-top:8px;color:${erro ? '#991b1b' : pronto ? '#166534' : '#475569'};font-size:.84rem;font-weight:700;">${status}</div>
+              ${j.avisos?.length ? `<div style="margin-top:7px;color:#92400e;font-size:.8rem;">⚠️ ${esc(j.avisos.join(' · '))}</div>` : ''}
+              ${erro ? `<div style="margin-top:7px;padding:8px;border-radius:8px;background:#fef2f2;color:#991b1b;font-size:.8rem;">${esc(j.erro || 'A geração falhou.')}</div>` : ''}
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+                ${pronto ? `<button class="btn-add" data-review-generation="${j.id}" type="button" style="padding:9px 13px;">Revisar, alterar e publicar</button>` : ''}
+                ${!cancelado && !pronto ? `<button class="btn-add" data-cancel-generation="${j.id}" type="button" style="padding:9px 13px;background:#fff;color:#b91c1c;border:1px solid #fecaca;">${erro ? 'Remover da fila' : 'Parar geração'}</button>` : ''}
+              </div>
+            </div>`;
+          };
+
+          const cardEnviado = j => {
             const concluido = j.status === 'concluido', erro = j.status === 'erro';
             const travado = j.status === 'processando' && j.atualizadoEm?.seconds && (Date.now()/1000 - j.atualizadoEm.seconds > 300);
+            const semNotificacao = Array.isArray(j.resultado?.semNotificacao)
+              ? j.resultado.semNotificacao
+              : (j.semTokenUids || []).map(uid => ({
+                  uid,
+                  nome: (j.alunos || []).find(a => a.uid === uid)?.nome || 'Aluno',
+                }));
+            const nomesSemNotificacao = semNotificacao.map(a => a.nome || 'Aluno').join(', ');
+            const avisoSemNotificacao = semNotificacao.length === 1
+              ? `${nomesSemNotificacao} não recebeu a notificação porque não está com as notificações ativas. Vale lembrar o aluno.`
+              : `${nomesSemNotificacao} não receberam a notificação porque não estão com as notificações ativas. Vale lembrar os alunos.`;
             const etapas = ETAPAS.map(([key, label]) => {
               const semToken = key === 'notificado' && concluido && Number(j.resultado?.semToken) > 0;
               const ok = !!j.etapas?.[key] || (concluido && !semToken);
               const ativa = !ok && !erro && ((key === 'analisado' && j.etapa === 'analisando') || (key === 'salvo' && j.etapa === 'salvando') || (key === 'notificado' && j.etapa === 'notificando'));
-              return `<div style="display:flex;align-items:center;gap:9px;padding:5px 0;color:${ok ? '#166534' : (ativa || semToken) ? '#92400e' : '#64748b'};"><span style="width:22px;text-align:center;">${ok ? '✅' : ativa ? '⏳' : semToken ? '⚠️' : '○'}</span><span>${semToken ? 'Aluno sem notificações ativadas' : label}${ativa ? '…' : ''}</span></div>`;
+              return `<div style="display:flex;align-items:center;gap:9px;padding:5px 0;color:${ok ? '#166534' : (ativa || semToken) ? '#92400e' : '#64748b'};"><span style="width:22px;text-align:center;">${ok ? '✅' : ativa ? '⏳' : semToken ? '⚠️' : '○'}</span><span>${semToken ? `${esc(nomesSemNotificacao)} sem notificações ativas` : label}${ativa ? '…' : ''}</span></div>`;
             }).join('');
             return `<div style="border:1px solid ${erro ? '#fecaca' : concluido ? '#bbf7d0' : 'var(--border)'};border-radius:12px;padding:14px;margin-bottom:10px;background:#fff;">
-              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;"><strong>${esc(nomes || 'Pós-aula')}</strong><span style="font-size:0.75rem;color:var(--muted);margin-left:auto;">${esc(quando)}</span></div>
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;"><strong>${esc(nomesDoJob(j))}</strong><span style="font-size:0.75rem;color:var(--muted);margin-left:auto;">${esc(quandoDoJob(j))}</span></div>
               ${etapas}
               ${concluido ? '<div style="margin-top:8px;color:#166534;font-weight:700;">✅ Pós-aula enviada</div>' : ''}
+              ${concluido && semNotificacao.length ? `<div style="margin-top:8px;padding:9px;border-radius:8px;background:#fffbeb;color:#92400e;font-size:0.82rem;">⚠️ ${esc(avisoSemNotificacao)}</div>` : ''}
               ${erro ? `<div style="margin-top:8px;padding:9px;border-radius:8px;background:#fef2f2;color:#991b1b;font-size:0.82rem;">${esc(j.erro || 'Falha na publicação.')}</div>` : ''}
               ${travado ? '<div style="margin-top:8px;color:#92400e;font-size:0.82rem;">Este processo está demorando mais que o normal.</div>' : ''}
               ${(erro || travado) ? `<button class="btn-add" data-retry-job="${j.id}" type="button" style="margin-top:9px;padding:8px 12px;">Tentar novamente</button>` : ''}
             </div>`;
-          }).join('');
+          };
+
+          box.innerHTML = `
+            <details class="process-folder" open>
+              <summary>⏳ Processos em andamento <span class="grp-badge warn">${andamento.length}</span></summary>
+              <div class="process-folder-body">
+                ${andamento.length ? `<div style="text-align:right;margin-bottom:10px;"><button class="btn-sm-danger" data-clear-folder="andamento" type="button" style="background:#fff1f2;color:#be123c;border:1px solid #fecdd3;">Cancelar e excluir tudo</button></div>${andamento.map(cardGeracao).join('')}` : '<div class="loading">Nenhum processo em andamento.</div>'}
+              </div>
+            </details>
+            <details class="process-folder">
+              <summary>📁 Pós-aulas enviadas <span class="grp-badge done">${enviados.length}</span></summary>
+              <div class="process-folder-body">
+                ${enviados.length ? `<div style="text-align:right;margin-bottom:10px;"><button class="btn-sm-danger" data-clear-folder="enviados" type="button" style="background:#fff1f2;color:#be123c;border:1px solid #fecdd3;">Excluir todo o histórico</button></div>${enviados.map(cardEnviado).join('')}` : '<div class="loading">Nenhuma pós-aula enviada no histórico.</div>'}
+              </div>
+            </details>`;
+
+          box.querySelectorAll('[data-review-generation]').forEach(b => b.onclick = () => {
+            const job = jobs.find(j => j.id === b.dataset.reviewGeneration);
+            if (job?.posaulas?.length) abrirPosAulaDoProcesso(job);
+          });
+
+          box.querySelectorAll('[data-cancel-generation]').forEach(b => b.onclick = async () => {
+            if (!confirm('Parar esta geração?\n\nNenhum crédito de pós-aula será descontado. Depois você poderá começar novamente.')) return;
+            b.disabled = true; b.textContent = 'Parando…';
+            try {
+              const cancelar = httpsCallable(fns, 'cancelarProcessoPosAula', { timeout: 90000 });
+              await cancelar({ jobId: b.dataset.cancelGeneration });
+            } catch (e) { alert(`Não foi possível parar: ${e.message}`); }
+            await recarregarProcessosPosAula();
+          });
+
+          box.querySelectorAll('[data-clear-folder]').forEach(b => b.onclick = async () => {
+            const pasta = b.dataset.clearFolder;
+            const texto = pasta === 'enviados'
+              ? 'Excluir todo o histórico de envios?\n\nAs pós-aulas já entregues aos alunos NÃO serão apagadas.'
+              : 'Cancelar e excluir todos os processos desta pasta?\n\nNenhum crédito de pós-aula será descontado pelas gerações canceladas.';
+            if (!confirm(texto)) return;
+            b.disabled = true; b.textContent = 'Excluindo…';
+            try {
+              const limpar = httpsCallable(fns, 'limparProcessosPosAula', { timeout: 180000 });
+              await limpar({ escolaId: escolaAtual, pasta });
+            } catch (e) { alert(`Não foi possível excluir: ${e.message}`); }
+            await recarregarProcessosPosAula();
+          });
 
           box.querySelectorAll('[data-retry-job]').forEach(b => b.onclick = async () => {
             b.disabled = true; b.textContent = 'Tentando novamente...';
@@ -1597,9 +1777,7 @@
         }
       };
       btn?.addEventListener('click', recarregarProcessosPosAula);
-      setInterval(() => {
-        if (document.getElementById('tab-processos')?.classList.contains('active')) recarregarProcessosPosAula();
-      }, 10000);
+      setInterval(recarregarProcessosPosAula, 10000);
     })();
 
     // ── LOAD STUDENTS ───────────────────────────────────────────────────
@@ -1720,23 +1898,72 @@
 
       // Pós-aula e atividades aceitam turma, então usam caixas de marcar.
       const listas = [
-        { id: 'pa-alunos', vazio: 'Nenhum aluno cadastrado nesta escola.' },
-        { id: 'ga-alunos', vazio: 'Nenhum aluno cadastrado nesta escola.' },
+        { id: 'pa-alunos', vazio: 'Nenhum aluno cadastrado nesta escola.', picker: true },
+        { id: 'ga-alunos', vazio: 'Nenhum aluno cadastrado nesta escola.', picker: false },
       ];
-      for (const { id, vazio } of listas) {
+      for (const { id, vazio, picker } of listas) {
         const cx = document.getElementById(id);
         if (!cx) continue;
         const marcados = new Set([...cx.querySelectorAll('input:checked')].map(c => c.value));
         cx.innerHTML = active.length
           ? active.map(s => `
-            <label style="display:flex;gap:10px;align-items:center;padding:6px 0;cursor:pointer;">
+            <label ${picker ? `class="student-picker-option" data-search="${esc((s.name || s.firstName || 'Aluno').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[̀-ͯ]/g, ''))}"` : 'style="display:flex;gap:10px;align-items:center;padding:6px 0;cursor:pointer;"'}>
               <input type="checkbox" value="${s.uid}" ${marcados.has(s.uid) ? 'checked' : ''}>
-              <span style="font-size:0.9rem;">${esc(s.name || s.firstName || 'Aluno')}</span>
-              ${s.level ? `<span style="font-size:0.78rem;color:var(--muted);">${esc(s.level)}</span>` : ''}
+              <span ${picker ? 'class="picker-name"' : 'style="font-size:0.9rem;"'}>${esc(s.name || s.firstName || 'Aluno')}</span>
+              ${s.level ? `<span ${picker ? 'class="picker-level"' : 'style="font-size:0.78rem;color:var(--muted);"'}>${esc(s.level)}</span>` : ''}
             </label>`).join('')
           : `<div style="font-size:0.85rem;color:var(--muted);">${vazio}</div>`;
       }
+      updatePosAulaPickerSummary();
     }
+
+    function updatePosAulaPickerSummary() {
+      const summary = document.getElementById('pa-picker-summary');
+      const checked = [...document.querySelectorAll('#pa-alunos input:checked')];
+      if (!summary) return;
+      summary.classList.toggle('picker-placeholder', checked.length === 0);
+      summary.textContent = checked.length === 0
+        ? 'Selecionar aluno'
+        : checked.length === 1
+          ? checked[0].closest('label')?.querySelector('.picker-name')?.textContent || '1 aluno selecionado'
+          : `${checked.length} alunos selecionados`;
+    }
+
+    (function iniciarSeletorPosAula() {
+      const picker = document.getElementById('pa-picker');
+      const trigger = document.getElementById('pa-picker-trigger');
+      const menu = document.getElementById('pa-picker-menu');
+      const search = document.getElementById('pa-alunos-busca');
+      const options = document.getElementById('pa-alunos');
+      const empty = document.getElementById('pa-alunos-vazio');
+      if (!picker || !trigger || !menu || !search || !options) return;
+
+      const close = () => {
+        menu.hidden = true;
+        trigger.setAttribute('aria-expanded', 'false');
+      };
+      const filter = () => {
+        const query = search.value.trim().toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[̀-ͯ]/g, '');
+        let visible = 0;
+        options.querySelectorAll('.student-picker-option').forEach(option => {
+          const show = !query || (option.dataset.search || '').includes(query);
+          option.style.setProperty('display', show ? 'flex' : 'none', 'important');
+          if (show) visible++;
+        });
+        if (empty) empty.style.display = visible || !options.querySelector('.student-picker-option') ? 'none' : 'block';
+      };
+
+      trigger.addEventListener('click', () => {
+        const opening = menu.hidden;
+        menu.hidden = !opening;
+        trigger.setAttribute('aria-expanded', String(opening));
+        if (opening) { search.value = ''; filter(); requestAnimationFrame(() => search.focus()); }
+      });
+      search.addEventListener('input', filter);
+      options.addEventListener('change', updatePosAulaPickerSummary);
+      document.addEventListener('click', event => { if (!picker.contains(event.target)) close(); });
+      picker.addEventListener('keydown', event => { if (event.key === 'Escape') { close(); trigger.focus(); } });
+    })();
 
     // ── GERAR PÓS-AULA ──────────────────────────────────────────────────
     function ligarDitado(btn, campo) {
@@ -1840,6 +2067,33 @@
         });
       };
 
+      const abrirPrevia = (data, origemGeracaoId = '') => {
+        esconderPrevia();
+        posaulaGerada = {
+          posaulas: data.posaulas,
+          data: data.data,
+          draftId: data.draftId,
+          revisaoUsada: false,
+          ...(origemGeracaoId && { origemGeracaoId }),
+        };
+        tituloEl.textContent = data.posaulas.length > 1
+          ? `${data.posaulas.length} pós-aulas — aula em grupo`
+          : data.posaulas[0].titulo;
+        abas.innerHTML = data.posaulas.length > 1
+          ? data.posaulas.map((p, i) => `<button type="button" data-i="${i}" style="padding:7px 13px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;font-weight:700;font-size:0.82rem;">${esc(p.nome)}</button>`).join('')
+          : '';
+        abas.querySelectorAll('button').forEach(b => { b.onclick = () => mostrar(Number(b.dataset.i)); });
+        mostrar(0);
+        wrap.style.display = 'block';
+        aviso('Prévia pronta para revisar. Você ainda pode editar manualmente ou usar a revisão com IA antes de publicar.', 'green');
+        wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      };
+
+      abrirPosAulaDoProcesso = job => {
+        document.querySelector('.tab[data-tab="posaula"]')?.click();
+        abrirPrevia({ posaulas: job.posaulas, data: job.data, draftId: job.draftId }, job.id);
+      };
+
       btnEditar.onclick = () => {
         if (!posaulaGerada) return;
         if (editando) { salvarEdicao(); return; }
@@ -1866,53 +2120,27 @@
         const [a, m, d] = (inputData.value || '').split('-');
         const dataAula = (a && m && d) ? `${d}/${m}/${a}` : '';
 
-        esconderPrevia();
         btnGerar.disabled = true;
-
-        const inicio = Date.now();
-        const emGrupo = uids.length > 1;
-        const tick = () => {
-          const s = Math.floor((Date.now() - inicio) / 1000);
-          btnGerar.textContent = `✨ Gerando... ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-          aviso(emGrupo
-            ? `Gerando ${uids.length} pós-aulas, uma para cada aluno. Leva alguns minutos.`
-            : (s < 30 ? 'Lendo a transcrição...'
-              : s < 90 ? 'Montando o resumo e o vocabulário...'
-                       : 'Escrevendo as correções e o dever de casa...'), 'var(--muted)');
-        };
-        tick();
-        const cronometro = setInterval(tick, 1000);
+        btnGerar.textContent = 'Enviando para Processos…';
+        aviso('Criando o processo no servidor…', 'var(--muted)');
+        entregasAoServidorPendentes++;
 
         try {
-          const gerar = httpsCallable(fns, 'gerarPosAula', { timeout: 3600000 });
+          const gerar = httpsCallable(fns, 'enfileirarPosAula', { timeout: 120000 });
           const { data } = await gerar({ uids, transcricao, youtubeUrl, data: dataAula, observacoes: observacoesTexto });
-
-          posaulaGerada = { posaulas: data.posaulas, data: data.data, draftId: data.draftId, revisaoUsada: false };
-
-          tituloEl.textContent = data.posaulas.length > 1
-            ? `${data.posaulas.length} pós-aulas — aula em grupo`
-            : data.posaulas[0].titulo;
-
-          // Com turma, uma aba por aluno para conferir cada uma.
-          abas.innerHTML = data.posaulas.length > 1
-            ? data.posaulas.map((p, i) => `<button type="button" data-i="${i}" style="padding:7px 13px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;font-weight:700;font-size:0.82rem;">${esc(p.nome)}</button>`).join('')
-            : '';
-          abas.querySelectorAll('button').forEach(b => {
-            b.onclick = () => mostrar(Number(b.dataset.i));
-          });
-
-          mostrar(0);
-          wrap.style.display = 'block';
-          aviso(`Prévia pronta — custo técnico da geração: US$ ${data.custoUSD}. Editar manualmente é grátis; gerar novamente usa IA outra vez.`, 'green');
-          wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          document.getElementById('pa-transcript').value = '';
+          document.getElementById('pa-youtube').value = '';
+          observacoes.value = '';
+          document.querySelectorAll('#pa-alunos input:checked').forEach(input => { input.checked = false; });
+          updatePosAulaPickerSummary();
+          aviso(`✅ Enviado para Processos (${data.alunos} aluno${data.alunos !== 1 ? 's' : ''}). O formulário já está livre para a próxima pós-aula.`, 'green');
+          await recarregarProcessosPosAula();
         } catch (e) {
-          aviso(e.code === 'functions/deadline-exceeded'
-            ? 'A geração demorou mais que o esperado. Tente com menos alunos por vez.'
-            : `Erro: ${e.message}`, 'crimson');
+          aviso(`Erro: ${e.message}`, 'crimson');
         } finally {
-          clearInterval(cronometro);
+          entregasAoServidorPendentes = Math.max(0, entregasAoServidorPendentes - 1);
           btnGerar.disabled = false;
-          btnGerar.textContent = '✨ Gerar pós-aula';
+          btnGerar.textContent = '⏳ Enviar para Processos e começar outra';
         }
       };
 
@@ -1963,6 +2191,14 @@
           document.querySelector('.tab[data-tab="processos"]')?.click();
           const { data } = await publicacao;
 
+          const semNotificacao = Array.isArray(data.semNotificacao) ? data.semNotificacao : [];
+          if (semNotificacao.length) {
+            const nomes = semNotificacao.map(a => a.nome || 'Aluno').join(', ');
+            const lembrete = semNotificacao.length === 1
+              ? `${nomes} não recebeu a notificação porque não está com as notificações ativas. Vale lembrar o aluno.`
+              : `${nomes} não receberam a notificação porque não estão com as notificações ativas. Vale lembrar os alunos.`;
+            alert(`Pós-aula publicada com sucesso.\n\n${lembrete}`);
+          }
           aviso(`✅ ${data.total} pós-aula(s) publicada(s) — ${data.notificados} aluno(s) notificado(s).`, 'green');
           await recarregarProcessosPosAula();
 
@@ -2008,6 +2244,11 @@
 
       const aviso = (t, c) => { msg.textContent = t; msg.style.color = c; };
       const marcados = () => [...listaAlunos.querySelectorAll('input:checked')].map(c => c.value);
+      const limparSelecaoAlunos = () => {
+        listaAlunos.querySelectorAll('input:checked').forEach(input => { input.checked = false; });
+        atualizarPosaulas();
+        atualizarAvisoRevisao();
+      };
       const atualizarAvisoRevisao = () => {
         const ativos = marcados().map(uid => allStudents.find(s => s.uid === uid)).filter(review90IsActive);
         reviewNote.style.display = ativos.length ? 'block' : 'none';
@@ -2134,6 +2375,7 @@
         };
         tick();
         const cron = setInterval(tick, 1000);
+        entregasAoServidorPendentes++;
 
         try {
           const gerar = httpsCallable(fns, 'gerarAtividades', { timeout: 3600000 });
@@ -2143,6 +2385,7 @@
           // depois. Nada de prévia agora — o job aparece na lista abaixo.
           if (data.modo === 'batch') {
             aviso(`✅ Enviado para processamento (${data.alunos} aluno(s)). Fica pronto em algumas horas — você recebe um aviso e revisa aqui embaixo antes de publicar.`, 'green');
+            limparSelecaoAlunos();
             await recarregarJobsBatch();
             return;
           }
@@ -2154,6 +2397,7 @@
             ? 'A geração demorou mais que o esperado. Tente com menos alunos ou menos atividades.'
             : `Erro: ${e.message}`, 'crimson');
         } finally {
+          entregasAoServidorPendentes = Math.max(0, entregasAoServidorPendentes - 1);
           clearInterval(cron);
           btnGerar.disabled = false;
           btnGerar.textContent = '✨ Gerar atividades';
@@ -2180,6 +2424,7 @@
 
           esconderPrevia();
           document.getElementById('ga-obs').value = '';
+          limparSelecaoAlunos();
           recarregarJobsBatch();
         } catch (e) {
           aviso(`Erro ao publicar: ${e.message}`, 'crimson');
@@ -2500,6 +2745,7 @@
       // Só pede notificação a quem gera em batch — é o único aviso que sai daqui.
       if (escolas.some(e => e.plan?.modoBatch === true)) registrarPushDoProfessor();
       recarregarJobsBatch();
+      recarregarProcessosPosAula();
 
       // O admin lê a coleção inteira; o professor só pode ler os alunos da
       // escola dele, então a consulta precisa vir filtrada.
