@@ -3742,8 +3742,8 @@ function ReaderView({ post, onBack }) {
       </div>
       {/* Pos-aulas antigas vem por URL; as geradas no admin vem no proprio doc. */}
       {post?.html
-        ? <iframe className="reader-frame" srcDoc={sanitizeReaderHtml(post.html)} sandbox="allow-scripts allow-popups allow-presentation" referrerPolicy="no-referrer" allowFullScreen />
-        : <iframe className="reader-frame" src={post?.url || 'about:blank'} sandbox="allow-scripts allow-popups allow-presentation" referrerPolicy="no-referrer" allowFullScreen />}
+        ? <iframe className="reader-frame" srcDoc={sanitizeReaderHtml(post.html)} sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-presentation" referrerPolicy="no-referrer" allowFullScreen />
+        : <iframe className="reader-frame" src={post?.url || 'about:blank'} sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-presentation" referrerPolicy="no-referrer" allowFullScreen />}
     </div>
   );
 }
