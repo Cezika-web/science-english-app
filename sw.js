@@ -12,10 +12,11 @@ firebase.initializeApp({
 });
 
 const messaging = firebase.messaging();
-const CACHE = 'czk-v6';
+const CACHE = 'czk-v7';
 const SHELL = [
   '/science-english-app/',
   '/science-english-app/index.html',
+  '/science-english-app/challenge.jsx',
   '/science-english-app/manifest.json'
 ];
 const DEFAULT_URL = '/science-english-app/';

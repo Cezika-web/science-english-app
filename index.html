@@ -169,6 +169,7 @@
 <div id="root"></div>
 <div class="toast-el" id="global-toast"></div>
 
+<script type="text/babel" src="challenge.jsx"></script>
 <script type="text/babel">
 const FB_CONFIG = {
   apiKey:            "AIzaSyDgDlLyU15p8wQ1YtCN8NebGes_oq3atU8",
@@ -2700,7 +2701,7 @@ function nextActivityStep(activities) {
   return { ...escolhido, hasProgress:temProgresso(escolhido.activity) };
 }
 
-function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOpenExtra, onOpenCorrecao }) {
+function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOpenExtra, onOpenCorrecao, onOpenChallenge }) {
   const [sub, setSub] = useState('atividades');
   const [openHist, setOpenHist] = useState({});
   const [openMonth, setOpenMonth] = useState({});
@@ -2812,21 +2813,23 @@ function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOp
         ))}
       </div>
 
+      {sub === 'atividades' && <ChallengeCard onOpen={onOpenChallenge} />}
+
       {sub === 'atividades' && (
         <button type="button" disabled={!continuar} onClick={() => continuar && onContinueActivity(continuar.activity, continuar.part)} style={{
-          width:'100%', boxSizing:'border-box', border:`1px solid ${continuar ? 'rgba(var(--brand-rgb),.3)' : '#D8CFC3'}`, borderRadius:16,
-          padding:'14px 16px', marginBottom:16, background:continuar ? 'linear-gradient(145deg,var(--brand),var(--brand-dark))' : '#EDE7DF',
-          color:continuar ? '#fff' : '#7C6F62', cursor:continuar ? 'pointer' : 'default', fontFamily:'inherit', display:'flex', alignItems:'center', gap:12,
-          textAlign:'left', boxShadow:continuar ? '0 8px 20px rgba(var(--brand-rgb),.18)' : 'none', opacity:continuar ? 1 : .82
+          width:'100%', boxSizing:'border-box', border:`1px solid ${continuar ? 'rgba(var(--brand-rgb),.22)' : '#D8CFC3'}`, borderRadius:14,
+          padding:'9px 13px', marginBottom:16, background:continuar ? 'rgba(255,255,255,.72)' : '#EDE7DF',
+          color:continuar ? 'var(--brand-dark)' : '#7C6F62', cursor:continuar ? 'pointer' : 'default', fontFamily:'inherit', display:'flex', alignItems:'center', gap:10,
+          textAlign:'left', boxShadow:'none', opacity:continuar ? 1 : .82
         }} aria-label={continuar ? `Continuar ${continuar.activity.title || 'atividade'}, ${continuar.part.title || 'próxima parte'}` : 'Tudo concluído por enquanto'}>
-          <span style={{ width:42, height:42, borderRadius:13, background:continuar ? 'rgba(255,255,255,.18)' : 'rgba(124,111,98,.1)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:21, flexShrink:0 }}>{continuar ? '▶' : '✓'}</span>
+          <span style={{ width:32, height:32, borderRadius:10, background:continuar ? 'rgba(var(--brand-rgb),.1)' : 'rgba(124,111,98,.1)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, flexShrink:0 }}>{continuar ? '▶' : '✓'}</span>
           <span style={{ flex:1, minWidth:0 }}>
-            <span style={{ display:'block', fontSize:15, fontWeight:800 }}>{continuar ? 'Continuar de onde parei' : 'Tudo concluído por enquanto'}</span>
-            <span style={{ display:'block', marginTop:3, fontSize:12, color:continuar ? 'rgba(255,255,255,.84)' : '#8B7D6D', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+            <span style={{ display:'block', fontSize:13, fontWeight:800 }}>{continuar ? 'Continuar de onde parei' : 'Tudo concluído por enquanto'}</span>
+            <span style={{ display:'block', marginTop:1, fontSize:10.5, color:continuar ? '#718096' : '#8B7D6D', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
               {continuar ? `${continuar.activity.title || 'Atividade'} · ${continuar.part.title || 'Próxima parte'}` : 'Quando chegar uma atividade nova, o botão será liberado.'}
             </span>
           </span>
-          {continuar && <span aria-hidden="true" style={{ fontSize:22, lineHeight:1 }}>›</span>}
+          {continuar && <span aria-hidden="true" style={{ fontSize:18, lineHeight:1, color:'#94A3B8' }}>›</span>}
         </button>
       )}
 
@@ -3951,6 +3954,7 @@ function App() {
   const [avisos, setAvisos]             = useState([]);
   const [bootError, setBootError]       = useState(null);
   const [tab, setTab]                   = useState('home');
+  const [challengeView, setChallengeView] = useState(null);
   const [readerPost, setReaderPost]     = useState(null);
   const [openActivity, setOpenActivity] = useState(null);
   const [openPart, setOpenPart]         = useState(null);
@@ -4480,13 +4484,24 @@ function App() {
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         {tab === 'home'   && <HomeTab   student={student} posaulas={posaulas} activities={activities} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} />}
-        {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} />}
+        {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={() => setChallengeView('hub')} />}
         {tab === 'progresso' && <ProgressTab student={student} posaulas={posaulas} activities={activities} reviewReports={reviewReports} onOpenReview={openReviewResult} />}
         {tab === 'vocab'  && <VocabTab vocab={vocab} />}
         {tab === 'perfil' && <PerfilTab student={student} onLogout={handleLogout} onPatchStudent={patchStudent} reviews={courseReviews} ownReview={ownCourseReview} onSaveReview={saveCourseReview} openReviewForm={reviewFormRequest} />}
       </div>
 
       <BottomNav active={tab} onChange={setTab} />
+
+      {challengeView && <ChallengeHub
+        student={student}
+        previewAllowed={mirror || ['cmo.sep@gmail.com','czkenglish@gmail.com'].includes(user?.email || '')}
+        onBack={() => setChallengeView(null)}
+        onStart={() => setChallengeView('game')}
+      />}
+      {challengeView === 'game' && <ChallengeGame
+        onExit={() => setChallengeView('hub')}
+        onFinish={() => setChallengeView('hub')}
+      />}
 
       <ActivityModal activity={openActivity} onClose={handleCloseAll} onOpenPart={handleOpenPart} />
       <PartModal part={openPart} activity={openActivity} posaulas={posaulas} onBack={handleClosePart} onClose={handleCloseAll} onFinish={handleFinishPart} onSaveDraft={handleSaveDraftPart} />
