@@ -2916,16 +2916,27 @@ const IRREGULAR_VERBS = [
 // ── VocabTab ─────────────────────────────────────────────────────
 // A interface chama somente esta função. Assim, a voz do aparelho pode ser
 // substituída futuramente por um arquivo gerado com a voz clonada do professor.
+let activeEnglishUtterance = null;
 function pronounceEnglish(text, { onStart, onEnd, onError } = {}) {
   const synth = window.speechSynthesis;
   if (!synth || typeof window.SpeechSynthesisUtterance !== 'function') {
     onError?.();
     return false;
   }
-  synth.cancel();
-  const utterance = new SpeechSynthesisUtterance(String(text || '').trim());
+  const cleanText = String(text || '').trim();
+  if (!cleanText) {
+    onError?.();
+    return false;
+  }
+  // Evita o cancel() vazio: em alguns navegadores móveis ele deixa a fila de
+  // voz parada. Só interrompe quando há algo real na fila e sempre retoma uma
+  // engine que o sistema operacional tenha pausado.
+  if (synth.speaking || synth.pending || activeEnglishUtterance) synth.cancel();
+  if (synth.paused) synth.resume();
+  const utterance = new SpeechSynthesisUtterance(cleanText);
+  activeEnglishUtterance = utterance;
   utterance.lang = 'en-US';
-  const isPhrase = String(text || '').trim().split(/\s+/).length > 1;
+  const isPhrase = cleanText.split(/\s+/).length > 1;
   utterance.rate = isPhrase ? 0.95 : 0.88;
   utterance.pitch = 1;
   const englishVoices = synth.getVoices().filter(voice => /^en[-_]/i.test(voice.lang));
@@ -2941,12 +2952,17 @@ function pronounceEnglish(text, { onStart, onEnd, onError } = {}) {
   const preferred = [...englishVoices].sort((a, b) => voiceScore(b) - voiceScore(a))[0];
   if (preferred) utterance.voice = preferred;
   utterance.onstart = () => onStart?.();
-  utterance.onend = () => onEnd?.();
+  utterance.onend = () => {
+    if (activeEnglishUtterance === utterance) activeEnglishUtterance = null;
+    onEnd?.();
+  };
   utterance.onerror = event => {
+    if (activeEnglishUtterance === utterance) activeEnglishUtterance = null;
     if (event.error !== 'canceled' && event.error !== 'interrupted') onError?.();
     onEnd?.();
   };
   synth.speak(utterance);
+  if (synth.paused) synth.resume();
   return true;
 }
 
@@ -3075,6 +3091,54 @@ const READER_AUDIO_BRIDGE = `
 })();
 `;
 
+// Alguns geradores preservam o cartão de vocabulário, mas omitem o botão
+// de pronúncia. Recria o botão a partir do <h3>, inclusive para pós-aulas
+// antigas que já estão salvas no Firestore.
+function ensureReaderVocabularyAudio(doc) {
+  if (!doc?.body) return;
+
+  if (!doc.getElementById('czk-reader-audio-style')) {
+    const style = doc.createElement('style');
+    style.id = 'czk-reader-audio-style';
+    style.textContent = `
+      .vocab-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+      .vocab-head h3{min-width:0;overflow-wrap:anywhere}
+      .vocab-say{flex:0 0 auto;width:40px;height:40px;padding:0;border-radius:50%;cursor:pointer;
+        border:1px solid var(--border,#dbeafe);background:#fff;color:var(--accent-dark,var(--accent,#2563eb));
+        font-size:1rem;line-height:1;display:inline-flex;align-items:center;justify-content:center;font-family:inherit}
+      .vocab-say[data-czk-speaking="true"]{background:var(--accent,#2563eb);color:#fff;animation:czk-reader-pulse .9s ease-in-out infinite}
+      @keyframes czk-reader-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+      @media (prefers-reduced-motion:reduce){.vocab-say[data-czk-speaking="true"]{animation:none}}
+    `;
+    doc.head.appendChild(style);
+  }
+
+  doc.querySelectorAll('.vocab h3').forEach(heading => {
+    const card = heading.closest('.vocab');
+    if (!card || card.querySelector('[data-czk-say]')) return;
+    const word = String(heading.textContent || '').trim();
+    if (!word || /^\[.*\]$/.test(word)) return;
+
+    let head = heading.parentElement;
+    if (!head?.classList.contains('vocab-head')) {
+      head = doc.createElement('div');
+      head.className = 'vocab-head';
+      heading.before(head);
+      head.appendChild(heading);
+    }
+
+    const button = doc.createElement('button');
+    button.type = 'button';
+    button.className = 'vocab-say';
+    button.setAttribute('data-czk-say', word);
+    button.setAttribute('aria-label', `Ouvir a pronúncia de ${word}`);
+    button.setAttribute('aria-pressed', 'false');
+    button.title = `Ouvir ${word}`;
+    button.textContent = '🔊';
+    head.appendChild(button);
+  });
+}
+
 // Tira script, onclick e javascript: do HTML salvo e devolve o documento
 // completo (o <style> do cabeçalho continua valendo) já com a ponte de áudio.
 function sanitizeReaderHtml(html) {
@@ -3092,6 +3156,7 @@ function sanitizeReaderHtml(html) {
       }
     });
   });
+  ensureReaderVocabularyAudio(doc);
   const bridge = doc.createElement('script');
   bridge.textContent = READER_AUDIO_BRIDGE;
   doc.body.appendChild(bridge);

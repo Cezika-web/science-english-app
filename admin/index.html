@@ -4301,6 +4301,49 @@
 })();
 `;
 
+    // O modelo pode devolver o cartão certo e omitir apenas o botão de som.
+    // A prévia precisa mostrar exatamente a recuperação feita no app do aluno.
+    function ensureReaderVocabularyAudio(doc) {
+      if (!doc?.body) return;
+      if (!doc.getElementById('czk-reader-audio-style')) {
+        const style = doc.createElement('style');
+        style.id = 'czk-reader-audio-style';
+        style.textContent = `
+          .vocab-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+          .vocab-head h3{min-width:0;overflow-wrap:anywhere}
+          .vocab-say{flex:0 0 auto;width:40px;height:40px;padding:0;border-radius:50%;cursor:pointer;
+            border:1px solid var(--border,#dbeafe);background:#fff;color:var(--accent-dark,var(--accent,#2563eb));
+            font-size:1rem;line-height:1;display:inline-flex;align-items:center;justify-content:center;font-family:inherit}
+          .vocab-say[data-czk-speaking="true"]{background:var(--accent,#2563eb);color:#fff;animation:czk-reader-pulse .9s ease-in-out infinite}
+          @keyframes czk-reader-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+          @media (prefers-reduced-motion:reduce){.vocab-say[data-czk-speaking="true"]{animation:none}}
+        `;
+        doc.head.appendChild(style);
+      }
+      doc.querySelectorAll('.vocab h3').forEach(heading => {
+        const card = heading.closest('.vocab');
+        if (!card || card.querySelector('[data-czk-say]')) return;
+        const word = String(heading.textContent || '').trim();
+        if (!word || /^\[.*\]$/.test(word)) return;
+        let head = heading.parentElement;
+        if (!head?.classList.contains('vocab-head')) {
+          head = doc.createElement('div');
+          head.className = 'vocab-head';
+          heading.before(head);
+          head.appendChild(heading);
+        }
+        const button = doc.createElement('button');
+        button.type = 'button';
+        button.className = 'vocab-say';
+        button.setAttribute('data-czk-say', word);
+        button.setAttribute('aria-label', `Ouvir a pronúncia de ${word}`);
+        button.setAttribute('aria-pressed', 'false');
+        button.title = `Ouvir ${word}`;
+        button.textContent = '🔊';
+        head.appendChild(button);
+      });
+    }
+
     function sanitizeReaderHtml(html = '') {
       const doc = new DOMParser().parseFromString(String(html), 'text/html');
       doc.querySelectorAll('script,iframe,object,embed,link,base,form,meta[http-equiv]').forEach(el => el.remove());
@@ -4316,6 +4359,7 @@
           }
         });
       });
+      ensureReaderVocabularyAudio(doc);
       const audio = doc.createElement('script');
       audio.textContent = PREVIEW_AUDIO_SCRIPT;
       doc.body.appendChild(audio);

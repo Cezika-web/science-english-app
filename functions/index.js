@@ -5,7 +5,7 @@ import { initializeApp } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 import Anthropic from '@anthropic-ai/sdk';
-import { montarTemplate, REGRAS_POS_AULA } from './posaula.js';
+import { montarTemplate, REGRAS_POS_AULA, garantirAudioPosAula } from './posaula.js';
 import { REGRAS_ATIVIDADES, SCHEMA_ATIVIDADES, textoDaPosAula } from './atividades.js';
 
 initializeApp();
@@ -832,6 +832,7 @@ export const gerarPosAula = onCall(
       let html = blocoTexto.text.trim();
       const emBloco = html.match(/^```(?:html)?\s*\n([\s\S]*?)\n```$/);
       if (emBloco) html = emBloco[1].trim();
+      html = garantirAudioPosAula(html);
 
       if (!html.toLowerCase().startsWith('<!doctype html')) {
         throw new HttpsError('internal', `A pós-aula de ${aluno.name} veio num formato inesperado.`);
@@ -937,6 +938,7 @@ export const revisarPosAula = onCall(
           throw new Error(`A revisão de ${p.nome || 'um aluno'} não aplicou nenhuma alteração.`);
         }
         const tituloMatch = html.match(/<h1>([\s\S]*?)<\/h1>/i);
+        html = garantirAudioPosAula(html);
         revisadas.push({ ...p, html, titulo: tituloMatch ? tituloMatch[1].replace(/<[^>]*>/g, '').trim() : p.titulo, talkTime: extrairTalkTime(html) });
         custoTotal += registrarUso(lote, {
           tipo: 'revisao_posaula', uid: p.uid, escolaId: escola.id, uso: resposta.usage,
@@ -1852,6 +1854,7 @@ async function concluirJobPosAula(client, doc) {
     let html = bloco?.text?.trim() || '';
     const cercado = html.match(/^```(?:html)?\s*\n([\s\S]*?)\n```$/);
     if (cercado) html = cercado[1].trim();
+    html = garantirAudioPosAula(html);
     if (!html.toLowerCase().startsWith('<!doctype html')) {
       falhas.push(`${aluno.nome || aluno.uid}: resposta em formato inesperado.`);
       continue;

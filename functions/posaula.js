@@ -13,6 +13,66 @@ function esc(s) {
   ));
 }
 
+const AUDIO_RECOVERY_STYLE = `<style id="czk-generated-audio-style">
+.vocab-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.vocab-head h3{min-width:0;overflow-wrap:anywhere}
+.vocab-say{flex:0 0 auto;width:40px;height:40px;padding:0;border-radius:50%;cursor:pointer;border:1px solid var(--border,#dbeafe);background:#fff;color:var(--accent-dark,var(--accent,#2563eb));font-size:1rem;line-height:1;display:inline-flex;align-items:center;justify-content:center;font-family:inherit}
+.vocab-say[data-czk-speaking="true"]{background:var(--accent,#2563eb);color:#fff}
+</style>`;
+
+const AUDIO_RECOVERY_SCRIPT = `<script id="czk-generated-audio-script">
+(function(){
+  var active = null;
+  document.addEventListener('click', function(ev){
+    var btn = ev.target && ev.target.closest ? ev.target.closest('[data-czk-say]') : null;
+    if(!btn) return;
+    ev.preventDefault();
+    var text = (btn.getAttribute('data-czk-say') || '').trim();
+    if(!text || !window.speechSynthesis || typeof window.SpeechSynthesisUtterance !== 'function') return;
+    window.speechSynthesis.cancel();
+    if(active === btn){ active.setAttribute('data-czk-speaking','false'); active = null; return; }
+    if(active) active.setAttribute('data-czk-speaking','false');
+    active = btn; btn.setAttribute('data-czk-speaking','true');
+    var utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US'; utterance.rate = text.split(/\\s+/).length > 1 ? .95 : .88;
+    var voices = window.speechSynthesis.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+    if(voices[0]) utterance.voice = voices[0];
+    function done(){ if(active === btn){ btn.setAttribute('data-czk-speaking','false'); active = null; } }
+    utterance.onend = done; utterance.onerror = done;
+    window.speechSynthesis.speak(utterance);
+  });
+})();
+</script>`;
+
+/**
+ * O modelo ocasionalmente simplifica o template e remove os controles de
+ * áudio. Finaliza o HTML de forma determinística para o Cloud nunca publicar
+ * um cartão de vocabulário sem pronúncia.
+ */
+export function garantirAudioPosAula(html) {
+  let output = String(html || '');
+  output = output.replace(
+    /(<div\b[^>]*class=(['"])vocab(?:\s+[^'"]*)?\2[^>]*>\s*)(<h3\b[^>]*>([\s\S]*?)<\/h3>)/gi,
+    (match, cardOpen, _quote, heading, headingHtml) => {
+      const word = String(headingHtml || '').replace(/<[^>]+>/g, '').trim();
+      if (!word || /^\[.*\]$/.test(word)) return match;
+      const safeWord = esc(word);
+      return `${cardOpen}<div class="vocab-head">\n                ${heading}\n` +
+        `                <button type="button" class="vocab-say" data-czk-say="${safeWord}" ` +
+        `aria-label="Ouvir a pronúncia de ${safeWord}" aria-pressed="false" title="Ouvir ${safeWord}">&#128266;</button>\n` +
+        `              </div>`;
+    },
+  );
+
+  if (!/\.vocab-say\s*\{/i.test(output)) {
+    output = output.replace(/<\/head>/i, `${AUDIO_RECOVERY_STYLE}\n</head>`);
+  }
+  if (!/SpeechSynthesisUtterance|source\s*:\s*['"]czk-posaula/i.test(output)) {
+    output = output.replace(/<\/body>/i, `${AUDIO_RECOVERY_SCRIPT}\n</body>`);
+  }
+  return output;
+}
+
 // Só existe quando o professor informou o link. Sem link, a seção inteira
 // some — nada de botão morto para quem não grava aula.
 const SECAO_GRAVACAO = `
