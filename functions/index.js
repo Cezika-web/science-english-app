@@ -2240,7 +2240,7 @@ async function sendChallengeReminders(period) {
     });
     if (!reserved) continue;
 
-    const title = period === 'morning' ? 'Seu desafio termina hoje' : 'Últimos 30 minutos do desafio';
+    const title = period === 'morning' ? 'Seu desafio termina hoje' : 'Última hora do desafio';
     const body = period === 'morning'
       ? `Você ainda não concluiu a parte ${round.part}. Responda até 23h59 de hoje.`
       : `A parte ${round.part} termina à meia-noite. Ainda dá tempo de responder.`;
@@ -2250,7 +2250,10 @@ async function sendChallengeReminders(period) {
         tokens,
         notification:{ title, body },
         data:{ type:'challenge-reminder', roundId:round.roundId, part:String(round.part) },
-        webpush:{ fcmOptions:{ link:CHALLENGE_APP_URL } },
+        webpush:{
+          headers:{ Urgency:period === 'night' ? 'high' : 'normal', TTL:period === 'night' ? '3600' : '54000' },
+          fcmOptions:{ link:CHALLENGE_APP_URL },
+        },
       });
       await logRef.update({ status:'sent', sent:response.successCount, failed:response.failureCount, sentAt:FieldValue.serverTimestamp() });
       sent += response.successCount;
@@ -2268,7 +2271,7 @@ export const lembrarDesafioManha = onSchedule(
 );
 
 export const lembrarDesafioNoite = onSchedule(
-  { region:'southamerica-east1', schedule:'30 23 * * 3,6', timeZone:'America/Sao_Paulo', timeoutSeconds:300, memory:'256MiB' },
+  { region:'southamerica-east1', schedule:'0 23 * * 3,6', timeZone:'America/Sao_Paulo', timeoutSeconds:300, memory:'256MiB' },
   async () => sendChallengeReminders('night')
 );
 
