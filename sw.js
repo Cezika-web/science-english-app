@@ -12,7 +12,7 @@ firebase.initializeApp({
 });
 
 const messaging = firebase.messaging();
-const CACHE = 'czk-v8';
+const CACHE = 'czk-v9';
 const SHELL = [
   '/science-english-app/',
   '/science-english-app/index.html',
