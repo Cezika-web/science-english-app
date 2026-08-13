@@ -35,30 +35,57 @@ function challengeSimulationBadges(simulation) {
 const challengeBlue = 'linear-gradient(135deg,#071B3A 0%,#0D3F82 58%,#087CC1 100%)';
 const challengeRoundButton = { width:36, height:36, borderRadius:'50%', border:'1px solid rgba(255,255,255,.22)', background:'rgba(255,255,255,.1)', color:'#fff', fontSize:20, cursor:'pointer', fontFamily:'inherit' };
 
-function ChallengeCard({ onOpen }) {
+const CHALLENGE_CARD_THEMES = {
+  general:'linear-gradient(135deg,#071B3A 0%,#0D3F82 58%,#087CC1 100%)',
+  violet:'linear-gradient(135deg,#25124D 0%,#6136A8 58%,#9564DD 100%)',
+  coral:'linear-gradient(135deg,#54251D 0%,#B6533D 58%,#E88856 100%)',
+  teal:'linear-gradient(135deg,#073D43 0%,#087982 58%,#20A9A0 100%)',
+};
+
+function ChallengeCard({ onOpen, challenge }) {
   const upcoming = Date.now() < CHALLENGE_LAUNCH_AT.getTime();
+  const personal = challenge?.kind === 'private';
+  const gradient = CHALLENGE_CARD_THEMES[challenge?.theme] || CHALLENGE_CARD_THEMES.general;
+  const title = personal ? challenge.title : 'Desafio Science English';
+  const questionCount = personal ? Number(challenge.questionCount || 10) : 5;
   return (
-    <button type="button" onClick={onOpen} aria-label="Abrir o Desafio Science English" style={{
+    <button type="button" onClick={() => onOpen(challenge || null)} aria-label={`Abrir ${title}`} style={{
       width:'100%', boxSizing:'border-box', border:'1px solid rgba(93,225,255,.35)', borderRadius:22,
       padding:'19px 18px', marginBottom:12, overflow:'hidden', position:'relative', color:'#fff', cursor:'pointer',
-      textAlign:'left', fontFamily:'inherit', background:challengeBlue, boxShadow:'0 14px 30px rgba(7,27,58,.24)'
+      textAlign:'left', fontFamily:'inherit', background:gradient, boxShadow:'0 14px 30px rgba(7,27,58,.24)'
     }}>
       <span aria-hidden="true" style={{ position:'absolute', width:150, height:150, borderRadius:'50%', right:-52, top:-70, background:'rgba(93,225,255,.13)' }} />
       <span style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, position:'relative' }}>
         <span style={{ display:'flex', alignItems:'center', gap:9, fontSize:10.5, fontWeight:900, letterSpacing:1.25, textTransform:'uppercase', color:'#A9EEFF' }}>
           <span style={{ width:30, height:30, borderRadius:10, display:'inline-flex', alignItems:'center', justifyContent:'center', background:'rgba(255,255,255,.13)', fontSize:17 }}>🏆</span>
-          Desafio Science English
+          {personal ? 'Desafio particular' : 'Desafio Science English'}
         </span>
-        <span style={{ padding:'5px 8px', borderRadius:999, background:upcoming ? 'rgba(255,255,255,.14)' : '#5DE1FF', color:upcoming ? '#fff' : '#071B3A', fontSize:9, fontWeight:900, textTransform:'uppercase' }}>{upcoming ? 'Em breve' : 'Disponível'}</span>
+        <span style={{ padding:'5px 8px', borderRadius:999, background:personal ? 'rgba(255,255,255,.18)' : upcoming ? 'rgba(255,255,255,.14)' : '#5DE1FF', color:personal || upcoming ? '#fff' : '#071B3A', fontSize:9, fontWeight:900, textTransform:'uppercase' }}>{personal ? 'Ativo' : upcoming ? 'Em breve' : 'Disponível'}</span>
       </span>
-      <span style={{ display:'block', position:'relative', fontSize:20, lineHeight:1.15, fontWeight:900, marginTop:14 }}>{upcoming ? 'A disputa começa segunda-feira' : 'Parte 1 disponível agora'}</span>
-      <span style={{ display:'block', position:'relative', color:'rgba(255,255,255,.78)', fontSize:12.5, marginTop:6 }}>5 perguntas · 45 segundos cada · até 500 pontos</span>
+      <span style={{ display:'block', position:'relative', fontSize:20, lineHeight:1.15, fontWeight:900, marginTop:14 }}>{personal ? title : upcoming ? 'A disputa começa segunda-feira' : 'Parte 1 disponível agora'}</span>
+      <span style={{ display:'block', position:'relative', color:'rgba(255,255,255,.78)', fontSize:12.5, marginTop:6 }}>{questionCount} perguntas{personal ? ' por rodada' : ''} · 45 segundos cada · até {(questionCount * 100).toLocaleString('pt-BR')} PTS</span>
       <span style={{ display:'flex', position:'relative', alignItems:'center', justifyContent:'space-between', marginTop:16 }}>
-        <span style={{ fontSize:11.5, fontWeight:750, color:'#D8F8FF' }}>{upcoming ? '17 de agosto' : 'Termina quarta-feira, 23:59'}</span>
-        <span style={{ padding:'8px 12px', borderRadius:11, background:'#fff', color:'#0B4C91', fontSize:10.5, fontWeight:900 }}>VER DESAFIO →</span>
+        <span style={{ fontSize:11.5, fontWeight:750, color:'#D8F8FF' }}>{personal ? `${challenge.participantCount || challenge.participants?.length || 2} participantes · termina em 3 dias` : upcoming ? '17 de agosto' : 'Termina quarta-feira, 23:59'}</span>
+        <span style={{ padding:'8px 12px', borderRadius:11, background:'#fff', color:personal ? '#59318E' : '#0B4C91', fontSize:10.5, fontWeight:900 }}>ABRIR →</span>
       </span>
     </button>
   );
+}
+
+function ChallengeCarousel({ simulation, onOpen }) {
+  const [index, setIndex] = React.useState(0);
+  const scrollRef = React.useRef(null);
+  const items = [{ id:'general', kind:'general' }, ...(simulation?.activeChallenges || [])];
+  const onScroll = event => {
+    const width = event.currentTarget.clientWidth || 1;
+    setIndex(Math.max(0, Math.min(items.length - 1, Math.round(event.currentTarget.scrollLeft / width))));
+  };
+  return <div style={{ margin:'0 -16px 12px' }}>
+    <div ref={scrollRef} onScroll={onScroll} style={{ display:'flex', overflowX:'auto', scrollSnapType:'x mandatory', scrollbarWidth:'none', overscrollBehaviorX:'contain' }}>
+      {items.map((item,itemIndex) => <div key={item.id} style={{ flex:'0 0 100%', boxSizing:'border-box', padding:'0 16px', scrollSnapAlign:'start' }}><ChallengeCard challenge={item.kind === 'general' ? null : item} onOpen={onOpen} /></div>)}
+    </div>
+    {items.length > 1 && <div aria-label={`${items.length} desafios disponíveis`} style={{ display:'flex', justifyContent:'center', gap:6, marginTop:-3 }}>{items.map((item,itemIndex) => <button key={`dot-${item.id}`} aria-label={`Mostrar desafio ${itemIndex + 1}`} onClick={() => scrollRef.current?.scrollTo({ left:(scrollRef.current.clientWidth || 0) * itemIndex, behavior:'smooth' })} style={{ width:index === itemIndex ? 18 : 7, height:7, padding:0, border:0, borderRadius:999, background:index === itemIndex ? '#0D5AA7' : '#B7C5D4', transition:'width .2s', cursor:'pointer' }} />)}</div>}
+  </div>;
 }
 
 function ChallengeSubpageHeader({ title, subtitle, onClose }) {
@@ -202,6 +229,7 @@ function ChallengeHistory({ simulation, onClose }) {
 function ChallengeDuels({ simulation, onClose }) {
   const [tab, setTab] = React.useState('create');
   const [duration, setDuration] = React.useState('week');
+  const [questionCount, setQuestionCount] = React.useState(10);
   const [selected, setSelected] = React.useState([]);
   const [sent, setSent] = React.useState(false);
   const [inviteStatus, setInviteStatus] = React.useState('pending');
@@ -223,14 +251,17 @@ function ChallengeDuels({ simulation, onClose }) {
         <div style={{ marginTop:14, padding:16, borderRadius:18, color:'#fff', background:challengeBlue }}><span style={{ color:'#A9EEFF', fontSize:9.5, fontWeight:900, letterSpacing:1, textTransform:'uppercase' }}>Novo desafio particular</span><strong style={{ display:'block', fontSize:18, marginTop:5 }}>Quem você quer desafiar?</strong><p style={{ margin:'6px 0 0', color:'rgba(255,255,255,.72)', fontSize:11.5, lineHeight:1.5 }}>Os pontos e o ranking ficam separados do desafio geral.</p></div>
         <div style={{ marginTop:15, color:'#0D5AA7', fontSize:10, fontWeight:900, letterSpacing:.9, textTransform:'uppercase' }}>Escolha a duração</div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:8, marginTop:8 }}>{[
-          ['week','10 perguntas','Uma semana'],['month','40 perguntas','Quatro semanas']
+          ['week','Uma semana','2 rodadas de 3 dias'],['month','Quatro semanas','8 rodadas de 3 dias']
         ].map(([id,title,detail]) => <button key={id} onClick={() => setDuration(id)} style={{ padding:'13px 10px', borderRadius:14, border:`1.5px solid ${duration === id ? '#147AE0' : '#DCE7F4'}`, background:duration === id ? '#EAF4FF' : '#fff', textAlign:'left', cursor:'pointer', fontFamily:'inherit' }}><strong style={{ display:'block', color:duration === id ? '#0D5AA7' : '#213B5B', fontSize:12.5 }}>{title}</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:10, marginTop:3 }}>{detail}</span></button>)}</div>
+        <div style={{ marginTop:15, color:'#0D5AA7', fontSize:10, fontWeight:900, letterSpacing:.9, textTransform:'uppercase' }}>Perguntas por rodada</div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,minmax(0,1fr))', gap:7, marginTop:8 }}>{[5,10,15,20].map(count => <button key={count} onClick={() => setQuestionCount(count)} style={{ padding:'11px 3px', borderRadius:12, border:`1.5px solid ${questionCount === count ? '#147AE0' : '#DCE7F4'}`, background:questionCount === count ? '#EAF4FF' : '#fff', color:questionCount === count ? '#0D5AA7' : '#53677E', fontFamily:'inherit', fontSize:13, fontWeight:900, cursor:'pointer' }}>{count}<small style={{ display:'block', marginTop:2, fontSize:7.5 }}>PERG.</small></button>)}</div>
+        <div style={{ marginTop:7, color:'#70839A', fontSize:10.5, lineHeight:1.45 }}>A quantidade escolhida vale para cada rodada. O prazo permanece o mesmo: três dias.</div>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:17 }}><span style={{ color:'#0D5AA7', fontSize:10, fontWeight:900, letterSpacing:.9, textTransform:'uppercase' }}>Alunos cadastrados</span><span style={{ color:'#70839A', fontSize:10 }}>{selected.length} selecionado{selected.length === 1 ? '' : 's'}</span></div>
         <div style={{ display:'grid', gap:7, marginTop:8, maxHeight:310, overflowY:'auto' }}>{students.map(student => {
           const active = selected.includes(student.name);
           return <button key={student.name} onClick={() => toggleStudent(student.name)} style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'10px 11px', borderRadius:14, border:`1px solid ${active ? '#8BC9F5' : '#DCE7F4'}`, background:active ? '#EDF7FF' : '#fff', textAlign:'left', cursor:'pointer', fontFamily:'inherit' }}><span style={{ width:34, height:34, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background:active ? '#147AE0' : '#E7EFF8', color:active ? '#fff' : '#49627D', fontSize:12, fontWeight:900 }}>{student.firstName.slice(0,1).toUpperCase()}</span><span style={{ flex:1, color:'#183451', fontSize:12.5, fontWeight:800 }}>{student.firstName}</span><span style={{ width:20, height:20, borderRadius:7, display:'flex', alignItems:'center', justifyContent:'center', border:`1.5px solid ${active ? '#147AE0' : '#B9C8D8'}`, background:active ? '#147AE0' : '#fff', color:'#fff', fontSize:12 }}>{active ? '✓' : ''}</span></button>;
         })}</div>
-        <button disabled={!selected.length} onClick={() => setSent(true)} style={{ width:'100%', border:0, borderRadius:14, padding:14, marginTop:13, background:selected.length ? 'linear-gradient(135deg,#147AE0,#0757A5)' : '#DCE5EF', color:selected.length ? '#fff' : '#7F91A5', fontFamily:'inherit', fontSize:12.5, fontWeight:900, cursor:selected.length ? 'pointer' : 'default' }}>ENVIAR DESAFIO DE {duration === 'week' ? '10' : '40'} PERGUNTAS</button>
+        <button disabled={!selected.length} onClick={() => setSent(true)} style={{ width:'100%', border:0, borderRadius:14, padding:14, marginTop:13, background:selected.length ? 'linear-gradient(135deg,#147AE0,#0757A5)' : '#DCE5EF', color:selected.length ? '#fff' : '#7F91A5', fontFamily:'inherit', fontSize:12.5, fontWeight:900, cursor:selected.length ? 'pointer' : 'default' }}>ENVIAR DESAFIO · {questionCount} PERGUNTAS POR RODADA</button>
         {sent && <div style={{ marginTop:10, padding:'11px 12px', borderRadius:13, background:'#E7F8F1', border:'1px solid #B8E8D5', color:'#14745C', fontSize:11.5, lineHeight:1.45 }}><strong>Convite preparado!</strong> Nesta prévia nada foi enviado. O desafio começará na próxima segunda depois que os convidados aceitarem.</div>}
       </React.Fragment>}
 
@@ -243,6 +274,29 @@ function ChallengeDuels({ simulation, onClose }) {
         <div style={{ padding:15, borderRadius:17, background:'#fff', border:'1px solid #DCE7F4' }}><span style={{ display:'block', color:'#B87316', fontSize:9, fontWeight:900, textTransform:'uppercase' }}>Aguardando resposta</span><strong style={{ display:'block', color:'#102C4E', fontSize:13.5, marginTop:4 }}>{selected.length ? selected.map(name => name.split(/\s+/)[0]).join(', ') : sampleChallenger}</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:10.5, marginTop:4 }}>O desafio só começa depois da aceitação.</span></div>
       </div>}
     </div>
+  </div>;
+}
+
+function ChallengePrivateHub({ challenge, onBack }) {
+  const [showQuestions, setShowQuestions] = React.useState(false);
+  const week = challenge?.currentWeek || {};
+  const ranking = week.ranking || [];
+  const own = ranking.find(row => row.isOwn) || { position:week.ownPosition || '—', score:week.ownScore || 0 };
+  const gradient = CHALLENGE_CARD_THEMES[challenge?.theme] || CHALLENGE_CARD_THEMES.violet;
+  return <div style={{ position:'fixed', inset:0, zIndex:10020, maxWidth:480, margin:'0 auto', background:'#F3F7FC', overflowY:'auto' }}>
+    <div style={{ minHeight:235, padding:'calc(env(safe-area-inset-top, 0px) + 14px) 18px 28px', color:'#fff', background:gradient }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}><button onClick={onBack} aria-label="Voltar" style={challengeRoundButton}>‹</button><span style={{ fontSize:10.5, fontWeight:900, letterSpacing:1.2, color:'#fff', textTransform:'uppercase' }}>Desafio particular</span><span style={{ width:36 }} /></div>
+      <div style={{ textAlign:'center', marginTop:22 }}><div style={{ fontSize:36 }}>⚔️</div><h1 style={{ fontSize:23, margin:'9px 0 5px', lineHeight:1.15 }}>{challenge?.title || 'Desafio particular'}</h1><p style={{ margin:0, color:'rgba(255,255,255,.74)', fontSize:12 }}>{challenge?.participantLabel || `${challenge?.participantCount || ranking.length} participantes`}</p></div>
+    </div>
+    <div style={{ padding:'0 16px 30px', marginTop:-24 }}>
+      <div style={{ padding:17, borderRadius:21, background:'#fff', border:'1px solid #DCE7F4', boxShadow:'0 12px 28px rgba(7,27,58,.1)' }}><div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12 }}><span><span style={{ display:'block', color:'#0D5AA7', fontSize:9.5, fontWeight:900, textTransform:'uppercase' }}>Rodada atual · três dias</span><strong style={{ display:'block', color:'#102C4E', fontSize:16, marginTop:4 }}>{challenge?.questionCount || week.questions?.length || 10} perguntas</strong><span style={{ display:'block', color:'#70839A', fontSize:10.5, marginTop:4 }}>{challenge?.scheduleLabel || 'Segunda 00h até quarta 23h59'}</span></span><span style={{ padding:'6px 8px', borderRadius:9, background:'#E8F3FF', color:'#0D5AA7', fontSize:9, fontWeight:900 }}>ATIVO</span></div><button onClick={() => setShowQuestions(true)} style={{ width:'100%', border:0, borderRadius:14, padding:14, marginTop:14, color:'#fff', background:gradient, fontFamily:'inherit', fontSize:11.5, fontWeight:900, cursor:'pointer' }}>VER PERGUNTAS E PONTUAÇÃO →</button></div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,minmax(0,1fr))', gap:8, marginTop:12 }}>{[
+        ['Seus pontos',Number(own.score || 0).toLocaleString('pt-BR'),'PTS'],['Posição',`${own.position}º`,''],['Perguntas',String(challenge?.questionCount || week.questions?.length || 0),'']
+      ].map(([label,value,suffix]) => <div key={label} style={{ padding:'13px 6px', textAlign:'center', borderRadius:15, background:'#fff', border:'1px solid #DCE7F4' }}><strong style={{ display:'block', color:'#0D3F82', fontSize:15 }}>{value}{suffix && <small style={{ marginLeft:2, fontSize:7.5 }}>{suffix}</small>}</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:8.8, marginTop:4 }}>{label}</span></div>)}</div>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', margin:'18px 2px 8px' }}><span style={{ color:'#0D5AA7', fontSize:10, fontWeight:900, letterSpacing:.8, textTransform:'uppercase' }}>Placar particular</span><span style={{ color:'#70839A', fontSize:9.5 }}>{ranking.length} participantes</span></div>
+      <div style={{ padding:12, borderRadius:17, background:'#fff', border:'1px solid #DCE7F4' }}><ChallengeRanking month={{ ranking }} showAll /></div>
+    </div>
+    {showQuestions && <ChallengeCorrections week={week} onClose={() => setShowQuestions(false)} />}
   </div>;
 }
 
@@ -271,8 +325,9 @@ function ChallengeProgressPanel({ simulation, onOpenChallenge }) {
   </div>;
 }
 
-function ChallengeHub({ student, simulation, previewAllowed, onBack, onStart }) {
+function ChallengeHub({ student, simulation, selectedChallenge, previewAllowed, onBack, onStart }) {
   const [panel, setPanel] = React.useState(null);
+  if (selectedChallenge?.kind === 'private') return <ChallengePrivateHub challenge={selectedChallenge} onBack={onBack} />;
   const upcoming = Date.now() < CHALLENGE_LAUNCH_AT.getTime();
   const months = simulation?.months || [];
   const currentMonth = months[months.length - 1] || { label:'Agosto', ranking:[] };

@@ -2702,7 +2702,7 @@ function nextActivityStep(activities) {
   return { ...escolhido, hasProgress:temProgresso(escolhido.activity) };
 }
 
-function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOpenExtra, onOpenCorrecao, onOpenChallenge, challengeEnabled = false }) {
+function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOpenExtra, onOpenCorrecao, onOpenChallenge, challengeSimulation, challengeEnabled = false }) {
   const [sub, setSub] = useState('atividades');
   const [openHist, setOpenHist] = useState({});
   const [openMonth, setOpenMonth] = useState({});
@@ -2814,7 +2814,7 @@ function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOp
         ))}
       </div>
 
-      {sub === 'atividades' && challengeEnabled && <ChallengeCard onOpen={onOpenChallenge} />}
+      {sub === 'atividades' && challengeEnabled && <ChallengeCarousel simulation={challengeSimulation} onOpen={onOpenChallenge} />}
 
       {sub === 'atividades' && (
         <button type="button" disabled={!continuar} onClick={() => continuar && onContinueActivity(continuar.activity, continuar.part)} style={{
@@ -3957,6 +3957,7 @@ function App() {
   const [tab, setTab]                   = useState('home');
   const [challengeView, setChallengeView] = useState(null);
   const [challengeSimulation, setChallengeSimulation] = useState(null);
+  const [selectedChallenge, setSelectedChallenge] = useState(null);
   const [readerPost, setReaderPost]     = useState(null);
   const [openActivity, setOpenActivity] = useState(null);
   const [openPart, setOpenPart]         = useState(null);
@@ -4492,8 +4493,8 @@ function App() {
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         {tab === 'home'   && <HomeTab   student={student} posaulas={posaulas} activities={activities} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} />}
-        {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={() => setChallengeView('hub')} challengeEnabled={challengePreviewAccess} />}
-        {tab === 'progresso' && <ProgressTab student={student} posaulas={posaulas} activities={activities} reviewReports={reviewReports} onOpenReview={openReviewResult} challengeSimulation={challengeSimulation} challengeEnabled={challengePreviewAccess} onOpenChallenge={() => setChallengeView('hub')} />}
+        {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={(challenge) => { setSelectedChallenge(challenge || null); setChallengeView('hub'); }} challengeSimulation={challengeSimulation} challengeEnabled={challengePreviewAccess} />}
+        {tab === 'progresso' && <ProgressTab student={student} posaulas={posaulas} activities={activities} reviewReports={reviewReports} onOpenReview={openReviewResult} challengeSimulation={challengeSimulation} challengeEnabled={challengePreviewAccess} onOpenChallenge={() => { setSelectedChallenge(null); setChallengeView('hub'); }} />}
         {tab === 'vocab'  && <VocabTab vocab={vocab} />}
         {tab === 'perfil' && <PerfilTab student={student} onLogout={handleLogout} onPatchStudent={patchStudent} reviews={courseReviews} ownReview={ownCourseReview} onSaveReview={saveCourseReview} openReviewForm={reviewFormRequest} />}
       </div>
@@ -4503,8 +4504,9 @@ function App() {
       {challengeView && <ChallengeHub
         student={student}
         simulation={challengeSimulation}
+        selectedChallenge={selectedChallenge}
         previewAllowed={challengePreviewAccess}
-        onBack={() => setChallengeView(null)}
+        onBack={() => { setChallengeView(null); setSelectedChallenge(null); }}
         onStart={() => setChallengeView('game')}
       />}
       {challengeView === 'game' && <ChallengeGame
