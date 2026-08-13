@@ -298,6 +298,7 @@
         <button class="tab" data-tab="vocab">📖 Vocabulário</button>
         <button class="tab" data-tab="extras">🎧 Extras</button>
         <button class="tab" data-tab="avisos">📣 Avisos</button>
+        <button class="tab" data-tab="avaliacoes">⭐ Avaliações</button>
         <button class="tab" data-tab="add">➕ Novo Aluno</button>
         <button class="tab" data-tab="exalunos">🗄️ Ex-alunos</button>
         <button class="tab" data-tab="pendencias">🧭 Pendências <span id="pendencias-count" style="display:none;margin-left:4px;padding:1px 6px;border-radius:999px;background:#dc2626;color:#fff;font-size:0.7rem;"></span></button>
@@ -769,6 +770,20 @@
             Arquivar tira o aviso da tela de quem ainda não leu. Quem já confirmou não vê de novo.
           </p>
           <div id="av-lista"></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-avaliacoes">
+        <div class="form-card">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div>
+              <h2>⭐ Avaliações do curso</h2>
+              <p style="font-size:0.85rem;color:var(--muted);margin:4px 0 0;">Avaliações publicadas pelos alunos da escola selecionada. Você pode ocultar um comentário sem apagá-lo.</p>
+            </div>
+            <button class="btn-add" id="btn-atualizar-avaliacoes" type="button" style="padding:8px 12px;">Atualizar</button>
+          </div>
+          <div id="avaliacoes-resumo" style="margin:16px 0 12px;"></div>
+          <div id="avaliacoes-lista"><div class="loading">Carregando...</div></div>
         </div>
       </div>
 
@@ -1403,6 +1418,7 @@
           escolaAtual = btn.dataset.escola;
           localStorage.setItem('adminEscola', escolaAtual);
           loadStudents();
+          if (document.querySelector('.tab[data-tab="avaliacoes"]')?.classList.contains('active')) recarregarAvaliacoes();
         };
       });
     }
@@ -1462,6 +1478,7 @@
         document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
         if (tab.dataset.tab === 'publish') recarregarJobsBatch();
         if (tab.dataset.tab === 'avisos')  recarregarAvisos();
+        if (tab.dataset.tab === 'avaliacoes') recarregarAvaliacoes();
         if (tab.dataset.tab === 'creditos') carregarConsumoApi();
         if (tab.dataset.tab === 'processos') { marcarProcessosPosAulaVistos(); recarregarProcessosPosAula(); }
       };
@@ -2622,6 +2639,72 @@
     // Recado do professor para todos os alunos da escola. Fica em
     // schools/{escola}/avisos e o app mostra por cima de tudo até o aluno
     // confirmar que leu.
+    let recarregarAvaliacoes = async () => {};
+
+    (function iniciarAvaliacoes() {
+      const lista = document.getElementById('avaliacoes-lista');
+      const resumo = document.getElementById('avaliacoes-resumo');
+      const atualizar = document.getElementById('btn-atualizar-avaliacoes');
+      if (!lista || !resumo || !atualizar) return;
+
+      recarregarAvaliacoes = async () => {
+        lista.innerHTML = '<div class="loading">Carregando avaliações...</div>';
+        try {
+          const snap = await getDocs(collection(db, 'schools', escolaAtual, 'courseReviews'));
+          const reviews = snap.docs.map(d => ({ id:d.id, ...d.data() }))
+            .sort((a,b) => ((b.updatedAt || b.createdAt)?.seconds || 0) - ((a.updatedAt || a.createdAt)?.seconds || 0));
+          const visiveis = reviews.filter(r => r.hidden !== true);
+          const media = visiveis.length ? (visiveis.reduce((sum,r) => sum + Number(r.rating || 0), 0) / visiveis.length).toFixed(1) : '—';
+          const ocultas = reviews.length - visiveis.length;
+          resumo.innerHTML = `<div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <div style="padding:12px 16px;border-radius:12px;background:#fffbeb;border:1px solid #fde68a;"><strong style="font-size:1.35rem;color:#92400e;">${media}</strong><span style="color:#f59e0b;margin-left:6px;">★</span><div style="font-size:.75rem;color:#92400e;">Média publicada</div></div>
+            <div style="padding:12px 16px;border-radius:12px;background:#f8fafc;border:1px solid var(--border);"><strong style="font-size:1.35rem;">${visiveis.length}</strong><div style="font-size:.75rem;color:var(--muted);">Publicadas</div></div>
+            ${ocultas ? `<div style="padding:12px 16px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;"><strong style="font-size:1.35rem;color:#9a3412;">${ocultas}</strong><div style="font-size:.75rem;color:#9a3412;">Ocultas</div></div>` : ''}
+          </div>`;
+
+          if (!reviews.length) {
+            lista.innerHTML = '<div style="font-size:.85rem;color:var(--muted);padding:18px 0;">Nenhuma avaliação recebida ainda.</div>';
+            return;
+          }
+
+          lista.innerHTML = reviews.map(r => {
+            const stamp = r.updatedAt || r.createdAt;
+            const quando = stamp?.seconds ? new Date(stamp.seconds * 1000).toLocaleString('pt-BR') : '';
+            const hidden = r.hidden === true;
+            return `<div style="border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:9px;background:${hidden ? '#f8fafc' : '#fff'};opacity:${hidden ? '.75' : '1'};">
+              <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;">
+                <strong>${esc(r.authorName || 'Aluno')}</strong>
+                ${r.anonymous ? '<span style="padding:2px 8px;border-radius:999px;background:#f1f5f9;color:#64748b;font-size:.72rem;font-weight:700;">Anônima para os alunos</span>' : ''}
+                ${hidden ? '<span style="padding:2px 8px;border-radius:999px;background:#fff7ed;color:#9a3412;font-size:.72rem;font-weight:700;">Oculta</span>' : ''}
+                <span style="margin-left:auto;color:#f59e0b;font-size:1rem;letter-spacing:1px;">${'★'.repeat(Number(r.rating)||0)}${'☆'.repeat(5-(Number(r.rating)||0))}</span>
+              </div>
+              ${r.comment ? `<div style="font-size:.88rem;line-height:1.55;color:#334155;white-space:pre-wrap;overflow-wrap:anywhere;margin-top:9px;">${esc(r.comment)}</div>` : '<div style="font-size:.82rem;color:var(--muted);margin-top:8px;">Sem comentário.</div>'}
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;">
+                <span style="font-size:.73rem;color:var(--muted);">${esc(quando)}</span>
+                <button type="button" class="btn-sm-danger" data-review-id="${r.id}" data-hidden="${hidden ? '1' : '0'}" style="margin-left:auto;background:${hidden ? '#f0fdf4' : '#fff7ed'};color:${hidden ? '#166534' : '#9a3412'};">${hidden ? 'Tornar visível' : 'Ocultar'}</button>
+              </div>
+            </div>`;
+          }).join('');
+
+          lista.querySelectorAll('button[data-review-id]').forEach(button => {
+            button.onclick = async () => {
+              const ocultar = button.dataset.hidden !== '1';
+              button.disabled = true;
+              try {
+                await updateDoc(doc(db, 'schools', escolaAtual, 'courseReviews', button.dataset.reviewId), { hidden: ocultar, moderatedAt: serverTimestamp(), moderatedBy: auth.currentUser?.email || '' });
+                await recarregarAvaliacoes();
+              } catch (e) { alert('Erro ao atualizar avaliação: ' + e.message); button.disabled = false; }
+            };
+          });
+        } catch (e) {
+          resumo.innerHTML = '';
+          lista.innerHTML = `<div style="font-size:.85rem;color:crimson;">Erro ao carregar avaliações: ${esc(e.message)}</div>`;
+        }
+      };
+
+      atualizar.onclick = () => recarregarAvaliacoes();
+    })();
+
     let recarregarAvisos = async () => {};
 
     (function iniciarAvisos() {

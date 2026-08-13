@@ -186,7 +186,7 @@ async function getFB() {
   const [
     { initializeApp },
     { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential },
-    { getFirestore, doc, getDoc, collection, query, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion, deleteField },
+    { getFirestore, doc, getDoc, collection, query, where, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion, deleteField },
     { getMessaging, getToken, onMessage, isSupported },
     { getStorage, ref: storageRef, uploadBytes, getDownloadURL },
   ] = await Promise.all([
@@ -205,7 +205,7 @@ async function getFB() {
   _fb = { app, auth, db, storage, messaging,
     signInWithEmailAndPassword, signOut, onAuthStateChanged,
     updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential,
-    doc, getDoc, collection, query, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion, deleteField,
+    doc, getDoc, collection, query, where, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion, deleteField,
     storageRef, uploadBytes, getDownloadURL,
     getToken, onMessage };
   return _fb;
@@ -3259,7 +3259,7 @@ function VocabTab({ vocab }) {
 }
 
 // ── PerfilTab ─────────────────────────────────────────────────────
-function PerfilTab({ student, onLogout, onPatchStudent }) {
+function PerfilTab({ student, onLogout, onPatchStudent, reviews = [], ownReview, onSaveReview, openReviewForm }) {
   const name    = student?.firstName || student?.name || 'Aluno';
   const level   = student?.level || '';
   const initial = name[0].toUpperCase();
@@ -3272,7 +3272,45 @@ function PerfilTab({ student, onLogout, onPatchStudent }) {
   const [saving, setSaving]       = useState(false);
   const [msg, setMsg]             = useState('');
   const [photoSaving, setPhotoSaving] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewAnonymous, setReviewAnonymous] = useState(false);
+  const [reviewSaving, setReviewSaving] = useState(false);
+  const [reviewMsg, setReviewMsg] = useState('');
   const fileRef = useRef(null);
+  const reviewFormRef = useRef(null);
+
+  useEffect(() => {
+    if (!ownReview) return;
+    setReviewRating(Number(ownReview.rating) || 0);
+    setReviewComment(ownReview.comment || '');
+    setReviewAnonymous(ownReview.anonymous === true);
+  }, [ownReview]);
+
+  useEffect(() => {
+    if (!openReviewForm) return;
+    setShowReviewForm(true);
+    const timer = setTimeout(() => reviewFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+    return () => clearTimeout(timer);
+  }, [openReviewForm]);
+
+  const saveCourseReview = async () => {
+    if (reviewRating < 1 || reviewRating > 5) {
+      setReviewMsg('Escolha de 1 a 5 estrelas.');
+      return;
+    }
+    setReviewSaving(true); setReviewMsg('');
+    try {
+      await onSaveReview({ rating: reviewRating, comment: reviewComment.trim(), anonymous: reviewAnonymous });
+      setReviewMsg('Avaliação publicada! Obrigado por compartilhar sua opinião.');
+      setShowReviewForm(false);
+    } catch (e) {
+      setReviewMsg('Não foi possível publicar. Tente novamente.');
+    } finally {
+      setReviewSaving(false);
+    }
+  };
 
   const onPhotoPick = async (e) => {
     const file = e.target.files?.[0];
@@ -3394,6 +3432,58 @@ function PerfilTab({ student, onLogout, onPatchStudent }) {
             </div>
           </div>
         )}
+      </GlassCard>
+
+      <GlassCard style={{ padding: 18, marginBottom: 12 }}>
+        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, marginBottom:14 }}>
+          <div>
+            <div style={{ fontSize:11, fontWeight:800, color:'#9A6438', textTransform:'uppercase', letterSpacing:.8 }}>Avaliações do curso</div>
+            <div style={{ display:'flex', alignItems:'baseline', gap:8, marginTop:7 }}>
+              <strong style={{ fontSize:28, color:'#0F172A' }}>{reviews.length ? (reviews.reduce((sum, r) => sum + Number(r.rating || 0), 0) / reviews.length).toFixed(1) : '—'}</strong>
+              <span aria-label={reviews.length ? `${(reviews.reduce((sum, r) => sum + Number(r.rating || 0), 0) / reviews.length).toFixed(1)} de 5 estrelas` : 'Sem avaliações'} style={{ color:'#F59E0B', fontSize:18, letterSpacing:1 }}>
+                {reviews.length ? '★'.repeat(Math.round(reviews.reduce((sum, r) => sum + Number(r.rating || 0), 0) / reviews.length)) + '☆'.repeat(5 - Math.round(reviews.reduce((sum, r) => sum + Number(r.rating || 0), 0) / reviews.length)) : '☆☆☆☆☆'}
+              </span>
+            </div>
+            <div style={{ fontSize:11.5, color:'#64748B', marginTop:2 }}>{reviews.length} avaliação{reviews.length !== 1 ? 'ões' : ''}</div>
+          </div>
+          <button onClick={() => { setShowReviewForm(v => !v); setReviewMsg(''); }} style={{ ...actBtn(), width:'auto', padding:'10px 13px', margin:0 }}>
+            {showReviewForm ? 'Fechar' : (ownReview ? 'Editar a minha' : 'Deixar avaliação')}
+          </button>
+        </div>
+
+        {showReviewForm && <div ref={reviewFormRef} style={{ padding:'15px', borderRadius:15, background:'#F8FAFC', border:'1px solid #E2E8F0', marginBottom:14 }}>
+          <div style={{ fontSize:13, fontWeight:800, color:'#0F172A', marginBottom:9 }}>{ownReview ? 'Editar minha avaliação' : 'Minha avaliação'}</div>
+          <div role="radiogroup" aria-label="Nota do curso" style={{ display:'flex', gap:5, marginBottom:12 }}>
+            {[1,2,3,4,5].map(star => <button key={star} type="button" role="radio" aria-checked={reviewRating === star} aria-label={`${star} estrela${star > 1 ? 's' : ''}`} onClick={() => setReviewRating(star)} style={{ border:'none', background:'transparent', padding:2, cursor:'pointer', fontSize:31, lineHeight:1, color:star <= reviewRating ? '#F59E0B' : '#CBD5E1' }}>★</button>)}
+          </div>
+          <textarea value={reviewComment} onChange={e => setReviewComment(e.target.value.slice(0, 600))} maxLength="600" placeholder="Conte como está sendo sua experiência (opcional)" style={{ ...inp, minHeight:96, resize:'vertical', marginBottom:4 }} />
+          <div style={{ textAlign:'right', fontSize:10.5, color:'#94A3B8', marginBottom:10 }}>{reviewComment.length}/600</div>
+          <label style={{ display:'flex', alignItems:'center', gap:9, fontSize:12.5, color:'#334155', cursor:'pointer', marginBottom:12 }}>
+            <input type="checkbox" checked={reviewAnonymous} onChange={e => setReviewAnonymous(e.target.checked)} />
+            Publicar anonimamente
+          </label>
+          <button type="button" onClick={saveCourseReview} disabled={reviewSaving} style={{ width:'100%', padding:12, border:'none', borderRadius:12, background:'var(--brand)', color:'#fff', fontWeight:800, fontFamily:'inherit', cursor:reviewSaving ? 'wait' : 'pointer' }}>
+            {reviewSaving ? 'Publicando...' : (ownReview ? 'Salvar alterações' : 'Publicar avaliação')}
+          </button>
+        </div>}
+
+        {reviewMsg && <div role="status" style={{ marginBottom:12, padding:'10px 12px', borderRadius:11, background:reviewMsg.startsWith('Avaliação') ? '#F0FDF4' : '#FFF7ED', color:reviewMsg.startsWith('Avaliação') ? '#166534' : '#9A3412', fontSize:12.5 }}>{reviewMsg}</div>}
+
+        <div style={{ display:'grid', gap:9 }}>
+          {reviews.map(review => {
+            const stamp = review.updatedAt || review.createdAt;
+            const date = stamp?.toDate ? stamp.toDate() : (stamp ? new Date(stamp) : null);
+            return <div key={review.id} style={{ padding:'13px 14px', border:'1px solid rgba(var(--brand-rgb),.12)', borderRadius:14, background:'rgba(255,255,255,.72)' }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10 }}>
+                <strong style={{ fontSize:12.5, color:'#0F172A' }}>{review.anonymous ? 'Aluno anônimo' : (review.authorName || 'Aluno')}</strong>
+                <span aria-label={`${review.rating} de 5 estrelas`} style={{ color:'#F59E0B', fontSize:14, letterSpacing:.5 }}>{'★'.repeat(Number(review.rating) || 0)}{'☆'.repeat(5 - (Number(review.rating) || 0))}</span>
+              </div>
+              {review.comment && <div style={{ marginTop:7, color:'#475569', fontSize:12.5, lineHeight:1.55, whiteSpace:'pre-wrap', overflowWrap:'anywhere' }}>{review.comment}</div>}
+              {date && <div style={{ marginTop:7, color:'#94A3B8', fontSize:10.5 }}>{date.toLocaleDateString('pt-BR')}</div>}
+            </div>;
+          })}
+          {!reviews.length && <div style={{ padding:'18px 10px', textAlign:'center', color:'#94A3B8', fontSize:12.5 }}>Ainda não há avaliações. Seja o primeiro a avaliar!</div>}
+        </div>
       </GlassCard>
 
       <GlassCard style={{ padding: 18, marginBottom: 12 }}>
@@ -3733,6 +3823,35 @@ function AvisoModal({ aviso, onConfirmar }) {
 }
 
 // ── ReaderView ───────────────────────────────────────────────────
+// Convite interno para avaliar. Não usa push nem Notification API: só existe
+// enquanto o aluno está com o aplicativo aberto.
+function CourseReviewPrompt({ open, onReview, onLater }) {
+  const [saving, setSaving] = useState(false);
+  if (!open) return null;
+
+  const choose = async (action) => {
+    if (saving) return;
+    setSaving(true);
+    try { await action(); } finally { setSaving(false); }
+  };
+
+  return (
+    <div role="dialog" aria-modal="true" aria-label="Convite para avaliar o curso" style={{ position:'fixed', inset:0, zIndex:760, background:'rgba(10,20,40,.62)', display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+      <div style={{ width:'100%', maxWidth:380, borderRadius:22, background:'#fff', overflow:'hidden', boxShadow:'0 22px 55px rgba(0,0,0,.3)' }}>
+        <div style={{ padding:'24px 20px 18px', textAlign:'center', background:'linear-gradient(180deg,rgba(var(--brand-rgb),.14),rgba(var(--brand-rgb),.04))' }}>
+          <div aria-hidden="true" style={{ color:'#F59E0B', fontSize:28, letterSpacing:3 }}>★★★★★</div>
+          <div style={{ color:'#0F172A', fontSize:19, fontWeight:900, marginTop:10 }}>Que tal avaliar nosso curso?</div>
+          <div style={{ color:'#64748B', fontSize:13.5, lineHeight:1.55, marginTop:8 }}>Sua opinião é muito importante e ajuda a melhorar cada vez mais sua experiência.</div>
+        </div>
+        <div style={{ padding:'17px 20px 20px', display:'grid', gap:9 }}>
+          <button onClick={() => choose(onReview)} disabled={saving} style={{ width:'100%', padding:14, border:'none', borderRadius:14, background:'linear-gradient(180deg,var(--brand-light),var(--brand))', color:'#fff', fontSize:14.5, fontWeight:800, fontFamily:'inherit', cursor:saving?'wait':'pointer' }}>Quero avaliar</button>
+          <button onClick={() => choose(onLater)} disabled={saving} style={{ width:'100%', padding:12, border:'none', borderRadius:12, background:'transparent', color:'#64748B', fontSize:13.5, fontWeight:700, fontFamily:'inherit', cursor:saving?'wait':'pointer' }}>Avaliar depois</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ReaderView({ post, onBack }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -3784,6 +3903,10 @@ function App() {
   const [vocab, setVocab]               = useState([]);
   const [extras, setExtras]             = useState([]);
   const [reviewReports, setReviewReports] = useState([]);
+  const [courseReviews, setCourseReviews] = useState([]);
+  const [ownCourseReview, setOwnCourseReview] = useState(null);
+  const [showCourseReviewPrompt, setShowCourseReviewPrompt] = useState(false);
+  const [reviewFormRequest, setReviewFormRequest] = useState(0);
   const [reviewReady, setReviewReady]   = useState(null);
   const [openReviewReport, setOpenReviewReport] = useState(null);
   const [openExtra, setOpenExtra]       = useState(null);
@@ -3904,6 +4027,7 @@ function App() {
             }
           } else {
             setUser(null); setStudent(null); setPosaulas([]); setActivities([]); setReviewReports([]);
+            setCourseReviews([]); setOwnCourseReview(null); setShowCourseReviewPrompt(false);
           }
         } catch (e) {
           // Falhar aqui já prendeu o app na tela de carregar para todo mundo:
@@ -3943,6 +4067,35 @@ function App() {
     }
   }
 
+  async function loadCourseReviews(studentData, fb, uid, schoolData) {
+    const schoolId = studentData?.schoolId;
+    if (!schoolId) {
+      setCourseReviews([]); setOwnCourseReview(null); setShowCourseReviewPrompt(false);
+      return;
+    }
+    try {
+      const reviewsRef = fb.collection(fb.db, 'schools', schoolId, 'courseReviews');
+      const [visibleSnap, ownSnap] = await Promise.all([
+        fb.getDocs(fb.query(reviewsRef, fb.where('hidden', '==', false))),
+        fb.getDoc(fb.doc(fb.db, 'schools', schoolId, 'courseReviews', uid)),
+      ]);
+      const visible = visibleSnap.docs
+        .map(d => ({ id:d.id, ...d.data() }))
+        .sort((a,b) => ((b.updatedAt || b.createdAt)?.seconds || 0) - ((a.updatedAt || a.createdAt)?.seconds || 0));
+      const own = ownSnap.exists() ? { id:ownSnap.id, ...ownSnap.data() } : null;
+      setCourseReviews(visible);
+      setOwnCourseReview(own);
+
+      const next = studentData.reviewNextPromptAt;
+      const nextDate = next?.toDate ? next.toDate() : (next ? new Date(next) : null);
+      const enabled = schoolData?.reviewsEnabled !== false;
+      setShowCourseReviewPrompt(!mirror && enabled && !own && (!nextDate || nextDate.getTime() <= Date.now()));
+    } catch (e) {
+      console.error('Avaliações do curso:', e);
+      setCourseReviews([]); setOwnCourseReview(null); setShowCourseReviewPrompt(false);
+    }
+  }
+
   async function loadData(uid, fb) {
     const [snap, posSnaps, actSnaps, vocSnaps, extSnaps, reviewSnaps] = await Promise.all([
       fb.getDoc(fb.doc(fb.db, 'students', uid)),
@@ -3965,6 +4118,7 @@ function App() {
         pixKey: dadosEscola.pixKey || '',
       }));
     }
+    await loadCourseReviews(dadosSeguros, fb, uid, dadosEscola);
     carregarAvisos(dadosSeguros, fb);
     // Versões antigas copiavam a senha do Firebase Auth para o Firestore.
     // Ela não é necessária: remove o campo legado quando o próprio aluno entra.
@@ -4089,6 +4243,41 @@ function App() {
     const fb = await getFB();
     await fb.setDoc(fb.doc(fb.db, 'students', user.uid), patch, { merge: true });
     setStudent(s => ({ ...s, ...patch }));
+  }
+
+  async function postponeCourseReview() {
+    setShowCourseReviewPrompt(false);
+    if (!user || mirror) return;
+    const next = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
+    try { await patchStudent({ reviewNextPromptAt: next }); }
+    catch (e) { console.error('Adiamento da avaliação:', e); }
+  }
+
+  async function openCourseReviewFromPrompt() {
+    await postponeCourseReview();
+    setTab('perfil');
+    setReviewFormRequest(value => value + 1);
+  }
+
+  async function saveCourseReview(values) {
+    if (!user || mirror || !student?.schoolId) throw new Error('Avaliação indisponível');
+    const fb = await getFB();
+    const ref = fb.doc(fb.db, 'schools', student.schoolId, 'courseReviews', user.uid);
+    const payload = {
+      rating: Number(values.rating),
+      comment: String(values.comment || '').slice(0, 600),
+      anonymous: values.anonymous === true,
+      updatedAt: fb.serverTimestamp(),
+    };
+    if (!ownCourseReview) {
+      payload.studentUid = user.uid;
+      payload.authorName = String(student.name || student.firstName || 'Aluno').slice(0, 100);
+      payload.hidden = false;
+      payload.createdAt = fb.serverTimestamp();
+    }
+    await fb.setDoc(ref, payload, { merge:true });
+    setShowCourseReviewPrompt(false);
+    await loadCourseReviews(student, fb, user.uid, { reviewsEnabled:true });
   }
 
   async function openReviewResult(report) {
@@ -4257,7 +4446,7 @@ function App() {
         {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} />}
         {tab === 'progresso' && <ProgressTab student={student} posaulas={posaulas} activities={activities} reviewReports={reviewReports} onOpenReview={openReviewResult} />}
         {tab === 'vocab'  && <VocabTab vocab={vocab} />}
-        {tab === 'perfil' && <PerfilTab student={student} onLogout={handleLogout} onPatchStudent={patchStudent} />}
+        {tab === 'perfil' && <PerfilTab student={student} onLogout={handleLogout} onPatchStudent={patchStudent} reviews={courseReviews} ownReview={ownCourseReview} onSaveReview={saveCourseReview} openReviewForm={reviewFormRequest} />}
       </div>
 
       <BottomNav active={tab} onChange={setTab} />
@@ -4268,6 +4457,12 @@ function App() {
       <CorrecaoModal data={openCorrecao} onClose={() => setOpenCorrecao(null)} />
 
       <AvisoModal aviso={avisos[0] || null} onConfirmar={confirmarAviso} />
+
+      <CourseReviewPrompt
+        open={showCourseReviewPrompt && !avisos.length && !reviewReady && !achievementItems}
+        onReview={openCourseReviewFromPrompt}
+        onLater={postponeCourseReview}
+      />
 
       <AchievementModal
         items={achievementItems}
