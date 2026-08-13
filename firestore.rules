@@ -203,6 +203,12 @@ service cloud.firestore {
         );
       }
 
+      // Prévia privada do desafio: somente o próprio aluno e a equipe responsável.
+      match /challengePreview/{previewId} {
+        allow read: if isOwnStudent(uid) || managesStudent(uid);
+        allow write: if managesStudent(uid);
+      }
+
       // Toda subcoleção nova nasce fechada para o aluno até ganhar uma regra
       // explícita. A equipe da escola continua podendo administrá-la.
       match /{document=**} {

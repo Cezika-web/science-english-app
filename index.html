@@ -3955,6 +3955,7 @@ function App() {
   const [bootError, setBootError]       = useState(null);
   const [tab, setTab]                   = useState('home');
   const [challengeView, setChallengeView] = useState(null);
+  const [challengeSimulation, setChallengeSimulation] = useState(null);
   const [readerPost, setReaderPost]     = useState(null);
   const [openActivity, setOpenActivity] = useState(null);
   const [openPart, setOpenPart]         = useState(null);
@@ -4142,7 +4143,7 @@ function App() {
   }
 
   async function loadData(uid, fb) {
-    const [snap, posSnaps, actSnaps, vocSnaps, extSnaps, reviewSnaps] = await Promise.all([
+    const [snap, posSnaps, actSnaps, vocSnaps, extSnaps, reviewSnaps, challengeSnap] = await Promise.all([
       fb.getDoc(fb.doc(fb.db, 'students', uid)),
       fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'posaulas'), fb.orderBy('createdAt','desc')))
         .catch(e => { console.error('Pós-aulas:', e); return { docs: [] }; }),
@@ -4150,6 +4151,7 @@ function App() {
       fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'vocabulario'), fb.orderBy('date','desc'))).catch(() => ({ docs: [] })),
       fb.getDocs(fb.collection(fb.db, 'students', uid, 'extras')).catch(() => ({ docs: [] })),
       fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'review90Reports'), fb.orderBy('createdAt','desc'))).catch(() => ({ docs: [] })),
+      fb.getDoc(fb.doc(fb.db, 'students', uid, 'challengePreview', 'history')).catch(() => null),
     ]);
     if (!snap.exists()) return;
     const dadosAluno = snap.data();
@@ -4177,6 +4179,7 @@ function App() {
     setVocab(vocSnaps.docs.map(d => ({ id: d.id, ...d.data() })));
     setExtras(extSnaps.docs.map(d => ({ id: d.id, ...d.data() })));
     setReviewReports(reviewSnaps.docs.map(d => ({ id: d.id, ...d.data() })));
+    setChallengeSimulation(challengeSnap?.exists?.() ? challengeSnap.data() : null);
     if (pendingPostId.current && posts.length > 0) {
       const target = posts.find(p => p.id === pendingPostId.current || p.filename === pendingPostId.current);
       if (target) {
@@ -4498,6 +4501,7 @@ function App() {
 
       {challengeView && <ChallengeHub
         student={student}
+        simulation={challengeSimulation}
         previewAllowed={challengePreviewAccess}
         onBack={() => setChallengeView(null)}
         onStart={() => setChallengeView('game')}

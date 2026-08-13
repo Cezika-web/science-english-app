@@ -13,17 +13,24 @@ const CHALLENGE_PREVIEW_QUESTIONS = [
 ];
 
 const CHALLENGE_BADGES = [
-  ['🌱','Primeiro Acerto','Acerte 1 das 5 perguntas'],
-  ['✌️','Dupla Certeira','Acerte 2 das 5 perguntas'],
-  ['🔺','Trinca de Acertos','Acerte 3 das 5 perguntas'],
-  ['⭐','Quase Perfeito','Acerte 4 das 5 perguntas'],
-  ['🖐️','Cinco de Ouro','Acerte as 5 perguntas'],
-  ['💎','100% Perfeito','Faça 500 de 500 pontos'],
-  ['🔵','Marca dos 10 Mil','Acumule 10.000 pontos'],
-  ['🥉','Mestre dos 50 Mil','Acumule 50.000 pontos'],
-  ['🥈','Elite Science English','Acumule 100.000 pontos'],
-  ['🏆','Campeão do Mês','Termine o mês em 1º lugar'],
+  { icon:'🌱', title:'Primeiro Acerto', detail:'Acerte 1 das 5 perguntas', earned:false },
+  { icon:'✌️', title:'Dupla Certeira', detail:'Acerte 2 das 5 perguntas', earned:false },
+  { icon:'🔺', title:'Trinca de Acertos', detail:'Acerte 3 das 5 perguntas', earned:false },
+  { icon:'⭐', title:'Quase Perfeito', detail:'Acerte 4 das 5 perguntas', earned:false },
+  { icon:'🖐️', title:'Cinco de Ouro', detail:'Acerte as 5 perguntas', earned:false },
+  { icon:'💎', title:'100% Perfeito', detail:'Faça 500 de 500 pontos', earned:false },
+  { icon:'🔥', title:'Sequência de 4 Semanas', detail:'Participe por 4 semanas seguidas', earned:false },
+  { icon:'👑', title:'Vencedora da Semana', detail:'Termine uma semana em 1º lugar', earned:false },
+  { icon:'🏆', title:'Campeã do Mês', detail:'Termine o mês em 1º lugar', earned:false },
+  { icon:'🟢', title:'Marca dos 5 Mil', detail:'Acumule 5.000 pontos', earned:false },
+  { icon:'🔵', title:'Marca dos 10 Mil', detail:'Acumule 10.000 pontos', earned:false },
+  { icon:'🥉', title:'Mestre dos 50 Mil', detail:'Acumule 50.000 pontos', earned:false },
+  { icon:'🥈', title:'Elite Science English', detail:'Acumule 100.000 pontos', earned:false },
 ];
+
+function challengeSimulationBadges(simulation) {
+  return Array.isArray(simulation?.badges) && simulation.badges.length ? simulation.badges : CHALLENGE_BADGES;
+}
 
 const challengeBlue = 'linear-gradient(135deg,#071B3A 0%,#0D3F82 58%,#087CC1 100%)';
 const challengeRoundButton = { width:36, height:36, borderRadius:'50%', border:'1px solid rgba(255,255,255,.22)', background:'rgba(255,255,255,.1)', color:'#fff', fontSize:20, cursor:'pointer', fontFamily:'inherit' };
@@ -83,23 +90,91 @@ function ChallengeRules({ onClose }) {
   </div>;
 }
 
-function ChallengeBadges({ onClose }) {
+function ChallengeBadges({ badges, onClose }) {
+  const earnedCount = badges.filter(badge => badge.earned).length;
   return <div style={{ position:'absolute', inset:0, zIndex:4, background:'#F3F7FC', overflowY:'auto' }}>
-    <ChallengeSubpageHeader title="Meus selos" subtitle="Suas conquistas ficam guardadas aqui" onClose={onClose} />
+    <ChallengeSubpageHeader title="Meus selos" subtitle={`${earnedCount} conquistados · ${badges.length - earnedCount} bloqueados`} onClose={onClose} />
     <div style={{ padding:'18px 16px 32px', display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:10 }}>
-      {CHALLENGE_BADGES.map(([icon,title,detail]) => <div key={title} style={{ padding:'16px 12px', textAlign:'center', borderRadius:18, background:'#fff', border:'1px solid #DCE7F4', opacity:.68 }}>
-        <div style={{ width:54, height:54, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 10px', background:'#E8EFF7', filter:'grayscale(1)', fontSize:27 }}>{icon}</div>
-        <strong style={{ display:'block', color:'#213B5B', fontSize:12.5 }}>{title}</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:10, lineHeight:1.35, marginTop:5 }}>{detail}</span>
-        <span style={{ display:'inline-block', marginTop:9, padding:'4px 7px', borderRadius:999, background:'#EDF2F7', color:'#8291A3', fontSize:8.5, fontWeight:900, textTransform:'uppercase' }}>Bloqueado</span>
+      {badges.map(badge => <div key={badge.title} style={{ padding:'16px 12px', textAlign:'center', borderRadius:18, background:badge.earned ? 'linear-gradient(180deg,#fff,#F4FAFF)' : '#fff', border:`1px solid ${badge.earned ? '#B9DDFB' : '#DCE7F4'}`, opacity:badge.earned ? 1 : .62 }}>
+        <div style={{ width:54, height:54, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 10px', background:badge.earned ? 'linear-gradient(145deg,#DFF6FF,#B7E4FF)' : '#E8EFF7', filter:badge.earned ? 'none' : 'grayscale(1)', fontSize:27, boxShadow:badge.earned ? '0 7px 17px rgba(13,90,167,.13)' : 'none' }}>{badge.icon}</div>
+        <strong style={{ display:'block', color:badge.earned ? '#0D3F82' : '#213B5B', fontSize:12.5 }}>{badge.title}</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:10, lineHeight:1.35, marginTop:5 }}>{badge.detail}</span>
+        <span style={{ display:'inline-block', marginTop:9, padding:'4px 7px', borderRadius:999, background:badge.earned ? '#DDF4EC' : '#EDF2F7', color:badge.earned ? '#15745F' : '#8291A3', fontSize:8.5, fontWeight:900, textTransform:'uppercase' }}>{badge.earned ? `${badge.count > 1 ? `${badge.count}× · ` : ''}${badge.date}` : 'Bloqueado'}</span>
       </div>)}
     </div>
   </div>;
 }
 
-function ChallengeHub({ student, previewAllowed, onBack, onStart }) {
+function ChallengeRanking({ month, compact = false }) {
+  const ranking = month?.ranking || [];
+  const own = ranking.find(row => row.isOwn) || { position:'—', score:0 };
+  const shown = ranking.slice(0, 3);
+  const rowStyle = (position, ownRow = false) => ({ display:'flex', alignItems:'center', gap:10, padding:compact ? '9px 11px' : '11px 12px', borderRadius:13, marginTop:7, background:ownRow ? '#E9F5FF' : '#F7FAFD', border:`1px solid ${ownRow ? '#B9DDFB' : '#E5EDF5'}` });
+  return <div>
+    {shown.map(row => <div key={row.name} style={rowStyle(row.position)}><span style={{ width:25, textAlign:'center', fontSize:row.position === 1 ? 18 : 12, fontWeight:900, color:row.position === 1 ? '#C28B12' : '#64748B' }}>{row.position === 1 ? '👑' : `${row.position}º`}</span><span style={{ flex:1, minWidth:0, color:'#213B5B', fontSize:12, fontWeight:750, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{row.name}</span><strong style={{ color:'#0D5AA7', fontSize:12 }}>{row.score.toLocaleString('pt-BR')}</strong></div>)}
+    {own.position > 3 && <React.Fragment><div style={{ textAlign:'center', color:'#9AAABC', fontSize:12, lineHeight:.7, marginTop:7 }}>•••</div><div style={rowStyle(own.position, true)}><span style={{ width:25, textAlign:'center', color:'#0D5AA7', fontSize:12, fontWeight:900 }}>{own.position}º</span><span style={{ flex:1, color:'#0D3F82', fontSize:12, fontWeight:900 }}>Você</span><strong style={{ color:'#0D5AA7', fontSize:12 }}>{own.score.toLocaleString('pt-BR')}</strong></div></React.Fragment>}
+  </div>;
+}
+
+function ChallengeCorrections({ week, onClose }) {
+  const [filter, setFilter] = React.useState('all');
+  const [openIndex, setOpenIndex] = React.useState(null);
+  const questions = Array.isArray(week?.questions) ? week.questions : [];
+  const filtered = questions.map((question,index) => ({ ...question, originalIndex:index })).filter(question => filter === 'all' || (filter === 'correct' ? question.score >= 80 : question.score < 80));
+  const accuracy = Math.round(Number(week?.ownScore || 0) / 10);
+  const filterLabel = { all:'Todas', correct:'Acertos', errors:'Erros' };
+  return <div style={{ position:'absolute', inset:0, zIndex:5, background:'#F3F7FC', overflowY:'auto' }}>
+    <ChallengeSubpageHeader title={`${week?.label || 'Semana'} · ${week?.range || ''}`} subtitle={`${week?.ownScore || 0} pontos · ${accuracy}% de aproveitamento`} onClose={onClose} />
+    <div style={{ padding:'16px 16px 32px' }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,minmax(0,1fr))', gap:8 }}>
+        {[['Aproveitamento',`${accuracy}%`],['Acertos',`${week?.correct || 0}/10`],['Posição',`${week?.ownPosition || '—'}º`]].map(([label,value]) => <div key={label} style={{ padding:'13px 7px', textAlign:'center', borderRadius:14, background:'#fff', border:'1px solid #DCE7F4' }}><strong style={{ display:'block', color:'#0D5AA7', fontSize:16 }}>{value}</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:9, marginTop:3 }}>{label}</span></div>)}
+      </div>
+      <div style={{ display:'flex', padding:4, marginTop:12, borderRadius:14, background:'#E4EDF6' }}>{Object.entries(filterLabel).map(([id,label]) => <button key={id} onClick={() => { setFilter(id); setOpenIndex(null); }} style={{ flex:1, border:0, borderRadius:11, padding:'9px 4px', background:filter === id ? '#fff' : 'transparent', color:filter === id ? '#0D3F82' : '#70839A', boxShadow:filter === id ? '0 3px 9px rgba(7,27,58,.08)' : 'none', fontFamily:'inherit', fontSize:11, fontWeight:900, cursor:'pointer' }}>{label}{id === 'correct' ? ` (${questions.filter(q => q.score >= 80).length})` : id === 'errors' ? ` (${questions.filter(q => q.score < 80).length})` : ''}</button>)}</div>
+      <div style={{ display:'grid', gap:9, marginTop:12 }}>{filtered.map(question => {
+        const open = openIndex === question.originalIndex;
+        const perfect = question.score === 100;
+        const correct = question.score >= 80;
+        const tone = perfect ? '#0D5AA7' : correct ? '#168C72' : question.score > 0 ? '#B87316' : '#B33A3A';
+        const label = perfect ? 'Perfeita' : correct ? 'Acertou' : question.score > 0 ? 'Acerto parcial' : 'Não respondeu';
+        return <div key={question.originalIndex} style={{ borderRadius:17, background:'#fff', border:`1px solid ${open ? tone : '#DCE7F4'}`, overflow:'hidden' }}><button onClick={() => setOpenIndex(open ? null : question.originalIndex)} style={{ width:'100%', display:'flex', alignItems:'center', gap:11, padding:'13px 14px', border:0, background:'transparent', textAlign:'left', cursor:'pointer', fontFamily:'inherit' }}><span style={{ width:34, height:34, borderRadius:11, display:'flex', alignItems:'center', justifyContent:'center', background:`${tone}16`, color:tone, fontSize:12, fontWeight:900 }}>{question.originalIndex + 1}</span><span style={{ flex:1, minWidth:0 }}><strong style={{ display:'block', color:'#102C4E', fontSize:12.5, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{question.prompt}</strong><span style={{ display:'block', color:tone, fontSize:9.5, fontWeight:850, marginTop:3 }}>{label}</span></span><span style={{ textAlign:'right' }}><strong style={{ display:'block', color:tone, fontSize:14 }}>{question.score}%</strong><span style={{ color:'#8CA0B5', fontSize:17 }}>{open ? '⌃' : '⌄'}</span></span></button>{open && <div style={{ padding:'0 14px 15px', borderTop:'1px solid #EDF2F7' }}><div style={{ marginTop:12 }}><span style={{ display:'block', color:'#7B8DA3', fontSize:9, fontWeight:900, textTransform:'uppercase' }}>Sua resposta</span><div style={{ marginTop:5, padding:'10px 11px', borderRadius:11, background:correct ? '#F1FBF7' : '#FFF8EA', color:'#253B54', fontSize:12, lineHeight:1.45 }}>{question.answer || 'Sem resposta'}</div></div><div style={{ marginTop:11 }}><span style={{ display:'block', color:'#7B8DA3', fontSize:9, fontWeight:900, textTransform:'uppercase' }}>Resposta esperada</span><div style={{ marginTop:5, padding:'10px 11px', borderRadius:11, background:'#EEF6FF', color:'#0D3F82', fontSize:12, lineHeight:1.45 }}>{question.expected}</div></div>{question.deductions?.length > 0 && <div style={{ marginTop:11 }}><span style={{ display:'block', color:'#7B8DA3', fontSize:9, fontWeight:900, textTransform:'uppercase' }}>Onde perdeu pontos</span>{question.deductions.map((deduction,index) => <div key={index} style={{ display:'flex', gap:8, marginTop:6, color:'#8F4C13', fontSize:10.5, lineHeight:1.4 }}><strong style={{ flexShrink:0 }}>−{deduction.points}</strong><span>{deduction.reason}</span></div>)}</div>}<div style={{ marginTop:11, padding:'10px 11px', borderRadius:11, background:'#F7FAFD', color:'#53677E', fontSize:10.5, lineHeight:1.5 }}><strong style={{ color:'#213B5B' }}>Explicação: </strong>{question.explanation}</div></div>}</div>;
+      })}</div>
+      {!filtered.length && <div style={{ padding:28, textAlign:'center', color:'#8091A5', fontSize:12 }}>Nenhuma pergunta nesta categoria.</div>}
+    </div>
+  </div>;
+}
+
+function ChallengeHistory({ simulation, onClose }) {
+  const [monthIndex, setMonthIndex] = React.useState(2);
+  const [selectedWeek, setSelectedWeek] = React.useState(null);
+  const months = simulation?.months || [];
+  const safeIndex = Math.min(monthIndex, Math.max(0, months.length - 1));
+  const month = months[safeIndex] || { label:'—', range:'', weeks:[], ranking:[] };
+  const ownMonth = month.ranking.find(row => row.isOwn) || { position:'—', score:0 };
+  return <div style={{ position:'absolute', inset:0, zIndex:4, background:'#F3F7FC', overflowY:'auto' }}>
+    <ChallengeSubpageHeader title="Meu histórico" subtitle="Resultados desde 11 de junho" onClose={onClose} />
+    <div style={{ padding:'16px 16px 32px' }}>
+      <div style={{ display:'flex', padding:4, borderRadius:14, background:'#E5EDF6' }}>{months.map((item,index) => <button key={item.id} onClick={() => setMonthIndex(index)} style={{ flex:1, padding:'9px 4px', border:0, borderRadius:11, background:index === safeIndex ? '#fff' : 'transparent', color:index === safeIndex ? '#0D3F82' : '#70839A', boxShadow:index === safeIndex ? '0 3px 9px rgba(7,27,58,.09)' : 'none', fontSize:11.5, fontWeight:900, cursor:'pointer', fontFamily:'inherit' }}>{item.label}</button>)}</div>
+      <div style={{ marginTop:12, padding:17, borderRadius:19, color:'#fff', background:challengeBlue }}><div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12 }}><div><span style={{ display:'block', color:'#A9EEFF', fontSize:9.5, fontWeight:900, textTransform:'uppercase', letterSpacing:1 }}>{month.current ? 'Mês em andamento' : 'Resultado mensal'}</span><strong style={{ display:'block', fontSize:21, marginTop:4 }}>{month.label}</strong><span style={{ display:'block', color:'rgba(255,255,255,.66)', fontSize:10.5, marginTop:3 }}>{month.range}</span></div><div style={{ textAlign:'right' }}><strong style={{ display:'block', fontSize:23 }}>{ownMonth.position}º</strong><span style={{ color:'#A9EEFF', fontSize:9.5 }}>de 22 alunos</span></div></div><div style={{ display:'flex', alignItems:'baseline', gap:7, marginTop:16 }}><strong style={{ fontSize:28 }}>{ownMonth.score.toLocaleString('pt-BR')}</strong><span style={{ color:'rgba(255,255,255,.67)', fontSize:11 }}>pontos no mês</span></div></div>
+      <div style={{ marginTop:18, fontSize:10.5, fontWeight:900, letterSpacing:1, color:'#0D5AA7', textTransform:'uppercase' }}>Resultado por semana</div>
+      <div style={{ display:'grid', gap:9, marginTop:9 }}>{month.weeks.map((week,weekIndex) => {
+        const weeklyWinner = week.ownPosition === 1 && !week.partial;
+        return <div key={week.range} style={{ padding:'14px 15px', borderRadius:17, background:'#fff', border:`1px solid ${weeklyWinner ? '#F2CF6B' : '#DCE7F4'}`, boxShadow:weeklyWinner ? '0 7px 18px rgba(194,139,18,.08)' : 'none' }}><div style={{ display:'flex', alignItems:'center', gap:11 }}><span style={{ width:39, height:39, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', background:weeklyWinner ? '#FFF5D6' : '#EBF4FC', fontSize:19 }}>{weeklyWinner ? '👑' : '📅'}</span><span style={{ flex:1 }}><strong style={{ display:'block', color:'#102C4E', fontSize:13 }}>{week.label} <span style={{ color:'#8191A3', fontWeight:650 }}>· {week.range}</span></strong><span style={{ display:'block', color:'#70839A', fontSize:10.5, marginTop:3 }}>{week.correct} de 10 perguntas acertadas{week.partial ? ' · parcial' : ''}</span></span><span style={{ textAlign:'right' }}><strong style={{ display:'block', color:'#0D5AA7', fontSize:14 }}>{week.ownScore}</strong><span style={{ color:weeklyWinner ? '#A36E00' : '#70839A', fontSize:9.5, fontWeight:900 }}>{week.ownPosition}º {week.partial ? 'provisório' : 'lugar'}</span></span></div>{weeklyWinner && <div style={{ marginTop:10, padding:'7px 9px', borderRadius:10, background:'#FFF8E5', color:'#966300', fontSize:10, fontWeight:850 }}>🏅 Selo conquistado: Vencedora da Semana</div>}<button onClick={() => setSelectedWeek(week)} style={{ width:'100%', border:0, borderTop:'1px solid #EDF2F7', marginTop:10, padding:'9px 0 0', background:'transparent', color:'#0D5AA7', fontFamily:'inherit', fontSize:10.5, fontWeight:900, cursor:'pointer' }}>VER AS 10 PERGUNTAS →</button></div>;
+      })}</div>
+      <div style={{ marginTop:20, fontSize:10.5, fontWeight:900, letterSpacing:1, color:'#0D5AA7', textTransform:'uppercase' }}>Ranking de {month.label}</div>
+      <div style={{ marginTop:9, padding:12, borderRadius:17, background:'#fff', border:'1px solid #DCE7F4' }}><ChallengeRanking month={month} /></div>
+    </div>
+    {selectedWeek && <ChallengeCorrections week={selectedWeek} onClose={() => setSelectedWeek(null)} />}
+  </div>;
+}
+
+function ChallengeHub({ student, simulation, previewAllowed, onBack, onStart }) {
   const [panel, setPanel] = React.useState(null);
   const upcoming = Date.now() < CHALLENGE_LAUNCH_AT.getTime();
-  const stats = student?.challengeStats || {};
+  const months = simulation?.months || [];
+  const currentMonth = months[months.length - 1] || { label:'Agosto', ranking:[] };
+  const currentOwn = currentMonth.ranking.find(row => row.isOwn) || { position:null, score:0 };
+  const badges = challengeSimulationBadges(simulation);
+  const earnedBadges = badges.filter(badge => badge.earned).length;
+  const stats = { monthPosition:currentOwn.position, monthPoints:currentOwn.score, totalPoints:Number(simulation?.totalPoints || 0) };
   return <div style={{ position:'fixed', inset:0, zIndex:10020, background:'#F3F7FC', maxWidth:480, margin:'0 auto', overflowY:'auto' }}>
     <div style={{ minHeight:250, padding:'calc(env(safe-area-inset-top, 0px) + 14px) 18px 28px', color:'#fff', background:'radial-gradient(circle at 88% 8%,rgba(93,225,255,.3),transparent 28%),linear-gradient(145deg,#071B3A,#0D4D91 68%,#087CC1)' }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}><button onClick={onBack} aria-label="Voltar" style={challengeRoundButton}>‹</button><span style={{ fontSize:10.5, fontWeight:900, letterSpacing:1.3, color:'#B9F2FF', textTransform:'uppercase' }}>Science English</span><button onClick={() => setPanel('badges')} aria-label="Meus selos" style={{ ...challengeRoundButton, fontSize:18 }}>🏅</button></div>
@@ -116,10 +191,13 @@ function ChallengeHub({ student, previewAllowed, onBack, onStart }) {
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,minmax(0,1fr))', gap:8, marginTop:12 }}>
         {[['Posição mensal',stats.monthPosition ? `${stats.monthPosition}º` : '—'],['Pontos do mês',Number(stats.monthPoints || 0).toLocaleString('pt-BR')],['Total acumulado',Number(stats.totalPoints || 0).toLocaleString('pt-BR')]].map(([label,value]) => <div key={label} style={{ minWidth:0, padding:'13px 8px', textAlign:'center', borderRadius:15, background:'#fff', border:'1px solid #DCE7F4' }}><strong style={{ display:'block', color:'#0D3F82', fontSize:15 }}>{value}</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:8.8, lineHeight:1.25, marginTop:4 }}>{label}</span></div>)}
       </div>
-      <button onClick={() => setPanel('badges')} style={{ width:'100%', display:'flex', alignItems:'center', gap:12, marginTop:12, padding:'14px 15px', borderRadius:17, border:'1px solid #DCE7F4', background:'#fff', cursor:'pointer', fontFamily:'inherit', textAlign:'left' }}><span style={{ width:40, height:40, borderRadius:13, display:'flex', alignItems:'center', justifyContent:'center', background:'#FFF5D9', fontSize:21 }}>🏅</span><span style={{ flex:1 }}><strong style={{ display:'block', color:'#071B3A', fontSize:13.5 }}>Meus selos</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:10.5, marginTop:2 }}>Descubra todas as conquistas</span></span><span style={{ color:'#8EA0B5', fontSize:20 }}>›</span></button>
+      <div style={{ marginTop:16, padding:'15px', borderRadius:18, background:'#fff', border:'1px solid #DCE7F4' }}><div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}><div><span style={{ display:'block', color:'#0D5AA7', fontSize:9.5, fontWeight:900, textTransform:'uppercase', letterSpacing:.9 }}>Ranking de {currentMonth.label.toLowerCase()}</span><strong style={{ display:'block', color:'#071B3A', fontSize:14, marginTop:3 }}>{currentMonth.ranking.length || 0} participantes</strong></div><span style={{ padding:'6px 8px', borderRadius:9, background:'#E8F3FF', color:'#0D5AA7', fontSize:9.5, fontWeight:900 }}>ATUALIZA DOMINGO</span></div><div style={{ marginTop:5 }}>{simulation ? <ChallengeRanking month={currentMonth} compact /> : <div style={{ padding:'18px 4px', color:'#7B8DA3', fontSize:11.5, textAlign:'center' }}>Carregando a simulação...</div>}</div></div>
+      <button onClick={() => setPanel('history')} style={{ width:'100%', display:'flex', alignItems:'center', gap:12, marginTop:12, padding:'14px 15px', borderRadius:17, border:'1px solid #DCE7F4', background:'#fff', cursor:'pointer', fontFamily:'inherit', textAlign:'left' }}><span style={{ width:40, height:40, borderRadius:13, display:'flex', alignItems:'center', justifyContent:'center', background:'#E7F3FF', fontSize:20 }}>📊</span><span style={{ flex:1 }}><strong style={{ display:'block', color:'#071B3A', fontSize:13.5 }}>Meu histórico</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:10.5, marginTop:2 }}>Junho, julho e agosto · semana por semana</span></span><span style={{ color:'#8EA0B5', fontSize:20 }}>›</span></button>
+      <button onClick={() => setPanel('badges')} style={{ width:'100%', display:'flex', alignItems:'center', gap:12, marginTop:9, padding:'14px 15px', borderRadius:17, border:'1px solid #DCE7F4', background:'#fff', cursor:'pointer', fontFamily:'inherit', textAlign:'left' }}><span style={{ width:40, height:40, borderRadius:13, display:'flex', alignItems:'center', justifyContent:'center', background:'#FFF5D9', fontSize:21 }}>🏅</span><span style={{ flex:1 }}><strong style={{ display:'block', color:'#071B3A', fontSize:13.5 }}>Meus selos</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:10.5, marginTop:2 }}>{earnedBadges} conquistados · veja sua coleção</span></span><span style={{ color:'#8EA0B5', fontSize:20 }}>›</span></button>
     </div>
     {panel === 'rules' && <ChallengeRules onClose={() => setPanel(null)} />}
-    {panel === 'badges' && <ChallengeBadges onClose={() => setPanel(null)} />}
+    {panel === 'badges' && <ChallengeBadges badges={badges} onClose={() => setPanel(null)} />}
+    {panel === 'history' && <ChallengeHistory simulation={simulation} onClose={() => setPanel(null)} />}
   </div>;
 }
 
