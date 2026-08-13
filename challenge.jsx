@@ -127,6 +127,7 @@ function ChallengeCorrections({ week, onClose }) {
   return <div style={{ position:'absolute', inset:0, zIndex:5, background:'#F3F7FC', overflowY:'auto' }}>
     <ChallengeSubpageHeader title={`${week?.label || 'Semana'} · ${week?.range || ''}`} subtitle={`${week?.ownScore || 0} pontos · ${accuracy}% de aproveitamento`} onClose={onClose} />
     <div style={{ padding:'16px 16px 32px' }}>
+      <div style={{ marginBottom:10, padding:'10px 12px', borderRadius:13, background:'#EAF5FF', border:'1px solid #B9DDFB', color:'#0D4F91', fontSize:10.5, lineHeight:1.45 }}><strong>Regra de precisão:</strong> ponto final é opcional e nunca desconta. Apenas vírgula obrigatória e interrogação obrigatória podem perder pontos.</div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,minmax(0,1fr))', gap:8 }}>
         {[['Aproveitamento',`${accuracy}%`],['Acertos',`${week?.correct || 0}/10`],['Posição',`${week?.ownPosition || '—'}º`]].map(([label,value]) => <div key={label} style={{ padding:'13px 7px', textAlign:'center', borderRadius:14, background:'#fff', border:'1px solid #DCE7F4' }}><strong style={{ display:'block', color:'#0D5AA7', fontSize:16 }}>{value}</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:9, marginTop:3 }}>{label}</span></div>)}
       </div>
