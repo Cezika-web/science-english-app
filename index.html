@@ -2701,7 +2701,7 @@ function nextActivityStep(activities) {
   return { ...escolhido, hasProgress:temProgresso(escolhido.activity) };
 }
 
-function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOpenExtra, onOpenCorrecao, onOpenChallenge }) {
+function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOpenExtra, onOpenCorrecao, onOpenChallenge, challengeEnabled = false }) {
   const [sub, setSub] = useState('atividades');
   const [openHist, setOpenHist] = useState({});
   const [openMonth, setOpenMonth] = useState({});
@@ -2813,7 +2813,7 @@ function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOp
         ))}
       </div>
 
-      {sub === 'atividades' && <ChallengeCard onOpen={onOpenChallenge} />}
+      {sub === 'atividades' && challengeEnabled && <ChallengeCard onOpen={onOpenChallenge} />}
 
       {sub === 'atividades' && (
         <button type="button" disabled={!continuar} onClick={() => continuar && onContinueActivity(continuar.activity, continuar.part)} style={{
@@ -3969,6 +3969,10 @@ function App() {
   const pendingPostId = useRef(new URLSearchParams(window.location.search).get('post') || '');
   const mirrorUid = useRef(new URLSearchParams(window.location.search).get('mirror') || '');
   const mirror = !!mirrorUid.current;
+  const challengePreviewAccess = mirror
+    || ['cmo.sep@gmail.com','czkenglish@gmail.com'].includes(user?.email || '')
+    || student?.slug === 'amorzinho'
+    || student?.email === 'brunaa.padilhaaa@gmail.com';
 
   // ── Comemoração (confete): dispara na hora que completa, em qualquer aba ──
   useEffect(() => {
@@ -4484,7 +4488,7 @@ function App() {
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         {tab === 'home'   && <HomeTab   student={student} posaulas={posaulas} activities={activities} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} />}
-        {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={() => setChallengeView('hub')} />}
+        {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={() => setChallengeView('hub')} challengeEnabled={challengePreviewAccess} />}
         {tab === 'progresso' && <ProgressTab student={student} posaulas={posaulas} activities={activities} reviewReports={reviewReports} onOpenReview={openReviewResult} />}
         {tab === 'vocab'  && <VocabTab vocab={vocab} />}
         {tab === 'perfil' && <PerfilTab student={student} onLogout={handleLogout} onPatchStudent={patchStudent} reviews={courseReviews} ownReview={ownCourseReview} onSaveReview={saveCourseReview} openReviewForm={reviewFormRequest} />}
@@ -4494,7 +4498,7 @@ function App() {
 
       {challengeView && <ChallengeHub
         student={student}
-        previewAllowed={mirror || ['cmo.sep@gmail.com','czkenglish@gmail.com'].includes(user?.email || '')}
+        previewAllowed={challengePreviewAccess}
         onBack={() => setChallengeView(null)}
         onStart={() => setChallengeView('game')}
       />}
