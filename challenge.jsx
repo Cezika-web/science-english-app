@@ -364,17 +364,42 @@ function ChallengeHub({ student, simulation, selectedChallenge, previewAllowed, 
   </div>;
 }
 
-function ChallengeGame({ onFinish, onExit }) {
+function currentChallengeRound() {
+  const now = new Date();
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weekday = monday.getDay();
+  monday.setDate(monday.getDate() - (weekday === 0 ? 6 : weekday - 1));
+  const weekKey = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2,'0')}-${String(monday.getDate()).padStart(2,'0')}`;
+  const part = weekday >= 4 || weekday === 0 ? 2 : 1;
+  return { weekKey, part, roundId:`${weekKey}-part-${part}` };
+}
+
+function ChallengeGame({ onFinish, onExit, onSubmit, recordingEnabled = false }) {
   const [phase, setPhase] = React.useState('intro');
   const [questionIndex, setQuestionIndex] = React.useState(0);
   const [answer, setAnswer] = React.useState('');
   const [seconds, setSeconds] = React.useState(CHALLENGE_TIME_SECONDS);
+  const [answers, setAnswers] = React.useState([]);
+  const answerRef = React.useRef('');
+  answerRef.current = answer;
+  const answersRef = React.useRef([]);
+  answersRef.current = answers;
 
   const completeCurrent = React.useCallback(() => {
-    if (questionIndex >= CHALLENGE_PREVIEW_QUESTIONS.length - 1) { setPhase('done'); return; }
+    const response = { questionIndex, prompt:CHALLENGE_PREVIEW_QUESTIONS[questionIndex].prompt, context:CHALLENGE_PREVIEW_QUESTIONS[questionIndex].context, answer:answerRef.current.trim() };
+    const nextAnswers = [...answersRef.current, response];
+    setAnswers(nextAnswers);
+    if (questionIndex >= CHALLENGE_PREVIEW_QUESTIONS.length - 1) {
+      if (!recordingEnabled || !onSubmit) { setPhase('done'); return; }
+      setPhase('saving');
+      Promise.resolve(onSubmit({ round:currentChallengeRound(), answers:nextAnswers }))
+        .then(() => setPhase('done'))
+        .catch(() => setPhase('save-error'));
+      return;
+    }
     setQuestionIndex(i => i + 1); setAnswer(''); setSeconds(CHALLENGE_TIME_SECONDS); setPhase('transition');
     setTimeout(() => setPhase('question'), 650);
-  }, [questionIndex]);
+  }, [questionIndex, onSubmit, recordingEnabled]);
 
   React.useEffect(() => {
     if (phase !== 'question') return;
@@ -385,7 +410,7 @@ function ChallengeGame({ onFinish, onExit }) {
     return () => clearInterval(timer);
   }, [phase, questionIndex, completeCurrent]);
 
-  const start = () => { setQuestionIndex(0); setAnswer(''); setSeconds(CHALLENGE_TIME_SECONDS); setPhase('question'); };
+  const start = () => { setQuestionIndex(0); setAnswer(''); setAnswers([]); setSeconds(CHALLENGE_TIME_SECONDS); setPhase('question'); };
   const question = CHALLENGE_PREVIEW_QUESTIONS[questionIndex];
   const timerTone = seconds <= 10 ? '#FF7B7B' : '#5DE1FF';
 
@@ -396,12 +421,14 @@ function ChallengeGame({ onFinish, onExit }) {
       <button onClick={start} style={{ width:'100%', border:0, borderRadius:16, padding:16, color:'#06162F', background:'linear-gradient(135deg,#5DE1FF,#E5FBFF)', fontFamily:'inherit', fontSize:13.5, fontWeight:900, cursor:'pointer' }}>COMEÇAR AGORA →</button>
     </div>}
     {phase === 'transition' && <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center' }}><div style={{ width:62, height:62, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background:'#168C72', fontSize:29 }}>✓</div><strong style={{ fontSize:18, marginTop:14 }}>Resposta enviada</strong><span style={{ color:'rgba(255,255,255,.6)', fontSize:12, marginTop:5 }}>Preparando a próxima…</span></div>}
+    {phase === 'saving' && <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center' }}><div style={{ width:62, height:62, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background:'#0D5AA7', fontSize:27 }}>↻</div><strong style={{ fontSize:18, marginTop:14 }}>Enviando suas respostas</strong><span style={{ color:'rgba(255,255,255,.6)', fontSize:12, marginTop:5 }}>Só mais um instante…</span></div>}
+    {phase === 'save-error' && <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center', padding:24 }}><div style={{ fontSize:38 }}>⚠️</div><strong style={{ fontSize:20, marginTop:14 }}>Não conseguimos salvar</strong><span style={{ color:'rgba(255,255,255,.65)', fontSize:12.5, marginTop:7 }}>Confira sua conexão e tente enviar novamente.</span><button onClick={() => { setPhase('saving'); Promise.resolve(onSubmit({ round:currentChallengeRound(), answers:answersRef.current })).then(() => setPhase('done')).catch(() => setPhase('save-error')); }} style={{ border:0, borderRadius:14, padding:'13px 18px', marginTop:20, color:'#06162F', background:'#5DE1FF', fontFamily:'inherit', fontWeight:900 }}>TENTAR NOVAMENTE</button></div>}
     {phase === 'question' && <div style={{ height:'100%', display:'flex', flexDirection:'column', padding:'calc(env(safe-area-inset-top, 0px) + 18px) 18px calc(env(safe-area-inset-bottom, 0px) + 18px)' }}>
       <div style={{ display:'flex', alignItems:'center', gap:12 }}><div style={{ flex:1, display:'flex', gap:5 }}>{CHALLENGE_PREVIEW_QUESTIONS.map((_,i) => <span key={i} style={{ flex:1, height:4, borderRadius:4, background:i <= questionIndex ? '#5DE1FF' : 'rgba(255,255,255,.16)' }} />)}</div><strong style={{ color:timerTone, minWidth:44, textAlign:'right', fontSize:18, fontVariantNumeric:'tabular-nums' }}>0:{String(seconds).padStart(2,'0')}</strong></div>
       <div style={{ color:'#8DEBFF', fontSize:10, fontWeight:900, letterSpacing:1.1, textTransform:'uppercase', marginTop:24 }}>Pergunta {questionIndex + 1} de 5 · {question.type}</div>
       <div style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'center', minHeight:0 }}><h2 style={{ fontSize:19, lineHeight:1.38, margin:'0 0 14px' }}>{question.prompt}</h2><div style={{ padding:'17px 16px', borderRadius:17, background:'rgba(255,255,255,.08)', border:'1px solid rgba(255,255,255,.13)', fontSize:16, fontWeight:700, lineHeight:1.45 }}>{question.context}</div><div style={{ color:'rgba(255,255,255,.52)', fontSize:10.5, marginTop:9 }}>{question.hint}</div><textarea autoFocus value={answer} onChange={e => setAnswer(e.target.value)} spellCheck="false" autoCorrect="off" autoCapitalize="sentences" placeholder="Digite sua resposta…" style={{ width:'100%', minHeight:112, boxSizing:'border-box', resize:'none', marginTop:18, padding:'15px', borderRadius:17, border:'1.5px solid rgba(93,225,255,.48)', outline:'none', color:'#071B3A', background:'#F7FCFF', fontFamily:'inherit', fontSize:15, lineHeight:1.45, boxShadow:'0 10px 24px rgba(0,0,0,.15)' }} /></div>
       <button onClick={completeCurrent} style={{ width:'100%', border:0, borderRadius:15, padding:15, color:'#06162F', background:answer.trim() ? 'linear-gradient(135deg,#5DE1FF,#E5FBFF)' : '#8CA3B9', fontFamily:'inherit', fontSize:13, fontWeight:900, cursor:'pointer' }}>ENVIAR RESPOSTA →</button>
     </div>}
-    {phase === 'done' && <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center', padding:'30px 24px' }}><div style={{ width:82, height:82, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(145deg,#168C72,#35C69F)', boxShadow:'0 18px 40px rgba(22,140,114,.3)', fontSize:39 }}>✓</div><div style={{ color:'#8DEBFF', fontSize:10.5, fontWeight:900, letterSpacing:1.4, textTransform:'uppercase', marginTop:24 }}>Desafio finalizado</div><h2 style={{ fontSize:26, margin:'8px 0' }}>Suas 5 respostas foram enviadas</h2><p style={{ maxWidth:320, color:'rgba(255,255,255,.66)', fontSize:13, lineHeight:1.55 }}>O resultado, sua posição e as correções serão liberados no domingo, 23 de agosto.</p><div style={{ width:'100%', maxWidth:330, marginTop:14, padding:'14px 15px', borderRadius:16, background:'rgba(255,255,255,.08)', border:'1px solid rgba(255,255,255,.13)' }}><span style={{ display:'block', color:'#8DEBFF', fontSize:9.5, fontWeight:900, textTransform:'uppercase' }}>Próximo desafio</span><strong style={{ display:'block', fontSize:14, marginTop:4 }}>Quinta-feira, 20 de agosto</strong></div><button onClick={onFinish} style={{ width:'100%', maxWidth:330, border:0, borderRadius:16, padding:15, marginTop:22, color:'#06162F', background:'linear-gradient(135deg,#5DE1FF,#E5FBFF)', fontFamily:'inherit', fontSize:13, fontWeight:900, cursor:'pointer' }}>VOLTAR AO DESAFIO</button><span style={{ color:'rgba(255,255,255,.42)', fontSize:10, marginTop:13 }}>Prévia: nenhuma resposta foi registrada</span></div>}
+    {phase === 'done' && <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center', padding:'30px 24px' }}><div style={{ width:82, height:82, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(145deg,#168C72,#35C69F)', boxShadow:'0 18px 40px rgba(22,140,114,.3)', fontSize:39 }}>✓</div><div style={{ color:'#8DEBFF', fontSize:10.5, fontWeight:900, letterSpacing:1.4, textTransform:'uppercase', marginTop:24 }}>Desafio finalizado</div><h2 style={{ fontSize:26, margin:'8px 0' }}>Suas 5 respostas foram enviadas</h2><p style={{ maxWidth:320, color:'rgba(255,255,255,.66)', fontSize:13, lineHeight:1.55 }}>O resultado, sua posição e as correções serão liberados no domingo, 23 de agosto.</p><div style={{ width:'100%', maxWidth:330, marginTop:14, padding:'14px 15px', borderRadius:16, background:'rgba(255,255,255,.08)', border:'1px solid rgba(255,255,255,.13)' }}><span style={{ display:'block', color:'#8DEBFF', fontSize:9.5, fontWeight:900, textTransform:'uppercase' }}>Próximo desafio</span><strong style={{ display:'block', fontSize:14, marginTop:4 }}>Quinta-feira, 20 de agosto</strong></div><button onClick={onFinish} style={{ width:'100%', maxWidth:330, border:0, borderRadius:16, padding:15, marginTop:22, color:'#06162F', background:'linear-gradient(135deg,#5DE1FF,#E5FBFF)', fontFamily:'inherit', fontSize:13, fontWeight:900, cursor:'pointer' }}>VOLTAR AO DESAFIO</button>{!recordingEnabled && <span style={{ color:'rgba(255,255,255,.42)', fontSize:10, marginTop:13 }}>Prévia: nenhuma resposta foi registrada</span>}</div>}
   </div>;
 }
