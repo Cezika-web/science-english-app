@@ -58,7 +58,7 @@ function ChallengeCard({ onOpen, challenge }) {
       <span style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, position:'relative' }}>
         <span style={{ display:'flex', alignItems:'center', gap:9, fontSize:10.5, fontWeight:900, letterSpacing:1.25, textTransform:'uppercase', color:'#A9EEFF' }}>
           <span style={{ width:30, height:30, borderRadius:10, display:'inline-flex', alignItems:'center', justifyContent:'center', background:'rgba(255,255,255,.13)', fontSize:17 }}>🏆</span>
-          {personal ? 'Desafio particular' : 'Desafio Science English'}
+          {challenge?.source === 'class-group' ? 'Desafio da turma' : personal ? 'Desafio particular' : 'Desafio Science English'}
         </span>
         <span style={{ padding:'5px 8px', borderRadius:999, background:personal ? 'rgba(255,255,255,.18)' : upcoming ? 'rgba(255,255,255,.14)' : '#5DE1FF', color:personal || upcoming ? '#fff' : '#071B3A', fontSize:9, fontWeight:900, textTransform:'uppercase' }}>{personal ? 'Ativo' : upcoming ? 'Em breve' : 'Disponível'}</span>
       </span>
@@ -277,21 +277,22 @@ function ChallengeDuels({ simulation, onClose }) {
   </div>;
 }
 
-function ChallengePrivateHub({ challenge, onBack }) {
+function ChallengePrivateHub({ challenge, onBack, onJoin }) {
   const [showQuestions, setShowQuestions] = React.useState(false);
   const week = challenge?.currentWeek || {};
-  const ranking = week.ranking || [];
+  const isClassGroup = challenge?.source === 'class-group';
+  const ranking = week.ranking?.length ? week.ranking : (challenge?.memberNames || []).map((name,index) => ({ name, position:index + 1, score:0 }));
   const own = ranking.find(row => row.isOwn) || { position:week.ownPosition || '—', score:week.ownScore || 0 };
   const gradient = CHALLENGE_CARD_THEMES[challenge?.theme] || CHALLENGE_CARD_THEMES.violet;
   return <div style={{ position:'fixed', inset:0, zIndex:10020, maxWidth:480, margin:'0 auto', background:'#F3F7FC', overflowY:'auto' }}>
     <div style={{ minHeight:235, padding:'calc(env(safe-area-inset-top, 0px) + 14px) 18px 28px', color:'#fff', background:gradient }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}><button onClick={onBack} aria-label="Voltar" style={challengeRoundButton}>‹</button><span style={{ fontSize:10.5, fontWeight:900, letterSpacing:1.2, color:'#fff', textTransform:'uppercase' }}>Desafio particular</span><span style={{ width:36 }} /></div>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}><button onClick={onBack} aria-label="Voltar" style={challengeRoundButton}>‹</button><span style={{ fontSize:10.5, fontWeight:900, letterSpacing:1.2, color:'#fff', textTransform:'uppercase' }}>{isClassGroup ? 'Desafio da turma' : 'Desafio particular'}</span><span style={{ width:36 }} /></div>
       <div style={{ textAlign:'center', marginTop:22 }}><div style={{ fontSize:36 }}>⚔️</div><h1 style={{ fontSize:23, margin:'9px 0 5px', lineHeight:1.15 }}>{challenge?.title || 'Desafio particular'}</h1><p style={{ margin:0, color:'rgba(255,255,255,.74)', fontSize:12 }}>{challenge?.participantLabel || `${challenge?.participantCount || ranking.length} participantes`}</p></div>
     </div>
     <div style={{ padding:'0 16px 30px', marginTop:-24 }}>
-      <div style={{ padding:17, borderRadius:21, background:'#fff', border:'1px solid #DCE7F4', boxShadow:'0 12px 28px rgba(7,27,58,.1)' }}><div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12 }}><span><span style={{ display:'block', color:'#0D5AA7', fontSize:9.5, fontWeight:900, textTransform:'uppercase' }}>Rodada atual · três dias</span><strong style={{ display:'block', color:'#102C4E', fontSize:16, marginTop:4 }}>{challenge?.questionCount || week.questions?.length || 10} perguntas</strong><span style={{ display:'block', color:'#70839A', fontSize:10.5, marginTop:4 }}>{challenge?.scheduleLabel || 'Segunda 00h até quarta 23h59'}</span></span><span style={{ padding:'6px 8px', borderRadius:9, background:'#E8F3FF', color:'#0D5AA7', fontSize:9, fontWeight:900 }}>ATIVO</span></div><button onClick={() => setShowQuestions(true)} style={{ width:'100%', border:0, borderRadius:14, padding:14, marginTop:14, color:'#fff', background:gradient, fontFamily:'inherit', fontSize:11.5, fontWeight:900, cursor:'pointer' }}>VER PERGUNTAS E PONTUAÇÃO →</button></div>
+      <div style={{ padding:17, borderRadius:21, background:'#fff', border:'1px solid #DCE7F4', boxShadow:'0 12px 28px rgba(7,27,58,.1)' }}><div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12 }}><span><span style={{ display:'block', color:'#0D5AA7', fontSize:9.5, fontWeight:900, textTransform:'uppercase' }}>{isClassGroup ? 'Criado automaticamente pela aula' : 'Rodada atual · três dias'}</span><strong style={{ display:'block', color:'#102C4E', fontSize:16, marginTop:4 }}>{challenge?.questionCount || week.questions?.length || 10} perguntas</strong><span style={{ display:'block', color:'#70839A', fontSize:10.5, marginTop:4 }}>{challenge?.scheduleLabel || 'Segunda 00h até quarta 23h59'}</span></span><span style={{ padding:'6px 8px', borderRadius:9, background:challenge?.joined ? '#DFF7E8' : '#E8F3FF', color:challenge?.joined ? '#15713A' : '#0D5AA7', fontSize:9, fontWeight:900 }}>{challenge?.joined ? 'PARTICIPANDO' : 'OPCIONAL'}</span></div>{isClassGroup && !challenge?.joined ? <button onClick={() => onJoin?.(challenge)} style={{ width:'100%', border:0, borderRadius:14, padding:14, marginTop:14, color:'#fff', background:gradient, fontFamily:'inherit', fontSize:11.5, fontWeight:900, cursor:'pointer' }}>PARTICIPAR DESTA RODADA →</button> : <button onClick={() => setShowQuestions(true)} style={{ width:'100%', border:0, borderRadius:14, padding:14, marginTop:14, color:'#fff', background:gradient, fontFamily:'inherit', fontSize:11.5, fontWeight:900, cursor:'pointer' }}>VER PERGUNTAS E PONTUAÇÃO →</button>}</div>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,minmax(0,1fr))', gap:8, marginTop:12 }}>{[
-        ['Seus pontos',Number(own.score || 0).toLocaleString('pt-BR'),'PTS'],['Posição',`${own.position}º`,''],['Perguntas',String(challenge?.questionCount || week.questions?.length || 0),'']
+        ['Seus pontos',Number(own.score || 0).toLocaleString('pt-BR'),'PTS'],['Posição',Number.isFinite(Number(own.position)) ? `${own.position}º` : '—',''],['Perguntas',String(challenge?.questionCount || week.questions?.length || 0),'']
       ].map(([label,value,suffix]) => <div key={label} style={{ padding:'13px 6px', textAlign:'center', borderRadius:15, background:'#fff', border:'1px solid #DCE7F4' }}><strong style={{ display:'block', color:'#0D3F82', fontSize:15 }}>{value}{suffix && <small style={{ marginLeft:2, fontSize:7.5 }}>{suffix}</small>}</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:8.8, marginTop:4 }}>{label}</span></div>)}</div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', margin:'18px 2px 8px' }}><span style={{ color:'#0D5AA7', fontSize:10, fontWeight:900, letterSpacing:.8, textTransform:'uppercase' }}>Placar particular</span><span style={{ color:'#70839A', fontSize:9.5 }}>{ranking.length} participantes</span></div>
       <div style={{ padding:12, borderRadius:17, background:'#fff', border:'1px solid #DCE7F4' }}><ChallengeRanking month={{ ranking }} showAll /></div>
@@ -325,9 +326,9 @@ function ChallengeProgressPanel({ simulation, onOpenChallenge }) {
   </div>;
 }
 
-function ChallengeHub({ student, simulation, selectedChallenge, previewAllowed, onBack, onStart }) {
+function ChallengeHub({ student, simulation, selectedChallenge, previewAllowed, onBack, onStart, onJoinChallenge }) {
   const [panel, setPanel] = React.useState(null);
-  if (selectedChallenge?.kind === 'private') return <ChallengePrivateHub challenge={selectedChallenge} onBack={onBack} />;
+  if (selectedChallenge?.kind === 'private') return <ChallengePrivateHub challenge={selectedChallenge} onBack={onBack} onJoin={onJoinChallenge} />;
   const upcoming = Date.now() < CHALLENGE_LAUNCH_AT.getTime();
   const months = simulation?.months || [];
   const currentMonth = months[months.length - 1] || { label:'Agosto', ranking:[] };

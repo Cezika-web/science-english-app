@@ -290,6 +290,7 @@
 
       <div class="tabs">
         <button class="tab active" data-tab="students">👥 Alunos</button>
+        <button class="tab" data-tab="groups">👥 Turmas/Duplas</button>
         <button class="tab" data-tab="creditos">💳 Saldo</button>
         <button class="tab" data-tab="posaula">📄 Pós-aula</button>
         <button class="tab" data-tab="processos">⏳ Processos <span id="processos-count" class="process-dot" aria-label="Processos prontos"></span></button>
@@ -313,6 +314,23 @@
         <div class="students-grid" id="students-grid">
           <div class="loading">Carregando alunos...</div>
         </div>
+      </div>
+
+      <!-- TURMAS / DUPLAS -->
+      <div class="tab-panel" id="tab-groups">
+        <div class="form-card" style="margin-bottom:18px;">
+          <h3 style="margin:0 0 6px;">Criar turma ou dupla</h3>
+          <p style="font-size:.84rem;color:var(--muted);line-height:1.5;margin:0 0 16px;">Selecione pelo menos dois alunos que fazem aula juntos. O desafio da turma aparecerá automaticamente no aplicativo de cada integrante, além do desafio geral.</p>
+          <label class="form-label" for="group-name">Nome da turma</label>
+          <input class="form-input" id="group-name" placeholder="Ex.: Lucas e Gabriel" style="margin-bottom:14px;">
+          <label class="form-label">Alunos que fazem aula juntos</label>
+          <div id="group-students" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin:8px 0 14px;"></div>
+          <label class="form-label" for="group-question-count">Perguntas por rodada</label>
+          <select class="form-input" id="group-question-count" style="margin-bottom:14px;"><option value="5">5 perguntas</option><option value="10" selected>10 perguntas</option><option value="15">15 perguntas</option><option value="20">20 perguntas</option></select>
+          <div style="display:flex;gap:9px;flex-wrap:wrap;"><button class="btn-primary" id="group-save" type="button">Criar desafio automático</button><button class="btn-secondary" id="group-cancel" type="button" style="display:none;">Cancelar edição</button></div>
+          <div class="form-msg" id="group-msg" style="display:none;"></div>
+        </div>
+        <div id="groups-list"><div class="loading">Carregando turmas...</div></div>
       </div>
 
       <!-- EX-ALUNOS -->
@@ -960,6 +978,9 @@
 
     let adminUid = null;
     let allStudents = [];
+    let classGroups = [];
+    let editingGroupId = null;
+    let editingGroupMembers = [];
     const review90PromptedSchools = new Set();
 
     const adminDate = value => {
@@ -1481,6 +1502,7 @@
         if (tab.dataset.tab === 'avaliacoes') recarregarAvaliacoes();
         if (tab.dataset.tab === 'creditos') carregarConsumoApi();
         if (tab.dataset.tab === 'processos') { marcarProcessosPosAulaVistos(); recarregarProcessosPosAula(); }
+        if (tab.dataset.tab === 'groups') loadClassGroups();
       };
     });
 
@@ -1494,8 +1516,8 @@
     // Quem administra a escola vê a interface dela — inclusive o César, ao
     // trocar de escola no seletor do topo.
     const ABAS_POR_MODO = {
-      manual:    ['students', 'creditos', 'posaula', 'processos', 'publish', 'correct', 'vocab', 'extras', 'avisos', 'add', 'exalunos', 'pendencias'],
-      assistido: ['students', 'creditos', 'posaula', 'processos', 'publish', 'extras', 'avisos', 'add', 'exalunos', 'pendencias'],
+      manual:    ['students', 'groups', 'creditos', 'posaula', 'processos', 'publish', 'correct', 'vocab', 'extras', 'avisos', 'add', 'exalunos', 'pendencias'],
+      assistido: ['students', 'groups', 'creditos', 'posaula', 'processos', 'publish', 'extras', 'avisos', 'add', 'exalunos', 'pendencias'],
     };
 
     function modoDaEscolaAtual() {
@@ -3015,6 +3037,8 @@
 
       // Daqui pra baixo o admin enxerga só a escola selecionada.
       allStudents = todos.filter(s => (s.schoolId || ESCOLA_PADRAO) === escolaAtual);
+      renderGroupStudentOptions();
+      if (document.querySelector('.tab[data-tab="groups"]')?.classList.contains('active')) loadClassGroups();
 
       // Mantém a lista pública "niveis" sincronizada (lida ao vivo pelo skill de atividades)
       allStudents.filter(s => !s.archived).forEach(s => {
@@ -4041,6 +4065,85 @@
     }
 
     // ── CREATE STUDENT ──────────────────────────────────────────────────
+    function renderGroupStudentOptions(selected = editingGroupMembers) {
+      const box = document.getElementById('group-students');
+      if (!box) return;
+      const active = allStudents.filter(student => !student.archived);
+      box.innerHTML = active.map(student => `<label style="display:flex;align-items:center;gap:9px;padding:10px 11px;border:1px solid var(--border);border-radius:10px;background:var(--card);cursor:pointer;font-size:.84rem;"><input type="checkbox" value="${student.uid}" ${selected.includes(student.uid) ? 'checked' : ''}> <span>${esc(student.name || student.firstName || 'Aluno')}</span></label>`).join('') || '<span style="color:var(--muted);font-size:.84rem;">Nenhum aluno ativo nesta escola.</span>';
+    }
+
+    function resetGroupForm() {
+      editingGroupId = null; editingGroupMembers = [];
+      document.getElementById('group-name').value = '';
+      document.getElementById('group-question-count').value = '10';
+      document.getElementById('group-save').textContent = 'Criar desafio automático';
+      document.getElementById('group-cancel').style.display = 'none';
+      showMsg('group-msg', '', ''); renderGroupStudentOptions();
+    }
+
+    async function loadClassGroups() {
+      const list = document.getElementById('groups-list'); if (!list) return;
+      list.innerHTML = '<div class="loading">Carregando turmas...</div>';
+      try {
+        const snap = await getDocs(collection(db, 'schools', escolaAtual, 'classGroups'));
+        classGroups = snap.docs.map(groupDoc => ({ id:groupDoc.id, ...groupDoc.data() })).sort((a,b) => (a.name || '').localeCompare(b.name || '', 'pt', { sensitivity:'base' }));
+        list.innerHTML = classGroups.map(group => `<div class="form-card" style="margin-bottom:10px;display:flex;align-items:center;gap:12px;"><span style="width:42px;height:42px;border-radius:13px;background:#DFF7F4;display:flex;align-items:center;justify-content:center;font-size:21px;">👥</span><span style="flex:1;min-width:0;"><strong style="display:block;">${esc(group.name || 'Turma')}</strong><small style="color:var(--muted);">${(group.memberNames || []).map(esc).join(' · ')} · ${Number(group.questionCount || 10)} perguntas por rodada</small></span><button class="btn-secondary group-edit" data-id="${group.id}" type="button">Editar</button><button class="btn-secondary group-delete" data-id="${group.id}" type="button" style="color:#B42318;">Excluir</button></div>`).join('') || '<div class="loading">Nenhuma turma ou dupla cadastrada.</div>';
+        list.querySelectorAll('.group-edit').forEach(button => button.onclick = () => editClassGroup(button.dataset.id));
+        list.querySelectorAll('.group-delete').forEach(button => button.onclick = () => deleteClassGroup(button.dataset.id));
+      } catch (error) { list.innerHTML = `<div class="form-msg err" style="display:block;">Erro ao carregar turmas: ${esc(error.message)}</div>`; }
+    }
+
+    function editClassGroup(groupId) {
+      const group = classGroups.find(item => item.id === groupId); if (!group) return;
+      editingGroupId = group.id; editingGroupMembers = [...(group.memberUids || [])];
+      document.getElementById('group-name').value = group.name || '';
+      document.getElementById('group-question-count').value = String(group.questionCount || 10);
+      document.getElementById('group-save').textContent = 'Salvar alterações';
+      document.getElementById('group-cancel').style.display = '';
+      renderGroupStudentOptions(); window.scrollTo({ top:0, behavior:'smooth' });
+    }
+
+    async function mirrorClassGroup(groupId, group, oldMembers = []) {
+      await Promise.all(oldMembers.filter(uid => !group.memberUids.includes(uid)).map(uid => deleteDoc(doc(db, 'students', uid, 'classGroups', groupId))));
+      await Promise.all(group.memberUids.map(uid => setDoc(doc(db, 'students', uid, 'classGroups', groupId), {
+        id:groupId, schoolId:escolaAtual, source:'class-group', kind:'private', theme:'teal', active:true,
+        title:`Desafio da turma ${group.name}`, name:group.name, memberUids:group.memberUids, memberNames:group.memberNames,
+        participantCount:group.memberUids.length, participantLabel:group.memberNames.join(' e '), questionCount:group.questionCount,
+        updatedAt:serverTimestamp()
+      }, { merge:true })));
+    }
+
+    document.getElementById('group-cancel').onclick = resetGroupForm;
+    document.getElementById('group-save').onclick = async () => {
+      const selected = [...document.querySelectorAll('#group-students input:checked')].map(input => input.value);
+      if (selected.length < 2) { showMsg('group-msg', 'Selecione pelo menos dois alunos.', 'err'); return; }
+      const members = selected.map(uid => allStudents.find(student => student.uid === uid)).filter(Boolean);
+      const firstNames = members.map(student => student.firstName || (student.name || 'Aluno').split(' ')[0]);
+      const name = document.getElementById('group-name').value.trim() || firstNames.join(' e ');
+      const questionCount = Number(document.getElementById('group-question-count').value || 10);
+      const button = document.getElementById('group-save'); const currentId = editingGroupId;
+      button.disabled = true; button.textContent = 'Salvando...';
+      try {
+        const groupId = currentId || `${Date.now()}-${name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}`;
+        const oldMembers = currentId ? [...editingGroupMembers] : [];
+        const group = { name, memberUids:selected, memberNames:members.map(student => student.name || student.firstName), questionCount, active:true, automaticChallenge:true, updatedAt:serverTimestamp() };
+        await setDoc(doc(db, 'schools', escolaAtual, 'classGroups', groupId), { ...group, ...(currentId ? {} : { createdAt:serverTimestamp() }) }, { merge:true });
+        await mirrorClassGroup(groupId, group, oldMembers); resetGroupForm();
+        showMsg('group-msg', `✅ ${name} salva. O desafio já aparece para ${firstNames.join(' e ')}.`, 'ok'); await loadClassGroups();
+      } catch (error) { showMsg('group-msg', 'Erro: ' + error.message, 'err'); }
+      finally { button.disabled = false; if (!editingGroupId) button.textContent = 'Criar desafio automático'; }
+    };
+
+    async function deleteClassGroup(groupId) {
+      const group = classGroups.find(item => item.id === groupId);
+      if (!group || !confirm(`Excluir a turma "${group.name}" e remover o desafio dos alunos?`)) return;
+      try {
+        await Promise.all((group.memberUids || []).map(uid => deleteDoc(doc(db, 'students', uid, 'classGroups', groupId))));
+        await deleteDoc(doc(db, 'schools', escolaAtual, 'classGroups', groupId));
+        if (editingGroupId === groupId) resetGroupForm(); await loadClassGroups();
+      } catch (error) { alert('Erro: ' + error.message); }
+    }
+
     document.getElementById('btn-create-student').onclick = async () => {
       const name   = document.getElementById('f-name').value.trim();
       const email  = document.getElementById('f-email').value.trim();

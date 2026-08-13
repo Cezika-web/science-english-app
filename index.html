@@ -3957,6 +3957,7 @@ function App() {
   const [tab, setTab]                   = useState('home');
   const [challengeView, setChallengeView] = useState(null);
   const [challengeSimulation, setChallengeSimulation] = useState(null);
+  const [classChallenges, setClassChallenges] = useState([]);
   const [selectedChallenge, setSelectedChallenge] = useState(null);
   const [readerPost, setReaderPost]     = useState(null);
   const [openActivity, setOpenActivity] = useState(null);
@@ -3975,7 +3976,12 @@ function App() {
   const challengePreviewAccess = mirror
     || ['cmo.sep@gmail.com','czkenglish@gmail.com'].includes(user?.email || '')
     || student?.slug === 'amorzinho'
-    || student?.email === 'brunaa.padilhaaa@gmail.com';
+    || student?.email === 'brunaa.padilhaaa@gmail.com'
+    || classChallenges.length > 0;
+  const combinedChallengeSimulation = {
+    ...(challengeSimulation || {}),
+    activeChallenges:[...(challengeSimulation?.activeChallenges || []), ...classChallenges.filter(group => group.active !== false)]
+  };
 
   // ── Comemoração (confete): dispara na hora que completa, em qualquer aba ──
   useEffect(() => {
@@ -4145,7 +4151,7 @@ function App() {
   }
 
   async function loadData(uid, fb) {
-    const [snap, posSnaps, actSnaps, vocSnaps, extSnaps, reviewSnaps, challengeSnap] = await Promise.all([
+    const [snap, posSnaps, actSnaps, vocSnaps, extSnaps, reviewSnaps, challengeSnap, classGroupSnaps] = await Promise.all([
       fb.getDoc(fb.doc(fb.db, 'students', uid)),
       fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'posaulas'), fb.orderBy('createdAt','desc')))
         .catch(e => { console.error('Pós-aulas:', e); return { docs: [] }; }),
@@ -4154,6 +4160,7 @@ function App() {
       fb.getDocs(fb.collection(fb.db, 'students', uid, 'extras')).catch(() => ({ docs: [] })),
       fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'review90Reports'), fb.orderBy('createdAt','desc'))).catch(() => ({ docs: [] })),
       fb.getDoc(fb.doc(fb.db, 'students', uid, 'challengePreview', 'history')).catch(() => null),
+      fb.getDocs(fb.collection(fb.db, 'students', uid, 'classGroups')).catch(() => ({ docs: [] })),
     ]);
     if (!snap.exists()) return;
     const dadosAluno = snap.data();
@@ -4182,6 +4189,7 @@ function App() {
     setExtras(extSnaps.docs.map(d => ({ id: d.id, ...d.data() })));
     setReviewReports(reviewSnaps.docs.map(d => ({ id: d.id, ...d.data() })));
     setChallengeSimulation(challengeSnap?.exists?.() ? challengeSnap.data() : null);
+    setClassChallenges(classGroupSnaps.docs.map(groupDoc => ({ id:groupDoc.id, ...groupDoc.data() })));
     if (pendingPostId.current && posts.length > 0) {
       const target = posts.find(p => p.id === pendingPostId.current || p.filename === pendingPostId.current);
       if (target) {
@@ -4493,8 +4501,8 @@ function App() {
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         {tab === 'home'   && <HomeTab   student={student} posaulas={posaulas} activities={activities} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} />}
-        {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={(challenge) => { setSelectedChallenge(challenge || null); setChallengeView('hub'); }} challengeSimulation={challengeSimulation} challengeEnabled={challengePreviewAccess} />}
-        {tab === 'progresso' && <ProgressTab student={student} posaulas={posaulas} activities={activities} reviewReports={reviewReports} onOpenReview={openReviewResult} challengeSimulation={challengeSimulation} challengeEnabled={challengePreviewAccess} onOpenChallenge={() => { setSelectedChallenge(null); setChallengeView('hub'); }} />}
+        {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={(challenge) => { setSelectedChallenge(challenge || null); setChallengeView('hub'); }} challengeSimulation={combinedChallengeSimulation} challengeEnabled={challengePreviewAccess} />}
+        {tab === 'progresso' && <ProgressTab student={student} posaulas={posaulas} activities={activities} reviewReports={reviewReports} onOpenReview={openReviewResult} challengeSimulation={combinedChallengeSimulation} challengeEnabled={challengePreviewAccess} onOpenChallenge={() => { setSelectedChallenge(null); setChallengeView('hub'); }} />}
         {tab === 'vocab'  && <VocabTab vocab={vocab} />}
         {tab === 'perfil' && <PerfilTab student={student} onLogout={handleLogout} onPatchStudent={patchStudent} reviews={courseReviews} ownReview={ownCourseReview} onSaveReview={saveCourseReview} openReviewForm={reviewFormRequest} />}
       </div>
@@ -4503,11 +4511,19 @@ function App() {
 
       {challengeView && <ChallengeHub
         student={student}
-        simulation={challengeSimulation}
+        simulation={combinedChallengeSimulation}
         selectedChallenge={selectedChallenge}
         previewAllowed={challengePreviewAccess}
         onBack={() => { setChallengeView(null); setSelectedChallenge(null); }}
         onStart={() => setChallengeView('game')}
+        onJoinChallenge={async (challenge) => {
+          if (mirror || !challenge?.id) return;
+          const fb = await getFB();
+          await fb.updateDoc(fb.doc(fb.db, 'students', user.uid, 'classGroups', challenge.id), { joined:true, joinedAt:fb.serverTimestamp() });
+          setClassChallenges(items => items.map(item => item.id === challenge.id ? { ...item, joined:true } : item));
+          setSelectedChallenge(current => current?.id === challenge.id ? { ...current, joined:true } : current);
+          showToast('Você entrou no desafio da turma!');
+        }}
       />}
       {challengeView === 'game' && <ChallengeGame
         onExit={() => setChallengeView('hub')}

@@ -113,6 +113,12 @@ service cloud.firestore {
         allow write: if isAdmin() || ownsSchool(schoolId);
       }
 
+      // O professor monta turmas/duplas; os desafios são espelhados de forma
+      // privada dentro de cada aluno participante.
+      match /classGroups/{groupId} {
+        allow read, write: if isAdmin() || ownsSchool(schoolId);
+      }
+
       match /courseReviews/{studentUid} {
         allow read: if isAdmin()
           || ownsSchool(schoolId)
@@ -207,6 +213,16 @@ service cloud.firestore {
       match /challengePreview/{previewId} {
         allow read: if isOwnStudent(uid) || managesStudent(uid);
         allow write: if managesStudent(uid);
+      }
+
+      match /classGroups/{groupId} {
+        allow read: if isOwnStudent(uid) || managesStudent(uid);
+        allow create, delete: if managesStudent(uid);
+        allow update: if managesStudent(uid) || (
+          isOwnStudent(uid)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['joined', 'joinedAt'])
+          && request.resource.data.joined is bool
+        );
       }
 
       // Toda subcoleção nova nasce fechada para o aluno até ganhar uma regra
