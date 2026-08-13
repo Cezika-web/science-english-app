@@ -3272,6 +3272,7 @@ function PerfilTab({ student, onLogout, onPatchStudent, reviews = [], ownReview,
   const [saving, setSaving]       = useState(false);
   const [msg, setMsg]             = useState('');
   const [photoSaving, setPhotoSaving] = useState(false);
+  const [showReviewsPage, setShowReviewsPage] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState('');
@@ -3290,6 +3291,7 @@ function PerfilTab({ student, onLogout, onPatchStudent, reviews = [], ownReview,
 
   useEffect(() => {
     if (!openReviewForm) return;
+    setShowReviewsPage(true);
     setShowReviewForm(true);
     const timer = setTimeout(() => reviewFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
     return () => clearTimeout(timer);
@@ -3371,6 +3373,80 @@ function PerfilTab({ student, onLogout, onPatchStudent, reviews = [], ownReview,
   const inp = { width: '100%', padding: '12px 14px', border: '1.5px solid #E2E8F0', borderRadius: 12, fontSize: 14, outline: 'none', background: '#F8FAFC', color: '#0F172A', marginBottom: 8, fontFamily: 'inherit' };
   const actBtn = (color = 'var(--brand)') => ({ width: 92, padding: '10px 0', textAlign: 'center', borderRadius: 12, border: 'none', cursor: 'pointer', background: color, color: '#fff', fontWeight: 700, fontSize: 13, marginRight: 6, marginTop: 4, fontFamily: 'inherit', flexShrink: 0 });
 
+  if (showReviewsPage) return (
+    <div className="scroll-area" style={{ padding:'14px 16px 20px' }}>
+      <button type="button" onClick={() => setShowReviewsPage(false)} style={{ width:'100%', border:'1px solid rgba(var(--brand-rgb),.16)', borderRadius:14, padding:'11px 13px', background:'rgba(255,255,255,.78)', cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:11, textAlign:'left', marginBottom:12 }}>
+        <span style={{ width:32, height:32, borderRadius:'50%', background:'#F1F5F9', display:'flex', alignItems:'center', justifyContent:'center', color:'#475569', fontSize:18 }}>‹</span>
+        <span><strong style={{ display:'block', color:'#0F172A', fontSize:14.5 }}>Avaliações do curso</strong><span style={{ color:'#64748B', fontSize:11.5 }}>Voltar para o perfil</span></span>
+      </button>
+
+      <GlassCard style={{ padding:18, marginBottom:12 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, marginBottom:(showReviewForm || ownReview) ? 14 : 0 }}>
+          <div>
+            <div style={{ fontSize:11, fontWeight:800, color:'#9A6438', textTransform:'uppercase', letterSpacing:.8 }}>Sua avaliação</div>
+            <div style={{ fontSize:12.5, color:'#64748B', marginTop:4 }}>{ownReview ? 'Sua opinião já está publicada.' : 'Conte como está sendo sua experiência.'}</div>
+          </div>
+          <button type="button" onClick={() => { setShowReviewForm(v => !v); setReviewMsg(''); }} style={{ ...actBtn(), width:'auto', padding:'10px 14px', margin:0 }}>
+            {showReviewForm ? 'Fechar' : (ownReview ? 'Editar' : 'Avaliar')}
+          </button>
+        </div>
+
+        {ownReview && !showReviewForm && <div style={{ padding:'14px', borderRadius:14, background:'#FFFBEB', border:'1px solid #FDE68A' }}>
+          <div style={{ color:'#F59E0B', fontSize:19, letterSpacing:1 }} aria-label={`${ownReview.rating} de 5 estrelas`}>{'★'.repeat(Number(ownReview.rating) || 0)}{'☆'.repeat(5 - (Number(ownReview.rating) || 0))}</div>
+          {ownReview.comment && <div style={{ marginTop:8, color:'#475569', fontSize:13, lineHeight:1.55, whiteSpace:'pre-wrap', overflowWrap:'anywhere' }}>{ownReview.comment}</div>}
+          <div style={{ marginTop:8, color:'#92400E', fontSize:11 }}>{ownReview.anonymous ? 'Publicada anonimamente' : `Publicada como ${ownReview.authorName || student?.name || 'Aluno'}`}</div>
+        </div>}
+
+        {showReviewForm && <div ref={reviewFormRef} style={{ padding:'15px', borderRadius:15, background:'#F8FAFC', border:'1px solid #E2E8F0' }}>
+          <div style={{ fontSize:13, fontWeight:800, color:'#0F172A', marginBottom:9 }}>{ownReview ? 'Editar minha avaliação' : 'Minha avaliação'}</div>
+          <div role="radiogroup" aria-label="Nota do curso" style={{ display:'flex', gap:5, marginBottom:12 }}>
+            {[1,2,3,4,5].map(star => <button key={star} type="button" role="radio" aria-checked={reviewRating === star} aria-label={`${star} estrela${star > 1 ? 's' : ''}`} onClick={() => setReviewRating(star)} style={{ border:'none', background:'transparent', padding:2, cursor:'pointer', fontSize:31, lineHeight:1, color:star <= reviewRating ? '#F59E0B' : '#CBD5E1' }}>★</button>)}
+          </div>
+          <textarea value={reviewComment} onChange={e => setReviewComment(e.target.value.slice(0, 600))} maxLength="600" placeholder="Conte como está sendo sua experiência (opcional)" style={{ ...inp, minHeight:96, resize:'vertical', marginBottom:4 }} />
+          <div style={{ textAlign:'right', fontSize:10.5, color:'#94A3B8', marginBottom:10 }}>{reviewComment.length}/600</div>
+          <label style={{ display:'flex', alignItems:'center', gap:9, fontSize:12.5, color:'#334155', cursor:'pointer', marginBottom:12 }}>
+            <input type="checkbox" checked={reviewAnonymous} onChange={e => setReviewAnonymous(e.target.checked)} />
+            Publicar anonimamente
+          </label>
+          <button type="button" onClick={saveCourseReview} disabled={reviewSaving} style={{ width:'100%', padding:12, border:'none', borderRadius:12, background:'var(--brand)', color:'#fff', fontWeight:800, fontFamily:'inherit', cursor:reviewSaving ? 'wait' : 'pointer' }}>
+            {reviewSaving ? 'Publicando...' : (ownReview ? 'Salvar alterações' : 'Publicar avaliação')}
+          </button>
+        </div>}
+      </GlassCard>
+
+      {reviewMsg && <div role="status" style={{ marginBottom:12, padding:'10px 12px', borderRadius:11, background:reviewMsg.startsWith('Avaliação') ? '#F0FDF4' : '#FFF7ED', color:reviewMsg.startsWith('Avaliação') ? '#166534' : '#9A3412', fontSize:12.5 }}>{reviewMsg}</div>}
+
+      <GlassCard style={{ padding:18 }}>
+        <div style={{ marginBottom:14 }}>
+          <div style={{ fontSize:11, fontWeight:800, color:'#9A6438', textTransform:'uppercase', letterSpacing:.8 }}>Todas as avaliações</div>
+          <div style={{ display:'flex', alignItems:'baseline', gap:8, marginTop:7 }}>
+            <strong style={{ fontSize:28, color:'#0F172A' }}>{reviews.length ? (reviews.reduce((sum, r) => sum + Number(r.rating || 0), 0) / reviews.length).toFixed(1) : '—'}</strong>
+            <span aria-label={reviews.length ? `${(reviews.reduce((sum, r) => sum + Number(r.rating || 0), 0) / reviews.length).toFixed(1)} de 5 estrelas` : 'Sem avaliações'} style={{ color:'#F59E0B', fontSize:18, letterSpacing:1 }}>
+              {reviews.length ? '★'.repeat(Math.round(reviews.reduce((sum, r) => sum + Number(r.rating || 0), 0) / reviews.length)) + '☆'.repeat(5 - Math.round(reviews.reduce((sum, r) => sum + Number(r.rating || 0), 0) / reviews.length)) : '☆☆☆☆☆'}
+            </span>
+          </div>
+          <div style={{ fontSize:11.5, color:'#64748B', marginTop:2 }}>{reviews.length} {reviews.length === 1 ? 'avaliação' : 'avaliações'}</div>
+        </div>
+
+        <div style={{ display:'grid', gap:9 }}>
+          {reviews.map(review => {
+            const stamp = review.updatedAt || review.createdAt;
+            const date = stamp?.toDate ? stamp.toDate() : (stamp ? new Date(stamp) : null);
+            return <div key={review.id} style={{ padding:'13px 14px', border:'1px solid rgba(var(--brand-rgb),.12)', borderRadius:14, background:'rgba(255,255,255,.72)' }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10 }}>
+                <strong style={{ fontSize:12.5, color:'#0F172A' }}>{review.anonymous ? 'Aluno anônimo' : (review.authorName || 'Aluno')}</strong>
+                <span aria-label={`${review.rating} de 5 estrelas`} style={{ color:'#F59E0B', fontSize:14, letterSpacing:.5 }}>{'★'.repeat(Number(review.rating) || 0)}{'☆'.repeat(5 - (Number(review.rating) || 0))}</span>
+              </div>
+              {review.comment && <div style={{ marginTop:7, color:'#475569', fontSize:12.5, lineHeight:1.55, whiteSpace:'pre-wrap', overflowWrap:'anywhere' }}>{review.comment}</div>}
+              {date && <div style={{ marginTop:7, color:'#94A3B8', fontSize:10.5 }}>{date.toLocaleDateString('pt-BR')}</div>}
+            </div>;
+          })}
+          {!reviews.length && <div style={{ padding:'18px 10px', textAlign:'center', color:'#94A3B8', fontSize:12.5 }}>Ainda não há avaliações. Seja o primeiro a avaliar!</div>}
+        </div>
+      </GlassCard>
+    </div>
+  );
+
   return (
     <div className="scroll-area" style={{ padding: '16px 16px 8px' }}>
       <GlassCard style={{ padding: '28px 20px', textAlign: 'center', marginBottom: 14 }}>
@@ -3434,57 +3510,18 @@ function PerfilTab({ student, onLogout, onPatchStudent, reviews = [], ownReview,
         )}
       </GlassCard>
 
-      <GlassCard style={{ padding: 18, marginBottom: 12 }}>
-        <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12, marginBottom:14 }}>
-          <div>
-            <div style={{ fontSize:11, fontWeight:800, color:'#9A6438', textTransform:'uppercase', letterSpacing:.8 }}>Avaliações do curso</div>
-            <div style={{ display:'flex', alignItems:'baseline', gap:8, marginTop:7 }}>
-              <strong style={{ fontSize:28, color:'#0F172A' }}>{reviews.length ? (reviews.reduce((sum, r) => sum + Number(r.rating || 0), 0) / reviews.length).toFixed(1) : '—'}</strong>
-              <span aria-label={reviews.length ? `${(reviews.reduce((sum, r) => sum + Number(r.rating || 0), 0) / reviews.length).toFixed(1)} de 5 estrelas` : 'Sem avaliações'} style={{ color:'#F59E0B', fontSize:18, letterSpacing:1 }}>
-                {reviews.length ? '★'.repeat(Math.round(reviews.reduce((sum, r) => sum + Number(r.rating || 0), 0) / reviews.length)) + '☆'.repeat(5 - Math.round(reviews.reduce((sum, r) => sum + Number(r.rating || 0), 0) / reviews.length)) : '☆☆☆☆☆'}
-              </span>
+      <button type="button" onClick={() => { setShowReviewsPage(true); setShowReviewForm(false); setReviewMsg(''); }} style={{ width:'100%', padding:0, border:'none', background:'transparent', cursor:'pointer', fontFamily:'inherit', textAlign:'left', marginBottom:12 }}>
+        <GlassCard style={{ padding:18 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:13 }}>
+            <div style={{ width:44, height:44, borderRadius:14, flexShrink:0, background:'#FFFBEB', border:'1px solid #FDE68A', color:'#F59E0B', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>★</div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:14, fontWeight:800, color:'#0F172A' }}>Avaliações</div>
+              <div style={{ fontSize:12, color:'#64748B', marginTop:3 }}>{ownReview ? 'Veja ou edite sua avaliação' : 'Avalie o curso e veja outras opiniões'}</div>
             </div>
-            <div style={{ fontSize:11.5, color:'#64748B', marginTop:2 }}>{reviews.length} avaliação{reviews.length !== 1 ? 'ões' : ''}</div>
+            <span style={{ color:'#94A3B8', fontSize:22 }}>›</span>
           </div>
-          <button onClick={() => { setShowReviewForm(v => !v); setReviewMsg(''); }} style={{ ...actBtn(), width:'auto', padding:'10px 13px', margin:0 }}>
-            {showReviewForm ? 'Fechar' : (ownReview ? 'Editar a minha' : 'Deixar avaliação')}
-          </button>
-        </div>
-
-        {showReviewForm && <div ref={reviewFormRef} style={{ padding:'15px', borderRadius:15, background:'#F8FAFC', border:'1px solid #E2E8F0', marginBottom:14 }}>
-          <div style={{ fontSize:13, fontWeight:800, color:'#0F172A', marginBottom:9 }}>{ownReview ? 'Editar minha avaliação' : 'Minha avaliação'}</div>
-          <div role="radiogroup" aria-label="Nota do curso" style={{ display:'flex', gap:5, marginBottom:12 }}>
-            {[1,2,3,4,5].map(star => <button key={star} type="button" role="radio" aria-checked={reviewRating === star} aria-label={`${star} estrela${star > 1 ? 's' : ''}`} onClick={() => setReviewRating(star)} style={{ border:'none', background:'transparent', padding:2, cursor:'pointer', fontSize:31, lineHeight:1, color:star <= reviewRating ? '#F59E0B' : '#CBD5E1' }}>★</button>)}
-          </div>
-          <textarea value={reviewComment} onChange={e => setReviewComment(e.target.value.slice(0, 600))} maxLength="600" placeholder="Conte como está sendo sua experiência (opcional)" style={{ ...inp, minHeight:96, resize:'vertical', marginBottom:4 }} />
-          <div style={{ textAlign:'right', fontSize:10.5, color:'#94A3B8', marginBottom:10 }}>{reviewComment.length}/600</div>
-          <label style={{ display:'flex', alignItems:'center', gap:9, fontSize:12.5, color:'#334155', cursor:'pointer', marginBottom:12 }}>
-            <input type="checkbox" checked={reviewAnonymous} onChange={e => setReviewAnonymous(e.target.checked)} />
-            Publicar anonimamente
-          </label>
-          <button type="button" onClick={saveCourseReview} disabled={reviewSaving} style={{ width:'100%', padding:12, border:'none', borderRadius:12, background:'var(--brand)', color:'#fff', fontWeight:800, fontFamily:'inherit', cursor:reviewSaving ? 'wait' : 'pointer' }}>
-            {reviewSaving ? 'Publicando...' : (ownReview ? 'Salvar alterações' : 'Publicar avaliação')}
-          </button>
-        </div>}
-
-        {reviewMsg && <div role="status" style={{ marginBottom:12, padding:'10px 12px', borderRadius:11, background:reviewMsg.startsWith('Avaliação') ? '#F0FDF4' : '#FFF7ED', color:reviewMsg.startsWith('Avaliação') ? '#166534' : '#9A3412', fontSize:12.5 }}>{reviewMsg}</div>}
-
-        <div style={{ display:'grid', gap:9 }}>
-          {reviews.map(review => {
-            const stamp = review.updatedAt || review.createdAt;
-            const date = stamp?.toDate ? stamp.toDate() : (stamp ? new Date(stamp) : null);
-            return <div key={review.id} style={{ padding:'13px 14px', border:'1px solid rgba(var(--brand-rgb),.12)', borderRadius:14, background:'rgba(255,255,255,.72)' }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10 }}>
-                <strong style={{ fontSize:12.5, color:'#0F172A' }}>{review.anonymous ? 'Aluno anônimo' : (review.authorName || 'Aluno')}</strong>
-                <span aria-label={`${review.rating} de 5 estrelas`} style={{ color:'#F59E0B', fontSize:14, letterSpacing:.5 }}>{'★'.repeat(Number(review.rating) || 0)}{'☆'.repeat(5 - (Number(review.rating) || 0))}</span>
-              </div>
-              {review.comment && <div style={{ marginTop:7, color:'#475569', fontSize:12.5, lineHeight:1.55, whiteSpace:'pre-wrap', overflowWrap:'anywhere' }}>{review.comment}</div>}
-              {date && <div style={{ marginTop:7, color:'#94A3B8', fontSize:10.5 }}>{date.toLocaleDateString('pt-BR')}</div>}
-            </div>;
-          })}
-          {!reviews.length && <div style={{ padding:'18px 10px', textAlign:'center', color:'#94A3B8', fontSize:12.5 }}>Ainda não há avaliações. Seja o primeiro a avaliar!</div>}
-        </div>
-      </GlassCard>
+        </GlassCard>
+      </button>
 
       <GlassCard style={{ padding: 18, marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: showEmail ? 14 : 0 }}>
