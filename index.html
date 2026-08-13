@@ -1847,7 +1847,7 @@ function ReviewReportModal({ report, onClose }) {
   );
 }
 
-function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpenReview }) {
+function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpenReview, challengeSimulation, challengeEnabled, onOpenChallenge }) {
   const [chartType, setChartType] = useState(() => localStorage.getItem('progressChartType') || 'line');
   const [periodMonths, setPeriodMonths] = useState(() => Number(localStorage.getItem('progressPeriodMonths')) || 3);
   const [errorFilter, setErrorFilter] = useState('all');
@@ -1890,6 +1890,7 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
   return (
     <div className="scroll-area" style={{ padding:'18px 14px 28px', width:'100%', maxWidth:'100%', minWidth:0, boxSizing:'border-box', overflowX:'hidden' }}>
       <div style={{ fontSize:22, fontWeight:800, color:'#0F172A' }}>Meu progresso</div>
+      {challengeEnabled && <ChallengeProgressPanel simulation={challengeSimulation} onOpenChallenge={onOpenChallenge} />}
       <ProgressSection title="Presença">
         <div style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:8, width:'100%' }}>
           <ProgressStat label="Realizadas" value={attendance.held} detail="com pós-aula" tone={PROGRESS_COLORS.good} />
@@ -4492,7 +4493,7 @@ function App() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         {tab === 'home'   && <HomeTab   student={student} posaulas={posaulas} activities={activities} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} />}
         {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={() => setChallengeView('hub')} challengeEnabled={challengePreviewAccess} />}
-        {tab === 'progresso' && <ProgressTab student={student} posaulas={posaulas} activities={activities} reviewReports={reviewReports} onOpenReview={openReviewResult} />}
+        {tab === 'progresso' && <ProgressTab student={student} posaulas={posaulas} activities={activities} reviewReports={reviewReports} onOpenReview={openReviewResult} challengeSimulation={challengeSimulation} challengeEnabled={challengePreviewAccess} onOpenChallenge={() => setChallengeView('hub')} />}
         {tab === 'vocab'  && <VocabTab vocab={vocab} />}
         {tab === 'perfil' && <PerfilTab student={student} onLogout={handleLogout} onPatchStudent={patchStudent} reviews={courseReviews} ownReview={ownCourseReview} onSaveReview={saveCourseReview} openReviewForm={reviewFormRequest} />}
       </div>
