@@ -177,12 +177,22 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if false;
     }
+    match /_saldoMovimentos/{doc} {
+      allow read: if isAdmin()
+        || (resource.data.escolaId is string && ownsSchool(resource.data.escolaId));
+      allow write: if false;
+    }
     match /_batchJobs/{doc} {
       allow read: if isAdmin()
         || (resource.data.escolaId is string && ownsSchool(resource.data.escolaId));
       allow write: if false;
     }
     match /_posaulaJobs/{doc} {
+      allow read: if isAdmin()
+        || (resource.data.escolaId is string && ownsSchool(resource.data.escolaId));
+      allow write: if false;
+    }
+    match /_correcaoJobs/{doc} {
       allow read: if isAdmin()
         || (resource.data.escolaId is string && ownsSchool(resource.data.escolaId));
       allow write: if false;
