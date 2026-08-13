@@ -26,6 +26,75 @@ const PRECO_ENTRADA = 3.0;
 const PRECO_SAIDA = 15.0;
 const PRECO_CACHE = 0.3;
 
+// Precos comerciais em centavos. O professor compra saldo em reais e escolhe
+// entre resposta imediata (expresso) e Batch API (programado).
+const PRECOS_CENTAVOS = Object.freeze({
+  posaula:   { expresso: 250, programado: 200 },
+  atividade: { expresso: 100, programado: 75 }, // por bloco de ate 3 atividades/aluno
+  correcao:  { expresso: 200, programado: 150 }, // por solicitacao/aluno
+});
+
+const normalizarPrazo = (value) => value === 'programado' ? 'programado' : 'expresso';
+const reais = (centavos) => `R$ ${(Number(centavos || 0) / 100).toFixed(2).replace('.', ',')}`;
+
+async function verificarSaldo(escola, valorCentavos) {
+  const saldo = escola?.plan?.saldoCentavos;
+  if (typeof saldo !== 'number' && escola?.plan?.trial === true) return;
+  const disponivel = typeof saldo === 'number' ? saldo : 0;
+  if (disponivel < valorCentavos) {
+    throw new HttpsError(
+      'failed-precondition',
+      `Saldo insuficiente. Esta operacao custa ${reais(valorCentavos)} e seu saldo e ${reais(disponivel)}.`
+    );
+  }
+}
+
+async function debitarSaldo({ escolaId, valorCentavos, tipo, prazo, email, uid = '', descricao = '', extra = {} }) {
+  if (!valorCentavos) return { saldoCentavos: null, movimentoId: null };
+  const escolaRef = db.doc(`schools/${escolaId}`);
+  const movimentoRef = db.collection('_saldoMovimentos').doc();
+  let saldoDepois = null;
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(escolaRef);
+    if (!snap.exists) throw new HttpsError('not-found', 'Escola nao encontrada.');
+    const plan = snap.data().plan || {};
+    const saldo = plan.saldoCentavos;
+    if (typeof saldo !== 'number' && plan.trial === true) return;
+    const disponivel = typeof saldo === 'number' ? saldo : 0;
+    if (disponivel < valorCentavos) {
+      throw new HttpsError('failed-precondition', `Saldo insuficiente. Faltam ${reais(valorCentavos - disponivel)}.`);
+    }
+    saldoDepois = disponivel - valorCentavos;
+    tx.update(escolaRef, { 'plan.saldoCentavos': saldoDepois });
+    tx.set(movimentoRef, {
+      escolaId, tipo, prazo, uid, descricao, valorCentavos: -valorCentavos,
+      saldoDepoisCentavos: saldoDepois, porEmail: email,
+      criadoEm: FieldValue.serverTimestamp(), ...extra,
+    });
+  });
+  return { saldoCentavos: saldoDepois, movimentoId: saldoDepois === null ? null : movimentoRef.id };
+}
+
+async function estornarSaldo({ escolaId, valorCentavos, tipo, prazo, email, movimentoId = null, motivo = '' }) {
+  if (!valorCentavos || !movimentoId) return;
+  const escolaRef = db.doc(`schools/${escolaId}`);
+  const movimentoRef = db.collection('_saldoMovimentos').doc();
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(escolaRef);
+    if (!snap.exists) return;
+    const saldo = snap.data().plan?.saldoCentavos;
+    if (typeof saldo !== 'number') return;
+    const saldoDepois = saldo + valorCentavos;
+    tx.update(escolaRef, { 'plan.saldoCentavos': saldoDepois });
+    tx.set(movimentoRef, {
+      escolaId, tipo: 'estorno', servico: tipo, prazo, motivo,
+      valorCentavos, saldoDepoisCentavos: saldoDepois,
+      movimentoOriginalId: movimentoId, porEmail: email,
+      criadoEm: FieldValue.serverTimestamp(),
+    });
+  });
+}
+
 const REGRAS_DE_CORRECAO = `Você é o professor César, da Science English, corrigindo as atividades de inglês
 de um aluno. Escreva o feedback DIRETAMENTE PARA O ALUNO — use "sua resposta" e
 "resposta correta". Tom encorajador e direto, em português do Brasil.
@@ -405,16 +474,12 @@ export const corrigirAluno = onCall(
   },
   async (request) => {
     const email = request.auth?.token?.email;
-    if (!email || !ADMIN_EMAILS.includes(email)) {
-      throw new HttpsError('permission-denied', 'Somente o administrador pode corrigir.');
-    }
+    if (!email) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
 
     const uid = request.data?.uid;
     if (!uid) throw new HttpsError('invalid-argument', 'Faltou o uid do aluno.');
 
-    const alunoSnap = await db.doc(`students/${uid}`).get();
-    if (!alunoSnap.exists) throw new HttpsError('not-found', 'Aluno não encontrado.');
-    const aluno = alunoSnap.data();
+    const { aluno, escola } = await carregarAlunoEEscola(email, uid);
 
     // Só entra o que o aluno FINALIZOU. Atividade começada mas não finalizada
     // continua pendente e acumula para a próxima correção — corrigir pela
@@ -433,6 +498,11 @@ export const corrigirAluno = onCall(
       };
     }
 
+    const jobsCorrecao = await db.collection('_correcaoJobs').where('uid', '==', uid).limit(20).get();
+    if (jobsCorrecao.docs.some(d => d.data().status === 'em_preparo')) {
+      return { ok: false, motivo: 'Já existe uma correção programada deste aluno em processamento.' };
+    }
+
     const entrada = paraCorrigir.map((a) => ({
       activityId: a.id,
       week: a.week || '',
@@ -441,30 +511,64 @@ export const corrigirAluno = onCall(
       respostasDoAluno: a.respostas || {},
     }));
 
+    const prazo = normalizarPrazo(request.data?.prazo);
+    const valorCentavos = PRECOS_CENTAVOS.correcao[prazo];
+    await verificarSaldo(escola, valorCentavos);
+
     const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
+
+    const params = {
+      model: MODEL,
+      max_tokens: 32000,
+      system: [
+        { type: 'text', text: REGRAS_DE_CORRECAO, cache_control: { type: 'ephemeral' } },
+      ],
+      output_config: { format: { type: 'json_schema', schema: SCHEMA } },
+      messages: [
+        {
+          role: 'user',
+          content:
+            `Aluno: ${aluno.name || ''} (nível ${aluno.level || 'não informado'})\n\n` +
+            `Corrija todas as atividades abaixo. O campo "parts" traz os enunciados e ` +
+            `"respostasDoAluno" traz o que ele respondeu — alinhe cada resposta à sua questão.\n\n` +
+            JSON.stringify(entrada, null, 2),
+        },
+      ],
+    };
+
+    if (prazo === 'programado') {
+      let batch;
+      try {
+        batch = await client.messages.batches.create({ requests: [{ custom_id: uid, params }] });
+      } catch (erro) {
+        throw new HttpsError('internal', `Não consegui programar a correção: ${erro.message}`);
+      }
+      let cobranca;
+      try {
+        cobranca = await debitarSaldo({
+          escolaId: escola.id, valorCentavos, tipo: 'correcao', prazo, email, uid,
+          descricao: `Correção programada de ${aluno.name || 'aluno'}`,
+          extra: { batchId: batch.id, atividades: paraCorrigir.length },
+        });
+      } catch (erro) {
+        try { await client.messages.batches.cancel(batch.id); } catch (_) {}
+        throw erro;
+      }
+      await db.doc(`_correcaoJobs/${batch.id}`).set({
+        batchId: batch.id, uid, escolaId: escola.id, porEmail: email,
+        alunoNome: aluno.name || '', activityIds: paraCorrigir.map(a => a.id),
+        valorCentavos, movimentoSaldoId: cobranca.movimentoId,
+        saldoCentavos: cobranca.saldoCentavos, status: 'em_preparo', prazo,
+        criadoEm: FieldValue.serverTimestamp(),
+      });
+      return { ok: true, modo: 'batch', status: 'em_preparo', jobId: batch.id, atividades: paraCorrigir.length, valorCentavos, saldoCentavos: cobranca.saldoCentavos };
+    }
 
     let resposta;
     try {
       // Streaming: um aluno com várias atividades gera um relatório longo, e sem
       // stream a requisição estoura o tempo limite antes de terminar.
-      const stream = client.messages.stream({
-        model: MODEL,
-        max_tokens: 32000,
-        system: [
-          { type: 'text', text: REGRAS_DE_CORRECAO, cache_control: { type: 'ephemeral' } },
-        ],
-        output_config: { format: { type: 'json_schema', schema: SCHEMA } },
-        messages: [
-          {
-            role: 'user',
-            content:
-              `Aluno: ${aluno.name || ''} (nível ${aluno.level || 'não informado'})\n\n` +
-              `Corrija todas as atividades abaixo. O campo "parts" traz os enunciados e ` +
-              `"respostasDoAluno" traz o que ele respondeu — alinhe cada resposta à sua questão.\n\n` +
-              JSON.stringify(entrada, null, 2),
-          },
-        ],
-      });
+      const stream = client.messages.stream(params);
       resposta = await stream.finalMessage();
     } catch (erro) {
       console.error('Falha na chamada à API:', erro);
@@ -593,6 +697,11 @@ export const corrigirAluno = onCall(
       criadoEm: FieldValue.serverTimestamp(),
     });
 
+    const cobranca = await debitarSaldo({
+      escolaId: escola.id, valorCentavos, tipo: 'correcao', prazo, email, uid,
+      descricao: `Correção expressa de ${aluno.name || 'aluno'}`,
+      extra: { atividades: gravadas },
+    });
     await lote.commit();
 
     return {
@@ -600,6 +709,9 @@ export const corrigirAluno = onCall(
       atividadesCorrigidas: gravadas,
       relatorioRevisao90: !!finalReport,
       custoUSD: Number(custoUSD.toFixed(4)),
+      modo: 'sincrono',
+      valorCentavos,
+      saldoCentavos: cobranca.saldoCentavos,
     };
   }
 );
@@ -627,7 +739,7 @@ export const gerarPosAula = onCall(
     const email = request.auth?.token?.email;
     if (!email) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
 
-    const { uids = [], transcricao, youtubeUrl = '', data, observacoes = '' } = request.data || {};
+    const { uids = [], transcricao, youtubeUrl = '', data, observacoes = '', prazo: prazoRecebido = 'expresso' } = request.data || {};
     const alunosIds = Array.isArray(uids) ? uids.filter(Boolean).slice(0, 12) : [];
 
     if (!alunosIds.length) throw new HttpsError('invalid-argument', 'Escolha ao menos um aluno.');
@@ -645,6 +757,11 @@ export const gerarPosAula = onCall(
       const { aluno, escola } = await carregarAlunoEEscola(email, uid);
       turma.push({ uid, aluno, escola });
     }
+
+    const prazo = normalizarPrazo(prazoRecebido);
+    if (prazo !== 'expresso') throw new HttpsError('invalid-argument', 'Use o processamento programado para esta opcao.');
+    const valorCentavos = PRECOS_CENTAVOS.posaula.expresso * turma.length;
+    await verificarSaldo(turma[0].escola, valorCentavos);
 
     const nomes = turma.map((t) => t.aluno.name || '').filter(Boolean);
     const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
@@ -750,6 +867,11 @@ export const gerarPosAula = onCall(
       criadoEm: FieldValue.serverTimestamp(),
     });
 
+    const cobranca = await debitarSaldo({
+      escolaId: turma[0].escola.id, valorCentavos, tipo: 'posaula', prazo,
+      email, descricao: `${turma.length} pos-aula(s) expressa(s)`,
+      extra: { alunos: turma.length },
+    });
     await lote.commit();
 
     return {
@@ -759,6 +881,8 @@ export const gerarPosAula = onCall(
       posaulas: resultados,
       draftId: draftRef.id,
       custoUSD: Number(custoTotal.toFixed(4)),
+      valorCentavos,
+      saldoCentavos: cobranca.saldoCentavos,
     };
   }
 );
@@ -830,10 +954,7 @@ export const revisarPosAula = onCall(
   }
 );
 
-/**
- * Envia a geração para a Batch API e devolve imediatamente. O crédito comercial
- * do professor continua sendo descontado somente na publicação, nunca aqui.
- */
+/** Envia a geração programada para a Batch API e reserva o valor no saldo. */
 export const enfileirarPosAula = onCall(
   { ...OPCOES_PADRAO, secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 120, memory: '512MiB' },
   async (request) => {
@@ -854,6 +975,10 @@ export const enfileirarPosAula = onCall(
       const { aluno, escola } = await carregarAlunoEEscola(email, uid);
       turma.push({ uid, aluno, escola });
     }
+
+    const prazo = 'programado';
+    const valorCentavos = PRECOS_CENTAVOS.posaula.programado * turma.length;
+    await verificarSaldo(turma[0].escola, valorCentavos);
 
     const nomes = turma.map((t) => t.aluno.name || '').filter(Boolean);
     const orientacoesProfessor = String(observacoes || '').trim().slice(0, 4000);
@@ -899,6 +1024,18 @@ export const enfileirarPosAula = onCall(
       throw new HttpsError('internal', `Não consegui enviar a pós-aula para Processos: ${erro.message}`);
     }
 
+    let cobranca;
+    try {
+      cobranca = await debitarSaldo({
+        escolaId: turma[0].escola.id, valorCentavos, tipo: 'posaula', prazo,
+        email, descricao: `${turma.length} pós-aula(s) programada(s)`,
+        extra: { alunos: turma.length, batchId: batch.id },
+      });
+    } catch (erro) {
+      try { await client.messages.batches.cancel(batch.id); } catch (_) {}
+      throw erro;
+    }
+
     await db.doc(`_posaulaJobs/${batch.id}`).set({
       tipo: 'geracao',
       batchId: batch.id,
@@ -911,15 +1048,19 @@ export const enfileirarPosAula = onCall(
       etapa: 'gerando',
       prontoVisto: false,
       creditoProfessorDebitado: false,
+      valorCentavos,
+      movimentoSaldoId: cobranca.movimentoId,
+      saldoCentavos: cobranca.saldoCentavos,
+      prazo,
       criadoEm: FieldValue.serverTimestamp(),
       atualizadoEm: FieldValue.serverTimestamp(),
     });
 
-    return { ok: true, jobId: batch.id, alunos: turma.length, status: 'gerando' };
+    return { ok: true, jobId: batch.id, alunos: turma.length, status: 'gerando', valorCentavos, saldoCentavos: cobranca.saldoCentavos };
   }
 );
 
-/** Cancela uma geração. Como a cobrança comercial só ocorre ao publicar, não usa crédito do professor. */
+/** Cancela uma geração programada e estorna o saldo reservado. */
 export const cancelarProcessoPosAula = onCall(
   { ...OPCOES_PADRAO, secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 90, memory: '256MiB' },
   async (request) => {
@@ -941,8 +1082,17 @@ export const cancelarProcessoPosAula = onCall(
       catch (erro) { console.warn('O batch pode já ter terminado ao cancelar', job.batchId, erro.message); }
     }
 
+    if (job.movimentoSaldoId && !job.saldoEstornado) {
+      await estornarSaldo({
+        escolaId: job.escolaId, valorCentavos: job.valorCentavos,
+        tipo: 'posaula', prazo: 'programado', email,
+        movimentoId: job.movimentoSaldoId, motivo: 'Processo cancelado pelo professor',
+      });
+    }
+
     await ref.set({
       status: 'cancelado', etapa: 'cancelado', creditoProfessorDebitado: false,
+      saldoEstornado: !!job.movimentoSaldoId,
       posaulas: FieldValue.delete(), canceladoEm: FieldValue.serverTimestamp(), atualizadoEm: FieldValue.serverTimestamp(),
     }, { merge: true });
     return { ok: true, creditoProfessorDebitado: false };
@@ -976,6 +1126,12 @@ export const limparProcessosPosAula = onCall(
       const job = doc.data();
       if (pasta === 'andamento' && job.batchId && ['gerando', 'cancelando'].includes(job.status)) {
         try { await client.messages.batches.cancel(job.batchId); } catch (_) {}
+      }
+      if (pasta === 'andamento' && job.movimentoSaldoId && !job.saldoEstornado && job.status !== 'pronto') {
+        await estornarSaldo({
+          escolaId, valorCentavos: job.valorCentavos, tipo: 'posaula', prazo: 'programado',
+          email, movimentoId: job.movimentoSaldoId, motivo: 'Processo removido pelo professor',
+        });
       }
       if (job.draftId) lote.delete(db.doc(`_posaulaDrafts/${job.draftId}`));
       lote.delete(doc.ref);
@@ -1030,17 +1186,6 @@ export const publicarPosAula = onCall(
       await jobRef.set({ status: 'processando', etapa: existingJob.salvo ? 'notificando' : 'analisando', erro: FieldValue.delete(), atualizadoEm: FieldValue.serverTimestamp() }, { merge: true });
     }
 
-    // 1 crédito de pós-aula por aluno — numa turma de 3, são 3.
-    const creditos = escola.plan?.creditosPosaula;
-    const controlaCredito = typeof creditos === 'number';
-    if (!existingJob?.salvo && controlaCredito && creditos < lista.length) {
-      await jobRef.set({ status: 'erro', etapa: 'erro', erro: 'Créditos insuficientes para publicar.', atualizadoEm: FieldValue.serverTimestamp() }, { merge: true });
-      throw new HttpsError(
-        'failed-precondition',
-        `Você tem ${creditos} crédito(s) de pós-aula e esta publicação precisa de ${lista.length}. Compre mais créditos para continuar.`
-      );
-    }
-
     const lote = db.batch();
     let publicadas = existingJob?.publicadas || [];
     const dataAula = dataDaAulaEmDate(data);
@@ -1066,29 +1211,12 @@ export const publicarPosAula = onCall(
         ...(lista.length > 1 && { aulaEmGrupo: true }),
       });
 
-      lote.set(db.doc(`_creditos/${jobRef.id}-${uid}`), {
-        escolaId: escola.id,
-        tipo: 'posaula',
-        quantidade: 1,
-        uid,
-        alunoNome: nome || aluno.name || '',
-        porEmail: email,
-        criadoEm: FieldValue.serverTimestamp(),
-      });
-
       publicadas.push({ uid, nome: nome || aluno.name || '', posaulaId: ref.id, fcmToken: aluno.fcmToken || null });
-    }
-
-    if (!existingJob?.salvo && controlaCredito) {
-      lote.update(db.doc(`schools/${escola.id}`), {
-        'plan.creditosPosaula': FieldValue.increment(-lista.length),
-      });
     }
 
     if (!existingJob?.salvo) {
       lote.set(jobRef, {
         status: 'processando', etapa: 'notificando', salvo: true, publicadas,
-        creditosRestantes: controlaCredito ? creditos - lista.length : null,
         'etapas.analisado': true, 'etapas.salvo': true, atualizadoEm: FieldValue.serverTimestamp(),
       }, { merge: true });
       await lote.commit();
@@ -1156,9 +1284,7 @@ export const publicarPosAula = onCall(
       notificados: notificadosUids.size,
       semToken: semTokenUids.size,
       semNotificacao,
-      creditosRestantes: existingJob?.salvo
-        ? (existingJob.creditosRestantes ?? null)
-        : (controlaCredito ? creditos - lista.length : null),
+      saldoCentavos: escola.plan?.saldoCentavos ?? null,
     };
     await jobRef.set({
       status: 'concluido', etapa: 'concluido', resultado, publicadas: resultado.publicadas,
@@ -1344,10 +1470,10 @@ function marcarAtividadeDeRevisao(activities, qtdRegular, revisao90) {
 
 /**
  * Gera as atividades a partir das pós-aulas escolhidas. NÃO publica —
- * o professor confere a prévia antes. Gerar de novo não consome crédito.
+ * o professor confere a prévia antes. Cada nova geração é uma nova operação.
  *
- * Escola com `plan.modoBatch: true` usa a Batch API (metade do preço, resposta
- * em algumas horas). Sem o campo, ou com ele em false, tudo segue em tempo real.
+ * O prazo escolhido define Batch API (programado) ou resposta em tempo real
+ * (expresso).
  */
 export const gerarAtividades = onCall(
   { ...OPCOES_PADRAO, secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 3600, memory: '512MiB' },
@@ -1355,12 +1481,13 @@ export const gerarAtividades = onCall(
     const email = request.auth?.token?.email;
     if (!email) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
 
-    const { uids = [], posaulaIds = [], quantidade = 3, observacoes = '' } = request.data || {};
+    const { uids = [], posaulaIds = [], quantidade = 3, observacoes = '', prazo: prazoRecebido = 'programado' } = request.data || {};
     const alunosIds = Array.isArray(uids) ? uids.filter(Boolean).slice(0, 12) : [];
     if (!alunosIds.length) throw new HttpsError('invalid-argument', 'Escolha ao menos um aluno.');
 
     const qtd = Math.max(1, Math.min(20, Number(quantidade) || 3));
     const emGrupo = alunosIds.length > 1;
+    const prazo = normalizarPrazo(prazoRecebido);
 
     // Carrega tudo antes de chamar a API: o pedido de cada aluno é o mesmo nos
     // dois modos, então monta uma vez só.
@@ -1403,13 +1530,18 @@ export const gerarAtividades = onCall(
         nome,
         nivel,
         escolaId: escola.id,
-        modoBatch: escola.plan?.modoBatch === true,
+        modoBatch: prazo === 'programado',
         qtdRegular: qtd,
         revisao90: revisao90 ? { phase: revisao90.phase, cycleId: revisao90.cycleId, posaulas: referenciaDasPosaulas(revisao90.posaulas) } : null,
         posaulas: referenciaDasPosaulas(todasPosaulas),
         params: pedidoDeAtividades({ nome, nivel, qtd, observacoes, posaulas: todasPosaulas, revisao90: revisaoPrompt }),
       });
     }
+
+    const blocosCobrados = Math.ceil(qtd / 3) * preparos.length;
+    const valorCentavos = PRECOS_CENTAVOS.atividade[prazo] * blocosCobrados;
+    const escolaSaldoSnap = await db.doc(`schools/${preparos[0].escolaId}`).get();
+    await verificarSaldo(escolaSaldoSnap.data(), valorCentavos);
 
     const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
 
@@ -1426,6 +1558,18 @@ export const gerarAtividades = onCall(
         throw new HttpsError('internal', `Não consegui enviar as atividades para processamento: ${erro.message}`);
       }
 
+      let cobranca;
+      try {
+        cobranca = await debitarSaldo({
+          escolaId: preparos[0].escolaId, valorCentavos, tipo: 'atividade', prazo,
+          email, descricao: `${preparos.length} leva(s) de atividades programadas`,
+          extra: { alunos: preparos.length, blocosCobrados, batchId: batch.id },
+        });
+      } catch (erro) {
+        try { await client.messages.batches.cancel(batch.id); } catch (_) {}
+        throw erro;
+      }
+
       await db.doc(`_batchJobs/${batch.id}`).set({
         batchId: batch.id,
         escolaId: preparos[0].escolaId,
@@ -1435,6 +1579,10 @@ export const gerarAtividades = onCall(
         observacoes: observacoes.trim(),
         emGrupo,
         porEmail: email,
+        prazo,
+        valorCentavos,
+        movimentoSaldoId: cobranca.movimentoId,
+        saldoCentavos: cobranca.saldoCentavos,
         status: 'em_preparo',
         criadoEm: FieldValue.serverTimestamp(),
       });
@@ -1446,6 +1594,8 @@ export const gerarAtividades = onCall(
         status: 'em_preparo',
         emGrupo,
         alunos: preparos.length,
+        valorCentavos,
+        saldoCentavos: cobranca.saldoCentavos,
       };
     }
 
@@ -1497,6 +1647,11 @@ export const gerarAtividades = onCall(
       });
     }
 
+    const cobranca = await debitarSaldo({
+      escolaId: preparos[0].escolaId, valorCentavos, tipo: 'atividade', prazo,
+      email, descricao: `${preparos.length} leva(s) de atividades expressas`,
+      extra: { alunos: preparos.length, blocosCobrados },
+    });
     await lote.commit();
 
     return {
@@ -1505,14 +1660,13 @@ export const gerarAtividades = onCall(
       emGrupo,
       levas: resultados,
       custoUSD: Number(custoTotal.toFixed(4)),
+      valorCentavos,
+      saldoCentavos: cobranca.saldoCentavos,
     };
   }
 );
 
-/**
- * Publica a leva de atividades e desconta UM crédito — independente de
- * quantas atividades tem a leva.
- */
+/** Publica uma leva já cobrada no momento da geração. */
 export const publicarAtividades = onCall(
   { ...OPCOES_PADRAO, timeoutSeconds: 300, memory: '256MiB' },
   async (request) => {
@@ -1527,22 +1681,6 @@ export const publicarAtividades = onCall(
 
     // Todas as levas de uma turma são da mesma escola: basta olhar a primeira.
     const { escola } = await carregarAlunoEEscola(email, lista[0].uid);
-
-    // 1 crédito a cada 3 atividades, por aluno. 4 a 6 = 2 créditos, etc.
-    // O crédito cobre gerar E corrigir — a correção não cobra de novo.
-    // A revisão de 90 dias é um bônus pedagógico e não aumenta o crédito da
-    // leva que o professor escolheu gerar.
-    const creditosPorLeva = (l) => Math.ceil(l.activities.filter((a) => !a.review90).length / 3);
-    const totalCreditos = lista.reduce((s, l) => s + creditosPorLeva(l), 0);
-
-    const creditos = escola.plan?.creditosAtividade;
-    const controlaCredito = typeof creditos === 'number';
-    if (controlaCredito && creditos < totalCreditos) {
-      throw new HttpsError(
-        'failed-precondition',
-        `Você tem ${creditos} crédito(s) de atividade e esta publicação precisa de ${totalCreditos}. Compre mais créditos para continuar.`
-      );
-    }
 
     const lote = db.batch();
     const publicadas = [];
@@ -1590,32 +1728,12 @@ export const publicarAtividades = onCall(
         });
       }
 
-      const atividadesCobradas = activities.filter((a) => !a.review90).length;
-      const creditosLeva = Math.ceil(atividadesCobradas / 3);
-      lote.set(db.collection('_creditos').doc(), {
-        escolaId: escola.id,
-        tipo: 'atividade',
-        quantidade: creditosLeva,
-        atividadesNaLeva: activities.length,
-        atividadesCobradas,
-        uid,
-        alunoNome: nome || aluno.name || '',
-        porEmail: email,
-        criadoEm: FieldValue.serverTimestamp(),
-      });
-
       publicadas.push({
         uid,
         nome: nome || aluno.name || '',
         atividades: activities.length,
         palavras: vocabulario.filter((v) => v?.en && v?.pt).length,
         fcmToken: aluno.fcmToken || null,
-      });
-    }
-
-    if (controlaCredito) {
-      lote.update(db.doc(`schools/${escola.id}`), {
-        'plan.creditosAtividade': FieldValue.increment(-totalCreditos),
       });
     }
 
@@ -1657,8 +1775,7 @@ export const publicarAtividades = onCall(
       publicadas,
       alunos: publicadas.length,
       notificados,
-      creditosUsados: totalCreditos,
-      creditosRestantes: controlaCredito ? creditos - totalCreditos : null,
+      saldoCentavos: escola.plan?.saldoCentavos ?? null,
     };
   }
 );
@@ -1700,7 +1817,7 @@ async function avisarProfessor(escolaId, alunos) {
   return enviados;
 }
 
-/** Conclui uma geração assíncrona de pós-aula sem publicar nem descontar crédito. */
+/** Conclui uma geração assíncrona de pós-aula sem publicar nem cobrar novamente. */
 async function concluirJobPosAula(client, doc) {
   const job = doc.data();
   let batch;
@@ -1754,6 +1871,14 @@ async function concluirJobPosAula(client, doc) {
       creditoProfessorDebitado: false, concluidoEm: FieldValue.serverTimestamp(), atualizadoEm: FieldValue.serverTimestamp(),
     });
     await lote.commit();
+    if (job.movimentoSaldoId && !job.saldoEstornado) {
+      await estornarSaldo({
+        escolaId: job.escolaId, valorCentavos: job.valorCentavos,
+        tipo: 'posaula', prazo: 'programado', email: job.porEmail,
+        movimentoId: job.movimentoSaldoId, motivo: 'Falha na geração programada',
+      });
+      await doc.ref.set({ saldoEstornado: true }, { merge: true });
+    }
     return true;
   }
   if (Buffer.byteLength(JSON.stringify(posaulas), 'utf8') > 900_000) {
@@ -1882,8 +2007,7 @@ async function concluirJob(client, doc) {
     });
   }
 
-  // Nenhuma leva saiu → job em erro. Crédito não é debitado aqui de qualquer
-  // forma: quem debita é a publicação.
+  // Nenhuma leva saiu: devolve automaticamente o saldo reservado.
   if (!levas.length) {
     lote.update(doc.ref, {
       status: 'erro',
@@ -1891,6 +2015,14 @@ async function concluirJob(client, doc) {
       concluidoEm: FieldValue.serverTimestamp(),
     });
     await lote.commit();
+    if (job.movimentoSaldoId && !job.saldoEstornado) {
+      await estornarSaldo({
+        escolaId: job.escolaId, valorCentavos: job.valorCentavos,
+        tipo: 'atividade', prazo: 'programado', email: job.porEmail,
+        movimentoId: job.movimentoSaldoId, motivo: 'Falha na geração programada',
+      });
+      await doc.ref.set({ saldoEstornado: true }, { merge: true });
+    }
     return true;
   }
 
@@ -1904,6 +2036,14 @@ async function concluirJob(client, doc) {
       concluidoEm: FieldValue.serverTimestamp(),
     });
     await lote.commit();
+    if (job.movimentoSaldoId && !job.saldoEstornado) {
+      await estornarSaldo({
+        escolaId: job.escolaId, valorCentavos: job.valorCentavos,
+        tipo: 'atividade', prazo: 'programado', email: job.porEmail,
+        movimentoId: job.movimentoSaldoId, motivo: 'Resultado excedeu o limite de armazenamento',
+      });
+      await doc.ref.set({ saldoEstornado: true }, { merge: true });
+    }
     return true;
   }
 
@@ -1953,59 +2093,123 @@ export const concluirAtividadesEmBatch = onSchedule(
   }
 );
 
+async function concluirCorrecaoProgramada(client, doc) {
+  const job = doc.data();
+  const batch = await client.messages.batches.retrieve(job.batchId);
+  if (batch.processing_status !== 'ended') return false;
+
+  let resultado = null;
+  for await (const item of await client.messages.batches.results(job.batchId)) {
+    if (item.custom_id === job.uid) resultado = item.result;
+  }
+
+  const falhar = async (mensagem) => {
+    await doc.ref.set({ status: 'erro', erro: mensagem, concluidoEm: FieldValue.serverTimestamp() }, { merge: true });
+    if (job.movimentoSaldoId && !job.saldoEstornado) {
+      await estornarSaldo({
+        escolaId: job.escolaId, valorCentavos: job.valorCentavos,
+        tipo: 'correcao', prazo: 'programado', email: job.porEmail,
+        movimentoId: job.movimentoSaldoId, motivo: mensagem,
+      });
+      await doc.ref.set({ saldoEstornado: true }, { merge: true });
+    }
+    return true;
+  };
+
+  if (!resultado || resultado.type !== 'succeeded') return falhar('A correção programada não foi concluída pela IA.');
+  const resposta = resultado.message;
+  if (resposta.stop_reason === 'max_tokens') return falhar('A correção programada ficou longa demais.');
+  const texto = resposta.content.find(b => b.type === 'text')?.text;
+  if (!texto) return falhar('A API não devolveu a correção programada.');
+
+  let dados;
+  try { dados = JSON.parse(texto); }
+  catch (_) { return falhar('A correção programada voltou em formato inesperado.'); }
+
+  const permitidos = new Set(job.activityIds || []);
+  const lote = db.batch();
+  let gravadas = 0;
+  for (const item of dados.atividades || []) {
+    if (!permitidos.has(item.activityId)) continue;
+    lote.update(db.doc(`students/${job.uid}/activities/${item.activityId}`), {
+      status: 'corrected', summary: item.summary, report: item.report,
+      patterns: dados.patterns, pedagogico: dados.pedagogico,
+      feedback: listaParaObjeto(item.feedback, f => ({ comment: f.comment, score: f.score })),
+      correcao: listaParaObjeto(item.correcao, c => c.itens.map(i => i.status === 'ok'
+        ? { status: 'ok' }
+        : { status: i.status, correct: i.correct, explain: i.explain })),
+      correctedAt: FieldValue.serverTimestamp(), corrigidoPorIA: true,
+    });
+    gravadas++;
+  }
+  if (!gravadas) return falhar('A correção programada não correspondeu às atividades enviadas.');
+
+  const custoUSD = registrarUso(lote, {
+    tipo: 'correcao', uid: job.uid, escolaId: job.escolaId,
+    uso: resposta.usage, fator: 0.5,
+    extra: { alunoNome: job.alunoNome || '', atividades: gravadas, modo: 'batch', batchId: job.batchId },
+  });
+  lote.update(doc.ref, {
+    status: 'pronto', atividadesCorrigidas: gravadas, custoUSD,
+    concluidoEm: FieldValue.serverTimestamp(),
+  });
+  await lote.commit();
+  return true;
+}
+
+export const concluirCorrecoesEmBatch = onSchedule(
+  {
+    region: 'southamerica-east1', schedule: 'every 5 minutes',
+    timeZone: 'America/Sao_Paulo', secrets: [ANTHROPIC_API_KEY],
+    timeoutSeconds: 540, memory: '512MiB',
+  },
+  async () => {
+    const pendentes = await db.collection('_correcaoJobs').where('status', '==', 'em_preparo').limit(20).get();
+    if (pendentes.empty) return;
+    const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
+    for (const doc of pendentes.docs) {
+      try { await concluirCorrecaoProgramada(client, doc); }
+      catch (erro) { console.error('Falha ao concluir correção programada', doc.id, erro); }
+    }
+  }
+);
+
 /* ────────────────────────────────────────────────────────────────
-   CRÉDITOS — só o administrador ajusta o saldo de uma escola
+   SALDO — só o administrador ajusta a carteira de uma escola
    ──────────────────────────────────────────────────────────────── */
 export const ajustarCreditos = onCall(
   { ...OPCOES_PADRAO, timeoutSeconds: 60, memory: '256MiB' },
   async (request) => {
     const email = request.auth?.token?.email;
     if (!ADMIN_EMAILS.includes(email)) {
-      throw new HttpsError('permission-denied', 'Somente o administrador ajusta créditos.');
+      throw new HttpsError('permission-denied', 'Somente o administrador ajusta saldo.');
     }
 
-    const { escolaId, posaula = 0, atividade = 0, motivo = '' } = request.data || {};
+    const { escolaId, valorReais = 0, motivo = '' } = request.data || {};
     if (!escolaId) throw new HttpsError('invalid-argument', 'Faltou a escola.');
 
-    const pa = Math.trunc(Number(posaula) || 0);
-    const at = Math.trunc(Number(atividade) || 0);
-    if (!pa && !at) throw new HttpsError('invalid-argument', 'Informe quantos créditos adicionar.');
+    const valorCentavos = Math.round(Number(valorReais) * 100);
+    if (!Number.isFinite(valorCentavos) || valorCentavos === 0) {
+      throw new HttpsError('invalid-argument', 'Informe o valor da recarga.');
+    }
 
     const ref = db.doc(`schools/${escolaId}`);
-    const snap = await ref.get();
-    if (!snap.exists) throw new HttpsError('not-found', 'Escola não encontrada.');
-
-    const plan = snap.data().plan || {};
-    const lote = db.batch();
-    const patch = {};
-
-    // Só mexe no saldo que já é controlado (número). Se está ilimitado
-    // (null, como no trial), adicionar crédito não faz sentido — ignora.
-    if (pa && typeof plan.creditosPosaula === 'number') {
-      patch['plan.creditosPosaula'] = FieldValue.increment(pa);
-    }
-    if (at && typeof plan.creditosAtividade === 'number') {
-      patch['plan.creditosAtividade'] = FieldValue.increment(at);
-    }
-    if (Object.keys(patch).length) lote.update(ref, patch);
-
-    lote.set(db.collection('_creditos').doc(), {
-      escolaId,
-      tipo: 'recarga',
-      posaula: pa,
-      atividade: at,
-      motivo,
-      porEmail: email,
-      criadoEm: FieldValue.serverTimestamp(),
+    const movRef = db.collection('_saldoMovimentos').doc();
+    let saldoCentavos;
+    await db.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) throw new HttpsError('not-found', 'Escola não encontrada.');
+      const atual = snap.data().plan?.saldoCentavos;
+      saldoCentavos = (typeof atual === 'number' ? atual : 0) + valorCentavos;
+      if (saldoCentavos < 0) throw new HttpsError('failed-precondition', 'O ajuste deixaria o saldo negativo.');
+      tx.update(ref, { 'plan.saldoCentavos': saldoCentavos });
+      tx.set(movRef, {
+        escolaId, tipo: valorCentavos > 0 ? 'recarga' : 'ajuste',
+        valorCentavos, saldoDepoisCentavos: saldoCentavos,
+        motivo, porEmail: email, criadoEm: FieldValue.serverTimestamp(),
+      });
     });
 
-    await lote.commit();
-
-    const atual = (await ref.get()).data().plan || {};
-    return {
-      ok: true,
-      creditosPosaula: atual.creditosPosaula ?? null,
-      creditosAtividade: atual.creditosAtividade ?? null,
-    };
+    return { ok: true, saldoCentavos };
   }
 );

@@ -290,7 +290,7 @@
 
       <div class="tabs">
         <button class="tab active" data-tab="students">👥 Alunos</button>
-        <button class="tab" data-tab="creditos">💳 Créditos</button>
+        <button class="tab" data-tab="creditos">💳 Saldo</button>
         <button class="tab" data-tab="posaula">📄 Pós-aula</button>
         <button class="tab" data-tab="processos">⏳ Processos <span id="processos-count" class="process-dot" aria-label="Processos prontos"></span></button>
         <button class="tab" data-tab="publish">📤 Atividades</button>
@@ -300,6 +300,7 @@
         <button class="tab" data-tab="avisos">📣 Avisos</button>
         <button class="tab" data-tab="add">➕ Novo Aluno</button>
         <button class="tab" data-tab="exalunos">🗄️ Ex-alunos</button>
+        <button class="tab" data-tab="pendencias">🧭 Pendências <span id="pendencias-count" style="display:none;margin-left:4px;padding:1px 6px;border-radius:999px;background:#dc2626;color:#fff;font-size:0.7rem;"></span></button>
       </div>
       <div id="processos-resume-banner" class="resume-banner" role="status">
         <strong id="processos-resume-text"></strong>
@@ -323,16 +324,32 @@
         </div>
       </div>
 
-      <!-- CRÉDITOS -->
+      <!-- ATALHOS DE PENDÊNCIAS -->
+      <div class="tab-panel" id="tab-pendencias">
+        <div style="margin-bottom:16px;">
+          <h2 style="margin:0 0 5px;">🧭 Pendências dos alunos</h2>
+          <p style="font-size:0.85rem;color:var(--muted);margin:0;">Uma visão separada para encontrar rapidamente quem precisa de material.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start;">
+          <div class="form-card" style="margin:0;">
+            <h2 style="display:flex;justify-content:space-between;gap:8px;align-items:center;">✏️ Sem atividades <span id="pend-sem-atividades-count" style="font-size:0.8rem;color:var(--muted);"></span></h2>
+            <p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;">Alunos sem nenhuma atividade pendente ou aguardando correção.</p>
+            <div id="pend-sem-atividades"><div class="loading">Carregando...</div></div>
+          </div>
+          <div class="form-card" style="margin:0;">
+            <h2 style="display:flex;justify-content:space-between;gap:8px;align-items:center;">📄 Pós-aula atrasada <span id="pend-sem-posaula-count" style="font-size:0.8rem;color:var(--muted);"></span></h2>
+            <p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;">Última pós-aula publicada há mais de cinco dias ou nunca publicada.</p>
+            <div id="pend-sem-posaula"><div class="loading">Carregando...</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SALDO -->
       <div class="tab-panel" id="tab-creditos">
         <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px;">
           <div class="stat-card" style="flex:1;min-width:200px;">
             <div class="val" id="cred-posaula" style="color:var(--brand,#16A34A);">—</div>
-            <div class="lbl">Créditos de pós-aula</div>
-          </div>
-          <div class="stat-card" style="flex:1;min-width:200px;">
-            <div class="val" id="cred-atividade" style="color:var(--brand,#16A34A);">—</div>
-            <div class="lbl">Créditos de atividade</div>
+            <div class="lbl">Saldo disponível</div>
           </div>
         </div>
 
@@ -359,33 +376,48 @@
         </div>
 
         <div class="form-card" style="margin-bottom:18px;">
-          <h2>💳 Comprar créditos</h2>
+          <h2>💳 Adicionar saldo</h2>
           <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;">
-            <strong>Pós-aula:</strong> 1 crédito por pós-aula publicada.<br>
-            <strong>Atividade:</strong> 1 crédito a cada 3 atividades (a correção está inclusa, não cobra à parte).
+            Coloque o valor que quiser na carteira e pague apenas pelo serviço utilizado.
+            Antes de cada operação, o painel mostra o preço e o prazo.
           </p>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <button class="btn-add" id="btn-comprar-posaula" type="button" style="flex:1;min-width:180px;">Comprar pós-aula</button>
-            <button class="btn-add" id="btn-comprar-atividade" type="button" style="flex:1;min-width:180px;">Comprar atividade</button>
-          </div>
+          <button class="btn-add" id="btn-comprar-posaula" type="button" style="width:100%;">Solicitar recarga</button>
+          <button id="btn-comprar-atividade" type="button" style="display:none;"></button>
           <div id="cred-trial" style="display:none;margin-top:14px;padding:10px 12px;border-radius:8px;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;font-size:0.85rem;"></div>
+        </div>
+
+        <div class="form-card" style="margin-bottom:18px;">
+          <h2>🏷️ Tabela de preços</h2>
+          <div style="overflow:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+              <thead><tr><th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Serviço</th><th style="padding:8px;border-bottom:1px solid var(--border);">Programado</th><th style="padding:8px;border-bottom:1px solid var(--border);">Expresso</th></tr></thead>
+              <tbody>
+                <tr><td style="padding:8px;">Pós-aula</td><td style="text-align:center;">R$ 2,00</td><td style="text-align:center;">R$ 2,50</td></tr>
+                <tr><td style="padding:8px;">Até 3 atividades</td><td style="text-align:center;">R$ 0,75</td><td style="text-align:center;">R$ 1,00</td></tr>
+                <tr><td style="padding:8px;">Correção por solicitação</td><td style="text-align:center;">R$ 1,50</td><td style="text-align:center;">R$ 2,00</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="font-size:0.78rem;color:var(--muted);margin:10px 0 0;">Programado: disponível até o dia seguinte. Expresso: processado imediatamente.</p>
+        </div>
+
+        <div class="form-card" style="margin-bottom:18px;">
+          <h2>🧾 Extrato do saldo</h2>
+          <div id="saldo-extrato" style="font-size:0.85rem;color:var(--muted);">Carregando movimentações...</div>
         </div>
 
         <!-- Só o administrador: recarregar o saldo de uma escola após o pagamento -->
         <div class="form-card" id="card-admin-creditos" style="display:none;">
-          <h2>🔑 Recarregar (administrador)</h2>
+          <h2>🔑 Recarregar saldo (administrador)</h2>
           <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;">
-            Depois que o professor pagar, adicione os créditos aqui. Vale para a escola selecionada no topo.
+            Depois que o professor pagar, adicione o valor à escola selecionada no topo.
           </p>
           <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;">
             <div class="field" style="flex:1;min-width:140px;margin:0;">
-              <label>+ Pós-aula</label>
-              <input type="number" id="rec-posaula" min="0" value="0">
+              <label>Valor em reais</label>
+              <input type="number" id="rec-posaula" min="0.01" step="0.01" value="100.00">
             </div>
-            <div class="field" style="flex:1;min-width:140px;margin:0;">
-              <label>+ Atividade</label>
-              <input type="number" id="rec-atividade" min="0" value="0">
-            </div>
+            <input type="hidden" id="rec-atividade" value="0">
             <button class="btn-add" id="btn-recarregar" type="button" style="flex:0 0 auto;">Adicionar</button>
           </div>
           <div class="form-msg" id="rec-msg"></div>
@@ -452,7 +484,15 @@
             </div>
           </div>
 
-          <button class="btn-add" id="btn-gerar-posaula" type="button" style="width:100%;">⏳ Enviar para Processos e começar outra</button>
+          <div class="field">
+            <label>Prazo da pós-aula</label>
+            <select id="pa-prazo">
+              <option value="expresso">⚡ Expresso — pronta em poucos minutos · R$ 2,50 por aluno</option>
+              <option value="programado">🗓️ Programado — pronta até o dia seguinte · R$ 2,00 por aluno</option>
+            </select>
+          </div>
+
+          <button class="btn-add" id="btn-gerar-posaula" type="button" style="width:100%;">Gerar pós-aula · R$ 2,50</button>
           <div class="form-msg" id="pa-msg"></div>
 
           <div id="pa-preview-wrap" style="display:none;margin-top:20px;">
@@ -502,8 +542,8 @@
           <h2>✨ Gerar Atividades com IA</h2>
           <p style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;">
             Escolha as pós-aulas que servem de base e quantas atividades quer.
-            Você confere a prévia antes de publicar — <strong>a leva inteira custa 1 crédito</strong>,
-            não importa quantas atividades tenha.
+            O preço é calculado em blocos de até 3 atividades por aluno e descontado do saldo ao gerar.
+            Publicar a prévia não gera um novo desconto.
           </p>
 
           <div class="field">
@@ -545,7 +585,15 @@
             <input type="text" id="ga-obs" placeholder="Ex: reforçar past simple, ele travou em preposições">
           </div>
 
-          <button class="btn-add" id="btn-gerar-atividades" type="button" style="width:100%;">✨ Gerar atividades</button>
+          <div class="field">
+            <label>Prazo das atividades</label>
+            <select id="ga-prazo">
+              <option value="programado">🗓️ Programado — prontas até o dia seguinte · R$ 0,75 a cada 3</option>
+              <option value="expresso">⚡ Expresso — prontas em poucos minutos · R$ 1,00 a cada 3</option>
+            </select>
+          </div>
+
+          <button class="btn-add" id="btn-gerar-atividades" type="button" style="width:100%;">✨ Gerar atividades · R$ 0,75</button>
           <div class="form-msg" id="ga-msg"></div>
 
           <div id="ga-preview-wrap" style="display:none;margin-top:20px;">
@@ -556,12 +604,12 @@
             <div id="ga-abas" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
             <div id="ga-preview" style="border:1px solid var(--border);border-radius:10px;background:#fff;padding:14px;max-height:460px;overflow:auto;"></div>
             <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
-              <button class="btn-add" id="btn-publicar-atividades" type="button" style="flex:1;min-width:200px;">🚀 Publicar (1 crédito)</button>
+              <button class="btn-add" id="btn-publicar-atividades" type="button" style="flex:1;min-width:200px;">🚀 Publicar</button>
               <button class="btn-add" id="btn-descartar-atividades" type="button" style="flex:0 0 auto;background:#e5e7eb;color:#374151;">Descartar</button>
             </div>
           </div>
 
-          <!-- Só aparece nas escolas com plan.modoBatch: true -->
+          <!-- Processamentos programados pela Batch API -->
           <div id="ga-jobs-wrap" style="display:none;margin-top:22px;padding-top:16px;border-top:1px solid var(--border);">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
               <strong style="font-size:0.95rem;">⏳ Gerações em processamento</strong>
@@ -1429,8 +1477,8 @@
     // Quem administra a escola vê a interface dela — inclusive o César, ao
     // trocar de escola no seletor do topo.
     const ABAS_POR_MODO = {
-      manual:    ['students', 'creditos', 'posaula', 'processos', 'publish', 'correct', 'vocab', 'extras', 'avisos', 'add', 'exalunos'],
-      assistido: ['students', 'creditos', 'posaula', 'processos', 'publish', 'extras', 'avisos', 'add', 'exalunos'],
+      manual:    ['students', 'creditos', 'posaula', 'processos', 'publish', 'correct', 'vocab', 'extras', 'avisos', 'add', 'exalunos', 'pendencias'],
+      assistido: ['students', 'creditos', 'posaula', 'processos', 'publish', 'extras', 'avisos', 'add', 'exalunos', 'pendencias'],
     };
 
     function modoDaEscolaAtual() {
@@ -1484,48 +1532,45 @@
       atualizarPainelCreditos(escola);
     }
 
-    // ── PAINEL DE CRÉDITOS ──────────────────────────────────────────────
-    // Número de créditos → tem saldo; null/ausente → ilimitado (ex.: trial).
+    // ── CARTEIRA EM REAIS ───────────────────────────────────────────────
     function textoSaldo(v) {
-      return typeof v === 'number' ? String(v) : '∞';
+      return typeof v === 'number'
+        ? (v / 100).toLocaleString('pt-BR', { style:'currency', currency:'BRL' })
+        : '∞';
     }
 
     function atualizarPainelCreditos(escola) {
       const plan = escola?.plan || {};
-      const pa = plan.creditosPosaula;
-      const at = plan.creditosAtividade;
+      const saldo = typeof plan.saldoCentavos === 'number' ? plan.saldoCentavos : (plan.trial ? null : 0);
 
       const elPa = document.getElementById('cred-posaula');
-      const elAt = document.getElementById('cred-atividade');
-      if (elPa) elPa.textContent = textoSaldo(pa);
-      if (elAt) elAt.textContent = textoSaldo(at);
+      if (elPa) elPa.textContent = textoSaldo(saldo);
+      carregarExtratoSaldo(escola?.id);
 
       // Aviso de teste grátis, quando o saldo é ilimitado.
       const trial = document.getElementById('cred-trial');
-      const ilimitado = typeof pa !== 'number' && typeof at !== 'number';
+      const ilimitado = plan.trial === true && typeof plan.saldoCentavos !== 'number';
       if (trial) {
         if (ilimitado) {
           const ate = plan.trialAte ? ` até ${plan.trialAte.split('-').reverse().join('/')}` : '';
           trial.textContent = plan.trial
-            ? `🎁 Período de teste${ate}: créditos ilimitados. O consumo está sendo registrado.`
-            : 'Uso sem limite de créditos. O custo real da API continua sendo registrado abaixo.';
+            ? `🎁 Período de teste${ate}: saldo ilimitado. O consumo está sendo registrado.`
+            : 'Uso sem limite de saldo. O custo real da API continua sendo registrado abaixo.';
           trial.style.display = 'block';
         } else {
           trial.style.display = 'none';
         }
       }
 
-      // O botão de compra abre o WhatsApp do administrador com o pedido pronto.
-      const WHATS_ADMIN = '5515996371614';   // WhatsApp do César (vendas de crédito)
-      const pedido = (tipo) => {
+      // O botão de recarga abre o WhatsApp do administrador com o pedido pronto.
+      const WHATS_ADMIN = '5515996371614';
+      const pedido = () => {
         const nome = escola?.name || 'minha escola';
-        const txt = `Olá! Sou da escola "${nome}" e quero comprar créditos de ${tipo} no painel.`;
+        const txt = `Olá! Sou da escola "${nome}" e quero adicionar saldo à carteira do painel.`;
         return `https://wa.me/${WHATS_ADMIN}?text=${encodeURIComponent(txt)}`;
       };
       const bpa = document.getElementById('btn-comprar-posaula');
-      const bat = document.getElementById('btn-comprar-atividade');
-      if (bpa) bpa.onclick = () => window.open(pedido('pós-aula'), '_blank');
-      if (bat) bat.onclick = () => window.open(pedido('atividade'), '_blank');
+      if (bpa) bpa.onclick = () => window.open(pedido(), '_blank');
 
       // Recarga: só o administrador global vê.
       const cardAdmin = document.getElementById('card-admin-creditos');
@@ -1536,22 +1581,20 @@
       if (btnRec && ehAdmin && !btnRec.dataset.ligado) {
         btnRec.dataset.ligado = '1';
         btnRec.onclick = async () => {
-          const posaula   = Number(document.getElementById('rec-posaula').value) || 0;
-          const atividade = Number(document.getElementById('rec-atividade').value) || 0;
+          const valorReais = Number(document.getElementById('rec-posaula').value) || 0;
           const recMsg = document.getElementById('rec-msg');
-          if (!posaula && !atividade) { recMsg.textContent = 'Informe quantos créditos adicionar.'; recMsg.style.color = 'crimson'; return; }
+          if (valorReais <= 0) { recMsg.textContent = 'Informe um valor maior que zero.'; recMsg.style.color = 'crimson'; return; }
 
           btnRec.disabled = true; btnRec.textContent = 'Adicionando...';
           try {
             const ajustar = httpsCallable(fns, 'ajustarCreditos', { timeout: 60000 });
-            const { data } = await ajustar({ escolaId: escolaAtual, posaula, atividade });
+            const { data } = await ajustar({ escolaId: escolaAtual, valorReais });
             recMsg.style.color = 'green';
-            recMsg.textContent = `✅ Saldo atualizado — pós-aula: ${textoSaldo(data.creditosPosaula)}, atividade: ${textoSaldo(data.creditosAtividade)}.`;
-            document.getElementById('rec-posaula').value = 0;
-            document.getElementById('rec-atividade').value = 0;
+            recMsg.textContent = `✅ Saldo atualizado: ${textoSaldo(data.saldoCentavos)}.`;
+            document.getElementById('rec-posaula').value = '100.00';
             // Reflete o novo saldo na tela sem recarregar tudo.
             const esc = escolas.find(e => e.id === escolaAtual);
-            if (esc) { esc.plan = { ...(esc.plan||{}), creditosPosaula: data.creditosPosaula, creditosAtividade: data.creditosAtividade }; atualizarPainelCreditos(esc); }
+            if (esc) { esc.plan = { ...(esc.plan||{}), saldoCentavos: data.saldoCentavos }; atualizarPainelCreditos(esc); }
           } catch (e) {
             recMsg.style.color = 'crimson';
             recMsg.textContent = `Erro: ${e.message}`;
@@ -1559,6 +1602,27 @@
             btnRec.disabled = false; btnRec.textContent = 'Adicionar';
           }
         };
+      }
+    }
+
+    async function carregarExtratoSaldo(escolaId) {
+      const box = document.getElementById('saldo-extrato');
+      if (!box || !escolaId) return;
+      try {
+        const snap = await getDocs(query(collection(db, '_saldoMovimentos'), where('escolaId', '==', escolaId)));
+        const itens = snap.docs.map(d => ({ id:d.id, ...d.data() }))
+          .sort((a,b) => (b.criadoEm?.seconds || 0) - (a.criadoEm?.seconds || 0)).slice(0, 30);
+        box.innerHTML = itens.length ? itens.map(m => {
+          const valor = Number(m.valorCentavos || 0);
+          const data = m.criadoEm?.toDate ? m.criadoEm.toDate().toLocaleString('pt-BR') : '';
+          const nome = m.descricao || (m.tipo === 'recarga' ? 'Recarga de saldo' : m.tipo || 'Movimentação');
+          return `<div style="display:flex;gap:10px;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);">
+            <span><strong>${esc(nome)}</strong><br><small>${esc(data)}</small></span>
+            <span style="font-weight:800;color:${valor >= 0 ? '#16a34a' : '#dc2626'};white-space:nowrap;">${valor >= 0 ? '+' : '−'} ${textoSaldo(Math.abs(valor))}</span>
+          </div>`;
+        }).join('') : 'Nenhuma movimentação registrada.';
+      } catch (e) {
+        box.textContent = `Não foi possível carregar o extrato: ${e.message}`;
       }
     }
 
@@ -1678,7 +1742,7 @@
             const pronto = j.status === 'pronto', erro = j.status === 'erro', cancelado = j.status === 'cancelado';
             const cor = erro ? '#fecaca' : pronto ? '#bbf7d0' : cancelado ? '#e5e7eb' : '#bfdbfe';
             const icone = erro ? '❌' : pronto ? '✅' : cancelado ? '⊘' : '⏳';
-            const status = erro ? 'Falhou' : pronto ? 'Pronto para revisar' : cancelado ? 'Cancelado — nenhum crédito usado' : 'Gerando no servidor…';
+            const status = erro ? 'Falhou' : pronto ? 'Pronto para revisar' : cancelado ? 'Cancelado — saldo estornado' : 'Gerando no servidor…';
             return `<div style="border:1px solid ${cor};border-radius:12px;padding:14px;margin-bottom:10px;background:#fff;">
               <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><strong>${icone} ${esc(nomesDoJob(j))}</strong><span style="font-size:0.75rem;color:var(--muted);margin-left:auto;">${esc(quandoDoJob(j))}</span></div>
               <div style="margin-top:8px;color:${erro ? '#991b1b' : pronto ? '#166534' : '#475569'};font-size:.84rem;font-weight:700;">${status}</div>
@@ -1741,7 +1805,7 @@
           });
 
           box.querySelectorAll('[data-cancel-generation]').forEach(b => b.onclick = async () => {
-            if (!confirm('Parar esta geração?\n\nNenhum crédito de pós-aula será descontado. Depois você poderá começar novamente.')) return;
+            if (!confirm('Parar esta geração?\n\nO valor reservado será estornado ao saldo.')) return;
             b.disabled = true; b.textContent = 'Parando…';
             try {
               const cancelar = httpsCallable(fns, 'cancelarProcessoPosAula', { timeout: 90000 });
@@ -1754,7 +1818,7 @@
             const pasta = b.dataset.clearFolder;
             const texto = pasta === 'enviados'
               ? 'Excluir todo o histórico de envios?\n\nAs pós-aulas já entregues aos alunos NÃO serão apagadas.'
-              : 'Cancelar e excluir todos os processos desta pasta?\n\nNenhum crédito de pós-aula será descontado pelas gerações canceladas.';
+              : 'Cancelar e excluir todos os processos desta pasta?\n\nOs valores dos processos cancelados serão estornados.';
             if (!confirm(texto)) return;
             b.disabled = true; b.textContent = 'Excluindo…';
             try {
@@ -2012,12 +2076,22 @@
       const revisaoInput = document.getElementById('pa-revisao');
       const revisaoMsg = document.getElementById('pa-revisao-msg');
       const revisaoWrap = document.getElementById('pa-revisao-wrap');
+      const prazoInput = document.getElementById('pa-prazo');
       let indiceAtual = 0;
       let editando = false;
 
       inputData.value = new Date().toISOString().slice(0, 10);
       ligarDitado(document.getElementById('btn-mic-observacoes'), observacoes);
       ligarDitado(document.getElementById('btn-mic-revisao'), revisaoInput);
+
+      const atualizarPrecoPrazo = () => {
+        const programado = prazoInput.value === 'programado';
+        btnGerar.textContent = programado
+          ? '🗓️ Programar pós-aula · R$ 2,00 por aluno'
+          : '⚡ Gerar pós-aula agora · R$ 2,50 por aluno';
+      };
+      prazoInput.addEventListener('change', atualizarPrecoPrazo);
+      atualizarPrecoPrazo();
 
       const aviso = (texto, cor) => { msg.textContent = texto; msg.style.color = cor; };
 
@@ -2112,6 +2186,7 @@
         const transcricao = document.getElementById('pa-transcript').value.trim();
         const youtubeUrl  = document.getElementById('pa-youtube').value.trim();
         const observacoesTexto = observacoes.value.trim();
+        const prazo = prazoInput.value;
 
         if (!uids.length) return aviso('Marque ao menos um aluno.', 'crimson');
         if (transcricao.length < 200) return aviso('A transcrição está muito curta.', 'crimson');
@@ -2121,26 +2196,35 @@
         const dataAula = (a && m && d) ? `${d}/${m}/${a}` : '';
 
         btnGerar.disabled = true;
-        btnGerar.textContent = 'Enviando para Processos…';
-        aviso('Criando o processo no servidor…', 'var(--muted)');
+        btnGerar.textContent = prazo === 'programado' ? 'Enviando para Processos…' : 'Gerando agora…';
+        aviso(prazo === 'programado' ? 'Criando o processo programado…' : 'Gerando a prévia expressa…', 'var(--muted)');
         entregasAoServidorPendentes++;
 
         try {
-          const gerar = httpsCallable(fns, 'enfileirarPosAula', { timeout: 120000 });
-          const { data } = await gerar({ uids, transcricao, youtubeUrl, data: dataAula, observacoes: observacoesTexto });
+          const gerar = httpsCallable(fns, prazo === 'programado' ? 'enfileirarPosAula' : 'gerarPosAula', { timeout: prazo === 'programado' ? 120000 : 3600000 });
+          const { data } = await gerar({ uids, transcricao, youtubeUrl, data: dataAula, observacoes: observacoesTexto, prazo });
+          if (typeof data.saldoCentavos === 'number') {
+            const escAtual = escolas.find(e => e.id === escolaAtual);
+            if (escAtual) { escAtual.plan = { ...(escAtual.plan || {}), saldoCentavos: data.saldoCentavos }; atualizarPainelCreditos(escAtual); }
+          }
+          if (prazo === 'expresso') {
+            abrirPrevia(data);
+            aviso(`✅ Prévia expressa pronta. Foi descontado ${textoSaldo(data.valorCentavos)} do saldo.`, 'green');
+            return;
+          }
           document.getElementById('pa-transcript').value = '';
           document.getElementById('pa-youtube').value = '';
           observacoes.value = '';
           document.querySelectorAll('#pa-alunos input:checked').forEach(input => { input.checked = false; });
           updatePosAulaPickerSummary();
-          aviso(`✅ Enviado para Processos (${data.alunos} aluno${data.alunos !== 1 ? 's' : ''}). O formulário já está livre para a próxima pós-aula.`, 'green');
+          aviso(`✅ Programado para ${data.alunos} aluno${data.alunos !== 1 ? 's' : ''}. Foi descontado ${textoSaldo(data.valorCentavos)} do saldo.`, 'green');
           await recarregarProcessosPosAula();
         } catch (e) {
           aviso(`Erro: ${e.message}`, 'crimson');
         } finally {
           entregasAoServidorPendentes = Math.max(0, entregasAoServidorPendentes - 1);
           btnGerar.disabled = false;
-          btnGerar.textContent = '⏳ Enviar para Processos e começar outra';
+          atualizarPrecoPrazo();
         }
       };
 
@@ -2241,6 +2325,7 @@
       const abas        = document.getElementById('ga-abas');
       const btnPub      = document.getElementById('btn-publicar-atividades');
       const btnDesc     = document.getElementById('btn-descartar-atividades');
+      const prazoInput  = document.getElementById('ga-prazo');
 
       const aviso = (t, c) => { msg.textContent = t; msg.style.color = c; };
       const marcados = () => [...listaAlunos.querySelectorAll('input:checked')].map(c => c.value);
@@ -2253,7 +2338,7 @@
         const ativos = marcados().map(uid => allStudents.find(s => s.uid === uid)).filter(review90IsActive);
         reviewNote.style.display = ativos.length ? 'block' : 'none';
         reviewNote.innerHTML = ativos.length
-          ? `🧭 <strong>Desafio de 90 dias ativo:</strong> será adicionada automaticamente uma atividade extra de revisão para ${ativos.map(s => esc(s.firstName || s.name || 'aluno')).join(', ')}. Ela não aumenta o crédito da leva.`
+          ? `🧭 <strong>Desafio de 90 dias ativo:</strong> será adicionada automaticamente uma atividade extra de revisão para ${ativos.map(s => esc(s.firstName || s.name || 'aluno')).join(', ')}. Ela não aumenta o preço da leva.`
           : '';
       };
 
@@ -2265,12 +2350,21 @@
           b.style.color       = ativo ? '#fff' : 'var(--muted)';
           b.style.borderColor = ativo ? 'var(--green)' : 'var(--border)';
         });
+        atualizarPrecoAtividades();
+      };
+      const atualizarPrecoAtividades = () => {
+        const qtd = Math.max(1, Number(inputQtd.value) || 3);
+        const alunos = Math.max(1, marcados().length);
+        const unitario = prazoInput.value === 'programado' ? 75 : 100;
+        const total = Math.ceil(qtd / 3) * alunos * unitario;
+        btnGerar.textContent = `${prazoInput.value === 'programado' ? '🗓️ Programar' : '⚡ Gerar agora'} · ${textoSaldo(total)}`;
       };
       chips.querySelectorAll('button').forEach(b => {
         b.style.cssText = 'padding:8px 14px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;font-weight:700;font-size:0.9rem;';
         b.onclick = () => { inputQtd.value = b.dataset.qtd; pintarChips(); };
       });
       inputQtd.oninput = pintarChips;
+      prazoInput.addEventListener('change', atualizarPrecoAtividades);
       pintarChips();
 
       // Preenchido quando a prévia veio de um job em batch — a publicação
@@ -2317,7 +2411,7 @@
         }
       }
 
-      listaAlunos.addEventListener('change', () => { atualizarPosaulas(); atualizarAvisoRevisao(); });
+      listaAlunos.addEventListener('change', () => { atualizarPosaulas(); atualizarAvisoRevisao(); atualizarPrecoAtividades(); });
 
       const mostrar = (i) => {
         const leva = atividadesGeradas.levas[i];
@@ -2355,6 +2449,7 @@
         const posaulaIds = [...listaPos.querySelectorAll('input:checked')].map(c => c.value);
         const quantidade = Number(inputQtd.value) || 3;
         const observacoes = document.getElementById('ga-obs').value.trim();
+        const prazo = prazoInput.value;
 
         if (!uids.length) return aviso('Marque ao menos um aluno.', 'crimson');
         if (uids.length === 1 && !posaulaIds.length) return aviso('Marque ao menos uma pós-aula.', 'crimson');
@@ -2379,19 +2474,23 @@
 
         try {
           const gerar = httpsCallable(fns, 'gerarAtividades', { timeout: 3600000 });
-          const { data } = await gerar({ uids, posaulaIds, quantidade, observacoes });
+          const { data } = await gerar({ uids, posaulaIds, quantidade, observacoes, prazo });
+          if (typeof data.saldoCentavos === 'number') {
+            const escAtual = escolas.find(e => e.id === escolaAtual);
+            if (escAtual) { escAtual.plan = { ...(escAtual.plan || {}), saldoCentavos: data.saldoCentavos }; atualizarPainelCreditos(escAtual); }
+          }
 
           // Escola em modo batch: a API responde na hora, o resultado vem
           // depois. Nada de prévia agora — o job aparece na lista abaixo.
           if (data.modo === 'batch') {
-            aviso(`✅ Enviado para processamento (${data.alunos} aluno(s)). Fica pronto em algumas horas — você recebe um aviso e revisa aqui embaixo antes de publicar.`, 'green');
+            aviso(`✅ Atividades programadas para ${data.alunos} aluno(s). Desconto: ${textoSaldo(data.valorCentavos)}.`, 'green');
             limparSelecaoAlunos();
             await recarregarJobsBatch();
             return;
           }
 
           abrirLeva(data.levas);
-          aviso(`Prévia pronta — custo US$ ${data.custoUSD}. Gerar de novo não gasta crédito.`, 'green');
+          aviso(`Prévia pronta. Desconto: ${textoSaldo(data.valorCentavos)}.`, 'green');
         } catch (e) {
           aviso(e.code === 'functions/deadline-exceeded'
             ? 'A geração demorou mais que o esperado. Tente com menos alunos ou menos atividades.'
@@ -2400,7 +2499,7 @@
           entregasAoServidorPendentes = Math.max(0, entregasAoServidorPendentes - 1);
           clearInterval(cron);
           btnGerar.disabled = false;
-          btnGerar.textContent = '✨ Gerar atividades';
+          atualizarPrecoAtividades();
         }
       };
 
@@ -2408,8 +2507,7 @@
         if (!atividadesGeradas) return;
         const n = atividadesGeradas.levas.length;
         const totalAtiv = atividadesGeradas.levas.reduce((s, l) => s + l.activities.length, 0);
-        const totalCreditos = atividadesGeradas.levas.reduce((s, l) => s + Math.ceil(l.activities.filter(a => !a.review90).length / 3), 0);
-        if (!confirm(`Publicar ${totalAtiv} atividade(s) para ${n} aluno(s)?\n\nIsso consome ${totalCreditos} crédito(s) e a notificação sai na hora. A revisão de 90 dias não aumenta o custo.`)) return;
+        if (!confirm(`Publicar ${totalAtiv} atividade(s) para ${n} aluno(s)?\n\nA geração já foi paga. Publicar não desconta nada e a notificação sai na hora.`)) return;
 
         btnPub.disabled = true;
         btnPub.textContent = 'Publicando...';
@@ -2417,10 +2515,7 @@
           const publicar = httpsCallable(fns, 'publicarAtividades', { timeout: 300000 });
           const { data } = await publicar({ levas: atividadesGeradas.levas, batchJobId: jobDaPrevia });
 
-          const saldo = data.creditosRestantes === null
-            ? ''
-            : ` Restam ${data.creditosRestantes} crédito(s).`;
-          aviso(`✅ Publicado para ${data.alunos} aluno(s) — ${data.notificados} notificado(s).${saldo}`, 'green');
+          aviso(`✅ Publicado para ${data.alunos} aluno(s) — ${data.notificados} notificado(s).`, 'green');
 
           esconderPrevia();
           document.getElementById('ga-obs').value = '';
@@ -2436,7 +2531,7 @@
 
       btnDesc.onclick = () => {
         esconderPrevia();
-        aviso('Prévia descartada. Ajuste o que quiser e gere de novo — sem custo de crédito.', 'var(--muted)');
+        aviso('Prévia descartada. Uma nova geração será uma nova operação e terá o preço mostrado no botão.', 'var(--muted)');
       };
 
       // ── Gerações em batch ─────────────────────────────────────────────
@@ -2468,14 +2563,13 @@
 
         mostrar(0);
         wrap.style.display = 'block';
-        const creditos = levas.reduce((s, l) => s + Math.ceil(l.activities.filter(a => !a.review90).length / 3), 0);
-        btnPub.textContent = `🚀 Publicar (${creditos} crédito${creditos !== 1 ? 's' : ''})`;
+        btnPub.textContent = '🚀 Publicar · sem novo desconto';
         wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       };
 
       recarregarJobsBatch = async () => {
         const escola = escolas.find(e => e.id === escolaAtual);
-        if (!escola || escola.plan?.modoBatch !== true) { jobsWrap.style.display = 'none'; return; }
+        if (!escola) { jobsWrap.style.display = 'none'; return; }
         jobsWrap.style.display = 'block';
         jobsBox.innerHTML = '<div style="font-size:0.85rem;color:var(--muted);">Carregando...</div>';
 
@@ -2727,6 +2821,70 @@
       }
     };
 
+    function abrirGeradorParaAluno(uid, destino) {
+      if (destino === 'posaula') {
+        document.querySelector('.tab[data-tab="posaula"]')?.click();
+        document.querySelectorAll('#pa-alunos input:checked').forEach(input => { input.checked = false; });
+        const input = [...document.querySelectorAll('#pa-alunos input')].find(item => item.value === uid);
+        if (input) input.checked = true;
+        updatePosAulaPickerSummary();
+        document.getElementById('pa-picker-trigger')?.scrollIntoView({ behavior:'smooth', block:'center' });
+        return;
+      }
+
+      document.querySelector('.tab[data-tab="publish"]')?.click();
+      if (modoDaEscolaAtual() === 'assistido') {
+        document.querySelectorAll('#ga-alunos input:checked').forEach(input => { input.checked = false; });
+        const input = [...document.querySelectorAll('#ga-alunos input')].find(item => item.value === uid);
+        if (input) {
+          input.checked = true;
+          input.dispatchEvent(new Event('change', { bubbles:true }));
+        }
+        document.getElementById('ga-alunos')?.scrollIntoView({ behavior:'smooth', block:'center' });
+      } else {
+        const select = document.getElementById('pub-student');
+        if (select) select.value = uid;
+        select?.scrollIntoView({ behavior:'smooth', block:'center' });
+      }
+    }
+
+    function renderPendencias(rows) {
+      const semAtividades = rows.filter(s => s.semAtividades);
+      const semPosaula = rows.filter(s => s.semPosaulaAtrasada)
+        .sort((a,b) => b.diasSemPosaula - a.diasSemPosaula);
+      const card = (s, destino, detalhe) => `
+        <div style="display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+          <button class="pend-open" data-uid="${s.uid}" data-name="${esc(s.name || s.firstName || 'Aluno')}" type="button" style="flex:1;min-width:0;border:0;background:none;padding:0;text-align:left;cursor:pointer;font-family:inherit;">
+            <strong style="display:block;color:var(--text);">${esc(s.name || s.firstName || 'Aluno')}</strong>
+            <span style="font-size:0.76rem;color:var(--muted);">${esc(detalhe)}</span>
+          </button>
+          <button class="pend-action" data-uid="${s.uid}" data-destino="${destino}" type="button" style="border:1px solid var(--brand);background:#fff;color:var(--brand);padding:7px 9px;border-radius:8px;font-weight:700;cursor:pointer;white-space:nowrap;">${destino === 'posaula' ? 'Pós-aula' : 'Atividades'} →</button>
+        </div>`;
+
+      const atBox = document.getElementById('pend-sem-atividades');
+      const posBox = document.getElementById('pend-sem-posaula');
+      document.getElementById('pend-sem-atividades-count').textContent = `${semAtividades.length} aluno${semAtividades.length !== 1 ? 's' : ''}`;
+      document.getElementById('pend-sem-posaula-count').textContent = `${semPosaula.length} aluno${semPosaula.length !== 1 ? 's' : ''}`;
+      atBox.innerHTML = semAtividades.length
+        ? semAtividades.map(s => card(s, 'atividades', s.totalAtividades ? 'Todas as atividades já foram corrigidas' : 'Ainda não recebeu atividades')).join('')
+        : '<div style="padding:12px;border-radius:9px;background:#f0fdf4;color:#166534;">✓ Todos têm atividades em andamento.</div>';
+      posBox.innerHTML = semPosaula.length
+        ? semPosaula.map(s => card(s, 'posaula', s.nuncaTevePosaula ? 'Nunca recebeu pós-aula' : `${s.diasSemPosaula} dias sem pós-aula`)).join('')
+        : '<div style="padding:12px;border-radius:9px;background:#f0fdf4;color:#166534;">✓ Nenhuma pós-aula atrasada.</div>';
+
+      const unicos = new Set([...semAtividades, ...semPosaula].map(s => s.uid)).size;
+      const badge = document.getElementById('pendencias-count');
+      badge.textContent = String(unicos);
+      badge.style.display = unicos ? 'inline-block' : 'none';
+
+      document.querySelectorAll('#tab-pendencias .pend-open').forEach(btn => {
+        btn.onclick = () => openDetail(btn.dataset.uid, btn.dataset.name);
+      });
+      document.querySelectorAll('#tab-pendencias .pend-action').forEach(btn => {
+        btn.onclick = () => abrirGeradorParaAluno(btn.dataset.uid, btn.dataset.destino);
+      });
+    }
+
     async function loadStudents() {
       const grid   = document.getElementById('students-grid');
       const exGrid = document.getElementById('exalunos-grid');
@@ -2743,7 +2901,7 @@
       aplicarModoDaEscola();
 
       // Só pede notificação a quem gera em batch — é o único aviso que sai daqui.
-      if (escolas.some(e => e.plan?.modoBatch === true)) registrarPushDoProfessor();
+      registrarPushDoProfessor();
       recarregarJobsBatch();
       recarregarProcessosPosAula();
 
@@ -2806,9 +2964,27 @@
         const currentActs = activities.filter(a => a.status !== 'corrected');
         const actToCorrect = currentActs.filter(a => a.finalizada).length;
         const actPending   = currentActs.filter(a => !a.finalizada).length;
+        const ultimaPosData = dateOfAdm(latest?.classDate || latest?.createdAt || latest?.publishedAt);
+        let referenciaSemPos = ultimaPosData;
+        if (!referenciaSemPos) {
+          referenciaSemPos = dateOfAdm(s.createdAt);
+          if (!referenciaSemPos && /^\d{4}-\d{2}-\d{2}$/.test(String(s.inicioCurso || ''))) {
+            referenciaSemPos = new Date(`${s.inicioCurso}T12:00:00`);
+          }
+        }
+        const diasSemPosaula = referenciaSemPos
+          ? Math.max(0, Math.floor((Date.now() - referenciaSemPos.getTime()) / 86400000))
+          : 9999;
         const reviewReports = reviewSnap.docs.map(d => ({ id:d.id, ...d.data() }));
         const progress = adminProgressSummary(s, posts, activities);
-        return { ...s, latestRead: isRead, latestTitle: latest?.title || null, actToCorrect, actPending, reviewReports, progress };
+        return {
+          ...s, latestRead: isRead, latestTitle: latest?.title || null,
+          actToCorrect, actPending, semAtividades: currentActs.length === 0,
+          totalAtividades: activities.length, diasSemPosaula,
+          semPosaulaAtrasada: diasSemPosaula > 5,
+          nuncaTevePosaula: !latest,
+          reviewReports, progress,
+        };
       }));
 
       populateStudentSelects(active);
@@ -2823,6 +2999,7 @@
 
       wireStudentGrid(grid);
       wireStudentGrid(exGrid);
+      renderPendencias(rows);
       const pendingReports = rows.flatMap(student => (student.reviewReports || []).map(report => ({ uid:student.uid, studentName:student.name || student.firstName || 'Aluno', report })));
       if (!showPendingReview90Reports(pendingReports)) showReview90Suggestion();
     }
@@ -3011,7 +3188,14 @@
       const emAndamento = naoCorrigidas.filter(a => !a.finalizada).length;
 
       const btnCorrigirIA = aguardando
-        ? `<button id="btn-corrigir-ia" class="btn-add" style="margin:10px 0 6px;width:100%;">
+        ? `<div class="field" style="margin:10px 0 8px;">
+             <label>Prazo da correção</label>
+             <select id="correcao-prazo">
+               <option value="expresso">⚡ Expresso — disponível em poucos minutos · R$ 2,00</option>
+               <option value="programado">🗓️ Programado — disponível até o dia seguinte · R$ 1,50</option>
+             </select>
+           </div>
+           <button id="btn-corrigir-ia" class="btn-add" style="margin:0 0 6px;width:100%;">
              🤖 Corrigir ${aguardando} atividade${aguardando !== 1 ? 's' : ''} finalizada${aguardando !== 1 ? 's' : ''}
            </button>
            ${emAndamento ? `<div style="font-size:0.82rem;color:var(--muted);margin-bottom:8px;">
@@ -3042,7 +3226,10 @@
       const btnIA = document.getElementById('btn-corrigir-ia');
       if (btnIA) {
         btnIA.onclick = async () => {
-          if (!confirm(`Corrigir ${aguardando} atividade(s) finalizada(s) de ${name} com IA?\n\nA correção fica visível para o aluno assim que terminar.`)) return;
+          const prazo = document.getElementById('correcao-prazo')?.value || 'expresso';
+          const preco = prazo === 'programado' ? 'R$ 1,50' : 'R$ 2,00';
+          const entrega = prazo === 'programado' ? 'até o dia seguinte' : 'assim que terminar';
+          if (!confirm(`Corrigir ${aguardando} atividade(s) finalizada(s) de ${name}?\n\nPrazo: ${prazo === 'programado' ? 'Programado' : 'Expresso'}\nValor: ${preco}\nA correção fica visível para o aluno ${entrega}.`)) return;
 
           const msg = document.getElementById('corrigir-ia-msg');
           const textoOriginal = btnIA.textContent;
@@ -3069,7 +3256,7 @@
             // A correção leva 2-3 min; o padrão do SDK é 70s e cortava a espera
             // com erro enquanto a função seguia rodando e concluía normalmente.
             const corrigir = httpsCallable(fns, 'corrigirAluno', { timeout: 540000 });
-            const { data } = await corrigir({ uid });
+            const { data } = await corrigir({ uid, prazo });
 
             pararCronometro();
 
@@ -3081,8 +3268,20 @@
               return;
             }
 
+            if (typeof data.saldoCentavos === 'number') {
+              const escAtual = escolas.find(e => e.id === escolaAtual);
+              if (escAtual) { escAtual.plan = { ...(escAtual.plan || {}), saldoCentavos: data.saldoCentavos }; atualizarPainelCreditos(escAtual); }
+            }
+
+            if (data.modo === 'batch') {
+              msg.style.color = 'green';
+              msg.textContent = `✅ Correção programada. Desconto: ${textoSaldo(data.valorCentavos)}. Ela ficará disponível até o dia seguinte.`;
+              btnIA.textContent = '🗓️ Correção programada';
+              return;
+            }
+
             msg.style.color = 'green';
-            msg.textContent = `✅ ${data.atividadesCorrigidas} atividade(s) corrigida(s) — custo US$ ${data.custoUSD}. O aluno já pode ver.${data.relatorioRevisao90 ? ' O resultado final do Desafio de 90 Dias também ficou pronto.' : ''}`;
+            msg.textContent = `✅ ${data.atividadesCorrigidas} atividade(s) corrigida(s). Desconto: ${textoSaldo(data.valorCentavos)}. O aluno já pode ver.${data.relatorioRevisao90 ? ' O resultado final do Desafio de 90 Dias também ficou pronto.' : ''}`;
             setTimeout(() => renderDetail(uid, name), 1500);
           } catch (e) {
             pararCronometro();
