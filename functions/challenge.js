@@ -272,8 +272,6 @@ export function createChallengeFunctions({
       const date = dateFrom(data.classDate || data.createdAt);
       return date && date >= cutoff && date <= now;
     }).sort((a,b) => dateFrom(a.data().classDate || a.data().createdAt) - dateFrom(b.data().classDate || b.data().createdAt));
-    if (!recentPosts.length) return { uid, posts:[], corrections:[] };
-
     const loadedPosts = await Promise.all(recentPosts.slice(-12).map(async doc => {
       const loaded = loadPostLesson ? await loadPostLesson(uid, doc.id) : null;
       const data = doc.data();
@@ -299,18 +297,37 @@ export function createChallengeFunctions({
         patterns:compact(data.patterns || data.pedagogico || data.correcao || '', 3500),
       };
     });
-    return { uid, posts:loadedPosts.filter(post => post.text), corrections };
+    const activityMaterials = activitySnaps.docs.filter(doc => {
+      const data = doc.data();
+      const date = dateFrom(data.createdAt || data.publishedAt || data.updatedAt || data.correctedAt);
+      return !date || (date >= cutoff && date <= now);
+    }).slice(-12).map(doc => {
+      const data = doc.data();
+      return {
+        id:doc.id, title:data.title || `Atividade ${doc.id}`,
+        date:iso(data.createdAt || data.publishedAt || data.updatedAt || data.correctedAt),
+        text:compact({
+          instructions:data.instructions || data.instruction || '', parts:data.parts || [],
+          respostas:data.respostas || {}, summary:data.summary || '', report:data.report || '',
+          patterns:data.patterns || data.pedagogico || data.correcao || '',
+        }, 9000),
+      };
+    }).filter(activity => activity.text && activity.text !== '{}');
+    return { uid, posts:loadedPosts.filter(post => post.text), activityMaterials, corrections };
   }
 
   async function generateForStudent(client, studentDoc, weekKey) {
     const student = studentDoc.data();
     const input = await personalizationInput(studentDoc);
-    if (!input.posts.length) throw new Error('Nenhum pós-aula utilizável nos últimos 90 dias.');
+    const isAmorzinho = student.slug === 'amorzinho' || String(student.name || '').toLowerCase() === 'amorzinho';
+    const materials = input.posts.length ? input.posts : isAmorzinho ? input.activityMaterials : [];
+    const sourceKind = input.posts.length ? 'pós-aulas' : 'atividades recentes da Amorzinho';
+    if (!materials.length) throw new Error('Nenhum pós-aula utilizável nos últimos 90 dias.');
     const response = await client.messages.create({
       model, max_tokens:12000,
       system:[{ type:'text', text:
-        'Você cria desafios individuais de inglês para o Science English. Use SOMENTE fatos linguísticos, vocabulário e contextos presentes nos pós-aulas fornecidos. ' +
-        'A dificuldade deve ser HARD em relação ao nível CEFR do aluno: exija aplicação, discriminação de nuances e recuperação ativa, sem ensinar conteúdo novo. ' +
+        `Você cria desafios individuais de inglês para o Science English. Use SOMENTE fatos linguísticos, vocabulário e contextos presentes nos ${sourceKind} fornecidos. ` +
+        `A dificuldade deve ser HARD em relação ao nível CEFR do aluno${isAmorzinho ? ' e, para a Amorzinho, especialmente exigente' : ''}: exija aplicação, discriminação de nuances e recuperação ativa, sem ensinar conteúdo novo. ` +
         'Use as correções para identificar padrões reais. Quando não houver correções suficientes, trate conteúdos repetidos ou muito explicados como fragilidades prováveis e deixe isso claro apenas na análise. ' +
         'Em CADA parte, produza exatamente 3 perguntas focus=weak e 2 focus=strong. Todas devem ser multiple choice com quatro alternativas plausíveis, uma única resposta inequívoca e explicação pedagógica curta. ' +
         'Não copie exercícios literalmente. Não mencione ao aluno que um item é fraqueza ou força.' }],
@@ -318,7 +335,7 @@ export function createChallengeFunctions({
       messages:[{ role:'user', content:
         `Aluno: ${student.name || student.firstName || 'Aluno'}\nNível: ${student.level || 'não informado'}\n` +
         `Semana: ${weekKey}\nJanela analisada: últimos ${LOOKBACK_DAYS} dias.\n\n` +
-        `PÓS-AULAS:\n${input.posts.map((post, i) => `[${i + 1}] ${post.title} (${post.date || 'sem data'})\n${post.text}`).join('\n\n')}\n\n` +
+        `MATERIAIS DE ESTUDO (${sourceKind.toUpperCase()}):\n${materials.map((item, i) => `[${i + 1}] ${item.title} (${item.date || 'sem data'})\n${item.text}`).join('\n\n')}\n\n` +
         `CORREÇÕES E DESEMPENHO:\n${input.corrections.length ? JSON.stringify(input.corrections) : 'Sem correções estruturadas suficientes; faça inferência conservadora a partir dos pós-aulas.'}`
       }],
     });
@@ -334,7 +351,8 @@ export function createChallengeFunctions({
       const checked = normalized.map(validateQuestion);
       return { questions:checked.map(item => item.publicQuestion), keys:checked.map(item => item.answerKey) };
     });
-    return { prepared, analysis:generated.analysis, sources:input.posts.map(post => ({ id:post.id, title:post.title, date:post.date })) };
+    return { prepared, analysis:generated.analysis, sourceKind,
+      sources:materials.map(item => ({ id:item.id, title:item.title, date:item.date })) };
   }
 
   const gerarDesafiosPersonalizados = onCall(
@@ -376,6 +394,7 @@ export function createChallengeFunctions({
             batch.set(answerKeyRef(studentDoc.id, roundSchedule.roundId, true), {
               uid:studentDoc.id, roundId:roundSchedule.roundId, weekKey, part:roundSchedule.part,
               answers:output.prepared[index].keys, analysis:output.analysis, sources:output.sources,
+              sourceKind:output.sourceKind,
               updatedAt:FieldValue.serverTimestamp(),
             });
           });
