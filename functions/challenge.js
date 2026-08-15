@@ -595,20 +595,23 @@ export function createChallengeFunctions({
       requireAdmin(request, adminEmails);
       const weekKey = String(request.data?.weekKey || weekKeyFor()).trim();
       const schedule = scheduleFor(weekKey);
-      const [week, part1, part2, submissions1, submissions2, generationJob] = await Promise.all([
+      const [week, part1, part2, generationJob, students] = await Promise.all([
         db.doc(`challengeWeeks/${weekKey}`).get(),
         db.doc(`challengeRounds/${schedule.part1.roundId}`).get(),
         db.doc(`challengeRounds/${schedule.part2.roundId}`).get(),
-        db.collectionGroup('challengeSubmissions').where('roundId', '==', schedule.part1.roundId).get(),
-        db.collectionGroup('challengeSubmissions').where('roundId', '==', schedule.part2.roundId).get(),
         db.doc(`_challengeGenerationJobs/${weekKey}`).get(),
+        db.collection('students').get(),
       ]);
-      const completed = snaps => snaps.docs.filter(doc => doc.data().completed === true).length;
+      const submissionPairs = await Promise.all(students.docs.map(async studentDoc => ({
+        part1:await studentDoc.ref.collection('challengeSubmissions').doc(schedule.part1.roundId).get(),
+        part2:await studentDoc.ref.collection('challengeSubmissions').doc(schedule.part2.roundId).get(),
+      })));
+      const completed = part => submissionPairs.filter(pair => pair[part].exists && pair[part].data().completed === true).length;
       return {
         weekKey, published:week.exists,
         personalized:generationJob.exists ? generationJob.data() : null,
-        part1:{ published:part1.exists || generationJob.data()?.completed > 0, questions:part1.data()?.questionCount || (generationJob.data()?.completed ? 5 : 0), completed:completed(submissions1) },
-        part2:{ published:part2.exists || generationJob.data()?.completed > 0, questions:part2.data()?.questionCount || (generationJob.data()?.completed ? 5 : 0), completed:completed(submissions2) },
+        part1:{ published:part1.exists || generationJob.data()?.completed > 0, questions:part1.data()?.questionCount || (generationJob.data()?.completed ? 5 : 0), completed:completed('part1') },
+        part2:{ published:part2.exists || generationJob.data()?.completed > 0, questions:part2.data()?.questionCount || (generationJob.data()?.completed ? 5 : 0), completed:completed('part2') },
       };
     }
   );
