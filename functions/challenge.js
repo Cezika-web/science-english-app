@@ -15,12 +15,12 @@ const PERSONALIZED_CHALLENGE_SCHEMA = {
     analysis:{
       type:'object', additionalProperties:false, required:['weakPoints','strongPoints'],
       properties:{
-        weakPoints:{ type:'array', minItems:3, maxItems:6, items:{ type:'string' } },
-        strongPoints:{ type:'array', minItems:2, maxItems:6, items:{ type:'string' } },
+        weakPoints:{ type:'array', minItems:1, maxItems:6, items:{ type:'string' } },
+        strongPoints:{ type:'array', minItems:1, maxItems:6, items:{ type:'string' } },
       },
     },
-    part1:{ type:'array', minItems:5, maxItems:5, items:{ $ref:'#/$defs/question' } },
-    part2:{ type:'array', minItems:5, maxItems:5, items:{ $ref:'#/$defs/question' } },
+    part1:{ type:'array', minItems:1, maxItems:5, items:{ $ref:'#/$defs/question' } },
+    part2:{ type:'array', minItems:1, maxItems:5, items:{ $ref:'#/$defs/question' } },
   },
   $defs:{ question:{
     type:'object', additionalProperties:false,
@@ -28,7 +28,7 @@ const PERSONALIZED_CHALLENGE_SCHEMA = {
     properties:{
       id:{ type:'string' }, prompt:{ type:'string' }, context:{ type:'string' }, hint:{ type:'string' },
       focus:{ type:'string', enum:['weak','strong'] }, topic:{ type:'string' },
-      options:{ type:'array', minItems:4, maxItems:4, items:{
+      options:{ type:'array', minItems:1, maxItems:4, items:{
         type:'object', additionalProperties:false, required:['id','text'],
         properties:{ id:{ type:'string', enum:['a','b','c','d'] }, text:{ type:'string' } },
       } },
@@ -348,6 +348,9 @@ export function createChallengeFunctions({
         ...question, id:`p${partIndex + 1}q${index + 1}`, type:'multipleChoice',
       }));
       assertFocusMix(normalized, partIndex + 1);
+      if (normalized.some(question => !Array.isArray(question.options) || question.options.length !== 4)) {
+        throw new Error(`A Parte ${partIndex + 1} precisa ter quatro alternativas por pergunta.`);
+      }
       const checked = normalized.map(validateQuestion);
       return { questions:checked.map(item => item.publicQuestion), keys:checked.map(item => item.answerKey) };
     });
