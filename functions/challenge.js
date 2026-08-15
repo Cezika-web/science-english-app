@@ -15,12 +15,12 @@ const PERSONALIZED_CHALLENGE_SCHEMA = {
     analysis:{
       type:'object', additionalProperties:false, required:['weakPoints','strongPoints'],
       properties:{
-        weakPoints:{ type:'array', minItems:1, maxItems:6, items:{ type:'string' } },
-        strongPoints:{ type:'array', minItems:1, maxItems:6, items:{ type:'string' } },
+        weakPoints:{ type:'array', items:{ type:'string' } },
+        strongPoints:{ type:'array', items:{ type:'string' } },
       },
     },
-    part1:{ type:'array', minItems:1, maxItems:5, items:{ $ref:'#/$defs/question' } },
-    part2:{ type:'array', minItems:1, maxItems:5, items:{ $ref:'#/$defs/question' } },
+    part1:{ type:'array', items:{ $ref:'#/$defs/question' } },
+    part2:{ type:'array', items:{ $ref:'#/$defs/question' } },
   },
   $defs:{ question:{
     type:'object', additionalProperties:false,
@@ -28,7 +28,7 @@ const PERSONALIZED_CHALLENGE_SCHEMA = {
     properties:{
       id:{ type:'string' }, prompt:{ type:'string' }, context:{ type:'string' }, hint:{ type:'string' },
       focus:{ type:'string', enum:['weak','strong'] }, topic:{ type:'string' },
-      options:{ type:'array', minItems:1, maxItems:4, items:{
+      options:{ type:'array', items:{
         type:'object', additionalProperties:false, required:['id','text'],
         properties:{ id:{ type:'string', enum:['a','b','c','d'] }, text:{ type:'string' } },
       } },
