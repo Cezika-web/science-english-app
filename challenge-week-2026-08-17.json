@@ -1,0 +1,108 @@
+{
+  "weekKey": "2026-08-17",
+  "title": "Desafio Science English · Semana 1",
+  "part1": [
+    {
+      "id": "p1q1",
+      "type": "multipleChoice",
+      "prompt": "Complete a frase corretamente:",
+      "context": "She ___ a doctor.",
+      "options": [{"id":"a","text":"am"},{"id":"b","text":"is"},{"id":"c","text":"are"},{"id":"d","text":"does"}],
+      "correctOption": "b",
+      "expected": "She is a doctor.",
+      "explanation": "Com she, o verbo to be no presente é is."
+    },
+    {
+      "id": "p1q2",
+      "type": "multipleChoice",
+      "prompt": "Escolha o auxiliar correto:",
+      "context": "___ you work on Saturdays?",
+      "options": [{"id":"a","text":"Do"},{"id":"b","text":"Does"},{"id":"c","text":"Is"},{"id":"d","text":"Are"}],
+      "correctOption": "a",
+      "expected": "Do you work on Saturdays?",
+      "explanation": "Perguntas no presente simples com you usam do."
+    },
+    {
+      "id": "p1q3",
+      "type": "multipleChoice",
+      "prompt": "O que significa “take care of” nesta frase?",
+      "context": "I take care of my younger brother after school.",
+      "options": [{"id":"a","text":"procurar"},{"id":"b","text":"brigar com"},{"id":"c","text":"cuidar de"},{"id":"d","text":"esperar por"}],
+      "correctOption": "c",
+      "expected": "cuidar de",
+      "explanation": "Take care of significa cuidar de alguém ou de alguma coisa."
+    },
+    {
+      "id": "p1q4",
+      "type": "multipleChoice",
+      "prompt": "Complete usando o Present Perfect:",
+      "context": "She ___ never tried this before.",
+      "options": [{"id":"a","text":"have"},{"id":"b","text":"has"},{"id":"c","text":"is"},{"id":"d","text":"did"}],
+      "correctOption": "b",
+      "expected": "She has never tried this before.",
+      "explanation": "O Present Perfect com she é formado por has + particípio passado."
+    },
+    {
+      "id": "p1q5",
+      "type": "multipleChoice",
+      "prompt": "Qual é a correção completa desta frase?",
+      "context": "He don't went to work because he was sick.",
+      "options": [{"id":"a","text":"He doesn't went to work because he was sick."},{"id":"b","text":"He didn't go to work because he was sick."},{"id":"c","text":"He not go to work because he was sick."},{"id":"d","text":"He wasn't go to work because he was sick."}],
+      "correctOption": "b",
+      "expected": "He didn't go to work because he was sick.",
+      "explanation": "No passado negativo usamos didn't + verbo na forma base: go."
+    }
+  ],
+  "part2": [
+    {
+      "id": "p2q1",
+      "type": "multipleChoice",
+      "prompt": "Escolha a pergunta correta com “used to”:",
+      "context": "Você costumava cuidar dos seus irmãos?",
+      "options": [{"id":"a","text":"Did you used to take care of your siblings?"},{"id":"b","text":"Do you use to took care of your siblings?"},{"id":"c","text":"Did you use to take care of your siblings?"},{"id":"d","text":"Were you use to take care of your siblings?"}],
+      "correctOption": "c",
+      "expected": "Did you use to take care of your siblings?",
+      "explanation": "Depois de did, usamos use e take na forma base."
+    },
+    {
+      "id": "p2q2",
+      "type": "multipleChoice",
+      "prompt": "Qual resposta usa “would rather” corretamente?",
+      "context": "Do you want to stay home or go out tonight?",
+      "options": [{"id":"a","text":"I would rather stay home."},{"id":"b","text":"I would rather to stay home."},{"id":"c","text":"I rather staying home."},{"id":"d","text":"I would stayed home."}],
+      "correctOption": "a",
+      "expected": "I would rather stay home.",
+      "explanation": "Would rather é seguido do verbo na forma base, sem to."
+    },
+    {
+      "id": "p2q3",
+      "type": "multipleChoice",
+      "prompt": "Complete a tag question:",
+      "context": "They work here, ___?",
+      "options": [{"id":"a","text":"aren't they"},{"id":"b","text":"don't they"},{"id":"c","text":"didn't they"},{"id":"d","text":"doesn't they"}],
+      "correctOption": "b",
+      "expected": "They work here, don't they?",
+      "explanation": "Work está no presente simples; com they, a tag usa don't they."
+    },
+    {
+      "id": "p2q4",
+      "type": "multipleChoice",
+      "prompt": "Escolha a palavra correta:",
+      "context": "We don't have ___ milk at home.",
+      "options": [{"id":"a","text":"some"},{"id":"b","text":"any"},{"id":"c","text":"nothing"},{"id":"d","text":"a"}],
+      "correctOption": "b",
+      "expected": "We don't have any milk at home.",
+      "explanation": "Em frases negativas, normalmente usamos any."
+    },
+    {
+      "id": "p2q5",
+      "type": "multipleChoice",
+      "prompt": "Leia e escolha a resposta correta:",
+      "context": "Anna has lived in São Paulo for three years. She moved there in 2023 and still lives there today. How long has Anna lived in São Paulo?",
+      "options": [{"id":"a","text":"Since three years"},{"id":"b","text":"For three years"},{"id":"c","text":"In three years"},{"id":"d","text":"Three years ago and she left"}],
+      "correctOption": "b",
+      "expected": "For three years.",
+      "explanation": "For indica duração; since indica o ponto inicial."
+    }
+  ]
+}

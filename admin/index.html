@@ -291,6 +291,7 @@
       <div class="tabs">
         <button class="tab active" data-tab="students">👥 Alunos</button>
         <button class="tab" data-tab="groups">👥 Turmas/Duplas</button>
+        <button class="tab" data-tab="challenge">🏆 Desafio</button>
         <button class="tab" data-tab="creditos">💳 Saldo</button>
         <button class="tab" data-tab="posaula">📄 Pós-aula</button>
         <button class="tab" data-tab="processos">⏳ Processos <span id="processos-count" class="process-dot" aria-label="Processos prontos"></span></button>
@@ -331,6 +332,27 @@
           <div class="form-msg" id="group-msg" style="display:none;"></div>
         </div>
         <div id="groups-list"><div class="loading">Carregando turmas...</div></div>
+      </div>
+
+      <!-- DESAFIO SEMANAL -->
+      <div class="tab-panel" id="tab-challenge">
+        <div style="display:grid;grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);gap:16px;align-items:start;">
+          <div class="form-card" style="margin:0;">
+            <h2 style="margin-bottom:5px;">🏆 Publicar desafio semanal</h2>
+            <p style="font-size:.84rem;color:var(--muted);line-height:1.5;margin:0 0 15px;">A semana precisa ter duas partes de 5 perguntas. Os gabaritos são enviados ao servidor e nunca aparecem no aplicativo do aluno.</p>
+            <label class="form-label" for="challenge-week">Segunda-feira da semana</label>
+            <input class="form-input" id="challenge-week" type="date" value="2026-08-17" style="margin-bottom:12px;">
+            <label class="form-label" for="challenge-json">Perguntas e gabaritos (JSON)</label>
+            <textarea id="challenge-json" style="width:100%;min-height:390px;box-sizing:border-box;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.76rem;line-height:1.45;resize:vertical;" placeholder="Carregue o modelo da primeira semana ou cole outro JSON."></textarea>
+            <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:12px;"><button class="btn-secondary" id="challenge-load-template" type="button">Carregar Semana 1</button><button class="btn-primary" id="challenge-publish" type="button">Publicar as 10 perguntas</button></div>
+            <div class="form-msg" id="challenge-msg" style="display:none;"></div>
+          </div>
+          <div class="form-card" style="margin:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;"><h2 style="margin:0;">Status da semana</h2><button class="btn-secondary" id="challenge-refresh" type="button">Atualizar</button></div>
+            <div id="challenge-status" style="margin-top:14px;"><div class="loading">Carregando...</div></div>
+            <div style="margin-top:16px;padding:13px;border-radius:12px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A;font-size:.78rem;line-height:1.5;"><strong>Programação automática</strong><br>Parte 1: segunda 00h → quarta 23h59<br>Parte 2: quinta 00h → sábado 23h59<br>Resultado: domingo 00h</div>
+          </div>
+        </div>
       </div>
 
       <!-- EX-ALUNOS -->
@@ -1503,6 +1525,7 @@
         if (tab.dataset.tab === 'creditos') carregarConsumoApi();
         if (tab.dataset.tab === 'processos') { marcarProcessosPosAulaVistos(); recarregarProcessosPosAula(); }
         if (tab.dataset.tab === 'groups') loadClassGroups();
+        if (tab.dataset.tab === 'challenge') loadChallengeAdmin();
       };
     });
 
@@ -1516,8 +1539,8 @@
     // Quem administra a escola vê a interface dela — inclusive o César, ao
     // trocar de escola no seletor do topo.
     const ABAS_POR_MODO = {
-      manual:    ['students', 'groups', 'creditos', 'posaula', 'processos', 'publish', 'correct', 'vocab', 'extras', 'avisos', 'add', 'exalunos', 'pendencias'],
-      assistido: ['students', 'groups', 'creditos', 'posaula', 'processos', 'publish', 'extras', 'avisos', 'add', 'exalunos', 'pendencias'],
+      manual:    ['students', 'groups', 'challenge', 'creditos', 'posaula', 'processos', 'publish', 'correct', 'vocab', 'extras', 'avisos', 'add', 'exalunos', 'pendencias'],
+      assistido: ['students', 'groups', 'challenge', 'creditos', 'posaula', 'processos', 'publish', 'extras', 'avisos', 'add', 'exalunos', 'pendencias'],
     };
 
     function modoDaEscolaAtual() {
@@ -4063,6 +4086,54 @@
         };
       });
     }
+
+    // ── DESAFIO SEMANAL ─────────────────────────────────────────────────
+    async function loadChallengeTemplate() {
+      const area = document.getElementById('challenge-json');
+      const msg = document.getElementById('challenge-msg');
+      try {
+        const response = await fetch('../challenge-week-2026-08-17.json', { cache:'no-store' });
+        if (!response.ok) throw new Error('Modelo não encontrado.');
+        const data = await response.json();
+        area.value = JSON.stringify(data, null, 2);
+        document.getElementById('challenge-week').value = data.weekKey || '2026-08-17';
+        showMsg('challenge-msg', '✅ Semana 1 carregada: 5 perguntas na Parte 1 e 5 na Parte 2.', 'ok');
+      } catch (error) { showMsg('challenge-msg', 'Erro ao carregar modelo: ' + error.message, 'err'); }
+    }
+
+    async function loadChallengeAdmin() {
+      const status = document.getElementById('challenge-status');
+      if (!status) return;
+      if (!document.getElementById('challenge-json').value.trim()) await loadChallengeTemplate();
+      status.innerHTML = '<div class="loading">Consultando servidor...</div>';
+      try {
+        const weekKey = document.getElementById('challenge-week').value || '2026-08-17';
+        const obter = httpsCallable(fns, 'obterStatusDesafioAdmin', { timeout:60000 });
+        const { data } = await obter({ weekKey });
+        const line = (label, part) => `<div style="display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-top:1px solid var(--border);"><span><strong>${label}</strong><br><small style="color:var(--muted);">${part.questions} perguntas · ${part.completed} concluída(s)</small></span><span style="color:${part.published ? '#15803D' : '#B45309'};font-weight:800;">${part.published ? '✓ Publicada' : 'Pendente'}</span></div>`;
+        status.innerHTML = `<div style="padding:12px;border-radius:12px;background:${data.published ? '#F0FDF4' : '#FFF7ED'};color:${data.published ? '#166534' : '#9A3412'};font-weight:800;">${data.published ? '✅ Semana publicada e programada' : '⚠️ Semana ainda não publicada'}</div>${line('Parte 1', data.part1)}${line('Parte 2', data.part2)}`;
+      } catch (error) { status.innerHTML = `<div class="form-msg err" style="display:block;">Erro: ${esc(error.message)}</div>`; }
+    }
+
+    document.getElementById('challenge-load-template').onclick = loadChallengeTemplate;
+    document.getElementById('challenge-refresh').onclick = loadChallengeAdmin;
+    document.getElementById('challenge-week').onchange = loadChallengeAdmin;
+    document.getElementById('challenge-publish').onclick = async () => {
+      const button = document.getElementById('challenge-publish');
+      try {
+        const payload = JSON.parse(document.getElementById('challenge-json').value || '{}');
+        payload.weekKey = document.getElementById('challenge-week').value || payload.weekKey;
+        if (!Array.isArray(payload.part1) || payload.part1.length !== 5 || !Array.isArray(payload.part2) || payload.part2.length !== 5) {
+          throw new Error('O JSON precisa ter exatamente 5 perguntas em cada parte.');
+        }
+        button.disabled = true; button.textContent = 'Publicando com segurança...';
+        const publicar = httpsCallable(fns, 'publicarDesafioSemanal', { timeout:120000 });
+        await publicar(payload);
+        showMsg('challenge-msg', '✅ As 10 perguntas foram publicadas. A abertura e o resultado serão automáticos.', 'ok');
+        await loadChallengeAdmin();
+      } catch (error) { showMsg('challenge-msg', 'Erro: ' + error.message, 'err'); }
+      finally { button.disabled = false; button.textContent = 'Publicar as 10 perguntas'; }
+    };
 
     // ── CREATE STUDENT ──────────────────────────────────────────────────
     function renderGroupStudentOptions(selected = editingGroupMembers) {

@@ -190,25 +190,28 @@ async function getFB() {
     { getFirestore, doc, getDoc, collection, query, where, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion, deleteField },
     { getMessaging, getToken, onMessage, isSupported },
     { getStorage, ref: storageRef, uploadBytes, getDownloadURL },
+    { getFunctions, httpsCallable },
   ] = await Promise.all([
     import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
     import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'),
     import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'),
     import('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js'),
     import('https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js'),
+    import('https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js'),
   ]);
   const app  = initializeApp(FB_CONFIG);
   const auth = getAuth(app);
   const db   = getFirestore(app);
   const storage = getStorage(app);
+  const functions = getFunctions(app, 'southamerica-east1');
   let messaging = null;
   try { if (await isSupported()) messaging = getMessaging(app); } catch(e) {}
-  _fb = { app, auth, db, storage, messaging,
+  _fb = { app, auth, db, storage, functions, messaging,
     signInWithEmailAndPassword, signOut, onAuthStateChanged,
     updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential,
     doc, getDoc, collection, query, where, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion, deleteField,
     storageRef, uploadBytes, getDownloadURL,
-    getToken, onMessage };
+    getToken, onMessage, httpsCallable };
   return _fb;
 }
 
@@ -1847,7 +1850,7 @@ function ReviewReportModal({ report, onClose }) {
   );
 }
 
-function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpenReview, challengeSimulation, challengeEnabled, onOpenChallenge }) {
+function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpenReview, challengeSimulation, challengeState, challengeEnabled, onOpenChallenge }) {
   const [chartType, setChartType] = useState(() => localStorage.getItem('progressChartType') || 'line');
   const [periodMonths, setPeriodMonths] = useState(() => Number(localStorage.getItem('progressPeriodMonths')) || 3);
   const [errorFilter, setErrorFilter] = useState('all');
@@ -1890,7 +1893,7 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
   return (
     <div className="scroll-area" style={{ padding:'18px 14px 28px', width:'100%', maxWidth:'100%', minWidth:0, boxSizing:'border-box', overflowX:'hidden' }}>
       <div style={{ fontSize:22, fontWeight:800, color:'#0F172A' }}>Meu progresso</div>
-      {challengeEnabled && <ChallengeProgressPanel simulation={challengeSimulation} onOpenChallenge={onOpenChallenge} />}
+      {challengeEnabled && <ChallengeProgressPanel challengeState={challengeState} onOpenChallenge={onOpenChallenge} />}
       <ProgressSection title="Presença">
         <div style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:8, width:'100%' }}>
           <ProgressStat label="Realizadas" value={attendance.held} detail="com pós-aula" tone={PROGRESS_COLORS.good} />
@@ -2702,7 +2705,7 @@ function nextActivityStep(activities) {
   return { ...escolhido, hasProgress:temProgresso(escolhido.activity) };
 }
 
-function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOpenExtra, onOpenCorrecao, onOpenChallenge, challengeSimulation, challengeEnabled = false }) {
+function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOpenExtra, onOpenCorrecao, onOpenChallenge, challengeSimulation, challengeState, challengeEnabled = false }) {
   const [sub, setSub] = useState('atividades');
   const [openHist, setOpenHist] = useState({});
   const [openMonth, setOpenMonth] = useState({});
@@ -2814,7 +2817,7 @@ function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOp
         ))}
       </div>
 
-      {sub === 'atividades' && challengeEnabled && <ChallengeCarousel simulation={challengeSimulation} onOpen={onOpenChallenge} />}
+      {sub === 'atividades' && challengeEnabled && <ChallengeCarousel simulation={challengeSimulation} challengeState={challengeState} onOpen={onOpenChallenge} />}
 
       {sub === 'atividades' && (
         <button type="button" disabled={!continuar} onClick={() => continuar && onContinueActivity(continuar.activity, continuar.part)} style={{
@@ -4022,6 +4025,7 @@ function App() {
   const [tab, setTab]                   = useState('home');
   const [challengeView, setChallengeView] = useState(null);
   const [challengeSimulation, setChallengeSimulation] = useState(null);
+  const [challengeState, setChallengeState] = useState({ enabled:true, phase:'upcoming', weekKey:'2026-08-17' });
   const [classChallenges, setClassChallenges] = useState([]);
   const [selectedChallenge, setSelectedChallenge] = useState(null);
   const [readerPost, setReaderPost]     = useState(null);
@@ -4036,13 +4040,10 @@ function App() {
   const [achievementItems, setAchievementItems] = useState(null);
   const achievementCheckingRef = useRef(false);
   const pendingPostId = useRef(new URLSearchParams(window.location.search).get('post') || '');
+  const pendingChallenge = useRef(new URLSearchParams(window.location.search).get('challenge') === '1');
   const mirrorUid = useRef(new URLSearchParams(window.location.search).get('mirror') || '');
   const mirror = !!mirrorUid.current;
-  const challengePreviewAccess = mirror
-    || ['cmo.sep@gmail.com','czkenglish@gmail.com'].includes(user?.email || '')
-    || student?.slug === 'amorzinho'
-    || student?.email === 'brunaa.padilhaaa@gmail.com'
-    || classChallenges.length > 0;
+  const challengePreviewAccess = Boolean(student) && student?.challengeEnabled !== false;
   const combinedChallengeSimulation = {
     ...(challengeSimulation || {}),
     activeChallenges:[...(challengeSimulation?.activeChallenges || []), ...classChallenges.filter(group => group.active !== false)]
@@ -4215,6 +4216,26 @@ function App() {
     }
   }
 
+  async function refreshChallengeState(fbOverride = null) {
+    if (mirror) return;
+    try {
+      const fb = fbOverride || await getFB();
+      const obter = fb.httpsCallable(fb.functions, 'obterDesafioSemanal');
+      const response = await obter({});
+      setChallengeState(response.data || { enabled:true, phase:'unpublished' });
+      if (pendingChallenge.current) {
+        pendingChallenge.current = false;
+        setTab('aulas'); setSelectedChallenge(null); setChallengeView('hub');
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+      return response.data;
+    } catch (error) {
+      console.error('Desafio semanal:', error);
+      setChallengeState(current => ({ ...current, enabled:true, loadError:true }));
+      return null;
+    }
+  }
+
   async function loadData(uid, fb) {
     const [snap, posSnaps, actSnaps, vocSnaps, extSnaps, reviewSnaps, challengeSnap, classGroupSnaps] = await Promise.all([
       fb.getDoc(fb.doc(fb.db, 'students', uid)),
@@ -4255,6 +4276,7 @@ function App() {
     setReviewReports(reviewSnaps.docs.map(d => ({ id: d.id, ...d.data() })));
     setChallengeSimulation(challengeSnap?.exists?.() ? challengeSnap.data() : null);
     setClassChallenges(classGroupSnaps.docs.map(groupDoc => ({ id:groupDoc.id, ...groupDoc.data() })));
+    refreshChallengeState(fb);
     if (pendingPostId.current && posts.length > 0) {
       const target = posts.find(p => p.id === pendingPostId.current || p.filename === pendingPostId.current);
       if (target) {
@@ -4566,8 +4588,8 @@ function App() {
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         {tab === 'home'   && <HomeTab   student={student} posaulas={posaulas} activities={activities} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} />}
-        {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={(challenge) => { setSelectedChallenge(challenge || null); setChallengeView('hub'); }} challengeSimulation={combinedChallengeSimulation} challengeEnabled={challengePreviewAccess} />}
-        {tab === 'progresso' && <ProgressTab student={student} posaulas={posaulas} activities={activities} reviewReports={reviewReports} onOpenReview={openReviewResult} challengeSimulation={combinedChallengeSimulation} challengeEnabled={challengePreviewAccess} onOpenChallenge={() => { setSelectedChallenge(null); setChallengeView('hub'); }} />}
+        {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={(challenge) => { setSelectedChallenge(challenge || null); setChallengeView('hub'); }} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} />}
+        {tab === 'progresso' && <ProgressTab student={student} posaulas={posaulas} activities={activities} reviewReports={reviewReports} onOpenReview={openReviewResult} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} onOpenChallenge={() => { setSelectedChallenge(null); setChallengeView('hub'); }} />}
         {tab === 'vocab'  && <VocabTab vocab={vocab} />}
         {tab === 'perfil' && <PerfilTab student={student} onLogout={handleLogout} onPatchStudent={patchStudent} reviews={courseReviews} ownReview={ownCourseReview} onSaveReview={saveCourseReview} openReviewForm={reviewFormRequest} />}
       </div>
@@ -4577,8 +4599,10 @@ function App() {
       {challengeView && <ChallengeHub
         student={student}
         simulation={combinedChallengeSimulation}
+        challengeState={challengeState}
         selectedChallenge={selectedChallenge}
         previewAllowed={challengePreviewAccess}
+        onRefresh={() => refreshChallengeState()}
         onBack={() => { setChallengeView(null); setSelectedChallenge(null); }}
         onStart={() => setChallengeView('game')}
         onJoinChallenge={async (challenge) => {
@@ -4591,15 +4615,21 @@ function App() {
         }}
       />}
       {challengeView === 'game' && <ChallengeGame
+        challengeState={challengeState}
         onExit={() => setChallengeView('hub')}
-        onFinish={() => setChallengeView('hub')}
-        recordingEnabled={!mirror && !['cmo.sep@gmail.com','czkenglish@gmail.com'].includes(user?.email || '') && Date.now() >= new Date('2026-08-17T00:00:00-03:00').getTime()}
-        onSubmit={async ({ round, answers }) => {
+        onFinish={async () => { await refreshChallengeState(); setChallengeView('hub'); }}
+        onStart={async (roundId) => {
           const fb = await getFB();
-          await fb.setDoc(fb.doc(fb.db, 'students', user.uid, 'challengeSubmissions', round.roundId), {
-            roundId:round.roundId, weekKey:round.weekKey, part:round.part, answers,
-            completed:true, status:'submitted', submittedAt:fb.serverTimestamp(), updatedAt:fb.serverTimestamp()
-          }, { merge:true });
+          const iniciar = fb.httpsCallable(fb.functions, 'iniciarDesafioSemanal');
+          const response = await iniciar({ roundId });
+          return response.data;
+        }}
+        onSaveAnswer={async ({ roundId, questionId, value }) => {
+          const fb = await getFB();
+          const salvar = fb.httpsCallable(fb.functions, 'salvarRespostaDesafio');
+          const response = await salvar({ roundId, questionId, value });
+          if (response.data?.completed) await refreshChallengeState(fb);
+          return response.data;
         }}
       />}
 

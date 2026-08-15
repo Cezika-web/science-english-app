@@ -7,6 +7,7 @@ import { getMessaging } from 'firebase-admin/messaging';
 import Anthropic from '@anthropic-ai/sdk';
 import { montarTemplate, REGRAS_POS_AULA, garantirAudioPosAula } from './posaula.js';
 import { REGRAS_ATIVIDADES, SCHEMA_ATIVIDADES, textoDaPosAula } from './atividades.js';
+import { createChallengeFunctions } from './challenge.js';
 
 initializeApp();
 const db = getFirestore();
@@ -2180,103 +2181,15 @@ export const concluirCorrecoesEmBatch = onSchedule(
 /* ────────────────────────────────────────────────────────────────
    SALDO — só o administrador ajusta a carteira de uma escola
    ──────────────────────────────────────────────────────────────── */
-const CHALLENGE_LAUNCH_DATE = '2026-08-17';
-const CHALLENGE_APP_URL = 'https://cezika-web.github.io/science-english-app/?challenge=1';
-
-function challengeDateParts(date = new Date()) {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone:'America/Sao_Paulo', year:'numeric', month:'2-digit', day:'2-digit', weekday:'short',
-  }).formatToParts(date).reduce((result, item) => ({ ...result, [item.type]:item.value }), {});
-  return { date:`${parts.year}-${parts.month}-${parts.day}`, weekday:parts.weekday };
-}
-
-function challengeRoundFor(date = new Date()) {
-  const local = challengeDateParts(date);
-  const weekdayNumber = { Sun:0, Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6 }[local.weekday];
-  const noonUtc = new Date(`${local.date}T12:00:00Z`);
-  const daysSinceMonday = weekdayNumber === 0 ? 6 : weekdayNumber - 1;
-  noonUtc.setUTCDate(noonUtc.getUTCDate() - daysSinceMonday);
-  const weekKey = noonUtc.toISOString().slice(0, 10);
-  const part = weekdayNumber === 6 ? 2 : 1;
-  return { weekKey, part, roundId:`${weekKey}-part-${part}` };
-}
-
-function completedChallengeSubmission(data = {}) {
-  return data.completed === true || data.finalizada === true || data.status === 'completed'
-    || data.status === 'submitted' || Boolean(data.submittedAt || data.completedAt);
-}
-
-async function studentCompletedChallenge(studentRef, round) {
-  const ids = [round.roundId, `${round.weekKey}-part${round.part}`];
-  const snaps = await Promise.all(ids.map(id => studentRef.collection('challengeSubmissions').doc(id).get()));
-  return snaps.some(snap => snap.exists && completedChallengeSubmission(snap.data()));
-}
-
-function studentPushTokens(student = {}) {
-  return [...new Set([student.fcmToken, ...(Array.isArray(student.fcmTokens) ? student.fcmTokens : [])].filter(Boolean))];
-}
-
-async function sendChallengeReminders(period) {
-  const round = challengeRoundFor();
-  if (round.weekKey < CHALLENGE_LAUNCH_DATE) {
-    console.log(`Lembrete ignorado: rodada ${round.roundId} anterior ao lançamento.`);
-    return;
-  }
-
-  const students = await db.collection('students').get();
-  const slot = `${round.roundId}-${period}`;
-  let sent = 0, completed = 0, withoutToken = 0, inactive = 0;
-
-  for (const studentDoc of students.docs) {
-    const student = studentDoc.data();
-    if (student.archived === true || student.challengeEnabled === false) { inactive++; continue; }
-    const tokens = studentPushTokens(student);
-    if (!tokens.length) { withoutToken++; continue; }
-    if (await studentCompletedChallenge(studentDoc.ref, round)) { completed++; continue; }
-
-    const logRef = studentDoc.ref.collection('challengeReminderLogs').doc(slot);
-    const reserved = await db.runTransaction(async transaction => {
-      const log = await transaction.get(logRef);
-      if (log.exists) return false;
-      transaction.create(logRef, { slot, roundId:round.roundId, part:round.part, period, status:'sending', createdAt:FieldValue.serverTimestamp() });
-      return true;
-    });
-    if (!reserved) continue;
-
-    const title = period === 'morning' ? 'Seu desafio termina hoje' : 'Última hora do desafio';
-    const body = period === 'morning'
-      ? `Você ainda não concluiu a parte ${round.part}. Responda até 23h59 de hoje.`
-      : `A parte ${round.part} termina à meia-noite. Ainda dá tempo de responder.`;
-
-    try {
-      const response = await getMessaging().sendEachForMulticast({
-        tokens,
-        notification:{ title, body },
-        data:{ type:'challenge-reminder', roundId:round.roundId, part:String(round.part) },
-        webpush:{
-          headers:{ Urgency:period === 'night' ? 'high' : 'normal', TTL:period === 'night' ? '3600' : '54000' },
-          fcmOptions:{ link:CHALLENGE_APP_URL },
-        },
-      });
-      await logRef.update({ status:'sent', sent:response.successCount, failed:response.failureCount, sentAt:FieldValue.serverTimestamp() });
-      sent += response.successCount;
-    } catch (error) {
-      await logRef.delete().catch(() => {});
-      console.error(`Lembrete falhou para ${studentDoc.id}:`, error.message);
-    }
-  }
-  console.log(`Lembretes ${slot}: ${sent} enviados, ${completed} concluídos, ${withoutToken} sem token, ${inactive} inativos.`);
-}
-
-export const lembrarDesafioManha = onSchedule(
-  { region:'southamerica-east1', schedule:'0 9 * * 3,6', timeZone:'America/Sao_Paulo', timeoutSeconds:300, memory:'256MiB' },
-  async () => sendChallengeReminders('morning')
-);
-
-export const lembrarDesafioNoite = onSchedule(
-  { region:'southamerica-east1', schedule:'0 23 * * 3,6', timeZone:'America/Sao_Paulo', timeoutSeconds:300, memory:'256MiB' },
-  async () => sendChallengeReminders('night')
-);
+const challengeFunctions = createChallengeFunctions({ db, getMessaging, adminEmails:ADMIN_EMAILS });
+export const publicarDesafioSemanal = challengeFunctions.publicarDesafioSemanal;
+export const obterDesafioSemanal = challengeFunctions.obterDesafioSemanal;
+export const iniciarDesafioSemanal = challengeFunctions.iniciarDesafioSemanal;
+export const salvarRespostaDesafio = challengeFunctions.salvarRespostaDesafio;
+export const obterStatusDesafioAdmin = challengeFunctions.obterStatusDesafioAdmin;
+export const finalizarDesafioSemanal = challengeFunctions.finalizarDesafioSemanal;
+export const lembrarDesafioManha = challengeFunctions.lembrarDesafioManha;
+export const lembrarDesafioNoite = challengeFunctions.lembrarDesafioNoite;
 
 export const ajustarCreditos = onCall(
   { ...OPCOES_PADRAO, timeoutSeconds: 60, memory: '256MiB' },

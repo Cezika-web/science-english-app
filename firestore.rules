@@ -96,6 +96,23 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Conteúdo público do desafio para usuários autenticados. Gabaritos e
+    // resultados individuais ficam em coleções internas sem regra de leitura.
+    match /challengeWeeks/{weekKey} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /challengeRounds/{roundId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /challengeRankings/{weekKey} {
+      allow read: if signedIn() && resource.data.revealAt <= request.time;
+      allow write: if isAdmin();
+    }
+
     match /schools/{schoolId} {
       // Aluno só lê a própria escola; professor só a escola que administra.
       allow get: if isAdmin()
@@ -229,16 +246,9 @@ service cloud.firestore {
       // pelo servidor. A conclusão também impede lembretes indevidos.
       match /challengeSubmissions/{roundId} {
         allow read: if isOwnStudent(uid) || managesStudent(uid);
-        allow create: if managesStudent(uid) || (isOwnStudent(uid)
-          && request.resource.data.keys().hasOnly([
-            'roundId', 'weekKey', 'part', 'answers', 'completed', 'status',
-            'startedAt', 'submittedAt', 'updatedAt'
-          ]));
-        allow update: if managesStudent(uid) || (isOwnStudent(uid)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'answers', 'completed', 'status', 'submittedAt', 'updatedAt'
-          ]));
-        allow delete: if managesStudent(uid);
+        // As respostas entram exclusivamente pelas Cloud Functions. Assim o
+        // servidor garante a ordem, a janela de tempo e uma única tentativa.
+        allow create, update, delete: if managesStudent(uid);
       }
 
       // Toda subcoleção nova nasce fechada para o aluno até ganhar uma regra
