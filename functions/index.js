@@ -2181,13 +2181,19 @@ export const concluirCorrecoesEmBatch = onSchedule(
 /* ────────────────────────────────────────────────────────────────
    SALDO — só o administrador ajusta a carteira de uma escola
    ──────────────────────────────────────────────────────────────── */
-const challengeFunctions = createChallengeFunctions({ db, getMessaging, adminEmails:ADMIN_EMAILS });
+const challengeFunctions = createChallengeFunctions({
+  db, getMessaging, adminEmails:ADMIN_EMAILS,
+  anthropicApiKey:ANTHROPIC_API_KEY, Anthropic, model:MODEL,
+  loadPostLesson:conteudoDaPosAula,
+});
 export const publicarDesafioSemanal = challengeFunctions.publicarDesafioSemanal;
+export const gerarDesafiosPersonalizados = challengeFunctions.gerarDesafiosPersonalizados;
 export const obterDesafioSemanal = challengeFunctions.obterDesafioSemanal;
 export const iniciarDesafioSemanal = challengeFunctions.iniciarDesafioSemanal;
 export const salvarRespostaDesafio = challengeFunctions.salvarRespostaDesafio;
 export const obterStatusDesafioAdmin = challengeFunctions.obterStatusDesafioAdmin;
 export const finalizarDesafioSemanal = challengeFunctions.finalizarDesafioSemanal;
+export const notificarAberturaDesafio = challengeFunctions.notificarAberturaDesafio;
 export const lembrarDesafioManha = challengeFunctions.lembrarDesafioManha;
 export const lembrarDesafioNoite = challengeFunctions.lembrarDesafioNoite;
 

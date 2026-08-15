@@ -6,6 +6,36 @@ const REGION = 'southamerica-east1';
 const TIME_ZONE = 'America/Sao_Paulo';
 const LAUNCH_WEEK = '2026-08-17';
 const APP_URL = 'https://cezika-web.github.io/science-english-app/?challenge=1';
+const LOOKBACK_DAYS = 90;
+
+const PERSONALIZED_CHALLENGE_SCHEMA = {
+  type:'object', additionalProperties:false,
+  required:['analysis','part1','part2'],
+  properties:{
+    analysis:{
+      type:'object', additionalProperties:false, required:['weakPoints','strongPoints'],
+      properties:{
+        weakPoints:{ type:'array', minItems:3, maxItems:6, items:{ type:'string' } },
+        strongPoints:{ type:'array', minItems:2, maxItems:6, items:{ type:'string' } },
+      },
+    },
+    part1:{ type:'array', minItems:5, maxItems:5, items:{ $ref:'#/$defs/question' } },
+    part2:{ type:'array', minItems:5, maxItems:5, items:{ $ref:'#/$defs/question' } },
+  },
+  $defs:{ question:{
+    type:'object', additionalProperties:false,
+    required:['id','prompt','context','hint','focus','topic','options','correctOption','expected','explanation'],
+    properties:{
+      id:{ type:'string' }, prompt:{ type:'string' }, context:{ type:'string' }, hint:{ type:'string' },
+      focus:{ type:'string', enum:['weak','strong'] }, topic:{ type:'string' },
+      options:{ type:'array', minItems:4, maxItems:4, items:{
+        type:'object', additionalProperties:false, required:['id','text'],
+        properties:{ id:{ type:'string', enum:['a','b','c','d'] }, text:{ type:'string' } },
+      } },
+      correctOption:{ type:'string', enum:['a','b','c','d'] }, expected:{ type:'string' }, explanation:{ type:'string' },
+    },
+  } },
+};
 
 function localDateParts(date = new Date()) {
   const parts = new Intl.DateTimeFormat('en-CA', {
@@ -77,11 +107,14 @@ function validateQuestion(question, index) {
   const type = question?.type === 'text' ? 'text' : 'multipleChoice';
   if (!id || !prompt) throw new HttpsError('invalid-argument', `Pergunta ${index + 1} sem id ou enunciado.`);
 
+  const focus = question?.focus === 'strong' ? 'strong' : question?.focus === 'weak' ? 'weak' : '';
+  const topic = String(question?.topic || '').trim();
   const publicQuestion = { id, type, prompt, context, hint };
   const answerKey = {
     id,
     expected:String(question?.expected || '').trim(),
     explanation:String(question?.explanation || '').trim(),
+    ...(focus ? { focus } : {}), ...(topic ? { topic } : {}),
   };
 
   if (type === 'multipleChoice') {
@@ -138,7 +171,33 @@ function requireAdmin(request, adminEmails) {
   }
 }
 
-export function createChallengeFunctions({ db, getMessaging, adminEmails }) {
+function dateFrom(value) {
+  if (!value) return null;
+  if (typeof value.toDate === 'function') return value.toDate();
+  const brazilian = typeof value === 'string' && value.match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/);
+  const date = brazilian
+    ? new Date(`${brazilian[3]}-${brazilian[2]}-${brazilian[1]}T12:00:00-03:00`)
+    : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function compact(value, max = 12000) {
+  const text = typeof value === 'string' ? value : JSON.stringify(value || {});
+  return text.replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+function assertFocusMix(questions, part) {
+  const weak = questions.filter(question => question.focus === 'weak').length;
+  const strong = questions.filter(question => question.focus === 'strong').length;
+  if (weak !== 3 || strong !== 2) {
+    throw new Error(`A Parte ${part} precisa ter exatamente 3 perguntas de pontos fracos e 2 de pontos fortes.`);
+  }
+}
+
+export function createChallengeFunctions({
+  db, getMessaging, adminEmails, anthropicApiKey = null, Anthropic = null,
+  model = 'claude-sonnet-5', loadPostLesson = null,
+}) {
   async function assertStudent(uid) {
     const snap = await db.doc(`students/${uid}`).get();
     if (!snap.exists || snap.data().archived === true || snap.data().challengeEnabled === false) {
@@ -147,16 +206,27 @@ export function createChallengeFunctions({ db, getMessaging, adminEmails }) {
     return snap;
   }
 
-  async function assertOpenRound(roundId, now = new Date()) {
+  async function resolveRound(uid, roundId) {
+    const personalSnap = await db.doc(`students/${uid}/challengeRounds/${roundId}`).get();
+    if (personalSnap.exists) return { roundSnap:personalSnap, personalized:true };
     const roundSnap = await db.doc(`challengeRounds/${roundId}`).get();
+    return { roundSnap, personalized:false };
+  }
+
+  async function assertOpenRound(uid, roundId, now = new Date()) {
+    const { roundSnap, personalized } = await resolveRound(uid, roundId);
     if (!roundSnap.exists) throw new HttpsError('not-found', 'Esta rodada ainda não foi publicada.');
     const round = roundSnap.data();
     const opensAt = round.opensAt?.toDate?.() || new Date(round.opensAt);
     const closesAt = round.closesAt?.toDate?.() || new Date(round.closesAt);
     if (now < opensAt) throw new HttpsError('failed-precondition', 'Esta rodada ainda não começou.');
     if (now > closesAt) throw new HttpsError('deadline-exceeded', 'O prazo desta rodada terminou.');
-    return { roundSnap, round, opensAt, closesAt };
+    return { roundSnap, round, opensAt, closesAt, personalized };
   }
+
+  const answerKeyRef = (uid, roundId, personalized) => db.doc(
+    personalized ? `_challengeAnswerKeys/${roundId}_${uid}` : `_challengeAnswerKeys/${roundId}`
+  );
 
   async function buildRanking(weekKey) {
     const resultSnaps = await db.collection('_challengeResults').where('weekKey', '==', weekKey).get();
@@ -189,6 +259,148 @@ export function createChallengeFunctions({ db, getMessaging, adminEmails }) {
     }, { merge:true });
     return ranking;
   }
+
+  async function personalizationInput(studentDoc, now = new Date()) {
+    const uid = studentDoc.id;
+    const cutoff = new Date(now.getTime() - LOOKBACK_DAYS * 86400000);
+    const [postSnaps, activitySnaps] = await Promise.all([
+      studentDoc.ref.collection('posaulas').get(),
+      studentDoc.ref.collection('activities').get(),
+    ]);
+    const recentPosts = postSnaps.docs.filter(doc => {
+      const data = doc.data();
+      const date = dateFrom(data.classDate || data.createdAt);
+      return date && date >= cutoff && date <= now;
+    }).sort((a,b) => dateFrom(a.data().classDate || a.data().createdAt) - dateFrom(b.data().classDate || b.data().createdAt));
+    if (!recentPosts.length) return { uid, posts:[], corrections:[] };
+
+    const loadedPosts = await Promise.all(recentPosts.slice(-12).map(async doc => {
+      const loaded = loadPostLesson ? await loadPostLesson(uid, doc.id) : null;
+      const data = doc.data();
+      const raw = loaded?.texto || data.html || data.content || '';
+      return {
+        id:doc.id, title:loaded?.titulo || data.title || `Pós-aula ${doc.id}`,
+        date:iso(data.classDate || data.createdAt), text:compact(raw, 9000),
+      };
+    }));
+    const corrections = activitySnaps.docs.filter(doc => {
+      const data = doc.data();
+      const date = dateFrom(data.correctedAt || data.updatedAt || data.createdAt);
+      return data.status === 'corrected' && date && date >= cutoff && date <= now;
+    }).sort((a,b) => {
+      const left = dateFrom(a.data().correctedAt || a.data().updatedAt || a.data().createdAt);
+      const right = dateFrom(b.data().correctedAt || b.data().updatedAt || b.data().createdAt);
+      return left - right;
+    }).slice(-20).map(doc => {
+      const data = doc.data();
+      return {
+        title:data.title || '', score:data.score ?? data.nota ?? null,
+        summary:compact(data.summary || data.report || '', 2500),
+        patterns:compact(data.patterns || data.pedagogico || data.correcao || '', 3500),
+      };
+    });
+    return { uid, posts:loadedPosts.filter(post => post.text), corrections };
+  }
+
+  async function generateForStudent(client, studentDoc, weekKey) {
+    const student = studentDoc.data();
+    const input = await personalizationInput(studentDoc);
+    if (!input.posts.length) throw new Error('Nenhum pós-aula utilizável nos últimos 90 dias.');
+    const response = await client.messages.create({
+      model, max_tokens:12000,
+      system:[{ type:'text', text:
+        'Você cria desafios individuais de inglês para o Science English. Use SOMENTE fatos linguísticos, vocabulário e contextos presentes nos pós-aulas fornecidos. ' +
+        'A dificuldade deve ser HARD em relação ao nível CEFR do aluno: exija aplicação, discriminação de nuances e recuperação ativa, sem ensinar conteúdo novo. ' +
+        'Use as correções para identificar padrões reais. Quando não houver correções suficientes, trate conteúdos repetidos ou muito explicados como fragilidades prováveis e deixe isso claro apenas na análise. ' +
+        'Em CADA parte, produza exatamente 3 perguntas focus=weak e 2 focus=strong. Todas devem ser multiple choice com quatro alternativas plausíveis, uma única resposta inequívoca e explicação pedagógica curta. ' +
+        'Não copie exercícios literalmente. Não mencione ao aluno que um item é fraqueza ou força.' }],
+      output_config:{ format:{ type:'json_schema', schema:PERSONALIZED_CHALLENGE_SCHEMA } },
+      messages:[{ role:'user', content:
+        `Aluno: ${student.name || student.firstName || 'Aluno'}\nNível: ${student.level || 'não informado'}\n` +
+        `Semana: ${weekKey}\nJanela analisada: últimos ${LOOKBACK_DAYS} dias.\n\n` +
+        `PÓS-AULAS:\n${input.posts.map((post, i) => `[${i + 1}] ${post.title} (${post.date || 'sem data'})\n${post.text}`).join('\n\n')}\n\n` +
+        `CORREÇÕES E DESEMPENHO:\n${input.corrections.length ? JSON.stringify(input.corrections) : 'Sem correções estruturadas suficientes; faça inferência conservadora a partir dos pós-aulas.'}`
+      }],
+    });
+    const text = response.content.find(block => block.type === 'text')?.text;
+    if (!text) throw new Error('A IA não devolveu as perguntas.');
+    const generated = JSON.parse(text);
+    const prepared = [generated.part1, generated.part2].map((questions, partIndex) => {
+      if (!Array.isArray(questions) || questions.length !== 5) throw new Error(`Parte ${partIndex + 1} incompleta.`);
+      const normalized = questions.map((question, index) => ({
+        ...question, id:`p${partIndex + 1}q${index + 1}`, type:'multipleChoice',
+      }));
+      assertFocusMix(normalized, partIndex + 1);
+      const checked = normalized.map(validateQuestion);
+      return { questions:checked.map(item => item.publicQuestion), keys:checked.map(item => item.answerKey) };
+    });
+    return { prepared, analysis:generated.analysis, sources:input.posts.map(post => ({ id:post.id, title:post.title, date:post.date })) };
+  }
+
+  const gerarDesafiosPersonalizados = onCall(
+    { region:REGION, secrets:anthropicApiKey ? [anthropicApiKey] : [], timeoutSeconds:3600, memory:'1GiB' },
+    async request => {
+      requireAdmin(request, adminEmails);
+      if (!Anthropic || !anthropicApiKey) throw new HttpsError('failed-precondition', 'A geração por IA não foi configurada.');
+      const weekKey = String(request.data?.weekKey || '').trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(weekKey) || new Date(`${weekKey}T12:00:00Z`).getUTCDay() !== 1) {
+        throw new HttpsError('invalid-argument', 'Escolha uma segunda-feira válida.');
+      }
+      const requestedUids = Array.isArray(request.data?.uids) ? new Set(request.data.uids.map(String)) : null;
+      const schoolId = String(request.data?.schoolId || '').trim();
+      const allStudents = await db.collection('students').get();
+      const students = allStudents.docs.filter(doc => {
+        const data = doc.data();
+        return data.archived !== true && data.challengeEnabled !== false
+          && (!requestedUids || requestedUids.has(doc.id)) && (!schoolId || data.schoolId === schoolId);
+      });
+      if (!students.length) throw new HttpsError('not-found', 'Nenhum aluno ativo foi encontrado.');
+      const schedule = scheduleFor(weekKey);
+      const jobRef = db.doc(`_challengeGenerationJobs/${weekKey}`);
+      await jobRef.set({ weekKey, status:'running', total:students.length, completed:0, failed:0,
+        startedAt:FieldValue.serverTimestamp(), requestedBy:request.auth.token?.email || '' });
+      const client = new Anthropic({ apiKey:anthropicApiKey.value() });
+      const generated = [], errors = [];
+      for (const studentDoc of students) {
+        try {
+          const output = await generateForStudent(client, studentDoc, weekKey);
+          const batch = db.batch();
+          [schedule.part1, schedule.part2].forEach((roundSchedule, index) => {
+            batch.set(studentDoc.ref.collection('challengeRounds').doc(roundSchedule.roundId), {
+              roundId:roundSchedule.roundId, weekKey, part:roundSchedule.part, personalized:true,
+              opensAt:roundSchedule.opensAt, closesAt:roundSchedule.closesAt,
+              questionCount:5, questions:output.prepared[index].questions,
+              difficulty:'hard', lookbackDays:LOOKBACK_DAYS,
+              status:'published', updatedAt:FieldValue.serverTimestamp(),
+            });
+            batch.set(answerKeyRef(studentDoc.id, roundSchedule.roundId, true), {
+              uid:studentDoc.id, roundId:roundSchedule.roundId, weekKey, part:roundSchedule.part,
+              answers:output.prepared[index].keys, analysis:output.analysis, sources:output.sources,
+              updatedAt:FieldValue.serverTimestamp(),
+            });
+          });
+          await batch.commit();
+          generated.push({ uid:studentDoc.id, name:studentDoc.data().name || studentDoc.data().firstName || 'Aluno' });
+        } catch (error) {
+          console.error(`Desafio personalizado falhou para ${studentDoc.id}:`, error);
+          errors.push({ uid:studentDoc.id, name:studentDoc.data().name || 'Aluno', error:error.message });
+        }
+        await jobRef.set({ completed:generated.length, failed:errors.length, lastUid:studentDoc.id,
+          updatedAt:FieldValue.serverTimestamp() }, { merge:true });
+      }
+      if (generated.length) {
+        await db.doc(`challengeWeeks/${weekKey}`).set({
+          weekKey, title:'Desafio Science English', active:true, personalized:true,
+          startsAt:schedule.startsAt, revealAt:schedule.revealAt, endsAt:schedule.endsAt,
+          generatedCount:generated.length, expectedCount:students.length,
+          updatedAt:FieldValue.serverTimestamp(), publishedBy:request.auth.token?.email || '',
+        }, { merge:true });
+      }
+      await jobRef.set({ status:errors.length ? (generated.length ? 'partial' : 'failed') : 'completed',
+        completed:generated.length, failed:errors.length, errors, finishedAt:FieldValue.serverTimestamp() }, { merge:true });
+      return { ok:errors.length === 0, weekKey, total:students.length, generated, errors };
+    }
+  );
 
   const publicarDesafioSemanal = onCall(
     { region:REGION, timeoutSeconds:120, memory:'256MiB' },
@@ -272,8 +484,8 @@ export function createChallengeFunctions({ db, getMessaging, adminEmails }) {
 
       if (stage.phase !== 'open') return base;
       const roundSchedule = stage.part === 1 ? schedule.part1 : schedule.part2;
-      const [roundSnap, submissionSnap] = await Promise.all([
-        db.doc(`challengeRounds/${roundSchedule.roundId}`).get(),
+      const [{ roundSnap }, submissionSnap] = await Promise.all([
+        resolveRound(uid, roundSchedule.roundId),
         db.doc(`students/${uid}/challengeSubmissions/${roundSchedule.roundId}`).get(),
       ]);
       if (!roundSnap.exists) return { ...base, phase:'unpublished' };
@@ -295,7 +507,7 @@ export function createChallengeFunctions({ db, getMessaging, adminEmails }) {
       const uid = requireAuth(request);
       await assertStudent(uid);
       const roundId = String(request.data?.roundId || '');
-      await assertOpenRound(roundId);
+      await assertOpenRound(uid, roundId);
       const ref = db.doc(`students/${uid}/challengeSubmissions/${roundId}`);
       const result = await db.runTransaction(async tx => {
         const snap = await tx.get(ref);
@@ -318,8 +530,8 @@ export function createChallengeFunctions({ db, getMessaging, adminEmails }) {
       const roundId = String(request.data?.roundId || '');
       const questionId = String(request.data?.questionId || '');
       const value = String(request.data?.value || '').trim().slice(0, 1000);
-      const { round } = await assertOpenRound(roundId);
-      const keySnap = await db.doc(`_challengeAnswerKeys/${roundId}`).get();
+      const { round, personalized } = await assertOpenRound(uid, roundId);
+      const keySnap = await answerKeyRef(uid, roundId, personalized).get();
       if (!keySnap.exists) throw new HttpsError('failed-precondition', 'O gabarito desta rodada não foi publicado.');
       const questions = round.questions || [];
       const keys = keySnap.data().answers || [];
@@ -361,18 +573,20 @@ export function createChallengeFunctions({ db, getMessaging, adminEmails }) {
       requireAdmin(request, adminEmails);
       const weekKey = String(request.data?.weekKey || weekKeyFor()).trim();
       const schedule = scheduleFor(weekKey);
-      const [week, part1, part2, submissions1, submissions2] = await Promise.all([
+      const [week, part1, part2, submissions1, submissions2, generationJob] = await Promise.all([
         db.doc(`challengeWeeks/${weekKey}`).get(),
         db.doc(`challengeRounds/${schedule.part1.roundId}`).get(),
         db.doc(`challengeRounds/${schedule.part2.roundId}`).get(),
         db.collectionGroup('challengeSubmissions').where('roundId', '==', schedule.part1.roundId).get(),
         db.collectionGroup('challengeSubmissions').where('roundId', '==', schedule.part2.roundId).get(),
+        db.doc(`_challengeGenerationJobs/${weekKey}`).get(),
       ]);
       const completed = snaps => snaps.docs.filter(doc => doc.data().completed === true).length;
       return {
         weekKey, published:week.exists,
-        part1:{ published:part1.exists, questions:part1.data()?.questionCount || 0, completed:completed(submissions1) },
-        part2:{ published:part2.exists, questions:part2.data()?.questionCount || 0, completed:completed(submissions2) },
+        personalized:generationJob.exists ? generationJob.data() : null,
+        part1:{ published:part1.exists || generationJob.data()?.completed > 0, questions:part1.data()?.questionCount || (generationJob.data()?.completed ? 5 : 0), completed:completed(submissions1) },
+        part2:{ published:part2.exists || generationJob.data()?.completed > 0, questions:part2.data()?.questionCount || (generationJob.data()?.completed ? 5 : 0), completed:completed(submissions2) },
       };
     }
   );
@@ -380,6 +594,54 @@ export function createChallengeFunctions({ db, getMessaging, adminEmails }) {
   const finalizarDesafioSemanal = onSchedule(
     { region:REGION, schedule:'5 0 * * 0', timeZone:TIME_ZONE, timeoutSeconds:300, memory:'256MiB' },
     async () => buildRanking(weekKeyFor())
+  );
+
+  async function sendOpeningNotifications() {
+    const now = new Date();
+    const weekKey = weekKeyFor(now);
+    if (weekKey < LAUNCH_WEEK) return;
+    const schedule = scheduleFor(weekKey);
+    const stage = stageFor(now, schedule);
+    if (stage.phase !== 'open') return;
+    const roundId = stage.part === 1 ? schedule.part1.roundId : schedule.part2.roundId;
+    const students = await db.collection('students').get();
+    for (const studentDoc of students.docs) {
+      const student = studentDoc.data();
+      if (student.archived === true || student.challengeEnabled === false) continue;
+      const { roundSnap } = await resolveRound(studentDoc.id, roundId);
+      if (!roundSnap.exists) continue;
+      const tokens = [...new Set([student.fcmToken, ...(Array.isArray(student.fcmTokens) ? student.fcmTokens : [])].filter(Boolean))];
+      if (!tokens.length) continue;
+      const slot = `${roundId}-opening-08`;
+      const logRef = studentDoc.ref.collection('challengeReminderLogs').doc(slot);
+      const reserved = await db.runTransaction(async tx => {
+        const log = await tx.get(logRef);
+        if (log.exists) return false;
+        tx.create(logRef, { slot, roundId, part:stage.part, period:'opening', status:'sending', createdAt:FieldValue.serverTimestamp() });
+        return true;
+      });
+      if (!reserved) continue;
+      try {
+        const response = await getMessaging().sendEachForMulticast({
+          tokens,
+          notification:{
+            title:`Parte ${stage.part} do desafio começou`,
+            body:'Você tem 5 perguntas difíceis e personalizadas com base nos seus últimos 90 dias de estudo.',
+          },
+          data:{ type:'challenge-opening', roundId, part:String(stage.part) },
+          webpush:{ headers:{ Urgency:'high' }, fcmOptions:{ link:APP_URL } },
+        });
+        await logRef.update({ status:'sent', sent:response.successCount, failed:response.failureCount, sentAt:FieldValue.serverTimestamp() });
+      } catch (error) {
+        await logRef.delete().catch(() => {});
+        console.error(`Abertura do desafio falhou para ${studentDoc.id}:`, error.message);
+      }
+    }
+  }
+
+  const notificarAberturaDesafio = onSchedule(
+    { region:REGION, schedule:'0 8 * * 1,4', timeZone:TIME_ZONE, timeoutSeconds:300, memory:'256MiB' },
+    sendOpeningNotifications
   );
 
   async function sendReminders(period) {
@@ -395,6 +657,8 @@ export function createChallengeFunctions({ db, getMessaging, adminEmails }) {
     for (const studentDoc of students.docs) {
       const student = studentDoc.data();
       if (student.archived === true || student.challengeEnabled === false) continue;
+      const { roundSnap } = await resolveRound(studentDoc.id, roundId);
+      if (!roundSnap.exists) continue;
       const tokens = [...new Set([student.fcmToken, ...(Array.isArray(student.fcmTokens) ? student.fcmTokens : [])].filter(Boolean))];
       if (!tokens.length) continue;
       const submission = await studentDoc.ref.collection('challengeSubmissions').doc(roundId).get();
@@ -434,13 +698,13 @@ export function createChallengeFunctions({ db, getMessaging, adminEmails }) {
   );
 
   return {
-    publicarDesafioSemanal, obterDesafioSemanal, iniciarDesafioSemanal,
+    publicarDesafioSemanal, gerarDesafiosPersonalizados, obterDesafioSemanal, iniciarDesafioSemanal,
     salvarRespostaDesafio, obterStatusDesafioAdmin, finalizarDesafioSemanal,
-    lembrarDesafioManha, lembrarDesafioNoite,
+    notificarAberturaDesafio, lembrarDesafioManha, lembrarDesafioNoite,
   };
 }
 
 export const challengeInternals = Object.freeze({
   localDateParts, addDays, weekKeyFor, scheduleFor, stageFor,
-  normalizeAnswer, validateQuestion, scoreAnswers,
+  normalizeAnswer, validateQuestion, scoreAnswers, dateFrom, assertFocusMix,
 });

@@ -232,6 +232,13 @@ service cloud.firestore {
         allow write: if managesStudent(uid);
       }
 
+      // Rodadas individualizadas: cada aluno recebe perguntas geradas a partir
+      // dos próprios pós-aulas. O gabarito permanece em coleção interna.
+      match /challengeRounds/{roundId} {
+        allow read: if isOwnStudent(uid) || managesStudent(uid);
+        allow write: if managesStudent(uid);
+      }
+
       match /classGroups/{groupId} {
         allow read: if isOwnStudent(uid) || managesStudent(uid);
         allow create, delete: if managesStudent(uid);
@@ -285,6 +292,10 @@ service cloud.firestore {
     match /_correcaoJobs/{doc} {
       allow read: if isAdmin()
         || (resource.data.escolaId is string && ownsSchool(resource.data.escolaId));
+      allow write: if false;
+    }
+    match /_challengeGenerationJobs/{doc} {
+      allow read: if isAdmin();
       allow write: if false;
     }
   }
