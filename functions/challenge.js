@@ -382,8 +382,16 @@ export function createChallengeFunctions({
         startedAt:FieldValue.serverTimestamp(), requestedBy:request.auth.token?.email || '' });
       const client = new Anthropic({ apiKey:anthropicApiKey.value() });
       const generated = [], errors = [];
-      for (const studentDoc of students) {
+      const force = request.data?.force === true;
+      const processStudent = async studentDoc => {
+        const studentName = studentDoc.data().name || studentDoc.data().firstName || 'Aluno';
         try {
+          const existingRounds = await Promise.all([schedule.part1, schedule.part2].map(roundSchedule =>
+            studentDoc.ref.collection('challengeRounds').doc(roundSchedule.roundId).get()
+          ));
+          if (!force && existingRounds.every(snap => snap.exists && snap.data().questionCount === 5)) {
+            return { kind:'generated', row:{ uid:studentDoc.id, name:studentName, existing:true } };
+          }
           const output = await generateForStudent(client, studentDoc, weekKey);
           const batch = db.batch();
           [schedule.part1, schedule.part2].forEach((roundSchedule, index) => {
@@ -402,13 +410,18 @@ export function createChallengeFunctions({
             });
           });
           await batch.commit();
-          generated.push({ uid:studentDoc.id, name:studentDoc.data().name || studentDoc.data().firstName || 'Aluno' });
+          return { kind:'generated', row:{ uid:studentDoc.id, name:studentName } };
         } catch (error) {
           console.error(`Desafio personalizado falhou para ${studentDoc.id}:`, error);
-          errors.push({ uid:studentDoc.id, name:studentDoc.data().name || 'Aluno', error:error.message });
+          return { kind:'error', row:{ uid:studentDoc.id, name:studentName, error:error.message } };
         }
-        await jobRef.set({ completed:generated.length, failed:errors.length, lastUid:studentDoc.id,
-          updatedAt:FieldValue.serverTimestamp() }, { merge:true });
+      };
+      for (let index = 0; index < students.length; index += 3) {
+        const chunk = students.slice(index, index + 3);
+        const results = await Promise.all(chunk.map(processStudent));
+        results.forEach(result => (result.kind === 'generated' ? generated : errors).push(result.row));
+        await jobRef.set({ completed:generated.length, failed:errors.length,
+          lastUid:chunk[chunk.length - 1].id, updatedAt:FieldValue.serverTimestamp() }, { merge:true });
       }
       if (generated.length) {
         await db.doc(`challengeWeeks/${weekKey}`).set({
