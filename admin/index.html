@@ -4121,7 +4121,6 @@
     document.getElementById('challenge-generate-personalized').onclick = async () => {
       const button = document.getElementById('challenge-generate-personalized');
       const weekKey = document.getElementById('challenge-week').value || '2026-08-17';
-      if (!confirm(`Gerar e publicar duas partes individuais para todos os alunos ativos na semana de ${weekKey}?`)) return;
       button.disabled = true;
       button.textContent = 'Analisando pós-aulas e desempenho...';
       showMsg('challenge-msg', 'A geração pode levar alguns minutos. Não feche esta página.', 'ok');
