@@ -1468,14 +1468,14 @@
         <input id="finance-transaction-covers" type="hidden" value="1">
         <input id="finance-transaction-id" type="hidden" value="">
         <input id="finance-transaction-series" type="hidden" value="">
-        <div class="field" id="finance-transaction-student-field"><label for="finance-transaction-student">Aluno</label><select id="finance-transaction-student"><option value="">Ganho sem aluno</option></select></div>
+        <div class="field"><label for="finance-transaction-description" id="finance-transaction-description-label">Nome do ganho</label><input id="finance-transaction-description" maxlength="120" placeholder="Ex.: Aula avulsa, material, reembolso"></div>
+        <div class="field" id="finance-transaction-student-field"><label for="finance-transaction-student">Aluno <span style="font-weight:400;color:var(--muted);">(opcional)</span></label><select id="finance-transaction-student"><option value="">Ganho sem aluno</option></select></div>
         <div class="calendar-form-grid">
           <div class="field"><label for="finance-transaction-amount">Valor (R$)</label><input id="finance-transaction-amount" type="number" min="0.01" step="0.01"></div>
           <div class="field"><label for="finance-transaction-date">Data</label><input id="finance-transaction-date" type="date"></div>
           <div class="field" id="finance-reference-field"><label for="finance-transaction-reference">Mês de referência</label><input id="finance-transaction-reference" type="month"></div>
           <div class="field"><label for="finance-transaction-category">Categoria</label><select id="finance-transaction-category"></select></div>
         </div>
-        <div class="field" style="margin-top:14px;"><label for="finance-transaction-description">Descrição</label><input id="finance-transaction-description" maxlength="120" placeholder="Ex.: Mensalidade de agosto"></div>
         <label id="finance-transaction-repeat-field" style="display:flex;align-items:center;gap:9px;font-size:.82rem;margin-top:12px;"><input id="finance-transaction-repeat" type="checkbox"> Repetir nos próximos meses <span style="color:var(--muted);font-size:.75rem;">(cria os 12 meses)</span></label>
         <p id="finance-transaction-repeat-nota" style="display:none;margin:10px 0 0;padding:9px 11px;border-radius:8px;background:#fff8e1;border:1px solid #fde68a;color:#7c5e10;font-size:.75rem;line-height:1.45;">Mensalidade não se repete: registrar é dizer que o dinheiro <strong>entrou</strong>. Se repetisse, os meses seguintes já nasceriam como pagos. Para adiantamento, troque o mês de referência.</p>
         <label id="finance-transaction-series-field" style="display:none;align-items:center;gap:9px;font-size:.82rem;margin-top:8px;"><input id="finance-transaction-series-apply" type="checkbox"> Aplicar também aos próximos meses desta série</label>
@@ -3037,8 +3037,26 @@
       const futuras=financeFutureTuitions(),botaoLimpar=document.getElementById('finance-clean-future');
       botaoLimpar.style.display=futuras.length?'inline-block':'none';
       botaoLimpar.textContent=`🧹 Limpar ${futuras.length} mensalidade(s) futura(s)`;
+      // Todo mês já lista a mensalidade de quem tem cobrança ativa, como
+      // PREVISTO — sem gravar nada. Sai da lista quando é recebida (vira
+      // lançamento real) ou quando você desliga a cobrança no cadastro.
+      const previstos=[];
+      configured.forEach(profile=> {
+        const aluno=allStudents.find(item=>item.uid===profile.studentUid);
+        if(!aluno||aluno.archived) return;
+        const nome=aluno.name||aluno.firstName||'Aluno';
+        financeProfileParts(profile,month).forEach(part=> {
+          if(!part.amount) return;
+          const status=financePartStatus(profile,month,part);
+          const falta=part.amount-status.received;
+          if(falta<=0) return;
+          previstos.push({virtual:true,type:'income',category:'tuition',amountCents:falta,
+            date:part.dueKey,studentUid:profile.studentUid,studentName:nome,part:part.part,
+            description:`${part.part?part.label:'Mensalidade'} · ${nome}`});
+        });
+      });
       renderFinanceBars(month);
-      renderFinanceSplit(monthTransactions.filter(tx=>tx.type==='income'),monthTransactions.filter(tx=>tx.type==='expense'));
+      renderFinanceSplit([...monthTransactions.filter(tx=>tx.type==='income'),...previstos],monthTransactions.filter(tx=>tx.type==='expense'));
     }
 
     // Ano inteiro, mês a mês: é aqui que dá pra ver o pulo do mês em que
@@ -3067,6 +3085,7 @@
     function renderFinanceSplit(incomes,expenses) {
       renderFinanceSide('income',incomes); renderFinanceSide('expense',expenses);
       document.querySelectorAll('.finance-edit').forEach(button=>button.onclick=()=>editFinanceTransaction(button.dataset.id));
+      document.querySelectorAll('.finance-receive').forEach(button=>button.onclick=()=>openFinanceTransaction('income',button.dataset.uid,Number(button.dataset.part||0)));
       document.querySelectorAll('.finance-confirm').forEach(button=>button.onclick=async()=> {
         await setDoc(doc(db,'schools',escolaAtual,'financeTransactions',button.dataset.id),{planned:false,updatedAt:serverTimestamp()},{merge:true});
         await loadFinance();
@@ -3079,16 +3098,24 @@
 
     function renderFinanceSide(type,items) {
       const income=type==='income',color=income?'#22c55e':'#ef4444';
-      const total=items.filter(tx=>!tx.planned).reduce((sum,tx)=>sum+Number(tx.amountCents||0),0);
+      const naoConta=tx=>tx.planned||tx.virtual; // previsto não entra em nenhum total
+      const total=items.filter(tx=>!naoConta(tx)).reduce((sum,tx)=>sum+Number(tx.amountCents||0),0);
       document.getElementById(income?'finance-income-total':'finance-expense-total').textContent=financeMoney(total);
       const groups=new Map();
-      items.filter(tx=>!tx.planned).forEach(tx=>{ const key=tx.category||(income?'other-income':'other-expense'); groups.set(key,(groups.get(key)||0)+Number(tx.amountCents||0)); });
+      items.filter(tx=>!naoConta(tx)).forEach(tx=>{ const key=tx.category||(income?'other-income':'other-expense'); groups.set(key,(groups.get(key)||0)+Number(tx.amountCents||0)); });
       const ranked=[...groups.entries()].sort((a,b)=>b[1]-a[1]);
       document.getElementById(income?'finance-income-cats':'finance-expense-cats').innerHTML=ranked.length
         ? ranked.map(([key,value])=>`<div class="finance-cat"><span>${esc(FINANCE_CATEGORIES[key]||key)}</span><span class="finance-cat-bar"><i style="width:${total?value/total*100:0}%;background:${color}"></i></span><span class="finance-cat-value">${financeMoney(value)}</span></div>`).join('')
         : `<div style="color:var(--muted);font-size:.72rem;">Nada por categoria neste mês.</div>`;
-      const sorted=[...items].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
-      const rows=sorted.map(tx=>`<div class="finance-movement${tx.planned?' previsto':''}"><span class="finance-movement-icon" style="background:${tx.planned?'#f1f5f9':(income?'#dcfce7':'#fee2e2')}">${tx.planned?'◌':(income?'↗':'↘')}</span><span class="finance-movement-info"><strong>${esc(tx.description||FINANCE_CATEGORIES[tx.category]||'Movimentação')}</strong><small>${esc(tx.studentName||FINANCE_CATEGORIES[tx.category]||'')} · ${String(tx.date||'').split('-').reverse().join('/')}${tx.seriesId?' · ↻ mensal':''}${tx.planned?' · <strong style="color:#b45309">previsto</strong>':''}</small></span><span class="finance-money" style="color:${tx.planned?'#94a3b8':(income?'#15803d':'#b91c1c')}">${income?'+':'−'} ${financeMoney(tx.amountCents)}</span>${tx.planned?`<button class="finance-row-btn finance-confirm" data-id="${esc(tx.id)}" title="Confirmar que aconteceu">✓</button>`:''}<button class="finance-row-btn finance-edit" data-id="${esc(tx.id)}" title="Editar">✎</button><button class="finance-row-btn finance-delete" data-id="${esc(tx.id)}" title="Excluir">×</button></div>`).join('');
+      // Realizados primeiro, previstos depois — o que já entrou fica no topo.
+      const sorted=[...items].sort((a,b)=>(naoConta(a)?1:0)-(naoConta(b)?1:0)||String(b.date||'').localeCompare(String(a.date||'')));
+      const rows=sorted.map(tx=> {
+        const aberto=naoConta(tx);
+        const acoes=tx.virtual
+          ? `<button class="finance-row-btn finance-receive" data-uid="${esc(tx.studentUid)}" data-part="${Number(tx.part||0)}" title="Registrar o recebimento">Receber</button>`
+          : `${tx.planned?`<button class="finance-row-btn finance-confirm" data-id="${esc(tx.id)}" title="Confirmar que aconteceu">✓</button>`:''}<button class="finance-row-btn finance-edit" data-id="${esc(tx.id)}" title="Editar">✎</button><button class="finance-row-btn finance-delete" data-id="${esc(tx.id)}" title="Excluir">×</button>`;
+        return `<div class="finance-movement${aberto?' previsto':''}"><span class="finance-movement-icon" style="background:${aberto?'#f1f5f9':(income?'#dcfce7':'#fee2e2')}">${aberto?'◌':(income?'↗':'↘')}</span><span class="finance-movement-info"><strong>${esc(tx.description||FINANCE_CATEGORIES[tx.category]||'Movimentação')}</strong><small>${esc(tx.studentName||FINANCE_CATEGORIES[tx.category]||'')} · ${String(tx.date||'').split('-').reverse().join('/')}${tx.seriesId?' · ↻ mensal':''}${aberto?' · <strong style="color:#b45309">previsto</strong>':''}</small></span><span class="finance-money" style="color:${aberto?'#94a3b8':(income?'#15803d':'#b91c1c')}">${income?'+':'−'} ${financeMoney(tx.amountCents)}</span>${acoes}</div>`;
+      }).join('');
       document.getElementById(income?'finance-income-list':'finance-expense-list').innerHTML=rows
         || `<div class="finance-panel-empty">${income?'Nenhum ganho registrado':'Nenhuma despesa registrada'} neste mês.</div>`;
     }
@@ -3245,6 +3272,8 @@
       document.getElementById('finance-transaction-series-field').style.display='none';
       document.getElementById('finance-transaction-series-apply').checked=false;
       setTimeout(syncFinanceRepeatOption,0); // depois que a categoria é preenchida
+      document.getElementById('finance-transaction-description-label').textContent=income?'Nome do ganho':'Nome da despesa';
+      document.getElementById('finance-transaction-description').placeholder=income?'Ex.: Aula avulsa, material, reembolso':'Ex.: Zoom, Canva, contador';
       document.getElementById('finance-transaction-type').value=type; document.getElementById('finance-transaction-title').textContent=income?(chosen&&chosen.part?`Registrar ${chosen.label}`:'Registrar ganho'):'Registrar despesa'; document.getElementById('finance-transaction-student-field').style.display=income?'block':'none'; document.getElementById('finance-reference-field').style.display=income?'block':'none';
       document.getElementById('finance-transaction-student').value=income?uid:'';
       // No anual o valor é sempre o do ano, mesmo consultando outro mês.
@@ -3320,18 +3349,30 @@
       if(!podeRepetir) document.getElementById('finance-transaction-repeat').checked=false;
     }
 
+    // Mensalidades de série que não deviam existir:
+    //  a) lançadas para meses que ainda não chegaram (ninguém pagou ainda);
+    //  b) de aluno que hoje é anual — sobra de quando ele era mensalista.
+    // Só alcança lançamentos criados por série; o que foi lançado na mão fica.
     function financeFutureTuitions() {
       const mesAtual=financeTodayKey().slice(0,7);
-      return financeTransactions.filter(tx=>tx.type==='income'&&tx.category==='tuition'&&tx.seriesId
-        &&String(tx.referenceMonth||String(tx.date||'').slice(0,7))>mesAtual);
+      const anuais=new Set(financeProfiles.filter(profile=>profile.cycle==='annual').map(profile=>profile.studentUid));
+      return financeTransactions.filter(tx=> {
+        if(tx.type!=='income'||tx.category!=='tuition'||!tx.seriesId) return false;
+        if(anuais.has(tx.studentUid)) return true;
+        return String(tx.referenceMonth||String(tx.date||'').slice(0,7))>mesAtual;
+      });
     }
 
     async function cleanFutureTuitions() {
       const alvos=financeFutureTuitions();
       if(!alvos.length) return alert('Não há mensalidade lançada para meses futuros.');
       const total=alvos.reduce((soma,tx)=>soma+Number(tx.amountCents||0),0);
-      const meses=[...new Set(alvos.map(tx=>tx.referenceMonth||String(tx.date||'').slice(0,7)))].sort();
-      if(!confirm(`Apagar ${alvos.length} mensalidade(s) lançadas para meses que ainda não chegaram (${meses[0]} a ${meses[meses.length-1]}), somando ${financeMoney(total)}?\n\nElas voltam a aparecer como pendentes. Meses passados e adiantamentos lançados na mão não são tocados.`)) return;
+      const anuais=new Set(financeProfiles.filter(profile=>profile.cycle==='annual').map(profile=>profile.studentUid));
+      const deAnual=alvos.filter(tx=>anuais.has(tx.studentUid)),futuras=alvos.filter(tx=>!anuais.has(tx.studentUid));
+      const nomes=[...new Set(deAnual.map(tx=>tx.studentName).filter(Boolean))].join(', ');
+      const detalhe=[futuras.length?`${futuras.length} de meses que ainda não chegaram`:'',
+        deAnual.length?`${deAnual.length} de aluno que hoje é anual${nomes?` (${nomes})`:''}`:''].filter(Boolean).join('\n· ');
+      if(!confirm(`Apagar ${alvos.length} mensalidade(s), somando ${financeMoney(total)}?\n\n· ${detalhe}\n\nElas voltam a aparecer como pendentes. O que você lançou na mão não é tocado.`)) return;
       const botao=document.getElementById('finance-clean-future'); botao.disabled=true;
       try {
         await Promise.all(alvos.map(tx=>deleteDoc(doc(db,'schools',escolaAtual,'financeTransactions',tx.id))));
