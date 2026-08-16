@@ -284,9 +284,15 @@
     .calendar-day-head strong { display:inline-flex; width:29px; height:29px; border-radius:50%; align-items:center; justify-content:center; color:#1e293b; font-size:.86rem; }
     .calendar-day-head.today { color:var(--cal-brand); }
     .calendar-day-head.today strong { background:var(--cal-brand); color:#fff; }
+    .calendar-allday { display:grid; position:sticky; top:46px; z-index:14; background:rgba(255,255,255,.97); border-bottom:1px solid #e5e7eb; }
+    .calendar-allday:empty { display:none; }
+    .calendar-allday-cell { min-height:20px; border-left:1px solid #eef2f7; padding:2px; }
+    .calendar-holiday { display:block; border-radius:5px; padding:2px 6px; margin-bottom:2px; font-size:.55rem; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .calendar-holiday.feriado { background:#eef2ff; color:#5b57c9; }
+    .calendar-holiday.especial { background:#fdf2f8; color:#bf5f96; }
     .calendar-grid { display:grid; grid-template-columns:58px repeat(7,minmax(100px,1fr)); position:relative; }
     .calendar-hours { position:relative; background:#fff; }
-    .calendar-hour-label { height:var(--hour-height); padding:0 8px; text-align:right; color:#94a3b8; font-size:.65rem; transform:translateY(-7px); }
+    .calendar-hour-label { height:var(--hour-height); padding:0 8px; text-align:right; color:#a8b2c1; font-size:.6rem; transform:translateY(-6px); }
     .calendar-day-column { position:relative; border-left:1px solid #e9eef5; background-image:linear-gradient(to bottom, #e6ebf2 1px, transparent 1px),linear-gradient(to bottom, #f1f5f9 1px, transparent 1px),linear-gradient(to bottom, #f8fafc 1px, transparent 1px); background-size:100% var(--hour-height),100% calc(var(--hour-height) / 2),100% calc(var(--hour-height) / 4); cursor:crosshair; touch-action:pan-y; }
     .calendar-selection { position:absolute; left:2px; right:2px; z-index:9; border-radius:7px; border:1.5px dashed color-mix(in srgb, var(--cal-brand) 55%, #fff); background:color-mix(in srgb, var(--cal-brand) 15%, #fff); color:var(--cal-brand); padding:2px 5px; font-size:.62rem; font-weight:800; line-height:1.25; overflow:hidden; pointer-events:none; }
     .calendar-week.selecting { user-select:none; }
@@ -298,12 +304,13 @@
     .calendar-day-head.picked strong { background:var(--cal-brand); color:#fff; }
     /* Leve como o Notion Calendar: preenchimento bem lavado, sem barra lateral
        forte, e o texto puxando a cor do próprio bloco em vez de cinza escuro. */
-    .calendar-event { position:absolute; left:2px; right:2px; z-index:5; border:1px solid color-mix(in srgb, var(--event-color) 20%, #fff); border-radius:7px; padding:4px 7px; background:color-mix(in srgb, var(--event-color) 11%, #fff); color:color-mix(in srgb, var(--event-color) 58%, #334155); overflow:hidden; text-align:left; cursor:pointer; transition:background .12s ease, box-shadow .12s ease; }
+    .calendar-event { position:absolute; left:2px; right:2px; z-index:5; border:1px solid color-mix(in srgb, var(--event-color) 20%, #fff); border-radius:7px; padding:4px 7px; background:color-mix(in srgb, var(--event-color) 11%, #fff); color:color-mix(in srgb, var(--event-color) 46%, #6b7a90); overflow:hidden; text-align:left; cursor:pointer; transition:background .12s ease, box-shadow .12s ease, color .12s ease; }
+    .calendar-event:hover { color:color-mix(in srgb, var(--event-color) 62%, #334155); }
     .calendar-event:hover { z-index:8; background:color-mix(in srgb, var(--event-color) 17%, #fff); box-shadow:0 4px 12px rgba(15,23,42,.10); }
     .calendar-event.available { z-index:3; }
     .calendar-event.editing { z-index:9; box-shadow:0 0 0 2px color-mix(in srgb, var(--event-color) 55%, #fff), 0 6px 16px rgba(15,23,42,.13); }
-    .calendar-event strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.67rem; font-weight:650; text-transform:uppercase; letter-spacing:.012em; }
-    .calendar-event span { display:block; margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:color-mix(in srgb, var(--event-color) 34%, #94a3b8); font-size:.6rem; }
+    .calendar-event strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.615rem; font-weight:600; text-transform:uppercase; letter-spacing:.014em; }
+    .calendar-event span { display:block; margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:color-mix(in srgb, var(--event-color) 24%, #a3aec0); font-size:.555rem; }
     .calendar-now-line { position:absolute; left:58px; right:0; z-index:10; height:1px; background:#ef4444; pointer-events:none; }
     .calendar-now-line::before { content:''; position:absolute; left:-4px; top:-3px; width:7px; height:7px; border-radius:50%; background:#ef4444; }
     .calendar-empty { padding:18px; color:var(--muted); font-size:.82rem; }
@@ -314,7 +321,7 @@
     .calendar-month-cell.picked { background:color-mix(in srgb, var(--cal-brand, #2f86e6) 5.5%, #fff); }
     .calendar-month-cell.today .calendar-month-day { background:var(--cal-brand, #2f86e6); color:#fff; }
     .calendar-month-day { display:inline-flex; align-items:center; justify-content:center; min-width:21px; height:21px; border-radius:50%; color:#334155; font-size:.69rem; font-weight:700; }
-    .calendar-month-item { display:block; width:100%; margin-top:2px; border:1px solid color-mix(in srgb, var(--event-color) 20%, #fff); border-radius:5px; padding:2px 5px; background:color-mix(in srgb, var(--event-color) 11%, #fff); color:color-mix(in srgb, var(--event-color) 58%, #334155); font:inherit; font-size:.6rem; font-weight:650; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
+    .calendar-month-item { display:block; width:100%; margin-top:2px; border:1px solid color-mix(in srgb, var(--event-color) 20%, #fff); border-radius:5px; padding:2px 5px; background:color-mix(in srgb, var(--event-color) 11%, #fff); color:color-mix(in srgb, var(--event-color) 46%, #6b7a90); font:inherit; font-size:.555rem; font-weight:600; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
     .calendar-month-more { display:block; margin-top:2px; color:#94a3b8; font-size:.58rem; font-weight:700; }
     /* Popover leve para criar/editar — o modal completo fica no "mais opções" */
     .calendar-pop { position:fixed; z-index:120; width:272px; padding:13px; border:1px solid #e2e8f0; border-radius:14px; background:#fff; box-shadow:0 18px 44px rgba(15,23,42,.22); display:none; }
@@ -593,6 +600,7 @@
             <div class="calendar-week-scroll" id="calendar-week-scroll">
               <div class="calendar-week">
                 <div class="calendar-days-head" id="calendar-days-head"></div>
+                <div class="calendar-allday" id="calendar-allday"></div>
                 <div class="calendar-grid" id="calendar-grid"><div class="calendar-empty">Abra a agenda para carregar os horários.</div></div>
               </div>
             </div>
@@ -1868,6 +1876,8 @@
     // ── AGENDA DO PROFESSOR ────────────────────────────────────────────────
     const CALENDAR_DEFAULTS = { workingDays:[1,2,3,4,5], dayStart:'08:00', dayEnd:'21:00', slotMinutes:15, lessonColor:'#2f86e6', timezone:'America/Sao_Paulo' };
     const CALENDAR_HOUR_HEIGHT = 48;
+    const CALENDAR_VIEW_START = '05:00', CALENDAR_VIEW_END = '23:00'; // janela visível da grade
+    let calendarShouldScroll = true; // ao abrir, rola até o início do expediente
     let calendarSettings = { ...CALENDAR_DEFAULTS };
     let calendarEvents = [];
     let calendarWeekStart = calendarWeekStartDate(new Date());
@@ -1938,7 +1948,7 @@
       if (!auth.currentUser || !escolaAtual) return;
       const requestedSchool = escolaAtual;
       const grid = document.getElementById('calendar-grid');
-      grid.innerHTML = '<div class="calendar-empty">Carregando a agenda...</div>'; calendarLoadedSchool = requestedSchool;
+      grid.innerHTML = '<div class="calendar-empty">Carregando a agenda...</div>'; calendarLoadedSchool = requestedSchool; calendarShouldScroll = true;
       try {
         const [settingsSnap, eventsSnap] = await Promise.all([
           getDoc(doc(db, 'schools', requestedSchool, 'calendarSettings', 'work')),
@@ -1965,10 +1975,58 @@
 
     function calendarFocusDay() { return calendarSelectedDay || calendarDateKey(new Date()); }
 
+    // ── FERIADOS E DATAS ESPECIAIS ─────────────────────────────────────────
+    // Feriados nacionais (fixos e móveis) + datas comemorativas. Só marcam o
+    // dia: não bloqueiam horário nem entram no cálculo de horas.
+    const calendarHolidayCache = new Map();
+
+    function calendarEasterDate(year) { // Meeus/Jones/Butcher
+      const a = year % 19, b = Math.floor(year / 100), c = year % 100;
+      const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
+      const g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+      const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7;
+      const m = Math.floor((a + 11 * h + 22 * l) / 451);
+      const month = Math.floor((h + l - 7 * m + 114) / 31), day = ((h + l - 7 * m + 114) % 31) + 1;
+      return new Date(year, month - 1, day);
+    }
+
+    function calendarNthWeekday(year, month, weekday, nth) { // ex.: 2º domingo de agosto
+      const first = new Date(year, month - 1, 1);
+      const offset = (weekday - first.getDay() + 7) % 7;
+      return new Date(year, month - 1, 1 + offset + (nth - 1) * 7);
+    }
+
+    function calendarHolidaysOfYear(year) {
+      if (calendarHolidayCache.has(year)) return calendarHolidayCache.get(year);
+      const pascoa = calendarEasterDate(year), lista = [];
+      const fixo = (month, day, name, type = 'feriado') => lista.push({ date:calendarDateKey(new Date(year, month - 1, day)), name, type });
+      const movel = (offset, name, type = 'feriado') => lista.push({ date:calendarDateKey(calendarAddDays(pascoa, offset)), name, type });
+      const nesimo = (month, weekday, nth, name, type = 'especial') => lista.push({ date:calendarDateKey(calendarNthWeekday(year, month, weekday, nth)), name, type });
+      fixo(1,1,'Confraternização Universal'); fixo(4,21,'Tiradentes'); fixo(5,1,'Dia do Trabalho');
+      fixo(9,7,'Independência do Brasil'); fixo(10,12,'Nossa Senhora Aparecida'); fixo(11,2,'Finados');
+      fixo(11,15,'Proclamação da República'); fixo(11,20,'Consciência Negra'); fixo(12,25,'Natal');
+      movel(-48,'Carnaval'); movel(-47,'Carnaval'); movel(-2,'Sexta-feira Santa'); movel(0,'Páscoa','especial'); movel(60,'Corpus Christi');
+      nesimo(5,0,2,'Dia das Mães'); nesimo(8,0,2,'Dia dos Pais');
+      fixo(6,12,'Dia dos Namorados','especial'); fixo(6,24,'São João','especial');
+      fixo(10,12,'Dia das Crianças','especial'); fixo(10,15,'Dia do Professor','especial');
+      fixo(12,31,'Véspera de Ano-Novo','especial');
+      fixo(2,14,"Valentine's Day",'especial'); fixo(3,17,"St. Patrick's Day",'especial'); fixo(10,31,'Halloween','especial');
+      nesimo(11,4,4,'Thanksgiving');
+      calendarHolidayCache.set(year, lista);
+      return lista;
+    }
+
+    function calendarHolidaysOn(date) {
+      return calendarHolidaysOfYear(date.getFullYear()).filter(item => item.date === calendarDateKey(date));
+    }
+
     function renderCalendar() {
       calendarApplyTheme();
       if (calendarView === 'month') return renderCalendarMonth();
-      const startMinutes = calendarMinutes(calendarSettings.dayStart), endMinutes = Math.max(startMinutes + 60, calendarMinutes(calendarSettings.dayEnd));
+      // A grade sempre mostra a janela larga (05:00–23:00), como no Notion; o
+      // expediente salvo continua valendo, só não limita mais o que aparece.
+      const startMinutes = Math.min(calendarMinutes(calendarSettings.dayStart), calendarMinutes(CALENDAR_VIEW_START));
+      const endMinutes = Math.max(startMinutes + 60, calendarMinutes(calendarSettings.dayEnd), calendarMinutes(CALENDAR_VIEW_END));
       const hours = Math.ceil((endMinutes - startMinutes) / 60), height = hours * CALENDAR_HOUR_HEIGHT, todayKey = calendarDateKey(new Date());
       const days = calendarView === 'day'
         ? [new Date(`${calendarFocusDay()}T00:00:00`)]
@@ -1989,6 +2047,12 @@
         calendarSelectedDay = calendarSelectedDay === head.dataset.headDate ? '' : head.dataset.headDate;
         renderCalendar();
       });
+      const feriados = days.map(date => calendarHolidaysOn(date)), allday = document.getElementById('calendar-allday');
+      allday.style.gridTemplateColumns = columns2;
+      allday.innerHTML = feriados.some(lista => lista.length)
+        ? '<div></div>' + days.map((date, index) => `<div class="calendar-allday-cell">${feriados[index].map(item =>
+            `<span class="calendar-holiday ${item.type}" title="${esc(item.name)}">${esc(item.name)}</span>`).join('')}</div>`).join('')
+        : '';
       const labels = Array.from({ length:hours }, (_, index) => `<div class="calendar-hour-label">${calendarTime(startMinutes + index*60)}</div>`).join('');
       const columns = days.map(date => {
         const key = calendarDateKey(date), work = calendarSettings.workingDays.includes(date.getDay());
@@ -2066,6 +2130,11 @@
         clearCalendarSelection(); button.classList.add('editing'); // marca qual compromisso está sendo editado
         openCalendarPop(calendarEvents.find(item => item.id === button.dataset.eventId) || {}, button.getBoundingClientRect());
       });
+      if (calendarShouldScroll) { // abre já no começo do expediente, não às 5 da manhã
+        const scroller = document.getElementById('calendar-week-scroll');
+        if (scroller) scroller.scrollTop = Math.max(0, (calendarMinutes(calendarSettings.dayStart) - startMinutes) / 60 * CALENDAR_HOUR_HEIGHT - 6);
+        calendarShouldScroll = false;
+      }
       renderCalendarMini();
     }
 
@@ -2077,6 +2146,7 @@
       const weekBox = document.querySelector('.calendar-week'); if (weekBox) weekBox.style.minWidth = '760px';
       head.style.gridTemplateColumns = 'repeat(7,minmax(0,1fr))';
       head.innerHTML = ['dom','seg','ter','qua','qui','sex','sáb'].map(day => `<div class="calendar-day-head">${day}</div>`).join('');
+      document.getElementById('calendar-allday').innerHTML = ''; // no mês o feriado vai dentro da célula
       grid.style.gridTemplateColumns = 'repeat(7,minmax(0,1fr))';
       grid.innerHTML = Array.from({ length:42 }, (_, index) => {
         const date = calendarAddDays(first, index), key = calendarDateKey(date);
@@ -2085,6 +2155,7 @@
         const shown = items.slice(0, 3);
         return `<div class="calendar-month-cell${date.getMonth() !== cursor.getMonth() ? ' outside' : ''}${key === todayKey ? ' today' : ''}${key === calendarSelectedDay ? ' picked' : ''}" data-month-date="${key}">`
           + `<span class="calendar-month-day">${date.getDate()}</span>`
+          + calendarHolidaysOn(date).map(item => `<span class="calendar-holiday ${item.type}" title="${esc(item.name)}">${esc(item.name)}</span>`).join('')
           + shown.map(event => `<button type="button" class="calendar-month-item" data-event-id="${esc(event.id)}" style="--event-color:${calendarEventColor(event)}" title="${esc(event.title || '')}">${event.startTime} ${esc(event.title || 'Compromisso')}</button>`).join('')
           + (items.length > 3 ? `<span class="calendar-month-more">+${items.length - 3}</span>` : '') + '</div>';
       }).join('');
