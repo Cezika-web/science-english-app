@@ -2184,7 +2184,7 @@ export const concluirCorrecoesEmBatch = onSchedule(
 const challengeFunctions = createChallengeFunctions({
   db, getMessaging, adminEmails:ADMIN_EMAILS,
   anthropicApiKey:ANTHROPIC_API_KEY, Anthropic, model:MODEL,
-  loadPostLesson:conteudoDaPosAula,
+  loadPostLesson:conteudoDaPosAula, registrarUso,
 });
 export const publicarDesafioSemanal = challengeFunctions.publicarDesafioSemanal;
 export const gerarDesafiosPersonalizados = challengeFunctions.gerarDesafiosPersonalizados;

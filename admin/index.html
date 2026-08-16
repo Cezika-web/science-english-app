@@ -445,6 +445,11 @@
     .finance-row-btn.finance-undo:hover { background:#fff5f5; }
     .finance-bars { padding:14px 16px; display:grid; gap:11px; }
     .finance-bar-row { display:grid; grid-template-columns:62px 1fr 75px; gap:8px; align-items:center; font-size:.68rem; color:#64748b; }
+    /* O mês corrente ganha moldura; os que ainda não chegaram ficam esmaecidos,
+       como num calendário, para o previsto deles não se confundir com o que já
+       aconteceu. */
+    .finance-bar-row.atual { padding:6px 9px; margin:-6px -9px; border-radius:10px; background:#f8fafc; box-shadow:inset 0 0 0 1.5px #cbd5e1; color:#0f172a; font-weight:750; }
+    .finance-bar-row.futuro { opacity:.4; }
     .finance-bar-track { height:9px; border-radius:999px; background:#eef2f7; overflow:hidden; display:flex; }
     .finance-bar-income { height:100%; background:#22c55e; }
     .finance-bar-expense { height:100%; background:#f87171; }
@@ -629,6 +634,7 @@
           <button class="btn-add" id="finance-new-income" type="button" style="padding:9px 12px;">＋ Ganho</button>
           <button class="btn-add" id="finance-new-expense" type="button" style="background:#fff;color:#b91c1c;border:1px solid #fecaca;padding:9px 12px;">− Despesa</button>
         </div>
+        <div id="finance-late-alert"></div>
         <div class="finance-summary">
           <div class="finance-sum income"><small>↗ Ganhos do mês</small><strong id="finance-income">R$ 0,00</strong><span id="finance-income-note">0 entradas</span></div>
           <div class="finance-sum expense"><small>↘ Despesas do mês</small><strong id="finance-expenses">R$ 0,00</strong><span id="finance-expenses-note">0 saídas</span></div>
@@ -673,9 +679,6 @@
               <div style="text-align:right;white-space:nowrap;">
                 <small style="display:block;color:#64748b;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;">Faturado no ano</small>
                 <strong id="finance-year-income" style="display:block;font-size:1.15rem;color:#15803d;">R$ 0,00</strong>
-                <small style="display:block;margin-top:6px;color:#64748b;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;">Lucro</small>
-                <strong id="finance-year-profit" style="display:block;font-size:1.05rem;color:#0f172a;">R$ 0,00</strong>
-                <small id="finance-year-result" style="display:block;color:#94a3b8;font-size:.64rem;">—</small>
               </div>
             </div>
             <div class="finance-bars" id="finance-bars"></div>
@@ -1442,6 +1445,8 @@
         <p id="finance-profile-hint" style="display:none;margin:9px 0 0;padding:9px 11px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A;font-size:.76rem;line-height:1.45;"></p>
         <div class="field" style="margin-top:14px;"><label for="finance-profile-method">Forma habitual de pagamento</label><select id="finance-profile-method"><option value="pix">PIX</option><option value="card">Cartão</option><option value="cash">Dinheiro</option><option value="transfer">Transferência</option><option value="other">Outro</option></select></div>
         <label style="display:flex;align-items:center;gap:9px;font-size:.82rem;margin-top:8px;"><input id="finance-profile-active" type="checkbox" checked> Cobrança mensal ativa</label>
+        <label style="display:flex;align-items:center;gap:9px;font-size:.82rem;margin-top:8px;"><input id="finance-profile-notify" type="checkbox"> Avisar este aluno no app quando atrasar</label>
+        <small style="display:block;margin-top:5px;color:var(--muted);font-size:.72rem;line-height:1.45;">Desligado por padrão. Ligado, o aviso aparece quando ele abre o app, cinco dias depois de ficar atrasado — nunca antes do vencimento e nunca para quem está em dia.</small>
         <div class="form-msg" id="finance-profile-msg"></div>
         <button class="btn-add" id="finance-profile-save" type="button" style="width:100%;margin-top:18px;">Salvar mensalidade</button>
       </div>
@@ -2942,6 +2947,51 @@
       return {key:late?'overdue':'pending',label:late?'Atrasado':'Pendente',received};
     }
 
+    // O atraso começa no dia SEGUINTE ao vencimento: vence dia 15, fica atrasado
+    // dia 16, e o primeiro aviso sai cinco dias depois disso — dia 21. Quem está
+    // em dia ou ainda nem venceu devolve número negativo e não entra em lista
+    // nenhuma.
+    const FINANCE_AVISO_DIAS=[5,10];
+    function financeLateDays(part) {
+      const venc=new Date(`${part.dueKey}T00:00:00`),hoje=new Date(`${financeTodayKey()}T00:00:00`);
+      return Math.floor((hoje-venc)/86400000)-1;
+    }
+
+    // Só entra quem tem parcela vencida e não paga. Aluno em dia, aluno com o
+    // vencimento ainda por vir e ex-aluno ficam de fora.
+    function financeLateStudents(month) {
+      const linhas=[];
+      financeProfiles.forEach(profile=> {
+        if(profile.active===false) return;
+        financeProfileParts(profile,month).forEach(part=> {
+          if(!(part.amount>0)) return;
+          const status=financePartStatus(profile,month,part);
+          if(status.key!=='overdue') return;
+          const dias=financeLateDays(part);
+          if(dias<0) return;
+          linhas.push({uid:profile.studentUid,nome:profile.studentName||'Aluno',dias,
+            falta:part.amount-status.received,etapa:part.label,avisa:profile.avisarAtraso===true});
+        });
+      });
+      return linhas.sort((a,b)=>b.dias-a.dias);
+    }
+
+    function renderFinanceLateAlert(month) {
+      const box=document.getElementById('finance-late-alert'),atrasados=financeLateStudents(month);
+      if(!atrasados.length) { box.innerHTML=''; return; }
+      const marco=dias=>FINANCE_AVISO_DIAS.filter(d=>dias>=d).pop()||0;
+      const linha=item=>`<div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline;padding:6px 0;border-top:1px solid #FDE68A;">
+        <span><strong>${esc(item.nome)}</strong> <span style="color:#92400E;">· ${item.dias} dia(s) de atraso${item.etapa==='Mensalidade'?'':` · ${esc(item.etapa)}`}</span></span>
+        <span style="white-space:nowrap;"><strong>${financeMoney(item.falta)}</strong>${marco(item.dias)?` <span style="padding:1px 6px;border-radius:999px;background:#B45309;color:#fff;font-size:.66rem;font-weight:800;">cobrar · ${marco(item.dias)}d</span>`:''}${item.avisa?' <span title="o aluno vê o aviso ao abrir o app">🔔</span>':''}</span>
+      </div>`;
+      const aCobrar=atrasados.filter(item=>marco(item.dias)).length;
+      box.innerHTML=`<div style="margin-bottom:14px;padding:12px 14px;border-radius:12px;background:#FFFBEB;border:1px solid #FDE68A;color:#78350F;font-size:.8rem;">
+        <strong style="font-size:.86rem;">⏰ ${atrasados.length} pagamento(s) em atraso</strong>
+        ${aCobrar?`<span style="margin-left:6px;color:#92400E;">— ${aCobrar} já passou do prazo de cobrança</span>`:''}
+        ${atrasados.map(linha).join('')}
+      </div>`;
+    }
+
     function financeProfileReceived(profile,month) {
       return financeProfileParts(profile,month).reduce((sum,part)=>sum+Math.min(part.amount,financePartStatus(profile,month,part).received),0);
     }
@@ -3086,6 +3136,7 @@
             description:`${part.part?part.label:'Mensalidade'} · ${nome}`});
         });
       });
+      renderFinanceLateAlert(month);
       renderFinanceBars(month);
       renderFinanceSplit([...monthTransactions.filter(tx=>tx.type==='income'),...previstos],monthTransactions.filter(tx=>tx.type==='expense'));
     }
@@ -3113,12 +3164,9 @@
       const ganhoAno=values.reduce((sum,item)=>sum+item.income,0),despesaAno=values.reduce((sum,item)=>sum+item.expense,0);
       document.getElementById('finance-year-label').textContent=ano;
       document.getElementById('finance-year-income').textContent=financeMoney(ganhoAno);
-      const lucroAno=ganhoAno-despesaAno,lucroEl=document.getElementById('finance-year-profit');
-      lucroEl.textContent=financeMoney(lucroAno); lucroEl.style.color=lucroAno<0?'#b91c1c':'#0f172a';
-      document.getElementById('finance-year-result').textContent=`despesas ${financeMoney(despesaAno)}`;
       document.getElementById('finance-year-note').textContent=ano===mesAtual.slice(0,4)?'ganho no ano até agora':'ano fechado';
       document.getElementById('finance-bars').innerHTML=`<div style="font-size:.6rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);">Previsto mês a mês</div>`
-        +values.map(item=>`<div class="finance-bar-row${item.key===selectedMonth?' atual':''}"><strong>${esc(item.label)}</strong><div class="finance-bar-track"><span class="finance-bar-income" style="width:${item.previsto/max*100}%"></span><span class="finance-bar-expense" style="width:${item.expense/max*100}%"></span></div><span>${item.previsto||item.expense?financeMoney(item.previsto):'—'}</span></div>`).join('');
+        +values.map(item=>`<div class="finance-bar-row${item.key===mesAtual?' atual':''}${item.key>mesAtual?' futuro':''}"><strong>${esc(item.label)}</strong><div class="finance-bar-track"><span class="finance-bar-income" style="width:${item.previsto/max*100}%"></span><span class="finance-bar-expense" style="width:${item.expense/max*100}%"></span></div><span>${item.previsto||item.expense?financeMoney(item.previsto):'—'}</span></div>`).join('');
     }
 
     // Ganhos e despesas nunca se misturam: cada lado tem seu total, suas categorias e sua lista.
@@ -3191,6 +3239,7 @@
       if(profile?.cycle==='annual') document.getElementById('finance-profile-amount').value=Number(profile.annualCents||0)/100;
       document.getElementById('finance-profile-due').value=profile?.dueDay||10; document.getElementById('finance-profile-due2').value=profile?.dueDay2||20;
       document.getElementById('finance-profile-method').value=profile?.paymentMethod||'pix'; document.getElementById('finance-profile-active').checked=profile?.active!==false;
+      document.getElementById('finance-profile-notify').checked=profile?.avisarAtraso===true;
       syncFinanceProfileCycle();
       showMsg('finance-profile-msg','','info'); document.getElementById('finance-profile-modal').classList.add('open');
     }
@@ -3226,7 +3275,7 @@
       const monthlyCents=cycle==='annual'?Math.round(amount/12):amount;
       const button=document.getElementById('finance-profile-save'); button.disabled=true;
       try {
-        await setDoc(doc(db,'schools',escolaAtual,'financeStudents',uid),{studentUid:uid,studentName:student.name||student.firstName||'',monthlyCents,annualCents,annualMonth:cycle==='annual'?annualMonth:null,dueDay,cycle,dueDay2:cycle==='biweekly'?dueDay2:null,paymentMethod:document.getElementById('finance-profile-method').value,active:document.getElementById('finance-profile-active').checked,updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.email||''},{merge:true});
+        await setDoc(doc(db,'schools',escolaAtual,'financeStudents',uid),{studentUid:uid,studentName:student.name||student.firstName||'',monthlyCents,annualCents,annualMonth:cycle==='annual'?annualMonth:null,dueDay,cycle,dueDay2:cycle==='biweekly'?dueDay2:null,paymentMethod:document.getElementById('finance-profile-method').value,active:document.getElementById('finance-profile-active').checked,avisarAtraso:document.getElementById('finance-profile-notify').checked,updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.email||''},{merge:true});
         document.getElementById('finance-profile-modal').classList.remove('open'); await loadFinance();
       } catch(error) { showMsg('finance-profile-msg',`Erro ao salvar: ${error.message}`,'err'); } finally { button.disabled=false; }
     }

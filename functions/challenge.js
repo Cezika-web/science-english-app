@@ -204,7 +204,7 @@ function assertFocusMix(questions, part) {
 
 export function createChallengeFunctions({
   db, getMessaging, adminEmails, anthropicApiKey = null, Anthropic = null,
-  model = 'claude-sonnet-5', loadPostLesson = null,
+  model = 'claude-sonnet-5', loadPostLesson = null, registrarUso = null,
 }) {
   async function assertStudent(uid) {
     const snap = await db.doc(`students/${uid}`).get();
@@ -362,7 +362,7 @@ export function createChallengeFunctions({
       const checked = normalized.map(validateQuestion);
       return { questions:checked.map(item => item.publicQuestion), keys:checked.map(item => item.answerKey) };
     });
-    return { prepared, analysis:generated.analysis, sourceKind,
+    return { prepared, analysis:generated.analysis, sourceKind, usage:response.usage,
       sources:materials.map(item => ({ id:item.id, title:item.title, date:item.date })) };
   }
 
@@ -434,6 +434,15 @@ export function createChallengeFunctions({
         sourceKind:output.sourceKind, updatedAt:FieldValue.serverTimestamp(),
       });
     });
+    // O desafio era a única chamada de IA que não entrava no _apiUsage, então o
+    // gasto semanal não aparecia na contabilidade. Vai na mesma gravação das
+    // rodadas: se o commit falhar, não fica cobrança registrada sem pergunta.
+    if (registrarUso && output.usage) {
+      registrarUso(batch, {
+        tipo:'desafio', uid:studentDoc.id, escolaId:studentDoc.data().schoolId || '',
+        uso:output.usage, extra:{ weekKey, partes:pending.map(item => item.part) },
+      });
+    }
     await batch.commit();
 
     const openNow = pending.filter(item => item.opensAt.getTime() <= now.getTime());
