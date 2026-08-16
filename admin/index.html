@@ -307,6 +307,15 @@
     .calendar-now-line { position:absolute; left:58px; right:0; z-index:10; height:1px; background:#ef4444; pointer-events:none; }
     .calendar-now-line::before { content:''; position:absolute; left:-4px; top:-3px; width:7px; height:7px; border-radius:50%; background:#ef4444; }
     .calendar-empty { padding:18px; color:var(--muted); font-size:.82rem; }
+    /* Visão de mês: uma célula por dia, com os compromissos resumidos */
+    .calendar-month-cell { min-height:106px; border-left:1px solid #eef2f7; border-bottom:1px solid #eef2f7; padding:5px 6px; overflow:hidden; cursor:pointer; }
+    .calendar-month-cell.outside { background:#fcfcfd; }
+    .calendar-month-cell.outside .calendar-month-day { color:#cbd5e1; }
+    .calendar-month-cell.picked { background:color-mix(in srgb, var(--cal-brand, #2f86e6) 5.5%, #fff); }
+    .calendar-month-cell.today .calendar-month-day { background:var(--cal-brand, #2f86e6); color:#fff; }
+    .calendar-month-day { display:inline-flex; align-items:center; justify-content:center; min-width:21px; height:21px; border-radius:50%; color:#334155; font-size:.69rem; font-weight:700; }
+    .calendar-month-item { display:block; width:100%; margin-top:2px; border:1px solid color-mix(in srgb, var(--event-color) 20%, #fff); border-radius:5px; padding:2px 5px; background:color-mix(in srgb, var(--event-color) 11%, #fff); color:color-mix(in srgb, var(--event-color) 58%, #334155); font:inherit; font-size:.6rem; font-weight:650; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
+    .calendar-month-more { display:block; margin-top:2px; color:#94a3b8; font-size:.58rem; font-weight:700; }
     /* Popover leve para criar/editar — o modal completo fica no "mais opções" */
     .calendar-pop { position:fixed; z-index:120; width:272px; padding:13px; border:1px solid #e2e8f0; border-radius:14px; background:#fff; box-shadow:0 18px 44px rgba(15,23,42,.22); display:none; }
     .calendar-pop.open { display:block; }
@@ -318,6 +327,11 @@
     .calendar-pop-days button { padding:6px 0; border:1px solid var(--border); border-radius:7px; background:#fff; color:#64748b; font:inherit; font-size:.68rem; font-weight:800; cursor:pointer; }
     /* fallback obrigatório: sem ele um --cal-brand ausente deixa o chip branco no branco */
     .calendar-pop-days button.on { background:var(--cal-brand, #2f86e6); border-color:var(--cal-brand, #2f86e6); color:#fff; }
+    .calendar-pop-label { margin-top:12px; margin-bottom:-2px; color:#94a3b8; font-size:.63rem; font-weight:800; text-transform:uppercase; letter-spacing:.07em; }
+    .calendar-pop-palette { flex-wrap:wrap; gap:6px; }
+    .calendar-pop-palette button { width:21px; height:21px; }
+    .calendar-pop-palette button.sem-cor { background:#fff; position:relative; }
+    .calendar-pop-palette button.sem-cor::after { content:''; position:absolute; left:3px; right:3px; top:9px; height:1.5px; background:#cbd5e1; transform:rotate(-45deg); }
     .calendar-pop-colors { display:flex; gap:7px; margin-top:11px; }
     .calendar-pop-colors button { width:24px; height:24px; padding:0; border-radius:50%; border:2px solid transparent; outline:1px solid #e2e8f0; cursor:pointer; }
     .calendar-pop-colors button.on { border-color:#0f172a; outline-color:transparent; }
@@ -569,7 +583,7 @@
             <div class="calendar-toolbar">
               <h2 id="calendar-range-title">Semana</h2>
               <span class="spacer"></span>
-              <select class="calendar-today-btn" aria-label="Visualização atual"><option>Semana</option></select>
+              <select class="calendar-today-btn" id="calendar-view" aria-label="Visualização atual"><option value="day">Dia</option><option value="week" selected>Semana</option><option value="month">Mês</option></select>
               <button class="calendar-today-btn" id="calendar-today" type="button">Hoje</button>
               <button class="calendar-icon-btn" id="calendar-prev" type="button" aria-label="Semana anterior">‹</button>
               <button class="calendar-icon-btn" id="calendar-next" type="button" aria-label="Próxima semana">›</button>
@@ -600,8 +614,8 @@
           <div class="finance-sum result" id="finance-profit-card"><small>= Sobrou no mês</small><strong id="finance-profit">R$ 0,00</strong><span id="finance-profit-note">ganhos menos despesas</span></div>
         </div>
         <div class="finance-mini-kpis">
-          <div class="finance-mini"><small>Ainda a receber</small><strong id="finance-open">R$ 0,00</strong></div>
-          <div class="finance-mini"><small>Ticket médio</small><strong id="finance-ticket">R$ 0,00</strong></div>
+          <div class="finance-mini"><small>Ainda a receber</small><strong id="finance-open">R$ 0,00</strong><span>neste mês</span></div>
+          <div class="finance-mini"><small>Mensal diluído</small><strong id="finance-diluted">R$ 0,00</strong><span id="finance-diluted-note">anual espalhado em 12 meses</span></div>
           <div class="finance-mini"><small>Horas de aula</small><strong id="finance-hours">0h</strong><span id="finance-hours-note">no mês inteiro</span></div>
           <div class="finance-mini"><small>Ganho por hora</small><strong id="finance-hour-rate">R$ 0,00</strong><span id="finance-hour-rate-note">ganhos ÷ horas do mês</span></div>
         </div>
@@ -1344,7 +1358,10 @@
       </select>
     </div>
     <div class="calendar-pop-days" id="calendar-pop-days"></div>
+    <div class="calendar-pop-label">Tipo</div>
     <div class="calendar-pop-colors" id="calendar-pop-colors"></div>
+    <div class="calendar-pop-label">Cor</div>
+    <div class="calendar-pop-colors calendar-pop-palette" id="calendar-pop-palette"></div>
     <div class="calendar-pop-actions">
       <button class="btn-add" id="calendar-pop-save" type="button">Salvar</button>
       <button class="calendar-delete" id="calendar-pop-delete" type="button">Excluir</button>
@@ -1376,12 +1393,13 @@
       <div class="modal-header"><h2>Mensalidade do aluno</h2><button class="btn-close" id="finance-profile-close" type="button">×</button></div>
       <div class="modal-body">
         <div class="field"><label for="finance-profile-student">Aluno</label><select id="finance-profile-student"><option value="">Selecione</option></select></div>
-        <div class="field"><label for="finance-profile-cycle">Como esse aluno paga</label><select id="finance-profile-cycle"><option value="monthly">Uma vez por mês</option><option value="biweekly">Quinzenal — duas vezes por mês</option></select></div>
+        <div class="field"><label for="finance-profile-cycle">Como esse aluno paga</label><select id="finance-profile-cycle"><option value="monthly">Uma vez por mês</option><option value="biweekly">Quinzenal — duas vezes por mês</option><option value="annual">Anual — paga o ano inteiro de uma vez</option></select></div>
         <div class="calendar-form-grid">
-          <div class="field"><label for="finance-profile-amount">Valor mensal (R$)</label><input id="finance-profile-amount" type="number" min="0" step="0.01" placeholder="350,00"></div>
+          <div class="field"><label for="finance-profile-amount" id="finance-profile-amount-label">Valor mensal (R$)</label><input id="finance-profile-amount" type="number" min="0" step="0.01" placeholder="350,00"></div>
           <div class="field"><label for="finance-profile-due" id="finance-profile-due-label">Dia do vencimento</label><input id="finance-profile-due" type="number" min="1" max="31" placeholder="10"></div>
         </div>
         <div class="field" id="finance-profile-due2-field" style="display:none;margin-top:14px;"><label for="finance-profile-due2">Vencimento da 2ª quinzena</label><input id="finance-profile-due2" type="number" min="1" max="31" placeholder="20"></div>
+        <div class="field" id="finance-profile-annual-field" style="display:none;margin-top:14px;"><label for="finance-profile-annual-month">Mês em que o anual cai</label><input id="finance-profile-annual-month" type="month"></div>
         <p id="finance-profile-hint" style="display:none;margin:9px 0 0;padding:9px 11px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A;font-size:.76rem;line-height:1.45;"></p>
         <div class="field" style="margin-top:14px;"><label for="finance-profile-method">Forma habitual de pagamento</label><select id="finance-profile-method"><option value="pix">PIX</option><option value="card">Cartão</option><option value="cash">Dinheiro</option><option value="transfer">Transferência</option><option value="other">Outro</option></select></div>
         <label style="display:flex;align-items:center;gap:9px;font-size:.82rem;margin-top:8px;"><input id="finance-profile-active" type="checkbox" checked> Cobrança mensal ativa</label>
@@ -1397,6 +1415,7 @@
       <div class="modal-body">
         <input id="finance-transaction-type" type="hidden" value="income">
         <input id="finance-transaction-part" type="hidden" value="0">
+        <input id="finance-transaction-covers" type="hidden" value="1">
         <div class="field" id="finance-transaction-student-field"><label for="finance-transaction-student">Aluno</label><select id="finance-transaction-student"><option value="">Ganho sem aluno</option></select></div>
         <div class="calendar-form-grid">
           <div class="field"><label for="finance-transaction-amount">Valor (R$)</label><input id="finance-transaction-amount" type="number" min="0.01" step="0.01"></div>
@@ -1853,6 +1872,7 @@
     let calendarEvents = [];
     let calendarWeekStart = calendarWeekStartDate(new Date());
     let calendarSelectedDay = ''; // dia em destaque na coluna; vazio = nenhum
+    let calendarView = 'week';    // 'day' | 'week' | 'month'
     let calendarMiniCursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     let calendarLoadedSchool = '';
 
@@ -1906,6 +1926,7 @@
     }
 
     function calendarEventColor(event) {
+      if (event.color) return event.color; // cor escolhida à mão vence a do tipo
       return event.type === 'available' ? '#f59e7a' : event.type === 'personal' ? '#8b5cf6' : event.type === 'blocked' ? '#64748b' : calendarSchoolColor();
     }
 
@@ -1942,13 +1963,24 @@
       if ([...select.options].some(option => option.value === current)) select.value = current;
     }
 
+    function calendarFocusDay() { return calendarSelectedDay || calendarDateKey(new Date()); }
+
     function renderCalendar() {
       calendarApplyTheme();
+      if (calendarView === 'month') return renderCalendarMonth();
       const startMinutes = calendarMinutes(calendarSettings.dayStart), endMinutes = Math.max(startMinutes + 60, calendarMinutes(calendarSettings.dayEnd));
       const hours = Math.ceil((endMinutes - startMinutes) / 60), height = hours * CALENDAR_HOUR_HEIGHT, todayKey = calendarDateKey(new Date());
-      const days = Array.from({ length:7 }, (_, index) => calendarAddDays(calendarWeekStart, index));
-      const monthFormat = new Intl.DateTimeFormat('pt-BR', { month:'long', year:'numeric' }), first = days[0], last = days[6];
-      document.getElementById('calendar-range-title').textContent = first.getMonth() === last.getMonth() ? monthFormat.format(first) : `${first.toLocaleDateString('pt-BR',{month:'short'})} – ${monthFormat.format(last)}`;
+      const days = calendarView === 'day'
+        ? [new Date(`${calendarFocusDay()}T00:00:00`)]
+        : Array.from({ length:7 }, (_, index) => calendarAddDays(calendarWeekStart, index));
+      const columns2 = `58px repeat(${days.length},minmax(100px,1fr))`;
+      document.getElementById('calendar-days-head').style.gridTemplateColumns = columns2;
+      document.getElementById('calendar-grid').style.gridTemplateColumns = columns2;
+      const weekBox = document.querySelector('.calendar-week'); if (weekBox) weekBox.style.minWidth = days.length === 1 ? '0' : '760px';
+      const monthFormat = new Intl.DateTimeFormat('pt-BR', { month:'long', year:'numeric' }), first = days[0], last = days[days.length - 1];
+      document.getElementById('calendar-range-title').textContent = days.length === 1
+        ? first.toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' })
+        : first.getMonth() === last.getMonth() ? monthFormat.format(first) : `${first.toLocaleDateString('pt-BR',{month:'short'})} – ${monthFormat.format(last)}`;
       document.getElementById('calendar-days-head').innerHTML = '<div></div>' + days.map(date => {
         const key = calendarDateKey(date);
         return `<div class="calendar-day-head${key === todayKey ? ' today' : ''}${key === calendarSelectedDay ? ' picked' : ''}" data-head-date="${key}" style="cursor:pointer">${date.toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','')} <strong>${date.getDate()}</strong></div>`;
@@ -2033,6 +2065,37 @@
         click.stopPropagation();
         clearCalendarSelection(); button.classList.add('editing'); // marca qual compromisso está sendo editado
         openCalendarPop(calendarEvents.find(item => item.id === button.dataset.eventId) || {}, button.getBoundingClientRect());
+      });
+      renderCalendarMini();
+    }
+
+    function renderCalendarMonth() {
+      const cursor = new Date(calendarMiniCursor.getFullYear(), calendarMiniCursor.getMonth(), 1);
+      const first = calendarAddDays(cursor, -cursor.getDay()), todayKey = calendarDateKey(new Date());
+      document.getElementById('calendar-range-title').textContent = cursor.toLocaleDateString('pt-BR', { month:'long', year:'numeric' });
+      const head = document.getElementById('calendar-days-head'), grid = document.getElementById('calendar-grid');
+      const weekBox = document.querySelector('.calendar-week'); if (weekBox) weekBox.style.minWidth = '760px';
+      head.style.gridTemplateColumns = 'repeat(7,minmax(0,1fr))';
+      head.innerHTML = ['dom','seg','ter','qua','qui','sex','sáb'].map(day => `<div class="calendar-day-head">${day}</div>`).join('');
+      grid.style.gridTemplateColumns = 'repeat(7,minmax(0,1fr))';
+      grid.innerHTML = Array.from({ length:42 }, (_, index) => {
+        const date = calendarAddDays(first, index), key = calendarDateKey(date);
+        const items = calendarEvents.filter(event => calendarOccursOn(event, date))
+          .sort((one, other) => calendarMinutes(one.startTime) - calendarMinutes(other.startTime));
+        const shown = items.slice(0, 3);
+        return `<div class="calendar-month-cell${date.getMonth() !== cursor.getMonth() ? ' outside' : ''}${key === todayKey ? ' today' : ''}${key === calendarSelectedDay ? ' picked' : ''}" data-month-date="${key}">`
+          + `<span class="calendar-month-day">${date.getDate()}</span>`
+          + shown.map(event => `<button type="button" class="calendar-month-item" data-event-id="${esc(event.id)}" style="--event-color:${calendarEventColor(event)}" title="${esc(event.title || '')}">${event.startTime} ${esc(event.title || 'Compromisso')}</button>`).join('')
+          + (items.length > 3 ? `<span class="calendar-month-more">+${items.length - 3}</span>` : '') + '</div>';
+      }).join('');
+      grid.querySelectorAll('.calendar-month-item').forEach(button => button.onclick = click => {
+        click.stopPropagation(); clearCalendarSelection(); button.classList.add('editing');
+        openCalendarPop(calendarEvents.find(item => item.id === button.dataset.eventId) || {}, button.getBoundingClientRect());
+      });
+      grid.querySelectorAll('[data-month-date]').forEach(cell => cell.onclick = () => { // clicar no dia abre a visão de dia
+        const chosen = new Date(`${cell.dataset.monthDate}T00:00:00`);
+        calendarSelectedDay = cell.dataset.monthDate; calendarWeekStart = calendarWeekStartDate(chosen);
+        calendarView = 'day'; document.getElementById('calendar-view').value = 'day'; renderCalendar();
       });
       renderCalendarMini();
     }
@@ -2181,13 +2244,28 @@
     document.getElementById('calendar-settings-open-mobile').onclick = openCalendarSettings;
     document.getElementById('calendar-settings-close').onclick = () => document.getElementById('calendar-settings-modal').classList.remove('open');
     document.getElementById('calendar-settings-save').onclick = saveCalendarSettings;
-    const calendarShiftWeek = amount => { // o dia em destaque acompanha a virada de semana
-      calendarWeekStart = calendarAddDays(calendarWeekStart, amount);
-      if (calendarSelectedDay) calendarSelectedDay = calendarDateKey(calendarAddDays(new Date(`${calendarSelectedDay}T00:00:00`), amount));
-      calendarMiniCursor = new Date(calendarWeekStart.getFullYear(),calendarWeekStart.getMonth(),1); renderCalendar();
+    // As setas andam na unidade da visão: um dia, uma semana ou um mês.
+    const calendarShiftView = amount => {
+      if (calendarView === 'day') {
+        const alvo = calendarAddDays(new Date(`${calendarFocusDay()}T00:00:00`), amount);
+        calendarSelectedDay = calendarDateKey(alvo); calendarWeekStart = calendarWeekStartDate(alvo);
+        calendarMiniCursor = new Date(alvo.getFullYear(), alvo.getMonth(), 1);
+      } else if (calendarView === 'month') {
+        calendarMiniCursor = new Date(calendarMiniCursor.getFullYear(), calendarMiniCursor.getMonth() + amount, 1);
+      } else {
+        calendarWeekStart = calendarAddDays(calendarWeekStart, amount * 7);
+        if (calendarSelectedDay) calendarSelectedDay = calendarDateKey(calendarAddDays(new Date(`${calendarSelectedDay}T00:00:00`), amount * 7));
+        calendarMiniCursor = new Date(calendarWeekStart.getFullYear(), calendarWeekStart.getMonth(), 1);
+      }
+      renderCalendar();
     };
-    document.getElementById('calendar-prev').onclick = () => calendarShiftWeek(-7);
-    document.getElementById('calendar-next').onclick = () => calendarShiftWeek(7);
+    document.getElementById('calendar-prev').onclick = () => calendarShiftView(-1);
+    document.getElementById('calendar-next').onclick = () => calendarShiftView(1);
+    document.getElementById('calendar-view').onchange = choice => {
+      calendarView = choice.target.value;
+      if (calendarView === 'day' && !calendarSelectedDay) calendarSelectedDay = calendarDateKey(new Date());
+      renderCalendar();
+    };
     document.getElementById('calendar-today').onclick = () => { const today = new Date(); calendarWeekStart = calendarWeekStartDate(today); calendarSelectedDay = calendarDateKey(today); calendarMiniCursor = new Date(today.getFullYear(),today.getMonth(),1); renderCalendar(); };
     document.getElementById('calendar-mini-prev').onclick = () => { calendarMiniCursor = new Date(calendarMiniCursor.getFullYear(),calendarMiniCursor.getMonth()-1,1); renderCalendarMini(); };
     document.getElementById('calendar-mini-next').onclick = () => { calendarMiniCursor = new Date(calendarMiniCursor.getFullYear(),calendarMiniCursor.getMonth()+1,1); renderCalendarMini(); };
@@ -2211,6 +2289,30 @@
     }
 
     function calendarPopColorOf(type) { return calendarEventColor({ type }); }
+
+    const CALENDAR_PALETTE = [
+      { value:'',        label:'Usar a cor do tipo' },
+      { value:'#2f86e6', label:'Azul' },
+      { value:'#16a34a', label:'Verde' },
+      { value:'#06b6d4', label:'Turquesa' },
+      { value:'#eab308', label:'Amarelo' },
+      { value:'#f97316', label:'Laranja' },
+      { value:'#ef4444', label:'Vermelho' },
+      { value:'#ec4899', label:'Rosa' },
+      { value:'#8b5cf6', label:'Roxo' },
+      { value:'#78716c', label:'Marrom' },
+      { value:'#64748b', label:'Cinza' },
+    ];
+
+    function renderCalendarPopPalette() {
+      if (!calendarPopDraft) return;
+      const atual = calendarPopDraft.color || '';
+      document.getElementById('calendar-pop-palette').innerHTML = CALENDAR_PALETTE.map(item =>
+        `<button type="button" data-color="${item.value}" title="${item.label}" aria-label="${item.label}" class="${atual === item.value ? 'on' : ''}${item.value ? '' : ' sem-cor'}" style="${item.value ? `background:${item.value}` : ''}"></button>`).join('');
+      document.querySelectorAll('#calendar-pop-palette button').forEach(button => button.onclick = () => {
+        calendarPopDraft.color = button.dataset.color; renderCalendarPopPalette();
+      });
+    }
 
     const CALENDAR_REPEAT_LABELS = { daily:'todo dia', weekly:'semanal', monthly:'todo mês', custom:'dias escolhidos' };
 
@@ -2239,7 +2341,7 @@
       document.querySelectorAll('#calendar-pop-colors button').forEach(button => button.onclick = () => {
         calendarPopDraft.type = button.dataset.type;
         document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle(calendarPopDraft.type);
-        renderCalendarPopColors();
+        renderCalendarPopColors(); renderCalendarPopPalette();
       });
     }
 
@@ -2261,7 +2363,7 @@
       calendarPopDraft.repeatDays = (event.repeatDays || []).map(Number);
       document.getElementById('calendar-pop-delete').style.display = event.id ? 'block' : 'none';
       document.getElementById('calendar-pop-msg').style.display = 'none';
-      renderCalendarPopColors(); renderCalendarPopDays();
+      renderCalendarPopColors(); renderCalendarPopPalette(); renderCalendarPopDays();
       document.getElementById('calendar-pop').classList.add('open');
       calendarPlacePop(anchor);
       setTimeout(() => document.getElementById('calendar-pop-title').focus(), 20);
@@ -2290,7 +2392,7 @@
         type, studentUid:type === 'lesson' ? (calendarPopDraft.studentUid || '') : '',
         studentName:type === 'lesson' && student ? (student.name || student.firstName || '') : '',
         title:document.getElementById('calendar-pop-title').value.trim() || calendarDefaultTitle(type),
-        date:calendarPopDraft.date, startTime, endTime, repeat, repeatDays,
+        date:calendarPopDraft.date, startTime, endTime, repeat, repeatDays, color:calendarPopDraft.color || '',
         repeatUntil:repeat !== 'none' ? (calendarPopDraft.repeatUntil || '') : '',
         notes:calendarPopDraft.notes || '', timezone:'America/Sao_Paulo',
         updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || ''
@@ -2569,12 +2671,54 @@
       return Math.round(minutes/6)/10;
     }
 
+    // ── PAGAMENTO ANUAL ────────────────────────────────────────────────────
+    // O anual cai inteiro num mês só (é isso que faz o mês pular). Para poder
+    // olhar também o equivalente mensal, cada lançamento guarda coversMonths
+    // e é espalhado pelos meses que ele cobre.
+    const financeMonthIndex = month => Number(month.slice(0,4))*12 + Number(month.slice(5,7)) - 1;
+
+    function financeAnnualTransactions() {
+      return financeTransactions.filter(tx=>tx.type==='income'&&Number(tx.coversMonths||1)>1);
+    }
+
+    function financeAnnualCovers(uid,month) {
+      const alvo=financeMonthIndex(month);
+      return financeAnnualTransactions().some(tx=> {
+        if(tx.studentUid!==uid) return false;
+        const inicio=tx.referenceMonth||String(tx.date||'').slice(0,7); if(!inicio) return false;
+        const base=financeMonthIndex(inicio),meses=Number(tx.coversMonths||12);
+        return alvo>=base&&alvo<base+meses;
+      });
+    }
+
+    // Ganhos do mês com o anual diluído: entradas normais do mês + a fatia
+    // mensal de cada anual que cobre esse mês, mesmo que tenha caído antes.
+    function financeDilutedIncome(month) {
+      let total=0;
+      financeTransactions.filter(tx=>tx.type==='income').forEach(tx=> {
+        const meses=Number(tx.coversMonths||1);
+        if(meses<=1) { if(String(tx.date||'').startsWith(month)) total+=Number(tx.amountCents||0); return; }
+        const inicio=tx.referenceMonth||String(tx.date||'').slice(0,7); if(!inicio) return;
+        const base=financeMonthIndex(inicio),alvo=financeMonthIndex(month);
+        if(alvo>=base&&alvo<base+meses) total+=Number(tx.amountCents||0)/meses;
+      });
+      return Math.round(total);
+    }
+
     // Quem paga quinzenal tem duas etapas dentro do mês (part 1 e 2). Quem paga
     // mensal tem uma só (part 0), que aceita qualquer mensalidade daquele mês.
     function financeProfileParts(profile,month) {
       const total=Number(profile.monthlyCents||0);
       const {year,monthNumber}=financeMonthBounds(month),lastDay=new Date(year,monthNumber,0).getDate();
       const dayKey=day=>`${month}-${String(Math.min(lastDay,Math.max(1,Number(day)||1))).padStart(2,'0')}`;
+      if(profile.cycle==='annual') {
+        // Cobra uma vez por ano, sempre no mesmo mês do calendário. Nos outros
+        // 11 meses não há cobrança (amount 0) — não entra no "a receber".
+        const anual=Number(profile.annualCents||total*12||0),inicio=profile.annualMonth||'';
+        const mesDaCobranca=inicio?Number(inicio.slice(5,7)):0;
+        const cobra=Boolean(mesDaCobranca)&&Number(month.slice(5,7))===mesDaCobranca&&month>=inicio.slice(0,7);
+        return [{part:0,label:'Anual',short:'Ano',amount:cobra?anual:0,dueKey:dayKey(profile.dueDay||10),anual,cobraNesteMes:cobra}];
+      }
       if(profile.cycle!=='biweekly') return [{part:0,label:'Mensalidade',short:'Mês',amount:total,dueKey:dayKey(profile.dueDay||1)}];
       const half=Math.round(total/2);
       return [
@@ -2584,6 +2728,13 @@
     }
 
     function financePartStatus(profile,month,part) {
+      if(profile.cycle==='annual'&&!part.cobraNesteMes) {
+        // Fora do mês da cobrança: só interessa se o ano dele já está pago.
+        const coberto=financeAnnualCovers(profile.studentUid,month);
+        return coberto
+          ? {key:'paid',label:'Anual em dia',received:0}
+          : {key:'unset',label:'Anual não pago',received:0};
+      }
       const received=financeTransactions.filter(tx=>tx.type==='income'&&tx.category==='tuition'&&tx.studentUid===profile.studentUid&&tx.referenceMonth===month
         &&(part.part===0||Number(tx.referencePart||0)===part.part)).reduce((sum,tx)=>sum+Number(tx.amountCents||0),0);
       const late=part.dueKey<financeTodayKey();
@@ -2609,7 +2760,12 @@
       document.getElementById('finance-profit').textContent=financeMoney(profit);
       document.getElementById('finance-profit-note').textContent=profit<0?'as despesas passaram os ganhos':'ganhos menos despesas';
       const profitCard=document.getElementById('finance-profit-card'); profitCard.classList.toggle('negative',profit<0); profitCard.classList.toggle('positive',profit>0);
-      document.getElementById('finance-ticket').textContent=financeMoney(ticket);
+      // "Sobrou no mês" é caixa puro; aqui fica a visão com o anual espalhado.
+      const diluido=financeDilutedIncome(month),anuaisNoMes=incomes.filter(tx=>Number(tx.coversMonths||1)>1);
+      document.getElementById('finance-diluted').textContent=financeMoney(diluido);
+      document.getElementById('finance-diluted-note').textContent=anuaisNoMes.length
+        ? `${anuaisNoMes.length} anual caiu este mês · aqui entra só 1/12`
+        : (diluido>income?'inclui a parcela de anuais já recebidos':'anual espalhado em 12 meses');
       document.getElementById('finance-hours').textContent=`${String(hours).replace('.',',')}h`;
       document.getElementById('finance-hour-rate').textContent=financeMoney(rate);
       // Mês em andamento: o total é do mês fechado, mas mostra o quanto já foi dado.
@@ -2621,7 +2777,9 @@
 
       const profileMap=new Map(financeProfiles.map(profile=>[profile.studentUid,profile]));
       const activeStudents=allStudents.filter(student=>!student.archived);
-      const configured=financeProfiles.filter(profile=>profile.active!==false&&Number(profile.monthlyCents)>0),expected=configured.reduce((sum,profile)=>sum+Number(profile.monthlyCents||0),0);
+      // Previsto vem das etapas do mês: no anual só o mês da cobrança soma.
+      const configured=financeProfiles.filter(profile=>profile.active!==false&&(Number(profile.monthlyCents)>0||Number(profile.annualCents)>0));
+      const expected=configured.reduce((sum,profile)=>sum+financeProfileParts(profile,month).reduce((etapa,part)=>etapa+Number(part.amount||0),0),0);
       const expectedReceived=configured.reduce((sum,profile)=>sum+financeProfileReceived(profile,month),0);
       document.getElementById('finance-expected-note').textContent=`Previsto ${financeMoney(expected)} · recebido das mensalidades ${financeMoney(expectedReceived)}.`;
       document.getElementById('finance-open').textContent=financeMoney(Math.max(0,expected-expectedReceived));
@@ -2629,13 +2787,20 @@
         const profile=profileMap.get(student.uid);
         if(!profile||profile.active===false||!Number(profile.monthlyCents)) return `<tr><td><strong>${esc(student.name||student.firstName||'Aluno')}</strong></td><td>—</td><td>—</td><td><span class="finance-status unset">Não configurado</span></td><td><button class="finance-row-btn finance-configure" data-uid="${esc(student.uid)}">Configurar</button></td></tr>`;
         const method={pix:'PIX',card:'Cartão',cash:'Dinheiro',transfer:'Transferência',other:'Outro'}[profile.paymentMethod]||'';
-        const parts=financeProfileParts(profile,month),biweekly=profile.cycle==='biweekly';
-        const valueCell=biweekly?`<strong>${financeMoney(profile.monthlyCents)}</strong><br><small style="color:#94a3b8">2× ${financeMoney(parts[0].amount)}</small>`:`<strong>${financeMoney(profile.monthlyCents)}</strong>`;
-        const dueCell=parts.map(part=>`Dia ${Number(part.dueKey.slice(-2))}`).join('<br>');
+        const parts=financeProfileParts(profile,month),biweekly=profile.cycle==='biweekly',anual=profile.cycle==='annual';
+        const valueCell=anual
+          ? `<strong>${financeMoney(profile.annualCents||0)}</strong><small style="color:#94a3b8"> /ano</small><br><small style="color:#94a3b8">≈ ${financeMoney(profile.monthlyCents)}/mês</small>`
+          : biweekly
+            ? `<strong>${financeMoney(profile.monthlyCents)}</strong><br><small style="color:#94a3b8">2× ${financeMoney(parts[0].amount)}</small>`
+            : `<strong>${financeMoney(profile.monthlyCents)}</strong>`;
+        const dueCell=anual
+          ? `${(profile.annualMonth?new Date(`${profile.annualMonth}-01T00:00:00`).toLocaleDateString('pt-BR',{month:'long'}):'—')}<br><small style="color:#94a3b8">dia ${Number(profile.dueDay||10)}</small>`
+          : parts.map(part=>`Dia ${Number(part.dueKey.slice(-2))}`).join('<br>');
         const etapas=parts.map(part=>({part,status:financePartStatus(profile,month,part)}));
         const statusCell=etapas.map(({part,status})=>
           `<span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">${biweekly?`<small style="color:#94a3b8;font-weight:800;">${part.short}</small>`:''}<span class="finance-status ${status.key}">${esc(status.label)}</span></span>`).join('<br>');
         const actionCell=etapas.map(({part,status})=>{
+          if(anual&&!part.cobraNesteMes) return ''; // fora do mês do anual não há o que receber
           const sufixo=biweekly?` ${part.short}`:'';
           const receber=`<button class="finance-row-btn finance-pay" data-uid="${esc(student.uid)}" data-part="${part.part}">Receber${sufixo}</button>`;
           const desfazer=`<button class="finance-row-btn finance-undo" data-uid="${esc(student.uid)}" data-part="${part.part}" title="Cancelar o recebimento — volta para pendente">↩ Desfazer${sufixo}</button>`;
@@ -2718,7 +2883,9 @@
       financeFillStudents(); const select=document.getElementById('finance-profile-student'); select.value=uid;
       const profile=financeProfiles.find(item=>item.studentUid===uid);
       document.getElementById('finance-profile-amount').value=profile?Number(profile.monthlyCents||0)/100:'';
-      document.getElementById('finance-profile-cycle').value=profile?.cycle==='biweekly'?'biweekly':'monthly';
+      document.getElementById('finance-profile-cycle').value=['biweekly','annual'].includes(profile?.cycle)?profile.cycle:'monthly';
+      document.getElementById('finance-profile-annual-month').value=profile?.annualMonth||financeMonthKey();
+      if(profile?.cycle==='annual') document.getElementById('finance-profile-amount').value=Number(profile.annualCents||0)/100;
       document.getElementById('finance-profile-due').value=profile?.dueDay||10; document.getElementById('finance-profile-due2').value=profile?.dueDay2||20;
       document.getElementById('finance-profile-method').value=profile?.paymentMethod||'pix'; document.getElementById('finance-profile-active').checked=profile?.active!==false;
       syncFinanceProfileCycle();
@@ -2726,14 +2893,19 @@
     }
 
     function syncFinanceProfileCycle() {
-      const biweekly=document.getElementById('finance-profile-cycle').value==='biweekly';
+      const ciclo=document.getElementById('finance-profile-cycle').value,biweekly=ciclo==='biweekly',annual=ciclo==='annual';
+      document.getElementById('finance-profile-amount-label').textContent=annual?'Valor do ano (R$)':'Valor mensal (R$)';
       document.getElementById('finance-profile-due-label').textContent=biweekly?'Vencimento da 1ª quinzena':'Dia do vencimento';
       document.getElementById('finance-profile-due2-field').style.display=biweekly?'block':'none';
-      const hint=document.getElementById('finance-profile-hint'), amount=Number(document.getElementById('finance-profile-amount').value)||0;
-      hint.style.display=biweekly?'block':'none';
-      if(biweekly) hint.textContent=amount
-        ? `O mês fica com duas etapas de ${financeMoney(Math.round(amount*100/2))} cada. Você dá o "ok" em uma quinzena por vez.`
+      document.getElementById('finance-profile-annual-field').style.display=annual?'block':'none';
+      const hint=document.getElementById('finance-profile-hint'),valor=Number(document.getElementById('finance-profile-amount').value)||0;
+      hint.style.display=biweekly||annual?'block':'none';
+      if(biweekly) hint.textContent=valor
+        ? `O mês fica com duas etapas de ${financeMoney(Math.round(valor*100/2))} cada. Você dá o "ok" em uma quinzena por vez.`
         : 'O mês fica com duas etapas de metade do valor cada. Você dá o "ok" em uma quinzena por vez.';
+      if(annual) hint.textContent=valor
+        ? `Cai inteiro no mês escolhido e nos outros 11 meses não há cobrança. Equivale a ${financeMoney(Math.round(valor*100/12))} por mês.`
+        : 'Cai inteiro no mês escolhido e nos outros 11 meses não há cobrança.';
     }
 
     async function saveFinanceProfile() {
@@ -2743,9 +2915,15 @@
       if(!Number.isFinite(amount)||amount<0) return showMsg('finance-profile-msg','Informe um valor mensal válido.','err');
       if(!Number.isInteger(dueDay)||dueDay<1||dueDay>31) return showMsg('finance-profile-msg','O vencimento deve ficar entre os dias 1 e 31.','err');
       if(cycle==='biweekly'&&(!Number.isInteger(dueDay2)||dueDay2<1||dueDay2>31)) return showMsg('finance-profile-msg','O vencimento da 2ª quinzena deve ficar entre os dias 1 e 31.','err');
+      const annualMonth=document.getElementById('finance-profile-annual-month').value;
+      if(cycle==='annual'&&!annualMonth) return showMsg('finance-profile-msg','Escolha o mês em que o pagamento anual cai.','err');
+      // No anual o campo de valor é o do ano; monthlyCents guarda o equivalente
+      // mensal para os indicadores continuarem fazendo sentido.
+      const annualCents=cycle==='annual'?amount:null;
+      const monthlyCents=cycle==='annual'?Math.round(amount/12):amount;
       const button=document.getElementById('finance-profile-save'); button.disabled=true;
       try {
-        await setDoc(doc(db,'schools',escolaAtual,'financeStudents',uid),{studentUid:uid,studentName:student.name||student.firstName||'',monthlyCents:amount,dueDay,cycle,dueDay2:cycle==='biweekly'?dueDay2:null,paymentMethod:document.getElementById('finance-profile-method').value,active:document.getElementById('finance-profile-active').checked,updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.email||''},{merge:true});
+        await setDoc(doc(db,'schools',escolaAtual,'financeStudents',uid),{studentUid:uid,studentName:student.name||student.firstName||'',monthlyCents,annualCents,annualMonth:cycle==='annual'?annualMonth:null,dueDay,cycle,dueDay2:cycle==='biweekly'?dueDay2:null,paymentMethod:document.getElementById('finance-profile-method').value,active:document.getElementById('finance-profile-active').checked,updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.email||''},{merge:true});
         document.getElementById('finance-profile-modal').classList.remove('open'); await loadFinance();
       } catch(error) { showMsg('finance-profile-msg',`Erro ao salvar: ${error.message}`,'err'); } finally { button.disabled=false; }
     }
@@ -2754,6 +2932,8 @@
       financeFillStudents(); const income=type==='income',profile=financeProfiles.find(item=>item.studentUid===uid),student=allStudents.find(item=>item.uid===uid),month=financeMonthKey();
       const parts=profile?financeProfileParts(profile,month):[],chosen=parts.find(item=>item.part===part)||parts[0]||null;
       document.getElementById('finance-transaction-part').value=String(chosen?chosen.part:0);
+      const anual=profile?.cycle==='annual';
+      document.getElementById('finance-transaction-covers').value=anual?'12':'1';
       document.getElementById('finance-transaction-type').value=type; document.getElementById('finance-transaction-title').textContent=income?(chosen&&chosen.part?`Registrar ${chosen.label}`:'Registrar ganho'):'Registrar despesa'; document.getElementById('finance-transaction-student-field').style.display=income?'block':'none'; document.getElementById('finance-reference-field').style.display=income?'block':'none';
       document.getElementById('finance-transaction-student').value=income?uid:''; document.getElementById('finance-transaction-amount').value=chosen?chosen.amount/100:(profile?Number(profile.monthlyCents||0)/100:''); document.getElementById('finance-transaction-date').value=financeTodayKey(); document.getElementById('finance-transaction-reference').value=month;
       const category=document.getElementById('finance-transaction-category'); category.innerHTML=income?'<option value="tuition">Mensalidade</option><option value="material">Material</option><option value="other-income">Outro ganho</option>':'<option value="platform">Plataformas e sistemas</option><option value="tax">Impostos</option><option value="marketing">Marketing</option><option value="material">Material</option><option value="rent">Aluguel</option><option value="other-expense">Outra despesa</option>';
@@ -2766,7 +2946,7 @@
       if(!date) return showMsg('finance-transaction-msg','Informe a data.','err');
       const button=document.getElementById('finance-transaction-save'); button.disabled=true;
       try {
-        await addDoc(collection(db,'schools',escolaAtual,'financeTransactions'),{type,amountCents:amount,date,referenceMonth:type==='income'?document.getElementById('finance-transaction-reference').value:'',referencePart:type==='income'?Number(document.getElementById('finance-transaction-part').value)||0:0,studentUid:uid,studentName:student?.name||student?.firstName||'',category:document.getElementById('finance-transaction-category').value,description:document.getElementById('finance-transaction-description').value.trim()||(type==='income'?'Ganho':'Despesa'),createdAt:serverTimestamp(),createdBy:auth.currentUser?.email||''});
+        await addDoc(collection(db,'schools',escolaAtual,'financeTransactions'),{type,amountCents:amount,date,referenceMonth:type==='income'?document.getElementById('finance-transaction-reference').value:'',referencePart:type==='income'?Number(document.getElementById('finance-transaction-part').value)||0:0,coversMonths:type==='income'?Number(document.getElementById('finance-transaction-covers').value)||1:1,studentUid:uid,studentName:student?.name||student?.firstName||'',category:document.getElementById('finance-transaction-category').value,description:document.getElementById('finance-transaction-description').value.trim()||(type==='income'?'Ganho':'Despesa'),createdAt:serverTimestamp(),createdBy:auth.currentUser?.email||''});
         document.getElementById('finance-transaction-modal').classList.remove('open'); await loadFinance();
       } catch(error) { showMsg('finance-transaction-msg',`Erro ao registrar: ${error.message}`,'err'); } finally { button.disabled=false; }
     }
