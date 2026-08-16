@@ -802,9 +802,11 @@ export function createChallengeFunctions({
     console.log(`Desafio ${weekKey}: ${result.generated.length} aluno(s) prontos, ${result.errors.length} sem material.`);
   }
 
+  // 1800s é o teto de uma função agendada. A turma inteira roda em blocos de
+  // três e leva bem menos que isso; quem sobrar entra no cron diário.
   const gerarDesafioDaSemana = onSchedule(
     { region:REGION, schedule:'0 18 * * 0', timeZone:TIME_ZONE,
-      secrets:anthropicApiKey ? [anthropicApiKey] : [], timeoutSeconds:3600, memory:'1GiB' },
+      secrets:anthropicApiKey ? [anthropicApiKey] : [], timeoutSeconds:1800, memory:'1GiB' },
     generateNextWeek
   );
 
