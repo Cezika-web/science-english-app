@@ -649,7 +649,7 @@
         <div class="finance-split">
           <section class="finance-panel income">
             <header>
-              <div><h3>↗ Ganhos</h3><p>Tudo que entrou no mês</p></div>
+              <div><h3>↗ Ganhos</h3><p id="finance-income-sub">Tudo que entrou no mês</p></div>
               <strong id="finance-income-total">R$ 0,00</strong>
             </header>
             <div class="finance-cats" id="finance-income-cats"></div>
@@ -2997,7 +2997,18 @@
       const expected=configured.reduce((sum,profile)=>sum+financeProfileParts(profile,month).reduce((etapa,part)=>etapa+Number(part.amount||0),0),0);
       const expectedReceived=configured.reduce((sum,profile)=>sum+financeProfileReceived(profile,month),0);
       document.getElementById('finance-expected-note').textContent=`Previsto ${financeMoney(expected)} · recebido das mensalidades ${financeMoney(expectedReceived)}.`;
-      document.getElementById('finance-open').textContent=financeMoney(Math.max(0,expected-expectedReceived));
+      const aReceber=Math.max(0,expected-expectedReceived);
+      document.getElementById('finance-open').textContent=financeMoney(aReceber);
+      // "Ganhos do mês" mostra o TOTAL do mês (recebido + o que ainda falta),
+      // não só o caixa. O quanto já entrou fica na linha de apoio.
+      const totalGanhos=income+aReceber;
+      document.getElementById('finance-income').textContent=financeMoney(totalGanhos);
+      document.getElementById('finance-income-note').textContent=`${financeMoney(income)} recebido · ${financeMoney(aReceber)} a receber`;
+      document.getElementById('finance-income-sub').textContent=`${financeMoney(income)} já entrou de ${financeMoney(totalGanhos)}`;
+      const sobraPrevista=totalGanhos-expense,cardLucro=document.getElementById('finance-profit-card');
+      document.getElementById('finance-profit').textContent=financeMoney(sobraPrevista);
+      document.getElementById('finance-profit-note').textContent=`previsto · com o que já entrou dá ${financeMoney(income-expense)}`;
+      cardLucro.classList.toggle('negative',sobraPrevista<0); cardLucro.classList.toggle('positive',sobraPrevista>0);
       // Hora-aula pelo PREVISTO do mês: as horas são do mês inteiro, então o
       // dinheiro também precisa ser o do mês inteiro. Usar só o recebido fazia
       // o valor cair sozinho em mês que ainda não foi pago.
@@ -3106,7 +3117,10 @@
       const income=type==='income',color=income?'#22c55e':'#ef4444';
       const naoConta=financeIsPlanned; // previsão não entra em nenhum total
       const total=items.filter(tx=>!naoConta(tx)).reduce((sum,tx)=>sum+Number(tx.amountCents||0),0);
-      document.getElementById(income?'finance-income-total':'finance-expense-total').textContent=financeMoney(total);
+      // Nos ganhos o cabeçalho mostra o total do mês (recebido + a receber),
+      // igual ao card de cima; nas despesas segue o que realmente saiu.
+      const totalGeral=items.reduce((sum,tx)=>sum+Number(tx.amountCents||0),0);
+      document.getElementById(income?'finance-income-total':'finance-expense-total').textContent=financeMoney(income?totalGeral:total);
       const groups=new Map();
       items.filter(tx=>!naoConta(tx)).forEach(tx=>{ const key=tx.category||(income?'other-income':'other-expense'); groups.set(key,(groups.get(key)||0)+Number(tx.amountCents||0)); });
       const ranked=[...groups.entries()].sort((a,b)=>b[1]-a[1]);
