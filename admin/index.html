@@ -1336,6 +1336,15 @@
     </div>
   </div>
 
+  <!-- Pauta da aula: abre por cima da agenda, o professor lê e fecha. Tudo vem
+       de dado que já existe (pós-aula, correção, desafio) — não gasta IA. -->
+  <div class="modal-overlay" id="briefing-modal" style="z-index:1200;">
+    <div class="modal" style="max-width:660px;">
+      <div class="modal-header"><h2 id="briefing-title">Pauta da aula</h2><button class="btn-close" id="briefing-close" type="button">×</button></div>
+      <div class="modal-body" id="briefing-body"><div class="loading">Montando a pauta...</div></div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="calendar-event-modal">
     <div class="modal" style="max-width:590px;max-height:92vh;">
       <div class="modal-header">
@@ -1374,6 +1383,7 @@
         <div class="form-msg" id="calendar-event-msg"></div>
         <div class="calendar-modal-actions">
           <button class="calendar-delete" id="calendar-event-delete" type="button">Excluir</button>
+          <button class="btn-secondary" id="calendar-event-briefing" type="button" style="display:none;">📋 Pauta desta aula</button>
           <button class="btn-add" id="calendar-event-save" type="button">Salvar na agenda</button>
         </div>
       </div>
@@ -2259,6 +2269,113 @@
       });
     }
 
+    // ── PAUTA DA AULA ───────────────────────────────────────────────────
+    // O que o professor precisa saber antes de entrar na aula, reunido do que
+    // já foi gerado: último pós-aula, correção das atividades e desafio.
+    const briefingData = (valor) => valor?.toDate ? valor.toDate() : (valor ? new Date(valor) : null);
+    const briefingDia = (valor) => { const d = briefingData(valor); return d ? d.toLocaleDateString('pt-BR') : '—'; };
+
+    function briefingSegundaAnterior() {
+      const hoje = new Date(), dia = hoje.getDay();
+      const segunda = new Date(hoje);
+      segunda.setDate(hoje.getDate() - (dia === 0 ? 6 : dia - 1) - 7);
+      return `${segunda.getFullYear()}-${String(segunda.getMonth() + 1).padStart(2, '0')}-${String(segunda.getDate()).padStart(2, '0')}`;
+    }
+
+    function briefingBloco(titulo, conteudo) {
+      return `<div style="margin-bottom:18px;">
+        <div style="font-size:.71rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:7px;">${titulo}</div>
+        ${conteudo}
+      </div>`;
+    }
+
+    function briefingUltimaAula(posaula) {
+      if (!posaula) return briefingBloco('Última aula', '<p style="color:var(--muted);font-size:.85rem;">Nenhum pós-aula ainda.</p>');
+      const fala = posaula.talkTime;
+      const alertaFala = fala && Number(fala.studentPct) < 45;
+      return briefingBloco('Última aula', `<div style="padding:12px 14px;border-radius:12px;background:var(--card);border:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <strong>${esc(posaula.title || 'Pós-aula')}</strong>
+          <span style="color:var(--muted);font-size:.82rem;">${briefingDia(posaula.classDate || posaula.createdAt)}</span>
+        </div>
+        ${fala ? `<div style="margin-top:8px;font-size:.85rem;${alertaFala ? 'color:#B45309;font-weight:700;' : 'color:var(--muted);'}">
+            🗣️ O aluno falou ${fala.studentPct}% do tempo (${fala.studentMinutes} min de ${Number(fala.studentMinutes || 0) + Number(fala.teacherMinutes || 0)})${alertaFala ? ' — puxe mais fala nesta aula' : ''}
+          </div>` : ''}
+        <div style="margin-top:6px;font-size:.83rem;color:${posaula.readAt ? '#166534' : '#B45309'};">
+          ${posaula.readAt ? `✓ Leu o pós-aula em ${briefingDia(posaula.readAt)}` : '⚠️ Ainda não abriu o pós-aula'}
+        </div>
+      </div>`);
+    }
+
+    function briefingAtividades(atividades) {
+      const corrigidas = atividades.filter(item => item.status === 'corrected');
+      const aguardando = atividades.filter(item => item.finalizada === true && item.status !== 'corrected');
+      const naoFez = atividades.filter(item => item.finalizada !== true && item.status !== 'corrected');
+      const ultima = corrigidas[0];
+
+      const detalhe = !ultima ? '<p style="color:var(--muted);font-size:.85rem;">Nenhuma atividade corrigida ainda.</p>'
+        : `<div style="padding:12px 14px;border-radius:12px;background:var(--card);border:1px solid var(--border);">
+            <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+              <strong>${esc(ultima.title || 'Atividade')}</strong>
+              <span><strong style="color:#166534;">${esc(ultima.summary?.score || '—')}</strong>
+              ${ultima.summary?.errors ? `<small style="color:var(--muted);margin-left:6px;">${ultima.summary.errors.grave || 0} grave · ${ultima.summary.errors.mediano || 0} médio · ${ultima.summary.errors.bobo || 0} bobo</small>` : ''}</span>
+            </div>
+            ${Object.entries(ultima.feedback || {}).map(([parte, dados]) =>
+              `<div style="margin-top:7px;font-size:.83rem;line-height:1.5;"><strong style="color:var(--muted);">${esc(parte.replace('part-', 'Parte '))}:</strong> ${esc(dados.comment || '')}</div>`).join('')}
+            ${ultima.patterns ? `<div style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#FFFBEB;border:1px solid #FDE68A;color:#78350F;font-size:.82rem;line-height:1.55;white-space:pre-wrap;">${esc(String(ultima.patterns).trim())}</div>` : ''}
+          </div>`;
+
+      const pendencias = [
+        aguardando.length ? `<span style="padding:3px 10px;border-radius:999px;background:#DCFCE7;color:#166534;font-weight:700;">✅ ${aguardando.length} esperando sua correção</span>` : '',
+        naoFez.length ? `<span style="padding:3px 10px;border-radius:999px;background:#FEF3C7;color:#92400E;font-weight:700;">📝 ${naoFez.length} que ele ainda não fez</span>` : '',
+      ].filter(Boolean).join(' ');
+
+      return briefingBloco('Atividades', detalhe + (pendencias ? `<div style="margin-top:9px;display:flex;gap:7px;flex-wrap:wrap;font-size:.79rem;">${pendencias}</div>` : ''));
+    }
+
+    function briefingDesafio(linha, weekKey) {
+      if (!linha) return '';
+      return briefingBloco('Desafio', `<div style="padding:12px 14px;border-radius:12px;background:var(--card);border:1px solid var(--border);font-size:.85rem;">
+        Semana de ${esc(weekKey)}: <strong>${Number(linha.score || 0).toLocaleString('pt-BR')} pontos</strong>, ${linha.position}º lugar · ${linha.partsCompleted || 0} de 2 partes.
+      </div>`);
+    }
+
+    async function openBriefing(uid, nome, observacoes) {
+      const body = document.getElementById('briefing-body');
+      document.getElementById('briefing-title').textContent = `Pauta · ${nome || 'Aluno'}`;
+      body.innerHTML = '<div class="loading">Montando a pauta...</div>';
+      document.getElementById('briefing-modal').classList.add('open');
+      try {
+        const semanaPassada = briefingSegundaAnterior();
+        const [posSnap, actSnap, rankSnap] = await Promise.all([
+          getDocs(query(collection(db, 'students', uid, 'posaulas'), orderBy('createdAt', 'desc'))).catch(() => ({ docs:[] })),
+          getDocs(query(collection(db, 'students', uid, 'activities'), orderBy('createdAt', 'desc'))).catch(() => ({ docs:[] })),
+          getDoc(doc(db, 'challengeRankings', semanaPassada)).catch(() => null),
+        ]);
+        const posaula = posSnap.docs.map(item => item.data())[0] || null;
+        const atividades = actSnap.docs.map(item => item.data());
+        const linhaDesafio = (rankSnap?.exists?.() ? rankSnap.data().ranking || [] : []).find(row => row.uid === uid);
+
+        body.innerHTML = briefingUltimaAula(posaula)
+          + briefingAtividades(atividades)
+          + briefingDesafio(linhaDesafio, semanaPassada)
+          + (observacoes ? briefingBloco('Seu lembrete para esta aula',
+              `<div style="padding:12px 14px;border-radius:12px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A;font-size:.85rem;line-height:1.55;white-space:pre-wrap;">${esc(observacoes)}</div>`) : '')
+          + (posaula?.appUrl ? `<a href="${esc(posaula.appUrl)}" target="_blank" rel="noopener" style="display:block;text-align:center;font-size:.82rem;color:var(--brand);">Abrir o pós-aula completo →</a>` : '');
+      } catch (error) {
+        body.innerHTML = `<div class="form-msg err" style="display:block;">Erro ao montar a pauta: ${esc(error.message)}</div>`;
+      }
+    }
+
+    document.getElementById('briefing-close').onclick = () => document.getElementById('briefing-modal').classList.remove('open');
+    document.getElementById('briefing-modal').onclick = (click) => { if (click.target.id === 'briefing-modal') click.currentTarget.classList.remove('open'); };
+    document.getElementById('calendar-event-briefing').onclick = () => {
+      const uid = document.getElementById('calendar-event-student').value;
+      if (!uid) return;
+      const aluno = allStudents.find(item => item.uid === uid);
+      openBriefing(uid, aluno?.name || aluno?.firstName || '', document.getElementById('calendar-event-notes').value.trim());
+    };
+
     function openCalendarEvent(event = {}) {
       calendarFillStudents(); const editing = Boolean(event.id);
       document.getElementById('calendar-event-id').value = event.id || '';
@@ -2282,6 +2399,9 @@
     function calendarSyncEventForm() {
       const type = document.getElementById('calendar-event-type').value, repeat = document.getElementById('calendar-event-repeat').value;
       document.getElementById('calendar-student-field').style.display = type === 'lesson' ? 'block' : 'none';
+      // A pauta só faz sentido em aula de aluno, e só depois de escolher quem é.
+      document.getElementById('calendar-event-briefing').style.display =
+        (type === 'lesson' && document.getElementById('calendar-event-student').value) ? 'inline-block' : 'none';
       document.getElementById('calendar-repeat-until-field').style.display = repeat !== 'none' ? 'block' : 'none';
       if (repeat === 'custom' && !calendarModalDraft.repeatDays.length) {
         const date = document.getElementById('calendar-event-date').value;
@@ -2381,6 +2501,7 @@
     document.getElementById('calendar-event-student').onchange = event => {
       const student = allStudents.find(item => item.uid === event.target.value), title = document.getElementById('calendar-event-title');
       if (student && (!title.value || title.value.startsWith('Aula · '))) title.value = `Aula · ${student.name || student.firstName}`;
+      calendarSyncEventForm();
     };
     document.getElementById('calendar-event-close').onclick = () => document.getElementById('calendar-event-modal').classList.remove('open');
     document.getElementById('calendar-settings-open').onclick = openCalendarSettings;
