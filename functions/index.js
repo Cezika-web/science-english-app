@@ -2196,6 +2196,8 @@ export const finalizarDesafioSemanal = challengeFunctions.finalizarDesafioSemana
 export const notificarAberturaDesafio = challengeFunctions.notificarAberturaDesafio;
 export const lembrarDesafioManha = challengeFunctions.lembrarDesafioManha;
 export const lembrarDesafioNoite = challengeFunctions.lembrarDesafioNoite;
+export const gerarDesafiosAtrasados = challengeFunctions.gerarDesafiosAtrasados;
+export const gerarDesafioDaSemana = challengeFunctions.gerarDesafioDaSemana;
 
 export const ajustarCreditos = onCall(
   { ...OPCOES_PADRAO, timeoutSeconds: 60, memory: '256MiB' },

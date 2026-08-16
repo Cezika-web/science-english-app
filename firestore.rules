@@ -317,5 +317,9 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if false;
     }
+    match /_challengeLateEntries/{doc} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
   }
 }

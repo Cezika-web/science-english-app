@@ -3065,6 +3065,11 @@
 
     // Ano inteiro, mês a mês: é aqui que dá pra ver o pulo do mês em que
     // alguém fechou o anual e quanto entrou no ano até agora.
+    // O número de cada mês é o TOTAL que caiu na conta naquele mês — tudo que
+    // foi dado como pago, com o anual inteiro no mês em que ele entrou. Não é
+    // descontado de despesa (isso é o lucro, que fica no topo do card) nem
+    // diluído em fatias (isso é o card "Mensal diluído"). Por isso a soma das
+    // doze linhas bate exatamente com o "Faturado no ano".
     function renderFinanceBars(selectedMonth) {
       const ano=selectedMonth.slice(0,4),mesAtual=financeTodayKey().slice(0,7);
       const values=Array.from({length:12},(_,index)=> {
@@ -3082,7 +3087,7 @@
       lucroEl.textContent=financeMoney(lucroAno); lucroEl.style.color=lucroAno<0?'#b91c1c':'#0f172a';
       document.getElementById('finance-year-result').textContent=`despesas ${financeMoney(despesaAno)}`;
       document.getElementById('finance-year-note').textContent=ano===mesAtual.slice(0,4)?'ganho no ano até agora':'ano fechado';
-      document.getElementById('finance-bars').innerHTML=values.map(item=>`<div class="finance-bar-row${item.key===selectedMonth?' atual':''}"><strong>${esc(item.label)}</strong><div class="finance-bar-track"><span class="finance-bar-income" style="width:${item.income/max*100}%"></span><span class="finance-bar-expense" style="width:${item.expense/max*100}%"></span></div><span>${item.income||item.expense?financeMoney(item.income-item.expense):'—'}</span></div>`).join('');
+      document.getElementById('finance-bars').innerHTML=values.map(item=>`<div class="finance-bar-row${item.key===selectedMonth?' atual':''}"><strong>${esc(item.label)}</strong><div class="finance-bar-track"><span class="finance-bar-income" style="width:${item.income/max*100}%"></span><span class="finance-bar-expense" style="width:${item.expense/max*100}%"></span></div><span>${item.income||item.expense?financeMoney(item.income):'—'}</span></div>`).join('');
     }
 
     // Ganhos e despesas nunca se misturam: cada lado tem seu total, suas categorias e sua lista.

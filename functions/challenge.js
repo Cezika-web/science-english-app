@@ -58,6 +58,14 @@ function weekKeyFor(date = new Date()) {
   return monday < LAUNCH_WEEK ? LAUNCH_WEEK : monday;
 }
 
+// A segunda-feira que ainda vai chegar. No domingo é o dia seguinte; na própria
+// segunda é a de daqui a sete dias — nunca devolve a semana que já começou.
+function nextMonday(date = new Date()) {
+  const local = localDateParts(date);
+  const weekday = { Sun:0, Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6 }[local.weekday];
+  return addDays(local.date, (8 - weekday) % 7 || 7);
+}
+
 function scheduleFor(weekKey) {
   const thu = addDays(weekKey, 3);
   const sun = addDays(weekKey, 6);
@@ -358,6 +366,135 @@ export function createChallengeFunctions({
       sources:materials.map(item => ({ id:item.id, title:item.title, date:item.date })) };
   }
 
+  // Aviso de abertura de uma parte. O documento de log reserva a vaga antes do
+  // envio, então cada aluno recebe este aviso uma única vez por rodada — não
+  // importa se quem disparou foi o cron das 8h ou uma publicação atrasada.
+  async function notifyRoundOpen(studentDoc, roundId, part) {
+    const student = studentDoc.data();
+    if (student.archived === true || student.challengeEnabled === false) return false;
+    const tokens = [...new Set([student.fcmToken, ...(Array.isArray(student.fcmTokens) ? student.fcmTokens : [])].filter(Boolean))];
+    if (!tokens.length) return false;
+    const slot = `${roundId}-opening-08`;
+    const logRef = studentDoc.ref.collection('challengeReminderLogs').doc(slot);
+    const reserved = await db.runTransaction(async tx => {
+      const log = await tx.get(logRef);
+      if (log.exists) return false;
+      tx.create(logRef, { slot, roundId, part, period:'opening', status:'sending', createdAt:FieldValue.serverTimestamp() });
+      return true;
+    });
+    if (!reserved) return false;
+    try {
+      const response = await getMessaging().sendEachForMulticast({
+        tokens,
+        notification:{
+          title:`Parte ${part} do desafio começou`,
+          body:'Você tem 5 perguntas difíceis e personalizadas com base nos seus últimos 90 dias de estudo.',
+        },
+        data:{ type:'challenge-opening', roundId, part:String(part) },
+        webpush:{ headers:{ Urgency:'high' }, fcmOptions:{ link:APP_URL } },
+      });
+      await logRef.update({ status:'sent', sent:response.successCount, failed:response.failureCount, sentAt:FieldValue.serverTimestamp() });
+      return true;
+    } catch (error) {
+      await logRef.delete().catch(() => {});
+      console.error(`Abertura do desafio falhou para ${studentDoc.id}:`, error.message);
+      return false;
+    }
+  }
+
+  // Grava as rodadas de um aluno. Só entra parte que ainda não fechou: quem
+  // começa a estudar na quarta não recebe a Parte 1, que já passou — recebe
+  // apenas a Parte 2, de quinta a sábado. Se a parte já estiver aberta na hora
+  // da gravação, o aviso sai na mesma hora, porque o cron das 8h já passou.
+  async function publishStudentRounds(client, studentDoc, weekKey, { force = false, now = new Date() } = {}) {
+    const schedule = scheduleFor(weekKey);
+    const rounds = [schedule.part1, schedule.part2].filter(item => item.closesAt.getTime() >= now.getTime());
+    if (!rounds.length) return { written:[], notified:[], skipped:'semana-encerrada' };
+    const existing = await Promise.all(rounds.map(item =>
+      studentDoc.ref.collection('challengeRounds').doc(item.roundId).get()
+    ));
+    const pending = rounds.filter((item, index) =>
+      force || !(existing[index].exists && existing[index].data().questionCount === 5));
+    if (!pending.length) return { written:[], notified:[], skipped:'ja-publicado' };
+
+    const output = await generateForStudent(client, studentDoc, weekKey);
+    const batch = db.batch();
+    pending.forEach(item => {
+      const index = item.part - 1;
+      batch.set(studentDoc.ref.collection('challengeRounds').doc(item.roundId), {
+        roundId:item.roundId, weekKey, part:item.part, personalized:true,
+        opensAt:item.opensAt, closesAt:item.closesAt,
+        questionCount:5, questions:output.prepared[index].questions,
+        difficulty:'hard', lookbackDays:LOOKBACK_DAYS,
+        status:'published', updatedAt:FieldValue.serverTimestamp(),
+      });
+      batch.set(answerKeyRef(studentDoc.id, item.roundId, true), {
+        uid:studentDoc.id, roundId:item.roundId, weekKey, part:item.part,
+        answers:output.prepared[index].keys, analysis:output.analysis, sources:output.sources,
+        sourceKind:output.sourceKind, updatedAt:FieldValue.serverTimestamp(),
+      });
+    });
+    await batch.commit();
+
+    const openNow = pending.filter(item => item.opensAt.getTime() <= now.getTime());
+    const notified = [];
+    for (const item of openNow) {
+      if (await notifyRoundOpen(studentDoc, item.roundId, item.part)) notified.push(item.part);
+    }
+    return { written:pending.map(item => item.part), notified };
+  }
+
+  // Monta a semana inteira: cada aluno ativo ganha as duas partes, em blocos de
+  // três para não estourar a concorrência da IA. É o mesmo caminho para o botão
+  // do painel e para o agendamento de domingo — quem já tem perguntas é pulado,
+  // então repetir a chamada não gera nada de novo nem cobra de novo.
+  async function runWeeklyGeneration({ weekKey, force = false, requestedBy = '', uids = null, schoolId = '' }) {
+    const allStudents = await db.collection('students').get();
+    const students = allStudents.docs.filter(doc => {
+      const data = doc.data();
+      return data.archived !== true && data.challengeEnabled !== false
+        && (!uids || uids.has(doc.id)) && (!schoolId || data.schoolId === schoolId);
+    });
+    if (!students.length) return { ok:false, weekKey, total:0, generated:[], errors:[], reason:'sem-alunos' };
+
+    const schedule = scheduleFor(weekKey);
+    const jobRef = db.doc(`_challengeGenerationJobs/${weekKey}`);
+    await jobRef.set({ weekKey, status:'running', total:students.length, completed:0, failed:0,
+      startedAt:FieldValue.serverTimestamp(), requestedBy });
+    const client = new Anthropic({ apiKey:anthropicApiKey.value() });
+    const generated = [], errors = [];
+    const processStudent = async studentDoc => {
+      const studentName = studentDoc.data().name || studentDoc.data().firstName || 'Aluno';
+      try {
+        const result = await publishStudentRounds(client, studentDoc, weekKey, { force });
+        return { kind:'generated', row:result.written.length
+          ? { uid:studentDoc.id, name:studentName, parts:result.written }
+          : { uid:studentDoc.id, name:studentName, existing:true } };
+      } catch (error) {
+        console.error(`Desafio personalizado falhou para ${studentDoc.id}:`, error);
+        return { kind:'error', row:{ uid:studentDoc.id, name:studentName, error:error.message } };
+      }
+    };
+    for (let index = 0; index < students.length; index += 3) {
+      const chunk = students.slice(index, index + 3);
+      const results = await Promise.all(chunk.map(processStudent));
+      results.forEach(result => (result.kind === 'generated' ? generated : errors).push(result.row));
+      await jobRef.set({ completed:generated.length, failed:errors.length,
+        lastUid:chunk[chunk.length - 1].id, updatedAt:FieldValue.serverTimestamp() }, { merge:true });
+    }
+    if (generated.length) {
+      await db.doc(`challengeWeeks/${weekKey}`).set({
+        weekKey, title:'Desafio Science English', active:true, personalized:true,
+        startsAt:schedule.startsAt, revealAt:schedule.revealAt, endsAt:schedule.endsAt,
+        generatedCount:generated.length, expectedCount:students.length,
+        updatedAt:FieldValue.serverTimestamp(), publishedBy:requestedBy,
+      }, { merge:true });
+    }
+    await jobRef.set({ status:errors.length ? (generated.length ? 'partial' : 'failed') : 'completed',
+      completed:generated.length, failed:errors.length, errors, finishedAt:FieldValue.serverTimestamp() }, { merge:true });
+    return { ok:errors.length === 0, weekKey, total:students.length, generated, errors };
+  }
+
   const gerarDesafiosPersonalizados = onCall(
     { region:REGION, secrets:anthropicApiKey ? [anthropicApiKey] : [], timeoutSeconds:3600, memory:'1GiB' },
     async request => {
@@ -367,73 +504,15 @@ export function createChallengeFunctions({
       if (!/^\d{4}-\d{2}-\d{2}$/.test(weekKey) || new Date(`${weekKey}T12:00:00Z`).getUTCDay() !== 1) {
         throw new HttpsError('invalid-argument', 'Escolha uma segunda-feira válida.');
       }
-      const requestedUids = Array.isArray(request.data?.uids) ? new Set(request.data.uids.map(String)) : null;
-      const schoolId = String(request.data?.schoolId || '').trim();
-      const allStudents = await db.collection('students').get();
-      const students = allStudents.docs.filter(doc => {
-        const data = doc.data();
-        return data.archived !== true && data.challengeEnabled !== false
-          && (!requestedUids || requestedUids.has(doc.id)) && (!schoolId || data.schoolId === schoolId);
+      const result = await runWeeklyGeneration({
+        weekKey,
+        force:request.data?.force === true,
+        requestedBy:request.auth.token?.email || '',
+        uids:Array.isArray(request.data?.uids) ? new Set(request.data.uids.map(String)) : null,
+        schoolId:String(request.data?.schoolId || '').trim(),
       });
-      if (!students.length) throw new HttpsError('not-found', 'Nenhum aluno ativo foi encontrado.');
-      const schedule = scheduleFor(weekKey);
-      const jobRef = db.doc(`_challengeGenerationJobs/${weekKey}`);
-      await jobRef.set({ weekKey, status:'running', total:students.length, completed:0, failed:0,
-        startedAt:FieldValue.serverTimestamp(), requestedBy:request.auth.token?.email || '' });
-      const client = new Anthropic({ apiKey:anthropicApiKey.value() });
-      const generated = [], errors = [];
-      const force = request.data?.force === true;
-      const processStudent = async studentDoc => {
-        const studentName = studentDoc.data().name || studentDoc.data().firstName || 'Aluno';
-        try {
-          const existingRounds = await Promise.all([schedule.part1, schedule.part2].map(roundSchedule =>
-            studentDoc.ref.collection('challengeRounds').doc(roundSchedule.roundId).get()
-          ));
-          if (!force && existingRounds.every(snap => snap.exists && snap.data().questionCount === 5)) {
-            return { kind:'generated', row:{ uid:studentDoc.id, name:studentName, existing:true } };
-          }
-          const output = await generateForStudent(client, studentDoc, weekKey);
-          const batch = db.batch();
-          [schedule.part1, schedule.part2].forEach((roundSchedule, index) => {
-            batch.set(studentDoc.ref.collection('challengeRounds').doc(roundSchedule.roundId), {
-              roundId:roundSchedule.roundId, weekKey, part:roundSchedule.part, personalized:true,
-              opensAt:roundSchedule.opensAt, closesAt:roundSchedule.closesAt,
-              questionCount:5, questions:output.prepared[index].questions,
-              difficulty:'hard', lookbackDays:LOOKBACK_DAYS,
-              status:'published', updatedAt:FieldValue.serverTimestamp(),
-            });
-            batch.set(answerKeyRef(studentDoc.id, roundSchedule.roundId, true), {
-              uid:studentDoc.id, roundId:roundSchedule.roundId, weekKey, part:roundSchedule.part,
-              answers:output.prepared[index].keys, analysis:output.analysis, sources:output.sources,
-              sourceKind:output.sourceKind,
-              updatedAt:FieldValue.serverTimestamp(),
-            });
-          });
-          await batch.commit();
-          return { kind:'generated', row:{ uid:studentDoc.id, name:studentName } };
-        } catch (error) {
-          console.error(`Desafio personalizado falhou para ${studentDoc.id}:`, error);
-          return { kind:'error', row:{ uid:studentDoc.id, name:studentName, error:error.message } };
-        }
-      };
-      for (let index = 0; index < students.length; index += 3) {
-        const chunk = students.slice(index, index + 3);
-        const results = await Promise.all(chunk.map(processStudent));
-        results.forEach(result => (result.kind === 'generated' ? generated : errors).push(result.row));
-        await jobRef.set({ completed:generated.length, failed:errors.length,
-          lastUid:chunk[chunk.length - 1].id, updatedAt:FieldValue.serverTimestamp() }, { merge:true });
-      }
-      if (generated.length) {
-        await db.doc(`challengeWeeks/${weekKey}`).set({
-          weekKey, title:'Desafio Science English', active:true, personalized:true,
-          startsAt:schedule.startsAt, revealAt:schedule.revealAt, endsAt:schedule.endsAt,
-          generatedCount:generated.length, expectedCount:students.length,
-          updatedAt:FieldValue.serverTimestamp(), publishedBy:request.auth.token?.email || '',
-        }, { merge:true });
-      }
-      await jobRef.set({ status:errors.length ? (generated.length ? 'partial' : 'failed') : 'completed',
-        completed:generated.length, failed:errors.length, errors, finishedAt:FieldValue.serverTimestamp() }, { merge:true });
-      return { ok:errors.length === 0, weekKey, total:students.length, generated, errors };
+      if (result.reason === 'sem-alunos') throw new HttpsError('not-found', 'Nenhum aluno ativo foi encontrado.');
+      return result;
     }
   );
 
@@ -523,7 +602,9 @@ export function createChallengeFunctions({
         resolveRound(uid, roundSchedule.roundId),
         db.doc(`students/${uid}/challengeSubmissions/${roundSchedule.roundId}`).get(),
       ]);
-      if (!roundSnap.exists) return { ...base, phase:'unpublished' };
+      // A semana está publicada, mas este aluno ainda não tem perguntas: entrou
+      // depois da geração. Ele entra na próxima parte, assim que tiver pós-aula.
+      if (!roundSnap.exists) return { ...base, phase:'waiting' };
       const round = roundSnap.data();
       const submission = submissionSnap.exists ? submissionSnap.data() : null;
       return { ...base,
@@ -648,38 +729,83 @@ export function createChallengeFunctions({
       if (student.archived === true || student.challengeEnabled === false) continue;
       const { roundSnap } = await resolveRound(studentDoc.id, roundId);
       if (!roundSnap.exists) continue;
-      const tokens = [...new Set([student.fcmToken, ...(Array.isArray(student.fcmTokens) ? student.fcmTokens : [])].filter(Boolean))];
-      if (!tokens.length) continue;
-      const slot = `${roundId}-opening-08`;
-      const logRef = studentDoc.ref.collection('challengeReminderLogs').doc(slot);
-      const reserved = await db.runTransaction(async tx => {
-        const log = await tx.get(logRef);
-        if (log.exists) return false;
-        tx.create(logRef, { slot, roundId, part:stage.part, period:'opening', status:'sending', createdAt:FieldValue.serverTimestamp() });
-        return true;
-      });
-      if (!reserved) continue;
-      try {
-        const response = await getMessaging().sendEachForMulticast({
-          tokens,
-          notification:{
-            title:`Parte ${stage.part} do desafio começou`,
-            body:'Você tem 5 perguntas difíceis e personalizadas com base nos seus últimos 90 dias de estudo.',
-          },
-          data:{ type:'challenge-opening', roundId, part:String(stage.part) },
-          webpush:{ headers:{ Urgency:'high' }, fcmOptions:{ link:APP_URL } },
-        });
-        await logRef.update({ status:'sent', sent:response.successCount, failed:response.failureCount, sentAt:FieldValue.serverTimestamp() });
-      } catch (error) {
-        await logRef.delete().catch(() => {});
-        console.error(`Abertura do desafio falhou para ${studentDoc.id}:`, error.message);
-      }
+      await notifyRoundOpen(studentDoc, roundId, stage.part);
     }
   }
 
   const notificarAberturaDesafio = onSchedule(
     { region:REGION, schedule:'0 8 * * 1,4', timeZone:TIME_ZONE, timeoutSeconds:300, memory:'256MiB' },
     sendOpeningNotifications
+  );
+
+  // Aluno que entra no meio da semana (primeira aula na quarta, matrícula no
+  // meio do mês) não tinha pós-aula quando a leva da semana foi gerada. Este job
+  // roda toda manhã, procura quem ainda está sem perguntas para a parte que está
+  // aberta e gera só para essa parte — a parte que já fechou não é recriada.
+  // Sem candidato utilizável ele encerra sem chamar a IA, então não gasta nada.
+  async function generateLateEntries() {
+    if (!Anthropic || !anthropicApiKey) return;
+    const now = new Date();
+    const weekKey = weekKeyFor(now);
+    if (weekKey < LAUNCH_WEEK) return;
+    const stage = stageFor(now, scheduleFor(weekKey));
+    if (stage.phase !== 'open') return;
+    const roundId = stage.part === 1 ? `${weekKey}-part-1` : `${weekKey}-part-2`;
+
+    const settings = await db.doc('challengeSettings/auto').get();
+    if (settings.exists && settings.data().lateEntries === false) return;
+
+    const students = await db.collection('students').get();
+    const waiting = [];
+    for (const studentDoc of students.docs) {
+      const student = studentDoc.data();
+      if (student.archived === true || student.challengeEnabled === false) continue;
+      const snap = await studentDoc.ref.collection('challengeRounds').doc(roundId).get();
+      if (snap.exists && snap.data().questionCount === 5) continue;
+      waiting.push(studentDoc);
+    }
+    if (!waiting.length) return;
+
+    const client = new Anthropic({ apiKey:anthropicApiKey.value() });
+    const generated = [], stillWaiting = [];
+    for (const studentDoc of waiting) {
+      const name = studentDoc.data().name || studentDoc.data().firstName || 'Aluno';
+      try {
+        const result = await publishStudentRounds(client, studentDoc, weekKey, { now });
+        if (result.written.length) generated.push({ uid:studentDoc.id, name, parts:result.written, notified:result.notified });
+      } catch (error) {
+        console.error(`Entrada tardia no desafio falhou para ${studentDoc.id}:`, error.message);
+        stillWaiting.push({ uid:studentDoc.id, name, reason:error.message });
+      }
+    }
+    await db.doc(`_challengeLateEntries/${weekKey}`).set({
+      weekKey, part:stage.part, runAt:FieldValue.serverTimestamp(), generated, stillWaiting,
+    }, { merge:true });
+  }
+
+  const gerarDesafiosAtrasados = onSchedule(
+    { region:REGION, schedule:'0 7 * * *', timeZone:TIME_ZONE,
+      secrets:anthropicApiKey ? [anthropicApiKey] : [], timeoutSeconds:1800, memory:'1GiB' },
+    generateLateEntries
+  );
+
+  // A semana nasce sozinha: no domingo à tarde o sistema monta as duas partes da
+  // semana que começa na segunda, usando as aulas até sábado. Fica pronto seis
+  // horas antes da Parte 1 abrir. Quem entrar depois cai no gerarDesafiosAtrasados.
+  // Para voltar ao manual, grave weekly:false em challengeSettings/auto.
+  async function generateNextWeek() {
+    if (!Anthropic || !anthropicApiKey) return;
+    const settings = await db.doc('challengeSettings/auto').get();
+    if (settings.exists && settings.data().weekly === false) return;
+    const weekKey = nextMonday();
+    const result = await runWeeklyGeneration({ weekKey, requestedBy:'agendamento de domingo' });
+    console.log(`Desafio ${weekKey}: ${result.generated.length} aluno(s) prontos, ${result.errors.length} sem material.`);
+  }
+
+  const gerarDesafioDaSemana = onSchedule(
+    { region:REGION, schedule:'0 18 * * 0', timeZone:TIME_ZONE,
+      secrets:anthropicApiKey ? [anthropicApiKey] : [], timeoutSeconds:3600, memory:'1GiB' },
+    generateNextWeek
   );
 
   async function sendReminders(period) {
@@ -739,10 +865,11 @@ export function createChallengeFunctions({
     publicarDesafioSemanal, gerarDesafiosPersonalizados, obterDesafioSemanal, iniciarDesafioSemanal,
     salvarRespostaDesafio, obterStatusDesafioAdmin, finalizarDesafioSemanal,
     notificarAberturaDesafio, lembrarDesafioManha, lembrarDesafioNoite,
+    gerarDesafiosAtrasados, gerarDesafioDaSemana,
   };
 }
 
 export const challengeInternals = Object.freeze({
-  localDateParts, addDays, weekKeyFor, scheduleFor, stageFor,
+  localDateParts, addDays, weekKeyFor, nextMonday, scheduleFor, stageFor,
   normalizeAnswer, validateQuestion, scoreAnswers, dateFrom, assertFocusMix,
 });
