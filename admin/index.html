@@ -264,7 +264,8 @@
     .calendar-mini-grid button { aspect-ratio:1; border:0; border-radius:8px; background:transparent; color:#334155; font:inherit; font-size:.72rem; cursor:pointer; }
     .calendar-mini-grid button:hover { background:var(--cal-brand-soft); }
     .calendar-mini-grid button.today { box-shadow:inset 0 0 0 1.5px var(--cal-brand); color:var(--cal-brand); font-weight:900; }
-    .calendar-mini-grid button.selected { background:var(--cal-brand); color:#fff; font-weight:900; }
+    .calendar-mini-grid button.selected { background:color-mix(in srgb, var(--cal-brand) 14%, #fff); color:#334155; font-weight:800; }
+    .calendar-mini-grid button.picked { background:var(--cal-brand); color:#fff; font-weight:900; box-shadow:none; }
     .calendar-mini-grid button.outside { color:#cbd5e1; }
     .calendar-legend { margin-top:22px; padding-top:16px; border-top:1px solid var(--border); display:grid; gap:9px; }
     .calendar-legend-title { font-size:.7rem; color:#94a3b8; font-weight:800; text-transform:uppercase; letter-spacing:.08em; }
@@ -286,9 +287,15 @@
     .calendar-grid { display:grid; grid-template-columns:58px repeat(7,minmax(100px,1fr)); position:relative; }
     .calendar-hours { position:relative; background:#fff; }
     .calendar-hour-label { height:var(--hour-height); padding:0 8px; text-align:right; color:#94a3b8; font-size:.65rem; transform:translateY(-7px); }
-    .calendar-day-column { position:relative; border-left:1px solid #e9eef5; background-image:linear-gradient(to bottom, #edf1f6 1px, transparent 1px),linear-gradient(to bottom, #f6f8fb 1px, transparent 1px); background-size:100% var(--hour-height),100% calc(var(--hour-height) / 2); cursor:crosshair; }
+    .calendar-day-column { position:relative; border-left:1px solid #e9eef5; background-image:linear-gradient(to bottom, #e6ebf2 1px, transparent 1px),linear-gradient(to bottom, #f1f5f9 1px, transparent 1px),linear-gradient(to bottom, #f8fafc 1px, transparent 1px); background-size:100% var(--hour-height),100% calc(var(--hour-height) / 2),100% calc(var(--hour-height) / 4); cursor:crosshair; touch-action:pan-y; }
+    .calendar-selection { position:absolute; left:2px; right:2px; z-index:9; border-radius:7px; border:1.5px dashed color-mix(in srgb, var(--cal-brand) 55%, #fff); background:color-mix(in srgb, var(--cal-brand) 15%, #fff); color:var(--cal-brand); padding:2px 5px; font-size:.62rem; font-weight:800; line-height:1.25; overflow:hidden; pointer-events:none; }
+    .calendar-week.selecting { user-select:none; }
+    .calendar-week.selecting .calendar-event { pointer-events:none; }
     .calendar-day-column.off-hours { background-color:#fafbfc; }
     .calendar-day-column.today { background-color:color-mix(in srgb, var(--cal-brand) 3.5%, #fff); }
+    .calendar-day-column.picked { background-color:color-mix(in srgb, var(--cal-brand) 9%, #fff); box-shadow:inset 1.5px 0 0 color-mix(in srgb, var(--cal-brand) 50%, #fff), inset -1.5px 0 0 color-mix(in srgb, var(--cal-brand) 50%, #fff); }
+    .calendar-day-head.picked { color:var(--cal-brand); background:color-mix(in srgb, var(--cal-brand) 9%, #fff); }
+    .calendar-day-head.picked strong { background:var(--cal-brand); color:#fff; }
     .calendar-event { position:absolute; left:2px; right:2px; z-index:5; border:0; border-left:3px solid var(--event-color); border-radius:6px; padding:4px 6px; background:color-mix(in srgb, var(--event-color) 17%, #fff); color:#314158; overflow:hidden; text-align:left; cursor:pointer; }
     .calendar-event:hover { z-index:8; box-shadow:0 5px 14px rgba(15,23,42,.14); filter:saturate(1.08); }
     .calendar-event.available { z-index:3; }
@@ -297,6 +304,20 @@
     .calendar-now-line { position:absolute; left:58px; right:0; z-index:10; height:1px; background:#ef4444; pointer-events:none; }
     .calendar-now-line::before { content:''; position:absolute; left:-4px; top:-3px; width:7px; height:7px; border-radius:50%; background:#ef4444; }
     .calendar-empty { padding:18px; color:var(--muted); font-size:.82rem; }
+    /* Popover leve para criar/editar — o modal completo fica no "mais opções" */
+    .calendar-pop { position:fixed; z-index:120; width:272px; padding:13px; border:1px solid #e2e8f0; border-radius:14px; background:#fff; box-shadow:0 18px 44px rgba(15,23,42,.22); display:none; }
+    .calendar-pop.open { display:block; }
+    .calendar-pop input, .calendar-pop select { width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:9px; background:#fff; font:inherit; font-size:.82rem; color:#0f172a; }
+    .calendar-pop input#calendar-pop-title { font-size:.92rem; font-weight:700; }
+    .calendar-pop-row { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:8px; align-items:center; }
+    .calendar-pop-colors { display:flex; gap:7px; margin-top:11px; }
+    .calendar-pop-colors button { width:24px; height:24px; padding:0; border-radius:50%; border:2px solid transparent; outline:1px solid #e2e8f0; cursor:pointer; }
+    .calendar-pop-colors button.on { border-color:#0f172a; outline-color:transparent; }
+    .calendar-pop-actions { display:flex; gap:7px; margin-top:12px; }
+    .calendar-pop-actions .btn-add { flex:1; padding:9px; font-size:.83rem; }
+    .calendar-pop-actions .calendar-delete { display:none; padding:9px 12px; font-size:.83rem; }
+    .calendar-pop-more { width:100%; margin-top:9px; padding:0; border:0; background:none; color:var(--muted); font:inherit; font-size:.72rem; text-decoration:underline; cursor:pointer; }
+    .calendar-pop-msg { margin-top:8px; color:var(--danger); font-size:.72rem; display:none; }
     .calendar-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
     .calendar-form-grid .field { margin-bottom:0; }
     .calendar-modal-actions { display:flex; gap:9px; margin-top:18px; }
@@ -322,6 +343,41 @@
     .finance-toolbar { display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:16px; }
     .finance-toolbar h2 { margin-right:auto; font-size:1.15rem; }
     .finance-toolbar input { width:auto; min-width:150px; padding:9px 11px; border:1px solid var(--border); border-radius:9px; background:#fff; font:inherit; }
+    .finance-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:11px; margin-bottom:11px; }
+    .finance-sum { position:relative; padding:16px 16px 16px 20px; border:1px solid var(--border); border-radius:14px; background:#fff; overflow:hidden; }
+    .finance-sum::before { content:''; position:absolute; top:0; bottom:0; left:0; width:5px; background:#0f172a; }
+    .finance-sum.income::before { background:#22c55e; }
+    .finance-sum.expense::before { background:#ef4444; }
+    .finance-sum small { display:block; color:#64748b; font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
+    .finance-sum strong { display:block; margin-top:7px; color:#0f172a; font-size:1.6rem; letter-spacing:-.02em; }
+    .finance-sum span { display:block; margin-top:3px; color:#94a3b8; font-size:.7rem; }
+    .finance-sum.income strong { color:#15803d; }
+    .finance-sum.expense strong { color:#b91c1c; }
+    .finance-sum.result.positive::before { background:#22c55e; }
+    .finance-sum.result.positive strong { color:#15803d; }
+    .finance-sum.result.negative::before { background:#ef4444; }
+    .finance-sum.result.negative strong { color:#b91c1c; }
+    .finance-mini-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:11px; margin-bottom:16px; }
+    .finance-mini { padding:11px 13px; border:1px solid var(--border); border-radius:11px; background:#fff; }
+    .finance-mini small { display:block; color:#64748b; font-size:.66rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
+    .finance-mini strong { display:block; margin-top:4px; color:#0f172a; font-size:1rem; }
+    .finance-split { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-bottom:14px; align-items:start; }
+    .finance-panel { border:1px solid var(--border); border-radius:14px; background:#fff; overflow:hidden; }
+    .finance-panel > header { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:13px 16px; border-bottom:1px solid var(--border); }
+    .finance-panel > header h3 { margin:0; font-size:.92rem; }
+    .finance-panel > header p { margin:3px 0 0; color:var(--muted); font-size:.7rem; }
+    .finance-panel > header strong { font-size:1.08rem; white-space:nowrap; }
+    .finance-panel.income > header { background:#f2fdf5; border-bottom-color:#dcfce7; }
+    .finance-panel.income > header strong { color:#15803d; }
+    .finance-panel.expense > header { background:#fef5f5; border-bottom-color:#fee2e2; }
+    .finance-panel.expense > header strong { color:#b91c1c; }
+    .finance-cats { display:grid; gap:8px; padding:13px 16px; border-bottom:1px solid #eef2f7; }
+    .finance-cat { display:grid; grid-template-columns:minmax(0,1fr) 66px 82px; gap:9px; align-items:center; font-size:.72rem; color:#475569; }
+    .finance-cat > span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .finance-cat-bar { height:6px; border-radius:999px; background:#eef2f7; overflow:hidden; }
+    .finance-cat-bar i { display:block; height:100%; border-radius:999px; }
+    .finance-cat-value { text-align:right; font-weight:800; color:#334155; }
+    .finance-panel-empty { padding:16px; color:var(--muted); font-size:.76rem; }
     .finance-kpis { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:11px; margin-bottom:16px; }
     .finance-kpi { padding:15px; border:1px solid var(--border); border-radius:13px; background:#fff; }
     .finance-kpi small { display:block; color:#64748b; font-size:.7rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
@@ -359,8 +415,9 @@
     .finance-movement-info strong { font-size:.75rem; }
     .finance-movement-info small { color:#94a3b8; font-size:.65rem; margin-top:2px; }
     .finance-money { font-size:.75rem; font-weight:900; white-space:nowrap; }
+    @media (max-width:900px) { .finance-split { grid-template-columns:1fr; } .finance-mini-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } }
     @media (max-width:850px) { .finance-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); } .finance-layout { grid-template-columns:1fr; } }
-    @media (max-width:520px) { .finance-kpis { grid-template-columns:1fr; } .finance-toolbar .btn-add { flex:1; padding:9px; } }
+    @media (max-width:520px) { .finance-kpis, .finance-summary { grid-template-columns:1fr; } .finance-toolbar .btn-add { flex:1; padding:9px; } }
   </style>
 </head>
 <body>
@@ -492,6 +549,8 @@
               <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#64748b"></span> Horário bloqueado</div>
             </div>
             <button class="calendar-settings-btn" id="calendar-settings-open" type="button">⚙ Configurar expediente</button>
+            <button class="calendar-settings-btn" id="calendar-sync-students" type="button" style="margin-top:8px;">👥 Preencher com as aulas dos alunos</button>
+            <button class="calendar-settings-btn" id="calendar-import-open" type="button" style="margin-top:8px;">⬇ Trazer meus blocos do Notion</button>
           </aside>
           <section class="calendar-main">
             <div class="calendar-toolbar">
@@ -519,26 +578,44 @@
         <div class="finance-toolbar">
           <h2>📊 Financeiro da escola</h2>
           <input id="finance-month" type="month" aria-label="Mês do financeiro">
+          <button class="btn-add" id="finance-new-income" type="button" style="padding:9px 12px;">＋ Ganho</button>
           <button class="btn-add" id="finance-new-expense" type="button" style="background:#fff;color:#b91c1c;border:1px solid #fecaca;padding:9px 12px;">− Despesa</button>
-          <button class="btn-add" id="finance-new-income" type="button" style="padding:9px 12px;">＋ Receita</button>
         </div>
-        <div class="finance-kpis">
-          <div class="finance-kpi positive"><small>Recebido no mês</small><strong id="finance-income">R$ 0,00</strong><span id="finance-income-note">0 pagamentos</span></div>
-          <div class="finance-kpi negative"><small>Despesas</small><strong id="finance-expenses">R$ 0,00</strong><span id="finance-expenses-note">0 lançamentos</span></div>
-          <div class="finance-kpi"><small>Resultado líquido</small><strong id="finance-profit">R$ 0,00</strong><span>receitas menos despesas</span></div>
-          <div class="finance-kpi"><small>Ticket médio</small><strong id="finance-ticket">R$ 0,00</strong><span>por aluno pagante</span></div>
-          <div class="finance-kpi"><small>Horas de aula</small><strong id="finance-hours">0h</strong><span>calculadas pela agenda</span></div>
-          <div class="finance-kpi"><small>Receita por hora</small><strong id="finance-hour-rate">R$ 0,00</strong><span>recebido ÷ horas dadas</span></div>
+        <div class="finance-summary">
+          <div class="finance-sum income"><small>↗ Ganhos do mês</small><strong id="finance-income">R$ 0,00</strong><span id="finance-income-note">0 entradas</span></div>
+          <div class="finance-sum expense"><small>↘ Despesas do mês</small><strong id="finance-expenses">R$ 0,00</strong><span id="finance-expenses-note">0 saídas</span></div>
+          <div class="finance-sum result" id="finance-profit-card"><small>= Sobrou no mês</small><strong id="finance-profit">R$ 0,00</strong><span id="finance-profit-note">ganhos menos despesas</span></div>
+        </div>
+        <div class="finance-mini-kpis">
+          <div class="finance-mini"><small>Ainda a receber</small><strong id="finance-open">R$ 0,00</strong></div>
+          <div class="finance-mini"><small>Ticket médio</small><strong id="finance-ticket">R$ 0,00</strong></div>
+          <div class="finance-mini"><small>Horas de aula</small><strong id="finance-hours">0h</strong></div>
+          <div class="finance-mini"><small>Ganho por hora</small><strong id="finance-hour-rate">R$ 0,00</strong></div>
+        </div>
+        <div class="finance-split">
+          <section class="finance-panel income">
+            <header>
+              <div><h3>↗ Ganhos</h3><p>Tudo que entrou no mês</p></div>
+              <strong id="finance-income-total">R$ 0,00</strong>
+            </header>
+            <div class="finance-cats" id="finance-income-cats"></div>
+            <div class="finance-movements" id="finance-income-list"></div>
+          </section>
+          <section class="finance-panel expense">
+            <header>
+              <div><h3>↘ Despesas</h3><p>Tudo que saiu no mês</p></div>
+              <strong id="finance-expense-total">R$ 0,00</strong>
+            </header>
+            <div class="finance-cats" id="finance-expense-cats"></div>
+            <div class="finance-movements" id="finance-expense-list"></div>
+          </section>
         </div>
         <div class="finance-layout">
           <div class="finance-card">
             <div class="finance-card-head"><div><h3>Mensalidades dos alunos</h3><p id="finance-expected-note">Configure valor e vencimento de cada aluno.</p></div><button class="finance-row-btn" id="finance-profile-new" type="button">⚙ Configurar</button></div>
             <div class="finance-table-wrap"><table class="finance-table"><thead><tr><th>Aluno</th><th>Mensalidade</th><th>Vencimento</th><th>Status</th><th></th></tr></thead><tbody id="finance-students-body"><tr><td colspan="5">Carregando...</td></tr></tbody></table></div>
           </div>
-          <div style="display:grid;gap:14px;">
-            <div class="finance-card"><div class="finance-card-head"><div><h3>Fluxo dos últimos 6 meses</h3><p>Receitas em verde e despesas em vermelho.</p></div></div><div class="finance-bars" id="finance-bars"></div></div>
-            <div class="finance-card"><div class="finance-card-head"><div><h3>Movimentações do mês</h3><p>Pagamentos e despesas registrados.</p></div></div><div class="finance-movements" id="finance-movements"></div></div>
-          </div>
+          <div class="finance-card"><div class="finance-card-head"><div><h3>Fluxo dos últimos 6 meses</h3><p>Ganhos em verde e despesas em vermelho.</p></div></div><div class="finance-bars" id="finance-bars"></div></div>
         </div>
       </div>
 
@@ -1043,8 +1120,16 @@
               <label><input type="checkbox" data-d="6">Sáb</label>
             </div>
           </div>
-          <div class="field"><label>Horário da aula</label><input type="time" id="f-hora" /></div>
+          <div class="field"><label>Horário da aula</label><input type="time" id="f-hora" step="900" /></div>
+          <div class="field">
+            <label>Duração da aula</label>
+            <select id="f-duracao">
+              <option value="30">30 minutos</option><option value="45">45 minutos</option>
+              <option value="60" selected>1 hora</option><option value="90">1h30</option><option value="120">2 horas</option>
+            </select>
+          </div>
           <div class="field"><label>Data de início das aulas</label><input type="date" id="f-inicio" /></div>
+          <p style="margin:-4px 0 16px;padding:10px 12px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A;font-size:.78rem;line-height:1.5;">📅 Os dias e o horário acima já entram sozinhos na <strong>Agenda</strong>, como aula semanal. Não precisa criar o compromisso na mão.</p>
           <button class="btn-add" id="btn-create-student">Criar aluno</button>
           <div class="form-msg" id="create-msg"></div>
         </div>
@@ -1215,11 +1300,47 @@
         <div class="calendar-form-grid">
           <div class="field"><label for="calendar-day-start">Início do dia</label><input id="calendar-day-start" type="time"></div>
           <div class="field"><label for="calendar-day-end">Fim do dia</label><input id="calendar-day-end" type="time"></div>
-          <div class="field"><label for="calendar-slot-minutes">Intervalo da grade</label><select id="calendar-slot-minutes"><option value="30">30 minutos</option><option value="60">60 minutos</option></select></div>
+          <div class="field"><label for="calendar-slot-minutes">Intervalo da grade</label><select id="calendar-slot-minutes"><option value="10">10 minutos</option><option value="15">15 minutos</option><option value="20">20 minutos</option><option value="30">30 minutos</option><option value="60">60 minutos</option></select></div>
           <div class="field"><label for="calendar-school-color">Cor das aulas</label><input id="calendar-school-color" type="color" style="height:43px;padding:5px;"></div>
         </div>
         <div class="form-msg" id="calendar-settings-msg"></div>
         <button class="btn-add" id="calendar-settings-save" type="button" style="width:100%;margin-top:18px;">Salvar expediente</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="calendar-pop" id="calendar-pop">
+    <input id="calendar-pop-title" maxlength="100" placeholder="Nome do compromisso">
+    <div class="calendar-pop-row">
+      <input id="calendar-pop-start" type="time" step="900" aria-label="Começa">
+      <input id="calendar-pop-end" type="time" step="900" aria-label="Termina">
+    </div>
+    <div class="calendar-pop-row" style="grid-template-columns:1fr;">
+      <select id="calendar-pop-repeat" aria-label="Repetição"><option value="none">Não repete</option><option value="weekly">Toda semana</option></select>
+    </div>
+    <div class="calendar-pop-colors" id="calendar-pop-colors"></div>
+    <div class="calendar-pop-actions">
+      <button class="btn-add" id="calendar-pop-save" type="button">Salvar</button>
+      <button class="calendar-delete" id="calendar-pop-delete" type="button">Excluir</button>
+    </div>
+    <div class="calendar-pop-msg" id="calendar-pop-msg"></div>
+    <button class="calendar-pop-more" id="calendar-pop-more" type="button">mais opções (aluno, observações…)</button>
+  </div>
+
+  <div class="modal-overlay" id="calendar-import-modal">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-header">
+        <h2>Trazer a agenda do Notion</h2>
+        <button class="btn-close" id="calendar-import-close" type="button">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin:0 0 14px;color:var(--muted);font-size:.82rem;line-height:1.5;">Sua semana do Notion Calendar já está montada aqui. Tudo entra como compromisso <strong>semanal</strong>, então vale para esta semana e para as seguintes — é só ajustar depois o que mudar.</p>
+        <div id="calendar-import-preview" style="max-height:250px;overflow:auto;border:1px solid var(--border);border-radius:11px;padding:11px 13px;background:#fafbfc;font-size:.76rem;line-height:1.55;"></div>
+        <label style="display:flex;align-items:center;gap:9px;font-size:.82rem;margin-top:14px;"><input id="calendar-import-available" type="checkbox" checked> Trazer também os blocos de <strong>horário disponível</strong></label>
+        <label style="display:flex;align-items:center;gap:9px;font-size:.82rem;margin-top:8px;"><input id="calendar-import-settings" type="checkbox" checked> Ajustar o expediente para 07:00–22:00, de segunda a sábado</label>
+        <label style="display:flex;align-items:center;gap:9px;font-size:.82rem;margin-top:8px;color:#b91c1c;"><input id="calendar-import-replace" type="checkbox"> Apagar os <span id="calendar-import-count">0</span> compromissos que já existem antes de importar</label>
+        <div class="form-msg" id="calendar-import-msg"></div>
+        <button class="btn-add" id="calendar-import-run" type="button" style="width:100%;margin-top:18px;">Importar agenda</button>
       </div>
     </div>
   </div>
@@ -1246,7 +1367,7 @@
       <div class="modal-header"><h2 id="finance-transaction-title">Registrar movimentação</h2><button class="btn-close" id="finance-transaction-close" type="button">×</button></div>
       <div class="modal-body">
         <input id="finance-transaction-type" type="hidden" value="income">
-        <div class="field" id="finance-transaction-student-field"><label for="finance-transaction-student">Aluno</label><select id="finance-transaction-student"><option value="">Receita sem aluno</option></select></div>
+        <div class="field" id="finance-transaction-student-field"><label for="finance-transaction-student">Aluno</label><select id="finance-transaction-student"><option value="">Ganho sem aluno</option></select></div>
         <div class="calendar-form-grid">
           <div class="field"><label for="finance-transaction-amount">Valor (R$)</label><input id="finance-transaction-amount" type="number" min="0.01" step="0.01"></div>
           <div class="field"><label for="finance-transaction-date">Data</label><input id="finance-transaction-date" type="date"></div>
@@ -1696,11 +1817,12 @@
     let entregasAoServidorPendentes = 0;
 
     // ── AGENDA DO PROFESSOR ────────────────────────────────────────────────
-    const CALENDAR_DEFAULTS = { workingDays:[1,2,3,4,5], dayStart:'08:00', dayEnd:'21:00', slotMinutes:30, lessonColor:'#2f86e6', timezone:'America/Sao_Paulo' };
+    const CALENDAR_DEFAULTS = { workingDays:[1,2,3,4,5], dayStart:'08:00', dayEnd:'21:00', slotMinutes:15, lessonColor:'#2f86e6', timezone:'America/Sao_Paulo' };
     const CALENDAR_HOUR_HEIGHT = 48;
     let calendarSettings = { ...CALENDAR_DEFAULTS };
     let calendarEvents = [];
     let calendarWeekStart = calendarWeekStartDate(new Date());
+    let calendarSelectedDay = ''; // dia em destaque na coluna; vazio = nenhum
     let calendarMiniCursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     let calendarLoadedSchool = '';
 
@@ -1716,6 +1838,8 @@
     }
 
     function calendarAddDays(value, amount) { const date = new Date(value); date.setDate(date.getDate() + amount); return date; }
+    function calendarSlotMinutes() { const value = Number(calendarSettings.slotMinutes); return [10,15,20,30,60].includes(value) ? value : 15; }
+    function calendarDuration(minutes) { const hours = Math.floor(minutes/60), rest = minutes%60; return hours && rest ? `${hours}h${String(rest).padStart(2,'0')}` : hours ? `${hours}h` : `${rest}min`; }
     function calendarMinutes(value) { const [hour, minute] = String(value || '00:00').split(':').map(Number); return hour * 60 + minute; }
     function calendarTime(minutes) {
       const bounded = Math.max(0, Math.min(1439, Math.round(minutes / 5) * 5));
@@ -1745,6 +1869,10 @@
 
     function calendarEventColor(event) {
       return event.type === 'available' ? '#f59e7a' : event.type === 'personal' ? '#8b5cf6' : event.type === 'blocked' ? '#64748b' : calendarSchoolColor();
+    }
+
+    function calendarDefaultTitle(type) {
+      return type === 'available' ? 'Horário disponível' : type === 'blocked' ? 'Horário bloqueado' : type === 'personal' ? 'Compromisso particular' : 'Aula';
     }
 
     async function loadCalendar() {
@@ -1784,9 +1912,13 @@
       const monthFormat = new Intl.DateTimeFormat('pt-BR', { month:'long', year:'numeric' }), first = days[0], last = days[6];
       document.getElementById('calendar-range-title').textContent = first.getMonth() === last.getMonth() ? monthFormat.format(first) : `${first.toLocaleDateString('pt-BR',{month:'short'})} – ${monthFormat.format(last)}`;
       document.getElementById('calendar-days-head').innerHTML = '<div></div>' + days.map(date => {
-        const isToday = calendarDateKey(date) === todayKey;
-        return `<div class="calendar-day-head${isToday ? ' today' : ''}">${date.toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','')} <strong>${date.getDate()}</strong></div>`;
+        const key = calendarDateKey(date);
+        return `<div class="calendar-day-head${key === todayKey ? ' today' : ''}${key === calendarSelectedDay ? ' picked' : ''}" data-head-date="${key}" style="cursor:pointer">${date.toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','')} <strong>${date.getDate()}</strong></div>`;
       }).join('');
+      document.querySelectorAll('[data-head-date]').forEach(head => head.onclick = () => {
+        calendarSelectedDay = calendarSelectedDay === head.dataset.headDate ? '' : head.dataset.headDate;
+        renderCalendar();
+      });
       const labels = Array.from({ length:hours }, (_, index) => `<div class="calendar-hour-label">${calendarTime(startMinutes + index*60)}</div>`).join('');
       const columns = days.map(date => {
         const key = calendarDateKey(date), work = calendarSettings.workingDays.includes(date.getDay());
@@ -1797,7 +1929,7 @@
           const subtitle = `${event.startTime}–${event.endTime}${event.repeat === 'weekly' ? ' · semanal' : ''}`;
           return `<button type="button" class="calendar-event ${event.type === 'available' ? 'available' : ''}" data-event-id="${esc(event.id)}" style="top:${top+1}px;height:${Math.max(22,bottom-top-2)}px;--event-color:${calendarEventColor(event)}" title="${esc(event.title || subtitle)}"><strong>${esc(event.title || 'Compromisso')}</strong><span>${esc(subtitle)}</span></button>`;
         }).join('');
-        return `<div class="calendar-day-column${work ? '' : ' off-hours'}${key === todayKey ? ' today' : ''}" data-date="${key}" style="height:${height}px">${events}</div>`;
+        return `<div class="calendar-day-column${work ? '' : ' off-hours'}${key === todayKey ? ' today' : ''}${key === calendarSelectedDay ? ' picked' : ''}" data-date="${key}" style="height:${height}px">${events}</div>`;
       }).join('');
       document.getElementById('calendar-grid').innerHTML = `<div class="calendar-hours" style="height:${height}px">${labels}</div>${columns}`;
       const now = new Date();
@@ -1805,13 +1937,63 @@
         const top = (now.getHours()*60 + now.getMinutes() - startMinutes) / 60 * CALENDAR_HOUR_HEIGHT;
         if (top >= 0 && top <= height) document.getElementById('calendar-grid').insertAdjacentHTML('beforeend', `<div class="calendar-now-line" style="top:${top}px"></div>`);
       }
-      document.querySelectorAll('.calendar-day-column').forEach(column => column.onclick = click => {
-        if (click.target.closest('.calendar-event')) return;
-        const raw = startMinutes + ((click.clientY - column.getBoundingClientRect().top) / CALENDAR_HOUR_HEIGHT) * 60, slot = Number(calendarSettings.slotMinutes) || 30;
-        const start = Math.floor(raw / slot) * slot;
-        openCalendarEvent({ date:column.dataset.date, startTime:calendarTime(start), endTime:calendarTime(start+60) });
+      // Seleção por arrasto: segura o mouse e arrasta para pintar o horário, como no Notion Calendar.
+      const slotMinutes = calendarSlotMinutes(), totalSlots = Math.max(1, Math.round((endMinutes - startMinutes) / slotMinutes));
+      const weekEl = document.querySelector('.calendar-week');
+      document.querySelectorAll('.calendar-day-column').forEach(column => {
+        const slotAt = clientY => {
+          const raw = ((clientY - column.getBoundingClientRect().top) / CALENDAR_HOUR_HEIGHT) * 60;
+          return Math.max(0, Math.min(totalSlots - 1, Math.floor(raw / slotMinutes)));
+        };
+        const openRange = (fromSlot, toSlot) => {
+          const start = startMinutes + fromSlot * slotMinutes;
+          const end = Math.max(start + slotMinutes, Math.min(endMinutes, startMinutes + toSlot * slotMinutes));
+          const box = column.getBoundingClientRect(), offset = (start - startMinutes) / 60 * CALENDAR_HOUR_HEIGHT;
+          openCalendarPop({ type:'lesson', date:column.dataset.date, startTime:calendarTime(start), endTime:calendarTime(end) },
+            { left:box.left, right:box.right, top:box.top + offset });
+        };
+        column.onpointerdown = down => {
+          if (down.target.closest('.calendar-event')) return;
+          if (down.pointerType === 'mouse' && down.button !== 0) return;
+          const anchor = slotAt(down.clientY), hourSlots = Math.round(60 / slotMinutes);
+          if (down.pointerType === 'touch') { // no celular o dedo continua rolando a grade: vale o toque simples
+            const originX = down.clientX, originY = down.clientY;
+            column.onpointerup = up => {
+              column.onpointerup = null;
+              if (Math.abs(up.clientX - originX) > 8 || Math.abs(up.clientY - originY) > 8) return;
+              openRange(anchor, anchor + hourSlots);
+            };
+            return;
+          }
+          down.preventDefault();
+          const ghost = document.createElement('div'); ghost.className = 'calendar-selection'; column.appendChild(ghost);
+          weekEl?.classList.add('selecting');
+          let from = anchor, to = anchor, dragged = false;
+          const paint = () => {
+            const start = startMinutes + from * slotMinutes, end = Math.min(endMinutes, startMinutes + (to + 1) * slotMinutes);
+            ghost.style.top = `${(start - startMinutes) / 60 * CALENDAR_HOUR_HEIGHT + 1}px`;
+            ghost.style.height = `${Math.max(13, (end - start) / 60 * CALENDAR_HOUR_HEIGHT - 2)}px`;
+            ghost.textContent = `${calendarTime(start)} – ${calendarTime(end)} · ${calendarDuration(end - start)}`;
+          };
+          const cleanup = () => {
+            column.onpointermove = column.onpointerup = column.onpointercancel = null;
+            if (column.hasPointerCapture(down.pointerId)) column.releasePointerCapture(down.pointerId);
+            ghost.remove(); weekEl?.classList.remove('selecting');
+          };
+          paint(); column.setPointerCapture(down.pointerId);
+          column.onpointermove = move => {
+            const current = slotAt(move.clientY);
+            if (current !== anchor) dragged = true;
+            from = Math.min(anchor, current); to = Math.max(anchor, current); paint();
+          };
+          column.onpointerup = () => { const start = from, end = dragged ? to + 1 : from + hourSlots; cleanup(); openRange(start, end); };
+          column.onpointercancel = cleanup;
+        };
       });
-      document.querySelectorAll('.calendar-event').forEach(button => button.onclick = click => { click.stopPropagation(); openCalendarEvent(calendarEvents.find(item => item.id === button.dataset.eventId)); });
+      document.querySelectorAll('.calendar-event').forEach(button => button.onclick = click => {
+        click.stopPropagation();
+        openCalendarPop(calendarEvents.find(item => item.id === button.dataset.eventId) || {}, button.getBoundingClientRect());
+      });
       renderCalendarMini();
     }
 
@@ -1821,11 +2003,12 @@
       const selectedEnd = calendarAddDays(calendarWeekStart,6), weekdays = ['D','S','T','Q','Q','S','S'].map(day => `<span>${day}</span>`).join('');
       const buttons = Array.from({length:42},(_,index) => {
         const date = calendarAddDays(first,index), key = calendarDateKey(date), selected = date >= calendarWeekStart && date <= selectedEnd;
-        return `<button type="button" data-mini-date="${key}" class="${key===calendarDateKey(new Date())?'today ':''}${selected?'selected ':''}${date.getMonth()!==cursor.getMonth()?'outside':''}">${date.getDate()}</button>`;
+        return `<button type="button" data-mini-date="${key}" class="${key===calendarDateKey(new Date())?'today ':''}${selected?'selected ':''}${key===calendarSelectedDay?'picked ':''}${date.getMonth()!==cursor.getMonth()?'outside':''}">${date.getDate()}</button>`;
       }).join('');
       document.getElementById('calendar-mini-grid').innerHTML = weekdays + buttons;
       document.querySelectorAll('[data-mini-date]').forEach(button => button.onclick = () => {
         const chosen = new Date(`${button.dataset.miniDate}T00:00:00`); calendarWeekStart = calendarWeekStartDate(chosen);
+        calendarSelectedDay = button.dataset.miniDate; // o dia clicado ganha destaque, a semana fica clarinha
         calendarMiniCursor = new Date(chosen.getFullYear(),chosen.getMonth(),1); renderCalendar();
       });
     }
@@ -1894,7 +2077,7 @@
     function openCalendarSettings() {
       document.querySelectorAll('#calendar-working-days input').forEach(input => input.checked = calendarSettings.workingDays.includes(Number(input.value)));
       document.getElementById('calendar-day-start').value = calendarSettings.dayStart; document.getElementById('calendar-day-end').value = calendarSettings.dayEnd;
-      document.getElementById('calendar-slot-minutes').value = String(calendarSettings.slotMinutes || 30); document.getElementById('calendar-school-color').value = calendarSchoolColor();
+      document.getElementById('calendar-slot-minutes').value = String(calendarSlotMinutes()); document.getElementById('calendar-school-color').value = calendarSchoolColor();
       showMsg('calendar-settings-msg','','info'); document.getElementById('calendar-settings-modal').classList.add('open');
     }
 
@@ -1923,8 +2106,12 @@
       finally { button.disabled = false; }
     }
 
-    document.getElementById('calendar-new-event').onclick = () => openCalendarEvent();
-    document.getElementById('calendar-class-new').onclick = () => openCalendarEvent({ type:'lesson', date:calendarDateKey(new Date()) });
+    const calendarQuickNew = (type, button) => {
+      const start = calendarSettings.dayStart || '08:00';
+      openCalendarPop({ type, date:calendarDateKey(new Date()), startTime:start, endTime:calendarTime(calendarMinutes(start) + 60) }, button.getBoundingClientRect());
+    };
+    document.getElementById('calendar-new-event').onclick = event => calendarQuickNew('personal', event.currentTarget);
+    document.getElementById('calendar-class-new').onclick = event => calendarQuickNew('lesson', event.currentTarget);
     document.getElementById('calendar-event-save').onclick = saveCalendarEvent;
     document.getElementById('calendar-event-delete').onclick = deleteCalendarEvent;
     document.getElementById('calendar-event-type').onchange = calendarSyncEventForm;
@@ -1938,12 +2125,298 @@
     document.getElementById('calendar-settings-open-mobile').onclick = openCalendarSettings;
     document.getElementById('calendar-settings-close').onclick = () => document.getElementById('calendar-settings-modal').classList.remove('open');
     document.getElementById('calendar-settings-save').onclick = saveCalendarSettings;
-    document.getElementById('calendar-prev').onclick = () => { calendarWeekStart = calendarAddDays(calendarWeekStart,-7); calendarMiniCursor = new Date(calendarWeekStart.getFullYear(),calendarWeekStart.getMonth(),1); renderCalendar(); };
-    document.getElementById('calendar-next').onclick = () => { calendarWeekStart = calendarAddDays(calendarWeekStart,7); calendarMiniCursor = new Date(calendarWeekStart.getFullYear(),calendarWeekStart.getMonth(),1); renderCalendar(); };
-    document.getElementById('calendar-today').onclick = () => { const today = new Date(); calendarWeekStart = calendarWeekStartDate(today); calendarMiniCursor = new Date(today.getFullYear(),today.getMonth(),1); renderCalendar(); };
+    const calendarShiftWeek = amount => { // o dia em destaque acompanha a virada de semana
+      calendarWeekStart = calendarAddDays(calendarWeekStart, amount);
+      if (calendarSelectedDay) calendarSelectedDay = calendarDateKey(calendarAddDays(new Date(`${calendarSelectedDay}T00:00:00`), amount));
+      calendarMiniCursor = new Date(calendarWeekStart.getFullYear(),calendarWeekStart.getMonth(),1); renderCalendar();
+    };
+    document.getElementById('calendar-prev').onclick = () => calendarShiftWeek(-7);
+    document.getElementById('calendar-next').onclick = () => calendarShiftWeek(7);
+    document.getElementById('calendar-today').onclick = () => { const today = new Date(); calendarWeekStart = calendarWeekStartDate(today); calendarSelectedDay = calendarDateKey(today); calendarMiniCursor = new Date(today.getFullYear(),today.getMonth(),1); renderCalendar(); };
     document.getElementById('calendar-mini-prev').onclick = () => { calendarMiniCursor = new Date(calendarMiniCursor.getFullYear(),calendarMiniCursor.getMonth()-1,1); renderCalendarMini(); };
     document.getElementById('calendar-mini-next').onclick = () => { calendarMiniCursor = new Date(calendarMiniCursor.getFullYear(),calendarMiniCursor.getMonth()+1,1); renderCalendarMini(); };
-    ['calendar-event-modal','calendar-settings-modal'].forEach(id => document.getElementById(id).onclick = click => { if (click.target.id === id) click.currentTarget.classList.remove('open'); });
+    ['calendar-event-modal','calendar-settings-modal','calendar-import-modal'].forEach(id => document.getElementById(id).onclick = click => { if (click.target.id === id) click.currentTarget.classList.remove('open'); });
+
+    // ── POPOVER RÁPIDO ─────────────────────────────────────────────────────
+    // Clicar num compromisso (ou soltar o arrasto) abre este cartão pequeno:
+    // nome, horário, repetição e cor. O modal completo fica em "mais opções".
+    const CALENDAR_TYPES = [
+      { type:'lesson',    label:'Aula' },
+      { type:'available', label:'Horário disponível' },
+      { type:'personal',  label:'Particular' },
+      { type:'blocked',   label:'Horário bloqueado' },
+    ];
+    let calendarPopDraft = null;
+
+    function calendarPopColorOf(type) { return calendarEventColor({ type }); }
+
+    function renderCalendarPopColors() {
+      if (!calendarPopDraft) return;
+      document.getElementById('calendar-pop-colors').innerHTML = CALENDAR_TYPES.map(item =>
+        `<button type="button" data-type="${item.type}" title="${item.label}" aria-label="${item.label}" class="${calendarPopDraft.type === item.type ? 'on' : ''}" style="background:${calendarPopColorOf(item.type)}"></button>`).join('');
+      document.querySelectorAll('#calendar-pop-colors button').forEach(button => button.onclick = () => {
+        calendarPopDraft.type = button.dataset.type;
+        document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle(calendarPopDraft.type);
+        renderCalendarPopColors();
+      });
+    }
+
+    function calendarPlacePop(anchor) {
+      const pop = document.getElementById('calendar-pop'), size = pop.getBoundingClientRect();
+      let left = (anchor ? anchor.right : window.innerWidth / 2) + 9;
+      if (left + size.width > window.innerWidth - 12) left = Math.max(12, (anchor ? anchor.left : window.innerWidth / 2) - size.width - 9);
+      const top = Math.min(Math.max(12, (anchor ? anchor.top : 120) - 8), window.innerHeight - size.height - 12);
+      pop.style.left = `${left}px`; pop.style.top = `${Math.max(12, top)}px`;
+    }
+
+    function openCalendarPop(event = {}, anchor = null) {
+      calendarPopDraft = { type:'lesson', ...event };
+      document.getElementById('calendar-pop-title').value = event.title || '';
+      document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle(calendarPopDraft.type);
+      document.getElementById('calendar-pop-start').value = event.startTime || '';
+      document.getElementById('calendar-pop-end').value = event.endTime || '';
+      document.getElementById('calendar-pop-repeat').value = event.repeat === 'weekly' ? 'weekly' : 'none';
+      document.getElementById('calendar-pop-delete').style.display = event.id ? 'block' : 'none';
+      document.getElementById('calendar-pop-msg').style.display = 'none';
+      renderCalendarPopColors();
+      document.getElementById('calendar-pop').classList.add('open');
+      calendarPlacePop(anchor);
+      setTimeout(() => document.getElementById('calendar-pop-title').focus(), 20);
+    }
+
+    function closeCalendarPop() { document.getElementById('calendar-pop').classList.remove('open'); calendarPopDraft = null; }
+
+    function calendarPopFail(text) {
+      const message = document.getElementById('calendar-pop-msg');
+      message.textContent = text; message.style.display = 'block';
+    }
+
+    async function saveCalendarPop() {
+      if (!calendarPopDraft) return;
+      const type = calendarPopDraft.type || 'lesson';
+      const startTime = document.getElementById('calendar-pop-start').value, endTime = document.getElementById('calendar-pop-end').value;
+      if (!startTime || !endTime) return calendarPopFail('Preencha o horário.');
+      if (calendarMinutes(endTime) <= calendarMinutes(startTime)) return calendarPopFail('O fim precisa ser depois do início.');
+      const student = allStudents.find(item => item.uid === calendarPopDraft.studentUid);
+      const repeat = document.getElementById('calendar-pop-repeat').value;
+      const payload = {
+        type, studentUid:type === 'lesson' ? (calendarPopDraft.studentUid || '') : '',
+        studentName:type === 'lesson' && student ? (student.name || student.firstName || '') : '',
+        title:document.getElementById('calendar-pop-title').value.trim() || calendarDefaultTitle(type),
+        date:calendarPopDraft.date, startTime, endTime, repeat,
+        repeatUntil:repeat === 'weekly' ? (calendarPopDraft.repeatUntil || '') : '',
+        notes:calendarPopDraft.notes || '', timezone:'America/Sao_Paulo',
+        updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || ''
+      };
+      const conflict = calendarEvents.find(item => item.id !== calendarPopDraft.id && calendarSeriesOverlap(payload, item));
+      if (conflict) return calendarPopFail(`Conflito com “${conflict.title || 'outro compromisso'}” (${conflict.startTime}–${conflict.endTime}).`);
+      const button = document.getElementById('calendar-pop-save'); button.disabled = true;
+      try {
+        if (calendarPopDraft.id) await setDoc(doc(db,'schools',escolaAtual,'calendarEvents',calendarPopDraft.id), payload, { merge:true });
+        else await addDoc(collection(db,'schools',escolaAtual,'calendarEvents'), { ...payload, createdAt:serverTimestamp(), createdBy:auth.currentUser?.email || '' });
+        closeCalendarPop(); await loadCalendar();
+      } catch (error) { calendarPopFail(`Erro ao salvar: ${error.message}`); }
+      finally { button.disabled = false; }
+    }
+
+    async function deleteCalendarPop() {
+      if (!calendarPopDraft?.id || !confirm('Excluir este compromisso? Se ele for semanal, toda a série será removida.')) return;
+      const button = document.getElementById('calendar-pop-delete'); button.disabled = true;
+      try { await deleteDoc(doc(db,'schools',escolaAtual,'calendarEvents',calendarPopDraft.id)); closeCalendarPop(); await loadCalendar(); }
+      catch (error) { calendarPopFail(`Erro ao excluir: ${error.message}`); }
+      finally { button.disabled = false; }
+    }
+
+    document.getElementById('calendar-pop-save').onclick = saveCalendarPop;
+    document.getElementById('calendar-pop-delete').onclick = deleteCalendarPop;
+    document.getElementById('calendar-pop-title').onkeydown = key => { if (key.key === 'Enter') saveCalendarPop(); };
+    document.getElementById('calendar-pop-more').onclick = () => {
+      const draft = {
+        ...calendarPopDraft,
+        title:document.getElementById('calendar-pop-title').value.trim(),
+        startTime:document.getElementById('calendar-pop-start').value,
+        endTime:document.getElementById('calendar-pop-end').value,
+        repeat:document.getElementById('calendar-pop-repeat').value,
+      };
+      closeCalendarPop(); openCalendarEvent(draft);
+    };
+    document.addEventListener('pointerdown', click => {
+      if (!calendarPopDraft) return;
+      if (click.target.closest('#calendar-pop') || click.target.closest('.calendar-event')) return;
+      closeCalendarPop();
+    }, true);
+    document.addEventListener('keydown', key => { if (key.key === 'Escape' && calendarPopDraft) closeCalendarPop(); });
+
+    // ── AULAS QUE NASCEM DO CADASTRO DO ALUNO ──────────────────────────────
+    // Os dias/horário preenchidos no cadastro viram série semanal na agenda.
+    // Esses eventos ficam marcados com source:'cadastro' para poderem ser
+    // regerados sem tocar nos compromissos criados na mão.
+    function studentLessonEvents(student) {
+      const days = [...new Set((student.aulaDias || []).map(Number))].filter(day => day >= 0 && day <= 6);
+      const startTime = student.aulaHora || '';
+      if (!days.length || !startTime) return [];
+      const duration = Number(student.aulaDuracao) > 0 ? Number(student.aulaDuracao) : 60;
+      const weekStart = calendarWeekStartDate(new Date());
+      return days.map(day => ({
+        type:'lesson', studentUid:student.uid, studentName:student.name || student.firstName || '',
+        title:`Aula · ${student.firstName || (student.name || '').split(' ')[0] || 'Aluno'}`,
+        date:calendarDateKey(calendarAddDays(weekStart, day)), startTime,
+        endTime:calendarTime(calendarMinutes(startTime) + duration),
+        repeat:'weekly', repeatUntil:'', notes:'', timezone:'America/Sao_Paulo', source:'cadastro',
+      }));
+    }
+
+    async function syncStudentLessons(students, replace = true) {
+      let total = 0;
+      for (const student of students) {
+        const events = studentLessonEvents(student);
+        if (!events.length) continue;
+        if (replace) {
+          const previous = calendarEvents.filter(item => item.source === 'cadastro' && item.studentUid === student.uid);
+          await Promise.all(previous.map(item => deleteDoc(doc(db,'schools',escolaAtual,'calendarEvents',item.id))));
+        }
+        await Promise.all(events.map(event => addDoc(collection(db,'schools',escolaAtual,'calendarEvents'),
+          { ...event, createdAt:serverTimestamp(), createdBy:auth.currentUser?.email || '', updatedAt:serverTimestamp() })));
+        total += events.length;
+      }
+      return total;
+    }
+
+    document.getElementById('calendar-sync-students').onclick = async event => {
+      const button = event.currentTarget, active = allStudents.filter(student => !student.archived);
+      const ready = active.filter(student => (student.aulaDias || []).length && student.aulaHora);
+      if (!ready.length) return alert('Nenhum aluno desta escola tem dias e horário de aula no cadastro. Preencha em "Novo Aluno" (ou editando o aluno) que a agenda se monta sozinha.');
+      if (!confirm(`Montar a agenda com as aulas de ${ready.length} aluno(s)? As aulas geradas antes pelo cadastro são refeitas; o que você criou na mão fica intacto.`)) return;
+      button.disabled = true; const label = button.textContent; button.textContent = 'Montando a agenda...';
+      try {
+        const total = await syncStudentLessons(ready);
+        await loadCalendar();
+        alert(`Pronto! ${total} aulas semanais na agenda, de ${ready.length} aluno(s).`);
+      } catch (error) { alert(`Erro ao montar a agenda: ${error.message}`); }
+      finally { button.disabled = false; button.textContent = label; }
+    };
+
+    // ── IMPORTAR A AGENDA DO NOTION CALENDAR ───────────────────────────────
+    // Semana base do César, transcrita do Notion Calendar. Entra como série
+    // semanal: vale para esta semana e para as próximas, é só editar o que mudar.
+    const CALENDAR_IMPORT_TEMPLATE = [
+      { weekday:1, start:'07:00', end:'09:00', type:'available' },
+      { weekday:1, start:'09:00', end:'14:00', type:'personal', title:'Sofia' },
+      { weekday:1, start:'14:00', end:'15:00', type:'available' },
+      { weekday:1, start:'15:00', end:'16:00', type:'lesson', title:'Aula · Fátima', student:'Fátima' },
+      { weekday:1, start:'16:00', end:'17:00', type:'lesson', title:'Aula · Isabelle', student:'Isabelle' },
+      { weekday:1, start:'17:00', end:'18:00', type:'available' },
+      { weekday:1, start:'18:00', end:'19:00', type:'lesson', title:'Aula · Thifany', student:'Thifany' },
+      { weekday:1, start:'19:00', end:'20:00', type:'lesson', title:'Aula · Lucas e Gabriel' },
+      { weekday:1, start:'20:00', end:'21:00', type:'lesson', title:'Aula · Gu', student:'Gu' },
+      { weekday:1, start:'21:00', end:'22:00', type:'lesson', title:'Aula · Felipe', student:'Felipe' },
+
+      { weekday:2, start:'07:00', end:'09:00', type:'available' },
+      { weekday:2, start:'09:00', end:'14:30', type:'personal', title:'Sofia' },
+      { weekday:2, start:'14:30', end:'15:30', type:'lesson', title:'Aula experimental · Joyce', repeat:'none' },
+      { weekday:2, start:'15:30', end:'16:30', type:'lesson', title:'Aula · Lorena', student:'Lorena' },
+      { weekday:2, start:'16:30', end:'17:00', type:'blocked', title:'Deslocamento' },
+      { weekday:2, start:'17:00', end:'19:00', type:'lesson', title:'Aula · Vitor e Karlla' },
+      { weekday:2, start:'19:00', end:'19:15', type:'blocked', title:'Deslocamento' },
+      { weekday:2, start:'19:15', end:'20:15', type:'lesson', title:'Aula · Davi', student:'Davi' },
+      { weekday:2, start:'20:15', end:'21:15', type:'lesson', title:'Aula · Giovanna', student:'Giovanna' },
+      { weekday:2, start:'21:15', end:'22:00', type:'available' },
+
+      { weekday:3, start:'07:00', end:'08:00', type:'available' },
+      { weekday:3, start:'08:00', end:'09:00', type:'lesson', title:'Aula · Máquina', student:'Máquina' },
+      { weekday:3, start:'09:00', end:'14:00', type:'personal', title:'Sofia' },
+      { weekday:3, start:'14:00', end:'15:00', type:'lesson', title:'Aula · Rebeca', student:'Rebeca' },
+      { weekday:3, start:'15:00', end:'16:00', type:'lesson', title:'Aula · Fátima', student:'Fátima' },
+      { weekday:3, start:'16:00', end:'17:00', type:'lesson', title:'Aula · Isabelle', student:'Isabelle' },
+      { weekday:3, start:'17:00', end:'19:00', type:'available' },
+      { weekday:3, start:'19:00', end:'20:00', type:'lesson', title:'Aula · Lucas e Gabriel' },
+      { weekday:3, start:'20:00', end:'21:00', type:'lesson', title:'Aula · Gu', student:'Gu' },
+      { weekday:3, start:'21:00', end:'22:00', type:'lesson', title:'Aula · Felipe', student:'Felipe' },
+
+      { weekday:4, start:'07:00', end:'08:00', type:'available' },
+      { weekday:4, start:'08:00', end:'09:00', type:'lesson', title:'Aula · Douglas', student:'Douglas' },
+      { weekday:4, start:'09:00', end:'14:30', type:'personal', title:'Sofia' },
+      { weekday:4, start:'14:30', end:'15:30', type:'available' },
+      { weekday:4, start:'15:30', end:'16:30', type:'lesson', title:'Aula · Lorena', student:'Lorena' },
+      { weekday:4, start:'16:30', end:'17:00', type:'blocked', title:'Pós-aula' },
+      { weekday:4, start:'17:00', end:'18:00', type:'lesson', title:'Aula · Michelle', student:'Michelle' },
+      { weekday:4, start:'18:00', end:'19:00', type:'available' },
+      { weekday:4, start:'19:00', end:'20:00', type:'lesson', title:'Aula · Anna', student:'Anna' },
+      { weekday:4, start:'20:00', end:'21:00', type:'lesson', title:'Aula · Giovanna', student:'Giovanna' },
+      { weekday:4, start:'21:00', end:'22:00', type:'lesson', title:'Aula · Felipe', student:'Felipe' },
+
+      { weekday:5, start:'07:00', end:'09:00', type:'available' },
+      { weekday:5, start:'09:00', end:'14:00', type:'personal', title:'Sofia' },
+      { weekday:5, start:'14:00', end:'15:00', type:'lesson', title:'Aula · Rebeca', student:'Rebeca' },
+      { weekday:5, start:'15:00', end:'22:00', type:'available' },
+
+      { weekday:6, start:'07:30', end:'08:30', type:'available' },
+      { weekday:6, start:'08:30', end:'09:30', type:'lesson', title:'Aula · Mateus Richter', student:'Mateus Richter' },
+      { weekday:6, start:'09:30', end:'10:30', type:'lesson', title:'Aula · Artur', student:'Artur' },
+      { weekday:6, start:'10:30', end:'15:00', type:'available' },
+      { weekday:6, start:'15:00', end:'16:30', type:'lesson', title:'Aula · Mateus', student:'Mateus Oliveira' },
+      { weekday:6, start:'16:30', end:'17:00', type:'blocked', title:'Pós-aula' },
+      { weekday:6, start:'17:00', end:'18:00', type:'lesson', title:'Aula · Michelle', student:'Michelle' },
+    ];
+
+    function calendarImportTitle(item) { return item.title || calendarDefaultTitle(item.type); }
+
+    function calendarMatchStudent(name) {
+      if (!name) return null;
+      const clean = value => String(value || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();
+      const target = clean(name), pool = allStudents.filter(student => !student.archived), named = student => clean(student.name || student.firstName);
+      return pool.find(student => named(student) === target)
+        || pool.find(student => named(student).split(' ')[0] === target)
+        || pool.find(student => named(student).includes(target))
+        || null;
+    }
+
+    function openCalendarImport() {
+      const weekdayNames = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'], grouped = new Map();
+      CALENDAR_IMPORT_TEMPLATE.forEach(item => { if (!grouped.has(item.weekday)) grouped.set(item.weekday, []); grouped.get(item.weekday).push(item); });
+      document.getElementById('calendar-import-preview').innerHTML = [...grouped.entries()].sort((first, second) => first[0] - second[0]).map(([weekday, items]) =>
+        `<div style="margin-bottom:10px;"><strong style="display:block;color:#334155;margin-bottom:2px;">${weekdayNames[weekday]}</strong>${items.map(item =>
+          `<span style="display:block;color:${item.type === 'available' ? '#c2703f' : item.type === 'lesson' ? '#475569' : '#94a3b8'};">${item.start}–${item.end} · ${esc(calendarImportTitle(item))}</span>`).join('')}</div>`).join('');
+      document.getElementById('calendar-import-count').textContent = String(calendarEvents.length);
+      document.getElementById('calendar-import-replace').checked = false;
+      showMsg('calendar-import-msg','','info'); document.getElementById('calendar-import-modal').classList.add('open');
+    }
+
+    async function runCalendarImport() {
+      if (!escolaAtual) return showMsg('calendar-import-msg','Escolha uma escola antes de importar.','err');
+      const withAvailable = document.getElementById('calendar-import-available').checked;
+      const withSettings = document.getElementById('calendar-import-settings').checked;
+      const replace = document.getElementById('calendar-import-replace').checked;
+      if (replace && calendarEvents.length && !confirm(`Isso apaga os ${calendarEvents.length} compromissos que já estão na agenda. Continuar?`)) return;
+      const items = CALENDAR_IMPORT_TEMPLATE.filter(item => withAvailable || item.type !== 'available');
+      const weekStart = calendarWeekStartDate(new Date()), button = document.getElementById('calendar-import-run');
+      button.disabled = true; showMsg('calendar-import-msg','Importando a agenda...','info');
+      try {
+        if (replace) await Promise.all(calendarEvents.map(event => deleteDoc(doc(db,'schools',escolaAtual,'calendarEvents',event.id))));
+        let linked = 0;
+        await Promise.all(items.map(item => {
+          const student = item.student ? calendarMatchStudent(item.student) : null;
+          if (student) linked += 1;
+          return addDoc(collection(db,'schools',escolaAtual,'calendarEvents'), {
+            type:item.type, studentUid:student?.uid || '', studentName:student ? (student.name || student.firstName || '') : '',
+            title:calendarImportTitle(item), date:calendarDateKey(calendarAddDays(weekStart, item.weekday)),
+            startTime:item.start, endTime:item.end, repeat:item.repeat === 'none' ? 'none' : 'weekly', repeatUntil:'',
+            notes:'', timezone:'America/Sao_Paulo', source:'notion-calendar',
+            createdAt:serverTimestamp(), createdBy:auth.currentUser?.email || '', updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || ''
+          });
+        }));
+        if (withSettings) await setDoc(doc(db,'schools',escolaAtual,'calendarSettings','work'),
+          { workingDays:[1,2,3,4,5,6], dayStart:'07:00', dayEnd:'22:00', slotMinutes:15, timezone:'America/Sao_Paulo', updatedAt:serverTimestamp() }, { merge:true });
+        showMsg('calendar-import-msg',`Pronto! ${items.length} compromissos na agenda, ${linked} aulas já ligadas ao aluno certo.`,'ok');
+        await loadCalendar();
+        setTimeout(() => document.getElementById('calendar-import-modal').classList.remove('open'), 1600);
+      } catch (error) { showMsg('calendar-import-msg',`Erro ao importar: ${error.message}`,'err'); }
+      finally { button.disabled = false; }
+    }
+
+    document.getElementById('calendar-import-open').onclick = openCalendarImport;
+    document.getElementById('calendar-import-close').onclick = () => document.getElementById('calendar-import-modal').classList.remove('open');
+    document.getElementById('calendar-import-run').onclick = runCalendarImport;
 
     // ── FINANCEIRO DA ESCOLA ───────────────────────────────────────────────
     let financeProfiles = [];
@@ -1956,7 +2429,7 @@
     function financeFillStudents() {
       const options = allStudents.filter(student => !student.archived).map(student => `<option value="${esc(student.uid)}">${esc(student.name || student.firstName || 'Aluno')}</option>`).join('');
       ['finance-profile-student','finance-transaction-student'].forEach(id => {
-        const select=document.getElementById(id), current=select.value, first=id==='finance-transaction-student'?'<option value="">Receita sem aluno</option>':'<option value="">Selecione</option>';
+        const select=document.getElementById(id), current=select.value, first=id==='finance-transaction-student'?'<option value="">Ganho sem aluno</option>':'<option value="">Selecione</option>';
         select.innerHTML=first+options; if([...select.options].some(option=>option.value===current)) select.value=current;
       });
     }
@@ -2018,9 +2491,11 @@
       const studentIncome=incomes.filter(tx=>tx.studentUid),payingStudents=new Set(studentIncome.map(tx=>tx.studentUid));
       const studentIncomeTotal=studentIncome.reduce((sum,tx)=>sum+Number(tx.amountCents||0),0),ticket=payingStudents.size?Math.round(studentIncomeTotal/payingStudents.size):0;
       const hours=financeHoursForMonth(month),rate=hours?Math.round(income/hours):0;
-      document.getElementById('finance-income').textContent=financeMoney(income); document.getElementById('finance-income-note').textContent=`${incomes.length} pagamento${incomes.length===1?'':'s'}`;
-      document.getElementById('finance-expenses').textContent=financeMoney(expense); document.getElementById('finance-expenses-note').textContent=`${expenses.length} lançamento${expenses.length===1?'':'s'}`;
-      const profitEl=document.getElementById('finance-profit'); profitEl.textContent=financeMoney(profit); profitEl.parentElement.classList.toggle('negative',profit<0); profitEl.parentElement.classList.toggle('positive',profit>0);
+      document.getElementById('finance-income').textContent=financeMoney(income); document.getElementById('finance-income-note').textContent=`${incomes.length} entrada${incomes.length===1?'':'s'}`;
+      document.getElementById('finance-expenses').textContent=financeMoney(expense); document.getElementById('finance-expenses-note').textContent=`${expenses.length} saída${expenses.length===1?'':'s'}`;
+      document.getElementById('finance-profit').textContent=financeMoney(profit);
+      document.getElementById('finance-profit-note').textContent=profit<0?'as despesas passaram os ganhos':'ganhos menos despesas';
+      const profitCard=document.getElementById('finance-profit-card'); profitCard.classList.toggle('negative',profit<0); profitCard.classList.toggle('positive',profit>0);
       document.getElementById('finance-ticket').textContent=financeMoney(ticket); document.getElementById('finance-hours').textContent=`${String(hours).replace('.',',')}h`; document.getElementById('finance-hour-rate').textContent=financeMoney(rate);
 
       const profileMap=new Map(financeProfiles.map(profile=>[profile.studentUid,profile]));
@@ -2028,6 +2503,7 @@
       const configured=financeProfiles.filter(profile=>profile.active!==false&&Number(profile.monthlyCents)>0),expected=configured.reduce((sum,profile)=>sum+Number(profile.monthlyCents||0),0);
       const expectedReceived=configured.reduce((sum,profile)=>sum+Math.min(Number(profile.monthlyCents||0),financeProfileStatus(profile,month).received),0);
       document.getElementById('finance-expected-note').textContent=`Previsto ${financeMoney(expected)} · recebido das mensalidades ${financeMoney(expectedReceived)}.`;
+      document.getElementById('finance-open').textContent=financeMoney(Math.max(0,expected-expectedReceived));
       document.getElementById('finance-students-body').innerHTML=activeStudents.map(student=> {
         const profile=profileMap.get(student.uid);
         if(!profile||profile.active===false||!Number(profile.monthlyCents)) return `<tr><td><strong>${esc(student.name||student.firstName||'Aluno')}</strong></td><td>—</td><td>—</td><td><span class="finance-status unset">Não configurado</span></td><td><button class="finance-row-btn finance-configure" data-uid="${esc(student.uid)}">Configurar</button></td></tr>`;
@@ -2036,7 +2512,7 @@
       }).join('')||'<tr><td colspan="5">Nenhum aluno ativo.</td></tr>';
       document.querySelectorAll('.finance-configure').forEach(button=>button.onclick=()=>openFinanceProfile(button.dataset.uid));
       document.querySelectorAll('.finance-pay').forEach(button=>button.onclick=()=>openFinanceTransaction('income',button.dataset.uid));
-      renderFinanceBars(month); renderFinanceMovements(monthTransactions);
+      renderFinanceBars(month); renderFinanceSplit(incomes,expenses);
     }
 
     function renderFinanceBars(selectedMonth) {
@@ -2049,13 +2525,30 @@
       document.getElementById('finance-bars').innerHTML=values.map(item=>`<div class="finance-bar-row"><strong>${esc(item.label)}</strong><div class="finance-bar-track"><span class="finance-bar-income" style="width:${item.income/max*100}%"></span><span class="finance-bar-expense" style="width:${item.expense/max*100}%"></span></div><span>${financeMoney(item.income-item.expense)}</span></div>`).join('');
     }
 
-    function renderFinanceMovements(items) {
-      const sorted=[...items].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
-      document.getElementById('finance-movements').innerHTML=sorted.map(tx=>`<div class="finance-movement"><span class="finance-movement-icon" style="background:${tx.type==='income'?'#dcfce7':'#fee2e2'}">${tx.type==='income'?'↗':'↘'}</span><span class="finance-movement-info"><strong>${esc(tx.description||tx.category||'Movimentação')}</strong><small>${esc(tx.studentName||tx.category||'')} · ${String(tx.date||'').split('-').reverse().join('/')}</small></span><span class="finance-money" style="color:${tx.type==='income'?'#15803d':'#b91c1c'}">${tx.type==='income'?'+':'−'} ${financeMoney(tx.amountCents)}</span><button class="finance-row-btn finance-delete" data-id="${esc(tx.id)}" title="Excluir">×</button></div>`).join('')||'<div style="padding:18px 2px;color:var(--muted);font-size:.78rem;">Nenhuma movimentação neste mês.</div>';
+    // Ganhos e despesas nunca se misturam: cada lado tem seu total, suas categorias e sua lista.
+    const FINANCE_CATEGORIES={tuition:'Mensalidade',material:'Material','other-income':'Outro ganho',platform:'Plataformas e sistemas',tax:'Impostos',marketing:'Marketing',rent:'Aluguel','other-expense':'Outra despesa'};
+
+    function renderFinanceSplit(incomes,expenses) {
+      renderFinanceSide('income',incomes); renderFinanceSide('expense',expenses);
       document.querySelectorAll('.finance-delete').forEach(button=>button.onclick=async()=> {
         if(!confirm('Excluir esta movimentação financeira?')) return;
         await deleteDoc(doc(db,'schools',escolaAtual,'financeTransactions',button.dataset.id)); await loadFinance();
       });
+    }
+
+    function renderFinanceSide(type,items) {
+      const income=type==='income',color=income?'#22c55e':'#ef4444';
+      const total=items.reduce((sum,tx)=>sum+Number(tx.amountCents||0),0);
+      document.getElementById(income?'finance-income-total':'finance-expense-total').textContent=financeMoney(total);
+      const groups=new Map();
+      items.forEach(tx=>{ const key=tx.category||(income?'other-income':'other-expense'); groups.set(key,(groups.get(key)||0)+Number(tx.amountCents||0)); });
+      const ranked=[...groups.entries()].sort((a,b)=>b[1]-a[1]);
+      document.getElementById(income?'finance-income-cats':'finance-expense-cats').innerHTML=ranked.length
+        ? ranked.map(([key,value])=>`<div class="finance-cat"><span>${esc(FINANCE_CATEGORIES[key]||key)}</span><span class="finance-cat-bar"><i style="width:${total?value/total*100:0}%;background:${color}"></i></span><span class="finance-cat-value">${financeMoney(value)}</span></div>`).join('')
+        : `<div style="color:var(--muted);font-size:.72rem;">Nada por categoria neste mês.</div>`;
+      const sorted=[...items].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+      document.getElementById(income?'finance-income-list':'finance-expense-list').innerHTML=sorted.map(tx=>`<div class="finance-movement"><span class="finance-movement-icon" style="background:${income?'#dcfce7':'#fee2e2'}">${income?'↗':'↘'}</span><span class="finance-movement-info"><strong>${esc(tx.description||FINANCE_CATEGORIES[tx.category]||'Movimentação')}</strong><small>${esc(tx.studentName||FINANCE_CATEGORIES[tx.category]||'')} · ${String(tx.date||'').split('-').reverse().join('/')}</small></span><span class="finance-money" style="color:${income?'#15803d':'#b91c1c'}">${income?'+':'−'} ${financeMoney(tx.amountCents)}</span><button class="finance-row-btn finance-delete" data-id="${esc(tx.id)}" title="Excluir">×</button></div>`).join('')
+        || `<div class="finance-panel-empty">${income?'Nenhum ganho registrado':'Nenhuma despesa registrada'} neste mês.</div>`;
     }
 
     function openFinanceProfile(uid='') {
@@ -2080,10 +2573,10 @@
 
     function openFinanceTransaction(type='income',uid='') {
       financeFillStudents(); const income=type==='income',profile=financeProfiles.find(item=>item.studentUid===uid),student=allStudents.find(item=>item.uid===uid),month=financeMonthKey();
-      document.getElementById('finance-transaction-type').value=type; document.getElementById('finance-transaction-title').textContent=income?'Registrar receita':'Registrar despesa'; document.getElementById('finance-transaction-student-field').style.display=income?'block':'none'; document.getElementById('finance-reference-field').style.display=income?'block':'none';
+      document.getElementById('finance-transaction-type').value=type; document.getElementById('finance-transaction-title').textContent=income?'Registrar ganho':'Registrar despesa'; document.getElementById('finance-transaction-student-field').style.display=income?'block':'none'; document.getElementById('finance-reference-field').style.display=income?'block':'none';
       document.getElementById('finance-transaction-student').value=income?uid:''; document.getElementById('finance-transaction-amount').value=profile?Number(profile.monthlyCents||0)/100:''; document.getElementById('finance-transaction-date').value=financeTodayKey(); document.getElementById('finance-transaction-reference').value=month;
-      const category=document.getElementById('finance-transaction-category'); category.innerHTML=income?'<option value="tuition">Mensalidade</option><option value="material">Material</option><option value="other-income">Outra receita</option>':'<option value="platform">Plataformas e sistemas</option><option value="tax">Impostos</option><option value="marketing">Marketing</option><option value="material">Materiais</option><option value="rent">Aluguel</option><option value="other-expense">Outra despesa</option>';
-      document.getElementById('finance-transaction-description').value=income&&student?`Mensalidade · ${student.name||student.firstName}`:''; document.getElementById('finance-transaction-save').textContent=income?'Registrar receita':'Registrar despesa'; document.getElementById('finance-transaction-save').style.background=income?'var(--accent)':'#dc2626'; showMsg('finance-transaction-msg','','info'); document.getElementById('finance-transaction-modal').classList.add('open');
+      const category=document.getElementById('finance-transaction-category'); category.innerHTML=income?'<option value="tuition">Mensalidade</option><option value="material">Material</option><option value="other-income">Outro ganho</option>':'<option value="platform">Plataformas e sistemas</option><option value="tax">Impostos</option><option value="marketing">Marketing</option><option value="material">Material</option><option value="rent">Aluguel</option><option value="other-expense">Outra despesa</option>';
+      document.getElementById('finance-transaction-description').value=income&&student?`Mensalidade · ${student.name||student.firstName}`:''; document.getElementById('finance-transaction-save').textContent=income?'Registrar ganho':'Registrar despesa'; document.getElementById('finance-transaction-save').style.background=income?'var(--accent)':'#dc2626'; showMsg('finance-transaction-msg','','info'); document.getElementById('finance-transaction-modal').classList.add('open');
     }
 
     async function saveFinanceTransaction() {
@@ -2092,7 +2585,7 @@
       if(!date) return showMsg('finance-transaction-msg','Informe a data.','err');
       const button=document.getElementById('finance-transaction-save'); button.disabled=true;
       try {
-        await addDoc(collection(db,'schools',escolaAtual,'financeTransactions'),{type,amountCents:amount,date,referenceMonth:type==='income'?document.getElementById('finance-transaction-reference').value:'',studentUid:uid,studentName:student?.name||student?.firstName||'',category:document.getElementById('finance-transaction-category').value,description:document.getElementById('finance-transaction-description').value.trim()||(type==='income'?'Receita':'Despesa'),createdAt:serverTimestamp(),createdBy:auth.currentUser?.email||''});
+        await addDoc(collection(db,'schools',escolaAtual,'financeTransactions'),{type,amountCents:amount,date,referenceMonth:type==='income'?document.getElementById('finance-transaction-reference').value:'',studentUid:uid,studentName:student?.name||student?.firstName||'',category:document.getElementById('finance-transaction-category').value,description:document.getElementById('finance-transaction-description').value.trim()||(type==='income'?'Ganho':'Despesa'),createdAt:serverTimestamp(),createdBy:auth.currentUser?.email||''});
         document.getElementById('finance-transaction-modal').classList.remove('open'); await loadFinance();
       } catch(error) { showMsg('finance-transaction-msg',`Erro ao registrar: ${error.message}`,'err'); } finally { button.disabled=false; }
     }
@@ -4951,6 +5444,7 @@
       const level  = document.getElementById('f-level').value;
       const meta   = parseInt(document.getElementById('f-meta').value, 10);
       const aula   = readAula('f-dias-week', 'f-hora');
+      const duracao = Number(document.getElementById('f-duracao').value) || 60;
       const inicio = document.getElementById('f-inicio').value;
       if (!name || !email || !pass) { showMsg('create-msg', 'Preencha nome, e-mail e senha.', 'err'); return; }
       if (pass.length < 6)          { showMsg('create-msg', 'Senha mínima de 6 caracteres.', 'err'); return; }
@@ -4964,15 +5458,22 @@
           ...(meta > 0 && { metaAnual: meta }),
           ...(aula.texto && { diasAulas: aula.texto }),
           ...(aula.aulaDias.length && { aulaDias: aula.aulaDias }),
-          ...(aula.aulaHora && { aulaHora: aula.aulaHora }),
+          ...(aula.aulaHora && { aulaHora: aula.aulaHora, aulaDuracao: duracao }),
           ...(inicio && { inicioCurso: inicio }),
           createdAt: serverTimestamp()
         });
         await signOut(auth2);
-        showMsg('create-msg', `✅ Aluno ${name} criado!`, 'ok');
+        // As aulas do cadastro já entram na agenda — sem criar compromisso na mão.
+        let naAgenda = 0;
+        if (aula.aulaDias.length && aula.aulaHora) {
+          try {
+            naAgenda = await syncStudentLessons([{ uid: cred.user.uid, name, firstName: name.split(' ')[0], aulaDias: aula.aulaDias, aulaHora: aula.aulaHora, aulaDuracao: duracao }], false);
+          } catch (erroAgenda) { console.error('Agenda do aluno:', erroAgenda); }
+        }
+        showMsg('create-msg', `✅ Aluno ${name} criado!${naAgenda ? ` ${naAgenda} aula(s) já entraram na agenda.` : ''}`, 'ok');
         ['f-name','f-email','f-pass','f-meta','f-hora','f-inicio'].forEach(id => document.getElementById(id).value = '');
         document.querySelectorAll('#f-dias-week input').forEach(c => c.checked = false);
-        document.getElementById('f-level').value = '';
+        document.getElementById('f-level').value = ''; document.getElementById('f-duracao').value = '60';
         setTimeout(() => {
           document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
           document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
