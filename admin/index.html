@@ -673,8 +673,11 @@
             <div class="finance-card-head">
               <div><h3>Ano de <span id="finance-year-label">2026</span></h3><p id="finance-year-note">ganhos em verde, despesas em vermelho</p></div>
               <div style="text-align:right;white-space:nowrap;">
-                <strong id="finance-year-income" style="display:block;font-size:1.1rem;color:#15803d;">R$ 0,00</strong>
-                <small id="finance-year-result" style="color:#94a3b8;font-size:.68rem;">no ano</small>
+                <small style="display:block;color:#64748b;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;">Faturado no ano</small>
+                <strong id="finance-year-income" style="display:block;font-size:1.15rem;color:#15803d;">R$ 0,00</strong>
+                <small style="display:block;margin-top:6px;color:#64748b;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;">Lucro</small>
+                <strong id="finance-year-profit" style="display:block;font-size:1.05rem;color:#0f172a;">R$ 0,00</strong>
+                <small id="finance-year-result" style="display:block;color:#94a3b8;font-size:.64rem;">—</small>
               </div>
             </div>
             <div class="finance-bars" id="finance-bars"></div>
@@ -3074,7 +3077,9 @@
       const ganhoAno=values.reduce((sum,item)=>sum+item.income,0),despesaAno=values.reduce((sum,item)=>sum+item.expense,0);
       document.getElementById('finance-year-label').textContent=ano;
       document.getElementById('finance-year-income').textContent=financeMoney(ganhoAno);
-      document.getElementById('finance-year-result').textContent=`− ${financeMoney(despesaAno)} = ${financeMoney(ganhoAno-despesaAno)}`;
+      const lucroAno=ganhoAno-despesaAno,lucroEl=document.getElementById('finance-year-profit');
+      lucroEl.textContent=financeMoney(lucroAno); lucroEl.style.color=lucroAno<0?'#b91c1c':'#0f172a';
+      document.getElementById('finance-year-result').textContent=`despesas ${financeMoney(despesaAno)}`;
       document.getElementById('finance-year-note').textContent=ano===mesAtual.slice(0,4)?'ganho no ano até agora':'ano fechado';
       document.getElementById('finance-bars').innerHTML=values.map(item=>`<div class="finance-bar-row${item.key===selectedMonth?' atual':''}"><strong>${esc(item.label)}</strong><div class="finance-bar-track"><span class="finance-bar-income" style="width:${item.income/max*100}%"></span><span class="finance-bar-expense" style="width:${item.expense/max*100}%"></span></div><span>${item.income||item.expense?financeMoney(item.income-item.expense):'—'}</span></div>`).join('');
     }
