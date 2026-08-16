@@ -627,6 +627,7 @@
           <button class="btn-add" id="finance-new-income" type="button" style="padding:9px 12px;">＋ Ganho</button>
           <button class="btn-add" id="finance-new-expense" type="button" style="background:#fff;color:#b91c1c;border:1px solid #fecaca;padding:9px 12px;">− Despesa</button>
           <button class="btn-add" id="finance-backfill-open" type="button" style="background:#fff;color:#334155;border:1px solid var(--border);padding:9px 12px;">⟲ Preencher meses anteriores</button>
+          <button class="btn-add" id="finance-clean-future" type="button" style="display:none;background:#fff;color:#b45309;border:1px solid #fde68a;padding:9px 12px;">🧹 Limpar mensalidades futuras</button>
         </div>
         <div class="finance-summary">
           <div class="finance-sum income"><small>↗ Ganhos do mês</small><strong id="finance-income">R$ 0,00</strong><span id="finance-income-note">0 entradas</span></div>
@@ -1474,6 +1475,7 @@
         </div>
         <div class="field" style="margin-top:14px;"><label for="finance-transaction-description">Descrição</label><input id="finance-transaction-description" maxlength="120" placeholder="Ex.: Mensalidade de agosto"></div>
         <label id="finance-transaction-repeat-field" style="display:flex;align-items:center;gap:9px;font-size:.82rem;margin-top:12px;"><input id="finance-transaction-repeat" type="checkbox"> Repetir nos próximos meses <span style="color:var(--muted);font-size:.75rem;">(cria os 12 meses)</span></label>
+        <p id="finance-transaction-repeat-nota" style="display:none;margin:10px 0 0;padding:9px 11px;border-radius:8px;background:#fff8e1;border:1px solid #fde68a;color:#7c5e10;font-size:.75rem;line-height:1.45;">Mensalidade não se repete: registrar é dizer que o dinheiro <strong>entrou</strong>. Se repetisse, os meses seguintes já nasceriam como pagos. Para adiantamento, troque o mês de referência.</p>
         <label id="finance-transaction-series-field" style="display:none;align-items:center;gap:9px;font-size:.82rem;margin-top:8px;"><input id="finance-transaction-series-apply" type="checkbox"> Aplicar também aos próximos meses desta série</label>
         <div class="form-msg" id="finance-transaction-msg"></div>
         <button class="btn-add" id="finance-transaction-save" type="button" style="width:100%;margin-top:18px;">Registrar receita</button>
@@ -2957,7 +2959,7 @@
       const income=incomes.reduce((sum,tx)=>sum+Number(tx.amountCents||0),0),expense=expenses.reduce((sum,tx)=>sum+Number(tx.amountCents||0),0),profit=income-expense;
       const studentIncome=incomes.filter(tx=>tx.studentUid),payingStudents=new Set(studentIncome.map(tx=>tx.studentUid));
       const studentIncomeTotal=studentIncome.reduce((sum,tx)=>sum+Number(tx.amountCents||0),0),ticket=payingStudents.size?Math.round(studentIncomeTotal/payingStudents.size):0;
-      const hours=financeHoursForMonth(month),rate=hours?Math.round(income/hours):0;
+      const hours=financeHoursForMonth(month);
       document.getElementById('finance-income').textContent=financeMoney(income); document.getElementById('finance-income-note').textContent=`${incomes.length} entrada${incomes.length===1?'':'s'}`;
       document.getElementById('finance-expenses').textContent=financeMoney(expense); document.getElementById('finance-expenses-note').textContent=`${expenses.length} saída${expenses.length===1?'':'s'}`;
       document.getElementById('finance-profit').textContent=financeMoney(profit);
@@ -2972,7 +2974,6 @@
       const horasSemana=financeHoursForWeek(month),mostrando=financeHoursScope==='week'?horasSemana:hours;
       document.getElementById('finance-hours').textContent=`${String(mostrando).replace('.',',')}h`;
       document.querySelectorAll('#finance-hours-toggle button').forEach(button=>button.classList.toggle('on',button.dataset.scope===financeHoursScope));
-      document.getElementById('finance-hour-rate').textContent=financeMoney(rate);
       // Mês em andamento: o total é do mês fechado, mas mostra o quanto já foi dado.
       const agora=new Date(); agora.setHours(23,59,59,999);
       const limites=financeMonthBounds(month),emAndamento=limites.start<=agora&&agora<limites.end;
@@ -2980,7 +2981,6 @@
       document.getElementById('finance-hours-note').textContent=financeHoursScope==='week'
         ? `no mês dá ${String(hours).replace('.',',')}h`
         : (emAndamento?`mês inteiro · ${String(horasAteHoje).replace('.',',')}h até hoje`:'no mês inteiro');
-      document.getElementById('finance-hour-rate-note').textContent=emAndamento?'previsto para o mês fechado':'ganhos ÷ horas do mês';
 
       const profileMap=new Map(financeProfiles.map(profile=>[profile.studentUid,profile]));
       const activeStudents=allStudents.filter(student=>!student.archived);
@@ -2990,6 +2990,12 @@
       const expectedReceived=configured.reduce((sum,profile)=>sum+financeProfileReceived(profile,month),0);
       document.getElementById('finance-expected-note').textContent=`Previsto ${financeMoney(expected)} · recebido das mensalidades ${financeMoney(expectedReceived)}.`;
       document.getElementById('finance-open').textContent=financeMoney(Math.max(0,expected-expectedReceived));
+      // Hora-aula pelo PREVISTO do mês: as horas são do mês inteiro, então o
+      // dinheiro também precisa ser o do mês inteiro. Usar só o recebido fazia
+      // o valor cair sozinho em mês que ainda não foi pago.
+      const taxaPrevista=hours?Math.round(expected/hours):0,taxaRecebida=hours?Math.round(income/hours):0;
+      document.getElementById('finance-hour-rate').textContent=financeMoney(taxaPrevista);
+      document.getElementById('finance-hour-rate-note').textContent=`previsto · recebido dá ${financeMoney(taxaRecebida)}/h`;
       document.getElementById('finance-students-body').innerHTML=activeStudents.map(student=> {
         const profile=profileMap.get(student.uid);
         if(!profile||profile.active===false||!Number(profile.monthlyCents)) return `<tr><td><strong>${esc(student.name||student.firstName||'Aluno')}</strong></td><td>—</td><td>—</td><td><span class="finance-status unset">Não configurado</span></td><td><button class="finance-row-btn finance-configure" data-uid="${esc(student.uid)}">Configurar</button></td></tr>`;
@@ -3024,6 +3030,9 @@
       document.querySelectorAll('.finance-configure').forEach(button=>button.onclick=()=>openFinanceProfile(button.dataset.uid));
       document.querySelectorAll('.finance-pay').forEach(button=>button.onclick=()=>openFinanceTransaction('income',button.dataset.uid,Number(button.dataset.part||0)));
       document.querySelectorAll('.finance-undo').forEach(button=>button.onclick=()=>undoFinancePayment(button.dataset.uid,Number(button.dataset.part||0)));
+      const futuras=financeFutureTuitions(),botaoLimpar=document.getElementById('finance-clean-future');
+      botaoLimpar.style.display=futuras.length?'inline-block':'none';
+      botaoLimpar.textContent=`🧹 Limpar ${futuras.length} mensalidade(s) futura(s)`;
       renderFinanceBars(month); renderFinanceSplit(incomes,expenses);
     }
 
@@ -3223,6 +3232,7 @@
       document.getElementById('finance-transaction-repeat-field').style.display=anual?'none':'flex';
       document.getElementById('finance-transaction-series-field').style.display='none';
       document.getElementById('finance-transaction-series-apply').checked=false;
+      setTimeout(syncFinanceRepeatOption,0); // depois que a categoria é preenchida
       document.getElementById('finance-transaction-type').value=type; document.getElementById('finance-transaction-title').textContent=income?(chosen&&chosen.part?`Registrar ${chosen.label}`:'Registrar ganho'):'Registrar despesa'; document.getElementById('finance-transaction-student-field').style.display=income?'block':'none'; document.getElementById('finance-reference-field').style.display=income?'block':'none';
       document.getElementById('finance-transaction-student').value=income?uid:'';
       // No anual o valor é sempre o do ano, mesmo consultando outro mês.
@@ -3282,6 +3292,38 @@
       await Promise.all(novos.map(item=>addDoc(collection(db,'schools',escolaAtual,'financeTransactions'),item)));
     }
 
+    // Mensalidade nunca se repete: registrar é dizer que o dinheiro entrou.
+    // Repetir faria os meses seguintes nascerem "pagos" sem ninguém ter pago.
+    function syncFinanceRepeatOption() {
+      const type=document.getElementById('finance-transaction-type').value;
+      const mensalidade=type==='income'&&document.getElementById('finance-transaction-category').value==='tuition';
+      const serie=Boolean(document.getElementById('finance-transaction-series').value);
+      const anual=Number(document.getElementById('finance-transaction-covers').value||1)>1;
+      const podeRepetir=!mensalidade&&!serie&&!anual;
+      document.getElementById('finance-transaction-repeat-field').style.display=podeRepetir?'flex':'none';
+      document.getElementById('finance-transaction-repeat-nota').style.display=mensalidade?'block':'none';
+      if(!podeRepetir) document.getElementById('finance-transaction-repeat').checked=false;
+    }
+
+    function financeFutureTuitions() {
+      const mesAtual=financeTodayKey().slice(0,7);
+      return financeTransactions.filter(tx=>tx.type==='income'&&tx.category==='tuition'&&tx.seriesId
+        &&String(tx.referenceMonth||String(tx.date||'').slice(0,7))>mesAtual);
+    }
+
+    async function cleanFutureTuitions() {
+      const alvos=financeFutureTuitions();
+      if(!alvos.length) return alert('Não há mensalidade lançada para meses futuros.');
+      const total=alvos.reduce((soma,tx)=>soma+Number(tx.amountCents||0),0);
+      const meses=[...new Set(alvos.map(tx=>tx.referenceMonth||String(tx.date||'').slice(0,7)))].sort();
+      if(!confirm(`Apagar ${alvos.length} mensalidade(s) lançadas para meses que ainda não chegaram (${meses[0]} a ${meses[meses.length-1]}), somando ${financeMoney(total)}?\n\nElas voltam a aparecer como pendentes. Meses passados e adiantamentos lançados na mão não são tocados.`)) return;
+      const botao=document.getElementById('finance-clean-future'); botao.disabled=true;
+      try {
+        await Promise.all(alvos.map(tx=>deleteDoc(doc(db,'schools',escolaAtual,'financeTransactions',tx.id))));
+        await loadFinance(); alert(`Pronto! ${alvos.length} lançamento(s) removidos.`);
+      } catch(error) { alert(`Erro ao limpar: ${error.message}`); } finally { botao.disabled=false; }
+    }
+
     function editFinanceTransaction(id) {
       const tx=financeTransactions.find(item=>item.id===id); if(!tx) return;
       const income=tx.type==='income';
@@ -3297,8 +3339,8 @@
       const categoria=document.getElementById('finance-transaction-category');
       if([...categoria.options].some(option=>option.value===tx.category)) categoria.value=tx.category;
       document.getElementById('finance-transaction-description').value=tx.description||'';
-      document.getElementById('finance-transaction-repeat-field').style.display=tx.seriesId?'none':'flex';
       document.getElementById('finance-transaction-series-field').style.display=tx.seriesId?'flex':'none';
+      syncFinanceRepeatOption();
     }
 
     document.getElementById('finance-month').value=financeTodayKey().slice(0,7);
@@ -3307,6 +3349,8 @@
     document.getElementById('finance-profile-cycle').onchange=syncFinanceProfileCycle; document.getElementById('finance-profile-amount').oninput=syncFinanceProfileCycle;
     document.getElementById('finance-profile-new').onclick=()=>openFinanceProfile(); document.getElementById('finance-profile-save').onclick=saveFinanceProfile; document.getElementById('finance-profile-close').onclick=()=>document.getElementById('finance-profile-modal').classList.remove('open');
     document.getElementById('finance-new-income').onclick=()=>openFinanceTransaction('income'); document.getElementById('finance-new-expense').onclick=()=>openFinanceTransaction('expense'); document.getElementById('finance-transaction-save').onclick=saveFinanceTransaction; document.getElementById('finance-transaction-close').onclick=()=>document.getElementById('finance-transaction-modal').classList.remove('open');
+    document.getElementById('finance-transaction-category').onchange=syncFinanceRepeatOption;
+    document.getElementById('finance-clean-future').onclick=cleanFutureTuitions;
     document.getElementById('finance-backfill-open').onclick=openFinanceBackfill;
     document.getElementById('finance-backfill-run').onclick=runFinanceBackfill;
     document.getElementById('finance-backfill-close').onclick=()=>document.getElementById('finance-backfill-modal').classList.remove('open');
