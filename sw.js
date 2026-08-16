@@ -12,7 +12,10 @@ firebase.initializeApp({
 });
 
 const messaging = firebase.messaging();
-const CACHE = 'czk-v19';
+// Subir esta versão a cada mudança em challenge.jsx ou no shell: os assets são
+// servidos cache-first, então sem trocar o nome do cache o aluno continua com o
+// arquivo antigo mesmo depois do deploy.
+const CACHE = 'czk-v20';
 const SHELL = [
   '/science-english-app/',
   '/science-english-app/index.html',

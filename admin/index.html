@@ -588,6 +588,15 @@
             <select class="form-input" id="challenge-review-student" style="margin-bottom:12px;"><option value="">Selecione o aluno</option></select>
             <div id="challenge-review-body"></div>
           </div>
+
+          <div class="form-card" style="margin:16px 0 0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+              <h2 style="margin:0;">Resultado e temporada</h2>
+              <button class="btn-secondary" id="challenge-results-refresh" type="button">Atualizar</button>
+            </div>
+            <p style="font-size:.84rem;color:var(--muted);line-height:1.5;margin:8px 0 14px;">Como foi a semana, o acumulado desde o começo e — o mais útil — quais perguntas a turma errou junto.</p>
+            <div id="challenge-results-body"><div class="loading">Carregando...</div></div>
+          </div>
           <div class="form-card" style="margin:0;">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;"><h2 style="margin:0;">Status da semana</h2><button class="btn-secondary" id="challenge-refresh" type="button">Atualizar</button></div>
             <div id="challenge-status" style="margin-top:14px;"><div class="loading">Carregando...</div></div>
@@ -6163,8 +6172,67 @@
         if (personal) status.insertAdjacentHTML('beforeend', `<div style="margin-top:12px;padding:12px;border-radius:12px;background:#F5F3FF;color:#5B21B6;font-weight:700;">Personalização: ${Number(personal.completed || 0)}/${Number(personal.total || 0)} alunos prontos${personal.failed ? ` · ${personal.failed} falha(s)` : ''}</div>`);
         await loadChallengeManualWeek();
         await loadChallengeReviewStudents();
+        await loadChallengeResults();
       } catch (error) { status.innerHTML = `<div class="form-msg err" style="display:block;">Erro: ${esc(error.message)}</div>`; }
     }
+
+    // Resultado da semana e temporada. A semana isolada some na segunda; aqui
+    // fica o acumulado e o mapa de erro coletivo.
+    function renderChallengeResults(data) {
+      const linhaRanking = (item, index) => `<div style="display:flex;align-items:center;gap:10px;padding:7px 9px;border-radius:9px;background:${index < 3 ? '#FFFBEB' : 'var(--card)'};border:1px solid ${index < 3 ? '#FDE68A' : 'var(--border)'};">
+        <strong style="width:30px;text-align:center;color:${index < 3 ? '#B45309' : 'var(--muted)'};">${item.position}º</strong>
+        <span style="flex:1;min-width:0;">${esc(item.name)}</span>
+        <strong>${Number(item.total ?? item.score ?? 0).toLocaleString('pt-BR')} <small style="color:var(--muted);">PTS</small></strong>
+        ${item.semanas ? `<small style="color:var(--muted);white-space:nowrap;">${item.semanas} sem.</small>` : ''}
+      </div>`;
+
+      const semana = !data.alunos.length
+        ? '<p style="color:var(--muted);font-size:.84rem;">Ninguém concluiu nenhuma parte nesta semana ainda.</p>'
+        : `<div style="display:grid;gap:5px;">${data.alunos.map((aluno, index) => `<div style="display:flex;align-items:center;gap:10px;padding:7px 9px;border-radius:9px;background:var(--card);border:1px solid var(--border);">
+            <strong style="width:30px;text-align:center;color:var(--muted);">${index + 1}º</strong>
+            <span style="flex:1;min-width:0;">${esc(aluno.name)}</span>
+            <small style="color:var(--muted);white-space:nowrap;">${aluno.acertos}✓ ${aluno.erros}✗ · ${aluno.partes}/2</small>
+            <strong>${Number(aluno.score).toLocaleString('pt-BR')}</strong>
+          </div>`).join('')}</div>`;
+
+      const erradas = data.perguntas.filter(item => item.erros > 0);
+      const mapa = !erradas.length
+        ? '<p style="color:var(--muted);font-size:.84rem;">Nenhum erro registrado ainda.</p>'
+        : erradas.map(item => `<div style="padding:9px 0;border-top:1px solid var(--border);">
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline;">
+              <span style="font-size:.72rem;font-weight:800;text-transform:uppercase;color:var(--muted);">Parte ${item.part}</span>
+              <span style="white-space:nowrap;"><strong style="color:#B91C1C;">${item.erros} erro(s)</strong> <small style="color:var(--muted);">· ${item.acertos} acerto(s)</small></span>
+            </div>
+            <div style="font-weight:700;margin:3px 0;">${esc(item.prompt)}</div>
+            ${item.context ? `<div style="font-size:.82rem;color:var(--muted);">${esc(item.context)}</div>` : ''}
+            <div style="font-size:.79rem;margin-top:4px;">Resposta certa: <strong style="color:#166534;">${esc(item.expected)}</strong></div>
+            ${item.quemErrou.length ? `<div style="font-size:.76rem;color:#92400E;margin-top:3px;">Errou: ${esc(item.quemErrou.join(', '))}</div>` : ''}
+          </div>`).join('');
+
+      const bloco = (titulo, conteudo, extra = '') => `<div style="margin-bottom:20px;">
+        <div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px;">${titulo}${extra}</div>
+        ${conteudo}
+      </div>`;
+
+      return bloco(`Semana de ${esc(data.weekKey)}`, semana, data.revelado ? ' · resultado liberado' : ' · ainda em disputa')
+        + bloco('Erro coletivo — vira pauta de aula', mapa)
+        + bloco('Temporada — acumulado desde o começo', data.temporada.length
+          ? `<div style="display:grid;gap:5px;">${data.temporada.map(linhaRanking).join('')}</div>`
+          : '<p style="color:var(--muted);font-size:.84rem;">A primeira semana ainda não fechou.</p>');
+    }
+
+    async function loadChallengeResults() {
+      const body = document.getElementById('challenge-results-body');
+      if (!body) return;
+      body.innerHTML = '<div class="loading">Consultando servidor...</div>';
+      try {
+        const obter = httpsCallable(fns, 'obterResultadoDesafioAdmin', { timeout:120000 });
+        const { data } = await obter({ weekKey:document.getElementById('challenge-week').value || '2026-08-17' });
+        body.innerHTML = renderChallengeResults(data);
+      } catch (error) { body.innerHTML = `<div class="form-msg err" style="display:block;">Erro: ${esc(error.message)}</div>`; }
+    }
+
+    document.getElementById('challenge-results-refresh').onclick = loadChallengeResults;
 
     // Semanas manuais ficam numa lista em challengeSettings/auto; os dois crons
     // do desafio consultam essa lista antes de chamar a IA.

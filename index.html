@@ -4238,6 +4238,15 @@ function App() {
     }
   }
 
+  // Temporada do desafio: só busca quando o aluno abre o painel, para não pesar
+  // em toda abertura do app.
+  async function loadChallengeSeason() {
+    const fb = await getFB();
+    const obter = fb.httpsCallable(fb.functions, 'obterTemporadaDesafio');
+    const response = await obter({});
+    return response.data;
+  }
+
   async function refreshChallengeState(fbOverride = null) {
     if (mirror) return;
     try {
@@ -4628,6 +4637,7 @@ function App() {
         selectedChallenge={selectedChallenge}
         previewAllowed={challengePreviewAccess}
         onRefresh={() => refreshChallengeState()}
+        onLoadSeason={loadChallengeSeason}
         onBack={() => { setChallengeView(null); setSelectedChallenge(null); }}
         onStart={() => setChallengeView('game')}
         onJoinChallenge={async (challenge) => {

@@ -936,6 +936,106 @@ export function createChallengeFunctions({
     async () => sendReminders('night')
   );
 
+  // Temporada: a semana isolada esquece tudo na segunda-feira. Aqui a pontuação
+  // de cada semana revelada é somada, montando o acumulado e o ranking geral.
+  // Sai dos documentos de ranking (um por semana), não dos resultados soltos.
+  async function loadSeason(now = new Date()) {
+    const snaps = await db.collection('challengeRankings').get();
+    const semanas = [], totais = new Map();
+    snaps.docs.forEach(doc => {
+      const data = doc.data();
+      const revealAt = data.revealAt?.toDate?.() || new Date(data.revealAt);
+      if (!(revealAt <= now)) return;                    // semana ainda não revelada
+      semanas.push({ weekKey:data.weekKey, participantes:data.participantCount || 0,
+        ranking:data.ranking || [] });
+      (data.ranking || []).forEach(row => {
+        const atual = totais.get(row.uid) || { uid:row.uid, name:row.name || 'Aluno', total:0, semanas:0, melhor:null };
+        atual.total += Number(row.score || 0);
+        atual.semanas += 1;
+        if (row.name) atual.name = row.name;
+        if (atual.melhor === null || row.position < atual.melhor) atual.melhor = row.position;
+        totais.set(row.uid, atual);
+      });
+    });
+    semanas.sort((a, b) => b.weekKey.localeCompare(a.weekKey));
+    const geral = [...totais.values()].sort((a, b) => b.total - a.total
+      || b.semanas - a.semanas || a.name.localeCompare(b.name, 'pt-BR'));
+    let ultimoTotal = null, ultimasSemanas = null, posicao = 0;
+    geral.forEach((row, index) => {
+      if (row.total !== ultimoTotal || row.semanas !== ultimasSemanas) posicao = index + 1;
+      ultimoTotal = row.total; ultimasSemanas = row.semanas;
+      row.position = posicao;
+    });
+    return { semanas, geral };
+  }
+
+  const obterTemporadaDesafio = onCall(
+    { region:REGION, timeoutSeconds:60, memory:'256MiB' },
+    async request => {
+      const uid = requireAuth(request);
+      await assertStudent(uid);
+      const { semanas, geral } = await loadSeason();
+      return {
+        minhasSemanas:semanas.map(semana => {
+          const linha = (semana.ranking || []).find(row => row.uid === uid);
+          return linha ? { weekKey:semana.weekKey, score:linha.score,
+            position:linha.position, partesFeitas:linha.partsCompleted,
+            participantes:semana.participantes } : null;
+        }).filter(Boolean),
+        geral:geral.map(row => ({ name:row.name, total:row.total, semanas:row.semanas,
+          position:row.position, isOwn:row.uid === uid })),
+        meuTotal:geral.find(row => row.uid === uid)?.total || 0,
+        minhaPosicao:geral.find(row => row.uid === uid)?.position || null,
+        melhorPosicao:geral.find(row => row.uid === uid)?.melhor || null,
+      };
+    }
+  );
+
+  // Visão do professor: como foi a semana, quem pontuou e — o mais útil — qual
+  // pergunta a turma errou junto, que vira pauta de aula.
+  const obterResultadoDesafioAdmin = onCall(
+    { region:REGION, timeoutSeconds:120, memory:'256MiB' },
+    async request => {
+      requireAdmin(request, adminEmails);
+      const weekKey = String(request.data?.weekKey || weekKeyFor()).trim();
+      const [resultSnaps, rankingSnap, season] = await Promise.all([
+        db.collection('_challengeResults').where('weekKey', '==', weekKey).get(),
+        db.doc(`challengeRankings/${weekKey}`).get(),
+        loadSeason(),
+      ]);
+
+      const perguntas = new Map();
+      const alunos = new Map();
+      resultSnaps.docs.forEach(doc => {
+        const resultado = doc.data();
+        const aluno = alunos.get(resultado.uid) || {
+          uid:resultado.uid, name:resultado.studentName || 'Aluno', score:0, partes:0, acertos:0, erros:0 };
+        aluno.score += Number(resultado.score || 0);
+        aluno.partes += 1;
+        (resultado.details || []).forEach(item => {
+          if (item.correct) aluno.acertos += 1; else aluno.erros += 1;
+          const chave = `${resultado.part}:${item.questionId || item.prompt}`;
+          const pergunta = perguntas.get(chave) || { part:resultado.part, prompt:item.prompt,
+            context:item.context || '', expected:item.expected || '', acertos:0, erros:0, quemErrou:[] };
+          if (item.correct) pergunta.acertos += 1;
+          else { pergunta.erros += 1; pergunta.quemErrou.push(resultado.studentName || 'Aluno'); }
+          perguntas.set(chave, pergunta);
+        });
+        alunos.set(resultado.uid, aluno);
+      });
+
+      return {
+        weekKey,
+        revelado:rankingSnap.exists,
+        ranking:(rankingSnap.data()?.ranking || []),
+        alunos:[...alunos.values()].sort((a, b) => b.score - a.score),
+        perguntas:[...perguntas.values()].sort((a, b) => b.erros - a.erros || a.part - b.part),
+        temporada:season.geral.map(row => ({ name:row.name, total:row.total,
+          semanas:row.semanas, position:row.position })),
+      };
+    }
+  );
+
   // O painel precisa ver pergunta E gabarito juntos, e o gabarito mora numa
   // coleção sem regra de leitura — fechada inclusive para o admin, para nenhum
   // aluno conseguir puxar as respostas. Por isso a revisão passa por aqui.
@@ -1067,6 +1167,7 @@ export function createChallengeFunctions({
   return {
     publicarDesafioSemanal, gerarDesafiosPersonalizados, obterDesafioSemanal, iniciarDesafioSemanal,
     obterPerguntasDesafio, regerarPerguntaDesafio,
+    obterTemporadaDesafio, obterResultadoDesafioAdmin,
     salvarRespostaDesafio, obterStatusDesafioAdmin, finalizarDesafioSemanal,
     notificarAberturaDesafio, lembrarDesafioManha, lembrarDesafioNoite,
     gerarDesafiosAtrasados, gerarDesafioDaSemana,
