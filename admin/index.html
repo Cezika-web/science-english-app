@@ -3273,9 +3273,21 @@
       // mensal para os indicadores continuarem fazendo sentido.
       const annualCents=cycle==='annual'?amount:null;
       const monthlyCents=cycle==='annual'?Math.round(amount/12):amount;
+      // Mudar o valor do anual muda o que o aluno VAI pagar; o recebimento que
+      // já está lançado não se mexe sozinho. Foi assim que janeiro ficou com
+      // 3.000 enquanto o cadastro já dizia 6.000 — e o faturado do ano saiu
+      // 3.000 menor. Se houver lançamento divergente, pergunta antes.
+      let ajusteAnual=null;
+      if(cycle==='annual'&&annualCents) {
+        const divergentes=financeTransactions.filter(tx=>tx.type==='income'&&tx.category==='tuition'
+          &&tx.studentUid===uid&&String(tx.referenceMonth||String(tx.date||'').slice(0,7))===annualMonth
+          &&Number(tx.amountCents||0)!==annualCents);
+        if(divergentes.length&&confirm(`O recebimento de ${annualMonth} está lançado como ${financeMoney(divergentes[0].amountCents)}, mas o novo valor do ano é ${financeMoney(annualCents)}.\n\nAtualizar o lançamento também?\n\nOK — corrige o que já entrou e o faturado do mês sobe.\nCancelar — muda só a previsão daqui pra frente.`)) ajusteAnual=divergentes;
+      }
       const button=document.getElementById('finance-profile-save'); button.disabled=true;
       try {
         await setDoc(doc(db,'schools',escolaAtual,'financeStudents',uid),{studentUid:uid,studentName:student.name||student.firstName||'',monthlyCents,annualCents,annualMonth:cycle==='annual'?annualMonth:null,dueDay,cycle,dueDay2:cycle==='biweekly'?dueDay2:null,paymentMethod:document.getElementById('finance-profile-method').value,active:document.getElementById('finance-profile-active').checked,avisarAtraso:document.getElementById('finance-profile-notify').checked,updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.email||''},{merge:true});
+        if(ajusteAnual) await Promise.all(ajusteAnual.map(tx=>setDoc(doc(db,'schools',escolaAtual,'financeTransactions',tx.id),{amountCents:annualCents,updatedAt:serverTimestamp()},{merge:true})));
         document.getElementById('finance-profile-modal').classList.remove('open'); await loadFinance();
       } catch(error) { showMsg('finance-profile-msg',`Erro ao salvar: ${error.message}`,'err'); } finally { button.disabled=false; }
     }
