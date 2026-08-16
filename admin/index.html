@@ -426,22 +426,23 @@
     .finance-kpi span { display:block; margin-top:3px; color:#94a3b8; font-size:.7rem; }
     .finance-kpi.positive strong { color:#15803d; }
     .finance-kpi.negative strong { color:#b91c1c; }
-    .finance-layout { display:grid; grid-template-columns:minmax(0,1.45fr) minmax(300px,.75fr); gap:14px; align-items:start; }
+    .finance-layout { display:grid; grid-template-columns:minmax(0,1.9fr) minmax(230px,.62fr); gap:12px; align-items:start; }
     .finance-card { border:1px solid var(--border); border-radius:14px; background:#fff; overflow:hidden; }
     .finance-card-head { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px; border-bottom:1px solid var(--border); }
     .finance-card-head h3 { margin:0; font-size:.9rem; }
     .finance-card-head p { margin:3px 0 0; color:var(--muted); font-size:.7rem; }
     .finance-table-wrap { overflow:auto; }
     .finance-table { width:100%; border-collapse:collapse; font-size:.78rem; }
-    .finance-table th { padding:9px 12px; background:#f8fafc; color:#64748b; text-align:left; font-size:.66rem; text-transform:uppercase; white-space:nowrap; }
-    .finance-table td { padding:11px 12px; border-top:1px solid #eef2f7; vertical-align:middle; }
+    .finance-table th { padding:8px 8px; background:#f8fafc; color:#64748b; text-align:left; font-size:.64rem; text-transform:uppercase; white-space:nowrap; }
+    .finance-table td { padding:9px 8px; border-top:1px solid #eef2f7; vertical-align:middle; }
+    .finance-actions { display:flex; gap:4px; justify-content:flex-end; }
     .finance-table tr:hover td { background:#fbfdff; }
     .finance-status { display:inline-flex; padding:3px 8px; border-radius:999px; font-size:.65rem; font-weight:800; white-space:nowrap; }
     .finance-status.paid { background:#dcfce7; color:#166534; }
     .finance-status.pending { background:#fef3c7; color:#92400e; }
     .finance-status.overdue { background:#fee2e2; color:#991b1b; }
     .finance-status.unset { background:#f1f5f9; color:#64748b; }
-    .finance-row-btn { border:1px solid var(--border); border-radius:7px; padding:6px 8px; background:#fff; color:#334155; font:inherit; font-size:.68rem; font-weight:800; cursor:pointer; white-space:nowrap; }
+    .finance-row-btn { border:1px solid var(--border); border-radius:7px; padding:5px 7px; background:#fff; color:#334155; font:inherit; font-size:.645rem; font-weight:800; cursor:pointer; white-space:nowrap; }
     .finance-row-btn.finance-undo { border-color:#fecaca; color:#b91c1c; }
     .finance-row-btn.finance-undo:hover { background:#fff5f5; }
     .finance-bars { padding:14px 16px; display:grid; gap:11px; }
@@ -663,7 +664,16 @@
             <div class="finance-card-head"><div><h3>Mensalidades dos alunos</h3><p id="finance-expected-note">Configure valor e vencimento de cada aluno.</p></div><button class="finance-row-btn" id="finance-profile-new" type="button">⚙ Configurar</button></div>
             <div class="finance-table-wrap"><table class="finance-table"><thead><tr><th>Aluno</th><th>Mensalidade</th><th>Vencimento</th><th>Status</th><th></th></tr></thead><tbody id="finance-students-body"><tr><td colspan="5">Carregando...</td></tr></tbody></table></div>
           </div>
-          <div class="finance-card"><div class="finance-card-head"><div><h3>Fluxo dos últimos 6 meses</h3><p>Ganhos em verde e despesas em vermelho.</p></div></div><div class="finance-bars" id="finance-bars"></div></div>
+          <div class="finance-card">
+            <div class="finance-card-head">
+              <div><h3>Ano de <span id="finance-year-label">2026</span></h3><p id="finance-year-note">ganhos em verde, despesas em vermelho</p></div>
+              <div style="text-align:right;white-space:nowrap;">
+                <strong id="finance-year-income" style="display:block;font-size:1.1rem;color:#15803d;">R$ 0,00</strong>
+                <small id="finance-year-result" style="color:#94a3b8;font-size:.68rem;">no ano</small>
+              </div>
+            </div>
+            <div class="finance-bars" id="finance-bars"></div>
+          </div>
         </div>
       </div>
 
@@ -1422,7 +1432,7 @@
           <div class="field"><label for="finance-profile-due" id="finance-profile-due-label">Dia do vencimento</label><input id="finance-profile-due" type="number" min="1" max="31" placeholder="10"></div>
         </div>
         <div class="field" id="finance-profile-due2-field" style="display:none;margin-top:14px;"><label for="finance-profile-due2">Vencimento da 2ª quinzena</label><input id="finance-profile-due2" type="number" min="1" max="31" placeholder="20"></div>
-        <div class="field" id="finance-profile-annual-field" style="display:none;margin-top:14px;"><label for="finance-profile-annual-month">Mês em que o anual cai</label><input id="finance-profile-annual-month" type="month"></div>
+        <div class="field" id="finance-profile-annual-field" style="display:none;margin-top:14px;"><label for="finance-profile-annual-month">Mês em que o anual foi (ou será) pago</label><input id="finance-profile-annual-month" type="month"></div>
         <p id="finance-profile-hint" style="display:none;margin:9px 0 0;padding:9px 11px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A;font-size:.76rem;line-height:1.45;"></p>
         <div class="field" style="margin-top:14px;"><label for="finance-profile-method">Forma habitual de pagamento</label><select id="finance-profile-method"><option value="pix">PIX</option><option value="card">Cartão</option><option value="cash">Dinheiro</option><option value="transfer">Transferência</option><option value="other">Outro</option></select></div>
         <label style="display:flex;align-items:center;gap:9px;font-size:.82rem;margin-top:8px;"><input id="finance-profile-active" type="checkbox" checked> Cobrança mensal ativa</label>
@@ -1439,6 +1449,8 @@
         <input id="finance-transaction-type" type="hidden" value="income">
         <input id="finance-transaction-part" type="hidden" value="0">
         <input id="finance-transaction-covers" type="hidden" value="1">
+        <input id="finance-transaction-id" type="hidden" value="">
+        <input id="finance-transaction-series" type="hidden" value="">
         <div class="field" id="finance-transaction-student-field"><label for="finance-transaction-student">Aluno</label><select id="finance-transaction-student"><option value="">Ganho sem aluno</option></select></div>
         <div class="calendar-form-grid">
           <div class="field"><label for="finance-transaction-amount">Valor (R$)</label><input id="finance-transaction-amount" type="number" min="0.01" step="0.01"></div>
@@ -1447,6 +1459,8 @@
           <div class="field"><label for="finance-transaction-category">Categoria</label><select id="finance-transaction-category"></select></div>
         </div>
         <div class="field" style="margin-top:14px;"><label for="finance-transaction-description">Descrição</label><input id="finance-transaction-description" maxlength="120" placeholder="Ex.: Mensalidade de agosto"></div>
+        <label id="finance-transaction-repeat-field" style="display:flex;align-items:center;gap:9px;font-size:.82rem;margin-top:12px;"><input id="finance-transaction-repeat" type="checkbox"> Repetir nos próximos meses <span style="color:var(--muted);font-size:.75rem;">(cria os 12 meses)</span></label>
+        <label id="finance-transaction-series-field" style="display:none;align-items:center;gap:9px;font-size:.82rem;margin-top:8px;"><input id="finance-transaction-series-apply" type="checkbox"> Aplicar também aos próximos meses desta série</label>
         <div class="form-msg" id="finance-transaction-msg"></div>
         <button class="btn-add" id="finance-transaction-save" type="button" style="width:100%;margin-top:18px;">Registrar receita</button>
       </div>
@@ -2962,15 +2976,19 @@
         const statusCell=etapas.map(({part,status})=>
           `<span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">${biweekly?`<small style="color:#94a3b8;font-weight:800;">${part.short}</small>`:''}<span class="finance-status ${status.key}">${esc(status.label)}</span></span>`).join('<br>');
         const actionCell=etapas.map(({part,status})=>{
-          if(anual&&!part.cobraNesteMes) return ''; // fora do mês do anual não há o que receber
+          // No anual, se ainda não está pago o botão aparece em qualquer mês —
+          // o pagamento pode ter sido feito lá atrás (janeiro, por exemplo).
+          if(anual) return status.key==='paid'
+            ? (part.cobraNesteMes?`<button class="finance-row-btn finance-undo" data-uid="${esc(student.uid)}" data-part="0" title="Cancelar o recebimento">↩ Desfazer</button>`:'')
+            : `<button class="finance-row-btn finance-pay" data-uid="${esc(student.uid)}" data-part="0">Receber o ano</button>`;
           const sufixo=biweekly?` ${part.short}`:'';
           const receber=`<button class="finance-row-btn finance-pay" data-uid="${esc(student.uid)}" data-part="${part.part}">Receber${sufixo}</button>`;
-          const desfazer=`<button class="finance-row-btn finance-undo" data-uid="${esc(student.uid)}" data-part="${part.part}" title="Cancelar o recebimento — volta para pendente">↩ Desfazer${sufixo}</button>`;
+          const desfazer=`<button class="finance-row-btn finance-undo" data-uid="${esc(student.uid)}" data-part="${part.part}" title="Cancelar o recebimento — volta para pendente">↩${biweekly?sufixo:' Desfazer'}</button>`;
           if(status.received<=0) return receber;                      // nada recebido
           if(status.received<part.amount) return `${receber} ${desfazer}`; // parcial: dá pra completar ou cancelar
           return desfazer;                                            // quitado
-        }).join(' ')+` <button class="finance-row-btn finance-configure" data-uid="${esc(student.uid)}">Editar</button>`;
-        return `<tr><td><strong>${esc(student.name||student.firstName||'Aluno')}</strong><br><small style="color:#94a3b8">${method}${biweekly?' · quinzenal':''}</small></td><td>${valueCell}</td><td>${dueCell}</td><td>${statusCell}</td><td style="white-space:nowrap">${actionCell}</td></tr>`;
+        }).join('')+`<button class="finance-row-btn finance-configure" data-uid="${esc(student.uid)}">Editar</button>`;
+        return `<tr><td><strong>${esc(student.name||student.firstName||'Aluno')}</strong><br><small style="color:#94a3b8">${method}${biweekly?' · quinzenal':''}</small></td><td>${valueCell}</td><td>${dueCell}</td><td>${statusCell}</td><td><div class="finance-actions">${actionCell}</div></td></tr>`;
       }).join('')||'<tr><td colspan="5">Nenhum aluno ativo.</td></tr>';
       document.querySelectorAll('.finance-configure').forEach(button=>button.onclick=()=>openFinanceProfile(button.dataset.uid));
       document.querySelectorAll('.finance-pay').forEach(button=>button.onclick=()=>openFinanceTransaction('income',button.dataset.uid,Number(button.dataset.part||0)));
@@ -2978,14 +2996,24 @@
       renderFinanceBars(month); renderFinanceSplit(incomes,expenses);
     }
 
+    // Ano inteiro, mês a mês: é aqui que dá pra ver o pulo do mês em que
+    // alguém fechou o anual e quanto entrou no ano até agora.
     function renderFinanceBars(selectedMonth) {
-      const {start}=financeMonthBounds(selectedMonth),months=Array.from({length:6},(_,index)=>new Date(start.getFullYear(),start.getMonth()-5+index,1));
-      const values=months.map(date=> {
-        const key=calendarDateKey(date).slice(0,7),items=financeTransactions.filter(tx=>String(tx.date||'').startsWith(key));
-        return {key,label:date.toLocaleDateString('pt-BR',{month:'short'}).replace('.',''),income:items.filter(tx=>tx.type==='income').reduce((sum,tx)=>sum+Number(tx.amountCents||0),0),expense:items.filter(tx=>tx.type==='expense').reduce((sum,tx)=>sum+Number(tx.amountCents||0),0)};
+      const ano=selectedMonth.slice(0,4),mesAtual=financeTodayKey().slice(0,7);
+      const values=Array.from({length:12},(_,index)=> {
+        const key=`${ano}-${String(index+1).padStart(2,'0')}`;
+        const items=financeTransactions.filter(tx=>String(tx.date||'').startsWith(key));
+        return {key,label:new Date(Number(ano),index,1).toLocaleDateString('pt-BR',{month:'short'}).replace('.',''),
+          income:items.filter(tx=>tx.type==='income').reduce((sum,tx)=>sum+Number(tx.amountCents||0),0),
+          expense:items.filter(tx=>tx.type==='expense').reduce((sum,tx)=>sum+Number(tx.amountCents||0),0)};
       });
       const max=Math.max(1,...values.flatMap(item=>[item.income,item.expense]));
-      document.getElementById('finance-bars').innerHTML=values.map(item=>`<div class="finance-bar-row"><strong>${esc(item.label)}</strong><div class="finance-bar-track"><span class="finance-bar-income" style="width:${item.income/max*100}%"></span><span class="finance-bar-expense" style="width:${item.expense/max*100}%"></span></div><span>${financeMoney(item.income-item.expense)}</span></div>`).join('');
+      const ganhoAno=values.reduce((sum,item)=>sum+item.income,0),despesaAno=values.reduce((sum,item)=>sum+item.expense,0);
+      document.getElementById('finance-year-label').textContent=ano;
+      document.getElementById('finance-year-income').textContent=financeMoney(ganhoAno);
+      document.getElementById('finance-year-result').textContent=`− ${financeMoney(despesaAno)} = ${financeMoney(ganhoAno-despesaAno)}`;
+      document.getElementById('finance-year-note').textContent=ano===mesAtual.slice(0,4)?'ganho no ano até agora':'ano fechado';
+      document.getElementById('finance-bars').innerHTML=values.map(item=>`<div class="finance-bar-row${item.key===selectedMonth?' atual':''}"><strong>${esc(item.label)}</strong><div class="finance-bar-track"><span class="finance-bar-income" style="width:${item.income/max*100}%"></span><span class="finance-bar-expense" style="width:${item.expense/max*100}%"></span></div><span>${item.income||item.expense?financeMoney(item.income-item.expense):'—'}</span></div>`).join('');
     }
 
     // Ganhos e despesas nunca se misturam: cada lado tem seu total, suas categorias e sua lista.
@@ -2999,6 +3027,7 @@
       document.querySelectorAll('.finance-more').forEach(button=>button.onclick=()=> {
         financeListExpanded[button.dataset.side]=!financeListExpanded[button.dataset.side]; renderFinance();
       });
+      document.querySelectorAll('.finance-edit').forEach(button=>button.onclick=()=>editFinanceTransaction(button.dataset.id));
       document.querySelectorAll('.finance-delete').forEach(button=>button.onclick=async()=> {
         if(!confirm('Excluir esta movimentação financeira?')) return;
         await deleteDoc(doc(db,'schools',escolaAtual,'financeTransactions',button.dataset.id)); await loadFinance();
@@ -3017,7 +3046,7 @@
         : `<div style="color:var(--muted);font-size:.72rem;">Nada por categoria neste mês.</div>`;
       const sorted=[...items].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
       const expanded=financeListExpanded[type], shown=expanded?sorted:sorted.slice(0,FINANCE_LIST_LIMIT);
-      const rows=shown.map(tx=>`<div class="finance-movement"><span class="finance-movement-icon" style="background:${income?'#dcfce7':'#fee2e2'}">${income?'↗':'↘'}</span><span class="finance-movement-info"><strong>${esc(tx.description||FINANCE_CATEGORIES[tx.category]||'Movimentação')}</strong><small>${esc(tx.studentName||FINANCE_CATEGORIES[tx.category]||'')} · ${String(tx.date||'').split('-').reverse().join('/')}</small></span><span class="finance-money" style="color:${income?'#15803d':'#b91c1c'}">${income?'+':'−'} ${financeMoney(tx.amountCents)}</span><button class="finance-row-btn finance-delete" data-id="${esc(tx.id)}" title="Excluir">×</button></div>`).join('');
+      const rows=shown.map(tx=>`<div class="finance-movement"><span class="finance-movement-icon" style="background:${income?'#dcfce7':'#fee2e2'}">${income?'↗':'↘'}</span><span class="finance-movement-info"><strong>${esc(tx.description||FINANCE_CATEGORIES[tx.category]||'Movimentação')}</strong><small>${esc(tx.studentName||FINANCE_CATEGORIES[tx.category]||'')} · ${String(tx.date||'').split('-').reverse().join('/')}${tx.seriesId?' · ↻ mensal':''}</small></span><span class="finance-money" style="color:${income?'#15803d':'#b91c1c'}">${income?'+':'−'} ${financeMoney(tx.amountCents)}</span><button class="finance-row-btn finance-edit" data-id="${esc(tx.id)}" title="Editar">✎</button><button class="finance-row-btn finance-delete" data-id="${esc(tx.id)}" title="Excluir">×</button></div>`).join('');
       const more=sorted.length>FINANCE_LIST_LIMIT?`<button class="finance-more" type="button" data-side="${type}">${expanded?'ver menos':`ver todos os ${sorted.length}`}</button>`:'';
       document.getElementById(income?'finance-income-list':'finance-expense-list').innerHTML=rows
         ? rows+more
@@ -3096,8 +3125,18 @@
       document.getElementById('finance-transaction-part').value=String(chosen?chosen.part:0);
       const anual=profile?.cycle==='annual';
       document.getElementById('finance-transaction-covers').value=anual?'12':'1';
+      document.getElementById('finance-transaction-id').value='';
+      document.getElementById('finance-transaction-series').value='';
+      document.getElementById('finance-transaction-repeat').checked=false;
+      document.getElementById('finance-transaction-repeat-field').style.display=anual?'none':'flex';
+      document.getElementById('finance-transaction-series-field').style.display='none';
+      document.getElementById('finance-transaction-series-apply').checked=false;
       document.getElementById('finance-transaction-type').value=type; document.getElementById('finance-transaction-title').textContent=income?(chosen&&chosen.part?`Registrar ${chosen.label}`:'Registrar ganho'):'Registrar despesa'; document.getElementById('finance-transaction-student-field').style.display=income?'block':'none'; document.getElementById('finance-reference-field').style.display=income?'block':'none';
-      document.getElementById('finance-transaction-student').value=income?uid:''; document.getElementById('finance-transaction-amount').value=chosen?chosen.amount/100:(profile?Number(profile.monthlyCents||0)/100:''); document.getElementById('finance-transaction-date').value=financeTodayKey(); document.getElementById('finance-transaction-reference').value=month;
+      document.getElementById('finance-transaction-student').value=income?uid:'';
+      // No anual o valor é sempre o do ano, mesmo consultando outro mês.
+      document.getElementById('finance-transaction-amount').value=anual?Number(profile.annualCents||0)/100
+        :(chosen&&chosen.amount?chosen.amount/100:(profile?Number(profile.monthlyCents||0)/100:'')); document.getElementById('finance-transaction-date').value=anual&&profile?.annualMonth?`${profile.annualMonth}-${String(Math.min(28,Number(profile.dueDay||10))).padStart(2,'0')}`:financeTodayKey();
+      document.getElementById('finance-transaction-reference').value=anual&&profile?.annualMonth?profile.annualMonth:month;
       const category=document.getElementById('finance-transaction-category'); category.innerHTML=income?'<option value="tuition">Mensalidade</option><option value="material">Material</option><option value="other-income">Outro ganho</option>':'<option value="platform">Plataformas e sistemas</option><option value="tax">Impostos</option><option value="marketing">Marketing</option><option value="material">Material</option><option value="rent">Aluguel</option><option value="other-expense">Outra despesa</option>';
       document.getElementById('finance-transaction-description').value=income&&student?`${chosen&&chosen.part?chosen.label:'Mensalidade'} · ${student.name||student.firstName}`:''; document.getElementById('finance-transaction-save').textContent=income?'Registrar ganho':'Registrar despesa'; document.getElementById('finance-transaction-save').style.background=income?'var(--accent)':'#dc2626'; showMsg('finance-transaction-msg','','info'); document.getElementById('finance-transaction-modal').classList.add('open');
     }
@@ -3106,11 +3145,68 @@
       const type=document.getElementById('finance-transaction-type').value,uid=type==='income'?document.getElementById('finance-transaction-student').value:'',student=allStudents.find(item=>item.uid===uid),amount=Math.round(Number(document.getElementById('finance-transaction-amount').value)*100),date=document.getElementById('finance-transaction-date').value;
       if(!Number.isFinite(amount)||amount<=0) return showMsg('finance-transaction-msg','Informe um valor maior que zero.','err');
       if(!date) return showMsg('finance-transaction-msg','Informe a data.','err');
+      const id=document.getElementById('finance-transaction-id').value;
+      const seriesId=document.getElementById('finance-transaction-series').value;
+      const base={type,amountCents:amount,date,
+        referenceMonth:type==='income'?document.getElementById('finance-transaction-reference').value:'',
+        referencePart:type==='income'?Number(document.getElementById('finance-transaction-part').value)||0:0,
+        coversMonths:type==='income'?Number(document.getElementById('finance-transaction-covers').value)||1:1,
+        studentUid:uid,studentName:student?.name||student?.firstName||'',
+        category:document.getElementById('finance-transaction-category').value,
+        description:document.getElementById('finance-transaction-description').value.trim()||(type==='income'?'Ganho':'Despesa'),
+        updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.email||''};
       const button=document.getElementById('finance-transaction-save'); button.disabled=true;
       try {
-        await addDoc(collection(db,'schools',escolaAtual,'financeTransactions'),{type,amountCents:amount,date,referenceMonth:type==='income'?document.getElementById('finance-transaction-reference').value:'',referencePart:type==='income'?Number(document.getElementById('finance-transaction-part').value)||0:0,coversMonths:type==='income'?Number(document.getElementById('finance-transaction-covers').value)||1:1,studentUid:uid,studentName:student?.name||student?.firstName||'',category:document.getElementById('finance-transaction-category').value,description:document.getElementById('finance-transaction-description').value.trim()||(type==='income'?'Ganho':'Despesa'),createdAt:serverTimestamp(),createdBy:auth.currentUser?.email||''});
+        if(id) {
+          await setDoc(doc(db,'schools',escolaAtual,'financeTransactions',id),base,{merge:true});
+          if(seriesId&&document.getElementById('finance-transaction-series-apply').checked) {
+            // muda o valor/nome dos meses seguintes da mesma série, sem mexer no que já passou
+            const seguintes=financeTransactions.filter(tx=>tx.seriesId===seriesId&&tx.id!==id&&String(tx.date||'')>String(date));
+            await Promise.all(seguintes.map(tx=>setDoc(doc(db,'schools',escolaAtual,'financeTransactions',tx.id),
+              {amountCents:amount,category:base.category,description:base.description,updatedAt:serverTimestamp()},{merge:true})));
+          }
+          if(!seriesId&&document.getElementById('finance-transaction-repeat').checked) await financeCreateSeries(base,date,id);
+        } else if(document.getElementById('finance-transaction-repeat').checked) {
+          await financeCreateSeries(base,date,null);
+        } else {
+          await addDoc(collection(db,'schools',escolaAtual,'financeTransactions'),{...base,createdAt:serverTimestamp(),createdBy:auth.currentUser?.email||''});
+        }
         document.getElementById('finance-transaction-modal').classList.remove('open'); await loadFinance();
       } catch(error) { showMsg('finance-transaction-msg',`Erro ao registrar: ${error.message}`,'err'); } finally { button.disabled=false; }
+    }
+
+    // Repetir = materializa 12 meses. Cada mês vira um lançamento próprio, que
+    // dá para editar ou apagar sozinho; o seriesId é o que os liga.
+    async function financeCreateSeries(base,date,existingId) {
+      const seriesId=`s${Date.now()}${Math.random().toString(36).slice(2,7)}`;
+      const [ano,mes,dia]=date.split('-').map(Number),novos=[];
+      for(let passo=existingId?1:0;passo<12;passo+=1) {
+        const alvo=new Date(ano,mes-1+passo,1),ultimoDia=new Date(alvo.getFullYear(),alvo.getMonth()+1,0).getDate();
+        const dataMes=`${alvo.getFullYear()}-${String(alvo.getMonth()+1).padStart(2,'0')}-${String(Math.min(dia,ultimoDia)).padStart(2,'0')}`;
+        novos.push({...base,date:dataMes,referenceMonth:base.referenceMonth?dataMes.slice(0,7):'',
+          seriesId,recurring:true,createdAt:serverTimestamp(),createdBy:auth.currentUser?.email||''});
+      }
+      if(existingId) await setDoc(doc(db,'schools',escolaAtual,'financeTransactions',existingId),{seriesId,recurring:true},{merge:true});
+      await Promise.all(novos.map(item=>addDoc(collection(db,'schools',escolaAtual,'financeTransactions'),item)));
+    }
+
+    function editFinanceTransaction(id) {
+      const tx=financeTransactions.find(item=>item.id===id); if(!tx) return;
+      const income=tx.type==='income';
+      openFinanceTransaction(tx.type,tx.studentUid||'',Number(tx.referencePart||0));
+      document.getElementById('finance-transaction-id').value=tx.id;
+      document.getElementById('finance-transaction-series').value=tx.seriesId||'';
+      document.getElementById('finance-transaction-title').textContent=income?'Editar ganho':'Editar despesa';
+      document.getElementById('finance-transaction-save').textContent='Salvar alterações';
+      document.getElementById('finance-transaction-amount').value=Number(tx.amountCents||0)/100;
+      document.getElementById('finance-transaction-date').value=tx.date||financeTodayKey();
+      document.getElementById('finance-transaction-reference').value=tx.referenceMonth||financeMonthKey();
+      document.getElementById('finance-transaction-covers').value=String(Number(tx.coversMonths||1));
+      const categoria=document.getElementById('finance-transaction-category');
+      if([...categoria.options].some(option=>option.value===tx.category)) categoria.value=tx.category;
+      document.getElementById('finance-transaction-description').value=tx.description||'';
+      document.getElementById('finance-transaction-repeat-field').style.display=tx.seriesId?'none':'flex';
+      document.getElementById('finance-transaction-series-field').style.display=tx.seriesId?'flex':'none';
     }
 
     document.getElementById('finance-month').value=financeTodayKey().slice(0,7);
