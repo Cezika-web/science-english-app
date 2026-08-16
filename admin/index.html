@@ -628,7 +628,6 @@
           <input id="finance-month" type="month" aria-label="Mês do financeiro">
           <button class="btn-add" id="finance-new-income" type="button" style="padding:9px 12px;">＋ Ganho</button>
           <button class="btn-add" id="finance-new-expense" type="button" style="background:#fff;color:#b91c1c;border:1px solid #fecaca;padding:9px 12px;">− Despesa</button>
-          <button class="btn-add" id="finance-clean-future" type="button" style="display:none;background:#fff;color:#b45309;border:1px solid #fde68a;padding:9px 12px;">🧹 Limpar mensalidades futuras</button>
         </div>
         <div class="finance-summary">
           <div class="finance-sum income"><small>↗ Ganhos do mês</small><strong id="finance-income">R$ 0,00</strong><span id="finance-income-note">0 entradas</span></div>
@@ -2947,6 +2946,37 @@
       return financeProfileParts(profile,month).reduce((sum,part)=>sum+Math.min(part.amount,financePartStatus(profile,month,part).received),0);
     }
 
+    // Mês em que o aluno entrou na cobrança: o primeiro lançamento de
+    // mensalidade que existe para ele. Sem essa âncora, quem entrou em junho
+    // apareceria como previsto desde janeiro — o retroativo que já foi tirado.
+    function financeFirstChargedMonth(uid) {
+      const meses=financeTransactions
+        .filter(tx=>tx.type==='income'&&tx.category==='tuition'&&tx.studentUid===uid)
+        .map(tx=>String(tx.referenceMonth||String(tx.date||'').slice(0,7)))
+        .filter(Boolean).sort();
+      return meses[0]||'';
+    }
+
+    // Previsto do mês: tudo que já entrou mais o que ainda falta entrar de quem
+    // continua na lista. Aluno pendente conta como ganho previsto enquanto for
+    // aluno; ao virar ex-aluno (active:false) a pendência dele some de todos os
+    // meses de uma vez, porque aquele dinheiro não vem mais. O que ele já pagou
+    // continua contado — aquilo aconteceu e não se desfaz.
+    function financeMonthForecast(month,recebido) {
+      const mesAtual=financeTodayKey().slice(0,7);
+      let pendente=0;
+      financeProfiles.forEach(profile=> {
+        if(profile.active===false) return;
+        const inicio=financeFirstChargedMonth(profile.studentUid);
+        if(inicio?month<inicio:month<mesAtual) return;
+        financeProfileParts(profile,month).forEach(part=> {
+          if(!(part.amount>0)) return;
+          pendente+=Math.max(0,part.amount-financePartStatus(profile,month,part).received);
+        });
+      });
+      return recebido+pendente;
+    }
+
     function renderFinance() {
       const month=financeMonthKey();
       const monthTransactions=financeTransactions.filter(tx=>String(tx.date||'').startsWith(month));
@@ -3038,9 +3068,6 @@
       document.querySelectorAll('.finance-configure').forEach(button=>button.onclick=()=>openFinanceProfile(button.dataset.uid));
       document.querySelectorAll('.finance-pay').forEach(button=>button.onclick=()=>openFinanceTransaction('income',button.dataset.uid,Number(button.dataset.part||0)));
       document.querySelectorAll('.finance-undo').forEach(button=>button.onclick=()=>undoFinancePayment(button.dataset.uid,Number(button.dataset.part||0)));
-      const futuras=financeFutureTuitions(),botaoLimpar=document.getElementById('finance-clean-future');
-      botaoLimpar.style.display=futuras.length?'inline-block':'none';
-      botaoLimpar.textContent=`🧹 Limpar ${futuras.length} mensalidade(s) futura(s)`;
       // Todo mês já lista a mensalidade de quem tem cobrança ativa, como
       // PREVISTO — sem gravar nada. Sai da lista quando é recebida (vira
       // lançamento real) ou quando você desliga a cobrança no cadastro.
@@ -3065,21 +3092,24 @@
 
     // Ano inteiro, mês a mês: é aqui que dá pra ver o pulo do mês em que
     // alguém fechou o anual e quanto entrou no ano até agora.
-    // O número de cada mês é o TOTAL que caiu na conta naquele mês — tudo que
-    // foi dado como pago, com o anual inteiro no mês em que ele entrou. Não é
-    // descontado de despesa (isso é o lucro, que fica no topo do card) nem
-    // diluído em fatias (isso é o card "Mensal diluído"). Por isso a soma das
-    // doze linhas bate exatamente com o "Faturado no ano".
+    // O número de cada mês é o PREVISTO daquele mês: o que já entrou mais o que
+    // ainda falta entrar de quem continua na lista de alunos. Não é descontado
+    // de despesa (isso é o lucro, no topo do card) nem diluído em fatias (isso é
+    // o card "Mensal diluído"). Por isso a soma das doze linhas é maior que o
+    // "Faturado no ano" enquanto houver mensalidade em aberto — a diferença
+    // entre os dois é exatamente o que falta receber.
     function renderFinanceBars(selectedMonth) {
       const ano=selectedMonth.slice(0,4),mesAtual=financeTodayKey().slice(0,7);
       const values=Array.from({length:12},(_,index)=> {
         const key=`${ano}-${String(index+1).padStart(2,'0')}`;
         const items=financeTransactions.filter(tx=>String(tx.date||'').startsWith(key)&&!financeIsPlanned(tx));
+        const income=items.filter(tx=>tx.type==='income').reduce((sum,tx)=>sum+Number(tx.amountCents||0),0);
         return {key,label:new Date(Number(ano),index,1).toLocaleDateString('pt-BR',{month:'short'}).replace('.',''),
-          income:items.filter(tx=>tx.type==='income').reduce((sum,tx)=>sum+Number(tx.amountCents||0),0),
-          expense:items.filter(tx=>tx.type==='expense').reduce((sum,tx)=>sum+Number(tx.amountCents||0),0)};
+          income,
+          expense:items.filter(tx=>tx.type==='expense').reduce((sum,tx)=>sum+Number(tx.amountCents||0),0),
+          previsto:financeMonthForecast(key,income)};
       });
-      const max=Math.max(1,...values.flatMap(item=>[item.income,item.expense]));
+      const max=Math.max(1,...values.flatMap(item=>[item.previsto,item.expense]));
       const ganhoAno=values.reduce((sum,item)=>sum+item.income,0),despesaAno=values.reduce((sum,item)=>sum+item.expense,0);
       document.getElementById('finance-year-label').textContent=ano;
       document.getElementById('finance-year-income').textContent=financeMoney(ganhoAno);
@@ -3087,7 +3117,8 @@
       lucroEl.textContent=financeMoney(lucroAno); lucroEl.style.color=lucroAno<0?'#b91c1c':'#0f172a';
       document.getElementById('finance-year-result').textContent=`despesas ${financeMoney(despesaAno)}`;
       document.getElementById('finance-year-note').textContent=ano===mesAtual.slice(0,4)?'ganho no ano até agora':'ano fechado';
-      document.getElementById('finance-bars').innerHTML=values.map(item=>`<div class="finance-bar-row${item.key===selectedMonth?' atual':''}"><strong>${esc(item.label)}</strong><div class="finance-bar-track"><span class="finance-bar-income" style="width:${item.income/max*100}%"></span><span class="finance-bar-expense" style="width:${item.expense/max*100}%"></span></div><span>${item.income||item.expense?financeMoney(item.income):'—'}</span></div>`).join('');
+      document.getElementById('finance-bars').innerHTML=`<div style="font-size:.6rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);">Previsto mês a mês</div>`
+        +values.map(item=>`<div class="finance-bar-row${item.key===selectedMonth?' atual':''}"><strong>${esc(item.label)}</strong><div class="finance-bar-track"><span class="finance-bar-income" style="width:${item.previsto/max*100}%"></span><span class="finance-bar-expense" style="width:${item.expense/max*100}%"></span></div><span>${item.previsto||item.expense?financeMoney(item.previsto):'—'}</span></div>`).join('');
     }
 
     // Ganhos e despesas nunca se misturam: cada lado tem seu total, suas categorias e sua lista.
@@ -3311,33 +3342,6 @@
       return financeProfiles.some(profile=>profile.studentUid===tx.studentUid&&profile.cycle==='annual');
     }
 
-    function financeFutureTuitions() {
-      const mesAtual=financeTodayKey().slice(0,7);
-      const anuais=new Set(financeProfiles.filter(profile=>profile.cycle==='annual').map(profile=>profile.studentUid));
-      return financeTransactions.filter(tx=> {
-        if(tx.type!=='income'||tx.category!=='tuition'||!tx.seriesId) return false;
-        if(anuais.has(tx.studentUid)) return true;
-        return String(tx.referenceMonth||String(tx.date||'').slice(0,7))>mesAtual;
-      });
-    }
-
-    async function cleanFutureTuitions() {
-      const alvos=financeFutureTuitions();
-      if(!alvos.length) return alert('Não há mensalidade lançada para meses futuros.');
-      const total=alvos.reduce((soma,tx)=>soma+Number(tx.amountCents||0),0);
-      const anuais=new Set(financeProfiles.filter(profile=>profile.cycle==='annual').map(profile=>profile.studentUid));
-      const deAnual=alvos.filter(tx=>anuais.has(tx.studentUid)),futuras=alvos.filter(tx=>!anuais.has(tx.studentUid));
-      const nomes=[...new Set(deAnual.map(tx=>tx.studentName).filter(Boolean))].join(', ');
-      const detalhe=[futuras.length?`${futuras.length} de meses que ainda não chegaram`:'',
-        deAnual.length?`${deAnual.length} de aluno que hoje é anual${nomes?` (${nomes})`:''}`:''].filter(Boolean).join('\n· ');
-      if(!confirm(`Apagar ${alvos.length} mensalidade(s), somando ${financeMoney(total)}?\n\n· ${detalhe}\n\nElas voltam a aparecer como pendentes. O que você lançou na mão não é tocado.`)) return;
-      const botao=document.getElementById('finance-clean-future'); botao.disabled=true;
-      try {
-        await Promise.all(alvos.map(tx=>deleteDoc(doc(db,'schools',escolaAtual,'financeTransactions',tx.id))));
-        await loadFinance(); alert(`Pronto! ${alvos.length} lançamento(s) removidos.`);
-      } catch(error) { alert(`Erro ao limpar: ${error.message}`); } finally { botao.disabled=false; }
-    }
-
     function editFinanceTransaction(id) {
       const tx=financeTransactions.find(item=>item.id===id); if(!tx) return;
       const income=tx.type==='income';
@@ -3364,7 +3368,6 @@
     document.getElementById('finance-profile-new').onclick=()=>openFinanceProfile(); document.getElementById('finance-profile-save').onclick=saveFinanceProfile; document.getElementById('finance-profile-close').onclick=()=>document.getElementById('finance-profile-modal').classList.remove('open');
     document.getElementById('finance-new-income').onclick=()=>openFinanceTransaction('income'); document.getElementById('finance-new-expense').onclick=()=>openFinanceTransaction('expense'); document.getElementById('finance-transaction-save').onclick=saveFinanceTransaction; document.getElementById('finance-transaction-close').onclick=()=>document.getElementById('finance-transaction-modal').classList.remove('open');
     document.getElementById('finance-transaction-category').onchange=syncFinanceRepeatOption;
-    document.getElementById('finance-clean-future').onclick=cleanFutureTuitions;
     ['finance-profile-modal','finance-transaction-modal'].forEach(id=>document.getElementById(id).onclick=click=>{if(click.target.id===id)click.currentTarget.classList.remove('open');});
 
     // Depois que o servidor devolve o jobId, atualizar/fechar é seguro. O aviso
