@@ -293,6 +293,8 @@
     .calendar-grid { display:grid; grid-template-columns:58px repeat(7,minmax(100px,1fr)); position:relative; }
     .calendar-hours { position:relative; background:#fff; }
     .calendar-hour-label { height:var(--hour-height); padding:0 8px; text-align:right; color:#a8b2c1; font-size:.6rem; transform:translateY(-6px); }
+    /* o primeiro rótulo não sobe: acima dele não há área visível e ele sumia */
+    .calendar-hour-label:first-child { transform:none; }
     .calendar-day-column { position:relative; border-left:1px solid #e9eef5; background-image:linear-gradient(to bottom, #e6ebf2 1px, transparent 1px),linear-gradient(to bottom, #f1f5f9 1px, transparent 1px),linear-gradient(to bottom, #f8fafc 1px, transparent 1px); background-size:100% var(--hour-height),100% calc(var(--hour-height) / 2),100% calc(var(--hour-height) / 4); cursor:crosshair; touch-action:pan-y; }
     .calendar-selection { position:absolute; left:2px; right:2px; z-index:9; border-radius:7px; border:1.5px dashed color-mix(in srgb, var(--cal-brand) 55%, #fff); background:color-mix(in srgb, var(--cal-brand) 15%, #fff); color:var(--cal-brand); padding:2px 5px; font-size:.62rem; font-weight:800; line-height:1.25; overflow:hidden; pointer-events:none; }
     .calendar-week.selecting { user-select:none; }
@@ -347,6 +349,9 @@
     .calendar-pop-actions .calendar-delete { display:none; padding:9px 12px; font-size:.83rem; }
     .calendar-pop-more { width:100%; margin-top:9px; padding:0; border:0; background:none; color:var(--muted); font:inherit; font-size:.72rem; text-decoration:underline; cursor:pointer; }
     .calendar-pop-msg { margin-top:8px; color:var(--danger); font-size:.72rem; display:none; }
+    .calendar-toast { position:fixed; left:50%; bottom:26px; z-index:200; transform:translateX(-50%) translateY(10px); padding:10px 16px; border-radius:10px; background:#0f172a; color:#fff; font-size:.8rem; font-weight:600; box-shadow:0 10px 30px rgba(15,23,42,.28); opacity:0; pointer-events:none; transition:opacity .16s ease, transform .16s ease; }
+    .calendar-toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
+    .calendar-toast.erro { background:#b91c1c; }
     .calendar-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
     .calendar-form-grid .field { margin-bottom:0; }
     .calendar-modal-actions { display:flex; gap:9px; margin-top:18px; }
@@ -391,6 +396,10 @@
     .finance-mini small { display:block; color:#64748b; font-size:.66rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
     .finance-mini strong { display:block; margin-top:4px; color:#0f172a; font-size:1rem; }
     .finance-mini span { display:block; margin-top:2px; color:#94a3b8; font-size:.68rem; }
+    .finance-toggle { display:inline-flex; margin-top:6px; border:1px solid var(--border); border-radius:7px; overflow:hidden; }
+    .finance-toggle button { border:0; padding:3px 9px; background:#fff; color:#64748b; font:inherit; font-size:.62rem; font-weight:800; cursor:pointer; }
+    .finance-toggle button + button { border-left:1px solid var(--border); }
+    .finance-toggle button.on { background:var(--accent); color:#fff; }
     .finance-split { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-bottom:14px; align-items:start; }
     .finance-panel { border:1px solid var(--border); border-radius:14px; background:#fff; overflow:hidden; }
     .finance-panel > header { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:13px 16px; border-bottom:1px solid var(--border); }
@@ -624,7 +633,11 @@
         <div class="finance-mini-kpis">
           <div class="finance-mini"><small>Ainda a receber</small><strong id="finance-open">R$ 0,00</strong><span>neste mês</span></div>
           <div class="finance-mini"><small>Mensal diluído</small><strong id="finance-diluted">R$ 0,00</strong><span id="finance-diluted-note">anual espalhado em 12 meses</span></div>
-          <div class="finance-mini"><small>Horas de aula</small><strong id="finance-hours">0h</strong><span id="finance-hours-note">no mês inteiro</span></div>
+          <div class="finance-mini">
+            <small>Horas de aula</small><strong id="finance-hours">0h</strong>
+            <div class="finance-toggle" id="finance-hours-toggle"><button type="button" data-scope="week" class="on">Semana</button><button type="button" data-scope="month">Mês</button></div>
+            <span id="finance-hours-note"></span>
+          </div>
           <div class="finance-mini"><small>Ganho por hora</small><strong id="finance-hour-rate">R$ 0,00</strong><span id="finance-hour-rate-note">ganhos ÷ horas do mês</span></div>
         </div>
         <div class="finance-split">
@@ -1350,6 +1363,8 @@
     </div>
   </div>
 
+  <div class="calendar-toast" id="calendar-toast"></div>
+
   <div class="calendar-pop" id="calendar-pop">
     <input id="calendar-pop-title" maxlength="100" placeholder="Nome do compromisso">
     <div class="calendar-pop-row">
@@ -1878,6 +1893,8 @@
     const CALENDAR_HOUR_HEIGHT = 48;
     const CALENDAR_VIEW_START = '05:00', CALENDAR_VIEW_END = '23:00'; // janela visível da grade
     let calendarShouldScroll = true; // ao abrir, rola até o início do expediente
+    let calendarClipboard = null;    // compromisso copiado com Ctrl+C
+    let calendarHover = null;        // {date, minutes} sob o mouse — destino do Ctrl+V
     let calendarSettings = { ...CALENDAR_DEFAULTS };
     let calendarEvents = [];
     let calendarWeekStart = calendarWeekStartDate(new Date());
@@ -2085,6 +2102,10 @@
           const box = column.getBoundingClientRect(), offset = (start - startMinutes) / 60 * CALENDAR_HOUR_HEIGHT;
           openCalendarPop({ type:'lesson', date:column.dataset.date, startTime:calendarTime(start), endTime:calendarTime(end) },
             { left:box.left, right:box.right, top:box.top + offset });
+        };
+        column.onmousemove = move => { // guarda onde o mouse está, para o Ctrl+V colar ali
+          const raw = ((move.clientY - column.getBoundingClientRect().top) / CALENDAR_HOUR_HEIGHT) * 60;
+          calendarHover = { date:column.dataset.date, minutes:startMinutes + Math.floor(Math.max(0, raw) / slotMinutes) * slotMinutes };
         };
         column.onpointerdown = down => {
           if (down.target.closest('.calendar-event')) return;
@@ -2680,6 +2701,51 @@
       finally { button.disabled = false; }
     }
 
+    // ── COPIAR E COLAR (Ctrl+C / Ctrl+V) ───────────────────────────────────
+    let calendarToastTimer = null;
+    function calendarToast(text, erro = false) {
+      const toast = document.getElementById('calendar-toast');
+      toast.textContent = text; toast.classList.toggle('erro', erro); toast.classList.add('on');
+      clearTimeout(calendarToastTimer); calendarToastTimer = setTimeout(() => toast.classList.remove('on'), 2600);
+    }
+
+    async function calendarPasteEvent() {
+      if (!calendarClipboard || !escolaAtual) return;
+      const destinoDia = calendarHover?.date || calendarFocusDay();
+      const duracao = Math.max(15, calendarMinutes(calendarClipboard.endTime) - calendarMinutes(calendarClipboard.startTime));
+      const inicio = Number.isFinite(calendarHover?.minutes) ? calendarHover.minutes : calendarMinutes(calendarClipboard.startTime);
+      const novo = {
+        ...calendarClipboard, date:destinoDia, startTime:calendarTime(inicio), endTime:calendarTime(inicio + duracao),
+        createdAt:serverTimestamp(), createdBy:auth.currentUser?.email || '', updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || '',
+      };
+      const conflito = calendarEvents.find(item => calendarSeriesOverlap(novo, item));
+      if (conflito) return calendarToast(`Não colei: bate com “${conflito.title || 'outro compromisso'}” (${conflito.startTime}–${conflito.endTime})`, true);
+      try {
+        await addDoc(collection(db, 'schools', escolaAtual, 'calendarEvents'), novo);
+        await loadCalendar();
+        calendarToast(`Colado em ${destinoDia.split('-').reverse().join('/')} às ${calendarTime(inicio)}`);
+      } catch (error) { calendarToast(`Erro ao colar: ${error.message}`, true); }
+    }
+
+    document.addEventListener('keydown', key => {
+      if (!(key.ctrlKey || key.metaKey)) return;
+      if (!document.getElementById('tab-calendar')?.classList.contains('active')) return;
+      const digitando = ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName);
+      const tecla = String(key.key).toLowerCase();
+      if (tecla === 'c') {
+        if (digitando) return; // não atrapalha o Ctrl+C de texto
+        const alvo = calendarPopDraft?.id ? calendarEvents.find(item => item.id === calendarPopDraft.id) : null;
+        if (!alvo) return calendarToast('Clique num compromisso antes de copiar.', true);
+        const { id, createdAt, updatedAt, ...copia } = alvo;
+        calendarClipboard = copia; key.preventDefault();
+        calendarToast(`“${alvo.title || 'Compromisso'}” copiado — Ctrl+V para colar`);
+      }
+      if (tecla === 'v') {
+        if (digitando || !calendarClipboard) return;
+        key.preventDefault(); closeCalendarPop(); calendarPasteEvent();
+      }
+    });
+
     document.getElementById('calendar-import-open').onclick = openCalendarImport;
     document.getElementById('calendar-import-close').onclick = () => document.getElementById('calendar-import-modal').classList.remove('open');
     document.getElementById('calendar-import-run').onclick = runCalendarImport;
@@ -2688,6 +2754,7 @@
     let financeProfiles = [];
     let financeTransactions = [];
     let financeCalendarEvents = [];
+    let financeHoursScope = 'week'; // 'week' | 'month' — botão no card de horas
     const financeMoney = cents => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(cents || 0)/100);
     const financeTodayKey = () => calendarDateKey(new Date());
     const financeMonthKey = () => document.getElementById('finance-month').value || financeTodayKey().slice(0,7);
@@ -2724,6 +2791,26 @@
     function financeMonthBounds(month) {
       const [year,monthNumber]=month.split('-').map(Number);
       return { start:new Date(year,monthNumber-1,1), end:new Date(year,monthNumber,0), year, monthNumber };
+    }
+
+    // Horas de uma semana típica: no mês corrente usa a semana de hoje; em
+    // outro mês, a semana do dia 15. Como as aulas são séries semanais, esse
+    // é o retrato da carga semanal dele.
+    function financeWeekStartFor(month) {
+      const hoje=new Date(),atual=calendarDateKey(hoje).slice(0,7);
+      const base=month===atual?hoje:new Date(Number(month.slice(0,4)),Number(month.slice(5,7))-1,15);
+      return calendarWeekStartDate(base);
+    }
+
+    function financeHoursForWeek(month) {
+      const inicio=financeWeekStartFor(month); let minutes=0;
+      for(let index=0;index<7;index+=1) {
+        const date=calendarAddDays(inicio,index);
+        financeCalendarEvents.filter(event=>event.type==='lesson'&&calendarOccursOn(event,date)).forEach(event=> {
+          minutes+=Math.max(0,calendarMinutes(event.endTime)-calendarMinutes(event.startTime));
+        });
+      }
+      return Math.round(minutes/6)/10;
     }
 
     // Horas do MÊS INTEIRO — é o que faz o ganho por hora variar de mês para mês,
@@ -2837,13 +2924,17 @@
       document.getElementById('finance-diluted-note').textContent=anuaisNoMes.length
         ? `${anuaisNoMes.length} anual caiu este mês · aqui entra só 1/12`
         : (diluido>income?'inclui a parcela de anuais já recebidos':'anual espalhado em 12 meses');
-      document.getElementById('finance-hours').textContent=`${String(hours).replace('.',',')}h`;
+      const horasSemana=financeHoursForWeek(month),mostrando=financeHoursScope==='week'?horasSemana:hours;
+      document.getElementById('finance-hours').textContent=`${String(mostrando).replace('.',',')}h`;
+      document.querySelectorAll('#finance-hours-toggle button').forEach(button=>button.classList.toggle('on',button.dataset.scope===financeHoursScope));
       document.getElementById('finance-hour-rate').textContent=financeMoney(rate);
       // Mês em andamento: o total é do mês fechado, mas mostra o quanto já foi dado.
       const agora=new Date(); agora.setHours(23,59,59,999);
       const limites=financeMonthBounds(month),emAndamento=limites.start<=agora&&agora<limites.end;
       const horasAteHoje=emAndamento?financeHoursForMonth(month,agora):hours;
-      document.getElementById('finance-hours-note').textContent=emAndamento?`mês inteiro · ${String(horasAteHoje).replace('.',',')}h até hoje`:'no mês inteiro';
+      document.getElementById('finance-hours-note').textContent=financeHoursScope==='week'
+        ? `no mês dá ${String(hours).replace('.',',')}h`
+        : (emAndamento?`mês inteiro · ${String(horasAteHoje).replace('.',',')}h até hoje`:'no mês inteiro');
       document.getElementById('finance-hour-rate-note').textContent=emAndamento?'previsto para o mês fechado':'ganhos ÷ horas do mês';
 
       const profileMap=new Map(financeProfiles.map(profile=>[profile.studentUid,profile]));
@@ -3024,6 +3115,7 @@
 
     document.getElementById('finance-month').value=financeTodayKey().slice(0,7);
     document.getElementById('finance-month').onchange=renderFinance;
+    document.querySelectorAll('#finance-hours-toggle button').forEach(button=>button.onclick=()=>{ financeHoursScope=button.dataset.scope; renderFinance(); });
     document.getElementById('finance-profile-cycle').onchange=syncFinanceProfileCycle; document.getElementById('finance-profile-amount').oninput=syncFinanceProfileCycle;
     document.getElementById('finance-profile-new').onclick=()=>openFinanceProfile(); document.getElementById('finance-profile-save').onclick=saveFinanceProfile; document.getElementById('finance-profile-close').onclick=()=>document.getElementById('finance-profile-modal').classList.remove('open');
     document.getElementById('finance-new-income').onclick=()=>openFinanceTransaction('income'); document.getElementById('finance-new-expense').onclick=()=>openFinanceTransaction('expense'); document.getElementById('finance-transaction-save').onclick=saveFinanceTransaction; document.getElementById('finance-transaction-close').onclick=()=>document.getElementById('finance-transaction-modal').classList.remove('open');
