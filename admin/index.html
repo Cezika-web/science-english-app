@@ -2907,6 +2907,7 @@
       let total=0;
       financeTransactions.filter(tx=>tx.type==='income').forEach(tx=> {
         const meses=Number(tx.coversMonths||1);
+        if(financeIsPlanned(tx)) return; // previsão não entra no diluído
         if(meses<=1) { if(String(tx.date||'').startsWith(month)) total+=Number(tx.amountCents||0); return; }
         const inicio=tx.referenceMonth||String(tx.date||'').slice(0,7); if(!inicio) return;
         const base=financeMonthIndex(inicio),alvo=financeMonthIndex(month);
@@ -2961,7 +2962,7 @@
       const month=financeMonthKey();
       const monthTransactions=financeTransactions.filter(tx=>String(tx.date||'').startsWith(month));
       // Previsto (planned) aparece na lista mas não conta em nenhum total.
-      const realizados=monthTransactions.filter(tx=>!tx.planned);
+      const realizados=monthTransactions.filter(tx=>!financeIsPlanned(tx));
       const incomes=realizados.filter(tx=>tx.type==='income'),expenses=realizados.filter(tx=>tx.type==='expense');
       const income=incomes.reduce((sum,tx)=>sum+Number(tx.amountCents||0),0),expense=expenses.reduce((sum,tx)=>sum+Number(tx.amountCents||0),0),profit=income-expense;
       const studentIncome=incomes.filter(tx=>tx.studentUid),payingStudents=new Set(studentIncome.map(tx=>tx.studentUid));
@@ -3068,7 +3069,7 @@
       const ano=selectedMonth.slice(0,4),mesAtual=financeTodayKey().slice(0,7);
       const values=Array.from({length:12},(_,index)=> {
         const key=`${ano}-${String(index+1).padStart(2,'0')}`;
-        const items=financeTransactions.filter(tx=>String(tx.date||'').startsWith(key));
+        const items=financeTransactions.filter(tx=>String(tx.date||'').startsWith(key)&&!financeIsPlanned(tx));
         return {key,label:new Date(Number(ano),index,1).toLocaleDateString('pt-BR',{month:'short'}).replace('.',''),
           income:items.filter(tx=>tx.type==='income').reduce((sum,tx)=>sum+Number(tx.amountCents||0),0),
           expense:items.filter(tx=>tx.type==='expense').reduce((sum,tx)=>sum+Number(tx.amountCents||0),0)};
@@ -3103,7 +3104,7 @@
 
     function renderFinanceSide(type,items) {
       const income=type==='income',color=income?'#22c55e':'#ef4444';
-      const naoConta=tx=>tx.planned||tx.virtual; // previsto não entra em nenhum total
+      const naoConta=financeIsPlanned; // previsão não entra em nenhum total
       const total=items.filter(tx=>!naoConta(tx)).reduce((sum,tx)=>sum+Number(tx.amountCents||0),0);
       document.getElementById(income?'finance-income-total':'finance-expense-total').textContent=financeMoney(total);
       const groups=new Map();
@@ -3358,6 +3359,15 @@
     //  a) lançadas para meses que ainda não chegaram (ninguém pagou ainda);
     //  b) de aluno que hoje é anual — sobra de quando ele era mensalista.
     // Só alcança lançamentos criados por série; o que foi lançado na mão fica.
+    // Um lançamento é PREVISÃO quando ainda não aconteceu de fato: linha
+    // sintética de mensalidade em aberto, marcado como planned, ou de uma
+    // série repetida caindo em mês que ainda não chegou. Previsão aparece na
+    // lista mas não entra em nenhum total.
+    function financeIsPlanned(tx) {
+      if(tx.virtual||tx.planned) return true;
+      return Boolean(tx.seriesId)&&String(tx.date||'').slice(0,7)>financeTodayKey().slice(0,7);
+    }
+
     function financeFutureTuitions() {
       const mesAtual=financeTodayKey().slice(0,7);
       const anuais=new Set(financeProfiles.filter(profile=>profile.cycle==='annual').map(profile=>profile.studentUid));
