@@ -417,8 +417,6 @@
     .finance-cat-bar i { display:block; height:100%; border-radius:999px; }
     .finance-cat-value { text-align:right; font-weight:800; color:#334155; }
     .finance-panel-empty { padding:16px; color:var(--muted); font-size:.76rem; }
-    .finance-more { width:100%; margin:9px 0 3px; padding:8px; border:1px dashed var(--border); border-radius:9px; background:#fff; color:#475569; font:inherit; font-size:.73rem; font-weight:800; cursor:pointer; }
-    .finance-more:hover { background:#f8fafc; }
     .finance-kpis { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:11px; margin-bottom:16px; }
     .finance-kpi { padding:15px; border:1px solid var(--border); border-radius:13px; background:#fff; }
     .finance-kpi small { display:block; color:#64748b; font-size:.7rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
@@ -450,7 +448,10 @@
     .finance-bar-track { height:9px; border-radius:999px; background:#eef2f7; overflow:hidden; display:flex; }
     .finance-bar-income { height:100%; background:#22c55e; }
     .finance-bar-expense { height:100%; background:#f87171; }
-    .finance-movements { padding:5px 14px 12px; }
+    .finance-movements { padding:5px 14px 12px; max-height:430px; overflow-y:auto; overscroll-behavior:contain; }
+    .finance-movements::-webkit-scrollbar { width:9px; }
+    .finance-movements::-webkit-scrollbar-thumb { border-radius:99px; background:#dbe2ea; }
+    .finance-movements::-webkit-scrollbar-thumb:hover { background:#c6d0da; }
     .finance-movement { display:flex; align-items:center; gap:10px; padding:10px 2px; border-bottom:1px solid #eef2f7; }
     .finance-movement:last-child { border-bottom:0; }
     .finance-movement-icon { width:31px; height:31px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
@@ -625,6 +626,7 @@
           <input id="finance-month" type="month" aria-label="Mês do financeiro">
           <button class="btn-add" id="finance-new-income" type="button" style="padding:9px 12px;">＋ Ganho</button>
           <button class="btn-add" id="finance-new-expense" type="button" style="background:#fff;color:#b91c1c;border:1px solid #fecaca;padding:9px 12px;">− Despesa</button>
+          <button class="btn-add" id="finance-backfill-open" type="button" style="background:#fff;color:#334155;border:1px solid var(--border);padding:9px 12px;">⟲ Preencher meses anteriores</button>
         </div>
         <div class="finance-summary">
           <div class="finance-sum income"><small>↗ Ganhos do mês</small><strong id="finance-income">R$ 0,00</strong><span id="finance-income-note">0 entradas</span></div>
@@ -1438,6 +1440,18 @@
         <label style="display:flex;align-items:center;gap:9px;font-size:.82rem;margin-top:8px;"><input id="finance-profile-active" type="checkbox" checked> Cobrança mensal ativa</label>
         <div class="form-msg" id="finance-profile-msg"></div>
         <button class="btn-add" id="finance-profile-save" type="button" style="width:100%;margin-top:18px;">Salvar mensalidade</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="finance-backfill-modal">
+    <div class="modal" style="max-width:580px;">
+      <div class="modal-header"><h2>Preencher os meses anteriores</h2><button class="btn-close" id="finance-backfill-close" type="button">×</button></div>
+      <div class="modal-body">
+        <p style="margin:0 0 14px;color:var(--muted);font-size:.82rem;line-height:1.5;">Usa a <strong>data de início das aulas</strong> de cada aluno e considera que você recebeu a mensalidade desde então. Meses que já têm recebimento lançado são pulados, então dá para rodar de novo sem duplicar.</p>
+        <div id="finance-backfill-preview" style="max-height:280px;overflow:auto;border:1px solid var(--border);border-radius:11px;padding:11px 13px;background:#fafbfc;font-size:.78rem;line-height:1.6;"></div>
+        <div class="form-msg" id="finance-backfill-msg"></div>
+        <button class="btn-add" id="finance-backfill-run" type="button" style="width:100%;margin-top:18px;">Lançar os recebimentos</button>
       </div>
     </div>
   </div>
@@ -2820,11 +2834,28 @@
       const inicio=financeWeekStartFor(month); let minutes=0;
       for(let index=0;index<7;index+=1) {
         const date=calendarAddDays(inicio,index);
-        financeCalendarEvents.filter(event=>event.type==='lesson'&&calendarOccursOn(event,date)).forEach(event=> {
+        financeCalendarEvents.filter(event=>event.type==='lesson'&&financeLessonOccursOn(event,date)).forEach(event=> {
           minutes+=Math.max(0,calendarMinutes(event.endTime)-calendarMinutes(event.startTime));
         });
       }
       return Math.round(minutes/6)/10;
+    }
+
+    // Para a conta de horas, uma aula semanal que já existe no mês vale o mês
+    // inteiro. Sem isso, o mês em que a agenda foi cadastrada aparece pela
+    // metade — foi o que fez agosto mostrar 101h em vez de ~130h.
+    function financeLessonOccursOn(event,date) {
+      const repeat=event.repeat||'none',key=calendarDateKey(date);
+      if(repeat==='none') return event.date===key;
+      if(!event.date) return false;
+      if(event.repeatUntil&&key>event.repeatUntil) return false;
+      if(event.date.slice(0,7)>key.slice(0,7)) return false; // a série ainda não existia neste mês
+      if(repeat==='daily') return true;
+      if(repeat==='custom') return (event.repeatDays||[]).map(Number).includes(date.getDay());
+      const first=new Date(`${event.date}T00:00:00`);
+      if(repeat==='weekly') return first.getDay()===date.getDay();
+      if(repeat==='monthly') { const ultimo=new Date(date.getFullYear(),date.getMonth()+1,0).getDate(); return date.getDate()===Math.min(first.getDate(),ultimo); }
+      return false;
     }
 
     // Horas do MÊS INTEIRO — é o que faz o ganho por hora variar de mês para mês,
@@ -2836,7 +2867,7 @@
       if(start>cutoff) return 0;
       let minutes=0;
       for(let date=new Date(start);date<=cutoff;date=calendarAddDays(date,1)) {
-        financeCalendarEvents.filter(event=>event.type==='lesson'&&calendarOccursOn(event,date)).forEach(event=> {
+        financeCalendarEvents.filter(event=>event.type==='lesson'&&financeLessonOccursOn(event,date)).forEach(event=> {
           minutes+=Math.max(0,calendarMinutes(event.endTime)-calendarMinutes(event.startTime));
         });
       }
@@ -3019,14 +3050,8 @@
     // Ganhos e despesas nunca se misturam: cada lado tem seu total, suas categorias e sua lista.
     const FINANCE_CATEGORIES={tuition:'Mensalidade',material:'Material','other-income':'Outro ganho',platform:'Plataformas e sistemas',tax:'Impostos',marketing:'Marketing',rent:'Aluguel','other-expense':'Outra despesa'};
 
-    const FINANCE_LIST_LIMIT = 8; // mostra 8 e esconde o resto atrás de "ver todos"
-    let financeListExpanded = { income:false, expense:false };
-
     function renderFinanceSplit(incomes,expenses) {
       renderFinanceSide('income',incomes); renderFinanceSide('expense',expenses);
-      document.querySelectorAll('.finance-more').forEach(button=>button.onclick=()=> {
-        financeListExpanded[button.dataset.side]=!financeListExpanded[button.dataset.side]; renderFinance();
-      });
       document.querySelectorAll('.finance-edit').forEach(button=>button.onclick=()=>editFinanceTransaction(button.dataset.id));
       document.querySelectorAll('.finance-delete').forEach(button=>button.onclick=async()=> {
         if(!confirm('Excluir esta movimentação financeira?')) return;
@@ -3045,12 +3070,9 @@
         ? ranked.map(([key,value])=>`<div class="finance-cat"><span>${esc(FINANCE_CATEGORIES[key]||key)}</span><span class="finance-cat-bar"><i style="width:${total?value/total*100:0}%;background:${color}"></i></span><span class="finance-cat-value">${financeMoney(value)}</span></div>`).join('')
         : `<div style="color:var(--muted);font-size:.72rem;">Nada por categoria neste mês.</div>`;
       const sorted=[...items].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
-      const expanded=financeListExpanded[type], shown=expanded?sorted:sorted.slice(0,FINANCE_LIST_LIMIT);
-      const rows=shown.map(tx=>`<div class="finance-movement"><span class="finance-movement-icon" style="background:${income?'#dcfce7':'#fee2e2'}">${income?'↗':'↘'}</span><span class="finance-movement-info"><strong>${esc(tx.description||FINANCE_CATEGORIES[tx.category]||'Movimentação')}</strong><small>${esc(tx.studentName||FINANCE_CATEGORIES[tx.category]||'')} · ${String(tx.date||'').split('-').reverse().join('/')}${tx.seriesId?' · ↻ mensal':''}</small></span><span class="finance-money" style="color:${income?'#15803d':'#b91c1c'}">${income?'+':'−'} ${financeMoney(tx.amountCents)}</span><button class="finance-row-btn finance-edit" data-id="${esc(tx.id)}" title="Editar">✎</button><button class="finance-row-btn finance-delete" data-id="${esc(tx.id)}" title="Excluir">×</button></div>`).join('');
-      const more=sorted.length>FINANCE_LIST_LIMIT?`<button class="finance-more" type="button" data-side="${type}">${expanded?'ver menos':`ver todos os ${sorted.length}`}</button>`:'';
+      const rows=sorted.map(tx=>`<div class="finance-movement"><span class="finance-movement-icon" style="background:${income?'#dcfce7':'#fee2e2'}">${income?'↗':'↘'}</span><span class="finance-movement-info"><strong>${esc(tx.description||FINANCE_CATEGORIES[tx.category]||'Movimentação')}</strong><small>${esc(tx.studentName||FINANCE_CATEGORIES[tx.category]||'')} · ${String(tx.date||'').split('-').reverse().join('/')}${tx.seriesId?' · ↻ mensal':''}</small></span><span class="finance-money" style="color:${income?'#15803d':'#b91c1c'}">${income?'+':'−'} ${financeMoney(tx.amountCents)}</span><button class="finance-row-btn finance-edit" data-id="${esc(tx.id)}" title="Editar">✎</button><button class="finance-row-btn finance-delete" data-id="${esc(tx.id)}" title="Excluir">×</button></div>`).join('');
       document.getElementById(income?'finance-income-list':'finance-expense-list').innerHTML=rows
-        ? rows+more
-        : `<div class="finance-panel-empty">${income?'Nenhum ganho registrado':'Nenhuma despesa registrada'} neste mês.</div>`;
+        || `<div class="finance-panel-empty">${income?'Nenhum ganho registrado':'Nenhuma despesa registrada'} neste mês.</div>`;
     }
 
     // Recebimento lançado errado: apaga o(s) lançamento(s) daquela etapa e a
@@ -3068,6 +3090,76 @@
         await Promise.all(alvos.map(tx=>deleteDoc(doc(db,'schools',escolaAtual,'financeTransactions',tx.id))));
         await loadFinance();
       } catch(error) { alert(`Erro ao cancelar: ${error.message}`); }
+    }
+
+    // ── PREENCHER OS MESES ANTERIORES ──────────────────────────────────────
+    // Parte da data de início das aulas de cada aluno e considera recebido
+    // desde então. É idempotente: mês que já tem recebimento é pulado.
+    const financeNextMonth = month => {
+      const [ano,mes]=month.split('-').map(Number),alvo=new Date(ano,mes,1);
+      return `${alvo.getFullYear()}-${String(alvo.getMonth()+1).padStart(2,'0')}`;
+    };
+
+    function financeBackfillPlan() {
+      const hoje=financeTodayKey().slice(0,7),plano=[],semData=[],anuais=[];
+      financeProfiles.filter(profile=>profile.active!==false&&Number(profile.monthlyCents)>0).forEach(profile=> {
+        const aluno=allStudents.find(item=>item.uid===profile.studentUid);
+        if(!aluno||aluno.archived) return;
+        const nome=aluno.name||aluno.firstName||'Aluno';
+        if(profile.cycle==='annual') { anuais.push(nome); return; }
+        const inicio=String(aluno.inicioCurso||'').slice(0,7);
+        if(!/^\d{4}-\d{2}$/.test(inicio)) { semData.push(nome); return; }
+        if(inicio>hoje) return;
+        for(let mes=inicio;mes<=hoje;mes=financeNextMonth(mes)) {
+          financeProfileParts(profile,mes).forEach(part=> {
+            if(!part.amount||financePartStatus(profile,mes,part).received>0) return;
+            plano.push({profile,aluno,nome,mes,part});
+          });
+        }
+      });
+      return {plano,semData,anuais};
+    }
+
+    function openFinanceBackfill() {
+      const {plano,semData,anuais}=financeBackfillPlan();
+      const porAluno=new Map();
+      plano.forEach(item=> {
+        if(!porAluno.has(item.nome)) porAluno.set(item.nome,{meses:new Set(),total:0,de:item.mes});
+        const linha=porAluno.get(item.nome); linha.meses.add(item.mes); linha.total+=item.part.amount;
+        if(item.mes<linha.de) linha.de=item.mes;
+      });
+      const total=plano.reduce((soma,item)=>soma+item.part.amount,0);
+      const partes=[];
+      if(porAluno.size) partes.push([...porAluno.entries()].map(([nome,linha])=>
+        `<div style="display:flex;justify-content:space-between;gap:10px;"><span>${esc(nome)} <small style="color:#94a3b8">desde ${linha.de.split('-').reverse().join('/')} · ${linha.meses.size} mês(es)</small></span><strong>${financeMoney(linha.total)}</strong></div>`).join(''));
+      else partes.push('<div style="color:var(--muted)">Nenhum mês em aberto para lançar — está tudo em dia.</div>');
+      if(semData.length) partes.push(`<div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--border);color:#b45309;">Sem data de início no cadastro, ficaram de fora: ${esc(semData.join(', '))}</div>`);
+      if(anuais.length) partes.push(`<div style="margin-top:8px;color:#94a3b8;">Anuais não entram aqui (use "Receber o ano"): ${esc(anuais.join(', '))}</div>`);
+      document.getElementById('finance-backfill-preview').innerHTML=partes.join('');
+      const botao=document.getElementById('finance-backfill-run');
+      botao.disabled=!plano.length; botao.textContent=plano.length?`Lançar ${plano.length} recebimento(s) · ${financeMoney(total)}`:'Nada a lançar';
+      showMsg('finance-backfill-msg','','info'); document.getElementById('finance-backfill-modal').classList.add('open');
+    }
+
+    async function runFinanceBackfill() {
+      const {plano}=financeBackfillPlan();
+      if(!plano.length) return;
+      const total=plano.reduce((soma,item)=>soma+item.part.amount,0);
+      if(!confirm(`Lançar ${plano.length} recebimento(s), somando ${financeMoney(total)}?\n\nIsso registra como pago tudo desde a data de início de cada aluno.`)) return;
+      const botao=document.getElementById('finance-backfill-run'); botao.disabled=true;
+      showMsg('finance-backfill-msg','Lançando...','info');
+      try {
+        await Promise.all(plano.map(item=>addDoc(collection(db,'schools',escolaAtual,'financeTransactions'),{
+          type:'income',amountCents:item.part.amount,date:item.part.dueKey,referenceMonth:item.mes,
+          referencePart:item.part.part,coversMonths:1,studentUid:item.aluno.uid,studentName:item.nome,
+          category:'tuition',description:`${item.part.part?item.part.label:'Mensalidade'} · ${item.nome}`,
+          source:'retroativo',createdAt:serverTimestamp(),createdBy:auth.currentUser?.email||'',updatedAt:serverTimestamp()
+        })));
+        document.getElementById('finance-backfill-modal').classList.remove('open');
+        await loadFinance();
+        alert(`Pronto! ${plano.length} recebimento(s) lançados, somando ${financeMoney(total)}.`);
+      } catch(error) { showMsg('finance-backfill-msg',`Erro: ${error.message}`,'err'); }
+      finally { botao.disabled=false; }
     }
 
     function openFinanceProfile(uid='') {
@@ -3215,7 +3307,10 @@
     document.getElementById('finance-profile-cycle').onchange=syncFinanceProfileCycle; document.getElementById('finance-profile-amount').oninput=syncFinanceProfileCycle;
     document.getElementById('finance-profile-new').onclick=()=>openFinanceProfile(); document.getElementById('finance-profile-save').onclick=saveFinanceProfile; document.getElementById('finance-profile-close').onclick=()=>document.getElementById('finance-profile-modal').classList.remove('open');
     document.getElementById('finance-new-income').onclick=()=>openFinanceTransaction('income'); document.getElementById('finance-new-expense').onclick=()=>openFinanceTransaction('expense'); document.getElementById('finance-transaction-save').onclick=saveFinanceTransaction; document.getElementById('finance-transaction-close').onclick=()=>document.getElementById('finance-transaction-modal').classList.remove('open');
-    ['finance-profile-modal','finance-transaction-modal'].forEach(id=>document.getElementById(id).onclick=click=>{if(click.target.id===id)click.currentTarget.classList.remove('open');});
+    document.getElementById('finance-backfill-open').onclick=openFinanceBackfill;
+    document.getElementById('finance-backfill-run').onclick=runFinanceBackfill;
+    document.getElementById('finance-backfill-close').onclick=()=>document.getElementById('finance-backfill-modal').classList.remove('open');
+    ['finance-profile-modal','finance-transaction-modal','finance-backfill-modal'].forEach(id=>document.getElementById(id).onclick=click=>{if(click.target.id===id)click.currentTarget.classList.remove('open');});
 
     // Depois que o servidor devolve o jobId, atualizar/fechar é seguro. O aviso
     // existe apenas durante a curta entrega inicial ou numa geração sem fila.
