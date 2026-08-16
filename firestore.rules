@@ -108,6 +108,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Chaves de automação do desafio (geração semanal, entradas tardias e as
+    // semanas marcadas como manuais). Só a equipe lê e escreve.
+    match /challengeSettings/{doc} {
+      allow read, write: if isAdmin();
+    }
+
     match /challengeRankings/{weekKey} {
       allow read: if signedIn() && resource.data.revealAt <= request.time;
       allow write: if isAdmin();

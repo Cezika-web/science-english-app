@@ -567,7 +567,11 @@
             <p style="font-size:.84rem;color:var(--muted);line-height:1.5;margin:0 0 15px;">A semana precisa ter duas partes de 5 perguntas. Os gabaritos são enviados ao servidor e nunca aparecem no aplicativo do aluno.</p>
             <label class="form-label" for="challenge-week">Segunda-feira da semana</label>
             <input class="form-input" id="challenge-week" type="date" value="2026-08-17" style="margin-bottom:12px;">
-            <button class="btn-primary" id="challenge-generate-personalized" type="button" style="width:100%;margin-bottom:16px;">Gerar desafios individuais dos últimos 90 dias</button>
+            <button class="btn-primary" id="challenge-generate-personalized" type="button" style="width:100%;margin-bottom:10px;">Gerar desafios individuais dos últimos 90 dias</button>
+            <label style="display:flex;align-items:flex-start;gap:9px;font-size:.82rem;margin-bottom:16px;padding:10px 12px;border-radius:10px;background:#FFFBEB;border:1px solid #FDE68A;color:#78350F;cursor:pointer;">
+              <input id="challenge-manual-week" type="checkbox" style="margin-top:2px;">
+              <span><strong>Esta semana é manual</strong><br>A IA não roda nesta semana — nem a leva de domingo, nem as entradas tardias. Todo mundo usa o JSON que você publicar abaixo. Sem custo de API.</span>
+            </label>
             <label class="form-label" for="challenge-json">Perguntas e gabaritos (JSON)</label>
             <textarea id="challenge-json" style="width:100%;min-height:390px;box-sizing:border-box;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.76rem;line-height:1.45;resize:vertical;" placeholder="Carregue o modelo da primeira semana ou cole outro JSON."></textarea>
             <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:12px;"><button class="btn-secondary" id="challenge-load-template" type="button">Carregar Semana 1</button><button class="btn-primary" id="challenge-publish" type="button">Publicar as 10 perguntas</button></div>
@@ -6157,9 +6161,41 @@
         const line = (label, part) => `<div style="display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-top:1px solid var(--border);"><span><strong>${label}</strong><br><small style="color:var(--muted);">${part.questions} perguntas · ${part.completed} concluída(s)</small></span><span style="color:${part.published ? '#15803D' : '#B45309'};font-weight:800;">${part.published ? '✓ Publicada' : 'Pendente'}</span></div>`;
         status.innerHTML = `<div style="padding:12px;border-radius:12px;background:${data.published ? '#F0FDF4' : '#FFF7ED'};color:${data.published ? '#166534' : '#9A3412'};font-weight:800;">${data.published ? '✅ Semana publicada e programada' : '⚠️ Semana ainda não publicada'}</div>${line('Parte 1', data.part1)}${line('Parte 2', data.part2)}`;
         if (personal) status.insertAdjacentHTML('beforeend', `<div style="margin-top:12px;padding:12px;border-radius:12px;background:#F5F3FF;color:#5B21B6;font-weight:700;">Personalização: ${Number(personal.completed || 0)}/${Number(personal.total || 0)} alunos prontos${personal.failed ? ` · ${personal.failed} falha(s)` : ''}</div>`);
+        await loadChallengeManualWeek();
         await loadChallengeReviewStudents();
       } catch (error) { status.innerHTML = `<div class="form-msg err" style="display:block;">Erro: ${esc(error.message)}</div>`; }
     }
+
+    // Semanas manuais ficam numa lista em challengeSettings/auto; os dois crons
+    // do desafio consultam essa lista antes de chamar a IA.
+    async function loadChallengeManualWeek() {
+      const caixa = document.getElementById('challenge-manual-week');
+      const weekKey = document.getElementById('challenge-week').value || '2026-08-17';
+      try {
+        const snap = await getDoc(doc(db, 'challengeSettings', 'auto'));
+        const manuais = snap.exists() ? snap.data().manualWeeks : null;
+        caixa.checked = Array.isArray(manuais) && manuais.includes(weekKey);
+      } catch (error) { console.error('Semana manual:', error); }
+    }
+
+    document.getElementById('challenge-manual-week').onchange = async (evento) => {
+      const caixa = evento.target, weekKey = document.getElementById('challenge-week').value || '2026-08-17';
+      caixa.disabled = true;
+      try {
+        const snap = await getDoc(doc(db, 'challengeSettings', 'auto'));
+        const atuais = (snap.exists() && Array.isArray(snap.data().manualWeeks)) ? snap.data().manualWeeks : [];
+        const manualWeeks = caixa.checked
+          ? [...new Set([...atuais, weekKey])]
+          : atuais.filter(item => item !== weekKey);
+        await setDoc(doc(db, 'challengeSettings', 'auto'), { manualWeeks, updatedAt:serverTimestamp() }, { merge:true });
+        showMsg('challenge-msg', caixa.checked
+          ? `✅ Semana de ${weekKey} marcada como manual. A IA não roda; publique o JSON abaixo.`
+          : `Semana de ${weekKey} volta a ser gerada por IA no domingo 1h.`, 'ok');
+      } catch (error) {
+        caixa.checked = !caixa.checked;
+        showMsg('challenge-msg', `Erro ao salvar: ${error.message}`, 'err');
+      } finally { caixa.disabled = false; }
+    };
 
     // Revisão das perguntas. O gabarito vem por função porque a coleção onde
     // ele mora é fechada para leitura direta, inclusive para o admin.

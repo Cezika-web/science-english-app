@@ -8,6 +8,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { montarTemplate, REGRAS_POS_AULA, garantirAudioPosAula } from './posaula.js';
 import { REGRAS_ATIVIDADES, SCHEMA_ATIVIDADES, textoDaPosAula } from './atividades.js';
 import { createChallengeFunctions } from './challenge.js';
+import { createCobrancaFunctions } from './cobranca.js';
 
 initializeApp();
 const db = getFirestore();
@@ -2200,6 +2201,8 @@ export const gerarDesafiosAtrasados = challengeFunctions.gerarDesafiosAtrasados;
 export const gerarDesafioDaSemana = challengeFunctions.gerarDesafioDaSemana;
 export const obterPerguntasDesafio = challengeFunctions.obterPerguntasDesafio;
 export const regerarPerguntaDesafio = challengeFunctions.regerarPerguntaDesafio;
+
+export const avisarAtrasoNoApp = createCobrancaFunctions({ db }).avisarAtrasoNoApp;
 
 export const ajustarCreditos = onCall(
   { ...OPCOES_PADRAO, timeoutSeconds: 60, memory: '256MiB' },

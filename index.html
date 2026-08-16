@@ -1042,6 +1042,25 @@ const TABS = [
   { id: 'perfil', label: 'Perfil',      icon: '👤' },
 ];
 
+// Cobrança em atraso. O professor liga aluno por aluno; o servidor só grava o
+// aviso depois de cinco dias de atraso real. Aqui é só mostrar e sair da frente.
+function AvisoCobranca({ aviso, nome, onClose }) {
+  const valor = (Number(aviso.valorCentavos || 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const vencimento = String(aviso.venceEm || '').split('-').reverse().join('/');
+  const etapa = aviso.etapa === 'Mensalidade' ? 'mensalidade' : String(aviso.etapa || '').toLowerCase();
+  return <div style={{ position:'fixed', inset:0, zIndex:10050, display:'flex', alignItems:'center', justifyContent:'center', padding:22, background:'rgba(7,27,58,.55)' }}>
+    <div style={{ width:'100%', maxWidth:380, borderRadius:22, padding:'26px 22px', background:'#fff', boxShadow:'0 20px 50px rgba(7,27,58,.3)', textAlign:'center' }}>
+      <div style={{ fontSize:38 }}>💳</div>
+      <strong style={{ display:'block', fontSize:19, color:'#0F172A', marginTop:10 }}>Sua mensalidade está em aberto</strong>
+      <p style={{ color:'#64748B', fontSize:13.5, lineHeight:1.55, margin:'10px 0 0' }}>
+        {nome ? nome + ', a ' : 'A '}{etapa} de <strong style={{ color:'#0F172A' }}>{valor}</strong> venceu em {vencimento} e está {aviso.dias} {aviso.dias === 1 ? 'dia' : 'dias'} em atraso.
+      </p>
+      <p style={{ color:'#94A3B8', fontSize:12, lineHeight:1.5, margin:'12px 0 0' }}>Se você já pagou, pode ignorar — é só o registro que ainda não foi baixado.</p>
+      <button onClick={onClose} style={{ width:'100%', border:0, borderRadius:14, padding:14, marginTop:20, color:'#fff', background:'linear-gradient(135deg,#147AE0,#0757A5)', fontFamily:'inherit', fontSize:13.5, fontWeight:900 }}>ENTENDI</button>
+    </div>
+  </div>;
+}
+
 function BottomNav({ active, onChange }) {
   return (
     <div style={{
@@ -4038,6 +4057,9 @@ function App() {
   const [showNotifBtn, setShowNotifBtn] = useState(false);
   const [celebrate, setCelebrate]       = useState(false);
   const [achievementItems, setAchievementItems] = useState(null);
+  // Aviso de mensalidade atrasada: aparece uma vez, na abertura do app, e some
+  // ao ser fechado. Nunca fica preso na tela principal.
+  const [avisoCobrancaFechado, setAvisoCobrancaFechado] = useState(false);
   const achievementCheckingRef = useRef(false);
   const pendingPostId = useRef(new URLSearchParams(window.location.search).get('post') || '');
   const pendingChallenge = useRef(new URLSearchParams(window.location.search).get('challenge') === '1');
@@ -4595,6 +4617,9 @@ function App() {
       </div>
 
       <BottomNav active={tab} onChange={setTab} />
+
+      {!mirror && student?.avisoCobranca?.ativo && !avisoCobrancaFechado &&
+        <AvisoCobranca aviso={student.avisoCobranca} nome={student.firstName || ''} onClose={() => setAvisoCobrancaFechado(true)} />}
 
       {challengeView && <ChallengeHub
         student={student}

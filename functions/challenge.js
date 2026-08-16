@@ -808,6 +808,11 @@ export function createChallengeFunctions({
 
     const settings = await db.doc('challengeSettings/auto').get();
     if (settings.exists && settings.data().lateEntries === false) return;
+    if (await semanaManual(weekKey)) return;
+    // Com rodada geral publicada todo mundo já está coberto por ela — gerar
+    // personalizada por cima seria gastar exatamente o que o JSON economiza.
+    const geral = await db.doc(`challengeRounds/${roundId}`).get();
+    if (geral.exists) return;
 
     const students = await db.collection('students').get();
     const waiting = [];
@@ -849,11 +854,23 @@ export function createChallengeFunctions({
   // César ainda tem o domingo inteiro para revisar antes da Parte 1 abrir na
   // segunda à meia-noite. Quem entrar depois cai no gerarDesafiosAtrasados.
   // Para voltar ao manual, grave weekly:false em challengeSettings/auto.
+  // Semana marcada como manual: o César publica o JSON único da turma e a IA
+  // não roda, nem na leva de domingo nem no cron de entradas tardias.
+  async function semanaManual(weekKey) {
+    const settings = await db.doc('challengeSettings/auto').get();
+    const manuais = settings.exists ? settings.data().manualWeeks : null;
+    return Array.isArray(manuais) && manuais.includes(weekKey);
+  }
+
   async function generateNextWeek() {
     if (!Anthropic || !anthropicApiKey) return;
     const settings = await db.doc('challengeSettings/auto').get();
     if (settings.exists && settings.data().weekly === false) return;
     const weekKey = nextMonday();
+    if (await semanaManual(weekKey)) {
+      console.log(`Semana ${weekKey} marcada como manual — nada gerado por IA.`);
+      return;
+    }
     const result = await runWeeklyGeneration({ weekKey, requestedBy:'agendamento de domingo' });
     console.log(`Desafio ${weekKey}: ${result.generated.length} aluno(s) prontos, ${result.errors.length} sem material.`);
   }
