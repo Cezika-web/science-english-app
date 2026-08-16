@@ -291,16 +291,19 @@
     .calendar-selection { position:absolute; left:2px; right:2px; z-index:9; border-radius:7px; border:1.5px dashed color-mix(in srgb, var(--cal-brand) 55%, #fff); background:color-mix(in srgb, var(--cal-brand) 15%, #fff); color:var(--cal-brand); padding:2px 5px; font-size:.62rem; font-weight:800; line-height:1.25; overflow:hidden; pointer-events:none; }
     .calendar-week.selecting { user-select:none; }
     .calendar-week.selecting .calendar-event { pointer-events:none; }
-    .calendar-day-column.off-hours { background-color:#fafbfc; }
-    .calendar-day-column.today { background-color:color-mix(in srgb, var(--cal-brand) 3.5%, #fff); }
-    .calendar-day-column.picked { background-color:color-mix(in srgb, var(--cal-brand) 9%, #fff); box-shadow:inset 1.5px 0 0 color-mix(in srgb, var(--cal-brand) 50%, #fff), inset -1.5px 0 0 color-mix(in srgb, var(--cal-brand) 50%, #fff); }
+    .calendar-day-column.off-hours { background-color:#fcfcfd; }
+    .calendar-day-column.today { background-color:color-mix(in srgb, var(--cal-brand) 2.5%, #fff); }
+    .calendar-day-column.picked { background-color:color-mix(in srgb, var(--cal-brand) 5.5%, #fff); box-shadow:inset 1.5px 0 0 color-mix(in srgb, var(--cal-brand) 32%, #fff), inset -1.5px 0 0 color-mix(in srgb, var(--cal-brand) 32%, #fff); }
     .calendar-day-head.picked { color:var(--cal-brand); background:color-mix(in srgb, var(--cal-brand) 9%, #fff); }
     .calendar-day-head.picked strong { background:var(--cal-brand); color:#fff; }
-    .calendar-event { position:absolute; left:2px; right:2px; z-index:5; border:0; border-left:3px solid var(--event-color); border-radius:6px; padding:4px 6px; background:color-mix(in srgb, var(--event-color) 17%, #fff); color:#314158; overflow:hidden; text-align:left; cursor:pointer; }
-    .calendar-event:hover { z-index:8; box-shadow:0 5px 14px rgba(15,23,42,.14); filter:saturate(1.08); }
+    /* Leve como o Notion Calendar: preenchimento bem lavado, sem barra lateral
+       forte, e o texto puxando a cor do próprio bloco em vez de cinza escuro. */
+    .calendar-event { position:absolute; left:2px; right:2px; z-index:5; border:1px solid color-mix(in srgb, var(--event-color) 20%, #fff); border-radius:7px; padding:4px 7px; background:color-mix(in srgb, var(--event-color) 11%, #fff); color:color-mix(in srgb, var(--event-color) 58%, #334155); overflow:hidden; text-align:left; cursor:pointer; transition:background .12s ease, box-shadow .12s ease; }
+    .calendar-event:hover { z-index:8; background:color-mix(in srgb, var(--event-color) 17%, #fff); box-shadow:0 4px 12px rgba(15,23,42,.10); }
     .calendar-event.available { z-index:3; }
-    .calendar-event strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.68rem; text-transform:uppercase; letter-spacing:.01em; }
-    .calendar-event span { display:block; margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#718096; font-size:.6rem; }
+    .calendar-event.editing { z-index:9; box-shadow:0 0 0 2px color-mix(in srgb, var(--event-color) 55%, #fff), 0 6px 16px rgba(15,23,42,.13); }
+    .calendar-event strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.67rem; font-weight:650; text-transform:uppercase; letter-spacing:.012em; }
+    .calendar-event span { display:block; margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:color-mix(in srgb, var(--event-color) 34%, #94a3b8); font-size:.6rem; }
     .calendar-now-line { position:absolute; left:58px; right:0; z-index:10; height:1px; background:#ef4444; pointer-events:none; }
     .calendar-now-line::before { content:''; position:absolute; left:-4px; top:-3px; width:7px; height:7px; border-radius:50%; background:#ef4444; }
     .calendar-empty { padding:18px; color:var(--muted); font-size:.82rem; }
@@ -313,7 +316,8 @@
     .calendar-pop-days { display:none; grid-template-columns:repeat(7,1fr); gap:4px; margin-top:8px; }
     .calendar-pop-days.on { display:grid; }
     .calendar-pop-days button { padding:6px 0; border:1px solid var(--border); border-radius:7px; background:#fff; color:#64748b; font:inherit; font-size:.68rem; font-weight:800; cursor:pointer; }
-    .calendar-pop-days button.on { background:var(--cal-brand); border-color:var(--cal-brand); color:#fff; }
+    /* fallback obrigatório: sem ele um --cal-brand ausente deixa o chip branco no branco */
+    .calendar-pop-days button.on { background:var(--cal-brand, #2f86e6); border-color:var(--cal-brand, #2f86e6); color:#fff; }
     .calendar-pop-colors { display:flex; gap:7px; margin-top:11px; }
     .calendar-pop-colors button { width:24px; height:24px; padding:0; border-radius:50%; border:2px solid transparent; outline:1px solid #e2e8f0; cursor:pointer; }
     .calendar-pop-colors button.on { border-color:#0f172a; outline-color:transparent; }
@@ -365,6 +369,7 @@
     .finance-mini { padding:11px 13px; border:1px solid var(--border); border-radius:11px; background:#fff; }
     .finance-mini small { display:block; color:#64748b; font-size:.66rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
     .finance-mini strong { display:block; margin-top:4px; color:#0f172a; font-size:1rem; }
+    .finance-mini span { display:block; margin-top:2px; color:#94a3b8; font-size:.68rem; }
     .finance-split { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-bottom:14px; align-items:start; }
     .finance-panel { border:1px solid var(--border); border-radius:14px; background:#fff; overflow:hidden; }
     .finance-panel > header { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:13px 16px; border-bottom:1px solid var(--border); }
@@ -595,8 +600,8 @@
         <div class="finance-mini-kpis">
           <div class="finance-mini"><small>Ainda a receber</small><strong id="finance-open">R$ 0,00</strong></div>
           <div class="finance-mini"><small>Ticket médio</small><strong id="finance-ticket">R$ 0,00</strong></div>
-          <div class="finance-mini"><small>Horas de aula</small><strong id="finance-hours">0h</strong></div>
-          <div class="finance-mini"><small>Ganho por hora</small><strong id="finance-hour-rate">R$ 0,00</strong></div>
+          <div class="finance-mini"><small>Horas de aula</small><strong id="finance-hours">0h</strong><span id="finance-hours-note">no mês inteiro</span></div>
+          <div class="finance-mini"><small>Ganho por hora</small><strong id="finance-hour-rate">R$ 0,00</strong><span id="finance-hour-rate-note">ganhos ÷ horas do mês</span></div>
         </div>
         <div class="finance-split">
           <section class="finance-panel income">
@@ -1134,8 +1139,13 @@
               <option value="60" selected>1 hora</option><option value="90">1h30</option><option value="120">2 horas</option>
             </select>
           </div>
+          <div class="calendar-form-grid">
+            <div class="field"><label for="f-mensalidade">Mensalidade (R$)</label><input type="number" id="f-mensalidade" min="0" step="0.01" placeholder="250,00" /></div>
+            <div class="field"><label for="f-vencimento">Dia do vencimento</label><input type="number" id="f-vencimento" min="1" max="31" value="10" /></div>
+          </div>
+          <div class="field" style="margin-top:14px;"><label for="f-ciclo">Como esse aluno paga</label><select id="f-ciclo"><option value="monthly">Uma vez por mês</option><option value="biweekly">Quinzenal — duas vezes por mês</option></select></div>
           <div class="field"><label>Data de início das aulas</label><input type="date" id="f-inicio" /></div>
-          <p style="margin:-4px 0 16px;padding:10px 12px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A;font-size:.78rem;line-height:1.5;">📅 Os dias e o horário acima já entram sozinhos na <strong>Agenda</strong>, como aula semanal. Não precisa criar o compromisso na mão.</p>
+          <p style="margin:-4px 0 16px;padding:10px 12px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A;font-size:.78rem;line-height:1.5;">📅 Os dias e o horário já entram sozinhos na <strong>Agenda</strong> como aula semanal, e a mensalidade já entra no <strong>Financeiro</strong>. <span id="f-mensalidade-hint"></span></p>
           <button class="btn-add" id="btn-create-student">Criar aluno</button>
           <div class="form-msg" id="create-msg"></div>
         </div>
@@ -1869,7 +1879,7 @@
       const root = document.getElementById('tab-calendar'); if (!root) return;
       const color = calendarSchoolColor();
       root.style.setProperty('--cal-brand', color); root.style.setProperty('--cal-brand-soft', `${color}18`);
-      ['calendar-event-modal','calendar-settings-modal'].forEach(id => {
+      ['calendar-event-modal','calendar-settings-modal','calendar-pop'].forEach(id => {
         document.getElementById(id).style.setProperty('--cal-brand',color);
         document.getElementById(id).style.setProperty('--cal-brand-soft',`${color}18`);
       });
@@ -2001,11 +2011,12 @@
             ghost.style.height = `${Math.max(13, (end - start) / 60 * CALENDAR_HOUR_HEIGHT - 2)}px`;
             ghost.textContent = `${calendarTime(start)} – ${calendarTime(end)} · ${calendarDuration(end - start)}`;
           };
-          const cleanup = () => {
+          const cleanup = () => { // o bloco continua na tela: é a referência do que está sendo preenchido
             column.onpointermove = column.onpointerup = column.onpointercancel = null;
             if (column.hasPointerCapture(down.pointerId)) column.releasePointerCapture(down.pointerId);
-            ghost.remove(); weekEl?.classList.remove('selecting');
+            weekEl?.classList.remove('selecting');
           };
+          clearCalendarSelection(); calendarSelectionGhost = ghost;
           paint(); column.setPointerCapture(down.pointerId);
           column.onpointermove = move => {
             const current = slotAt(move.clientY);
@@ -2013,11 +2024,12 @@
             from = Math.min(anchor, current); to = Math.max(anchor, current); paint();
           };
           column.onpointerup = () => { const start = from, end = dragged ? to + 1 : from + hourSlots; cleanup(); openRange(start, end); };
-          column.onpointercancel = cleanup;
+          column.onpointercancel = () => { cleanup(); clearCalendarSelection(); };
         };
       });
       document.querySelectorAll('.calendar-event').forEach(button => button.onclick = click => {
         click.stopPropagation();
+        clearCalendarSelection(); button.classList.add('editing'); // marca qual compromisso está sendo editado
         openCalendarPop(calendarEvents.find(item => item.id === button.dataset.eventId) || {}, button.getBoundingClientRect());
       });
       renderCalendarMini();
@@ -2189,6 +2201,12 @@
       { type:'blocked',   label:'Horário bloqueado' },
     ];
     let calendarPopDraft = null;
+    let calendarSelectionGhost = null; // bloco arrastado que fica marcado enquanto o popover está aberto
+
+    function clearCalendarSelection() {
+      calendarSelectionGhost?.remove(); calendarSelectionGhost = null;
+      document.querySelectorAll('.calendar-event.editing').forEach(item => item.classList.remove('editing'));
+    }
 
     function calendarPopColorOf(type) { return calendarEventColor({ type }); }
 
@@ -2247,7 +2265,9 @@
       setTimeout(() => document.getElementById('calendar-pop-title').focus(), 20);
     }
 
-    function closeCalendarPop() { document.getElementById('calendar-pop').classList.remove('open'); calendarPopDraft = null; }
+    function closeCalendarPop() {
+      document.getElementById('calendar-pop').classList.remove('open'); calendarPopDraft = null; clearCalendarSelection();
+    }
 
     function calendarPopFail(text) {
       const message = document.getElementById('calendar-pop-msg');
@@ -2531,9 +2551,12 @@
       return { start:new Date(year,monthNumber-1,1), end:new Date(year,monthNumber,0), year, monthNumber };
     }
 
-    function financeHoursForMonth(month) {
-      const {start,end}=financeMonthBounds(month), today=new Date(); today.setHours(23,59,59,999);
-      const cutoff=end<today?end:today;
+    // Horas do MÊS INTEIRO — é o que faz o ganho por hora variar de mês para mês,
+    // porque cada mês tem uma quantidade diferente de cada dia da semana.
+    // `until` limita ao dia de hoje, só para mostrar o quanto já foi dado.
+    function financeHoursForMonth(month,until=null) {
+      const {start,end}=financeMonthBounds(month);
+      const cutoff=until&&until<end?until:end;
       if(start>cutoff) return 0;
       let minutes=0;
       for(let date=new Date(start);date<=cutoff;date=calendarAddDays(date,1)) {
@@ -2584,7 +2607,15 @@
       document.getElementById('finance-profit').textContent=financeMoney(profit);
       document.getElementById('finance-profit-note').textContent=profit<0?'as despesas passaram os ganhos':'ganhos menos despesas';
       const profitCard=document.getElementById('finance-profit-card'); profitCard.classList.toggle('negative',profit<0); profitCard.classList.toggle('positive',profit>0);
-      document.getElementById('finance-ticket').textContent=financeMoney(ticket); document.getElementById('finance-hours').textContent=`${String(hours).replace('.',',')}h`; document.getElementById('finance-hour-rate').textContent=financeMoney(rate);
+      document.getElementById('finance-ticket').textContent=financeMoney(ticket);
+      document.getElementById('finance-hours').textContent=`${String(hours).replace('.',',')}h`;
+      document.getElementById('finance-hour-rate').textContent=financeMoney(rate);
+      // Mês em andamento: o total é do mês fechado, mas mostra o quanto já foi dado.
+      const agora=new Date(); agora.setHours(23,59,59,999);
+      const limites=financeMonthBounds(month),emAndamento=limites.start<=agora&&agora<limites.end;
+      const horasAteHoje=emAndamento?financeHoursForMonth(month,agora):hours;
+      document.getElementById('finance-hours-note').textContent=emAndamento?`mês inteiro · ${String(horasAteHoje).replace('.',',')}h até hoje`:'no mês inteiro';
+      document.getElementById('finance-hour-rate-note').textContent=emAndamento?'previsto para o mês fechado':'ganhos ÷ horas do mês';
 
       const profileMap=new Map(financeProfiles.map(profile=>[profile.studentUid,profile]));
       const activeStudents=allStudents.filter(student=>!student.archived);
@@ -5562,6 +5593,30 @@
       } catch (error) { alert('Erro: ' + error.message); }
     }
 
+    // Mensalidade sugerida pelas horas por semana: 1h = 250, 2h = 320 (+70 por hora extra).
+    // É só sugestão — o campo continua editável aqui e depois em Financeiro › Editar.
+    const MENSALIDADE_1H = 250, MENSALIDADE_HORA_EXTRA = 70;
+    let mensalidadeEditadaNaMao = false;
+
+    function horasSemanaDoCadastro() {
+      const dias = document.querySelectorAll('#f-dias-week input:checked').length;
+      const duracao = Number(document.getElementById('f-duracao').value) || 60;
+      return dias * duracao / 60;
+    }
+
+    function sugerirMensalidade() {
+      const horas = horasSemanaDoCadastro(), campo = document.getElementById('f-mensalidade'), dica = document.getElementById('f-mensalidade-hint');
+      if (!horas) { dica.textContent = ''; return; }
+      const sugerida = Math.max(0, Math.round(MENSALIDADE_1H + MENSALIDADE_HORA_EXTRA * (horas - 1)));
+      const horasTexto = String(horas).replace('.', ',');
+      if (!mensalidadeEditadaNaMao) campo.value = sugerida;
+      dica.textContent = `São ${horasTexto}h por semana — sugestão de ${financeMoney(sugerida * 100)}${mensalidadeEditadaNaMao ? ' (você já ajustou o valor).' : '.'}`;
+    }
+
+    document.querySelectorAll('#f-dias-week input').forEach(box => box.addEventListener('change', sugerirMensalidade));
+    document.getElementById('f-duracao').addEventListener('change', sugerirMensalidade);
+    document.getElementById('f-mensalidade').addEventListener('input', () => { mensalidadeEditadaNaMao = true; });
+
     document.getElementById('btn-create-student').onclick = async () => {
       const name   = document.getElementById('f-name').value.trim();
       const email  = document.getElementById('f-email').value.trim();
@@ -5570,6 +5625,9 @@
       const meta   = parseInt(document.getElementById('f-meta').value, 10);
       const aula   = readAula('f-dias-week', 'f-hora');
       const duracao = Number(document.getElementById('f-duracao').value) || 60;
+      const mensalidade = Math.round(Number(document.getElementById('f-mensalidade').value) * 100);
+      const vencimento = Number(document.getElementById('f-vencimento').value) || 10;
+      const ciclo = document.getElementById('f-ciclo').value;
       const inicio = document.getElementById('f-inicio').value;
       if (!name || !email || !pass) { showMsg('create-msg', 'Preencha nome, e-mail e senha.', 'err'); return; }
       if (pass.length < 6)          { showMsg('create-msg', 'Senha mínima de 6 caracteres.', 'err'); return; }
@@ -5595,7 +5653,21 @@
             naAgenda = await syncStudentLessons([{ uid: cred.user.uid, name, firstName: name.split(' ')[0], aulaDias: aula.aulaDias, aulaHora: aula.aulaHora, aulaDuracao: duracao }], false);
           } catch (erroAgenda) { console.error('Agenda do aluno:', erroAgenda); }
         }
-        showMsg('create-msg', `✅ Aluno ${name} criado!${naAgenda ? ` ${naAgenda} aula(s) já entraram na agenda.` : ''}`, 'ok');
+        // A mensalidade já nasce no Financeiro — dá pra ajustar depois em "Editar".
+        let noFinanceiro = false;
+        if (Number.isFinite(mensalidade) && mensalidade > 0) {
+          try {
+            await setDoc(doc(db, 'schools', escolaAtual, 'financeStudents', cred.user.uid), {
+              studentUid: cred.user.uid, studentName: name, monthlyCents: mensalidade, dueDay: vencimento,
+              cycle: ciclo, dueDay2: ciclo === 'biweekly' ? Math.min(31, vencimento + 15) : null,
+              paymentMethod: 'pix', active: true, createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(), updatedBy: auth.currentUser?.email || ''
+            }, { merge: true });
+            noFinanceiro = true;
+          } catch (erroFinanceiro) { console.error('Financeiro do aluno:', erroFinanceiro); }
+        }
+        const extras = [naAgenda ? `${naAgenda} aula(s) na agenda` : '', noFinanceiro ? `mensalidade de ${financeMoney(mensalidade)} no financeiro` : ''].filter(Boolean);
+        showMsg('create-msg', `✅ Aluno ${name} criado!${extras.length ? ` Já entrou com ${extras.join(' e ')}.` : ''}`, 'ok');
         ['f-name','f-email','f-pass','f-meta','f-hora','f-inicio'].forEach(id => document.getElementById(id).value = '');
         document.querySelectorAll('#f-dias-week input').forEach(c => c.checked = false);
         document.getElementById('f-level').value = ''; document.getElementById('f-duracao').value = '60';
