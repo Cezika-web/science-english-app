@@ -412,6 +412,8 @@
     .finance-status.overdue { background:#fee2e2; color:#991b1b; }
     .finance-status.unset { background:#f1f5f9; color:#64748b; }
     .finance-row-btn { border:1px solid var(--border); border-radius:7px; padding:6px 8px; background:#fff; color:#334155; font:inherit; font-size:.68rem; font-weight:800; cursor:pointer; white-space:nowrap; }
+    .finance-row-btn.finance-undo { border-color:#fecaca; color:#b91c1c; }
+    .finance-row-btn.finance-undo:hover { background:#fff5f5; }
     .finance-bars { padding:14px 16px; display:grid; gap:11px; }
     .finance-bar-row { display:grid; grid-template-columns:62px 1fr 75px; gap:8px; align-items:center; font-size:.68rem; color:#64748b; }
     .finance-bar-track { height:9px; border-radius:999px; background:#eef2f7; overflow:hidden; display:flex; }
@@ -2630,15 +2632,22 @@
         const parts=financeProfileParts(profile,month),biweekly=profile.cycle==='biweekly';
         const valueCell=biweekly?`<strong>${financeMoney(profile.monthlyCents)}</strong><br><small style="color:#94a3b8">2× ${financeMoney(parts[0].amount)}</small>`:`<strong>${financeMoney(profile.monthlyCents)}</strong>`;
         const dueCell=parts.map(part=>`Dia ${Number(part.dueKey.slice(-2))}`).join('<br>');
-        const statusCell=parts.map(part=>{
-          const status=financePartStatus(profile,month,part);
-          return `<span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">${biweekly?`<small style="color:#94a3b8;font-weight:800;">${part.short}</small>`:''}<span class="finance-status ${status.key}">${esc(status.label)}</span></span>`;
-        }).join('<br>');
-        const actionCell=parts.map(part=>`<button class="finance-row-btn finance-pay" data-uid="${esc(student.uid)}" data-part="${part.part}">Receber${biweekly?` ${part.short}`:''}</button>`).join(' ')+` <button class="finance-row-btn finance-configure" data-uid="${esc(student.uid)}">Editar</button>`;
+        const etapas=parts.map(part=>({part,status:financePartStatus(profile,month,part)}));
+        const statusCell=etapas.map(({part,status})=>
+          `<span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">${biweekly?`<small style="color:#94a3b8;font-weight:800;">${part.short}</small>`:''}<span class="finance-status ${status.key}">${esc(status.label)}</span></span>`).join('<br>');
+        const actionCell=etapas.map(({part,status})=>{
+          const sufixo=biweekly?` ${part.short}`:'';
+          const receber=`<button class="finance-row-btn finance-pay" data-uid="${esc(student.uid)}" data-part="${part.part}">Receber${sufixo}</button>`;
+          const desfazer=`<button class="finance-row-btn finance-undo" data-uid="${esc(student.uid)}" data-part="${part.part}" title="Cancelar o recebimento — volta para pendente">↩ Desfazer${sufixo}</button>`;
+          if(status.received<=0) return receber;                      // nada recebido
+          if(status.received<part.amount) return `${receber} ${desfazer}`; // parcial: dá pra completar ou cancelar
+          return desfazer;                                            // quitado
+        }).join(' ')+` <button class="finance-row-btn finance-configure" data-uid="${esc(student.uid)}">Editar</button>`;
         return `<tr><td><strong>${esc(student.name||student.firstName||'Aluno')}</strong><br><small style="color:#94a3b8">${method}${biweekly?' · quinzenal':''}</small></td><td>${valueCell}</td><td>${dueCell}</td><td>${statusCell}</td><td style="white-space:nowrap">${actionCell}</td></tr>`;
       }).join('')||'<tr><td colspan="5">Nenhum aluno ativo.</td></tr>';
       document.querySelectorAll('.finance-configure').forEach(button=>button.onclick=()=>openFinanceProfile(button.dataset.uid));
       document.querySelectorAll('.finance-pay').forEach(button=>button.onclick=()=>openFinanceTransaction('income',button.dataset.uid,Number(button.dataset.part||0)));
+      document.querySelectorAll('.finance-undo').forEach(button=>button.onclick=()=>undoFinancePayment(button.dataset.uid,Number(button.dataset.part||0)));
       renderFinanceBars(month); renderFinanceSplit(incomes,expenses);
     }
 
@@ -2686,6 +2695,23 @@
       document.getElementById(income?'finance-income-list':'finance-expense-list').innerHTML=rows
         ? rows+more
         : `<div class="finance-panel-empty">${income?'Nenhum ganho registrado':'Nenhuma despesa registrada'} neste mês.</div>`;
+    }
+
+    // Recebimento lançado errado: apaga o(s) lançamento(s) daquela etapa e a
+    // cobrança volta sozinha para pendente ou atrasado, conforme o vencimento.
+    async function undoFinancePayment(uid,part=0) {
+      const month=financeMonthKey();
+      const alvos=financeTransactions.filter(tx=>tx.type==='income'&&tx.category==='tuition'&&tx.studentUid===uid&&tx.referenceMonth===month
+        &&(part===0||Number(tx.referencePart||0)===part));
+      if(!alvos.length) return alert('Não há recebimento registrado nesta etapa para cancelar.');
+      const total=alvos.reduce((sum,tx)=>sum+Number(tx.amountCents||0),0);
+      const aluno=allStudents.find(item=>item.uid===uid),nome=aluno?.name||aluno?.firstName||'este aluno';
+      const etapa=part?` da ${part}ª quinzena`:'';
+      if(!confirm(`Cancelar ${alvos.length} recebimento(s)${etapa} de ${nome}, somando ${financeMoney(total)}?\n\nO lançamento sai dos ganhos e a cobrança volta para pendente.`)) return;
+      try {
+        await Promise.all(alvos.map(tx=>deleteDoc(doc(db,'schools',escolaAtual,'financeTransactions',tx.id))));
+        await loadFinance();
+      } catch(error) { alert(`Erro ao cancelar: ${error.message}`); }
     }
 
     function openFinanceProfile(uid='') {
