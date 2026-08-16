@@ -136,6 +136,25 @@ service cloud.firestore {
         allow read, write: if isAdmin() || ownsSchool(schoolId);
       }
 
+      // Agenda e expediente são privados do professor. Alunos não recebem
+      // acesso, inclusive aos compromissos marcados como particulares.
+      match /calendarEvents/{eventId} {
+        allow read, write: if isAdmin() || ownsSchool(schoolId);
+      }
+
+      match /calendarSettings/{settingsId} {
+        allow read, write: if isAdmin() || ownsSchool(schoolId);
+      }
+
+      // Valores, vencimentos e despesas são exclusivamente administrativos.
+      match /financeStudents/{studentUid} {
+        allow read, write: if isAdmin() || ownsSchool(schoolId);
+      }
+
+      match /financeTransactions/{transactionId} {
+        allow read, write: if isAdmin() || ownsSchool(schoolId);
+      }
+
       match /courseReviews/{studentUid} {
         allow read: if isAdmin()
           || ownsSchool(schoolId)
