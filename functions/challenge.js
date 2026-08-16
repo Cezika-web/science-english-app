@@ -37,6 +37,22 @@ const PERSONALIZED_CHALLENGE_SCHEMA = {
   } },
 };
 
+// Uma pergunta só, para quando o César troca um item da rodada sem refazer a parte.
+const SINGLE_QUESTION_SCHEMA = {
+  type:'object', additionalProperties:false,
+  required:['prompt','context','hint','focus','topic','options','correctOption','expected','explanation'],
+  properties:{
+    prompt:{ type:'string' }, context:{ type:'string' }, hint:{ type:'string' },
+    focus:{ type:'string', enum:['weak','strong'] }, topic:{ type:'string' },
+    options:{ type:'array', items:{
+      type:'object', additionalProperties:false, required:['id','text'],
+      properties:{ id:{ type:'string', enum:['a','b','c','d'] }, text:{ type:'string' } },
+    } },
+    correctOption:{ type:'string', enum:['a','b','c','d'] },
+    expected:{ type:'string' }, explanation:{ type:'string' },
+  },
+};
+
 function localDateParts(date = new Date()) {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone:TIME_ZONE, year:'numeric', month:'2-digit', day:'2-digit', weekday:'short',
@@ -324,8 +340,28 @@ export function createChallengeFunctions({
     return { uid, posts:loadedPosts.filter(post => post.text), activityMaterials, corrections };
   }
 
+  // Como a leva roda depois do ranking sair, o resultado da semana anterior já
+  // existe. Quem gabaritou recebe perguntas mais duras na semana seguinte —
+  // senão a disputa esvazia.
+  async function previousWeekPerformance(uid, weekKey) {
+    const anterior = addDays(weekKey, -7);
+    const snaps = await Promise.all([1, 2].map(part =>
+      db.doc(`_challengeResults/${anterior}-part-${part}_${uid}`).get()));
+    const partes = snaps.filter(snap => snap.exists).map(snap => snap.data());
+    if (!partes.length) return null;
+    return {
+      weekKey:anterior,
+      score:partes.reduce((sum, part) => sum + Number(part.score || 0), 0),
+      maxScore:partes.length * 500,
+      erros:partes.flatMap(part => (part.details || [])
+        .filter(item => !item.correct)
+        .map(item => ({ pergunta:item.prompt, correta:item.expected }))),
+    };
+  }
+
   async function generateForStudent(client, studentDoc, weekKey) {
     const student = studentDoc.data();
+    const anterior = await previousWeekPerformance(studentDoc.id, weekKey);
     const input = await personalizationInput(studentDoc);
     const isAmorzinho = student.slug === 'amorzinho' || String(student.name || '').toLowerCase() === 'amorzinho';
     const materials = input.posts.length ? input.posts : isAmorzinho ? input.activityMaterials : [];
@@ -338,13 +374,17 @@ export function createChallengeFunctions({
         `A dificuldade deve ser HARD em relação ao nível CEFR do aluno${isAmorzinho ? ' e, para a Amorzinho, especialmente exigente' : ''}: exija aplicação, discriminação de nuances e recuperação ativa, sem ensinar conteúdo novo. ` +
         'Use as correções para identificar padrões reais. Quando não houver correções suficientes, trate conteúdos repetidos ou muito explicados como fragilidades prováveis e deixe isso claro apenas na análise. ' +
         'Em CADA parte, produza exatamente 3 perguntas focus=weak e 2 focus=strong. Todas devem ser multiple choice com quatro alternativas plausíveis, uma única resposta inequívoca e explicação pedagógica curta. ' +
+        'Quando houver resultado da semana anterior, calibre por ele: acima de 80% dos pontos, suba a dificuldade de forma perceptível (nuance mais fina, distratores mais próximos); abaixo de 40%, mantenha exigente mas alcançável. Os erros da semana passada são pista forte de fragilidade — cubra o mesmo ponto gramatical com contexto novo, nunca repetindo a pergunta. ' +
         'Não copie exercícios literalmente. Não mencione ao aluno que um item é fraqueza ou força.' }],
       output_config:{ format:{ type:'json_schema', schema:PERSONALIZED_CHALLENGE_SCHEMA } },
       messages:[{ role:'user', content:
         `Aluno: ${student.name || student.firstName || 'Aluno'}\nNível: ${student.level || 'não informado'}\n` +
         `Semana: ${weekKey}\nJanela analisada: últimos ${LOOKBACK_DAYS} dias.\n\n` +
         `MATERIAIS DE ESTUDO (${sourceKind.toUpperCase()}):\n${materials.map((item, i) => `[${i + 1}] ${item.title} (${item.date || 'sem data'})\n${item.text}`).join('\n\n')}\n\n` +
-        `CORREÇÕES E DESEMPENHO:\n${input.corrections.length ? JSON.stringify(input.corrections) : 'Sem correções estruturadas suficientes; faça inferência conservadora a partir dos pós-aulas.'}`
+        `CORREÇÕES E DESEMPENHO:\n${input.corrections.length ? JSON.stringify(input.corrections) : 'Sem correções estruturadas suficientes; faça inferência conservadora a partir dos pós-aulas.'}\n\n` +
+        `DESAFIO DA SEMANA ANTERIOR:\n${anterior
+          ? `${anterior.score} de ${anterior.maxScore} pontos (${Math.round(anterior.score / anterior.maxScore * 100)}%). Errou: ${anterior.erros.length ? JSON.stringify(anterior.erros) : 'nada'}.`
+          : 'Primeira semana dele no desafio — use o nível CEFR como referência.'}`
       }],
     });
     const text = response.content.find(block => block.type === 'text')?.text;
@@ -534,10 +574,12 @@ export function createChallengeFunctions({
       if (!/^\d{4}-\d{2}-\d{2}$/.test(weekKey)) throw new HttpsError('invalid-argument', 'Data da segunda-feira inválida.');
       if (new Date(`${weekKey}T12:00:00Z`).getUTCDay() !== 1) throw new HttpsError('invalid-argument', 'A data precisa ser uma segunda-feira.');
       const schedule = scheduleFor(weekKey);
-      const parts = [data.part1, data.part2];
-      const prepared = parts.map((questions, partIndex) => {
+      // Cada parte é opcional: dá para publicar só as 5 da Parte 1 à mão (sem
+      // custo de IA) e deixar a Parte 2 para a geração personalizada.
+      const prepared = [data.part1, data.part2].map((questions, partIndex) => {
+        if (questions === undefined || questions === null) return null;
         if (!Array.isArray(questions) || questions.length !== 5) {
-          throw new HttpsError('invalid-argument', `A Parte ${partIndex + 1} precisa ter exatamente 5 perguntas.`);
+          throw new HttpsError('invalid-argument', `A Parte ${partIndex + 1} precisa ter exatamente 5 perguntas, ou ficar de fora do JSON.`);
         }
         const checked = questions.map(validateQuestion);
         return {
@@ -545,6 +587,7 @@ export function createChallengeFunctions({
           keys:checked.map(item => item.answerKey),
         };
       });
+      if (!prepared.some(Boolean)) throw new HttpsError('invalid-argument', 'Informe part1, part2, ou as duas.');
       const batch = db.batch();
       batch.set(db.doc(`challengeWeeks/${weekKey}`), {
         weekKey, title:String(data.title || 'Desafio Science English').trim(), active:true,
@@ -552,6 +595,7 @@ export function createChallengeFunctions({
         updatedAt:FieldValue.serverTimestamp(), publishedBy:request.auth.token?.email || '',
       }, { merge:true });
       [schedule.part1, schedule.part2].forEach((roundSchedule, index) => {
+        if (!prepared[index]) return;
         batch.set(db.doc(`challengeRounds/${roundSchedule.roundId}`), {
           roundId:roundSchedule.roundId, weekKey, part:roundSchedule.part,
           opensAt:roundSchedule.opensAt, closesAt:roundSchedule.closesAt,
@@ -564,7 +608,8 @@ export function createChallengeFunctions({
         }, { merge:true });
       });
       await batch.commit();
-      return { ok:true, weekKey, rounds:[schedule.part1.roundId, schedule.part2.roundId] };
+      return { ok:true, weekKey, rounds:[schedule.part1, schedule.part2]
+        .filter((_, index) => prepared[index]).map(item => item.roundId) };
     }
   );
 
@@ -798,9 +843,11 @@ export function createChallengeFunctions({
     generateLateEntries
   );
 
-  // A semana nasce sozinha: no domingo à tarde o sistema monta as duas partes da
-  // semana que começa na segunda, usando as aulas até sábado. Fica pronto seis
-  // horas antes da Parte 1 abrir. Quem entrar depois cai no gerarDesafiosAtrasados.
+  // A semana nasce sozinha: domingo 1h da manhã, quando a rodada anterior já
+  // fechou e o ranking das 00h05 já saiu. Nessa hora o resultado da semana
+  // passada existe, então quem foi muito bem recebe perguntas mais duras — e o
+  // César ainda tem o domingo inteiro para revisar antes da Parte 1 abrir na
+  // segunda à meia-noite. Quem entrar depois cai no gerarDesafiosAtrasados.
   // Para voltar ao manual, grave weekly:false em challengeSettings/auto.
   async function generateNextWeek() {
     if (!Anthropic || !anthropicApiKey) return;
@@ -814,7 +861,7 @@ export function createChallengeFunctions({
   // 1800s é o teto de uma função agendada. A turma inteira roda em blocos de
   // três e leva bem menos que isso; quem sobrar entra no cron diário.
   const gerarDesafioDaSemana = onSchedule(
-    { region:REGION, schedule:'0 18 * * 0', timeZone:TIME_ZONE,
+    { region:REGION, schedule:'0 1 * * 0', timeZone:TIME_ZONE,
       secrets:anthropicApiKey ? [anthropicApiKey] : [], timeoutSeconds:1800, memory:'1GiB' },
     generateNextWeek
   );
@@ -872,8 +919,137 @@ export function createChallengeFunctions({
     async () => sendReminders('night')
   );
 
+  // O painel precisa ver pergunta E gabarito juntos, e o gabarito mora numa
+  // coleção sem regra de leitura — fechada inclusive para o admin, para nenhum
+  // aluno conseguir puxar as respostas. Por isso a revisão passa por aqui.
+  const obterPerguntasDesafio = onCall(
+    { region:REGION, timeoutSeconds:120, memory:'256MiB' },
+    async request => {
+      requireAdmin(request, adminEmails);
+      const weekKey = String(request.data?.weekKey || weekKeyFor()).trim();
+      const uid = String(request.data?.uid || '').trim();
+      const schedule = scheduleFor(weekKey);
+
+      if (!uid) {
+        const students = await db.collection('students').get();
+        const linhas = [];
+        for (const studentDoc of students.docs) {
+          const student = studentDoc.data();
+          if (student.archived === true || student.challengeEnabled === false) continue;
+          const [round1, round2, sub1, sub2] = await Promise.all([
+            studentDoc.ref.collection('challengeRounds').doc(schedule.part1.roundId).get(),
+            studentDoc.ref.collection('challengeRounds').doc(schedule.part2.roundId).get(),
+            studentDoc.ref.collection('challengeSubmissions').doc(schedule.part1.roundId).get(),
+            studentDoc.ref.collection('challengeSubmissions').doc(schedule.part2.roundId).get(),
+          ]);
+          linhas.push({ uid:studentDoc.id, name:student.name || student.firstName || 'Aluno',
+            level:student.level || '', prontas:[round1, round2].filter(snap => snap.exists).length,
+            iniciadas:[sub1, sub2].filter(snap => snap.exists).length });
+        }
+        return { weekKey, students:linhas.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')) };
+      }
+
+      const partes = [];
+      for (const item of [schedule.part1, schedule.part2]) {
+        const [roundSnap, keySnap, submissionSnap] = await Promise.all([
+          db.doc(`students/${uid}/challengeRounds/${item.roundId}`).get(),
+          answerKeyRef(uid, item.roundId, true).get(),
+          db.doc(`students/${uid}/challengeSubmissions/${item.roundId}`).get(),
+        ]);
+        if (!roundSnap.exists) { partes.push({ part:item.part, roundId:item.roundId, publicada:false }); continue; }
+        const chaves = new Map((keySnap.data()?.answers || []).map(answer => [answer.id, answer]));
+        partes.push({
+          part:item.part, roundId:item.roundId, publicada:true, travada:submissionSnap.exists,
+          abre:iso(item.opensAt), fecha:iso(item.closesAt),
+          questions:(roundSnap.data().questions || []).map(question => ({ ...question, ...(chaves.get(question.id) || {}) })),
+        });
+      }
+      return { weekKey, uid, partes };
+    }
+  );
+
+  // Troca UMA pergunta, mantendo as outras quatro. O tema é opcional: sem ele a
+  // IA só refaz no mesmo grau de dificuldade e no mesmo foco da original.
+  const regerarPerguntaDesafio = onCall(
+    { region:REGION, secrets:anthropicApiKey ? [anthropicApiKey] : [], timeoutSeconds:300, memory:'512MiB' },
+    async request => {
+      requireAdmin(request, adminEmails);
+      if (!Anthropic || !anthropicApiKey) throw new HttpsError('failed-precondition', 'A geração por IA não foi configurada.');
+      const uid = String(request.data?.uid || '').trim();
+      const roundId = String(request.data?.roundId || '').trim();
+      const questionId = String(request.data?.questionId || '').trim();
+      const tema = String(request.data?.tema || '').trim().slice(0, 300);
+      if (!uid || !roundId || !questionId) throw new HttpsError('invalid-argument', 'Faltou aluno, rodada ou pergunta.');
+
+      const studentDoc = await db.doc(`students/${uid}`).get();
+      if (!studentDoc.exists) throw new HttpsError('not-found', 'Aluno não encontrado.');
+      const roundRef = db.doc(`students/${uid}/challengeRounds/${roundId}`);
+      const [roundSnap, keySnap, submissionSnap] = await Promise.all([
+        roundRef.get(), answerKeyRef(uid, roundId, true).get(),
+        db.doc(`students/${uid}/challengeSubmissions/${roundId}`).get(),
+      ]);
+      if (!roundSnap.exists) throw new HttpsError('not-found', 'Esta rodada ainda não foi publicada.');
+      // Trocar pergunta de rodada já começada deixaria a resposta do aluno
+      // pendurada num enunciado que não existe mais.
+      if (submissionSnap.exists) throw new HttpsError('failed-precondition', 'O aluno já começou esta parte — não dá para trocar a pergunta agora.');
+
+      const questions = roundSnap.data().questions || [];
+      const index = questions.findIndex(question => question.id === questionId);
+      if (index < 0) throw new HttpsError('not-found', 'Pergunta não encontrada nesta rodada.');
+      const chaves = keySnap.data()?.answers || [];
+      const chaveAtual = chaves.find(answer => answer.id === questionId) || {};
+
+      const input = await personalizationInput(studentDoc);
+      const materials = input.posts.length ? input.posts : input.activityMaterials;
+      if (!materials.length) throw new HttpsError('failed-precondition', 'Sem material recente deste aluno para gerar outra pergunta.');
+
+      const student = studentDoc.data();
+      const client = new Anthropic({ apiKey:anthropicApiKey.value() });
+      const response = await client.messages.create({
+        model, max_tokens:2000,
+        system:[{ type:'text', text:
+          'Você reescreve UMA pergunta de um desafio de inglês. Use somente fatos linguísticos, vocabulário e contextos presentes nos materiais fornecidos. ' +
+          'Múltipla escolha com quatro alternativas plausíveis, uma única resposta inequívoca e explicação pedagógica curta em português. ' +
+          'A nova pergunta não pode repetir a que está sendo trocada nem nenhuma das outras da rodada. ' +
+          'Mantenha o mesmo grau de dificuldade e o mesmo foco da original, a menos que o professor peça outra coisa.' }],
+        output_config:{ format:{ type:'json_schema', schema:SINGLE_QUESTION_SCHEMA } },
+        messages:[{ role:'user', content:
+          `Aluno: ${student.name || 'Aluno'}\nNível: ${student.level || 'não informado'}\n` +
+          `Foco da pergunta original: ${chaveAtual.focus || 'weak'}\n` +
+          (tema ? `PEDIDO DO PROFESSOR: ${tema}\n` : '') +
+          `\nPERGUNTA A SUBSTITUIR:\n${JSON.stringify({ ...questions[index], ...chaveAtual })}\n\n` +
+          `OUTRAS PERGUNTAS DA RODADA (não repita nenhuma):\n${JSON.stringify(questions.filter((_, i) => i !== index).map(question => `${question.prompt} ${question.context || ''}`))}\n\n` +
+          `MATERIAIS DE ESTUDO:\n${materials.map((item, i) => `[${i + 1}] ${item.title}\n${item.text}`).join('\n\n')}`
+        }],
+      });
+      const text = response.content.find(block => block.type === 'text')?.text;
+      if (!text) throw new HttpsError('internal', 'A IA não devolveu a pergunta.');
+      const { publicQuestion, answerKey } = validateQuestion(
+        { ...JSON.parse(text), id:questionId, type:'multipleChoice' }, index);
+
+      const batch = db.batch();
+      batch.set(roundRef, {
+        questions:questions.map((question, i) => i === index ? publicQuestion : question),
+        updatedAt:FieldValue.serverTimestamp(),
+      }, { merge:true });
+      batch.set(answerKeyRef(uid, roundId, true), {
+        answers:chaves.some(answer => answer.id === questionId)
+          ? chaves.map(answer => answer.id === questionId ? answerKey : answer)
+          : [...chaves, answerKey],
+        updatedAt:FieldValue.serverTimestamp(),
+      }, { merge:true });
+      if (registrarUso && response.usage) {
+        registrarUso(batch, { tipo:'desafio-pergunta', uid, escolaId:student.schoolId || '',
+          uso:response.usage, extra:{ roundId, questionId } });
+      }
+      await batch.commit();
+      return { ok:true, question:{ ...publicQuestion, ...answerKey } };
+    }
+  );
+
   return {
     publicarDesafioSemanal, gerarDesafiosPersonalizados, obterDesafioSemanal, iniciarDesafioSemanal,
+    obterPerguntasDesafio, regerarPerguntaDesafio,
     salvarRespostaDesafio, obterStatusDesafioAdmin, finalizarDesafioSemanal,
     notificarAberturaDesafio, lembrarDesafioManha, lembrarDesafioNoite,
     gerarDesafiosAtrasados, gerarDesafioDaSemana,
