@@ -1702,6 +1702,8 @@
         </div>
         <div class="form-msg" id="calendar-settings-msg"></div>
         <button class="btn-add" id="calendar-settings-save" type="button" style="width:100%;margin-top:18px;">Salvar expediente</button>
+        <button class="btn-secondary" id="calendar-limpar-duplicadas" type="button" style="width:100%;margin-top:9px;padding:9px;font-size:.83rem;">🧹 Procurar aulas repetidas</button>
+        <p style="margin:7px 0 0;color:var(--muted);font-size:.76rem;line-height:1.5;">Aula que aparece duas vezes no mesmo horário, vinda do cadastro do aluno. Mostra o que achou antes de apagar.</p>
       </div>
     </div>
   </div>
@@ -3107,7 +3109,10 @@
       const botao = document.getElementById('calendar-pop-reposicao');
       botao.classList.toggle('on', ehReposicao);
       botao.textContent = ehReposicao ? '🔄 Reposição — toque para desfazer' : '🔄 Marcar reposição';
-      botao.style.display = calendarPopDraft.id && !ehReposicao ? 'none' : 'block';
+      // Some só quando ele está editando uma aula de verdade. Em bloco de
+      // horário disponível o botão TEM de aparecer: a agenda dele é coberta de
+      // disponível, então nunca existe um vago "limpo" para clicar.
+      botao.style.display = (calendarPopDraft.id && ehAula) ? 'none' : 'block';
       document.getElementById('calendar-pop-student-row').style.display = (ehReposicao || ehAula) ? 'grid' : 'none';
       const campoRepeticao = document.getElementById('calendar-pop-repeat');
       campoRepeticao.disabled = ehReposicao;
@@ -3116,6 +3121,22 @@
 
     document.getElementById('calendar-pop-reposicao').onclick = () => {
       if (!calendarPopDraft) return;
+      // Marcando reposição em cima de um bloco existente (horário disponível,
+      // por exemplo), ela nasce como compromisso NOVO só daquele dia: o bloco
+      // original continua inteiro e na semana seguinte o horário volta a ficar
+      // livre. Sem isto, salvar converteria a série inteira em reposição.
+      if (calendarPopDraft.type !== 'reposicao' && calendarPopDraft.id) {
+        const dia = calendarPopDraft.ocorrencia || calendarPopDraft.date;
+        calendarPopDraft = { type:'reposicao', ocorrencia:dia, date:dia,
+          startTime:document.getElementById('calendar-pop-start').value,
+          endTime:document.getElementById('calendar-pop-end').value, repeat:'none' };
+        document.getElementById('calendar-pop-title').value = '';
+        document.getElementById('calendar-pop-delete').style.display = 'none';
+        document.getElementById('calendar-pop-cancelar').style.display = 'none';
+        document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle('reposicao');
+        sincronizarReposicao(); renderCalendarPopColors(); renderCalendarPopPalette(); renderCalendarPopDays();
+        return;
+      }
       calendarPopDraft.type = calendarPopDraft.type === 'reposicao' ? 'lesson' : 'reposicao';
       document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle(calendarPopDraft.type);
       sincronizarReposicao(); renderCalendarPopColors(); renderCalendarPopPalette(); renderCalendarPopDays();
@@ -3233,6 +3254,33 @@
       }
       renderCalendarPopDays();
     };
+    // Aula repetida vem de um defeito antigo: o sincronismo apagava as aulas
+    // velhas olhando a lista em memória, que fora da Agenda vinha vazia — então
+    // não apagava nada e gravava a série de novo. O defeito já foi corrigido,
+    // mas o que ficou duplicado no banco continua lá.
+    document.getElementById('calendar-limpar-duplicadas').onclick = async evento => {
+      const botao = evento.currentTarget;
+      if (!escolaAtual) return showMsg('calendar-settings-msg', 'Escolha uma escola antes.', 'err');
+      botao.disabled = true;
+      try {
+        const snap = await getDocs(query(collection(db, 'schools', escolaAtual, 'calendarEvents'), where('source', '==', 'cadastro')));
+        const vistos = new Map(), repetidas = [];
+        snap.docs.forEach(item => {
+          const dado = item.data();
+          const chave = [dado.studentUid, dado.date, dado.startTime, dado.endTime, dado.repeat || 'none'].join('|');
+          if (vistos.has(chave)) repetidas.push({ ref:item.ref, nome:dado.studentName || dado.title || 'Aula', hora:`${dado.startTime}–${dado.endTime}` });
+          else vistos.set(chave, true);
+        });
+        if (!repetidas.length) return showMsg('calendar-settings-msg', '✅ Nenhuma aula repetida na agenda.', 'ok');
+        const resumo = [...new Set(repetidas.map(item => `${item.nome} (${item.hora})`))].join('\n');
+        if (!confirm(`Achei ${repetidas.length} aula(s) repetida(s):\n\n${resumo}\n\nApagar a cópia extra? A aula original fica.`)) return;
+        await Promise.all(repetidas.map(item => deleteDoc(item.ref)));
+        await loadCalendar();
+        showMsg('calendar-settings-msg', `✅ ${repetidas.length} cópia(s) removida(s).`, 'ok');
+      } catch (error) { showMsg('calendar-settings-msg', `Erro: ${error.message}`, 'err'); }
+      finally { botao.disabled = false; }
+    };
+
     document.getElementById('calendar-pop-close').onclick = () => { closeCalendarPop(); clearCalendarSelection(); };
     document.getElementById('calendar-pop-save').onclick = saveCalendarPop;
     document.getElementById('calendar-pop-delete').onclick = deleteCalendarPop;
