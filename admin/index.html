@@ -34,8 +34,10 @@
     body.menu-aberto .menu-toggle .seta { transform: rotate(180deg); }
 
     /* ── Esqueleto: menu lateral fixo + conteúdo ─────────────────────── */
+    /* Sem limite de largura: o menu encosta na esquerda e o conteúdo usa
+       todo o resto da tela, por maior que seja o monitor. */
     .container {
-      max-width: 1320px; margin: 0 auto; padding: 20px;
+      width: 100%; margin: 0; padding: 20px 24px;
       display: grid; grid-template-columns: var(--side-w) minmax(0, 1fr); gap: 22px;
       align-items: start;
     }
@@ -262,6 +264,35 @@
     }
     .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
     .field textarea { resize: vertical; min-height: 160px; font-family: monospace; font-size: 0.82rem; }
+
+    /* Estas quatro classes eram usadas em Turmas/Duplas e no Desafio, mas
+       nunca chegaram a existir no CSS — os botões e campos apareciam com o
+       visual cru do navegador. Seguem o mesmo padrão de .btn-add e .field. */
+    .btn-primary {
+      background: var(--accent); color: #fff; border: none;
+      padding: 11px 20px; border-radius: 10px;
+      font-family: inherit; font-size: 0.88rem; font-weight: 700;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .btn-primary:hover { background: var(--accent-dark); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: #fff; color: var(--muted); border: 1.5px solid var(--border);
+      padding: 8px 15px; border-radius: 9px;
+      font-family: inherit; font-size: 0.83rem; font-weight: 700;
+      cursor: pointer; transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent-dark); }
+    .btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .form-label { display: block; font-size: 0.83rem; font-weight: 600; margin-bottom: 5px; color: #374151; }
+    .form-input {
+      width: 100%; padding: 10px 12px; border: 1.5px solid var(--border);
+      border-radius: 8px; font-size: 0.9rem; outline: none; font-family: inherit;
+      background: #fff; color: var(--text);
+    }
+    .form-input:focus { border-color: var(--accent); }
     .student-picker { position: relative; }
     .student-picker-trigger {
       width: 100%; min-height: 44px; padding: 10px 12px; border: 1.5px solid var(--border);
@@ -4019,6 +4050,7 @@
         if (tab.dataset.tab === 'avaliacoes') recarregarAvaliacoes();
         if (tab.dataset.tab === 'creditos') carregarConsumoApi();
         if (tab.dataset.tab === 'processos') { marcarProcessosPosAulaVistos(); recarregarProcessosPosAula(); }
+        if (tab.dataset.tab === 'pendencias') marcarPendenciasVistas();
         if (tab.dataset.tab === 'groups') loadClassGroups();
         if (tab.dataset.tab === 'challenge') loadChallengeAdmin();
         if (tab.dataset.tab === 'calendar') loadCalendar();
@@ -5477,6 +5509,26 @@
       }
     }
 
+    // ── PENDÊNCIAS JÁ VISTAS ────────────────────────────────────────────
+    // Abrir a aba conta como "já li isso": o negrito some e só volta quando
+    // aparecer uma pendência NOVA — não a cada recarregada do painel.
+    // Cada pendência é identificada por aluno + tipo, então o mesmo aluno
+    // ficar também sem pós-aula conta como novidade e avisa de novo.
+    const pendenciasVistasKey = () => `pendenciasVistas:${escolaAtual}`;
+    const lerPendenciasVistas = () => {
+      try { return new Set(JSON.parse(localStorage.getItem(pendenciasVistasKey()) || '[]')); }
+      catch (e) { return new Set(); }
+    };
+    const salvarPendenciasVistas = ids => {
+      try { localStorage.setItem(pendenciasVistasKey(), JSON.stringify([...ids])); } catch (e) {}
+    };
+    let pendenciasAtuais = [];
+
+    function marcarPendenciasVistas() {
+      salvarPendenciasVistas(new Set(pendenciasAtuais));
+      destacarAba('pendencias', false);
+    }
+
     function renderPendencias(rows) {
       const semAtividades = rows.filter(s => s.semAtividades);
       const semPosaula = rows.filter(s => s.semPosaulaAtrasada)
@@ -5501,8 +5553,20 @@
         ? semPosaula.map(s => card(s, 'posaula', s.nuncaTevePosaula ? 'Nunca recebeu pós-aula' : `${s.diasSemPosaula} dias sem pós-aula`)).join('')
         : '<div style="padding:12px;border-radius:9px;background:#f0fdf4;color:#166534;">✓ Nenhuma pós-aula atrasada.</div>';
 
-      const unicos = new Set([...semAtividades, ...semPosaula].map(s => s.uid)).size;
-      destacarAba('pendencias', unicos > 0);
+      pendenciasAtuais = [
+        ...semAtividades.map(s => `${s.uid}:atividades`),
+        ...semPosaula.map(s => `${s.uid}:posaula`),
+      ];
+      const vistas = lerPendenciasVistas();
+      // Pendência resolvida sai da memória: se voltar a acontecer, avisa de novo.
+      const aindaValem = new Set(pendenciasAtuais.filter(id => vistas.has(id)));
+      if (aindaValem.size !== vistas.size) salvarPendenciasVistas(aindaValem);
+
+      if (document.getElementById('tab-pendencias')?.classList.contains('active')) {
+        marcarPendenciasVistas();   // já está lendo agora: conta como visto
+      } else {
+        destacarAba('pendencias', pendenciasAtuais.some(id => !aindaValem.has(id)));
+      }
 
       document.querySelectorAll('#tab-pendencias .pend-open').forEach(btn => {
         btn.onclick = () => openDetail(btn.dataset.uid, btn.dataset.name);
