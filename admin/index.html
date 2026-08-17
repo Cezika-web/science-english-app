@@ -486,7 +486,7 @@
     .calendar-event.available { z-index:3; }
     /* Aula cancelada continua na grade, para ele lembrar que aquele horário era
        de alguém — mas riscada e sem cor, bem longe do laranja do disponível. */
-    .calendar-event.cancelada { background:repeating-linear-gradient(135deg,#f8fafc,#f8fafc 5px,#eef2f7 5px,#eef2f7 10px); border-color:#cbd5e1; color:#94a3b8; }
+    .calendar-event.cancelada { background:repeating-linear-gradient(135deg,#f8fafc,#f8fafc 5px,#eef2f7 5px,#eef2f7 10px); border-color:#cbd5e1; color:#94a3b8; z-index:2; }
     .calendar-event.cancelada strong { text-decoration:line-through; }
     /* Aula junta usa o MESMO verde das outras: o primeiro da hora fica igual a
        uma aula sozinha e os seguintes vão perdendo tom. Sem faixa nem realce —
@@ -494,9 +494,11 @@
        porque a fatia é baixa demais para caber duas linhas. */
     .calendar-event.junta { background:color-mix(in srgb, var(--event-color) var(--event-mix,11%), #fff); border-color:color-mix(in srgb, var(--event-color) var(--event-mix-borda,20%), #fff); padding:2px 7px; display:flex; align-items:baseline; gap:5px; }
     /* Numa fatia de ~22px não cabem duas linhas, então o horário vai ao LADO do
-       nome. O nome encolhe primeiro; o horário não quebra. */
-    .calendar-event.junta strong { font-size:.585rem; flex:1 1 auto; min-width:0; }
-    .calendar-event.junta span { margin-top:0; flex:none; }
+       nome — colado nele. Nenhum dos dois estica (sem flex-grow), senão o nome
+       empurraria o horário para a borda direita. Os dois encolhem se faltar
+       espaço, e aí quem sobra corta com reticências em vez de vazar. */
+    .calendar-event.junta strong { font-size:.585rem; flex:0 1 auto; min-width:0; }
+    .calendar-event.junta span { margin-top:0; flex:0 1 auto; min-width:0; }
     .calendar-event-mais { position:absolute; right:3px; z-index:7; border:1px solid #cbd5e1; border-radius:6px; background:#fff; color:#475569; font-family:inherit; font-size:.56rem; font-weight:800; padding:1px 5px; height:13px; line-height:1; cursor:pointer; box-shadow:0 1px 4px rgba(15,23,42,.12); }
     .calendar-event-mais:hover { border-color:var(--accent); color:var(--accent-dark); }
     .calendar-event.editing { z-index:9; box-shadow:0 0 0 2px color-mix(in srgb, var(--event-color) 55%, #fff), 0 6px 16px rgba(15,23,42,.13); }
@@ -2535,16 +2537,23 @@
             porHora.push({ ...item, startTime:calendarTime(minuto), endTime:calendarTime(Math.min(minuto + 60, fim)), fatiada:true });
           }
         });
-        const events = calendarLanes(porHora, key).map(({ event, faixa, faixas, oculto, restantes, recolher, chave }) => {
+        // Aula cancelada não disputa espaço: fica atrás, ocupando a hora toda, e
+        // quem vale naquele horário reparte o espaço entre si. Cancelei a do Gu
+        // e pus reposição no lugar: a reposição é que tem de aparecer.
+        const cancelados = porHora.filter(item => calendarCancelada(item, key));
+        const ativos = porHora.filter(item => !calendarCancelada(item, key));
+        const fundo = cancelados.map(event => {
           const top = Math.max(0, (calendarMinutes(event.startTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
           const bottom = Math.min(height, (calendarMinutes(event.endTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
           if (bottom <= 0 || top >= height || bottom-top < 3) return '';
-          // Na aula junta cabe uma linha só, então ao lado do nome vai apenas a
-          // hora de início: o intervalo inteiro roubava o espaço do nome, e a
-          // duração já se lê pela altura do bloco.
-          const subtitle = faixas > 1
-            ? event.startTime
-            : `${event.startTime}–${event.endTime}${CALENDAR_REPEAT_LABELS[event.repeat] ? ` · ${CALENDAR_REPEAT_LABELS[event.repeat]}` : ''}`;
+          const legenda = `${event.startTime}–${event.endTime}`;
+          return `<button type="button" class="calendar-event cancelada" data-event-id="${esc(event.id)}" style="top:${top+1}px;height:${Math.max(13, bottom-top-2)}px;--event-color:${calendarEventColor(event)}" title="${esc(event.title || legenda)} · cancelada"><strong>${esc(event.title || 'Compromisso')}</strong><span>${esc(legenda)}</span></button>`;
+        }).join('');
+        const events = fundo + calendarLanes(ativos, key).map(({ event, faixa, faixas, oculto, restantes, recolher, chave }) => {
+          const top = Math.max(0, (calendarMinutes(event.startTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
+          const bottom = Math.min(height, (calendarMinutes(event.endTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
+          if (bottom <= 0 || top >= height || bottom-top < 3) return '';
+          const subtitle = `${event.startTime}–${event.endTime}${CALENDAR_REPEAT_LABELS[event.repeat] ? ` · ${CALENDAR_REPEAT_LABELS[event.repeat]}` : ''}`;
           if (oculto) return '';
           // Dois ou mais na mesma hora: cada um fica com uma fatia da ALTURA,
           // um embaixo do outro. Não vira um evento só — cada aluno continua
@@ -2555,8 +2564,7 @@
           const mais = (restantes || recolher)
             ? `<button type="button" class="calendar-event-mais" data-expandir="${esc(chave)}" style="top:${meuTopo + minhaAltura - 14}px" title="${recolher ? 'Mostrar menos' : `Ver os ${restantes} que faltam nesta hora`}">${recolher ? '⋯ menos' : `⋯ +${restantes}`}</button>`
             : '';
-          const cancelada = calendarCancelada(event, key);
-          return `<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}${cancelada ? ' cancelada' : ''}" data-event-id="${esc(event.id)}"${event.fatiada ? ` data-hora-inicio="${esc(event.startTime)}" data-hora-fim="${esc(event.endTime)}"` : ''} style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event)}${junta ? `;--event-mix:${calendarMistura(faixa)}%;--event-mix-borda:${calendarMistura(faixa, CALENDAR_INTENSIDADE_BORDA)}%` : ''}" title="${esc(event.title || subtitle)}"><strong>${esc(event.title || 'Compromisso')}</strong><span>${esc(subtitle)}</span></button>${mais}`;
+          return `<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}" data-event-id="${esc(event.id)}"${event.fatiada ? ` data-hora-inicio="${esc(event.startTime)}" data-hora-fim="${esc(event.endTime)}"` : ''} style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event)}${junta ? `;--event-mix:${calendarMistura(faixa)}%;--event-mix-borda:${calendarMistura(faixa, CALENDAR_INTENSIDADE_BORDA)}%` : ''}" title="${esc(event.title || subtitle)}"><strong>${esc(event.title || 'Compromisso')}</strong><span>${esc(subtitle)}</span></button>${mais}`;
         }).join('');
         return `<div class="calendar-day-column${work ? '' : ' off-hours'}${key === todayKey ? ' today' : ''}${key === calendarSelectedDay ? ' picked' : ''}" data-date="${key}" style="height:${height}px">${events}</div>`;
       }).join('');
@@ -7233,29 +7241,42 @@
           + (semErro.length ? `<details style="margin-top:8px;"><summary style="cursor:pointer;color:var(--muted);font-size:.82rem;padding:7px 2px;">${semErro.length} assunto(s) que ninguém errou</summary><div style="display:grid;gap:4px;margin-top:6px;">${semErro.map(item =>
               `<div style="display:flex;gap:12px;padding:6px 13px;font-size:.84rem;color:var(--muted);"><span style="flex:1;min-width:0;">${esc(item.tema)}</span><span style="white-space:nowrap;color:#166534;">${item.acertos} acerto(s)</span></div>`).join('')}</div></details>` : '');
 
-      const linhaResposta = item => `<div style="display:flex;align-items:center;gap:9px;font-size:.86rem;padding:4px 7px;border-radius:8px;background:${item.acertou ? '#F0FDF4' : '#FEF2F2'};">
-          <span style="width:16px;flex:none;text-align:center;font-weight:900;color:${item.acertou ? '#166534' : '#B91C1C'};">${item.acertou ? '✓' : '✗'}</span>
-          <span style="width:132px;flex:none;font-weight:600;">${esc(item.aluno)}</span>
-          <span style="flex:1;min-width:0;">${item.resposta
-            ? `respondeu <code style="background:#fff;border:1px solid ${item.acertou ? 'var(--border)' : '#FCA5A5'};${item.acertou ? '' : 'color:#991B1B;'}border-radius:6px;padding:1px 7px;font-family:ui-monospace,Menlo,monospace;font-size:.85em;">${esc(item.resposta)}</code>`
-            : '<em style="color:var(--muted);">não respondeu</em>'}</span>
+      // Antes era uma lista corrida de perguntas e tomava a tela inteira. Agora
+      // fecha por aluno: ele abre o que quiser ver. Aluno sem erro nem aparece.
+      const porAluno = new Map();
+      data.perguntas.forEach(item => (item.respostas || []).forEach(resposta => {
+        if (resposta.acertou) return;
+        if (!porAluno.has(resposta.aluno)) porAluno.set(resposta.aluno, []);
+        porAluno.get(resposta.aluno).push({ ...item, resposta:resposta.resposta });
+      }));
+      // Sem `respostas` (função antiga ainda no ar) cai no que dá para mostrar.
+      if (!porAluno.size) data.perguntas.filter(item => item.erros > 0)
+        .forEach(item => (item.quemErrou || []).forEach(quem => {
+          if (!porAluno.has(quem)) porAluno.set(quem, []);
+          porAluno.get(quem).push({ ...item, resposta:'' });
+        }));
+
+      const linhaPergunta = item => `<div style="border-top:1px solid var(--border);padding:11px 0;">
+          <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;color:var(--muted);">Parte ${item.part}${item.tema ? ` <em style="font-style:normal;color:#5B21B6;background:#F5F3FF;border-radius:5px;padding:1px 6px;margin-left:5px;">${esc(item.tema)}</em>` : ''}</div>
+          <div style="font-weight:700;margin:5px 0 2px;line-height:1.4;">${esc(item.prompt)}</div>
+          ${item.context ? `<div style="font-size:.85rem;color:var(--muted);font-style:italic;margin-bottom:6px;">${esc(item.context)}</div>` : ''}
+          <div style="font-size:.85rem;">${item.resposta
+            ? `Respondeu <code style="background:#fff;border:1px solid #FCA5A5;color:#991B1B;border-radius:6px;padding:1px 7px;font-family:ui-monospace,Menlo,monospace;font-size:.85em;">${esc(item.resposta)}</code>`
+            : '<em style="color:var(--muted);">não respondeu</em>'}
+            &nbsp;·&nbsp; certa: <strong style="color:#166534;">${esc(item.expected)}</strong></div>
+          ${item.explanation ? `<div style="margin-top:6px;font-size:.82rem;color:var(--muted);background:#F8FAFC;border-left:3px solid var(--border);padding:6px 10px;border-radius:0 8px 8px 0;line-height:1.45;">${esc(item.explanation)}</div>` : ''}
         </div>`;
 
-      const erradas = data.perguntas.filter(item => item.erros > 0);
-      const mapa = !erradas.length
+      const mapa = !porAluno.size
         ? '<p style="color:var(--muted);font-size:.84rem;">Nenhum erro registrado ainda.</p>'
-        : erradas.map(item => `<div style="border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:9px;">
-            <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline;">
-              <span style="font-size:.7rem;font-weight:800;text-transform:uppercase;color:var(--muted);">Parte ${item.part}${item.tema ? ` <em style="font-style:normal;color:#5B21B6;background:#F5F3FF;border-radius:5px;padding:1px 6px;margin-left:5px;">${esc(item.tema)}</em>` : ''}</span>
-              <span style="white-space:nowrap;"><strong style="color:#B91C1C;">${item.erros} erro(s)</strong> <small style="color:var(--muted);">· ${item.acertos} acerto(s)</small></span>
-            </div>
-            <div style="font-weight:700;margin:5px 0 2px;line-height:1.4;">${esc(item.prompt)}</div>
-            ${item.context ? `<div style="font-size:.85rem;color:var(--muted);font-style:italic;margin-bottom:8px;">${esc(item.context)}</div>` : ''}
-            ${(item.respostas || []).length ? `<div style="border-top:1px dashed var(--border);padding-top:8px;display:grid;gap:4px;">${item.respostas.map(linhaResposta).join('')}</div>` : ''}
-            ${!(item.respostas || []).length && (item.quemErrou || []).length ? `<div style="font-size:.79rem;color:#92400E;">Errou: ${esc(item.quemErrou.join(', '))}</div>` : ''}
-            <div style="font-size:.85rem;margin-top:8px;">Resposta certa: <strong style="color:#166534;">${esc(item.expected)}</strong></div>
-            ${item.explanation ? `<div style="margin-top:6px;font-size:.82rem;color:var(--muted);background:#F8FAFC;border-left:3px solid var(--border);padding:6px 10px;border-radius:0 8px 8px 0;line-height:1.45;">${esc(item.explanation)}</div>` : ''}
-          </div>`).join('');
+        : [...porAluno.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], 'pt-BR'))
+            .map(([quem, itens]) => `<details style="border:1px solid var(--border);border-radius:12px;margin-bottom:7px;">
+              <summary style="cursor:pointer;padding:11px 14px;display:flex;align-items:center;gap:10px;font-size:.9rem;">
+                <span style="flex:1;min-width:0;font-weight:700;">${esc(quem)}</span>
+                <strong style="color:#B91C1C;white-space:nowrap;">${itens.length} erro(s)</strong>
+              </summary>
+              <div style="padding:0 14px 12px;">${itens.map(linhaPergunta).join('')}</div>
+            </details>`).join('');
 
       const bloco = (titulo, conteudo, extra = '') => `<div style="margin-bottom:20px;">
         <div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px;">${titulo}${extra}</div>
@@ -7264,7 +7285,7 @@
 
       return bloco(`Semana de ${esc(data.weekKey)}`, semana, data.revelado ? ' · resultado liberado' : ' · ainda em disputa')
         + bloco('Assuntos que a turma errou — a pauta da próxima aula', temas)
-        + bloco('Pergunta por pergunta — quem errou e o que respondeu', mapa)
+        + bloco('Erros por aluno — abra para ver o que respondeu', mapa)
         + bloco('Temporada — acumulado desde o começo', data.temporada.length
           ? `<div style="display:grid;gap:5px;">${data.temporada.map(linhaRanking).join('')}</div>`
           : '<p style="color:var(--muted);font-size:.84rem;">A primeira semana ainda não fechou.</p>');
