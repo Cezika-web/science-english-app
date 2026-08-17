@@ -476,6 +476,14 @@
     .calendar-event:hover { color:color-mix(in srgb, var(--event-color) 62%, #334155); }
     .calendar-event:hover { z-index:8; background:color-mix(in srgb, var(--event-color) 17%, #fff); box-shadow:0 4px 12px rgba(15,23,42,.10); }
     .calendar-event.available { z-index:3; }
+    /* Aula junta: verde mais forte e uma faixa no topo, para bater o olho e ver
+       que aquela hora tem mais de um aluno. */
+    .calendar-event.junta { background:color-mix(in srgb, var(--event-color) 19%, #fff); border-color:color-mix(in srgb, var(--event-color) 34%, #fff); color:color-mix(in srgb, var(--event-color) 62%, #334155); padding:2px 7px; }
+    .calendar-event.junta::before { content:''; position:absolute; left:0; right:0; top:0; height:3px; background:color-mix(in srgb, var(--event-color) 62%, #fff); }
+    .calendar-event.junta span { display:none; }
+    .calendar-event.junta strong { font-size:.585rem; }
+    .calendar-event-mais { position:absolute; right:3px; z-index:7; border:1px solid #cbd5e1; border-radius:6px; background:#fff; color:#475569; font-family:inherit; font-size:.56rem; font-weight:800; padding:1px 5px; height:13px; line-height:1; cursor:pointer; box-shadow:0 1px 4px rgba(15,23,42,.12); }
+    .calendar-event-mais:hover { border-color:var(--accent); color:var(--accent-dark); }
     .calendar-event.editing { z-index:9; box-shadow:0 0 0 2px color-mix(in srgb, var(--event-color) 55%, #fff), 0 6px 16px rgba(15,23,42,.13); }
     .calendar-event strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.615rem; font-weight:600; text-transform:uppercase; letter-spacing:.014em; }
     .calendar-event span { display:block; margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:color-mix(in srgb, var(--event-color) 24%, #a3aec0); font-size:.555rem; }
@@ -749,15 +757,38 @@
       <!-- TURMAS / DUPLAS -->
       <div class="tab-panel" id="tab-groups">
         <div class="form-card" style="margin-bottom:18px;">
-          <h3 style="margin:0 0 6px;">Criar turma ou dupla</h3>
-          <p style="font-size:.84rem;color:var(--muted);line-height:1.5;margin:0 0 16px;">Selecione pelo menos dois alunos que fazem aula juntos. O desafio da turma aparecerá automaticamente no aplicativo de cada integrante, além do desafio geral.</p>
+          <h3 style="margin:0 0 6px;">Criar aula em grupo</h3>
+          <p style="font-size:.84rem;color:var(--muted);line-height:1.5;margin:0 0 16px;">Selecione pelo menos dois alunos que fazem aula juntos. O horário entra na agenda de cada um, o valor é rateado no Financeiro, e o desafio da turma passa a aparecer no aplicativo dos integrantes além do desafio geral.</p>
           <label class="form-label" for="group-name">Nome da turma</label>
           <input class="form-input" id="group-name" placeholder="Ex.: Lucas e Gabriel" style="margin-bottom:14px;">
           <label class="form-label">Alunos que fazem aula juntos</label>
           <div id="group-students" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin:8px 0 14px;"></div>
-          <label class="form-label" for="group-question-count">Perguntas por rodada</label>
+
+          <label class="form-label">Dias da aula</label>
+          <div class="dias-week" id="g-dias-week" style="margin-bottom:4px;">
+            <label><input type="checkbox" data-d="0">Dom</label>
+            <label><input type="checkbox" data-d="1">Seg</label>
+            <label><input type="checkbox" data-d="2">Ter</label>
+            <label><input type="checkbox" data-d="3">Qua</label>
+            <label><input type="checkbox" data-d="4">Qui</label>
+            <label><input type="checkbox" data-d="5">Sex</label>
+            <label><input type="checkbox" data-d="6">Sáb</label>
+          </div>
+          <label class="hora-mesma"><input type="checkbox" id="g-hora-mesma" checked><span><strong>Todas as aulas são no mesmo horário</strong><small>Desmarque se algum dia tem hora diferente — aparece um campo por dia.</small></span></label>
+          <div id="g-hora-unica"><label class="form-label" for="g-hora">Horário da aula</label><input class="form-input" id="g-hora" type="time" step="900" style="margin-bottom:14px;"></div>
+          <div id="g-hora-por-dia" style="display:none;"><label class="form-label">Horário de cada dia</label><div class="hora-dias" id="g-hora-dias" style="margin-bottom:14px;"></div></div>
+          <label class="form-label" for="g-duracao">Duração da aula</label>
+          <select class="form-input" id="g-duracao" style="margin-bottom:14px;"><option value="30">30 minutos</option><option value="45">45 minutos</option><option value="60" selected>1 hora</option><option value="90">1h30</option><option value="120">2 horas</option></select>
+
+          <label class="form-label" for="g-valor">Valor total da aula (R$ por mês)</label>
+          <input class="form-input" id="g-valor" type="number" min="0" step="10" placeholder="Ex.: 640" style="margin-bottom:4px;">
+          <label class="hora-mesma"><input type="checkbox" id="g-dividir" checked><span><strong>Dividir igual entre os alunos</strong><small>Desmarque se cada um paga um valor diferente — aí você preenche aluno por aluno.</small></span></label>
+          <div id="g-valores" style="display:none;margin-bottom:8px;"></div>
+          <div id="g-rateio" style="font-size:.83rem;color:var(--muted);line-height:1.5;margin-bottom:14px;"></div>
+
+          <label class="form-label" for="group-question-count">Perguntas por rodada do desafio</label>
           <select class="form-input" id="group-question-count" style="margin-bottom:14px;"><option value="5">5 perguntas</option><option value="10" selected>10 perguntas</option><option value="15">15 perguntas</option><option value="20">20 perguntas</option></select>
-          <div style="display:flex;gap:9px;flex-wrap:wrap;"><button class="btn-primary" id="group-save" type="button">Criar desafio automático</button><button class="btn-secondary" id="group-cancel" type="button" style="display:none;">Cancelar edição</button></div>
+          <div style="display:flex;gap:9px;flex-wrap:wrap;"><button class="btn-primary" id="group-save" type="button">Criar aula em grupo</button><button class="btn-secondary" id="group-cancel" type="button" style="display:none;">Cancelar edição</button></div>
           <div class="form-msg" id="group-msg" style="display:none;"></div>
         </div>
         <div id="groups-list"><div class="loading">Carregando turmas...</div></div>
@@ -1428,6 +1459,7 @@
             <div class="field"><label for="f-vencimento">Dia do vencimento</label><input type="number" id="f-vencimento" min="1" max="31" value="10" /></div>
           </div>
           <div class="field" style="margin-top:14px;"><label for="f-ciclo">Como esse aluno paga</label><select id="f-ciclo"><option value="monthly">Uma vez por mês</option><option value="biweekly">Quinzenal — duas vezes por mês</option></select></div>
+          <div class="field"><label for="f-pagamento">Este mês, o aluno</label><select id="f-pagamento"><option value="pendente">Ainda vai pagar — fica pendente no Financeiro</option><option value="pago">Já pagou — entra como recebido</option></select></div>
           <div class="field"><label>Data de início das aulas</label><input type="date" id="f-inicio" /></div>
           <p style="margin:-4px 0 16px;padding:10px 12px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A;font-size:.78rem;line-height:1.5;">📅 Os dias e o horário já entram sozinhos na <strong>Agenda</strong> como aula semanal, e a mensalidade já entra no <strong>Financeiro</strong>. <span id="f-mensalidade-hint"></span></p>
           <button class="btn-add" id="btn-create-student">Criar aluno</button>
@@ -2303,6 +2335,52 @@
       return calendarHolidaysOfYear(date.getFullYear()).filter(item => item.date === calendarDateKey(date));
     }
 
+    // Horário ocupado deixou de ser impedimento: aula em dupla ou em turma é
+    // rotina, e recusar obrigava a remarcar na mão. Pergunta e segue.
+    function confirmarAulaJunta(conflito) {
+      const quem = conflito.studentName || conflito.title || 'outro compromisso';
+      return confirm(`${quem} já tem ${conflito.startTime}–${conflito.endTime} nesse horário.\n\n`
+        + 'Eles vão ter aula juntos?\n\nOK mantém os dois na mesma hora, um embaixo do outro na agenda. '
+        + 'Cancelar volta para você escolher outro horário.');
+    }
+
+    // Quantos cabem legíveis numa hora antes de virar tarja fina. Passando
+    // disso, o resto fica atrás de um "⋯ +N": hoje é dupla, mas a agenda tem
+    // que aguentar turma cheia sem virar sopa de letrinhas.
+    const CALENDAR_MAX_NA_HORA = 3;
+    const calendarExpandido = new Set();
+
+    // Quem divide a mesma faixa de horário fica um EMBAIXO do outro, repartindo
+    // a altura da hora. Cada aluno continua com o evento dele — não viram um só.
+    function calendarLanes(eventos, chaveDia) {
+      const ordenados = [...eventos].sort((um, outro) =>
+        calendarMinutes(um.startTime) - calendarMinutes(outro.startTime)
+        || calendarMinutes(um.endTime) - calendarMinutes(outro.endTime)
+        || String(um.title || '').localeCompare(String(outro.title || ''), 'pt-BR'));
+      const grupos = [];
+      let atual = [], fim = -1;
+      ordenados.forEach(event => {
+        if (atual.length && calendarMinutes(event.startTime) >= fim) { grupos.push(atual); atual = []; fim = -1; }
+        atual.push(event);
+        fim = Math.max(fim, calendarMinutes(event.endTime));
+      });
+      if (atual.length) grupos.push(atual);
+
+      const saida = [];
+      grupos.forEach(grupo => {
+        const chave = `${chaveDia}|${grupo[0].startTime}`;
+        const aberto = calendarExpandido.has(chave);
+        const visiveis = (grupo.length <= CALENDAR_MAX_NA_HORA || aberto) ? grupo.length : CALENDAR_MAX_NA_HORA;
+        const restantes = grupo.length - visiveis;
+        grupo.forEach((event, indice) => saida.push({
+          event, chave, faixa:indice, faixas:visiveis, oculto:indice >= visiveis,
+          restantes:indice === visiveis - 1 ? restantes : 0,
+          recolher:indice === visiveis - 1 && aberto && grupo.length > CALENDAR_MAX_NA_HORA,
+        }));
+      });
+      return saida;
+    }
+
     function renderCalendar() {
       calendarApplyTheme();
       if (calendarView === 'month') return renderCalendarMonth();
@@ -2339,12 +2417,23 @@
       const labels = Array.from({ length:hours }, (_, index) => `<div class="calendar-hour-label">${calendarTime(startMinutes + index*60)}</div>`).join('');
       const columns = days.map(date => {
         const key = calendarDateKey(date), work = calendarSettings.workingDays.includes(date.getDay());
-        const events = calendarEvents.filter(event => calendarOccursOn(event,date)).map(event => {
+        const doDia = calendarEvents.filter(event => calendarOccursOn(event,date));
+        const events = calendarLanes(doDia, key).map(({ event, faixa, faixas, oculto, restantes, recolher, chave }) => {
           const top = Math.max(0, (calendarMinutes(event.startTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
           const bottom = Math.min(height, (calendarMinutes(event.endTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
           if (bottom <= 0 || top >= height || bottom-top < 3) return '';
           const subtitle = `${event.startTime}–${event.endTime}${CALENDAR_REPEAT_LABELS[event.repeat] ? ` · ${CALENDAR_REPEAT_LABELS[event.repeat]}` : ''}`;
-          return `<button type="button" class="calendar-event ${event.type === 'available' ? 'available' : ''}" data-event-id="${esc(event.id)}" style="top:${top+1}px;height:${Math.max(22,bottom-top-2)}px;--event-color:${calendarEventColor(event)}" title="${esc(event.title || subtitle)}"><strong>${esc(event.title || 'Compromisso')}</strong><span>${esc(subtitle)}</span></button>`;
+          if (oculto) return '';
+          // Dois ou mais na mesma hora: cada um fica com uma fatia da ALTURA,
+          // um embaixo do outro. Não vira um evento só — cada aluno continua
+          // clicável e editável sozinho.
+          const alturaTotal = Math.max(22, bottom-top-2);
+          const fatia = alturaTotal / faixas, meuTopo = top + 1 + fatia * faixa;
+          const junta = faixas > 1, minhaAltura = Math.max(13, fatia - 1);
+          const mais = (restantes || recolher)
+            ? `<button type="button" class="calendar-event-mais" data-expandir="${esc(chave)}" style="top:${meuTopo + minhaAltura - 14}px" title="${recolher ? 'Mostrar menos' : `Ver os ${restantes} que faltam nesta hora`}">${recolher ? '⋯ menos' : `⋯ +${restantes}`}</button>`
+            : '';
+          return `<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}" data-event-id="${esc(event.id)}" style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event)}" title="${esc(event.title || subtitle)}"><strong>${esc(event.title || 'Compromisso')}</strong><span>${esc(subtitle)}</span></button>${mais}`;
         }).join('');
         return `<div class="calendar-day-column${work ? '' : ' off-hours'}${key === todayKey ? ' today' : ''}${key === calendarSelectedDay ? ' picked' : ''}" data-date="${key}" style="height:${height}px">${events}</div>`;
       }).join('');
@@ -2374,7 +2463,7 @@
           calendarHover = { date:column.dataset.date, minutes:startMinutes + Math.floor(Math.max(0, raw) / slotMinutes) * slotMinutes };
         };
         column.onpointerdown = down => {
-          if (down.target.closest('.calendar-event')) return;
+          if (down.target.closest('.calendar-event, .calendar-event-mais')) return;
           if (down.pointerType === 'mouse' && down.button !== 0) return;
           const anchor = slotAt(down.clientY), hourSlots = Math.round(60 / slotMinutes);
           if (down.pointerType === 'touch') { // no celular o dedo continua rolando a grade: vale o toque simples
@@ -2416,6 +2505,12 @@
         click.stopPropagation();
         clearCalendarSelection(); button.classList.add('editing'); // marca qual compromisso está sendo editado
         openCalendarPop(calendarEvents.find(item => item.id === button.dataset.eventId) || {}, button.getBoundingClientRect());
+      });
+      document.querySelectorAll('.calendar-event-mais').forEach(button => button.onclick = click => {
+        click.stopPropagation();
+        const chave = button.dataset.expandir;
+        if (calendarExpandido.has(chave)) calendarExpandido.delete(chave); else calendarExpandido.add(chave);
+        renderCalendar();
       });
       if (calendarShouldScroll) { // abre já no começo do expediente, não às 5 da manhã
         const scroller = document.getElementById('calendar-week-scroll');
@@ -2770,7 +2865,7 @@
       if (calendarMinutes(event.endTime) <= calendarMinutes(event.startTime)) return showMsg('calendar-event-msg','O horário final precisa ser depois do inicial.','err');
       if (event.repeatUntil && event.repeatUntil < event.date) return showMsg('calendar-event-msg','A repetição não pode terminar antes da primeira aula.','err');
       const conflict = calendarEvents.find(item => item.id !== id && calendarSeriesOverlap(event,item));
-      if (conflict) return showMsg('calendar-event-msg',`Conflito com “${conflict.title || 'outro compromisso'}” (${conflict.startTime}–${conflict.endTime}).`,'err');
+      if (conflict && !confirmarAulaJunta(conflict)) return;
       const button = document.getElementById('calendar-event-save'); button.disabled = true;
       try {
         if (id) await setDoc(doc(db,'schools',escolaAtual,'calendarEvents',id),event,{merge:true});
@@ -2991,7 +3086,7 @@
         updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || ''
       };
       const conflict = calendarEvents.find(item => item.id !== calendarPopDraft.id && calendarSeriesOverlap(payload, item));
-      if (conflict) return calendarPopFail(`Conflito com “${conflict.title || 'outro compromisso'}” (${conflict.startTime}–${conflict.endTime}).`);
+      if (conflict && !confirmarAulaJunta(conflict)) return;
       const button = document.getElementById('calendar-pop-save'); button.disabled = true;
       try {
         if (calendarPopDraft.id) await setDoc(doc(db,'schools',escolaAtual,'calendarEvents',calendarPopDraft.id), payload, { merge:true });
@@ -3030,7 +3125,7 @@
     };
     document.addEventListener('pointerdown', click => {
       if (!calendarPopDraft) return;
-      if (click.target.closest('#calendar-pop') || click.target.closest('.calendar-event')) return;
+      if (click.target.closest('#calendar-pop') || click.target.closest('.calendar-event, .calendar-event-mais')) return;
       closeCalendarPop();
     }, true);
     document.addEventListener('keydown', key => { if (key.key === 'Escape' && calendarPopDraft) closeCalendarPop(); });
@@ -3096,7 +3191,7 @@
         createdAt:serverTimestamp(), createdBy:auth.currentUser?.email || '', updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || '',
       };
       const conflito = calendarEvents.find(item => calendarSeriesOverlap(novo, item));
-      if (conflito) return calendarToast(`Não colei: bate com “${conflito.title || 'outro compromisso'}” (${conflito.startTime}–${conflito.endTime})`, true);
+      if (conflito && !confirmarAulaJunta(conflito)) return;
       try {
         await addDoc(collection(db, 'schools', escolaAtual, 'calendarEvents'), novo);
         await loadCalendar();
@@ -5272,7 +5367,7 @@
       if (porDia) renderHorasPorDia(prefixo, valores);
     }
 
-    ['f','e'].forEach(prefixo => {
+    ['f','e','g'].forEach(prefixo => {
       document.getElementById(`${prefixo}-hora-mesma`).addEventListener('change', () => sincronizarModoHora(prefixo));
       document.querySelectorAll(`#${prefixo}-dias-week input`).forEach(caixa =>
         caixa.addEventListener('change', () => { if (aulaModoPorDia(prefixo)) renderHorasPorDia(prefixo); }));
@@ -6902,14 +6997,75 @@
       if (!box) return;
       const active = allStudents.filter(student => !student.archived);
       box.innerHTML = active.map(student => `<label style="display:flex;align-items:center;gap:9px;padding:10px 11px;border:1px solid var(--border);border-radius:10px;background:var(--card);cursor:pointer;font-size:.84rem;"><input type="checkbox" value="${student.uid}" ${selected.includes(student.uid) ? 'checked' : ''}> <span>${esc(student.name || student.firstName || 'Aluno')}</span></label>`).join('') || '<span style="color:var(--muted);font-size:.84rem;">Nenhum aluno ativo nesta escola.</span>';
+      box.querySelectorAll('input').forEach(caixa => caixa.addEventListener('change', renderGroupRateio));
+      renderGroupRateio();
     }
+
+    const groupSelecionados = () => [...document.querySelectorAll('#group-students input:checked')].map(input => input.value);
+    const groupNome = uid => {
+      const aluno = allStudents.find(item => item.uid === uid);
+      return aluno?.name || aluno?.firstName || 'Aluno';
+    };
+
+    // O rateio é do professor: ou divide igual, ou ele digita aluno por aluno.
+    // Nada de preço de dupla embutido — o valor que ele põe é o que vale.
+    function renderGroupRateio() {
+      const uids = groupSelecionados(), total = Math.round(Number(document.getElementById('g-valor').value) * 100) || 0;
+      const igual = document.getElementById('g-dividir').checked;
+      const caixa = document.getElementById('g-valores');
+      caixa.style.display = igual || !uids.length ? 'none' : '';
+      if (!igual && uids.length) {
+        const anteriores = new Map([...caixa.querySelectorAll('input')].map(campo => [campo.dataset.uid, campo.value]));
+        // Começa já pela divisão igual — inclusive com o centavo do resto — para
+        // o professor só mexer em quem paga diferente, sem quebrar a soma.
+        const base = Math.floor(total / uids.length);
+        const sugerido = uid => ((base + (uids[0] === uid ? total - base * uids.length : 0)) / 100).toFixed(2);
+        caixa.innerHTML = `<div class="hora-dias">${uids.map(uid =>
+          `<label class="linha"><strong>${esc(groupNome(uid))}</strong><input type="number" min="0" step="10" data-uid="${esc(uid)}" value="${esc(anteriores.get(uid) ?? sugerido(uid))}"></label>`).join('')}</div>`;
+        caixa.querySelectorAll('input').forEach(campo => campo.oninput = atualizarResumoRateio);
+      }
+      atualizarResumoRateio();
+    }
+
+    function groupRateio() {
+      const uids = groupSelecionados(), total = Math.round(Number(document.getElementById('g-valor').value) * 100) || 0;
+      if (!uids.length) return { uids, total, partes:new Map(), soma:0 };
+      const partes = new Map();
+      if (document.getElementById('g-dividir').checked) {
+        // O resto dos centavos vai para o primeiro, para a soma bater com o total.
+        const base = Math.floor(total / uids.length);
+        uids.forEach((uid, indice) => partes.set(uid, base + (indice === 0 ? total - base * uids.length : 0)));
+      } else {
+        document.querySelectorAll('#g-valores input').forEach(campo => {
+          partes.set(campo.dataset.uid, Math.round(Number(campo.value) * 100) || 0);
+        });
+        uids.forEach(uid => { if (!partes.has(uid)) partes.set(uid, 0); });
+      }
+      return { uids, total, partes, soma:[...partes.values()].reduce((sum, valor) => sum + valor, 0) };
+    }
+
+    function atualizarResumoRateio() {
+      const { uids, total, partes, soma } = groupRateio(), aviso = document.getElementById('g-rateio');
+      if (!uids.length || !total) { aviso.textContent = ''; return; }
+      const linhas = uids.map(uid => `${groupNome(uid)} ${financeMoney(partes.get(uid) || 0)}`).join(' · ');
+      const sobra = total - soma;
+      aviso.innerHTML = `${linhas}${sobra ? `<br><strong style="color:#b45309;">A soma dá ${financeMoney(soma)}, ${sobra > 0 ? `${financeMoney(sobra)} a menos` : `${financeMoney(-sobra)} a mais`} que o total de ${financeMoney(total)}.</strong>` : ''}`;
+    }
+
+    ['g-valor','g-dividir'].forEach(id => document.getElementById(id).addEventListener('input', renderGroupRateio));
+    document.getElementById('g-dividir').addEventListener('change', renderGroupRateio);
 
     function resetGroupForm() {
       editingGroupId = null; editingGroupMembers = [];
       document.getElementById('group-name').value = '';
       document.getElementById('group-question-count').value = '10';
-      document.getElementById('group-save').textContent = 'Criar desafio automático';
+      document.getElementById('group-save').textContent = 'Criar aula em grupo';
       document.getElementById('group-cancel').style.display = 'none';
+      document.getElementById('g-valor').value = '';
+      document.getElementById('g-duracao').value = '60';
+      document.getElementById('g-dividir').checked = true;
+      document.getElementById('g-valores').innerHTML = '';
+      fillAula('g-dias-week', 'g-hora', [], '', {});
       showMsg('group-msg', '', ''); renderGroupStudentOptions();
     }
 
@@ -6932,7 +7088,21 @@
       document.getElementById('group-question-count').value = String(group.questionCount || 10);
       document.getElementById('group-save').textContent = 'Salvar alterações';
       document.getElementById('group-cancel').style.display = '';
-      renderGroupStudentOptions(); window.scrollTo({ top:0, behavior:'smooth' });
+      document.getElementById('g-duracao').value = String(group.aulaDuracao || 60);
+      document.getElementById('g-valor').value = group.valorTotalCents ? Number(group.valorTotalCents) / 100 : '';
+      fillAula('g-dias-week', 'g-hora', group.aulaDias, group.aulaHora, group.aulaHorarios);
+      // Rateio desigual gravado reabre no modo manual, com os valores de cada um.
+      const rateio = group.rateio || {}, valores = Object.values(rateio);
+      document.getElementById('g-dividir').checked = valores.length < 2 || new Set(valores).size <= 1;
+      document.getElementById('g-valores').innerHTML = '';
+      renderGroupStudentOptions();
+      if (!document.getElementById('g-dividir').checked) {
+        document.querySelectorAll('#g-valores input').forEach(campo => {
+          if (rateio[campo.dataset.uid] !== undefined) campo.value = Number(rateio[campo.dataset.uid]) / 100;
+        });
+        atualizarResumoRateio();
+      }
+      window.scrollTo({ top:0, behavior:'smooth' });
     }
 
     async function mirrorClassGroup(groupId, group, oldMembers = []) {
@@ -6953,17 +7123,53 @@
       const firstNames = members.map(student => student.firstName || (student.name || 'Aluno').split(' ')[0]);
       const name = document.getElementById('group-name').value.trim() || firstNames.join(' e ');
       const questionCount = Number(document.getElementById('group-question-count').value || 10);
+      const aula = readAula('g-dias-week', 'g-hora');
+      const duracao = Number(document.getElementById('g-duracao').value) || 60;
+      const { total, partes, soma } = groupRateio();
+      if (total && soma !== total
+        && !confirm(`A soma dos valores dá ${financeMoney(soma)}, e o total da aula é ${financeMoney(total)}.
+
+Salvar assim mesmo?`)) return;
       const button = document.getElementById('group-save'); const currentId = editingGroupId;
       button.disabled = true; button.textContent = 'Salvando...';
       try {
-        const groupId = currentId || `${Date.now()}-${name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}`;
+        const groupId = currentId || `${Date.now()}-${name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}`;
         const oldMembers = currentId ? [...editingGroupMembers] : [];
-        const group = { name, memberUids:selected, memberNames:members.map(student => student.name || student.firstName), questionCount, active:true, automaticChallenge:true, updatedAt:serverTimestamp() };
+        const group = { name, memberUids:selected, memberNames:members.map(student => student.name || student.firstName), questionCount, active:true, automaticChallenge:true,
+          aulaDias:aula.aulaDias, aulaHora:aula.aulaHora, aulaHorarios:aula.aulaHorarios, aulaDuracao:duracao,
+          valorTotalCents:total, rateio:Object.fromEntries(partes), updatedAt:serverTimestamp() };
         await setDoc(doc(db, 'schools', escolaAtual, 'classGroups', groupId), { ...group, ...(currentId ? {} : { createdAt:serverTimestamp() }) }, { merge:true });
-        await mirrorClassGroup(groupId, group, oldMembers); resetGroupForm();
-        showMsg('group-msg', `✅ ${name} salva. O desafio já aparece para ${firstNames.join(' e ')}.`, 'ok'); await loadClassGroups();
+        await mirrorClassGroup(groupId, group, oldMembers);
+
+        // O horário do grupo É o horário de aula de cada integrante: vira a
+        // agenda deles (que se empilha sozinha na mesma hora) e o valor rateado
+        // vira a mensalidade de cada um. Sem isso o grupo seria só um rótulo.
+        let naAgenda = 0, noFinanceiro = 0;
+        if (aula.aulaDias.length && aula.aulaHora) {
+          await Promise.all(members.map(student => updateDoc(doc(db, 'students', student.uid), {
+            diasAulas:aula.texto, aulaDias:aula.aulaDias, aulaHora:aula.aulaHora,
+            aulaHorarios:aula.aulaHorarios, aulaDuracao:duracao,
+          })));
+          naAgenda = await syncStudentLessons(members.map(student => ({
+            uid:student.uid, name:student.name, firstName:student.firstName,
+            aulaDias:aula.aulaDias, aulaHora:aula.aulaHora, aulaHorarios:aula.aulaHorarios, aulaDuracao:duracao,
+          })));
+        }
+        if (total) {
+          await Promise.all(members.map(student => setDoc(doc(db, 'schools', escolaAtual, 'financeStudents', student.uid), {
+            studentUid:student.uid, studentName:student.name || student.firstName || '',
+            monthlyCents:partes.get(student.uid) || 0, active:true, groupId, groupName:name,
+            updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || '',
+          }, { merge:true })));
+          noFinanceiro = members.length;
+        }
+        resetGroupForm();
+        const extras = [naAgenda ? `${naAgenda} aula(s) na agenda` : '',
+          noFinanceiro ? `valor rateado entre ${noFinanceiro} aluno(s)` : ''].filter(Boolean);
+        showMsg('group-msg', `✅ ${name} salva.${extras.length ? ` Já entrou com ${extras.join(' e ')}.` : ''} O desafio da turma aparece para ${firstNames.join(' e ')}.`, 'ok');
+        await Promise.all([loadClassGroups(), loadStudents()]);
       } catch (error) { showMsg('group-msg', 'Erro: ' + error.message, 'err'); }
-      finally { button.disabled = false; if (!editingGroupId) button.textContent = 'Criar desafio automático'; }
+      finally { button.disabled = false; if (!editingGroupId) button.textContent = 'Criar aula em grupo'; }
     };
 
     async function deleteClassGroup(groupId) {
@@ -7038,7 +7244,7 @@
           } catch (erroAgenda) { console.error('Agenda do aluno:', erroAgenda); }
         }
         // A mensalidade já nasce no Financeiro — dá pra ajustar depois em "Editar".
-        let noFinanceiro = false;
+        let noFinanceiro = false, jaPago = false;
         if (Number.isFinite(mensalidade) && mensalidade > 0) {
           try {
             await setDoc(doc(db, 'schools', escolaAtual, 'financeStudents', cred.user.uid), {
@@ -7048,14 +7254,35 @@
               updatedAt: serverTimestamp(), updatedBy: auth.currentUser?.email || ''
             }, { merge: true });
             noFinanceiro = true;
+            // "Já pagou" lança o recebimento do mês. Pendente não lança nada:
+            // no Financeiro, pendência é a ausência de lançamento, e o professor
+            // dá como pago depois, pelo botão de sempre.
+            if (document.getElementById('f-pagamento').value === 'pago') {
+              const hoje = financeTodayKey(), mesRef = hoje.slice(0, 7);
+              const etapas = ciclo === 'biweekly'
+                ? [{ part:1, label:'1ª quinzena', valor:Math.round(mensalidade / 2) },
+                   { part:2, label:'2ª quinzena', valor:mensalidade - Math.round(mensalidade / 2) }]
+                : [{ part:0, label:'Mensalidade', valor:mensalidade }];
+              await Promise.all(etapas.map(etapa => addDoc(collection(db, 'schools', escolaAtual, 'financeTransactions'), {
+                type:'income', category:'tuition', amountCents:etapa.valor, date:hoje,
+                referenceMonth:mesRef, referencePart:etapa.part, coversMonths:1,
+                studentUid:cred.user.uid, studentName:name,
+                description:`${etapa.label} · ${name}`,
+                createdAt:serverTimestamp(), createdBy:auth.currentUser?.email || '',
+                updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || '',
+              })));
+              jaPago = true;
+            }
           } catch (erroFinanceiro) { console.error('Financeiro do aluno:', erroFinanceiro); }
         }
-        const extras = [naAgenda ? `${naAgenda} aula(s) na agenda` : '', noFinanceiro ? `mensalidade de ${financeMoney(mensalidade)} no financeiro` : ''].filter(Boolean);
+        const extras = [naAgenda ? `${naAgenda} aula(s) na agenda` : '',
+          noFinanceiro ? `mensalidade de ${financeMoney(mensalidade)} no financeiro${jaPago ? ' (já dada como paga)' : ' (pendente)'}` : ''].filter(Boolean);
         showMsg('create-msg', `✅ Aluno ${name} criado!${extras.length ? ` Já entrou com ${extras.join(' e ')}.` : ''}`, 'ok');
         ['f-name','f-email','f-pass','f-meta','f-hora','f-inicio'].forEach(id => document.getElementById(id).value = '');
         document.querySelectorAll('#f-dias-week input').forEach(c => c.checked = false);
         document.getElementById('f-hora-mesma').checked = true; sincronizarModoHora('f');
         document.getElementById('f-level').value = ''; document.getElementById('f-duracao').value = '60';
+        document.getElementById('f-pagamento').value = 'pendente';
         setTimeout(() => {
           document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
           document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
