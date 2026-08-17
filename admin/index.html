@@ -6870,17 +6870,27 @@
 
       // Com rodada personalizada cada aluno vê uma frase diferente, então o que
       // se repete não é a pergunta: é o assunto. Este bloco é a pauta de aula.
+      // Pauta é o que a turma ERROU. Assunto sem erro nenhum vira uma linha só no
+      // fim: com 22 alunos seriam dezenas de "ninguém errou" afogando os poucos
+      // que importam.
+      const temErro = (data.temas || []).filter(item => item.erros > 0);
+      const semErro = (data.temas || []).filter(item => !item.erros);
+      const linhaTema = item => {
+        const total = item.erros + item.acertos, fatia = total ? Math.round(item.erros / total * 100) : 0;
+        return `<div style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:11px;border:1px solid ${fatia >= 50 ? '#FCA5A5' : 'var(--border)'};background:${fatia >= 50 ? '#FEF2F2' : 'var(--card)'};">
+          <span style="width:76px;height:7px;border-radius:5px;background:#F1F5F9;overflow:hidden;flex:none;"><i style="display:block;height:100%;width:${fatia}%;background:#EF4444;"></i></span>
+          <span style="flex:1;min-width:0;font-weight:700;font-size:.93rem;">${esc(item.tema)}</span>
+          <span style="font-size:.78rem;white-space:nowrap;color:#92400E;">${esc(item.quemErrou.join(', '))}</span>
+          <span style="font-size:.78rem;color:var(--muted);white-space:nowrap;min-width:104px;text-align:right;">${item.erros} erro(s) · ${item.acertos} acerto(s)</span>
+        </div>`;
+      };
       const temas = !(data.temas || []).length
         ? '<p style="color:var(--muted);font-size:.84rem;">Os assuntos aparecem conforme os alunos concluem as partes.</p>'
-        : `<div style="display:grid;gap:6px;">${data.temas.map(item => {
-            const total = item.erros + item.acertos, fatia = total ? Math.round(item.erros / total * 100) : 0;
-            return `<div style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:11px;border:1px solid ${fatia >= 50 ? '#FCA5A5' : 'var(--border)'};background:${fatia >= 50 ? '#FEF2F2' : 'var(--card)'};">
-              <span style="width:76px;height:7px;border-radius:5px;background:#F1F5F9;overflow:hidden;flex:none;"><i style="display:block;height:100%;width:${fatia}%;background:#EF4444;"></i></span>
-              <span style="flex:1;min-width:0;font-weight:700;font-size:.93rem;">${esc(item.tema)}</span>
-              <span style="font-size:.78rem;white-space:nowrap;color:${item.erros ? '#92400E' : '#166534'};">${item.erros ? esc(item.quemErrou.join(', ')) : 'ninguém errou'}</span>
-              <span style="font-size:.78rem;color:var(--muted);white-space:nowrap;min-width:104px;text-align:right;">${item.erros} erro(s) · ${item.acertos} acerto(s)</span>
-            </div>`;
-          }).join('')}</div>`;
+        : (temErro.length
+            ? `<div style="display:grid;gap:6px;">${temErro.map(linhaTema).join('')}</div>`
+            : '<p style="color:#166534;font-size:.84rem;">Ninguém errou nada ainda nesta semana.</p>')
+          + (semErro.length ? `<details style="margin-top:8px;"><summary style="cursor:pointer;color:var(--muted);font-size:.82rem;padding:7px 2px;">${semErro.length} assunto(s) que ninguém errou</summary><div style="display:grid;gap:4px;margin-top:6px;">${semErro.map(item =>
+              `<div style="display:flex;gap:12px;padding:6px 13px;font-size:.84rem;color:var(--muted);"><span style="flex:1;min-width:0;">${esc(item.tema)}</span><span style="white-space:nowrap;color:#166534;">${item.acertos} acerto(s)</span></div>`).join('')}</div></details>` : '');
 
       const linhaResposta = item => `<div style="display:flex;align-items:center;gap:9px;font-size:.86rem;padding:4px 7px;border-radius:8px;background:${item.acertou ? '#F0FDF4' : '#FEF2F2'};">
           <span style="width:16px;flex:none;text-align:center;font-weight:900;color:${item.acertou ? '#166534' : '#B91C1C'};">${item.acertou ? '✓' : '✗'}</span>
