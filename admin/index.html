@@ -2851,6 +2851,66 @@
       </div>`);
     }
 
+    // Presença é o pós-aula: aula dada gera pós-aula naquele dia. Só que um
+    // pós-aula que o professor ainda não fez também "falta", então a ausência
+    // sozinha não prova nada. Na dupla prova: se o colega tem o pós-aula de um
+    // dia e este aluno não tem, foi este que faltou.
+    const briefingDiaDaAula = posaula => {
+      const bruto = posaula.classDate;
+      // Data já em texto não pode passar pelo Date: '2026-08-12' é lido como
+      // meia-noite UTC e, no nosso fuso, volta um dia — a aula do dia 12
+      // apareceria como falta do dia 11.
+      if (typeof bruto === 'string') {
+        const iso = bruto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+        const brasileira = bruto.match(/^(\d{2})[-/](\d{2})[-/](\d{4})/);
+        if (brasileira) return `${brasileira[3]}-${brasileira[2]}-${brasileira[1]}`;
+      }
+      const data = briefingData(bruto || posaula.createdAt);
+      if (!data || Number.isNaN(data.getTime())) return '';
+      return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2,'0')}-${String(data.getDate()).padStart(2,'0')}`;
+    };
+
+    async function briefingFaltas(uid, diasDoAluno) {
+      if (!escolaAtual) return [];
+      const grupos = await getDocs(query(collection(db, 'schools', escolaAtual, 'classGroups'),
+        where('memberUids', 'array-contains', uid))).catch(() => ({ docs:[] }));
+      const colegas = new Map();
+      grupos.docs.forEach(item => {
+        const dado = item.data();
+        (dado.memberUids || []).forEach((outro, indice) => {
+          if (outro !== uid) colegas.set(outro, (dado.memberNames || [])[indice] || 'o colega');
+        });
+      });
+      if (!colegas.size) return [];
+      const faltas = new Map();
+      await Promise.all([...colegas.entries()].map(async ([outroUid, outroNome]) => {
+        const snap = await getDocs(collection(db, 'students', outroUid, 'posaulas')).catch(() => ({ docs:[] }));
+        snap.docs.map(item => item.data()).forEach(posaula => {
+          const dia = briefingDiaDaAula(posaula);
+          if (!dia || diasDoAluno.has(dia)) return;
+          if (!faltas.has(dia)) faltas.set(dia, new Set());
+          faltas.get(dia).add(outroNome);
+        });
+      }));
+      return [...faltas.entries()].sort((a, b) => b[0].localeCompare(a[0]))
+        .map(([dia, quem]) => ({ dia, colegas:[...quem] }));
+    }
+
+    function briefingBlocoFaltas(nome, faltas) {
+      if (!faltas.length) return '';
+      const primeiro = nome || 'O aluno';
+      const linhas = faltas.slice(0, 6).map(falta =>
+        `<div style="display:flex;gap:10px;padding:6px 0;font-size:.85rem;border-top:1px solid #FDE68A;">
+          <span style="width:92px;flex:none;color:#92400E;">${falta.dia.split('-').reverse().join('/')}</span>
+          <span style="flex:1;min-width:0;color:#78350F;">${esc(falta.colegas.join(' e '))} teve aula, ${esc(primeiro)} não</span>
+        </div>`).join('');
+      return briefingBloco('Faltas', `<div style="padding:12px 14px;border-radius:12px;background:#FFFBEB;border:1px solid #FCD34D;">
+          <strong style="color:#92400E;font-size:.9rem;">${esc(primeiro)} faltou ${faltas.length === 1 ? 'na última aula' : `em ${faltas.length} aulas`}</strong>
+          ${linhas}
+        </div>`);
+    }
+
     async function openBriefing(uid, nome, observacoes) {
       const body = document.getElementById('briefing-body');
       document.getElementById('briefing-title').textContent = `Pauta · ${nome || 'Aluno'}`;
@@ -2869,7 +2929,10 @@
         const linhaDesafio = (houveDesafio ? rankSnap.data().ranking || [] : []).find(row => row.uid === uid);
 
         const aluno = allStudents.find(item => item.uid === uid);
+        const diasDoAluno = new Set(posSnap.docs.map(item => briefingDiaDaAula(item.data())).filter(Boolean));
+        const faltas = await briefingFaltas(uid, diasDoAluno).catch(() => []);
         body.innerHTML = briefingSelos({ uid, aluno, posaula, atividades, linhaDesafio, houveDesafio })
+          + briefingBlocoFaltas(aluno?.firstName || (nome || '').split(' ')[0], faltas)
           + briefingUltimaAula(posaula)
           + briefingAtividades(atividades)
           + briefingDesafio(linhaDesafio, semanaPassada)
