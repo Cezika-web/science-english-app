@@ -469,7 +469,7 @@
     .calendar-hour-label { height:var(--hour-height); padding:0 8px; text-align:right; color:#a8b2c1; font-size:.6rem; transform:translateY(-6px); }
     /* o primeiro rótulo não sobe: acima dele não há área visível e ele sumia */
     .calendar-hour-label:first-child { transform:none; }
-    .calendar-day-column { position:relative; border-left:1px solid #e9eef5; background-image:linear-gradient(to bottom, #e6ebf2 1px, transparent 1px),linear-gradient(to bottom, #f1f5f9 1px, transparent 1px),linear-gradient(to bottom, #f8fafc 1px, transparent 1px); background-size:100% var(--hour-height),100% calc(var(--hour-height) / 2),100% calc(var(--hour-height) / 4); cursor:crosshair; touch-action:pan-y; }
+    .calendar-day-column { position:relative; border-left:1px solid #e9eef5; background-image:linear-gradient(to bottom, #e6ebf2 1px, transparent 1px),linear-gradient(to bottom, #f1f5f9 1px, transparent 1px),linear-gradient(to bottom, #f8fafc 1px, transparent 1px); background-size:100% var(--hour-height),100% calc(var(--hour-height) / 2),100% calc(var(--hour-height) / 4); cursor:crosshair; touch-action:pan-x pan-y; }
     .calendar-selection { position:absolute; left:2px; right:2px; z-index:9; border-radius:7px; border:1.5px dashed color-mix(in srgb, var(--cal-brand) 55%, #fff); background:color-mix(in srgb, var(--cal-brand) 15%, #fff); color:var(--cal-brand); padding:2px 5px; font-size:.62rem; font-weight:800; line-height:1.25; overflow:hidden; pointer-events:none; }
     .calendar-week.selecting { user-select:none; }
     .calendar-week.selecting .calendar-event { pointer-events:none; }
@@ -490,7 +490,7 @@
     .calendar-event.cancelada strong { text-decoration:line-through; }
     /* Aula junta: verde mais forte e uma faixa no topo, para bater o olho e ver
        que aquela hora tem mais de um aluno. */
-    .calendar-event.junta { background:color-mix(in srgb, var(--event-color) 19%, #fff); border-color:color-mix(in srgb, var(--event-color) 34%, #fff); color:color-mix(in srgb, var(--event-color) 62%, #334155); padding:2px 7px; }
+    .calendar-event.junta { background:color-mix(in srgb, var(--event-color) 30%, #fff); border-color:color-mix(in srgb, var(--event-color) 52%, #fff); color:color-mix(in srgb, var(--event-color) 78%, #1e293b); padding:2px 7px; }
     .calendar-event.junta::before { content:''; position:absolute; left:0; right:0; top:0; height:3px; background:color-mix(in srgb, var(--event-color) 62%, #fff); }
     .calendar-event.junta span { display:none; }
     .calendar-event.junta strong { font-size:.585rem; }
@@ -573,7 +573,10 @@
          o celular mostrava três dias por vez, rolando de lado — dava para ver a
          agenda em pedaços, nunca inteira. Aqui as sete colunas encolhem, a
          calha das horas afina e o bloco fica só com o nome. */
-      .calendar-week-scroll { overflow-x:hidden; }
+      /* auto, nunca hidden: com zoom a largura efetiva cai abaixo de 760px e
+         esta regra passa a valer no desktop. Com hidden, a barra aparecia e ele
+         não conseguia arrastar para o lado. */
+      .calendar-week-scroll { overflow-x:auto; }
       .calendar-week { min-width:0 !important; }
       .calendar-days-head { height:40px; }
       .calendar-day-head { flex-direction:column; gap:0; font-size:.54rem; letter-spacing:0; }
@@ -2309,8 +2312,19 @@
       return false;
     }
 
-    function calendarEventColor(event) {
+    // Aula em dupla divide o mesmo quadrado, então os alunos precisam de tons
+    // diferentes de verde — senão viram um bloco só. O tom vem da POSIÇÃO no
+    // quadrado, não de sorteio pelo nome: sorteio dava colisão, e colidir
+    // justamente dentro de uma dupla é o único caso que não pode dar errado.
+    // Muda o MATIZ, não o brilho: o bloco pinta com pouca cor sobre branco, e
+    // dois verdes só mais claro/mais escuro ficam iguais na tela. Índice 0 é a
+    // cor da escola, então aula sozinha continua exatamente como sempre foi.
+    const CALENDAR_TONS = ['', '#7cb342', '#00897b', '#558b2f', '#26a69a', '#9ccc65'];
+    const calendarTomDaFaixa = (base, faixa) => CALENDAR_TONS[faixa] || base;
+
+    function calendarEventColor(event, faixa = 0) {
       if (event.color) return event.color; // cor escolhida à mão vence a do tipo
+      if (event.type === 'lesson') return calendarTomDaFaixa(calendarSchoolColor(), faixa);
       return event.type === 'available' ? '#f59e7a' : event.type === 'personal' ? '#8b5cf6'
         : event.type === 'blocked' ? '#64748b' : event.type === 'reposicao' ? '#eab308'
         : event.type === 'experimental' ? '#ea580c' : calendarSchoolColor();
@@ -2535,7 +2549,7 @@
             ? `<button type="button" class="calendar-event-mais" data-expandir="${esc(chave)}" style="top:${meuTopo + minhaAltura - 14}px" title="${recolher ? 'Mostrar menos' : `Ver os ${restantes} que faltam nesta hora`}">${recolher ? '⋯ menos' : `⋯ +${restantes}`}</button>`
             : '';
           const cancelada = calendarCancelada(event, key);
-          return `<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}${cancelada ? ' cancelada' : ''}" data-event-id="${esc(event.id)}"${event.fatiada ? ` data-hora-inicio="${esc(event.startTime)}" data-hora-fim="${esc(event.endTime)}"` : ''} style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event)}" title="${esc(event.title || subtitle)}"><strong>${esc(event.title || 'Compromisso')}</strong><span>${esc(subtitle)}</span></button>${mais}`;
+          return `<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}${cancelada ? ' cancelada' : ''}" data-event-id="${esc(event.id)}"${event.fatiada ? ` data-hora-inicio="${esc(event.startTime)}" data-hora-fim="${esc(event.endTime)}"` : ''} style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event, faixas > 1 ? faixa : 0)}" title="${esc(event.title || subtitle)}"><strong>${esc(event.title || 'Compromisso')}</strong><span>${esc(subtitle)}</span></button>${mais}`;
         }).join('');
         return `<div class="calendar-day-column${work ? '' : ' off-hours'}${key === todayKey ? ' today' : ''}${key === calendarSelectedDay ? ' picked' : ''}" data-date="${key}" style="height:${height}px">${events}</div>`;
       }).join('');
