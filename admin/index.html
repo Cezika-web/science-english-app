@@ -515,7 +515,9 @@
     .calendar-pop { position:fixed; z-index:120; width:272px; padding:13px; border:1px solid #e2e8f0; border-radius:14px; background:#fff; box-shadow:0 18px 44px rgba(15,23,42,.22); display:none; }
     .calendar-pop.open { display:block; }
     .calendar-pop input, .calendar-pop select { width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:9px; background:#fff; font:inherit; font-size:.82rem; color:#0f172a; }
-    .calendar-pop input#calendar-pop-title { font-size:.92rem; font-weight:700; }
+    .calendar-pop input#calendar-pop-title { font-size:.92rem; font-weight:700; padding-right:32px; }
+    .calendar-pop-close { position:absolute; top:9px; right:9px; z-index:2; width:26px; height:26px; padding:0; border:0; border-radius:8px; background:transparent; color:#94a3b8; font-family:inherit; font-size:19px; line-height:1; cursor:pointer; }
+    .calendar-pop-close:hover { background:#f1f5f9; color:#0f172a; }
     .calendar-pop-row { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:8px; align-items:center; }
     .calendar-pop-days { display:none; grid-template-columns:repeat(7,1fr); gap:4px; margin-top:8px; }
     .calendar-pop-days.on { display:grid; }
@@ -1702,6 +1704,7 @@
   <div class="calendar-toast" id="calendar-toast"></div>
 
   <div class="calendar-pop" id="calendar-pop">
+    <button class="calendar-pop-close" id="calendar-pop-close" type="button" aria-label="Fechar">×</button>
     <input id="calendar-pop-title" maxlength="100" placeholder="Nome do compromisso">
     <div class="calendar-pop-row">
       <input id="calendar-pop-start" type="time" step="900" aria-label="Começa">
@@ -2513,6 +2516,9 @@
         };
         column.onpointerdown = down => {
           if (down.target.closest('.calendar-event, .calendar-event-mais')) return;
+          // Cartão aberto: este toque só fecha. Para marcar outro horário, toca
+          // de novo — senão fechar viraria abrir, que não é o que se espera.
+          if (calendarPopDraft) { closeCalendarPop(); clearCalendarSelection(); return; }
           if (down.pointerType === 'mouse' && down.button !== 0) return;
           const anchor = slotAt(down.clientY), hourSlots = Math.round(60 / slotMinutes);
           if (down.pointerType === 'touch') { // no celular o dedo continua rolando a grade: vale o toque simples
@@ -3181,6 +3187,7 @@
       }
       renderCalendarPopDays();
     };
+    document.getElementById('calendar-pop-close').onclick = () => { closeCalendarPop(); clearCalendarSelection(); };
     document.getElementById('calendar-pop-save').onclick = saveCalendarPop;
     document.getElementById('calendar-pop-delete').onclick = deleteCalendarPop;
 
@@ -3220,7 +3227,11 @@
     document.addEventListener('pointerdown', click => {
       if (!calendarPopDraft) return;
       if (click.target.closest('#calendar-pop') || click.target.closest('.calendar-event, .calendar-event-mais')) return;
-      closeCalendarPop();
+      // Dentro da agenda quem fecha é o handler da própria coluna. Se fechasse
+      // aqui, o mesmo toque fechava este cartão e a coluna já abria outro no
+      // horário clicado — dois cartões seguidos, que era a reclamação.
+      if (click.target.closest('.calendar-day-column')) return;
+      closeCalendarPop(); clearCalendarSelection();
     }, true);
     document.addEventListener('keydown', key => { if (key.key === 'Escape' && calendarPopDraft) closeCalendarPop(); });
 
