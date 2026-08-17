@@ -492,9 +492,11 @@
        uma aula sozinha e os seguintes vão perdendo tom. Sem faixa nem realce —
        ele não quer que a dupla se destaque das demais aulas. Só o horário sai,
        porque a fatia é baixa demais para caber duas linhas. */
-    .calendar-event.junta { background:color-mix(in srgb, var(--event-color) var(--event-mix,11%), #fff); border-color:color-mix(in srgb, var(--event-color) var(--event-mix-borda,20%), #fff); padding:2px 7px; }
-    .calendar-event.junta span { display:none; }
-    .calendar-event.junta strong { font-size:.585rem; }
+    .calendar-event.junta { background:color-mix(in srgb, var(--event-color) var(--event-mix,11%), #fff); border-color:color-mix(in srgb, var(--event-color) var(--event-mix-borda,20%), #fff); padding:2px 7px; display:flex; align-items:baseline; gap:5px; }
+    /* Numa fatia de ~22px não cabem duas linhas, então o horário vai ao LADO do
+       nome. O nome encolhe primeiro; o horário não quebra. */
+    .calendar-event.junta strong { font-size:.585rem; flex:1 1 auto; min-width:0; }
+    .calendar-event.junta span { margin-top:0; flex:none; }
     .calendar-event-mais { position:absolute; right:3px; z-index:7; border:1px solid #cbd5e1; border-radius:6px; background:#fff; color:#475569; font-family:inherit; font-size:.56rem; font-weight:800; padding:1px 5px; height:13px; line-height:1; cursor:pointer; box-shadow:0 1px 4px rgba(15,23,42,.12); }
     .calendar-event-mais:hover { border-color:var(--accent); color:var(--accent-dark); }
     .calendar-event.editing { z-index:9; box-shadow:0 0 0 2px color-mix(in srgb, var(--event-color) 55%, #fff), 0 6px 16px rgba(15,23,42,.13); }
@@ -2537,7 +2539,12 @@
           const top = Math.max(0, (calendarMinutes(event.startTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
           const bottom = Math.min(height, (calendarMinutes(event.endTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
           if (bottom <= 0 || top >= height || bottom-top < 3) return '';
-          const subtitle = `${event.startTime}–${event.endTime}${CALENDAR_REPEAT_LABELS[event.repeat] ? ` · ${CALENDAR_REPEAT_LABELS[event.repeat]}` : ''}`;
+          // Na aula junta cabe uma linha só, então ao lado do nome vai apenas a
+          // hora de início: o intervalo inteiro roubava o espaço do nome, e a
+          // duração já se lê pela altura do bloco.
+          const subtitle = faixas > 1
+            ? event.startTime
+            : `${event.startTime}–${event.endTime}${CALENDAR_REPEAT_LABELS[event.repeat] ? ` · ${CALENDAR_REPEAT_LABELS[event.repeat]}` : ''}`;
           if (oculto) return '';
           // Dois ou mais na mesma hora: cada um fica com uma fatia da ALTURA,
           // um embaixo do outro. Não vira um evento só — cada aluno continua
