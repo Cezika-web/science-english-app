@@ -484,6 +484,10 @@
     .calendar-event:hover { color:color-mix(in srgb, var(--event-color) 62%, #334155); }
     .calendar-event:hover { z-index:8; background:color-mix(in srgb, var(--event-color) 17%, #fff); box-shadow:0 4px 12px rgba(15,23,42,.10); }
     .calendar-event.available { z-index:3; }
+    /* Aula cancelada continua na grade, para ele lembrar que aquele horário era
+       de alguém — mas riscada e sem cor, bem longe do laranja do disponível. */
+    .calendar-event.cancelada { background:repeating-linear-gradient(135deg,#f8fafc,#f8fafc 5px,#eef2f7 5px,#eef2f7 10px); border-color:#cbd5e1; color:#94a3b8; }
+    .calendar-event.cancelada strong { text-decoration:line-through; }
     /* Aula junta: verde mais forte e uma faixa no topo, para bater o olho e ver
        que aquela hora tem mais de um aluno. */
     .calendar-event.junta { background:color-mix(in srgb, var(--event-color) 19%, #fff); border-color:color-mix(in srgb, var(--event-color) 34%, #fff); color:color-mix(in srgb, var(--event-color) 62%, #334155); padding:2px 7px; }
@@ -553,6 +557,21 @@
       .calendar-toolbar h2 { order:3; width:100%; }
       .calendar-mobile-settings { display:inline-block; }
       .calendar-form-grid { grid-template-columns:1fr; }
+      /* A semana inteira tem que caber na tela. Antes ela tinha 760px fixos e
+         o celular mostrava três dias por vez, rolando de lado — dava para ver a
+         agenda em pedaços, nunca inteira. Aqui as sete colunas encolhem, a
+         calha das horas afina e o bloco fica só com o nome. */
+      .calendar-week-scroll { overflow-x:hidden; }
+      .calendar-week { min-width:0 !important; }
+      .calendar-days-head { height:40px; }
+      .calendar-day-head { flex-direction:column; gap:0; font-size:.54rem; letter-spacing:0; }
+      .calendar-day-head strong { width:19px; height:19px; font-size:.66rem; }
+      .calendar-hour-label { font-size:.55rem; padding-right:4px; }
+      .calendar-now-line { left:36px; }
+      .calendar-event { left:1px; right:1px; padding:2px 4px; border-radius:5px; }
+      .calendar-event strong { font-size:.5rem; letter-spacing:0; }
+      .calendar-event span { display:none; }
+      .calendar-event-mais { font-size:.5rem; padding:0 3px; right:1px; }
     }
 
     /* Financeiro da escola */
@@ -1698,6 +1717,7 @@
     <div class="calendar-pop-label">Cor</div>
     <div class="calendar-pop-colors calendar-pop-palette" id="calendar-pop-palette"></div>
     <button class="btn-secondary" id="calendar-pop-briefing" type="button" style="display:none;width:100%;margin-top:12px;padding:9px;font-size:.83rem;">📋 Pauta desta aula</button>
+    <button class="btn-secondary" id="calendar-pop-cancelar" type="button" style="display:none;width:100%;margin-top:8px;padding:9px;font-size:.83rem;">🚫 Cancelar só esta aula</button>
     <div class="calendar-pop-actions">
       <button class="btn-add" id="calendar-pop-save" type="button">Salvar</button>
       <button class="calendar-delete" id="calendar-pop-delete" type="button">Excluir</button>
@@ -2240,6 +2260,8 @@
       document.getElementById('calendar-settings-save').style.background = color;
     }
 
+    const calendarCancelada = (event, chaveDia) => (event.canceladas || []).includes(chaveDia);
+
     function calendarOccursOn(event, date) {
       const key = calendarDateKey(date), repeat = event.repeat || 'none';
       if (repeat === 'none') return event.date === key;
@@ -2257,11 +2279,13 @@
 
     function calendarEventColor(event) {
       if (event.color) return event.color; // cor escolhida à mão vence a do tipo
-      return event.type === 'available' ? '#f59e7a' : event.type === 'personal' ? '#8b5cf6' : event.type === 'blocked' ? '#64748b' : calendarSchoolColor();
+      return event.type === 'available' ? '#f59e7a' : event.type === 'personal' ? '#8b5cf6'
+        : event.type === 'blocked' ? '#64748b' : event.type === 'reposicao' ? '#0ea5e9' : calendarSchoolColor();
     }
 
     function calendarDefaultTitle(type) {
-      return type === 'available' ? 'Horário disponível' : type === 'blocked' ? 'Horário bloqueado' : type === 'personal' ? 'Compromisso particular' : 'Aula';
+      return type === 'available' ? 'Horário disponível' : type === 'blocked' ? 'Horário bloqueado'
+        : type === 'personal' ? 'Compromisso particular' : type === 'reposicao' ? 'Reposição' : 'Aula';
     }
 
     async function loadCalendar() {
@@ -2386,6 +2410,17 @@
       return saida;
     }
 
+    const calendarEstreito = () => window.innerWidth <= 760;
+
+    // Girar o aparelho troca a largura e, com ela, o formato do grid — que é
+    // montado no JS. Sem isto a agenda ficaria com o desenho da orientação velha.
+    let calendarEstreitoAtual = calendarEstreito();
+    window.addEventListener('resize', () => {
+      if (calendarEstreito() === calendarEstreitoAtual) return;
+      calendarEstreitoAtual = calendarEstreito();
+      if (document.getElementById('tab-calendar')?.classList.contains('active')) renderCalendar();
+    });
+
     function renderCalendar() {
       calendarApplyTheme();
       if (calendarView === 'month') return renderCalendarMonth();
@@ -2397,10 +2432,13 @@
       const days = calendarView === 'day'
         ? [new Date(`${calendarFocusDay()}T00:00:00`)]
         : Array.from({ length:7 }, (_, index) => calendarAddDays(calendarWeekStart, index));
-      const columns2 = `58px repeat(${days.length},minmax(100px,1fr))`;
+      // O grid é montado aqui, então é aqui que a largura da tela tem de entrar:
+      // no celular a calha das horas afina e as colunas podem encolher à vontade.
+      const estreito = calendarEstreito();
+      const columns2 = `${estreito ? 36 : 58}px repeat(${days.length},minmax(${estreito ? 0 : 100}px,1fr))`;
       document.getElementById('calendar-days-head').style.gridTemplateColumns = columns2;
       document.getElementById('calendar-grid').style.gridTemplateColumns = columns2;
-      const weekBox = document.querySelector('.calendar-week'); if (weekBox) weekBox.style.minWidth = days.length === 1 ? '0' : '760px';
+      const weekBox = document.querySelector('.calendar-week'); if (weekBox) weekBox.style.minWidth = (days.length === 1 || estreito) ? '0' : '760px';
       const monthFormat = new Intl.DateTimeFormat('pt-BR', { month:'long', year:'numeric' }), first = days[0], last = days[days.length - 1];
       document.getElementById('calendar-range-title').textContent = days.length === 1
         ? first.toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' })
@@ -2438,7 +2476,8 @@
           const mais = (restantes || recolher)
             ? `<button type="button" class="calendar-event-mais" data-expandir="${esc(chave)}" style="top:${meuTopo + minhaAltura - 14}px" title="${recolher ? 'Mostrar menos' : `Ver os ${restantes} que faltam nesta hora`}">${recolher ? '⋯ menos' : `⋯ +${restantes}`}</button>`
             : '';
-          return `<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}" data-event-id="${esc(event.id)}" style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event)}" title="${esc(event.title || subtitle)}"><strong>${esc(event.title || 'Compromisso')}</strong><span>${esc(subtitle)}</span></button>${mais}`;
+          const cancelada = calendarCancelada(event, key);
+          return `<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}${cancelada ? ' cancelada' : ''}" data-event-id="${esc(event.id)}" style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event)}" title="${esc(event.title || subtitle)}"><strong>${esc(event.title || 'Compromisso')}</strong><span>${esc(subtitle)}</span></button>${mais}`;
         }).join('');
         return `<div class="calendar-day-column${work ? '' : ' off-hours'}${key === todayKey ? ' today' : ''}${key === calendarSelectedDay ? ' picked' : ''}" data-date="${key}" style="height:${height}px">${events}</div>`;
       }).join('');
@@ -2509,7 +2548,8 @@
       document.querySelectorAll('.calendar-event').forEach(button => button.onclick = click => {
         click.stopPropagation();
         clearCalendarSelection(); button.classList.add('editing'); // marca qual compromisso está sendo editado
-        openCalendarPop(calendarEvents.find(item => item.id === button.dataset.eventId) || {}, button.getBoundingClientRect());
+        openCalendarPop(calendarEvents.find(item => item.id === button.dataset.eventId) || {}, button.getBoundingClientRect(),
+          button.closest('.calendar-day-column')?.dataset.date || '');
       });
       document.querySelectorAll('.calendar-event-mais').forEach(button => button.onclick = click => {
         click.stopPropagation();
@@ -2530,7 +2570,7 @@
       const first = calendarAddDays(cursor, -cursor.getDay()), todayKey = calendarDateKey(new Date());
       document.getElementById('calendar-range-title').textContent = cursor.toLocaleDateString('pt-BR', { month:'long', year:'numeric' });
       const head = document.getElementById('calendar-days-head'), grid = document.getElementById('calendar-grid');
-      const weekBox = document.querySelector('.calendar-week'); if (weekBox) weekBox.style.minWidth = '760px';
+      const weekBox = document.querySelector('.calendar-week'); if (weekBox) weekBox.style.minWidth = calendarEstreito() ? '0' : '760px';
       head.style.gridTemplateColumns = 'repeat(7,minmax(0,1fr))';
       head.innerHTML = ['dom','seg','ter','qua','qui','sex','sáb'].map(day => `<div class="calendar-day-head">${day}</div>`).join('');
       document.getElementById('calendar-allday').innerHTML = ''; // no mês o feriado vai dentro da célula
@@ -2967,6 +3007,7 @@
       { type:'available', label:'Horário disponível' },
       { type:'personal',  label:'Particular' },
       { type:'blocked',   label:'Horário bloqueado' },
+      { type:'reposicao', label:'Reposição' },
     ];
     let calendarPopDraft = null;
     let calendarSelectionGhost = null; // bloco arrastado que fica marcado enquanto o popover está aberto
@@ -3029,7 +3070,11 @@
       document.querySelectorAll('#calendar-pop-colors button').forEach(button => button.onclick = () => {
         calendarPopDraft.type = button.dataset.type;
         document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle(calendarPopDraft.type);
-        renderCalendarPopColors(); renderCalendarPopPalette();
+        // Reposição é de um dia só, por definição — não faz sentido repetir.
+        const repeticao = document.getElementById('calendar-pop-repeat');
+        if (calendarPopDraft.type === 'reposicao') { repeticao.value = 'none'; repeticao.disabled = true; }
+        else repeticao.disabled = false;
+        renderCalendarPopColors(); renderCalendarPopPalette(); renderCalendarPopDays();
       });
     }
 
@@ -3041,13 +3086,19 @@
       pop.style.left = `${left}px`; pop.style.top = `${Math.max(12, top)}px`;
     }
 
-    function openCalendarPop(event = {}, anchor = null) {
-      calendarPopDraft = { type:'lesson', ...event };
+    // `ocorrencia` é o dia em que ele clicou, que numa série semanal não é o
+    // mesmo que event.date (a primeira aula). Sem isso não dá para cancelar
+    // só a aula de hoje sem derrubar as das outras semanas.
+    function openCalendarPop(event = {}, anchor = null, ocorrencia = '') {
+      calendarPopDraft = { type:'lesson', ...event, ocorrencia:ocorrencia || event.date || '' };
       document.getElementById('calendar-pop-title').value = event.title || '';
       document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle(calendarPopDraft.type);
       document.getElementById('calendar-pop-start').value = event.startTime || '';
       document.getElementById('calendar-pop-end').value = event.endTime || '';
-      document.getElementById('calendar-pop-repeat').value = ['daily','weekly','monthly','custom'].includes(event.repeat) ? event.repeat : 'none';
+      const campoRepeticao = document.getElementById('calendar-pop-repeat');
+      campoRepeticao.value = ['daily','weekly','monthly','custom'].includes(event.repeat) ? event.repeat : 'none';
+      campoRepeticao.disabled = calendarPopDraft.type === 'reposicao';
+      if (campoRepeticao.disabled) campoRepeticao.value = 'none';
       calendarPopDraft.repeatDays = (event.repeatDays || []).map(Number);
       document.getElementById('calendar-pop-delete').style.display = event.id ? 'block' : 'none';
       // Pauta só em aula de aluno já salva — num bloco novo ainda não há o que resumir.
@@ -3055,6 +3106,13 @@
       const ehAula = Boolean(calendarPopDraft.type === 'lesson' && calendarPopDraft.studentUid && event.id);
       botaoPauta.style.display = ehAula ? 'block' : 'none';
       if (ehAula) briefingAplicarEstado(botaoPauta);
+      const botaoCancelar = document.getElementById('calendar-pop-cancelar');
+      const dia = calendarPopDraft.ocorrencia;
+      const jaCancelada = Boolean(event.id && dia && calendarCancelada(event, dia));
+      botaoCancelar.style.display = event.id && dia ? 'block' : 'none';
+      botaoCancelar.textContent = jaCancelada
+        ? `↩️ Desfazer o cancelamento de ${dia.split('-').reverse().join('/')}`
+        : `🚫 Cancelar só a aula de ${dia ? dia.split('-').reverse().join('/') : 'hoje'}`;
       document.getElementById('calendar-pop-msg').style.display = 'none';
       renderCalendarPopColors(); renderCalendarPopPalette(); renderCalendarPopDays();
       document.getElementById('calendar-pop').classList.add('open');
@@ -3078,7 +3136,7 @@
       if (!startTime || !endTime) return calendarPopFail('Preencha o horário.');
       if (calendarMinutes(endTime) <= calendarMinutes(startTime)) return calendarPopFail('O fim precisa ser depois do início.');
       const student = allStudents.find(item => item.uid === calendarPopDraft.studentUid);
-      const repeat = document.getElementById('calendar-pop-repeat').value;
+      const repeat = type === 'reposicao' ? 'none' : document.getElementById('calendar-pop-repeat').value;
       const repeatDays = repeat === 'custom' ? (calendarPopDraft.repeatDays || []).map(Number) : [];
       if (repeat === 'custom' && !repeatDays.length) return calendarPopFail('Escolha pelo menos um dia da semana.');
       const payload = {
@@ -3117,6 +3175,29 @@
     };
     document.getElementById('calendar-pop-save').onclick = saveCalendarPop;
     document.getElementById('calendar-pop-delete').onclick = deleteCalendarPop;
+
+    // Cancelar UMA aula: entra a data daquele dia numa lista de exceções do
+    // próprio compromisso. A série continua inteira — semana que vem a aula
+    // acontece normalmente. É o oposto de "Excluir", que derruba tudo.
+    document.getElementById('calendar-pop-cancelar').onclick = async () => {
+      const id = calendarPopDraft?.id, dia = calendarPopDraft?.ocorrencia;
+      if (!id || !dia || !escolaAtual) return;
+      const evento = calendarEvents.find(item => item.id === id) || {};
+      const atuais = Array.isArray(evento.canceladas) ? evento.canceladas : [];
+      const cancelando = !atuais.includes(dia);
+      const canceladas = cancelando ? [...atuais, dia] : atuais.filter(item => item !== dia);
+      const botao = document.getElementById('calendar-pop-cancelar');
+      botao.disabled = true;
+      try {
+        await setDoc(doc(db, 'schools', escolaAtual, 'calendarEvents', id),
+          { canceladas, updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || '' }, { merge:true });
+        closeCalendarPop(); await loadCalendar();
+        calendarToast(cancelando
+          ? `Aula de ${dia.split('-').reverse().join('/')} cancelada. As outras semanas seguem normais.`
+          : `Aula de ${dia.split('-').reverse().join('/')} de volta.`);
+      } catch (error) { calendarToast(`Erro ao cancelar: ${error.message}`, true); }
+      finally { botao.disabled = false; }
+    };
     document.getElementById('calendar-pop-title').onkeydown = key => { if (key.key === 'Enter') saveCalendarPop(); };
     document.getElementById('calendar-pop-more').onclick = () => {
       const draft = {
