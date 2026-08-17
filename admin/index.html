@@ -1438,6 +1438,7 @@
     <div class="calendar-pop-colors" id="calendar-pop-colors"></div>
     <div class="calendar-pop-label">Cor</div>
     <div class="calendar-pop-colors calendar-pop-palette" id="calendar-pop-palette"></div>
+    <button class="btn-secondary" id="calendar-pop-briefing" type="button" style="display:none;width:100%;margin-top:12px;padding:9px;font-size:.83rem;">📋 Pauta desta aula</button>
     <div class="calendar-pop-actions">
       <button class="btn-add" id="calendar-pop-save" type="button">Salvar</button>
       <button class="calendar-delete" id="calendar-pop-delete" type="button">Excluir</button>
@@ -2282,6 +2283,24 @@
       return `${segunda.getFullYear()}-${String(segunda.getMonth() + 1).padStart(2, '0')}-${String(segunda.getDate()).padStart(2, '0')}`;
     }
 
+    // A pauta é feita do que JÁ aconteceu. Olhando uma semana à frente, a aula
+    // anterior àquela ainda nem foi dada — o que apareceria seria o retrato de
+    // hoje, desatualizado na hora da aula. Então o botão trava.
+    function briefingSemanaFutura() {
+      return calendarWeekStart > calendarWeekStartDate(new Date());
+    }
+
+    function briefingAplicarEstado(botao) {
+      const futuro = briefingSemanaFutura();
+      botao.disabled = futuro;
+      botao.textContent = futuro ? '⏳ Aguardando a última aula' : '📋 Pauta desta aula';
+      botao.style.opacity = futuro ? '.55' : '1';
+      botao.style.cursor = futuro ? 'not-allowed' : 'pointer';
+      botao.title = futuro
+        ? 'A pauta é montada com o que já aconteceu. Volte para a semana atual para ver.'
+        : '';
+    }
+
     function briefingBloco(titulo, conteudo) {
       return `<div style="margin-bottom:18px;">
         <div style="font-size:.71rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:7px;">${titulo}</div>
@@ -2369,6 +2388,14 @@
 
     document.getElementById('briefing-close').onclick = () => document.getElementById('briefing-modal').classList.remove('open');
     document.getElementById('briefing-modal').onclick = (click) => { if (click.target.id === 'briefing-modal') click.currentTarget.classList.remove('open'); };
+    document.getElementById('calendar-pop-briefing').onclick = () => {
+      if (!calendarPopDraft?.studentUid) return;
+      const uid = calendarPopDraft.studentUid, notas = calendarPopDraft.notes || '';
+      const aluno = allStudents.find(item => item.uid === uid);
+      closeCalendarPop();                       // sai da frente: a pauta abre limpa sobre a agenda
+      openBriefing(uid, aluno?.name || aluno?.firstName || '', notas);
+    };
+
     document.getElementById('calendar-event-briefing').onclick = () => {
       const uid = document.getElementById('calendar-event-student').value;
       if (!uid) return;
@@ -2400,8 +2427,10 @@
       const type = document.getElementById('calendar-event-type').value, repeat = document.getElementById('calendar-event-repeat').value;
       document.getElementById('calendar-student-field').style.display = type === 'lesson' ? 'block' : 'none';
       // A pauta só faz sentido em aula de aluno, e só depois de escolher quem é.
-      document.getElementById('calendar-event-briefing').style.display =
-        (type === 'lesson' && document.getElementById('calendar-event-student').value) ? 'inline-block' : 'none';
+      const botaoPautaModal = document.getElementById('calendar-event-briefing');
+      const mostraPauta = type === 'lesson' && Boolean(document.getElementById('calendar-event-student').value);
+      botaoPautaModal.style.display = mostraPauta ? 'inline-block' : 'none';
+      if (mostraPauta) briefingAplicarEstado(botaoPautaModal);
       document.getElementById('calendar-repeat-until-field').style.display = repeat !== 'none' ? 'block' : 'none';
       if (repeat === 'custom' && !calendarModalDraft.repeatDays.length) {
         const date = document.getElementById('calendar-event-date').value;
@@ -2626,6 +2655,11 @@
       document.getElementById('calendar-pop-repeat').value = ['daily','weekly','monthly','custom'].includes(event.repeat) ? event.repeat : 'none';
       calendarPopDraft.repeatDays = (event.repeatDays || []).map(Number);
       document.getElementById('calendar-pop-delete').style.display = event.id ? 'block' : 'none';
+      // Pauta só em aula de aluno já salva — num bloco novo ainda não há o que resumir.
+      const botaoPauta = document.getElementById('calendar-pop-briefing');
+      const ehAula = Boolean(calendarPopDraft.type === 'lesson' && calendarPopDraft.studentUid && event.id);
+      botaoPauta.style.display = ehAula ? 'block' : 'none';
+      if (ehAula) briefingAplicarEstado(botaoPauta);
       document.getElementById('calendar-pop-msg').style.display = 'none';
       renderCalendarPopColors(); renderCalendarPopPalette(); renderCalendarPopDays();
       document.getElementById('calendar-pop').classList.add('open');
