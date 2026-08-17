@@ -8,30 +8,97 @@
     :root {
       --accent: #2f86e6; --accent-dark: #1f6fd1; --green: #36b37e;
       --muted: #6b7280; --border: #e6eef8; --bg: #f4f7fa; --danger: #e53e3e;
+      --card: #ffffff; --text: #0f1724;
+      --side-w: 216px; --header-h: 58px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Inter, "Segoe UI", sans-serif; background: var(--bg); color: #0f1724; }
+    body { font-family: Inter, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
 
     .header {
-      background: #1a3a5c; color: white; padding: 16px 24px;
-      display: flex; align-items: center; justify-content: space-between;
+      background: #1a3a5c; color: white; padding: 0 20px; height: var(--header-h);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      position: sticky; top: 0; z-index: 60;
     }
-    .header h1 { font-size: 1.1rem; font-weight: 800; }
+    .header h1 { font-size: 1.02rem; font-weight: 800; letter-spacing: -.2px; }
     .header span { font-size: 0.82rem; opacity: 0.7; }
+    .header .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
     .btn-sm-danger { background: rgba(255,255,255,0.15); border: none; color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
 
-    .container { max-width: 960px; margin: 0 auto; padding: 24px 20px; }
+    /* Setinha que abre o menu — só existe no celular/tablet */
+    .menu-toggle {
+      display: none; background: rgba(255,255,255,.15); border: none; color: #fff;
+      width: 34px; height: 34px; border-radius: 9px; cursor: pointer; flex-shrink: 0;
+      align-items: center; justify-content: center; padding: 0;
+    }
+    .menu-toggle .seta { display: block; font-size: 1.15rem; line-height: 1; opacity: 1; transition: transform .22s ease; }
+    body.menu-aberto .menu-toggle .seta { transform: rotate(180deg); }
 
-    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 28px; }
-    .stat-card { background: white; border-radius: 12px; padding: 16px; border: 1px solid var(--border); }
-    .stat-card .val { font-size: 1.8rem; font-weight: 800; color: var(--accent); }
-    .stat-card .lbl { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+    /* ── Esqueleto: menu lateral fixo + conteúdo ─────────────────────── */
+    .container {
+      max-width: 1320px; margin: 0 auto; padding: 20px;
+      display: grid; grid-template-columns: var(--side-w) minmax(0, 1fr); gap: 22px;
+      align-items: start;
+    }
+    .content { min-width: 0; }
 
-    .tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
-    .tab { padding: 8px 14px; border-radius: 8px; border: none; background: none; font-size: 0.85rem; cursor: pointer; color: var(--muted); font-weight: 600; white-space: nowrap; }
-    .tab.active { background: var(--accent); color: white; }
-    .process-dot { display:none; min-width:18px; height:18px; padding:0 5px; margin-left:4px; border-radius:999px; background:#dc2626; color:#fff; font-size:.68rem; font-weight:800; line-height:18px; text-align:center; vertical-align:1px; box-shadow:0 0 0 2px #fff; }
-    .tab.active .process-dot { box-shadow:0 0 0 2px var(--accent); }
+    .sidebar {
+      position: sticky; top: calc(var(--header-h) + 20px);
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 10px 8px; display: flex; flex-direction: column; gap: 2px;
+      max-height: calc(100vh - var(--header-h) - 40px); overflow-y: auto;
+    }
+    .side-title {
+      font-size: .64rem; font-weight: 800; letter-spacing: .7px; text-transform: uppercase;
+      color: #9aa5b4; padding: 12px 10px 5px;
+    }
+    /* O primeiro grupo vem logo depois do cabeçalho da gaveta (escondido no
+       computador), então o espaçamento extra do topo é desnecessário. */
+    .drawer-head + .side-group .side-title { padding-top: 4px; }
+
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .stat-card {
+      background: var(--card); border-radius: 12px; padding: 13px 15px; border: 1px solid var(--border);
+      display: flex; align-items: center; gap: 11px;
+    }
+    .stat-card .ico { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: .95rem; flex-shrink: 0; }
+    .stat-card .val { font-size: 1.45rem; font-weight: 800; color: var(--accent); line-height: 1.1; }
+    .stat-card .lbl { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+
+    .tab {
+      display: flex; align-items: center; gap: 9px; width: 100%;
+      padding: 8px 10px; border: none; border-radius: 9px; background: none;
+      font: inherit; font-size: 0.845rem; font-weight: 600; color: #4b5563;
+      cursor: pointer; text-align: left;
+    }
+    .tab .ic { width: 18px; text-align: center; flex-shrink: 0; font-size: .95rem; }
+    .tab .lb { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tab:hover { background: #f2f7fd; color: #1f2937; }
+    .tab.active { background: var(--accent); color: white; box-shadow: 0 2px 8px rgba(47,134,230,.28); }
+    .tab.active:hover { background: var(--accent); }
+
+    /* Quando tem coisa esperando, a própria palavra fica em negrito.
+       Sem bolinha vermelha e sem número — foi pedido assim. */
+    .tab.tem-coisa .lb { font-weight: 800; color: var(--text); }
+    .tab.tem-coisa:hover .lb { color: var(--text); }
+    .tab.active.tem-coisa .lb { color: #fff; }
+
+    /* Fundo escuro atrás da gaveta (só no celular) */
+    .menu-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(15,23,36,.45);
+      z-index: 65; opacity: 0; transition: opacity .22s ease;
+    }
+
+    /* Busca de aluno */
+    .student-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+    .search-wrap { position: relative; flex: 1; min-width: 200px; }
+    .search-wrap .mag { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9aa5b4; font-size: .9rem; pointer-events: none; }
+    #student-search {
+      width: 100%; padding: 10px 12px 10px 34px; border-radius: 10px;
+      border: 1px solid var(--border); background: #fff; font: inherit; font-size: .87rem; color: var(--text);
+    }
+    #student-search:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47,134,230,.14); }
+    .search-count { font-size: .78rem; color: var(--muted); font-weight: 600; white-space: nowrap; }
+    .search-empty { padding: 22px; text-align: center; color: var(--muted); font-size: .87rem; }
     .process-folder { border:1px solid var(--border); border-radius:12px; overflow:hidden; background:#fff; margin-top:12px; }
     .process-folder > summary { list-style:none; cursor:pointer; padding:13px 14px; display:flex; align-items:center; gap:9px; font-weight:800; color:#1f2937; background:#f8fafc; }
     .process-folder > summary::-webkit-details-marker { display:none; }
@@ -44,6 +111,60 @@
 
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
+
+    /* Com o menu lateral ocupando espaço, o card do aluno precisa quebrar antes:
+       as estatísticas descem pra uma linha própria e o slug continua legível. */
+    @media (max-width: 1280px) {
+      .student-row { flex-wrap: wrap; }
+      .student-progress-mini { order: 3; width: 100%; padding-left: 54px; }
+    }
+
+    /* ── CELULAR / TABLET: o menu vira gaveta ───────────────────────────
+       Fechada, a página escolhida ocupa a tela inteira. A setinha no topo
+       abre e fecha; escolher um item já fecha sozinho. */
+    @media (max-width: 1000px) {
+      .container { grid-template-columns: 1fr; gap: 14px; padding: 14px; }
+      .menu-toggle { display: flex; }
+
+      .sidebar {
+        position: fixed; top: 0; left: 0; z-index: 70;
+        width: 252px; height: 100vh; height: 100dvh; max-height: none;
+        border-radius: 0; border-width: 0 1px 0 0;
+        padding: 12px 10px calc(env(safe-area-inset-bottom) + 16px);
+        overflow-y: auto;
+        transform: translateX(-100%); transition: transform .24s ease;
+        box-shadow: 0 0 34px rgba(15,23,36,.16);
+      }
+      body.menu-aberto .sidebar { transform: translateX(0); }
+
+      .menu-backdrop { display: block; pointer-events: none; }
+      body.menu-aberto .menu-backdrop { opacity: 1; pointer-events: auto; }
+      body.menu-aberto { overflow: hidden; }
+
+      .drawer-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 2px 6px 10px; margin-bottom: 4px; border-bottom: 1px solid var(--border);
+      }
+      .drawer-head span { font-size: .72rem; font-weight: 800; letter-spacing: .7px; text-transform: uppercase; color: #9aa5b4; opacity: 1; }
+      .drawer-close { background: #f2f7fd; border: none; border-radius: 8px; width: 30px; height: 30px; font-size: 1rem; color: var(--muted); cursor: pointer; }
+    }
+    /* No computador a gaveta não existe: o menu é fixo e sempre visível. */
+    @media (min-width: 1001px) { .drawer-head { display: none; } }
+
+    /* No celular o card vira: (foto + nome + ⋮) numa linha, o resto empilhado. */
+    @media (max-width: 700px) {
+      .header { padding: 0 12px; }
+      .header h1 { font-size: 0.9rem; }
+      #admin-email-display { display: none; }
+
+      .student-row { padding: 13px 14px; row-gap: 10px; align-items: center; }
+      .student-info { flex: 1 1 0; }
+      .btn-kebab { order: 2; }
+      .student-progress-mini { order: 3; width: 100%; padding-left: 0; }
+      .progress-chip { flex: 1 1 0; min-width: 0; }
+      .badge-stack { order: 4; width: 100%; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 6px; }
+      .btn-detail { order: 5; width: 100%; padding: 9px 12px; }
+    }
 
     /* Grupos dobráveis no detalhe do aluno (pós-aulas por quinzena, atividades por semana) */
     .grp { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; overflow: hidden; background: white; }
@@ -489,18 +610,68 @@
   <!-- Admin Panel -->
   <div id="admin-panel" style="display:none;">
     <div class="header">
-      <h1 id="admin-titulo">Painel Admin</h1>
+      <div class="brand">
+        <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
+          <span class="seta">›</span>
+        </button>
+        <h1 id="admin-titulo">Painel Admin</h1>
+      </div>
       <div style="display:flex;align-items:center;gap:12px;">
         <span id="admin-email-display"></span>
         <button class="btn-sm-danger" id="a-logout-btn">Sair</button>
       </div>
     </div>
 
+    <div class="menu-backdrop" id="menu-backdrop"></div>
+
     <div class="container">
+
+      <!-- MENU LATERAL — fixo no computador, gaveta no celular -->
+      <aside class="sidebar" id="sidebar">
+        <div class="drawer-head">
+          <span>Menu</span>
+          <button class="drawer-close" id="drawer-close" type="button" aria-label="Fechar menu">✕</button>
+        </div>
+
+        <div class="side-group">
+          <div class="side-title">Turma</div>
+          <button class="tab active" data-tab="students"><span class="ic">👥</span><span class="lb">Alunos</span></button>
+          <button class="tab" data-tab="add"><span class="ic">➕</span><span class="lb">Novo Aluno</span></button>
+          <button class="tab" data-tab="calendar"><span class="ic">📅</span><span class="lb">Agenda</span></button>
+          <button class="tab" data-tab="pendencias"><span class="ic">🧭</span><span class="lb">Pendências</span></button>
+        </div>
+
+        <div class="side-group">
+          <div class="side-title">Aula</div>
+          <button class="tab" data-tab="posaula"><span class="ic">📄</span><span class="lb">Pós-aula</span></button>
+          <button class="tab" data-tab="processos"><span class="ic">⏳</span><span class="lb">Processos</span></button>
+          <button class="tab" data-tab="publish"><span class="ic">📤</span><span class="lb">Atividades</span></button>
+          <button class="tab" data-tab="correct"><span class="ic">✅</span><span class="lb">Correção</span></button>
+          <button class="tab" data-tab="vocab"><span class="ic">📖</span><span class="lb">Vocabulário</span></button>
+          <button class="tab" data-tab="extras"><span class="ic">🎧</span><span class="lb">Extras</span></button>
+        </div>
+
+        <div class="side-group">
+          <div class="side-title">Engajamento</div>
+          <button class="tab" data-tab="challenge"><span class="ic">🏆</span><span class="lb">Desafio</span></button>
+          <button class="tab" data-tab="avisos"><span class="ic">📣</span><span class="lb">Avisos</span></button>
+          <button class="tab" data-tab="avaliacoes"><span class="ic">⭐</span><span class="lb">Avaliações</span></button>
+        </div>
+
+        <div class="side-group">
+          <div class="side-title">Gestão</div>
+          <button class="tab" data-tab="finance"><span class="ic">📊</span><span class="lb">Financeiro</span></button>
+          <button class="tab" data-tab="creditos"><span class="ic">💳</span><span class="lb">Saldo</span></button>
+          <button class="tab" data-tab="exalunos"><span class="ic">🗄️</span><span class="lb">Ex-alunos</span></button>
+          <button class="tab" data-tab="groups"><span class="ic">🧩</span><span class="lb">Turmas/Duplas</span></button>
+        </div>
+      </aside>
+
+      <main class="content">
       <div class="stats">
-        <div class="stat-card"><div class="val" id="stat-total">—</div><div class="lbl">Alunos ativos</div></div>
-        <div class="stat-card"><div class="val" id="stat-read">—</div><div class="lbl">Leram o último pós-aula</div></div>
-        <div class="stat-card"><div class="val" id="stat-unread">—</div><div class="lbl">Ainda não leram</div></div>
+        <div class="stat-card"><div class="ico" style="background:#e8f3ff;">👥</div><div><div class="val" id="stat-total">—</div><div class="lbl">Alunos ativos</div></div></div>
+        <div class="stat-card"><div class="ico" style="background:#d1fae5;">✓</div><div><div class="val" id="stat-read" style="color:#059669">—</div><div class="lbl">Leram o último pós-aula</div></div></div>
+        <div class="stat-card"><div class="ico" style="background:#fff3cd;">⏳</div><div><div class="val" id="stat-unread" style="color:#b45309">—</div><div class="lbl">Ainda não leram</div></div></div>
       </div>
 
       <!-- Seletor de escola: só aparece para quem administra mais de uma.
@@ -511,25 +682,6 @@
         <span id="school-modo" style="margin-left:auto;font-size:0.78rem;color:var(--muted);"></span>
       </div>
 
-      <div class="tabs">
-        <button class="tab active" data-tab="students">👥 Alunos</button>
-        <button class="tab" data-tab="groups">👥 Turmas/Duplas</button>
-        <button class="tab" data-tab="calendar">📅 Agenda</button>
-        <button class="tab" data-tab="finance">📊 Financeiro</button>
-        <button class="tab" data-tab="challenge">🏆 Desafio</button>
-        <button class="tab" data-tab="creditos">💳 Saldo</button>
-        <button class="tab" data-tab="posaula">📄 Pós-aula</button>
-        <button class="tab" data-tab="processos">⏳ Processos <span id="processos-count" class="process-dot" aria-label="Processos prontos"></span></button>
-        <button class="tab" data-tab="publish">📤 Atividades</button>
-        <button class="tab" data-tab="correct">✅ Correção</button>
-        <button class="tab" data-tab="vocab">📖 Vocabulário</button>
-        <button class="tab" data-tab="extras">🎧 Extras</button>
-        <button class="tab" data-tab="avisos">📣 Avisos</button>
-        <button class="tab" data-tab="avaliacoes">⭐ Avaliações</button>
-        <button class="tab" data-tab="add">➕ Novo Aluno</button>
-        <button class="tab" data-tab="exalunos">🗄️ Ex-alunos</button>
-        <button class="tab" data-tab="pendencias">🧭 Pendências <span id="pendencias-count" style="display:none;margin-left:4px;padding:1px 6px;border-radius:999px;background:#dc2626;color:#fff;font-size:0.7rem;"></span></button>
-      </div>
       <div id="processos-resume-banner" class="resume-banner" role="status">
         <strong id="processos-resume-text"></strong>
         <button id="processos-resume-open" type="button">Ver andamento</button>
@@ -537,6 +689,13 @@
 
       <!-- ALUNOS -->
       <div class="tab-panel active" id="tab-students">
+        <div class="student-toolbar">
+          <div class="search-wrap">
+            <span class="mag">🔎</span>
+            <input type="search" id="student-search" placeholder="Buscar aluno por nome, e-mail, slug ou nível..." />
+          </div>
+          <span class="search-count" id="search-count"></span>
+        </div>
         <div class="students-grid" id="students-grid">
           <div class="loading">Carregando alunos...</div>
         </div>
@@ -1230,6 +1389,7 @@
           <div class="form-msg" id="create-msg"></div>
         </div>
       </div>
+      </main>
     </div>
   </div>
 
@@ -3827,6 +3987,24 @@
     document.getElementById('a-pass').onkeydown = e => { if (e.key === 'Enter') document.getElementById('a-login-btn').click(); };
     document.getElementById('a-logout-btn').onclick = () => signOut(auth);
 
+    // ── GAVETA DO MENU (celular) ────────────────────────────────────────
+    // No computador o menu é fixo e a gaveta nem existe. No celular a
+    // página escolhida ocupa a tela toda e a setinha traz o menu de volta.
+    const btnMenu     = document.getElementById('menu-toggle');
+    const menuBackdrop = document.getElementById('menu-backdrop');
+    const abrirMenu  = () => { document.body.classList.add('menu-aberto'); btnMenu.setAttribute('aria-expanded', 'true'); };
+    const fecharMenu = () => { document.body.classList.remove('menu-aberto'); btnMenu.setAttribute('aria-expanded', 'false'); };
+    btnMenu.onclick = () => document.body.classList.contains('menu-aberto') ? fecharMenu() : abrirMenu();
+    menuBackdrop.onclick = fecharMenu;
+    document.getElementById('drawer-close').onclick = fecharMenu;
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharMenu(); });
+
+    // Destaque de aba com coisa esperando: a palavra fica em negrito.
+    // Não usa bolinha nem número — foi pedido assim.
+    function destacarAba(nomeDaAba, temCoisa) {
+      document.querySelector(`.tab[data-tab="${nomeDaAba}"]`)?.classList.toggle('tem-coisa', !!temCoisa);
+    }
+
     // ── TABS ────────────────────────────────────────────────────────────
     document.querySelectorAll('.tab').forEach(tab => {
       tab.onclick = () => {
@@ -3834,6 +4012,8 @@
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
         tab.classList.add('active');
         document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+        fecharMenu();            // no celular, escolher já fecha a gaveta
+        window.scrollTo(0, 0);
         if (tab.dataset.tab === 'publish') recarregarJobsBatch();
         if (tab.dataset.tab === 'avisos')  recarregarAvisos();
         if (tab.dataset.tab === 'avaliacoes') recarregarAvaliacoes();
@@ -3870,6 +4050,12 @@
 
       document.querySelectorAll('.tab').forEach(t => {
         t.style.display = permitidas.includes(t.dataset.tab) ? '' : 'none';
+      });
+
+      // Um grupo sem nenhuma aba visível não deixa o título órfão no menu.
+      document.querySelectorAll('.sidebar .side-group').forEach(grupo => {
+        const temAlguma = [...grupo.querySelectorAll('.tab')].some(t => t.style.display !== 'none');
+        grupo.style.display = temAlguma ? '' : 'none';
       });
 
       // Aba Atividades: gerador no assistido, colar JSON no manual.
@@ -4075,8 +4261,7 @@
         const vistos = lerVistos();
         ultimosJobs.filter(j => ['pronto', 'erro'].includes(j.status)).forEach(j => vistos.add(j.id));
         salvarVistos(vistos);
-        const count = document.getElementById('processos-count');
-        if (count) { count.style.display = 'none'; count.textContent = ''; }
+        destacarAba('processos', false);
       };
 
       const nomesDoJob = j => (j.alunos || []).map(a => a.nome).filter(Boolean).join(', ') || 'Pós-aula';
@@ -4098,8 +4283,7 @@
             salvarVistos(vistos);
           }
           const atualizacoes = jobs.filter(j => ['pronto', 'erro'].includes(j.status) && !vistos.has(j.id)).length;
-          const count = document.getElementById('processos-count');
-          if (count) { count.textContent = atualizacoes ? String(atualizacoes) : ''; count.style.display = atualizacoes ? 'inline-block' : 'none'; }
+          destacarAba('processos', atualizacoes > 0);
 
           const andamento = jobs.filter(j => j.tipo === 'geracao' && j.status !== 'publicado');
           const enviados = jobs.filter(j => j.tipo !== 'geracao');
@@ -5318,9 +5502,7 @@
         : '<div style="padding:12px;border-radius:9px;background:#f0fdf4;color:#166534;">✓ Nenhuma pós-aula atrasada.</div>';
 
       const unicos = new Set([...semAtividades, ...semPosaula].map(s => s.uid)).size;
-      const badge = document.getElementById('pendencias-count');
-      badge.textContent = String(unicos);
-      badge.style.display = unicos ? 'inline-block' : 'none';
+      destacarAba('pendencias', unicos > 0);
 
       document.querySelectorAll('#tab-pendencias .pend-open').forEach(btn => {
         btn.onclick = () => openDetail(btn.dataset.uid, btn.dataset.name);
@@ -5329,6 +5511,44 @@
         btn.onclick = () => abrirGeradorParaAluno(btn.dataset.uid, btn.dataset.destino);
       });
     }
+
+    // ── BUSCA DE ALUNO ──────────────────────────────────────────────────
+    // Filtra pelo texto que já está no card: nome, e-mail, nível e slug.
+    // É reaplicada depois de cada render pra não "voltar" a lista inteira.
+    function aplicarBuscaAluno() {
+      const campo = document.getElementById('student-search');
+      const contador = document.getElementById('search-count');
+      const grid = document.getElementById('students-grid');
+      if (!campo || !grid) return;
+
+      const termo = campo.value.trim().toLowerCase();
+      const linhas = [...grid.querySelectorAll('.student-row')];
+      let visiveis = 0;
+      linhas.forEach(linha => {
+        const bate = !termo || linha.textContent.toLowerCase().includes(termo);
+        linha.style.display = bate ? '' : 'none';
+        if (bate) visiveis++;
+      });
+
+      let vazio = grid.querySelector('.search-empty');
+      if (termo && visiveis === 0 && linhas.length) {
+        if (!vazio) {
+          vazio = document.createElement('div');
+          vazio.className = 'search-empty';
+          grid.appendChild(vazio);
+        }
+        vazio.textContent = `Nenhum aluno encontrado para "${campo.value.trim()}".`;
+      } else if (vazio) {
+        vazio.remove();
+      }
+
+      if (contador) {
+        contador.textContent = !linhas.length ? ''
+          : termo ? `${visiveis} de ${linhas.length}`
+          : `${linhas.length} aluno${linhas.length === 1 ? '' : 's'}`;
+      }
+    }
+    document.getElementById('student-search').oninput = aplicarBuscaAluno;
 
     async function loadStudents() {
       const grid   = document.getElementById('students-grid');
@@ -5446,6 +5666,7 @@
 
       wireStudentGrid(grid);
       wireStudentGrid(exGrid);
+      aplicarBuscaAluno();
       renderPendencias(rows);
       const pendingReports = rows.flatMap(student => (student.reviewReports || []).map(report => ({ uid:student.uid, studentName:student.name || student.firstName || 'Aluno', report })));
       if (!showPendingReview90Reports(pendingReports)) showReview90Suggestion();
