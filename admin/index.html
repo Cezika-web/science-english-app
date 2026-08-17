@@ -2492,7 +2492,19 @@
         const naGrade = doDia.filter(item => item.type !== 'available' || !ocupam.some(outro =>
           calendarMinutes(outro.startTime) < calendarMinutes(item.endTime)
           && calendarMinutes(outro.endTime) > calendarMinutes(item.startTime)));
-        const events = calendarLanes(naGrade, key).map(({ event, faixa, faixas, oculto, restantes, recolher, chave }) => {
+        // "Horário disponível" longo vira uma tira por hora. É assim que ele lê a
+        // agenda — "esta hora está livre" — e clicar num bloco de 15h às 22h dava
+        // uma reposição de sete horas. Só a exibição muda: no banco continua um
+        // bloco só, então editar e excluir seguem valendo para a faixa inteira.
+        const porHora = [];
+        naGrade.forEach(item => {
+          const inicio = calendarMinutes(item.startTime), fim = calendarMinutes(item.endTime);
+          if (item.type !== 'available' || fim - inicio <= 60) { porHora.push(item); return; }
+          for (let minuto = inicio; minuto < fim; minuto += 60) {
+            porHora.push({ ...item, startTime:calendarTime(minuto), endTime:calendarTime(Math.min(minuto + 60, fim)), fatiada:true });
+          }
+        });
+        const events = calendarLanes(porHora, key).map(({ event, faixa, faixas, oculto, restantes, recolher, chave }) => {
           const top = Math.max(0, (calendarMinutes(event.startTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
           const bottom = Math.min(height, (calendarMinutes(event.endTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
           if (bottom <= 0 || top >= height || bottom-top < 3) return '';
@@ -2508,7 +2520,7 @@
             ? `<button type="button" class="calendar-event-mais" data-expandir="${esc(chave)}" style="top:${meuTopo + minhaAltura - 14}px" title="${recolher ? 'Mostrar menos' : `Ver os ${restantes} que faltam nesta hora`}">${recolher ? '⋯ menos' : `⋯ +${restantes}`}</button>`
             : '';
           const cancelada = calendarCancelada(event, key);
-          return `<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}${cancelada ? ' cancelada' : ''}" data-event-id="${esc(event.id)}" style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event)}" title="${esc(event.title || subtitle)}"><strong>${esc(event.title || 'Compromisso')}</strong><span>${esc(subtitle)}</span></button>${mais}`;
+          return `<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}${cancelada ? ' cancelada' : ''}" data-event-id="${esc(event.id)}"${event.fatiada ? ` data-hora-inicio="${esc(event.startTime)}" data-hora-fim="${esc(event.endTime)}"` : ''} style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event)}" title="${esc(event.title || subtitle)}"><strong>${esc(event.title || 'Compromisso')}</strong><span>${esc(subtitle)}</span></button>${mais}`;
         }).join('');
         return `<div class="calendar-day-column${work ? '' : ' off-hours'}${key === todayKey ? ' today' : ''}${key === calendarSelectedDay ? ' picked' : ''}" data-date="${key}" style="height:${height}px">${events}</div>`;
       }).join('');
@@ -2583,7 +2595,8 @@
         click.stopPropagation();
         clearCalendarSelection(); button.classList.add('editing'); // marca qual compromisso está sendo editado
         openCalendarPop(calendarEvents.find(item => item.id === button.dataset.eventId) || {}, button.getBoundingClientRect(),
-          button.closest('.calendar-day-column')?.dataset.date || '');
+          button.closest('.calendar-day-column')?.dataset.date || '',
+          button.dataset.horaInicio ? { startTime:button.dataset.horaInicio, endTime:button.dataset.horaFim } : null);
       });
       document.querySelectorAll('.calendar-event-mais').forEach(button => button.onclick = click => {
         click.stopPropagation();
@@ -3127,9 +3140,12 @@
       // livre. Sem isto, salvar converteria a série inteira em reposição.
       if (calendarPopDraft.type !== 'reposicao' && calendarPopDraft.id) {
         const dia = calendarPopDraft.ocorrencia || calendarPopDraft.date;
-        calendarPopDraft = { type:'reposicao', ocorrencia:dia, date:dia,
-          startTime:document.getElementById('calendar-pop-start').value,
-          endTime:document.getElementById('calendar-pop-end').value, repeat:'none' };
+        const janela = calendarPopDraft.janela;
+        const inicio = janela ? janela.startTime : document.getElementById('calendar-pop-start').value;
+        const fim = janela ? janela.endTime : document.getElementById('calendar-pop-end').value;
+        calendarPopDraft = { type:'reposicao', ocorrencia:dia, date:dia, startTime:inicio, endTime:fim, repeat:'none' };
+        document.getElementById('calendar-pop-start').value = inicio;
+        document.getElementById('calendar-pop-end').value = fim;
         document.getElementById('calendar-pop-title').value = '';
         document.getElementById('calendar-pop-delete').style.display = 'none';
         document.getElementById('calendar-pop-cancelar').style.display = 'none';
@@ -3165,8 +3181,11 @@
     // `ocorrencia` é o dia em que ele clicou, que numa série semanal não é o
     // mesmo que event.date (a primeira aula). Sem isso não dá para cancelar
     // só a aula de hoje sem derrubar as das outras semanas.
-    function openCalendarPop(event = {}, anchor = null, ocorrencia = '') {
-      calendarPopDraft = { type:'lesson', ...event, ocorrencia:ocorrencia || event.date || '' };
+    function openCalendarPop(event = {}, anchor = null, ocorrencia = '', janela = null) {
+      // `janela` é a hora em que ele clicou dentro de um bloco longo. O cartão
+      // segue mostrando a faixa inteira, para editar e excluir continuarem
+      // valendo para ela; a reposição é que nasce só naquela hora.
+      calendarPopDraft = { type:'lesson', ...event, ocorrencia:ocorrencia || event.date || '', janela };
       document.getElementById('calendar-pop-title').value = event.title || '';
       document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle(calendarPopDraft.type);
       document.getElementById('calendar-pop-start').value = event.startTime || '';
