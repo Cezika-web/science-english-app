@@ -902,12 +902,12 @@
             <div class="calendar-legend">
               <div class="calendar-legend-title">Calendários</div>
               <div class="calendar-legend-row"><span class="calendar-legend-dot" id="calendar-lesson-dot"></span> Aulas</div>
-              <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#f59e7a"></span> Horário disponível</div>
+              <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#dc2626"></span> Horário disponível</div>
               <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#8b5cf6"></span> Particular</div>
               <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#64748b"></span> Horário bloqueado</div>
               <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:repeating-linear-gradient(135deg,#e2e8f0,#e2e8f0 2px,#cbd5e1 2px,#cbd5e1 4px)"></span> Aula cancelada</div>
-              <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#eab308"></span> Reposição</div>
-              <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#ea580c"></span> Aula experimental</div>
+              <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#f97316"></span> Reposição</div>
+              <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#eab308"></span> Aula experimental</div>
             </div>
             <button class="calendar-settings-btn" id="calendar-settings-open" type="button">⚙ Configurar expediente</button>
           </aside>
@@ -2329,9 +2329,9 @@
 
     function calendarEventColor(event) {
       if (event.color) return event.color; // cor escolhida à mão vence a do tipo
-      return event.type === 'available' ? '#f59e7a' : event.type === 'personal' ? '#8b5cf6'
-        : event.type === 'blocked' ? '#64748b' : event.type === 'reposicao' ? '#eab308'
-        : event.type === 'experimental' ? '#ea580c' : calendarSchoolColor();
+      return event.type === 'available' ? '#dc2626' : event.type === 'personal' ? '#8b5cf6'
+        : event.type === 'blocked' ? '#64748b' : event.type === 'reposicao' ? '#f97316'
+        : event.type === 'experimental' ? '#eab308' : calendarSchoolColor();
     }
 
     function calendarDefaultTitle(type) {
