@@ -9,7 +9,7 @@
       --accent: #2f86e6; --accent-dark: #1f6fd1; --green: #36b37e;
       --muted: #6b7280; --border: #e6eef8; --bg: #f4f7fa; --danger: #e53e3e;
       --card: #ffffff; --text: #0f1724;
-      --side-w: 216px; --header-h: 58px;
+      --side-w: 280px; --header-h: 58px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Inter, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
@@ -41,7 +41,10 @@
       display: grid; grid-template-columns: var(--side-w) minmax(0, 1fr); gap: 22px;
       align-items: start;
     }
-    .content { min-width: 0; }
+    /* O conteúdo encosta no menu e para numa largura confortável de leitura:
+       em monitor largo o card de aluno esticava demais e abria um vão enorme
+       entre o slug e os números. Estatísticas, busca e lista ficam alinhadas. */
+    .content { min-width: 0; max-width: 1250px; }
 
     .sidebar {
       position: sticky; top: calc(var(--header-h) + 20px);
