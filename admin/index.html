@@ -2316,6 +2316,48 @@
         : '';
     }
 
+    // Faixa de selos no topo: o que dá pra saber batendo o olho, antes de ler.
+    // Só entra o que é acionável — nada de "está tudo em dia" ocupando espaço.
+    function briefingSelos({ uid, aluno, posaula, atividades, linhaDesafio, houveDesafio }) {
+      const tons = {
+        erro:'background:#FEE2E2;color:#991B1B;',
+        alerta:'background:#FEF3C7;color:#92400E;',
+        ok:'background:#DCFCE7;color:#166534;',
+        neutro:'background:#F1F5F9;color:#475569;',
+      };
+      const selo = (texto, tom = 'neutro') =>
+        `<span style="padding:4px 11px;border-radius:999px;font-size:.75rem;font-weight:700;white-space:nowrap;${tons[tom]}">${texto}</span>`;
+      const selos = [];
+
+      // Mensalidade: só dá pra checar se o financeiro já foi carregado nesta sessão.
+      if (financeProfiles.length) {
+        const atraso = financeLateStudents(financeMonthKey()).find(item => item.uid === uid);
+        if (atraso) selos.push(selo(`💳 Mensalidade atrasada ${atraso.dias} dia(s)`, 'erro'));
+      }
+
+      const tokens = [aluno?.fcmToken, ...(Array.isArray(aluno?.fcmTokens) ? aluno.fcmTokens : [])].filter(Boolean);
+      if (aluno && !tokens.length) selos.push(selo('🔕 Sem notificações no celular', 'alerta'));
+
+      if (posaula && !posaula.readAt) selos.push(selo('📖 Não abriu o último pós-aula', 'alerta'));
+
+      const aguardando = atividades.filter(item => item.finalizada === true && item.status !== 'corrected').length;
+      const naoFez = atividades.filter(item => item.finalizada !== true && item.status !== 'corrected').length;
+      if (aguardando) selos.push(selo(`✅ ${aguardando} esperando correção`, 'ok'));
+      if (naoFez) selos.push(selo(`📝 ${naoFez} que ele não fez`, 'alerta'));
+
+      // Sem ranking daquela semana não houve desafio — nesse caso o selo não
+      // aparece, senão todo aluno viraria "não fez" antes de existir desafio.
+      if (houveDesafio) {
+        selos.push(linhaDesafio
+          ? selo(`🏆 ${linhaDesafio.position}º no desafio · ${Number(linhaDesafio.score || 0)} pts`, 'neutro')
+          : selo('🏆 Não fez o desafio', 'alerta'));
+      }
+
+      if (aluno?.level) selos.push(selo(`🎯 ${esc(aluno.level)}`, 'neutro'));
+
+      return selos.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:17px;">${selos.join('')}</div>` : '';
+    }
+
     function briefingBloco(titulo, conteudo) {
       return `<div style="margin-bottom:18px;">
         <div style="font-size:.71rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:7px;">${titulo}</div>
@@ -2335,9 +2377,7 @@
         ${fala ? `<div style="margin-top:8px;font-size:.85rem;${alertaFala ? 'color:#B45309;font-weight:700;' : 'color:var(--muted);'}">
             🗣️ O aluno falou ${fala.studentPct}% do tempo (${fala.studentMinutes} min de ${Number(fala.studentMinutes || 0) + Number(fala.teacherMinutes || 0)})${alertaFala ? ' — puxe mais fala nesta aula' : ''}
           </div>` : ''}
-        <div style="margin-top:6px;font-size:.83rem;color:${posaula.readAt ? '#166534' : '#B45309'};">
-          ${posaula.readAt ? `✓ Leu o pós-aula em ${briefingDia(posaula.readAt)}` : '⚠️ Ainda não abriu o pós-aula'}
-        </div>
+        ${posaula.readAt ? `<div style="margin-top:6px;font-size:.83rem;color:#166534;">✓ Leu o pós-aula em ${briefingDia(posaula.readAt)}</div>` : ''}
       </div>`);
     }
 
@@ -2395,12 +2435,8 @@
             ${briefingExemplos(ultima)}
           </div>`;
 
-      const pendencias = [
-        aguardando.length ? `<span style="padding:3px 10px;border-radius:999px;background:#DCFCE7;color:#166534;font-weight:700;">✅ ${aguardando.length} esperando sua correção</span>` : '',
-        naoFez.length ? `<span style="padding:3px 10px;border-radius:999px;background:#FEF3C7;color:#92400E;font-weight:700;">📝 ${naoFez.length} que ele ainda não fez</span>` : '',
-      ].filter(Boolean).join(' ');
-
-      return briefingBloco('Atividades', detalhe + (pendencias ? `<div style="margin-top:9px;display:flex;gap:7px;flex-wrap:wrap;font-size:.79rem;">${pendencias}</div>` : ''));
+      // As contagens de pendência viraram selo no topo — aqui fica só o detalhe.
+      return briefingBloco('Atividades', detalhe);
     }
 
     function briefingDesafio(linha, weekKey) {
@@ -2424,9 +2460,12 @@
         ]);
         const posaula = posSnap.docs.map(item => item.data())[0] || null;
         const atividades = actSnap.docs.map(item => item.data());
-        const linhaDesafio = (rankSnap?.exists?.() ? rankSnap.data().ranking || [] : []).find(row => row.uid === uid);
+        const houveDesafio = Boolean(rankSnap?.exists?.());
+        const linhaDesafio = (houveDesafio ? rankSnap.data().ranking || [] : []).find(row => row.uid === uid);
 
-        body.innerHTML = briefingUltimaAula(posaula)
+        const aluno = allStudents.find(item => item.uid === uid);
+        body.innerHTML = briefingSelos({ uid, aluno, posaula, atividades, linhaDesafio, houveDesafio })
+          + briefingUltimaAula(posaula)
           + briefingAtividades(atividades)
           + briefingDesafio(linhaDesafio, semanaPassada)
           + (observacoes ? briefingBloco('Seu lembrete para esta aula',
