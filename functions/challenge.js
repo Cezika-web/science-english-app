@@ -839,7 +839,12 @@ ${item.text}`).join('\n\n')}`
   const obterDesafioSemanal = onCall(
     { region:REGION, timeoutSeconds:60, memory:'256MiB' },
     async request => {
-      const uid = requireAuth(request);
+      const quemChamou = requireAuth(request);
+      // O César abre o app do aluno pelo espelho do painel. Ali o desafio tem de
+      // ser o DO ALUNO — antes vinha o de quem chamou, e como ele não é aluno a
+      // chamada quebrava. Só admin pode pedir por outro uid.
+      const alvo = String(request.data?.uid || '').trim();
+      const uid = alvo && adminEmails.includes(request.auth.token?.email || '') ? alvo : quemChamou;
       const studentSnap = await assertStudent(uid);
       const student = studentSnap.data();
       const now = new Date();

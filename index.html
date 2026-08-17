@@ -4248,11 +4248,12 @@ function App() {
   }
 
   async function refreshChallengeState(fbOverride = null) {
-    if (mirror) return;
     try {
       const fb = fbOverride || await getFB();
       const obter = fb.httpsCallable(fb.functions, 'obterDesafioSemanal');
-      const response = await obter({});
+      // No espelho vai o uid do aluno: sem isso o painel pedia o desafio do
+      // próprio César, que não é aluno, e a parte de baixo ficava travada.
+      const response = await obter(mirror ? { uid:mirrorUid.current } : {});
       setChallengeState(response.data || { enabled:true, phase:'unpublished' });
       if (pendingChallenge.current) {
         pendingChallenge.current = false;
@@ -4654,12 +4655,15 @@ function App() {
         onExit={() => setChallengeView('hub')}
         onFinish={async () => { await refreshChallengeState(); setChallengeView('hub'); }}
         onStart={async (roundId) => {
+          if (mirror) throw new Error('Aqui você só acompanha — quem responde é o aluno.');
           const fb = await getFB();
           const iniciar = fb.httpsCallable(fb.functions, 'iniciarDesafioSemanal');
           const response = await iniciar({ roundId });
           return response.data;
         }}
         onSaveAnswer={async ({ roundId, questionId, value }) => {
+          // Segunda tranca: no espelho a resposta iria para a conta do César.
+          if (mirror) throw new Error('Aqui você só acompanha — quem responde é o aluno.');
           const fb = await getFB();
           const salvar = fb.httpsCallable(fb.functions, 'salvarRespostaDesafio');
           const response = await salvar({ roundId, questionId, value });
