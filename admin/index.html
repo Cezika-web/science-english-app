@@ -488,10 +488,11 @@
        de alguém — mas riscada e sem cor, bem longe do laranja do disponível. */
     .calendar-event.cancelada { background:repeating-linear-gradient(135deg,#f8fafc,#f8fafc 5px,#eef2f7 5px,#eef2f7 10px); border-color:#cbd5e1; color:#94a3b8; }
     .calendar-event.cancelada strong { text-decoration:line-through; }
-    /* Aula junta: verde mais forte e uma faixa no topo, para bater o olho e ver
-       que aquela hora tem mais de um aluno. */
-    .calendar-event.junta { background:color-mix(in srgb, var(--event-color) var(--event-mix,30%), #fff); border-color:color-mix(in srgb, var(--event-color) var(--event-mix-borda,52%), #fff); color:color-mix(in srgb, var(--event-color) 80%, #1e293b); padding:2px 7px; }
-    .calendar-event.junta::before { content:''; position:absolute; left:0; right:0; top:0; height:3px; background:color-mix(in srgb, var(--event-color) 62%, #fff); }
+    /* Aula junta usa o MESMO verde das outras: o primeiro da hora fica igual a
+       uma aula sozinha e os seguintes vão perdendo tom. Sem faixa nem realce —
+       ele não quer que a dupla se destaque das demais aulas. Só o horário sai,
+       porque a fatia é baixa demais para caber duas linhas. */
+    .calendar-event.junta { background:color-mix(in srgb, var(--event-color) var(--event-mix,11%), #fff); border-color:color-mix(in srgb, var(--event-color) var(--event-mix-borda,20%), #fff); padding:2px 7px; }
     .calendar-event.junta span { display:none; }
     .calendar-event.junta strong { font-size:.585rem; }
     .calendar-event-mais { position:absolute; right:3px; z-index:7; border:1px solid #cbd5e1; border-radius:6px; background:#fff; color:#475569; font-family:inherit; font-size:.56rem; font-weight:800; padding:1px 5px; height:13px; line-height:1; cursor:pointer; box-shadow:0 1px 4px rgba(15,23,42,.12); }
@@ -2315,8 +2316,12 @@
     // Aula em dupla divide o mesmo quadrado. É sempre o MESMO verde: o que muda
     // é a intensidade, que vai clareando conforme entra mais aluno naquela hora.
     // Trocar o matiz deixava um oliva no meio dos verdes e destoava.
-    const CALENDAR_INTENSIDADE = [38, 26, 18, 12, 8, 6];
-    const calendarMistura = faixa => CALENDAR_INTENSIDADE[faixa] || CALENDAR_INTENSIDADE[CALENDAR_INTENSIDADE.length - 1];
+    // O primeiro da hora fica IGUAL a uma aula sozinha (11% de cor sobre branco,
+    // borda a 20%) — dupla não pode chamar mais atenção que as outras aulas. Os
+    // seguintes vão perdendo tom, caminhando para o branco.
+    const CALENDAR_INTENSIDADE = [11, 7, 4.5, 3, 2, 1.5];
+    const CALENDAR_INTENSIDADE_BORDA = [20, 13.5, 9, 6, 4, 3];
+    const calendarMistura = (faixa, tabela = CALENDAR_INTENSIDADE) => tabela[faixa] ?? tabela[tabela.length - 1];
 
     function calendarEventColor(event) {
       if (event.color) return event.color; // cor escolhida à mão vence a do tipo
@@ -2544,7 +2549,7 @@
             ? `<button type="button" class="calendar-event-mais" data-expandir="${esc(chave)}" style="top:${meuTopo + minhaAltura - 14}px" title="${recolher ? 'Mostrar menos' : `Ver os ${restantes} que faltam nesta hora`}">${recolher ? '⋯ menos' : `⋯ +${restantes}`}</button>`
             : '';
           const cancelada = calendarCancelada(event, key);
-          return `<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}${cancelada ? ' cancelada' : ''}" data-event-id="${esc(event.id)}"${event.fatiada ? ` data-hora-inicio="${esc(event.startTime)}" data-hora-fim="${esc(event.endTime)}"` : ''} style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event)}${junta ? `;--event-mix:${calendarMistura(faixa)}%;--event-mix-borda:${Math.min(90, Math.round(calendarMistura(faixa) * 1.7))}%` : ''}" title="${esc(event.title || subtitle)}"><strong>${esc(event.title || 'Compromisso')}</strong><span>${esc(subtitle)}</span></button>${mais}`;
+          return `<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}${cancelada ? ' cancelada' : ''}" data-event-id="${esc(event.id)}"${event.fatiada ? ` data-hora-inicio="${esc(event.startTime)}" data-hora-fim="${esc(event.endTime)}"` : ''} style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event)}${junta ? `;--event-mix:${calendarMistura(faixa)}%;--event-mix-borda:${calendarMistura(faixa, CALENDAR_INTENSIDADE_BORDA)}%` : ''}" title="${esc(event.title || subtitle)}"><strong>${esc(event.title || 'Compromisso')}</strong><span>${esc(subtitle)}</span></button>${mais}`;
         }).join('');
         return `<div class="calendar-day-column${work ? '' : ' off-hours'}${key === todayKey ? ' today' : ''}${key === calendarSelectedDay ? ' picked' : ''}" data-date="${key}" style="height:${height}px">${events}</div>`;
       }).join('');
