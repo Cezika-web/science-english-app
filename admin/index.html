@@ -401,6 +401,15 @@
     .dias-week { display: flex; flex-wrap: wrap; gap: 6px; }
     .dias-week label { display: inline-flex; align-items: center; gap: 5px; font-size: 0.85rem; background: #f6f8fb; border: 1.5px solid var(--border); border-radius: 8px; padding: 6px 10px; cursor: pointer; user-select: none; }
     .dias-week input { margin: 0; }
+    /* Horário por dia: quem tem tudo na mesma hora não vê nada disso. */
+    .hora-mesma { display: flex; gap: 9px; align-items: flex-start; margin: 14px 0; padding: 11px 13px; border: 1.5px solid var(--border); border-radius: 10px; background: #f8fafc; cursor: pointer; font-size: 0.87rem; line-height: 1.45; }
+    .hora-mesma input { margin-top: 2px; width: 16px; height: 16px; flex: none; }
+    .hora-mesma small { display: block; color: var(--muted); font-size: 0.79rem; margin-top: 2px; }
+    .hora-dias { display: grid; gap: 8px; }
+    .hora-dias .linha { display: flex; align-items: center; gap: 11px; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 9px; background: #fff; }
+    .hora-dias .linha strong { width: 118px; flex: none; font-size: 0.86rem; font-weight: 600; }
+    .hora-dias .linha input { flex: 1; min-width: 0; }
+    .hora-dias .vazio { color: var(--muted); font-size: 0.84rem; font-style: italic; }
     .admin-login-card h1 { font-size: 1.2rem; font-weight: 800; margin-bottom: 4px; }
     .admin-login-card p { font-size: 0.85rem; color: var(--muted); margin-bottom: 24px; }
 
@@ -1404,7 +1413,9 @@
               <label><input type="checkbox" data-d="6">Sáb</label>
             </div>
           </div>
-          <div class="field"><label>Horário da aula</label><input type="time" id="f-hora" step="900" /></div>
+          <label class="hora-mesma"><input type="checkbox" id="f-hora-mesma" checked><span><strong>Todas as aulas são no mesmo horário</strong><small>Desmarque se algum dia tem hora diferente — aparece um campo por dia.</small></span></label>
+          <div class="field" id="f-hora-unica"><label>Horário da aula</label><input type="time" id="f-hora" step="900" /></div>
+          <div class="field" id="f-hora-por-dia" style="display:none;"><label>Horário de cada dia</label><div class="hora-dias" id="f-hora-dias"></div></div>
           <div class="field">
             <label>Duração da aula</label>
             <select id="f-duracao">
@@ -1486,7 +1497,9 @@
             <label><input type="checkbox" data-d="6">Sáb</label>
           </div>
         </div>
-        <div class="field"><label>Horário da aula</label><input type="time" id="e-hora" /></div>
+        <label class="hora-mesma"><input type="checkbox" id="e-hora-mesma" checked><span><strong>Todas as aulas são no mesmo horário</strong><small>Desmarque se algum dia tem hora diferente — aparece um campo por dia.</small></span></label>
+        <div class="field" id="e-hora-unica"><label>Horário da aula</label><input type="time" id="e-hora" /></div>
+        <div class="field" id="e-hora-por-dia" style="display:none;"><label>Horário de cada dia</label><div class="hora-dias" id="e-hora-dias"></div></div>
         <div class="field"><label>Data de início das aulas</label><input type="date" id="e-inicio" /></div>
 
         <div class="field">
@@ -3028,17 +3041,21 @@
     // regerados sem tocar nos compromissos criados na mão.
     function studentLessonEvents(student) {
       const days = [...new Set((student.aulaDias || []).map(Number))].filter(day => day >= 0 && day <= 6);
-      const startTime = student.aulaHora || '';
-      if (!days.length || !startTime) return [];
+      // Cada dia pode ter hora própria; sem mapa, todos usam o horário único.
+      const porDia = student.aulaHorarios && typeof student.aulaHorarios === 'object' ? student.aulaHorarios : {};
       const duration = Number(student.aulaDuracao) > 0 ? Number(student.aulaDuracao) : 60;
       const weekStart = calendarWeekStartDate(new Date());
-      return days.map(day => ({
-        type:'lesson', studentUid:student.uid, studentName:student.name || student.firstName || '',
-        title:`Aula · ${student.firstName || (student.name || '').split(' ')[0] || 'Aluno'}`,
-        date:calendarDateKey(calendarAddDays(weekStart, day)), startTime,
-        endTime:calendarTime(calendarMinutes(startTime) + duration),
-        repeat:'weekly', repeatUntil:'', notes:'', timezone:'America/Sao_Paulo', source:'cadastro',
-      }));
+      return days.map(day => {
+        const startTime = porDia[day] || porDia[String(day)] || student.aulaHora || '';
+        if (!startTime) return null;
+        return {
+          type:'lesson', studentUid:student.uid, studentName:student.name || student.firstName || '',
+          title:`Aula · ${student.firstName || (student.name || '').split(' ')[0] || 'Aluno'}`,
+          date:calendarDateKey(calendarAddDays(weekStart, day)), startTime,
+          endTime:calendarTime(calendarMinutes(startTime) + duration),
+          repeat:'weekly', repeatUntil:'', notes:'', timezone:'America/Sao_Paulo', source:'cadastro',
+        };
+      }).filter(Boolean);
     }
 
     // As aulas antigas vêm do banco, não da lista em memória: isto também roda
@@ -5225,16 +5242,76 @@
     }
 
     const DIAS_NOMES = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
-    function readAula(weekId, horaId) {
-      const dias = [...document.querySelectorAll('#' + weekId + ' input:checked')].map(c => Number(c.dataset.d)).sort((a,b) => a - b);
-      const hora = document.getElementById(horaId).value || '';
-      const texto = dias.length ? dias.map(d => DIAS_NOMES[d]).join(', ') + (hora ? ' · ' + hora : '') : (hora || '');
-      return { aulaDias: dias, aulaHora: hora, texto };
+
+    // Cada dia da semana pode ter hora própria (tem aluno de terça 08:15 e quinta
+    // 08:00). Quem tem tudo no mesmo horário deixa o tique marcado e preenche um
+    // campo só, que vale para todos os dias — o caminho curto continua curto.
+    function aulaDiasSelecionados(weekId) {
+      return [...document.querySelectorAll('#' + weekId + ' input:checked')]
+        .map(caixa => Number(caixa.dataset.d)).sort((a, b) => a - b);
     }
-    function fillAula(weekId, horaId, aulaDias, aulaHora) {
+
+    function renderHorasPorDia(prefixo, valores = null) {
+      const dias = aulaDiasSelecionados(`${prefixo}-dias-week`);
+      const caixa = document.getElementById(`${prefixo}-hora-dias`);
+      // Sem `valores`, aproveita o que já está digitado para não perder o que o
+      // professor preencheu ao marcar mais um dia.
+      const atuais = valores || Object.fromEntries([...caixa.querySelectorAll('input')].map(campo => [campo.dataset.d, campo.value]));
+      const padrao = document.getElementById(`${prefixo}-hora`).value || '';
+      caixa.innerHTML = dias.length
+        ? dias.map(dia => `<label class="linha"><strong>Aula de ${DIAS_NOMES[dia].toLowerCase()}</strong><input type="time" step="900" data-d="${dia}" value="${esc(atuais[dia] || padrao)}"></label>`).join('')
+        : '<div class="vazio">Selecione os dias da aula acima.</div>';
+    }
+
+    const aulaModoPorDia = prefixo => !document.getElementById(`${prefixo}-hora-mesma`).checked;
+
+    function sincronizarModoHora(prefixo, valores = null) {
+      const porDia = aulaModoPorDia(prefixo);
+      document.getElementById(`${prefixo}-hora-unica`).style.display = porDia ? 'none' : '';
+      document.getElementById(`${prefixo}-hora-por-dia`).style.display = porDia ? '' : 'none';
+      if (porDia) renderHorasPorDia(prefixo, valores);
+    }
+
+    ['f','e'].forEach(prefixo => {
+      document.getElementById(`${prefixo}-hora-mesma`).addEventListener('change', () => sincronizarModoHora(prefixo));
+      document.querySelectorAll(`#${prefixo}-dias-week input`).forEach(caixa =>
+        caixa.addEventListener('change', () => { if (aulaModoPorDia(prefixo)) renderHorasPorDia(prefixo); }));
+    });
+
+    function readAula(weekId, horaId) {
+      const prefixo = weekId.split('-')[0];
+      const dias = aulaDiasSelecionados(weekId);
+      const aulaHorarios = {};
+      if (aulaModoPorDia(prefixo)) {
+        document.querySelectorAll(`#${prefixo}-hora-dias input`).forEach(campo => {
+          if (campo.value) aulaHorarios[campo.dataset.d] = campo.value;
+        });
+      } else {
+        const hora = document.getElementById(horaId).value || '';
+        if (hora) dias.forEach(dia => { aulaHorarios[dia] = hora; });
+      }
+      // `aulaHora` continua existindo com o horário mais frequente: é o campo que
+      // o financeiro, os cadastros antigos e a agenda leem quando não há mapa.
+      const contagem = {};
+      Object.values(aulaHorarios).forEach(hora => { contagem[hora] = (contagem[hora] || 0) + 1; });
+      const aulaHora = Object.keys(contagem).sort((a, b) => contagem[b] - contagem[a] || a.localeCompare(b))[0] || '';
+      const iguais = Object.keys(contagem).length <= 1;
+      const texto = dias.length
+        ? dias.map(dia => DIAS_NOMES[dia] + (iguais || !aulaHorarios[dia] ? '' : ` ${aulaHorarios[dia]}`)).join(', ')
+          + (iguais && aulaHora ? ` · ${aulaHora}` : '')
+        : (aulaHora || '');
+      return { aulaDias: dias, aulaHora, aulaHorarios, texto };
+    }
+
+    function fillAula(weekId, horaId, aulaDias, aulaHora, aulaHorarios) {
+      const prefixo = weekId.split('-')[0];
       const set = new Set((aulaDias || []).map(Number));
-      document.querySelectorAll('#' + weekId + ' input').forEach(c => { c.checked = set.has(Number(c.dataset.d)); });
+      document.querySelectorAll('#' + weekId + ' input').forEach(caixa => { caixa.checked = set.has(Number(caixa.dataset.d)); });
       document.getElementById(horaId).value = aulaHora || '';
+      const horarios = aulaHorarios && typeof aulaHorarios === 'object' ? aulaHorarios : {};
+      const distintos = new Set(Object.values(horarios).filter(Boolean));
+      document.getElementById(`${prefixo}-hora-mesma`).checked = distintos.size <= 1;
+      sincronizarModoHora(prefixo, horarios);
     }
 
     let editSlugTouched = false;
@@ -5270,7 +5347,7 @@
       document.getElementById('e-email').value = s.email || '';
       document.getElementById('e-level').value = s.level || '';
       document.getElementById('e-meta').value  = s.metaAnual || '';
-      fillAula('e-dias-week', 'e-hora', [...adminLessonDays(s)], s.aulaHora);
+      fillAula('e-dias-week', 'e-hora', [...adminLessonDays(s)], s.aulaHora, s.aulaHorarios);
       document.getElementById('e-inicio').value = s.inicioCurso || '';
       document.getElementById('e-slug').value  = s.slug || toSlug(s.name || s.firstName || '');
       document.getElementById('e-photo-preview').src = editPhoto || '';
@@ -5323,6 +5400,7 @@
           diasAulas: aula.texto,
           aulaDias: aula.aulaDias,
           aulaHora: aula.aulaHora,
+          aulaHorarios: aula.aulaHorarios,
           inicioCurso: inicio || '',
           photo: editPhoto || '',
         });
@@ -5330,7 +5408,8 @@
         // acontecia no botão "Preencher com as aulas dos alunos", que saiu.
         const anterior = allStudents.find(item => item.uid === uid) || {};
         await syncStudentLessons([{ uid, name, firstName:name.split(' ')[0],
-          aulaDias:aula.aulaDias, aulaHora:aula.aulaHora, aulaDuracao:anterior.aulaDuracao }]);
+          aulaDias:aula.aulaDias, aulaHora:aula.aulaHora, aulaHorarios:aula.aulaHorarios,
+          aulaDuracao:anterior.aulaDuracao }]);
         btn.disabled = false; btn.textContent = 'Salvar alterações';
         document.getElementById('edit-modal').classList.remove('open');
         loadStudents();
@@ -6946,6 +7025,7 @@
           ...(aula.texto && { diasAulas: aula.texto }),
           ...(aula.aulaDias.length && { aulaDias: aula.aulaDias }),
           ...(aula.aulaHora && { aulaHora: aula.aulaHora, aulaDuracao: duracao }),
+          ...(Object.keys(aula.aulaHorarios).length && { aulaHorarios: aula.aulaHorarios }),
           ...(inicio && { inicioCurso: inicio }),
           createdAt: serverTimestamp()
         });
@@ -6954,7 +7034,7 @@
         let naAgenda = 0;
         if (aula.aulaDias.length && aula.aulaHora) {
           try {
-            naAgenda = await syncStudentLessons([{ uid: cred.user.uid, name, firstName: name.split(' ')[0], aulaDias: aula.aulaDias, aulaHora: aula.aulaHora, aulaDuracao: duracao }], false);
+            naAgenda = await syncStudentLessons([{ uid: cred.user.uid, name, firstName: name.split(' ')[0], aulaDias: aula.aulaDias, aulaHora: aula.aulaHora, aulaHorarios: aula.aulaHorarios, aulaDuracao: duracao }], false);
           } catch (erroAgenda) { console.error('Agenda do aluno:', erroAgenda); }
         }
         // A mensalidade já nasce no Financeiro — dá pra ajustar depois em "Editar".
@@ -6974,6 +7054,7 @@
         showMsg('create-msg', `✅ Aluno ${name} criado!${extras.length ? ` Já entrou com ${extras.join(' e ')}.` : ''}`, 'ok');
         ['f-name','f-email','f-pass','f-meta','f-hora','f-inicio'].forEach(id => document.getElementById(id).value = '');
         document.querySelectorAll('#f-dias-week input').forEach(c => c.checked = false);
+        document.getElementById('f-hora-mesma').checked = true; sincronizarModoHora('f');
         document.getElementById('f-level').value = ''; document.getElementById('f-duracao').value = '60';
         setTimeout(() => {
           document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
