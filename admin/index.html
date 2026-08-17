@@ -899,6 +899,7 @@
               <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#64748b"></span> Horário bloqueado</div>
             </div>
             <button class="calendar-settings-btn" id="calendar-settings-open" type="button">⚙ Configurar expediente</button>
+            <button class="calendar-settings-btn" id="calendar-canceladas-open" type="button" style="margin-top:8px;">🚫 Aulas canceladas</button>
           </aside>
           <section class="calendar-main">
             <div class="calendar-toolbar">
@@ -1704,6 +1705,16 @@
         <button class="btn-add" id="calendar-settings-save" type="button" style="width:100%;margin-top:18px;">Salvar expediente</button>
         <button class="btn-secondary" id="calendar-limpar-duplicadas" type="button" style="width:100%;margin-top:9px;padding:9px;font-size:.83rem;">🧹 Procurar aulas repetidas</button>
         <p style="margin:7px 0 0;color:var(--muted);font-size:.76rem;line-height:1.5;">Aula que aparece duas vezes no mesmo horário, vinda do cadastro do aluno. Mostra o que achou antes de apagar.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="calendar-canceladas-modal">
+    <div class="modal" style="max-width:520px;">
+      <div class="modal-header"><h2>Aulas canceladas</h2><button class="btn-close" id="calendar-canceladas-close" type="button">×</button></div>
+      <div class="modal-body">
+        <div class="field" style="margin-bottom:14px;"><label for="calendar-canceladas-ano">Ano</label><select id="calendar-canceladas-ano"></select></div>
+        <div id="calendar-canceladas-body"><div class="loading">Carregando...</div></div>
       </div>
     </div>
   </div>
@@ -3047,7 +3058,7 @@
     document.getElementById('calendar-today').onclick = () => { const today = new Date(); calendarWeekStart = calendarWeekStartDate(today); calendarSelectedDay = calendarDateKey(today); calendarMiniCursor = new Date(today.getFullYear(),today.getMonth(),1); renderCalendar(); };
     document.getElementById('calendar-mini-prev').onclick = () => { calendarMiniCursor = new Date(calendarMiniCursor.getFullYear(),calendarMiniCursor.getMonth()-1,1); renderCalendarMini(); };
     document.getElementById('calendar-mini-next').onclick = () => { calendarMiniCursor = new Date(calendarMiniCursor.getFullYear(),calendarMiniCursor.getMonth()+1,1); renderCalendarMini(); };
-    ['calendar-event-modal','calendar-settings-modal'].forEach(id => document.getElementById(id).onclick = click => { if (click.target.id === id) click.currentTarget.classList.remove('open'); });
+    ['calendar-event-modal','calendar-settings-modal','calendar-canceladas-modal'].forEach(id => document.getElementById(id).onclick = click => { if (click.target.id === id) click.currentTarget.classList.remove('open'); });
 
     // ── POPOVER RÁPIDO ─────────────────────────────────────────────────────
     // Clicar num compromisso (ou soltar o arrasto) abre este cartão pequeno:
@@ -3122,11 +3133,14 @@
       const botao = document.getElementById('calendar-pop-reposicao');
       botao.classList.toggle('on', ehReposicao);
       botao.textContent = ehReposicao ? '🔄 Reposição — toque para desfazer' : '🔄 Marcar reposição';
-      // Some só quando ele está editando uma aula de verdade. Em bloco de
-      // horário disponível o botão TEM de aparecer: a agenda dele é coberta de
-      // disponível, então nunca existe um vago "limpo" para clicar.
-      botao.style.display = (calendarPopDraft.id && ehAula) ? 'none' : 'block';
-      document.getElementById('calendar-pop-student-row').style.display = (ehReposicao || ehAula) ? 'grid' : 'none';
+      // Reposição se marca em horário livre. Em cima da aula de um aluno não
+      // dá — para liberar aquele horário ele cancela a aula primeiro, e aí o
+      // botão aparece na própria aula cancelada.
+      const aulaOcupada = Boolean(calendarPopDraft.id && ehAula
+        && !calendarCancelada(calendarPopDraft, calendarPopDraft.ocorrencia));
+      botao.style.display = aulaOcupada ? 'none' : 'block';
+      // Reposição não tem dono: ele escreve no título de quem é.
+      document.getElementById('calendar-pop-student-row').style.display = ehAula ? 'grid' : 'none';
       const campoRepeticao = document.getElementById('calendar-pop-repeat');
       campoRepeticao.disabled = ehReposicao;
       if (ehReposicao) campoRepeticao.value = 'none';
@@ -3231,9 +3245,8 @@
       const startTime = document.getElementById('calendar-pop-start').value, endTime = document.getElementById('calendar-pop-end').value;
       if (!startTime || !endTime) return calendarPopFail('Preencha o horário.');
       if (calendarMinutes(endTime) <= calendarMinutes(startTime)) return calendarPopFail('O fim precisa ser depois do início.');
-      const comAluno = type === 'lesson' || type === 'reposicao';
+      const comAluno = type === 'lesson';
       const uidEscolhido = comAluno ? (document.getElementById('calendar-pop-student').value || calendarPopDraft.studentUid || '') : '';
-      if (type === 'reposicao' && !uidEscolhido) return calendarPopFail('Escolha de quem é a reposição.');
       const student = allStudents.find(item => item.uid === uidEscolhido);
       const repeat = type === 'reposicao' ? 'none' : document.getElementById('calendar-pop-repeat').value;
       const repeatDays = repeat === 'custom' ? (calendarPopDraft.repeatDays || []).map(Number) : [];
@@ -3299,6 +3312,47 @@
       } catch (error) { showMsg('calendar-settings-msg', `Erro: ${error.message}`, 'err'); }
       finally { botao.disabled = false; }
     };
+
+    // O histórico não precisa de coleção nova: cada cancelamento já é uma data
+    // na lista de exceções do próprio compromisso. Basta juntar tudo.
+    function cancelamentosDoAno(ano) {
+      const linhas = [];
+      calendarEvents.forEach(evento => (evento.canceladas || []).forEach(dia => {
+        if (!String(dia).startsWith(String(ano))) return;
+        linhas.push({ dia, quem:evento.studentName || evento.title || 'Compromisso',
+          hora:`${evento.startTime}–${evento.endTime}` });
+      }));
+      return linhas.sort((a, b) => b.dia.localeCompare(a.dia));
+    }
+
+    function renderCancelamentos() {
+      const ano = document.getElementById('calendar-canceladas-ano').value;
+      const linhas = cancelamentosDoAno(ano), corpo = document.getElementById('calendar-canceladas-body');
+      if (!linhas.length) { corpo.innerHTML = `<p style="color:var(--muted);font-size:.85rem;">Nenhuma aula cancelada em ${esc(ano)}.</p>`; return; }
+      const porAluno = new Map();
+      linhas.forEach(linha => porAluno.set(linha.quem, (porAluno.get(linha.quem) || 0) + 1));
+      const ranking = [...porAluno.entries()].sort((a, b) => b[1] - a[1]);
+      corpo.innerHTML = `<div style="padding:13px 15px;border-radius:12px;background:#FEF2F2;border:1px solid #FCA5A5;color:#991B1B;font-weight:800;margin-bottom:14px;">
+          ${linhas.length} aula(s) cancelada(s) em ${esc(ano)}
+        </div>
+        <div style="font-size:.72rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:7px;">Por aluno</div>
+        <div style="display:grid;gap:5px;margin-bottom:16px;">${ranking.map(([quem, quantas]) =>
+          `<div style="display:flex;gap:10px;padding:8px 11px;border:1px solid var(--border);border-radius:9px;font-size:.86rem;"><span style="flex:1;min-width:0;">${esc(quem)}</span><strong>${quantas}</strong></div>`).join('')}</div>
+        <div style="font-size:.72rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:7px;">Uma a uma</div>
+        <div style="display:grid;gap:4px;max-height:280px;overflow:auto;">${linhas.map(linha =>
+          `<div style="display:flex;gap:10px;padding:7px 11px;font-size:.84rem;border-bottom:1px solid var(--border);"><span style="width:86px;flex:none;color:var(--muted);">${linha.dia.split('-').reverse().join('/')}</span><span style="flex:1;min-width:0;">${esc(linha.quem)}</span><span style="color:var(--muted);white-space:nowrap;">${esc(linha.hora)}</span></div>`).join('')}</div>`;
+    }
+
+    document.getElementById('calendar-canceladas-open').onclick = () => {
+      const anos = new Set([String(new Date().getFullYear())]);
+      calendarEvents.forEach(evento => (evento.canceladas || []).forEach(dia => anos.add(String(dia).slice(0, 4))));
+      const seletor = document.getElementById('calendar-canceladas-ano');
+      seletor.innerHTML = [...anos].sort().reverse().map(ano => `<option value="${ano}">${ano}</option>`).join('');
+      renderCancelamentos();
+      document.getElementById('calendar-canceladas-modal').classList.add('open');
+    };
+    document.getElementById('calendar-canceladas-ano').onchange = renderCancelamentos;
+    document.getElementById('calendar-canceladas-close').onclick = () => document.getElementById('calendar-canceladas-modal').classList.remove('open');
 
     document.getElementById('calendar-pop-close').onclick = () => { closeCalendarPop(); clearCalendarSelection(); };
     document.getElementById('calendar-pop-save').onclick = saveCalendarPop;
