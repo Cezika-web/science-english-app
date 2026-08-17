@@ -880,12 +880,18 @@ ${item.text}`).join('\n\n')}`
 
       // Quarta vira quinta: a Parte 1 fecha e o resultado dela sai na hora, sem
       // esperar domingo. Quem não respondeu perdeu — a nota é a que ficou.
-      if (stage.phase === 'open' && stage.part === 2 || stage.phase === 'between') {
-        const parte1 = await db.doc(`_challengeResults/${schedule.part1.roundId}_${uid}`).get();
-        base.parte1 = parte1.exists
-          ? { concluida:true, score:Number(parte1.data().score || 0), maxScore:500,
-              details:parte1.data().details || [] }
-          : { concluida:false, score:0, maxScore:500, details:[] };
+      if ((stage.phase === 'open' && stage.part === 2) || stage.phase === 'between') {
+        try {
+          const parte1 = await db.doc(`_challengeResults/${schedule.part1.roundId}_${uid}`).get();
+          base.parte1 = parte1.exists
+            ? { concluida:true, score:Number(parte1.data().score || 0), maxScore:500,
+                details:parte1.data().details || [] }
+            : { concluida:false, score:0, maxScore:500, details:[] };
+        } catch (error) {
+          // Nunca derrubar a tela do desafio por causa do extra: sem isto, uma
+          // falha nesta leitura tiraria o desafio do ar para todo mundo.
+          console.error('Resultado da Parte 1:', error.message);
+        }
       }
 
       if (stage.phase !== 'open') return base;
