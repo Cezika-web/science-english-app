@@ -549,6 +549,11 @@
     .calendar-weekdays-settings span { display:block; padding:8px 2px; border:1px solid var(--border); border-radius:8px; color:#64748b; text-align:center; font-size:.68rem; font-weight:800; }
     .calendar-weekdays-settings input:checked + span { background:var(--cal-brand); border-color:var(--cal-brand); color:#fff; }
     .calendar-mobile-settings { display:none; }
+    /* Duas colunas viram uma no celular. Com minimo fixo na coluna da direita,
+       a da esquerda virava uma tira de 79px e o texto saia letra por letra. */
+    .duas-colunas { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr); gap:16px; align-items:start; }
+    @media (max-width:860px) { .duas-colunas { grid-template-columns:minmax(0,1fr); } }
+
     @media (max-width:760px) {
       .container { padding-left:12px; padding-right:12px; }
       .calendar-shell { grid-template-columns:1fr; min-height:650px; }
@@ -823,7 +828,7 @@
 
       <!-- DESAFIO SEMANAL -->
       <div class="tab-panel" id="tab-challenge">
-        <div style="display:grid;grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);gap:16px;align-items:start;">
+        <div class="duas-colunas">
           <div class="form-card" style="margin:0;">
             <h2 style="margin-bottom:5px;">🏆 Publicar desafio semanal</h2>
             <p style="font-size:.84rem;color:var(--muted);line-height:1.5;margin:0 0 15px;">A semana precisa ter duas partes de 5 perguntas. Os gabaritos são enviados ao servidor e nunca aparecem no aplicativo do aluno.</p>
@@ -2886,7 +2891,10 @@
       const from = new Date(`${(first.date > second.date ? first.date : second.date)}T00:00:00`);
       const horizon = (repeats(first) && first.repeat === 'monthly') || (repeats(second) && second.repeat === 'monthly') ? 400 : 70;
       for (let index = 0; index < horizon; index += 1) {
-        const date = calendarAddDays(from, index);
+        const date = calendarAddDays(from, index), chave = calendarDateKey(date);
+        // Aula cancelada naquele dia não ocupa o horário: marcar a reposição no
+        // lugar dela não pode disparar a pergunta de aula junta.
+        if (calendarCancelada(first, chave) || calendarCancelada(second, chave)) continue;
         if (calendarOccursOn(first, date) && calendarOccursOn(second, date)) return true;
       }
       return false;
