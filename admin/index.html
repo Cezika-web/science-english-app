@@ -41,10 +41,11 @@
       display: grid; grid-template-columns: var(--side-w) minmax(0, 1fr); gap: 22px;
       align-items: start;
     }
-    /* O conteúdo encosta no menu e para numa largura confortável de leitura:
-       em monitor largo o card de aluno esticava demais e abria um vão enorme
-       entre o slug e os números. Estatísticas, busca e lista ficam alinhadas. */
-    .content { min-width: 0; max-width: 1250px; }
+    /* O conteúdo usa toda a largura que sobra do menu — agenda, financeiro e
+       formulários ocupam a tela inteira. Só a lista de alunos para antes: o
+       card esticava demais e abria um vão enorme entre o slug e os números. */
+    .content { min-width: 0; }
+    #tab-students, #tab-exalunos { max-width: 1250px; }
 
     .sidebar {
       position: sticky; top: calc(var(--header-h) + 20px);
@@ -54,7 +55,7 @@
     }
     .side-title {
       font-size: .64rem; font-weight: 800; letter-spacing: .7px; text-transform: uppercase;
-      color: #9aa5b4; padding: 12px 10px 5px;
+      color: #9aa5b4; padding: 12px 10px 5px; text-align: center;
     }
     /* O primeiro grupo vem logo depois do cabeçalho da gaveta (escondido no
        computador), então o espaçamento extra do topo é desnecessário. */
@@ -70,13 +71,13 @@
     .stat-card .lbl { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
 
     .tab {
-      display: flex; align-items: center; gap: 9px; width: 100%;
+      display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%;
       padding: 8px 10px; border: none; border-radius: 9px; background: none;
       font: inherit; font-size: 0.845rem; font-weight: 600; color: #4b5563;
-      cursor: pointer; text-align: left;
+      cursor: pointer; text-align: center;
     }
     .tab .ic { width: 18px; text-align: center; flex-shrink: 0; font-size: .95rem; }
-    .tab .lb { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tab .lb { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .tab:hover { background: #f2f7fd; color: #1f2937; }
     .tab.active { background: var(--accent); color: white; box-shadow: 0 2px 8px rgba(47,134,230,.28); }
     .tab.active:hover { background: var(--accent); }
@@ -257,7 +258,7 @@
     .kebab-item:hover { background: #f3f4f6; }
     .kebab-item.danger { color: var(--danger); }
 
-    .form-card { background: white; border-radius: 16px; padding: 24px; border: 1px solid var(--border); max-width: 560px; }
+    .form-card { background: white; border-radius: 16px; padding: 24px; border: 1px solid var(--border); }
     .form-card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 18px; }
     .field { margin-bottom: 14px; }
     .field label { display: block; font-size: 0.83rem; font-weight: 600; margin-bottom: 5px; color: #374151; }
@@ -404,8 +405,9 @@
     .admin-login-card p { font-size: 0.85rem; color: var(--muted); margin-bottom: 24px; }
 
     /* Agenda do professor — visão semanal inspirada no Notion Calendar */
-    .container:has(#tab-calendar.active) { max-width:1600px; padding-top:14px; }
-    .container:has(#tab-calendar.active) > .stats { display:none; }
+    /* Sem teto de largura: a semana inteira cabe melhor quanto mais espaço tiver. */
+    .container:has(#tab-calendar.active) { padding-top:14px; }
+    .container:has(#tab-calendar.active) .stats { display:none; }
     #tab-calendar { --cal-brand: var(--accent); --cal-brand-soft: #e8f3ff; }
     .calendar-shell { display:grid; grid-template-columns:230px minmax(0,1fr); min-height:calc(100vh - 180px); background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; }
     .calendar-sidebar { padding:16px 14px; border-right:1px solid #e5e7eb; background:#fafafa; }
