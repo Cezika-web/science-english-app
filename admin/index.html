@@ -518,6 +518,11 @@
     .calendar-pop input#calendar-pop-title { font-size:.92rem; font-weight:700; padding-right:32px; }
     .calendar-pop-close { position:absolute; top:9px; right:9px; z-index:2; width:26px; height:26px; padding:0; border:0; border-radius:8px; background:transparent; color:#94a3b8; font-family:inherit; font-size:19px; line-height:1; cursor:pointer; }
     .calendar-pop-close:hover { background:#f1f5f9; color:#0f172a; }
+    /* Reposição é o caso do dia a dia dele: fica um toque à frente, e não
+       escondida atrás das bolinhas de tipo. */
+    .calendar-pop-reposicao { width:100%; margin-top:8px; padding:9px; border:1.5px solid #bae6fd; border-radius:9px; background:#f0f9ff; color:#0369a1; font-family:inherit; font-size:.82rem; font-weight:800; cursor:pointer; }
+    .calendar-pop-reposicao:hover { border-color:#0ea5e9; background:#e0f2fe; }
+    .calendar-pop-reposicao.on { border-color:#0ea5e9; background:#0ea5e9; color:#fff; }
     .calendar-pop-row { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:8px; align-items:center; }
     .calendar-pop-days { display:none; grid-template-columns:repeat(7,1fr); gap:4px; margin-top:8px; }
     .calendar-pop-days.on { display:grid; }
@@ -1706,6 +1711,10 @@
   <div class="calendar-pop" id="calendar-pop">
     <button class="calendar-pop-close" id="calendar-pop-close" type="button" aria-label="Fechar">×</button>
     <input id="calendar-pop-title" maxlength="100" placeholder="Nome do compromisso">
+    <button class="calendar-pop-reposicao" id="calendar-pop-reposicao" type="button">🔄 Marcar reposição</button>
+    <div class="calendar-pop-row" id="calendar-pop-student-row" style="display:none;grid-template-columns:1fr;">
+      <select id="calendar-pop-student" aria-label="Aluno"><option value="">Selecione o aluno</option></select>
+    </div>
     <div class="calendar-pop-row">
       <input id="calendar-pop-start" type="time" step="900" aria-label="Começa">
       <input id="calendar-pop-end" type="time" step="900" aria-label="Termina">
@@ -2319,10 +2328,14 @@
     }
 
     function calendarFillStudents() {
-      const select = document.getElementById('calendar-event-student'), current = select.value;
-      select.innerHTML = '<option value="">Selecione o aluno</option>' + allStudents.filter(student => !student.archived)
+      const opcoes = '<option value="">Selecione o aluno</option>' + allStudents.filter(student => !student.archived)
         .map(student => `<option value="${esc(student.uid)}">${esc(student.name || student.firstName || 'Aluno')}</option>`).join('');
-      if ([...select.options].some(option => option.value === current)) select.value = current;
+      ['calendar-event-student', 'calendar-pop-student'].forEach(id => {
+        const select = document.getElementById(id); if (!select) return;
+        const current = select.value;
+        select.innerHTML = opcoes;
+        if ([...select.options].some(option => option.value === current)) select.value = current;
+      });
     }
 
     function calendarFocusDay() { return calendarSelectedDay || calendarDateKey(new Date()); }
@@ -2469,7 +2482,15 @@
       const columns = days.map(date => {
         const key = calendarDateKey(date), work = calendarSettings.workingDays.includes(date.getDay());
         const doDia = calendarEvents.filter(event => calendarOccursOn(event,date));
-        const events = calendarLanes(doDia, key).map(({ event, faixa, faixas, oculto, restantes, recolher, chave }) => {
+        // "Horário disponível" some no dia em que algo ocupa aquela faixa —
+        // marcar reposição no vago é deixar de estar vago. Some só a OCORRÊNCIA:
+        // na semana seguinte o bloco volta sozinho, porque a série continua. E
+        // aula cancelada não ocupa nada, então o disponível reaparece embaixo.
+        const ocupam = doDia.filter(item => item.type !== 'available' && !calendarCancelada(item, key));
+        const naGrade = doDia.filter(item => item.type !== 'available' || !ocupam.some(outro =>
+          calendarMinutes(outro.startTime) < calendarMinutes(item.endTime)
+          && calendarMinutes(outro.endTime) > calendarMinutes(item.startTime)));
+        const events = calendarLanes(naGrade, key).map(({ event, faixa, faixas, oculto, restantes, recolher, chave }) => {
           const top = Math.max(0, (calendarMinutes(event.startTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
           const bottom = Math.min(height, (calendarMinutes(event.endTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
           if (bottom <= 0 || top >= height || bottom-top < 3) return '';
@@ -3077,6 +3098,29 @@
     }
     function renderCalendarPopDays() { renderCalendarDayChips('calendar-pop-days', 'calendar-pop-repeat', calendarPopDraft); }
 
+    // Reposição, aluno e repetição andam juntos: reposição é de um dia só e
+    // sempre tem dono. Deixar isso num lugar só evita os três se desencontrarem.
+    function sincronizarReposicao() {
+      if (!calendarPopDraft) return;
+      const ehReposicao = calendarPopDraft.type === 'reposicao';
+      const ehAula = calendarPopDraft.type === 'lesson';
+      const botao = document.getElementById('calendar-pop-reposicao');
+      botao.classList.toggle('on', ehReposicao);
+      botao.textContent = ehReposicao ? '🔄 Reposição — toque para desfazer' : '🔄 Marcar reposição';
+      botao.style.display = calendarPopDraft.id && !ehReposicao ? 'none' : 'block';
+      document.getElementById('calendar-pop-student-row').style.display = (ehReposicao || ehAula) ? 'grid' : 'none';
+      const campoRepeticao = document.getElementById('calendar-pop-repeat');
+      campoRepeticao.disabled = ehReposicao;
+      if (ehReposicao) campoRepeticao.value = 'none';
+    }
+
+    document.getElementById('calendar-pop-reposicao').onclick = () => {
+      if (!calendarPopDraft) return;
+      calendarPopDraft.type = calendarPopDraft.type === 'reposicao' ? 'lesson' : 'reposicao';
+      document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle(calendarPopDraft.type);
+      sincronizarReposicao(); renderCalendarPopColors(); renderCalendarPopPalette(); renderCalendarPopDays();
+    };
+
     function renderCalendarPopColors() {
       if (!calendarPopDraft) return;
       document.getElementById('calendar-pop-colors').innerHTML = CALENDAR_TYPES.map(item =>
@@ -3084,10 +3128,7 @@
       document.querySelectorAll('#calendar-pop-colors button').forEach(button => button.onclick = () => {
         calendarPopDraft.type = button.dataset.type;
         document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle(calendarPopDraft.type);
-        // Reposição é de um dia só, por definição — não faz sentido repetir.
-        const repeticao = document.getElementById('calendar-pop-repeat');
-        if (calendarPopDraft.type === 'reposicao') { repeticao.value = 'none'; repeticao.disabled = true; }
-        else repeticao.disabled = false;
+        sincronizarReposicao();
         renderCalendarPopColors(); renderCalendarPopPalette(); renderCalendarPopDays();
       });
     }
@@ -3111,8 +3152,9 @@
       document.getElementById('calendar-pop-end').value = event.endTime || '';
       const campoRepeticao = document.getElementById('calendar-pop-repeat');
       campoRepeticao.value = ['daily','weekly','monthly','custom'].includes(event.repeat) ? event.repeat : 'none';
-      campoRepeticao.disabled = calendarPopDraft.type === 'reposicao';
-      if (campoRepeticao.disabled) campoRepeticao.value = 'none';
+      calendarFillStudents();
+      document.getElementById('calendar-pop-student').value = event.studentUid || '';
+      sincronizarReposicao();
       calendarPopDraft.repeatDays = (event.repeatDays || []).map(Number);
       document.getElementById('calendar-pop-delete').style.display = event.id ? 'block' : 'none';
       // Pauta só em aula de aluno já salva — num bloco novo ainda não há o que resumir.
@@ -3149,14 +3191,18 @@
       const startTime = document.getElementById('calendar-pop-start').value, endTime = document.getElementById('calendar-pop-end').value;
       if (!startTime || !endTime) return calendarPopFail('Preencha o horário.');
       if (calendarMinutes(endTime) <= calendarMinutes(startTime)) return calendarPopFail('O fim precisa ser depois do início.');
-      const student = allStudents.find(item => item.uid === calendarPopDraft.studentUid);
+      const comAluno = type === 'lesson' || type === 'reposicao';
+      const uidEscolhido = comAluno ? (document.getElementById('calendar-pop-student').value || calendarPopDraft.studentUid || '') : '';
+      if (type === 'reposicao' && !uidEscolhido) return calendarPopFail('Escolha de quem é a reposição.');
+      const student = allStudents.find(item => item.uid === uidEscolhido);
       const repeat = type === 'reposicao' ? 'none' : document.getElementById('calendar-pop-repeat').value;
       const repeatDays = repeat === 'custom' ? (calendarPopDraft.repeatDays || []).map(Number) : [];
       if (repeat === 'custom' && !repeatDays.length) return calendarPopFail('Escolha pelo menos um dia da semana.');
       const payload = {
-        type, studentUid:type === 'lesson' ? (calendarPopDraft.studentUid || '') : '',
-        studentName:type === 'lesson' && student ? (student.name || student.firstName || '') : '',
-        title:document.getElementById('calendar-pop-title').value.trim() || calendarDefaultTitle(type),
+        type, studentUid:comAluno ? uidEscolhido : '',
+        studentName:comAluno && student ? (student.name || student.firstName || '') : '',
+        title:document.getElementById('calendar-pop-title').value.trim()
+          || (student ? `${calendarDefaultTitle(type)} · ${student.firstName || (student.name || '').split(' ')[0]}` : calendarDefaultTitle(type)),
         date:calendarPopDraft.date, startTime, endTime, repeat, repeatDays, color:calendarPopDraft.color || '',
         repeatUntil:repeat !== 'none' ? (calendarPopDraft.repeatUntil || '') : '',
         notes:calendarPopDraft.notes || '', timezone:'America/Sao_Paulo',
