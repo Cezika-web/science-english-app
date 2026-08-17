@@ -893,13 +893,15 @@
             </div>
             <div class="calendar-legend">
               <div class="calendar-legend-title">Calendários</div>
-              <div class="calendar-legend-row"><span class="calendar-legend-dot" id="calendar-lesson-dot"></span> Aulas dos alunos</div>
+              <div class="calendar-legend-row"><span class="calendar-legend-dot" id="calendar-lesson-dot"></span> Aulas</div>
               <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#f59e7a"></span> Horário disponível</div>
               <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#8b5cf6"></span> Particular</div>
               <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#64748b"></span> Horário bloqueado</div>
+              <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:repeating-linear-gradient(135deg,#e2e8f0,#e2e8f0 2px,#cbd5e1 2px,#cbd5e1 4px)"></span> Aula cancelada</div>
+              <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#eab308"></span> Reposição</div>
+              <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#ea580c"></span> Aula experimental</div>
             </div>
             <button class="calendar-settings-btn" id="calendar-settings-open" type="button">⚙ Configurar expediente</button>
-            <button class="calendar-settings-btn" id="calendar-canceladas-open" type="button" style="margin-top:8px;">🚫 Aulas canceladas</button>
           </aside>
           <section class="calendar-main">
             <div class="calendar-toolbar">
@@ -1709,16 +1711,6 @@
     </div>
   </div>
 
-  <div class="modal-overlay" id="calendar-canceladas-modal">
-    <div class="modal" style="max-width:520px;">
-      <div class="modal-header"><h2>Aulas canceladas</h2><button class="btn-close" id="calendar-canceladas-close" type="button">×</button></div>
-      <div class="modal-body">
-        <div class="field" style="margin-bottom:14px;"><label for="calendar-canceladas-ano">Ano</label><select id="calendar-canceladas-ano"></select></div>
-        <div id="calendar-canceladas-body"><div class="loading">Carregando...</div></div>
-      </div>
-    </div>
-  </div>
-
   <div class="calendar-toast" id="calendar-toast"></div>
 
   <div class="calendar-pop" id="calendar-pop">
@@ -1739,6 +1731,16 @@
         <option value="weekly">Toda semana</option>
         <option value="monthly">Todo mês</option>
         <option value="custom">Escolher os dias…</option>
+      </select>
+    </div>
+    <div class="calendar-pop-row" style="grid-template-columns:1fr;">
+      <select id="calendar-pop-tipo" aria-label="Tipo do compromisso">
+        <option value="lesson">Aula de um aluno</option>
+        <option value="reposicao">Reposição</option>
+        <option value="experimental">Aula experimental</option>
+        <option value="personal">Compromisso particular</option>
+        <option value="blocked">Horário bloqueado</option>
+        <option value="available">Horário disponível</option>
       </select>
     </div>
     <div class="calendar-pop-days" id="calendar-pop-days"></div>
@@ -2310,12 +2312,14 @@
     function calendarEventColor(event) {
       if (event.color) return event.color; // cor escolhida à mão vence a do tipo
       return event.type === 'available' ? '#f59e7a' : event.type === 'personal' ? '#8b5cf6'
-        : event.type === 'blocked' ? '#64748b' : event.type === 'reposicao' ? '#0ea5e9' : calendarSchoolColor();
+        : event.type === 'blocked' ? '#64748b' : event.type === 'reposicao' ? '#eab308'
+        : event.type === 'experimental' ? '#ea580c' : calendarSchoolColor();
     }
 
     function calendarDefaultTitle(type) {
       return type === 'available' ? 'Horário disponível' : type === 'blocked' ? 'Horário bloqueado'
-        : type === 'personal' ? 'Compromisso particular' : type === 'reposicao' ? 'Reposição' : 'Aula';
+        : type === 'personal' ? 'Compromisso particular' : type === 'reposicao' ? 'Reposição'
+        : type === 'experimental' ? 'Aula experimental' : 'Aula';
     }
 
     async function loadCalendar() {
@@ -3058,7 +3062,7 @@
     document.getElementById('calendar-today').onclick = () => { const today = new Date(); calendarWeekStart = calendarWeekStartDate(today); calendarSelectedDay = calendarDateKey(today); calendarMiniCursor = new Date(today.getFullYear(),today.getMonth(),1); renderCalendar(); };
     document.getElementById('calendar-mini-prev').onclick = () => { calendarMiniCursor = new Date(calendarMiniCursor.getFullYear(),calendarMiniCursor.getMonth()-1,1); renderCalendarMini(); };
     document.getElementById('calendar-mini-next').onclick = () => { calendarMiniCursor = new Date(calendarMiniCursor.getFullYear(),calendarMiniCursor.getMonth()+1,1); renderCalendarMini(); };
-    ['calendar-event-modal','calendar-settings-modal','calendar-canceladas-modal'].forEach(id => document.getElementById(id).onclick = click => { if (click.target.id === id) click.currentTarget.classList.remove('open'); });
+    ['calendar-event-modal','calendar-settings-modal'].forEach(id => document.getElementById(id).onclick = click => { if (click.target.id === id) click.currentTarget.classList.remove('open'); });
 
     // ── POPOVER RÁPIDO ─────────────────────────────────────────────────────
     // Clicar num compromisso (ou soltar o arrasto) abre este cartão pequeno:
@@ -3069,6 +3073,7 @@
       { type:'personal',  label:'Particular' },
       { type:'blocked',   label:'Horário bloqueado' },
       { type:'reposicao', label:'Reposição' },
+      { type:'experimental', label:'Aula experimental' },
     ];
     let calendarPopDraft = null;
     let calendarSelectionGhost = null; // bloco arrastado que fica marcado enquanto o popover está aberto
@@ -3124,8 +3129,20 @@
     }
     function renderCalendarPopDays() { renderCalendarDayChips('calendar-pop-days', 'calendar-pop-repeat', calendarPopDraft); }
 
-    // Reposição, aluno e repetição andam juntos: reposição é de um dia só e
-    // sempre tem dono. Deixar isso num lugar só evita os três se desencontrarem.
+    // Só aula de aluno volta sozinha toda semana. Reposição e aula experimental
+    // são de um dia, então a repetição fica travada. Particular e bloqueado
+    // NASCEM sem repetir mas continuam editáveis: a agenda já tem particular
+    // semanal (a Sofia), e travar apagaria a série na primeira edição.
+    const TIPOS_SEM_REPETICAO = ['reposicao', 'experimental'];
+
+    document.getElementById('calendar-pop-tipo').onchange = evento => {
+      if (!calendarPopDraft) return;
+      calendarPopDraft.type = evento.target.value;
+      document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle(calendarPopDraft.type);
+      if (!calendarPopDraft.id && calendarPopDraft.type !== 'lesson') document.getElementById('calendar-pop-repeat').value = 'none';
+      sincronizarReposicao(); renderCalendarPopColors(); renderCalendarPopPalette(); renderCalendarPopDays();
+    };
+
     function sincronizarReposicao() {
       if (!calendarPopDraft) return;
       const ehReposicao = calendarPopDraft.type === 'reposicao';
@@ -3139,11 +3156,12 @@
       const aulaOcupada = Boolean(calendarPopDraft.id && ehAula
         && !calendarCancelada(calendarPopDraft, calendarPopDraft.ocorrencia));
       botao.style.display = aulaOcupada ? 'none' : 'block';
-      // Reposição não tem dono: ele escreve no título de quem é.
+      // Reposição e aula experimental não têm dono: ele escreve no título.
       document.getElementById('calendar-pop-student-row').style.display = ehAula ? 'grid' : 'none';
+      document.getElementById('calendar-pop-tipo').value = calendarPopDraft.type;
       const campoRepeticao = document.getElementById('calendar-pop-repeat');
-      campoRepeticao.disabled = ehReposicao;
-      if (ehReposicao) campoRepeticao.value = 'none';
+      campoRepeticao.disabled = TIPOS_SEM_REPETICAO.includes(calendarPopDraft.type);
+      if (campoRepeticao.disabled) campoRepeticao.value = 'none';
     }
 
     document.getElementById('calendar-pop-reposicao').onclick = () => {
@@ -3154,12 +3172,9 @@
       // livre. Sem isto, salvar converteria a série inteira em reposição.
       if (calendarPopDraft.type !== 'reposicao' && calendarPopDraft.id) {
         const dia = calendarPopDraft.ocorrencia || calendarPopDraft.date;
-        const janela = calendarPopDraft.janela;
-        const inicio = janela ? janela.startTime : document.getElementById('calendar-pop-start').value;
-        const fim = janela ? janela.endTime : document.getElementById('calendar-pop-end').value;
+        const inicio = document.getElementById('calendar-pop-start').value;
+        const fim = document.getElementById('calendar-pop-end').value;
         calendarPopDraft = { type:'reposicao', ocorrencia:dia, date:dia, startTime:inicio, endTime:fim, repeat:'none' };
-        document.getElementById('calendar-pop-start').value = inicio;
-        document.getElementById('calendar-pop-end').value = fim;
         document.getElementById('calendar-pop-title').value = '';
         document.getElementById('calendar-pop-delete').style.display = 'none';
         document.getElementById('calendar-pop-cancelar').style.display = 'none';
@@ -3196,9 +3211,16 @@
     // mesmo que event.date (a primeira aula). Sem isso não dá para cancelar
     // só a aula de hoje sem derrubar as das outras semanas.
     function openCalendarPop(event = {}, anchor = null, ocorrencia = '', janela = null) {
-      // `janela` é a hora em que ele clicou dentro de um bloco longo. O cartão
-      // segue mostrando a faixa inteira, para editar e excluir continuarem
-      // valendo para ela; a reposição é que nasce só naquela hora.
+      // Tocou numa tira de hora dentro de um bloco de horário livre: o cartão é
+      // de um compromisso NOVO daquela hora, e não a edição do bloco inteiro —
+      // mostrar 10:30–15:00 quando ele clicou nas 12:30 não ajudava ninguém. O
+      // bloco livre embaixo continua inteiro; ele só sai da frente naquela hora,
+      // quando algo passa a ocupá-la.
+      if (janela) {
+        const dia = ocorrencia || event.date || '';
+        event = { type:'reposicao', date:dia, startTime:janela.startTime, endTime:janela.endTime, repeat:'none' };
+        ocorrencia = dia;
+      }
       calendarPopDraft = { type:'lesson', ...event, ocorrencia:ocorrencia || event.date || '', janela };
       document.getElementById('calendar-pop-title').value = event.title || '';
       document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle(calendarPopDraft.type);
@@ -3248,7 +3270,7 @@
       const comAluno = type === 'lesson';
       const uidEscolhido = comAluno ? (document.getElementById('calendar-pop-student').value || calendarPopDraft.studentUid || '') : '';
       const student = allStudents.find(item => item.uid === uidEscolhido);
-      const repeat = type === 'reposicao' ? 'none' : document.getElementById('calendar-pop-repeat').value;
+      const repeat = TIPOS_SEM_REPETICAO.includes(type) ? 'none' : document.getElementById('calendar-pop-repeat').value;
       const repeatDays = repeat === 'custom' ? (calendarPopDraft.repeatDays || []).map(Number) : [];
       if (repeat === 'custom' && !repeatDays.length) return calendarPopFail('Escolha pelo menos um dia da semana.');
       const payload = {
@@ -3299,7 +3321,11 @@
         const vistos = new Map(), repetidas = [];
         snap.docs.forEach(item => {
           const dado = item.data();
-          const chave = [dado.studentUid, dado.date, dado.startTime, dado.endTime, dado.repeat || 'none'].join('|');
+          // Serie semanal criada em semanas diferentes tem `date` diferente e
+          // mesmo assim cai na mesma terca. Compara pelo DIA DA SEMANA.
+          const repete = dado.repeat && dado.repeat !== 'none';
+          const quando = repete ? `d${new Date(`${dado.date}T00:00:00`).getDay()}` : dado.date;
+          const chave = [dado.studentUid, quando, dado.startTime, dado.endTime, dado.repeat || 'none'].join('|');
           if (vistos.has(chave)) repetidas.push({ ref:item.ref, nome:dado.studentName || dado.title || 'Aula', hora:`${dado.startTime}–${dado.endTime}` });
           else vistos.set(chave, true);
         });
@@ -3312,47 +3338,6 @@
       } catch (error) { showMsg('calendar-settings-msg', `Erro: ${error.message}`, 'err'); }
       finally { botao.disabled = false; }
     };
-
-    // O histórico não precisa de coleção nova: cada cancelamento já é uma data
-    // na lista de exceções do próprio compromisso. Basta juntar tudo.
-    function cancelamentosDoAno(ano) {
-      const linhas = [];
-      calendarEvents.forEach(evento => (evento.canceladas || []).forEach(dia => {
-        if (!String(dia).startsWith(String(ano))) return;
-        linhas.push({ dia, quem:evento.studentName || evento.title || 'Compromisso',
-          hora:`${evento.startTime}–${evento.endTime}` });
-      }));
-      return linhas.sort((a, b) => b.dia.localeCompare(a.dia));
-    }
-
-    function renderCancelamentos() {
-      const ano = document.getElementById('calendar-canceladas-ano').value;
-      const linhas = cancelamentosDoAno(ano), corpo = document.getElementById('calendar-canceladas-body');
-      if (!linhas.length) { corpo.innerHTML = `<p style="color:var(--muted);font-size:.85rem;">Nenhuma aula cancelada em ${esc(ano)}.</p>`; return; }
-      const porAluno = new Map();
-      linhas.forEach(linha => porAluno.set(linha.quem, (porAluno.get(linha.quem) || 0) + 1));
-      const ranking = [...porAluno.entries()].sort((a, b) => b[1] - a[1]);
-      corpo.innerHTML = `<div style="padding:13px 15px;border-radius:12px;background:#FEF2F2;border:1px solid #FCA5A5;color:#991B1B;font-weight:800;margin-bottom:14px;">
-          ${linhas.length} aula(s) cancelada(s) em ${esc(ano)}
-        </div>
-        <div style="font-size:.72rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:7px;">Por aluno</div>
-        <div style="display:grid;gap:5px;margin-bottom:16px;">${ranking.map(([quem, quantas]) =>
-          `<div style="display:flex;gap:10px;padding:8px 11px;border:1px solid var(--border);border-radius:9px;font-size:.86rem;"><span style="flex:1;min-width:0;">${esc(quem)}</span><strong>${quantas}</strong></div>`).join('')}</div>
-        <div style="font-size:.72rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:7px;">Uma a uma</div>
-        <div style="display:grid;gap:4px;max-height:280px;overflow:auto;">${linhas.map(linha =>
-          `<div style="display:flex;gap:10px;padding:7px 11px;font-size:.84rem;border-bottom:1px solid var(--border);"><span style="width:86px;flex:none;color:var(--muted);">${linha.dia.split('-').reverse().join('/')}</span><span style="flex:1;min-width:0;">${esc(linha.quem)}</span><span style="color:var(--muted);white-space:nowrap;">${esc(linha.hora)}</span></div>`).join('')}</div>`;
-    }
-
-    document.getElementById('calendar-canceladas-open').onclick = () => {
-      const anos = new Set([String(new Date().getFullYear())]);
-      calendarEvents.forEach(evento => (evento.canceladas || []).forEach(dia => anos.add(String(dia).slice(0, 4))));
-      const seletor = document.getElementById('calendar-canceladas-ano');
-      seletor.innerHTML = [...anos].sort().reverse().map(ano => `<option value="${ano}">${ano}</option>`).join('');
-      renderCancelamentos();
-      document.getElementById('calendar-canceladas-modal').classList.add('open');
-    };
-    document.getElementById('calendar-canceladas-ano').onchange = renderCancelamentos;
-    document.getElementById('calendar-canceladas-close').onclick = () => document.getElementById('calendar-canceladas-modal').classList.remove('open');
 
     document.getElementById('calendar-pop-close').onclick = () => { closeCalendarPop(); clearCalendarSelection(); };
     document.getElementById('calendar-pop-save').onclick = saveCalendarPop;
@@ -3558,14 +3543,23 @@
       return calendarWeekStartDate(base);
     }
 
+    // Mesmo aluno, mesmo dia, mesmo horario: conta uma vez so. A agenda pode ter
+    // a serie repetida (defeito antigo do sincronismo), e o financeiro nao pode
+    // dobrar as horas por causa disso -- nem depender de faxina manual.
+    function financeMinutosDoDia(date) {
+      const contados=new Set(); let minutes=0;
+      financeCalendarEvents.filter(event=>event.type==='lesson'&&financeLessonOccursOn(event,date)).forEach(event=> {
+        const chave=[event.studentUid||event.title||'',event.startTime,event.endTime].join('|');
+        if(contados.has(chave)) return;
+        contados.add(chave);
+        minutes+=Math.max(0,calendarMinutes(event.endTime)-calendarMinutes(event.startTime));
+      });
+      return minutes;
+    }
+
     function financeHoursForWeek(month) {
       const inicio=financeWeekStartFor(month); let minutes=0;
-      for(let index=0;index<7;index+=1) {
-        const date=calendarAddDays(inicio,index);
-        financeCalendarEvents.filter(event=>event.type==='lesson'&&financeLessonOccursOn(event,date)).forEach(event=> {
-          minutes+=Math.max(0,calendarMinutes(event.endTime)-calendarMinutes(event.startTime));
-        });
-      }
+      for(let index=0;index<7;index+=1) minutes+=financeMinutosDoDia(calendarAddDays(inicio,index));
       return Math.round(minutes/6)/10;
     }
 
@@ -3594,11 +3588,7 @@
       const cutoff=until&&until<end?until:end;
       if(start>cutoff) return 0;
       let minutes=0;
-      for(let date=new Date(start);date<=cutoff;date=calendarAddDays(date,1)) {
-        financeCalendarEvents.filter(event=>event.type==='lesson'&&financeLessonOccursOn(event,date)).forEach(event=> {
-          minutes+=Math.max(0,calendarMinutes(event.endTime)-calendarMinutes(event.startTime));
-        });
-      }
+      for(let date=new Date(start);date<=cutoff;date=calendarAddDays(date,1)) minutes+=financeMinutosDoDia(date);
       return Math.round(minutes/6)/10;
     }
 
