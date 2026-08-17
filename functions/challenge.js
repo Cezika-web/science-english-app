@@ -24,23 +24,38 @@ const PERSONALIZED_CHALLENGE_SCHEMA = {
   },
   $defs:{ question:{
     type:'object', additionalProperties:false,
-    required:['id','prompt','context','hint','focus','topic','options','correctOption','expected','explanation'],
+    required:['id','format','prompt','context','hint','focus','topic','options','correctOption','acceptedAnswers','expected','explanation'],
     properties:{
-      id:{ type:'string' }, prompt:{ type:'string' }, context:{ type:'string' }, hint:{ type:'string' },
+      id:{ type:'string' },
+      format:{ type:'string', enum:['multipleChoice','trueFalse','text'] },
+      prompt:{ type:'string' }, context:{ type:'string' }, hint:{ type:'string' },
       focus:{ type:'string', enum:['weak','strong'] }, topic:{ type:'string' },
       options:{ type:'array', items:{
         type:'object', additionalProperties:false, required:['id','text'],
         properties:{ id:{ type:'string', enum:['a','b','c','d'] }, text:{ type:'string' } },
       } },
-      correctOption:{ type:'string', enum:['a','b','c','d'] }, expected:{ type:'string' }, explanation:{ type:'string' },
+      correctOption:{ type:'string' },
+      acceptedAnswers:{ type:'array', items:{ type:'string' } },
+      expected:{ type:'string' }, explanation:{ type:'string' },
     },
   } },
 };
 
+// O formato é a alavanca de dificuldade: escolher deixa acertar por eliminação,
+// escrever exige recuperação ativa. Quem passou da metade dos pontos na semana
+// anterior escreve as cinco; quem ficou abaixo — ou não tem semana anterior —
+// ganha um verdadeiro/falso e uma múltipla escolha de apoio.
+const FORMAT_THRESHOLD = 500;
+const FORMAT_MIX = {
+  escrita:{ text:5, trueFalse:0, multipleChoice:0 },
+  assistido:{ text:3, trueFalse:1, multipleChoice:1 },
+};
+const OPTION_COUNT = { multipleChoice:4, trueFalse:2 };
+
 // Uma pergunta só, para quando o César troca um item da rodada sem refazer a parte.
 const SINGLE_QUESTION_SCHEMA = {
   type:'object', additionalProperties:false,
-  required:['prompt','context','hint','focus','topic','options','correctOption','expected','explanation'],
+  required:['prompt','context','hint','focus','topic','options','correctOption','acceptedAnswers','expected','explanation'],
   properties:{
     prompt:{ type:'string' }, context:{ type:'string' }, hint:{ type:'string' },
     focus:{ type:'string', enum:['weak','strong'] }, topic:{ type:'string' },
@@ -48,9 +63,28 @@ const SINGLE_QUESTION_SCHEMA = {
       type:'object', additionalProperties:false, required:['id','text'],
       properties:{ id:{ type:'string', enum:['a','b','c','d'] }, text:{ type:'string' } },
     } },
-    correctOption:{ type:'string', enum:['a','b','c','d'] },
+    correctOption:{ type:'string' },
+    acceptedAnswers:{ type:'array', items:{ type:'string' } },
     expected:{ type:'string' }, explanation:{ type:'string' },
   },
+};
+
+// A troca de uma pergunta tem de sair no mesmo formato da que saiu, senão o mix
+// da parte (3 escritas + 1 V/F + 1 múltipla, ou 5 escritas) se desfaz.
+function formatOf(question) {
+  if (question?.type === 'text') return 'text';
+  return (question?.options || []).length === 2 ? 'trueFalse' : 'multipleChoice';
+}
+
+const FORMAT_RULES = {
+  text:'Resposta escrita: o aluno digita. Deixe options vazio e correctOption vazio, e preencha acceptedAnswers '
+    + 'com TODAS as formas corretas de escrever a resposta. Mínimo de 3 palavras, nunca uma palavra só, e curta o '
+    + 'suficiente para ser digitada em 45 segundos no celular. A pergunta precisa admitir uma única construção '
+    + 'natural, porque a correção compara texto — maiúscula, acento e pontuação são ignorados.',
+  trueFalse:'Verdadeiro ou falso: exatamente duas alternativas, {"id":"a","text":"True"} e {"id":"b","text":"False"}, '
+    + 'correctOption com a letra certa e acceptedAnswers vazio.',
+  multipleChoice:'Múltipla escolha com quatro alternativas plausíveis (a, b, c, d), correctOption com a letra certa '
+    + 'e acceptedAnswers vazio.',
 };
 
 function localDateParts(date = new Date()) {
@@ -178,6 +212,7 @@ function scoreAnswers(publicQuestions, keys, answers) {
     return {
       questionId:question.id, prompt:question.prompt, context:question.context || '',
       answer:selectedOption, expected:key.expected || '', explanation:key.explanation || '',
+      type:question.type, ...(key.topic ? { topic:key.topic } : {}),
       score:correct ? 100 : 0, correct,
     };
   });
@@ -216,6 +251,25 @@ function assertFocusMix(questions, part) {
   if (weak !== 3 || strong !== 2) {
     throw new Error(`A Parte ${part} precisa ter exatamente 3 perguntas de pontos fracos e 2 de pontos fortes.`);
   }
+}
+
+function assertFormatMix(questions, part, nivel) {
+  const alvo = FORMAT_MIX[nivel] || FORMAT_MIX.assistido;
+  const conta = formato => questions.filter(question => question.format === formato).length;
+  if (Object.entries(alvo).some(([formato, quantidade]) => conta(formato) !== quantidade)) {
+    throw new Error(`A Parte ${part} precisa de ${alvo.text} escrita(s), `
+      + `${alvo.trueFalse} verdadeiro/falso e ${alvo.multipleChoice} múltipla escolha — `
+      + `veio ${conta('text')}/${conta('trueFalse')}/${conta('multipleChoice')}.`);
+  }
+  questions.forEach((question, index) => {
+    const esperado = OPTION_COUNT[question.format];
+    if (esperado && (!Array.isArray(question.options) || question.options.length !== esperado)) {
+      throw new Error(`A pergunta ${index + 1} da Parte ${part} (${question.format}) precisa de ${esperado} alternativas.`);
+    }
+    if (question.format === 'text' && !(Array.isArray(question.acceptedAnswers) && question.acceptedAnswers.length)) {
+      throw new Error(`A pergunta ${index + 1} da Parte ${part} é escrita e veio sem respostas aceitas.`);
+    }
+  });
 }
 
 export function createChallengeFunctions({
@@ -363,6 +417,9 @@ export function createChallengeFunctions({
     const student = studentDoc.data();
     const anterior = await previousWeekPerformance(studentDoc.id, weekKey);
     const input = await personalizationInput(studentDoc);
+    // Sem semana anterior o aluno cai no mix assistido: pode ser alguém que
+    // acabou de entrar, e não se joga um A1 direto em cinco perguntas escritas.
+    const formato = anterior && Number(anterior.score) >= FORMAT_THRESHOLD ? 'escrita' : 'assistido';
     const isAmorzinho = student.slug === 'amorzinho' || String(student.name || '').toLowerCase() === 'amorzinho';
     const materials = input.posts.length ? input.posts : isAmorzinho ? input.activityMaterials : [];
     const sourceKind = input.posts.length ? 'pós-aulas' : 'atividades recentes da Amorzinho';
@@ -373,7 +430,16 @@ export function createChallengeFunctions({
         `Você cria desafios individuais de inglês para o Science English. Use SOMENTE fatos linguísticos, vocabulário e contextos presentes nos ${sourceKind} fornecidos. ` +
         `A dificuldade deve ser HARD em relação ao nível CEFR do aluno${isAmorzinho ? ' e, para a Amorzinho, especialmente exigente' : ''}: exija aplicação, discriminação de nuances e recuperação ativa, sem ensinar conteúdo novo. ` +
         'Use as correções para identificar padrões reais. Quando não houver correções suficientes, trate conteúdos repetidos ou muito explicados como fragilidades prováveis e deixe isso claro apenas na análise. ' +
-        'Em CADA parte, produza exatamente 3 perguntas focus=weak e 2 focus=strong. Todas devem ser multiple choice com quatro alternativas plausíveis, uma única resposta inequívoca e explicação pedagógica curta. ' +
+        'Em CADA parte, produza exatamente 3 perguntas focus=weak e 2 focus=strong. ' +
+        (formato === 'escrita'
+          ? 'Em CADA parte, todas as 5 perguntas devem ter format="text" — o aluno digita a resposta. '
+          : 'Em CADA parte, o formato é exatamente: 3 perguntas format="text", 1 format="trueFalse" e 1 format="multipleChoice". ') +
+        'Em format="multipleChoice": quatro alternativas plausíveis (a, b, c, d), correctOption com a letra certa, acceptedAnswers vazio. ' +
+        'Em format="trueFalse": exatamente duas alternativas, {"id":"a","text":"True"} e {"id":"b","text":"False"}, correctOption com a letra certa, acceptedAnswers vazio. ' +
+        'Em format="text": options vazio, correctOption vazio, e acceptedAnswers com TODAS as formas corretas de escrever a resposta. ' +
+        'A resposta escrita tem no MÍNIMO 3 palavras — nunca uma palavra só. Deve caber em 45 segundos digitando no celular: uma oração curta, não um parágrafo nem redação. ' +
+        'A correção é automática e compara texto, então a pergunta precisa admitir uma única construção natural — sem margem para sinônimo ou ordem diferente. Em acceptedAnswers liste EXAUSTIVAMENTE toda variação válida: contração e forma completa ("don\'t" e "do not"), grafia americana e britânica, e as alternâncias de palavra que um aluno correto poderia escrever. Se a pergunta admitir muitas respostas certas diferentes, reformule para fechar o alvo. Maiúscula, acento e pontuação são ignorados na correção, então não dependa deles. ' +
+        'Em todos os formatos: uma única resposta inequívoca e explicação pedagógica curta. ' +
         'Quando houver resultado da semana anterior, calibre por ele: acima de 80% dos pontos, suba a dificuldade de forma perceptível (nuance mais fina, distratores mais próximos); abaixo de 40%, mantenha exigente mas alcançável. Os erros da semana passada são pista forte de fragilidade — cubra o mesmo ponto gramatical com contexto novo, nunca repetindo a pergunta. ' +
         'Não copie exercícios literalmente. Não mencione ao aluno que um item é fraqueza ou força.' }],
       output_config:{ format:{ type:'json_schema', schema:PERSONALIZED_CHALLENGE_SCHEMA } },
@@ -393,12 +459,13 @@ export function createChallengeFunctions({
     const prepared = [generated.part1, generated.part2].map((questions, partIndex) => {
       if (!Array.isArray(questions) || questions.length !== 5) throw new Error(`Parte ${partIndex + 1} incompleta.`);
       const normalized = questions.map((question, index) => ({
-        ...question, id:`p${partIndex + 1}q${index + 1}`, type:'multipleChoice',
+        ...question, id:`p${partIndex + 1}q${index + 1}`,
+        // trueFalse é múltipla escolha de duas alternativas — nem o app do aluno
+        // nem a correção precisam de um terceiro caminho para ele.
+        type:question.format === 'text' ? 'text' : 'multipleChoice',
       }));
       assertFocusMix(normalized, partIndex + 1);
-      if (normalized.some(question => !Array.isArray(question.options) || question.options.length !== 4)) {
-        throw new Error(`A Parte ${partIndex + 1} precisa ter quatro alternativas por pergunta.`);
-      }
+      assertFormatMix(normalized, partIndex + 1, formato);
       const checked = normalized.map(validateQuestion);
       return { questions:checked.map(item => item.publicQuestion), keys:checked.map(item => item.answerKey) };
     });
@@ -1004,32 +1071,73 @@ export function createChallengeFunctions({
         loadSeason(),
       ]);
 
+      // O tema de cada pergunta mora no gabarito, não no resultado gravado. Sem
+      // ele não dá para somar o erro da turma: com rodada personalizada cada
+      // aluno vê uma frase diferente do mesmo assunto, e o assunto é a pauta.
+      const gabaritos = new Map();
+      await Promise.all(resultSnaps.docs.map(async doc => {
+        const { roundId, uid } = doc.data();
+        if (!roundId) return;
+        const [pessoal, geral] = await Promise.all([
+          db.doc(`_challengeAnswerKeys/${roundId}_${uid}`).get(),
+          db.doc(`_challengeAnswerKeys/${roundId}`).get(),
+        ]);
+        const respostas = (pessoal.exists ? pessoal : geral).data()?.answers || [];
+        gabaritos.set(doc.id, new Map(respostas.map(resposta => [resposta.id, resposta])));
+      }));
+
       const perguntas = new Map();
+      const temas = new Map();
       const alunos = new Map();
       resultSnaps.docs.forEach(doc => {
         const resultado = doc.data();
+        const gabarito = gabaritos.get(doc.id) || new Map();
+        const quem = resultado.studentName || 'Aluno';
         const aluno = alunos.get(resultado.uid) || {
-          uid:resultado.uid, name:resultado.studentName || 'Aluno', score:0, partes:0, acertos:0, erros:0 };
+          uid:resultado.uid, name:quem, score:0, partes:0, acertos:0, erros:0 };
         aluno.score += Number(resultado.score || 0);
         aluno.partes += 1;
         (resultado.details || []).forEach(item => {
+          const chaveItem = gabarito.get(item.questionId) || {};
+          const tema = String(item.topic || chaveItem.topic || '').trim();
           if (item.correct) aluno.acertos += 1; else aluno.erros += 1;
-          const chave = `${resultado.part}:${item.questionId || item.prompt}`;
+
+          // Agrupa pelo enunciado, não pelo id. Rodada personalizada dá o mesmo
+          // id (p1q1) para perguntas diferentes, então agrupar por id juntava
+          // quem errou uma coisa com quem acertou outra, na mesma linha.
+          const chave = `${resultado.part}|${normalizeAnswer(item.prompt)}|${normalizeAnswer(item.context || '')}`;
           const pergunta = perguntas.get(chave) || { part:resultado.part, prompt:item.prompt,
-            context:item.context || '', expected:item.expected || '', acertos:0, erros:0, quemErrou:[] };
-          if (item.correct) pergunta.acertos += 1;
-          else { pergunta.erros += 1; pergunta.quemErrou.push(resultado.studentName || 'Aluno'); }
+            context:item.context || '', expected:item.expected || '',
+            explanation:item.explanation || chaveItem.explanation || '', tema,
+            acertos:0, erros:0, respostas:[] };
+          if (item.correct) pergunta.acertos += 1; else pergunta.erros += 1;
+          pergunta.respostas.push({ aluno:quem, resposta:String(item.answer || '').trim(), acertou:item.correct === true });
           perguntas.set(chave, pergunta);
+
+          if (!tema) return;
+          const linha = temas.get(tema) || { tema, acertos:0, erros:0, quemErrou:[] };
+          if (item.correct) linha.acertos += 1;
+          else { linha.erros += 1; if (!linha.quemErrou.includes(quem)) linha.quemErrou.push(quem); }
+          temas.set(tema, linha);
         });
         alunos.set(resultado.uid, aluno);
       });
+
+      // Dentro da pergunta, quem errou primeiro: é o que o professor procura.
+      const comRespostasEmOrdem = pergunta => ({ ...pergunta,
+        respostas:pergunta.respostas.sort((a, b) => a.acertou === b.acertou
+          ? a.aluno.localeCompare(b.aluno, 'pt-BR') : (a.acertou ? 1 : -1)) });
 
       return {
         weekKey,
         revelado:rankingSnap.exists,
         ranking:(rankingSnap.data()?.ranking || []),
         alunos:[...alunos.values()].sort((a, b) => b.score - a.score),
-        perguntas:[...perguntas.values()].sort((a, b) => b.erros - a.erros || a.part - b.part),
+        perguntas:[...perguntas.values()].map(comRespostasEmOrdem)
+          .sort((a, b) => b.erros - a.erros || a.part - b.part),
+        temas:[...temas.values()].sort((a, b) => b.erros - a.erros
+          || (b.erros + b.acertos) - (a.erros + a.acertos)
+          || a.tema.localeCompare(b.tema, 'pt-BR')),
         temporada:season.geral.map(row => ({ name:row.name, total:row.total,
           semanas:row.semanas, position:row.position })),
       };
@@ -1115,6 +1223,7 @@ export function createChallengeFunctions({
       if (index < 0) throw new HttpsError('not-found', 'Pergunta não encontrada nesta rodada.');
       const chaves = keySnap.data()?.answers || [];
       const chaveAtual = chaves.find(answer => answer.id === questionId) || {};
+      const formatoOriginal = formatOf(questions[index]);
 
       const input = await personalizationInput(studentDoc);
       const materials = input.posts.length ? input.posts : input.activityMaterials;
@@ -1126,7 +1235,7 @@ export function createChallengeFunctions({
         model, max_tokens:2000,
         system:[{ type:'text', text:
           'Você reescreve UMA pergunta de um desafio de inglês. Use somente fatos linguísticos, vocabulário e contextos presentes nos materiais fornecidos. ' +
-          'Múltipla escolha com quatro alternativas plausíveis, uma única resposta inequívoca e explicação pedagógica curta em português. ' +
+          `${FORMAT_RULES[formatoOriginal]} Uma única resposta inequívoca e explicação pedagógica curta em português. ` +
           'A nova pergunta não pode repetir a que está sendo trocada nem nenhuma das outras da rodada. ' +
           'Mantenha o mesmo grau de dificuldade e o mesmo foco da original, a menos que o professor peça outra coisa.' }],
         output_config:{ format:{ type:'json_schema', schema:SINGLE_QUESTION_SCHEMA } },
@@ -1142,7 +1251,7 @@ export function createChallengeFunctions({
       const text = response.content.find(block => block.type === 'text')?.text;
       if (!text) throw new HttpsError('internal', 'A IA não devolveu a pergunta.');
       const { publicQuestion, answerKey } = validateQuestion(
-        { ...JSON.parse(text), id:questionId, type:'multipleChoice' }, index);
+        { ...JSON.parse(text), id:questionId, type:formatoOriginal === 'text' ? 'text' : 'multipleChoice' }, index);
 
       const batch = db.batch();
       batch.set(roundRef, {
@@ -1177,4 +1286,5 @@ export function createChallengeFunctions({
 export const challengeInternals = Object.freeze({
   localDateParts, addDays, weekKeyFor, nextMonday, scheduleFor, stageFor,
   normalizeAnswer, validateQuestion, scoreAnswers, dateFrom, assertFocusMix,
+  assertFormatMix, formatOf, FORMAT_MIX, FORMAT_THRESHOLD,
 });

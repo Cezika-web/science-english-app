@@ -820,8 +820,6 @@
               <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#64748b"></span> Horário bloqueado</div>
             </div>
             <button class="calendar-settings-btn" id="calendar-settings-open" type="button">⚙ Configurar expediente</button>
-            <button class="calendar-settings-btn" id="calendar-sync-students" type="button" style="margin-top:8px;">👥 Preencher com as aulas dos alunos</button>
-            <button class="calendar-settings-btn" id="calendar-import-open" type="button" style="margin-top:8px;">⬇ Trazer meus blocos do Notion</button>
           </aside>
           <section class="calendar-main">
             <div class="calendar-toolbar">
@@ -1656,24 +1654,6 @@
     </div>
     <div class="calendar-pop-msg" id="calendar-pop-msg"></div>
     <button class="calendar-pop-more" id="calendar-pop-more" type="button">mais opções (aluno, observações…)</button>
-  </div>
-
-  <div class="modal-overlay" id="calendar-import-modal">
-    <div class="modal" style="max-width:560px;">
-      <div class="modal-header">
-        <h2>Trazer a agenda do Notion</h2>
-        <button class="btn-close" id="calendar-import-close" type="button">×</button>
-      </div>
-      <div class="modal-body">
-        <p style="margin:0 0 14px;color:var(--muted);font-size:.82rem;line-height:1.5;">Sua semana do Notion Calendar já está montada aqui. Tudo entra como compromisso <strong>semanal</strong>, então vale para esta semana e para as seguintes — é só ajustar depois o que mudar.</p>
-        <div id="calendar-import-preview" style="max-height:250px;overflow:auto;border:1px solid var(--border);border-radius:11px;padding:11px 13px;background:#fafbfc;font-size:.76rem;line-height:1.55;"></div>
-        <label style="display:flex;align-items:center;gap:9px;font-size:.82rem;margin-top:14px;"><input id="calendar-import-available" type="checkbox" checked> Trazer também os blocos de <strong>horário disponível</strong></label>
-        <label style="display:flex;align-items:center;gap:9px;font-size:.82rem;margin-top:8px;"><input id="calendar-import-settings" type="checkbox" checked> Ajustar o expediente para 07:00–22:00, de segunda a sábado</label>
-        <label style="display:flex;align-items:center;gap:9px;font-size:.82rem;margin-top:8px;color:#b91c1c;"><input id="calendar-import-replace" type="checkbox"> Apagar os <span id="calendar-import-count">0</span> compromissos que já existem antes de importar</label>
-        <div class="form-msg" id="calendar-import-msg"></div>
-        <button class="btn-add" id="calendar-import-run" type="button" style="width:100%;margin-top:18px;">Importar agenda</button>
-      </div>
-    </div>
   </div>
 
   <div class="modal-overlay" id="finance-profile-modal">
@@ -2864,7 +2844,7 @@
     document.getElementById('calendar-today').onclick = () => { const today = new Date(); calendarWeekStart = calendarWeekStartDate(today); calendarSelectedDay = calendarDateKey(today); calendarMiniCursor = new Date(today.getFullYear(),today.getMonth(),1); renderCalendar(); };
     document.getElementById('calendar-mini-prev').onclick = () => { calendarMiniCursor = new Date(calendarMiniCursor.getFullYear(),calendarMiniCursor.getMonth()-1,1); renderCalendarMini(); };
     document.getElementById('calendar-mini-next').onclick = () => { calendarMiniCursor = new Date(calendarMiniCursor.getFullYear(),calendarMiniCursor.getMonth()+1,1); renderCalendarMini(); };
-    ['calendar-event-modal','calendar-settings-modal','calendar-import-modal'].forEach(id => document.getElementById(id).onclick = click => { if (click.target.id === id) click.currentTarget.classList.remove('open'); });
+    ['calendar-event-modal','calendar-settings-modal'].forEach(id => document.getElementById(id).onclick = click => { if (click.target.id === id) click.currentTarget.classList.remove('open'); });
 
     // ── POPOVER RÁPIDO ─────────────────────────────────────────────────────
     // Clicar num compromisso (ou soltar o arrasto) abre este cartão pequeno:
@@ -3061,152 +3041,24 @@
       }));
     }
 
+    // As aulas antigas vêm do banco, não da lista em memória: isto também roda
+    // a partir da aba Alunos, onde a agenda pode nunca ter sido carregada — e aí
+    // apagar pela lista em memória não apagaria nada e duplicaria a série.
     async function syncStudentLessons(students, replace = true) {
       let total = 0;
       for (const student of students) {
         const events = studentLessonEvents(student);
-        if (!events.length) continue;
+        if (!events.length && !replace) continue;
         if (replace) {
-          const previous = calendarEvents.filter(item => item.source === 'cadastro' && item.studentUid === student.uid);
-          await Promise.all(previous.map(item => deleteDoc(doc(db,'schools',escolaAtual,'calendarEvents',item.id))));
+          const antigas = await getDocs(query(collection(db,'schools',escolaAtual,'calendarEvents'),
+            where('source','==','cadastro'), where('studentUid','==',student.uid)));
+          await Promise.all(antigas.docs.map(item => deleteDoc(item.ref)));
         }
         await Promise.all(events.map(event => addDoc(collection(db,'schools',escolaAtual,'calendarEvents'),
           { ...event, createdAt:serverTimestamp(), createdBy:auth.currentUser?.email || '', updatedAt:serverTimestamp() })));
         total += events.length;
       }
       return total;
-    }
-
-    document.getElementById('calendar-sync-students').onclick = async event => {
-      const button = event.currentTarget, active = allStudents.filter(student => !student.archived);
-      const ready = active.filter(student => (student.aulaDias || []).length && student.aulaHora);
-      if (!ready.length) return alert('Nenhum aluno desta escola tem dias e horário de aula no cadastro. Preencha em "Novo Aluno" (ou editando o aluno) que a agenda se monta sozinha.');
-      if (!confirm(`Montar a agenda com as aulas de ${ready.length} aluno(s)? As aulas geradas antes pelo cadastro são refeitas; o que você criou na mão fica intacto.`)) return;
-      button.disabled = true; const label = button.textContent; button.textContent = 'Montando a agenda...';
-      try {
-        const total = await syncStudentLessons(ready);
-        await loadCalendar();
-        alert(`Pronto! ${total} aulas semanais na agenda, de ${ready.length} aluno(s).`);
-      } catch (error) { alert(`Erro ao montar a agenda: ${error.message}`); }
-      finally { button.disabled = false; button.textContent = label; }
-    };
-
-    // ── IMPORTAR A AGENDA DO NOTION CALENDAR ───────────────────────────────
-    // Semana base do César, transcrita do Notion Calendar. Entra como série
-    // semanal: vale para esta semana e para as próximas, é só editar o que mudar.
-    const CALENDAR_IMPORT_TEMPLATE = [
-      { weekday:1, start:'07:00', end:'09:00', type:'available' },
-      { weekday:1, start:'09:00', end:'14:00', type:'personal', title:'Sofia' },
-      { weekday:1, start:'14:00', end:'15:00', type:'available' },
-      { weekday:1, start:'15:00', end:'16:00', type:'lesson', title:'Aula · Fátima', student:'Fátima' },
-      { weekday:1, start:'16:00', end:'17:00', type:'lesson', title:'Aula · Isabelle', student:'Isabelle' },
-      { weekday:1, start:'17:00', end:'18:00', type:'available' },
-      { weekday:1, start:'18:00', end:'19:00', type:'lesson', title:'Aula · Thifany', student:'Thifany' },
-      { weekday:1, start:'19:00', end:'20:00', type:'lesson', title:'Aula · Lucas e Gabriel' },
-      { weekday:1, start:'20:00', end:'21:00', type:'lesson', title:'Aula · Gu', student:'Gu' },
-      { weekday:1, start:'21:00', end:'22:00', type:'lesson', title:'Aula · Felipe', student:'Felipe' },
-
-      { weekday:2, start:'07:00', end:'09:00', type:'available' },
-      { weekday:2, start:'09:00', end:'14:30', type:'personal', title:'Sofia' },
-      { weekday:2, start:'14:30', end:'15:30', type:'lesson', title:'Aula experimental · Joyce', repeat:'none' },
-      { weekday:2, start:'15:30', end:'16:30', type:'lesson', title:'Aula · Lorena', student:'Lorena' },
-      { weekday:2, start:'16:30', end:'17:00', type:'blocked', title:'Deslocamento' },
-      { weekday:2, start:'17:00', end:'19:00', type:'lesson', title:'Aula · Vitor e Karlla' },
-      { weekday:2, start:'19:00', end:'19:15', type:'blocked', title:'Deslocamento' },
-      { weekday:2, start:'19:15', end:'20:15', type:'lesson', title:'Aula · Davi', student:'Davi' },
-      { weekday:2, start:'20:15', end:'21:15', type:'lesson', title:'Aula · Giovanna', student:'Giovanna' },
-      { weekday:2, start:'21:15', end:'22:00', type:'available' },
-
-      { weekday:3, start:'07:00', end:'08:00', type:'available' },
-      { weekday:3, start:'08:00', end:'09:00', type:'lesson', title:'Aula · Máquina', student:'Máquina' },
-      { weekday:3, start:'09:00', end:'14:00', type:'personal', title:'Sofia' },
-      { weekday:3, start:'14:00', end:'15:00', type:'lesson', title:'Aula · Rebeca', student:'Rebeca' },
-      { weekday:3, start:'15:00', end:'16:00', type:'lesson', title:'Aula · Fátima', student:'Fátima' },
-      { weekday:3, start:'16:00', end:'17:00', type:'lesson', title:'Aula · Isabelle', student:'Isabelle' },
-      { weekday:3, start:'17:00', end:'19:00', type:'available' },
-      { weekday:3, start:'19:00', end:'20:00', type:'lesson', title:'Aula · Lucas e Gabriel' },
-      { weekday:3, start:'20:00', end:'21:00', type:'lesson', title:'Aula · Gu', student:'Gu' },
-      { weekday:3, start:'21:00', end:'22:00', type:'lesson', title:'Aula · Felipe', student:'Felipe' },
-
-      { weekday:4, start:'07:00', end:'08:00', type:'available' },
-      { weekday:4, start:'08:00', end:'09:00', type:'lesson', title:'Aula · Douglas', student:'Douglas' },
-      { weekday:4, start:'09:00', end:'14:30', type:'personal', title:'Sofia' },
-      { weekday:4, start:'14:30', end:'15:30', type:'available' },
-      { weekday:4, start:'15:30', end:'16:30', type:'lesson', title:'Aula · Lorena', student:'Lorena' },
-      { weekday:4, start:'16:30', end:'17:00', type:'blocked', title:'Pós-aula' },
-      { weekday:4, start:'17:00', end:'18:00', type:'lesson', title:'Aula · Michelle', student:'Michelle' },
-      { weekday:4, start:'18:00', end:'19:00', type:'available' },
-      { weekday:4, start:'19:00', end:'20:00', type:'lesson', title:'Aula · Anna', student:'Anna' },
-      { weekday:4, start:'20:00', end:'21:00', type:'lesson', title:'Aula · Giovanna', student:'Giovanna' },
-      { weekday:4, start:'21:00', end:'22:00', type:'lesson', title:'Aula · Felipe', student:'Felipe' },
-
-      { weekday:5, start:'07:00', end:'09:00', type:'available' },
-      { weekday:5, start:'09:00', end:'14:00', type:'personal', title:'Sofia' },
-      { weekday:5, start:'14:00', end:'15:00', type:'lesson', title:'Aula · Rebeca', student:'Rebeca' },
-      { weekday:5, start:'15:00', end:'22:00', type:'available' },
-
-      { weekday:6, start:'07:30', end:'08:30', type:'available' },
-      { weekday:6, start:'08:30', end:'09:30', type:'lesson', title:'Aula · Mateus Richter', student:'Mateus Richter' },
-      { weekday:6, start:'09:30', end:'10:30', type:'lesson', title:'Aula · Artur', student:'Artur' },
-      { weekday:6, start:'10:30', end:'15:00', type:'available' },
-      { weekday:6, start:'15:00', end:'16:30', type:'lesson', title:'Aula · Mateus', student:'Mateus Oliveira' },
-      { weekday:6, start:'16:30', end:'17:00', type:'blocked', title:'Pós-aula' },
-      { weekday:6, start:'17:00', end:'18:00', type:'lesson', title:'Aula · Michelle', student:'Michelle' },
-    ];
-
-    function calendarImportTitle(item) { return item.title || calendarDefaultTitle(item.type); }
-
-    function calendarMatchStudent(name) {
-      if (!name) return null;
-      const clean = value => String(value || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();
-      const target = clean(name), pool = allStudents.filter(student => !student.archived), named = student => clean(student.name || student.firstName);
-      return pool.find(student => named(student) === target)
-        || pool.find(student => named(student).split(' ')[0] === target)
-        || pool.find(student => named(student).includes(target))
-        || null;
-    }
-
-    function openCalendarImport() {
-      const weekdayNames = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'], grouped = new Map();
-      CALENDAR_IMPORT_TEMPLATE.forEach(item => { if (!grouped.has(item.weekday)) grouped.set(item.weekday, []); grouped.get(item.weekday).push(item); });
-      document.getElementById('calendar-import-preview').innerHTML = [...grouped.entries()].sort((first, second) => first[0] - second[0]).map(([weekday, items]) =>
-        `<div style="margin-bottom:10px;"><strong style="display:block;color:#334155;margin-bottom:2px;">${weekdayNames[weekday]}</strong>${items.map(item =>
-          `<span style="display:block;color:${item.type === 'available' ? '#c2703f' : item.type === 'lesson' ? '#475569' : '#94a3b8'};">${item.start}–${item.end} · ${esc(calendarImportTitle(item))}</span>`).join('')}</div>`).join('');
-      document.getElementById('calendar-import-count').textContent = String(calendarEvents.length);
-      document.getElementById('calendar-import-replace').checked = false;
-      showMsg('calendar-import-msg','','info'); document.getElementById('calendar-import-modal').classList.add('open');
-    }
-
-    async function runCalendarImport() {
-      if (!escolaAtual) return showMsg('calendar-import-msg','Escolha uma escola antes de importar.','err');
-      const withAvailable = document.getElementById('calendar-import-available').checked;
-      const withSettings = document.getElementById('calendar-import-settings').checked;
-      const replace = document.getElementById('calendar-import-replace').checked;
-      if (replace && calendarEvents.length && !confirm(`Isso apaga os ${calendarEvents.length} compromissos que já estão na agenda. Continuar?`)) return;
-      const items = CALENDAR_IMPORT_TEMPLATE.filter(item => withAvailable || item.type !== 'available');
-      const weekStart = calendarWeekStartDate(new Date()), button = document.getElementById('calendar-import-run');
-      button.disabled = true; showMsg('calendar-import-msg','Importando a agenda...','info');
-      try {
-        if (replace) await Promise.all(calendarEvents.map(event => deleteDoc(doc(db,'schools',escolaAtual,'calendarEvents',event.id))));
-        let linked = 0;
-        await Promise.all(items.map(item => {
-          const student = item.student ? calendarMatchStudent(item.student) : null;
-          if (student) linked += 1;
-          return addDoc(collection(db,'schools',escolaAtual,'calendarEvents'), {
-            type:item.type, studentUid:student?.uid || '', studentName:student ? (student.name || student.firstName || '') : '',
-            title:calendarImportTitle(item), date:calendarDateKey(calendarAddDays(weekStart, item.weekday)),
-            startTime:item.start, endTime:item.end, repeat:item.repeat === 'none' ? 'none' : 'weekly', repeatUntil:'',
-            notes:'', timezone:'America/Sao_Paulo', source:'notion-calendar',
-            createdAt:serverTimestamp(), createdBy:auth.currentUser?.email || '', updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || ''
-          });
-        }));
-        if (withSettings) await setDoc(doc(db,'schools',escolaAtual,'calendarSettings','work'),
-          { workingDays:[1,2,3,4,5,6], dayStart:'07:00', dayEnd:'22:00', slotMinutes:15, timezone:'America/Sao_Paulo', updatedAt:serverTimestamp() }, { merge:true });
-        showMsg('calendar-import-msg',`Pronto! ${items.length} compromissos na agenda, ${linked} aulas já ligadas ao aluno certo.`,'ok');
-        await loadCalendar();
-        setTimeout(() => document.getElementById('calendar-import-modal').classList.remove('open'), 1600);
-      } catch (error) { showMsg('calendar-import-msg',`Erro ao importar: ${error.message}`,'err'); }
-      finally { button.disabled = false; }
     }
 
     // ── COPIAR E COLAR (Ctrl+C / Ctrl+V) ───────────────────────────────────
@@ -3253,10 +3105,6 @@
         key.preventDefault(); closeCalendarPop(); calendarPasteEvent();
       }
     });
-
-    document.getElementById('calendar-import-open').onclick = openCalendarImport;
-    document.getElementById('calendar-import-close').onclick = () => document.getElementById('calendar-import-modal').classList.remove('open');
-    document.getElementById('calendar-import-run').onclick = runCalendarImport;
 
     // ── FINANCEIRO DA ESCOLA ───────────────────────────────────────────────
     let financeProfiles = [];
@@ -5478,6 +5326,11 @@
           inicioCurso: inicio || '',
           photo: editPhoto || '',
         });
+        // Mudou dia ou hora aqui, a agenda tem que acompanhar. Antes isso só
+        // acontecia no botão "Preencher com as aulas dos alunos", que saiu.
+        const anterior = allStudents.find(item => item.uid === uid) || {};
+        await syncStudentLessons([{ uid, name, firstName:name.split(' ')[0],
+          aulaDias:aula.aulaDias, aulaHora:aula.aulaHora, aulaDuracao:anterior.aulaDuracao }]);
         btn.disabled = false; btn.textContent = 'Salvar alterações';
         document.getElementById('edit-modal').classList.remove('open');
         loadStudents();
@@ -6746,18 +6599,42 @@
             <strong>${Number(aluno.score).toLocaleString('pt-BR')}</strong>
           </div>`).join('')}</div>`;
 
+      // Com rodada personalizada cada aluno vê uma frase diferente, então o que
+      // se repete não é a pergunta: é o assunto. Este bloco é a pauta de aula.
+      const temas = !(data.temas || []).length
+        ? '<p style="color:var(--muted);font-size:.84rem;">Os assuntos aparecem conforme os alunos concluem as partes.</p>'
+        : `<div style="display:grid;gap:6px;">${data.temas.map(item => {
+            const total = item.erros + item.acertos, fatia = total ? Math.round(item.erros / total * 100) : 0;
+            return `<div style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:11px;border:1px solid ${fatia >= 50 ? '#FCA5A5' : 'var(--border)'};background:${fatia >= 50 ? '#FEF2F2' : 'var(--card)'};">
+              <span style="width:76px;height:7px;border-radius:5px;background:#F1F5F9;overflow:hidden;flex:none;"><i style="display:block;height:100%;width:${fatia}%;background:#EF4444;"></i></span>
+              <span style="flex:1;min-width:0;font-weight:700;font-size:.93rem;">${esc(item.tema)}</span>
+              <span style="font-size:.78rem;white-space:nowrap;color:${item.erros ? '#92400E' : '#166534'};">${item.erros ? esc(item.quemErrou.join(', ')) : 'ninguém errou'}</span>
+              <span style="font-size:.78rem;color:var(--muted);white-space:nowrap;min-width:104px;text-align:right;">${item.erros} erro(s) · ${item.acertos} acerto(s)</span>
+            </div>`;
+          }).join('')}</div>`;
+
+      const linhaResposta = item => `<div style="display:flex;align-items:center;gap:9px;font-size:.86rem;padding:4px 7px;border-radius:8px;background:${item.acertou ? '#F0FDF4' : '#FEF2F2'};">
+          <span style="width:16px;flex:none;text-align:center;font-weight:900;color:${item.acertou ? '#166534' : '#B91C1C'};">${item.acertou ? '✓' : '✗'}</span>
+          <span style="width:132px;flex:none;font-weight:600;">${esc(item.aluno)}</span>
+          <span style="flex:1;min-width:0;">${item.resposta
+            ? `respondeu <code style="background:#fff;border:1px solid ${item.acertou ? 'var(--border)' : '#FCA5A5'};${item.acertou ? '' : 'color:#991B1B;'}border-radius:6px;padding:1px 7px;font-family:ui-monospace,Menlo,monospace;font-size:.85em;">${esc(item.resposta)}</code>`
+            : '<em style="color:var(--muted);">não respondeu</em>'}</span>
+        </div>`;
+
       const erradas = data.perguntas.filter(item => item.erros > 0);
       const mapa = !erradas.length
         ? '<p style="color:var(--muted);font-size:.84rem;">Nenhum erro registrado ainda.</p>'
-        : erradas.map(item => `<div style="padding:9px 0;border-top:1px solid var(--border);">
+        : erradas.map(item => `<div style="border:1px solid var(--border);border-radius:12px;padding:13px 15px;margin-bottom:9px;">
             <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline;">
-              <span style="font-size:.72rem;font-weight:800;text-transform:uppercase;color:var(--muted);">Parte ${item.part}</span>
+              <span style="font-size:.7rem;font-weight:800;text-transform:uppercase;color:var(--muted);">Parte ${item.part}${item.tema ? ` <em style="font-style:normal;color:#5B21B6;background:#F5F3FF;border-radius:5px;padding:1px 6px;margin-left:5px;">${esc(item.tema)}</em>` : ''}</span>
               <span style="white-space:nowrap;"><strong style="color:#B91C1C;">${item.erros} erro(s)</strong> <small style="color:var(--muted);">· ${item.acertos} acerto(s)</small></span>
             </div>
-            <div style="font-weight:700;margin:3px 0;">${esc(item.prompt)}</div>
-            ${item.context ? `<div style="font-size:.82rem;color:var(--muted);">${esc(item.context)}</div>` : ''}
-            <div style="font-size:.79rem;margin-top:4px;">Resposta certa: <strong style="color:#166534;">${esc(item.expected)}</strong></div>
-            ${item.quemErrou.length ? `<div style="font-size:.76rem;color:#92400E;margin-top:3px;">Errou: ${esc(item.quemErrou.join(', '))}</div>` : ''}
+            <div style="font-weight:700;margin:5px 0 2px;line-height:1.4;">${esc(item.prompt)}</div>
+            ${item.context ? `<div style="font-size:.85rem;color:var(--muted);font-style:italic;margin-bottom:8px;">${esc(item.context)}</div>` : ''}
+            ${(item.respostas || []).length ? `<div style="border-top:1px dashed var(--border);padding-top:8px;display:grid;gap:4px;">${item.respostas.map(linhaResposta).join('')}</div>` : ''}
+            ${!(item.respostas || []).length && (item.quemErrou || []).length ? `<div style="font-size:.79rem;color:#92400E;">Errou: ${esc(item.quemErrou.join(', '))}</div>` : ''}
+            <div style="font-size:.85rem;margin-top:8px;">Resposta certa: <strong style="color:#166534;">${esc(item.expected)}</strong></div>
+            ${item.explanation ? `<div style="margin-top:6px;font-size:.82rem;color:var(--muted);background:#F8FAFC;border-left:3px solid var(--border);padding:6px 10px;border-radius:0 8px 8px 0;line-height:1.45;">${esc(item.explanation)}</div>` : ''}
           </div>`).join('');
 
       const bloco = (titulo, conteudo, extra = '') => `<div style="margin-bottom:20px;">
@@ -6766,7 +6643,8 @@
       </div>`;
 
       return bloco(`Semana de ${esc(data.weekKey)}`, semana, data.revelado ? ' · resultado liberado' : ' · ainda em disputa')
-        + bloco('Erro coletivo — vira pauta de aula', mapa)
+        + bloco('Assuntos que a turma errou — a pauta da próxima aula', temas)
+        + bloco('Pergunta por pergunta — quem errou e o que respondeu', mapa)
         + bloco('Temporada — acumulado desde o começo', data.temporada.length
           ? `<div style="display:grid;gap:5px;">${data.temporada.map(linhaRanking).join('')}</div>`
           : '<p style="color:var(--muted);font-size:.84rem;">A primeira semana ainda não fechou.</p>');
