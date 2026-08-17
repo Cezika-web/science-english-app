@@ -137,6 +137,20 @@ function scheduleFor(weekKey) {
   };
 }
 
+// A rodada da turma usa o MESMO calendário da semanal (mesmas duas partes, mesma
+// abertura e mesmo fechamento) e só muda de identidade. Gravada dentro de cada
+// aluno, ela atravessa `resolveRound`, `iniciarDesafioSemanal` e
+// `responderDesafioSemanal` sem que nada disso precise saber que é de turma.
+function groupScheduleFor(weekKey, groupId) {
+  const base = scheduleFor(weekKey);
+  const marca = parte => `${weekKey}-g-${groupId}-part-${parte}`;
+  return {
+    ...base,
+    part1:{ ...base.part1, roundId:marca(1) },
+    part2:{ ...base.part2, roundId:marca(2) },
+  };
+}
+
 function stageFor(now, schedule) {
   const time = now.getTime();
   if (time < schedule.part1.opensAt.getTime()) return { phase:'upcoming', part:null };
@@ -311,6 +325,9 @@ export function createChallengeFunctions({
     const totals = new Map();
     resultSnaps.docs.forEach(doc => {
       const result = doc.data();
+      // Rodada de turma pontua só dentro da turma: no ranking geral ela daria
+      // vantagem a quem tem dupla, que joga 20 perguntas contra as 10 dos outros.
+      if (result.groupId) return;
       const current = totals.get(result.uid) || {
         uid:result.uid, name:result.studentName || 'Aluno', score:0, partsCompleted:0,
         completedAt:result.completedAt,
@@ -473,6 +490,124 @@ export function createChallengeFunctions({
       sources:materials.map(item => ({ id:item.id, title:item.title, date:item.date })) };
   }
 
+  // Uma rodada por turma, igual para os dois: a graça da dupla é comparar quem
+  // acertou o quê na MESMA pergunta. Sai do material somado dos integrantes e
+  // fica no formato assistido — o desafio da turma é o leve, o duro é o geral.
+  async function generateForGroup(client, grupo, membros, weekKey) {
+    const materiais = [];
+    for (const membro of membros) {
+      const entrada = await personalizationInput(membro);
+      entrada.posts.forEach(post => materiais.push({
+        ...post, title:`${membro.data().firstName || membro.data().name || 'Aluno'} — ${post.title}`,
+      }));
+    }
+    if (!materiais.length) throw new Error('Nenhum pós-aula dos integrantes nos últimos 90 dias.');
+    const nomes = membros.map(item => item.data().firstName || item.data().name || 'Aluno');
+    const response = await client.messages.create({
+      model, max_tokens:12000,
+      system:[{ type:'text', text:
+        `Você cria o desafio de uma turma do Science English: ${nomes.join(' e ')} fazem aula JUNTOS. ` +
+        'Use SOMENTE fatos linguísticos, vocabulário e contextos presentes nos pós-aulas fornecidos, que são das aulas em comum. ' +
+        'As perguntas são as MESMAS para todos os integrantes, então cubra o que a turma viu junto — nada que só um deles tenha estudado. ' +
+        'Em CADA parte, produza exatamente 3 perguntas focus=weak e 2 focus=strong. ' +
+        'Em CADA parte o formato é exatamente: 3 perguntas format="text", 1 format="trueFalse" e 1 format="multipleChoice". ' +
+        FORMAT_RULES.multipleChoice + ' ' + FORMAT_RULES.trueFalse + ' ' + FORMAT_RULES.text + ' ' +
+        'Em todos os formatos: uma única resposta inequívoca e explicação pedagógica curta em português. Não copie exercícios literalmente.' }],
+      output_config:{ format:{ type:'json_schema', schema:PERSONALIZED_CHALLENGE_SCHEMA } },
+      messages:[{ role:'user', content:
+        `Turma: ${grupo.name || nomes.join(' e ')}
+Integrantes: ${nomes.join(', ')}
+Semana: ${weekKey}
+
+` +
+        `PÓS-AULAS DAS AULAS EM COMUM:
+${materiais.map((item, i) => `[${i + 1}] ${item.title} (${item.date || 'sem data'})
+${item.text}`).join('\n\n')}`
+      }],
+    });
+    const text = response.content.find(block => block.type === 'text')?.text;
+    if (!text) throw new Error('A IA não devolveu as perguntas da turma.');
+    const generated = JSON.parse(text);
+    const prepared = [generated.part1, generated.part2].map((questions, partIndex) => {
+      if (!Array.isArray(questions) || questions.length !== 5) throw new Error(`Parte ${partIndex + 1} da turma incompleta.`);
+      const normalized = questions.map((question, index) => ({
+        ...question, id:`g${partIndex + 1}q${index + 1}`,
+        type:question.format === 'text' ? 'text' : 'multipleChoice',
+      }));
+      assertFocusMix(normalized, partIndex + 1);
+      assertFormatMix(normalized, partIndex + 1, 'assistido');
+      const checked = normalized.map(validateQuestion);
+      return { questions:checked.map(item => item.publicQuestion), keys:checked.map(item => item.answerKey) };
+    });
+    return { prepared, analysis:generated.analysis, usage:response.usage,
+      sources:materiais.map(item => ({ id:item.id, title:item.title, date:item.date })) };
+  }
+
+  // A mesma rodada é gravada dentro de CADA integrante. Assim o aluno abre e
+  // responde pelo caminho de sempre, e cada um tem o próprio gabarito e a
+  // própria pontuação — o que muda é que as perguntas são as mesmas.
+  async function publishGroupRounds(client, escolaId, groupId, grupo, { force = false, now = new Date() } = {}) {
+    const membros = (await Promise.all((grupo.memberUids || []).map(uid => db.doc(`students/${uid}`).get())))
+      .filter(snap => snap.exists && snap.data().archived !== true && snap.data().challengeEnabled !== false);
+    if (membros.length < 2) return { skipped:'turma-sem-dois-alunos' };
+
+    const weekKey = weekKeyFor(now);
+    const schedule = groupScheduleFor(weekKey, groupId);
+    const rounds = [schedule.part1, schedule.part2].filter(item => item.closesAt.getTime() >= now.getTime());
+    if (!rounds.length) return { skipped:'semana-encerrada' };
+    if (!force) {
+      const existentes = await Promise.all(rounds.map(item =>
+        db.doc(`students/${membros[0].id}/challengeRounds/${item.roundId}`).get()));
+      if (existentes.every(snap => snap.exists)) return { skipped:'ja-publicado' };
+    }
+
+    const output = await generateForGroup(client, grupo, membros, weekKey);
+    const batch = db.batch();
+    rounds.forEach(item => {
+      const index = item.part - 1;
+      membros.forEach(membro => {
+        batch.set(membro.ref.collection('challengeRounds').doc(item.roundId), {
+          roundId:item.roundId, weekKey, part:item.part, personalized:true,
+          groupId, groupName:grupo.name || '', schoolId:escolaId,
+          opensAt:item.opensAt, closesAt:item.closesAt,
+          questionCount:5, questions:output.prepared[index].questions,
+          difficulty:'turma', status:'published', updatedAt:FieldValue.serverTimestamp(),
+        });
+        batch.set(answerKeyRef(membro.id, item.roundId, true), {
+          uid:membro.id, roundId:item.roundId, weekKey, part:item.part, groupId,
+          answers:output.prepared[index].keys, analysis:output.analysis,
+          sources:output.sources, updatedAt:FieldValue.serverTimestamp(),
+        });
+      });
+    });
+    if (registrarUso && output.usage) {
+      registrarUso(batch, { tipo:'desafio-turma', uid:membros[0].id, escolaId:escolaId || '',
+        uso:output.usage, extra:{ weekKey, groupId, partes:rounds.map(item => item.part) } });
+    }
+    await batch.commit();
+    return { written:rounds.map(item => item.part), membros:membros.length };
+  }
+
+  // Criar a dupla tem de fazer o desafio dela aparecer na hora, e não só na leva
+  // de domingo — foi o que ele pediu: "assim que for criado, já tem que aparecer
+  // no aplicativo deles os dois desafios".
+  const gerarDesafioDaTurma = onCall(
+    { region:REGION, secrets:anthropicApiKey ? [anthropicApiKey] : [], timeoutSeconds:600, memory:'1GiB' },
+    async request => {
+      requireAdmin(request, adminEmails);
+      if (!Anthropic || !anthropicApiKey) throw new HttpsError('failed-precondition', 'A geração por IA não foi configurada.');
+      const schoolId = String(request.data?.schoolId || '').trim();
+      const groupId = String(request.data?.groupId || '').trim();
+      if (!schoolId || !groupId) throw new HttpsError('invalid-argument', 'Faltou a escola ou a turma.');
+      const grupoSnap = await db.doc(`schools/${schoolId}/classGroups/${groupId}`).get();
+      if (!grupoSnap.exists) throw new HttpsError('not-found', 'Turma não encontrada.');
+      const client = new Anthropic({ apiKey:anthropicApiKey.value() });
+      const saida = await publishGroupRounds(client, schoolId, groupId, grupoSnap.data(),
+        { force:request.data?.force === true });
+      return { ok:true, ...saida };
+    }
+  );
+
   // Aviso de abertura de uma parte. O documento de log reserva a vaga antes do
   // envio, então cada aluno recebe este aviso uma única vez por rodada — não
   // importa se quem disparou foi o cron das 8h ou uma publicação atrasada.
@@ -598,6 +733,27 @@ export function createChallengeFunctions({
       await jobRef.set({ completed:generated.length, failed:errors.length,
         lastUid:chunk[chunk.length - 1].id, updatedAt:FieldValue.serverTimestamp() }, { merge:true });
     }
+    // As turmas entram na mesma leva. Falha de turma não derruba a semana dos
+    // alunos: quem tem dupla continua com o desafio individual de qualquer jeito.
+    const turmas = [];
+    try {
+      const escolas = await db.collection('schools').get();
+      for (const escola of escolas.docs) {
+        const grupos = await escola.ref.collection('classGroups').get();
+        for (const grupo of grupos.docs) {
+          const dado = grupo.data();
+          if (dado.active === false || dado.automaticChallenge === false) continue;
+          try {
+            const saida = await publishGroupRounds(client, escola.id, grupo.id, dado, { force });
+            if (saida.written) turmas.push({ groupId:grupo.id, name:dado.name || '', parts:saida.written });
+          } catch (error) {
+            console.error(`Desafio da turma ${grupo.id} falhou:`, error.message);
+            errors.push({ groupId:grupo.id, name:dado.name || '', error:error.message });
+          }
+        }
+      }
+    } catch (error) { console.error('Desafios de turma:', error.message); }
+
     if (generated.length) {
       await db.doc(`challengeWeeks/${weekKey}`).set({
         weekKey, title:'Desafio Science English', active:true, personalized:true,
@@ -608,7 +764,7 @@ export function createChallengeFunctions({
     }
     await jobRef.set({ status:errors.length ? (generated.length ? 'partial' : 'failed') : 'completed',
       completed:generated.length, failed:errors.length, errors, finishedAt:FieldValue.serverTimestamp() }, { merge:true });
-    return { ok:errors.length === 0, weekKey, total:students.length, generated, errors };
+    return { ok:errors.length === 0, weekKey, total:students.length, generated, turmas, errors };
   }
 
   const gerarDesafiosPersonalizados = onCall(
@@ -717,6 +873,16 @@ export function createChallengeFunctions({
         }, ranking };
       }
 
+      // Quarta vira quinta: a Parte 1 fecha e o resultado dela sai na hora, sem
+      // esperar domingo. Quem não respondeu perdeu — a nota é a que ficou.
+      if (stage.phase === 'open' && stage.part === 2 || stage.phase === 'between') {
+        const parte1 = await db.doc(`_challengeResults/${schedule.part1.roundId}_${uid}`).get();
+        base.parte1 = parte1.exists
+          ? { concluida:true, score:Number(parte1.data().score || 0), maxScore:500,
+              details:parte1.data().details || [] }
+          : { concluida:false, score:0, maxScore:500, details:[] };
+      }
+
       if (stage.phase !== 'open') return base;
       const roundSchedule = stage.part === 1 ? schedule.part1 : schedule.part2;
       const [{ roundSnap }, submissionSnap] = await Promise.all([
@@ -796,6 +962,7 @@ export function createChallengeFunctions({
           tx.set(resultRef, {
             uid, studentName:studentSnap.data().name || studentSnap.data().firstName || 'Aluno',
             roundId, weekKey:round.weekKey, part:round.part, score, maxScore:questions.length * 100,
+            ...(round.groupId ? { groupId:round.groupId, groupName:round.groupName || '' } : {}),
             details, completedAt:FieldValue.serverTimestamp(),
           });
         }
@@ -1091,6 +1258,7 @@ export function createChallengeFunctions({
       const alunos = new Map();
       resultSnaps.docs.forEach(doc => {
         const resultado = doc.data();
+        if (resultado.groupId) return; // rodada de turma tem lugar próprio
         const gabarito = gabaritos.get(doc.id) || new Map();
         const quem = resultado.studentName || 'Aluno';
         const aluno = alunos.get(resultado.uid) || {
@@ -1279,12 +1447,12 @@ export function createChallengeFunctions({
     obterTemporadaDesafio, obterResultadoDesafioAdmin,
     salvarRespostaDesafio, obterStatusDesafioAdmin, finalizarDesafioSemanal,
     notificarAberturaDesafio, lembrarDesafioManha, lembrarDesafioNoite,
-    gerarDesafiosAtrasados, gerarDesafioDaSemana,
+    gerarDesafiosAtrasados, gerarDesafioDaSemana, gerarDesafioDaTurma,
   };
 }
 
 export const challengeInternals = Object.freeze({
   localDateParts, addDays, weekKeyFor, nextMonday, scheduleFor, stageFor,
   normalizeAnswer, validateQuestion, scoreAnswers, dateFrom, assertFocusMix,
-  assertFormatMix, formatOf, FORMAT_MIX, FORMAT_THRESHOLD,
+  assertFormatMix, formatOf, FORMAT_MIX, FORMAT_THRESHOLD, groupScheduleFor,
 });
