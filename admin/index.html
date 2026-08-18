@@ -7264,6 +7264,9 @@
             ? `Respondeu <code style="background:#fff;border:1px solid #FCA5A5;color:#991B1B;border-radius:6px;padding:1px 7px;font-family:ui-monospace,Menlo,monospace;font-size:.85em;">${esc(item.resposta)}</code>`
             : '<em style="color:var(--muted);">não respondeu</em>'}
             &nbsp;·&nbsp; certa: <strong style="color:#166534;">${esc(item.expected)}</strong></div>
+          ${item.resposta && item.uid && item.roundId && item.questionId
+            ? `<button type="button" class="aceitar-resposta" data-uid="${esc(item.uid)}" data-round="${esc(item.roundId)}" data-question="${esc(item.questionId)}" style="margin-top:7px;border:1px solid #BBF7D0;background:#F0FDF4;color:#166534;border-radius:8px;padding:5px 10px;font:inherit;font-size:.78rem;font-weight:800;cursor:pointer;">✓ Estava certa — dar o ponto</button>`
+            : ''}
           ${item.explanation ? `<div style="margin-top:6px;font-size:.82rem;color:var(--muted);background:#F8FAFC;border-left:3px solid var(--border);padding:6px 10px;border-radius:0 8px 8px 0;line-height:1.45;">${esc(item.explanation)}</div>` : ''}
         </div>`;
 
@@ -7301,6 +7304,25 @@
         body.innerHTML = renderChallengeResults(data);
       } catch (error) { body.innerHTML = `<div class="form-msg err" style="display:block;">Erro: ${esc(error.message)}</div>`; }
     }
+
+    // Variante válida que o gabarito não previu: em vez de o aluno perder ponto,
+    // o professor dá como certa aqui. Corrige a nota dele e ensina o gabarito.
+    document.addEventListener('click', async evento => {
+      const botao = evento.target.closest('.aceitar-resposta');
+      if (!botao) return;
+      if (!confirm('Dar essa resposta como certa?
+
+O aluno ganha os 100 pontos da pergunta e essa forma passa a ser aceita no gabarito, para ninguém mais errar pelo mesmo motivo.')) return;
+      botao.disabled = true; botao.textContent = 'Corrigindo...';
+      try {
+        const aceitar = httpsCallable(fns, 'aceitarRespostaDesafio', { timeout:60000 });
+        await aceitar({ uid:botao.dataset.uid, roundId:botao.dataset.round, questionId:botao.dataset.question });
+        await loadChallengeResults();
+      } catch (error) {
+        botao.disabled = false; botao.textContent = '✓ Estava certa — dar o ponto';
+        alert('Erro ao dar o ponto: ' + error.message);
+      }
+    });
 
     document.getElementById('challenge-results-refresh').onclick = loadChallengeResults;
 

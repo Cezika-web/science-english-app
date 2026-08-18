@@ -2200,6 +2200,7 @@ export const lembrarDesafioNoite = challengeFunctions.lembrarDesafioNoite;
 export const gerarDesafiosAtrasados = challengeFunctions.gerarDesafiosAtrasados;
 export const gerarDesafioDaSemana = challengeFunctions.gerarDesafioDaSemana;
 export const gerarDesafioDaTurma = challengeFunctions.gerarDesafioDaTurma;
+export const aceitarRespostaDesafio = challengeFunctions.aceitarRespostaDesafio;
 export const obterPerguntasDesafio = challengeFunctions.obterPerguntasDesafio;
 export const regerarPerguntaDesafio = challengeFunctions.regerarPerguntaDesafio;
 export const obterTemporadaDesafio = challengeFunctions.obterTemporadaDesafio;

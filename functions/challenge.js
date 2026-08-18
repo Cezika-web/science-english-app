@@ -608,6 +608,60 @@ ${item.text}`).join('\n\n')}`
     }
   );
 
+  // Variante válida que o gabarito não previu ("Chris' father" e "Chris's
+  // father" são as duas corretas). Em vez de o aluno perder ponto por isso, o
+  // professor dá como certa: corrige a nota dele E ensina o gabarito, para que
+  // ninguém mais erre a mesma coisa pelo mesmo motivo.
+  const aceitarRespostaDesafio = onCall(
+    { region:REGION, timeoutSeconds:60, memory:'256MiB' },
+    async request => {
+      requireAdmin(request, adminEmails);
+      const uid = String(request.data?.uid || '').trim();
+      const roundId = String(request.data?.roundId || '').trim();
+      const questionId = String(request.data?.questionId || '').trim();
+      if (!uid || !roundId || !questionId) throw new HttpsError('invalid-argument', 'Faltou aluno, rodada ou pergunta.');
+
+      const resultRef = db.doc(`_challengeResults/${roundId}_${uid}`);
+      const resultSnap = await resultRef.get();
+      if (!resultSnap.exists) throw new HttpsError('not-found', 'Resultado não encontrado.');
+      const detalhes = resultSnap.data().details || [];
+      const alvo = detalhes.find(item => item.questionId === questionId);
+      if (!alvo) throw new HttpsError('not-found', 'Pergunta não encontrada neste resultado.');
+      if (alvo.correct) return { ok:true, jaEstavaCerta:true };
+
+      const novos = detalhes.map(item => item.questionId === questionId
+        ? { ...item, score:100, correct:true, aceitaPeloProfessor:true } : item);
+      const score = novos.reduce((soma, item) => soma + Number(item.score || 0), 0);
+      await resultRef.set({ details:novos, score, updatedAt:FieldValue.serverTimestamp() }, { merge:true });
+
+      // O gabarito também aprende: a mesma variante deixa de ser erro para quem
+      // ainda vai responder, e some do "erro coletivo" na próxima atualização.
+      let noGabarito = false;
+      const resposta = String(alvo.answer || '').trim();
+      if (resposta) {
+        const chaveRef = answerKeyRef(uid, roundId, true);
+        const chaveSnap = await chaveRef.get();
+        if (chaveSnap.exists) {
+          const respostas = chaveSnap.data().answers || [];
+          const atualizadas = respostas.map(item => item.id === questionId
+            ? { ...item, acceptedAnswers:[...new Set([...(item.acceptedAnswers || []), normalizeAnswer(resposta)])].filter(Boolean) }
+            : item);
+          await chaveRef.set({ answers:atualizadas, updatedAt:FieldValue.serverTimestamp() }, { merge:true });
+          noGabarito = true;
+        }
+      }
+
+      // A semana já fechada precisa do ranking refeito, senão a posição fica
+      // com a nota velha.
+      const weekKey = resultSnap.data().weekKey;
+      if (weekKey && !resultSnap.data().groupId) {
+        const rankingSnap = await db.doc(`challengeRankings/${weekKey}`).get();
+        if (rankingSnap.exists) await buildRanking(weekKey);
+      }
+      return { ok:true, score, noGabarito };
+    }
+  );
+
   // Aviso de abertura de uma parte. O documento de log reserva a vaga antes do
   // envio, então cada aluno recebe este aviso uma única vez por rodada — não
   // importa se quem disparou foi o cron das 8h ou uma publicação atrasada.
@@ -1290,7 +1344,8 @@ ${item.text}`).join('\n\n')}`
             explanation:item.explanation || chaveItem.explanation || '', tema,
             acertos:0, erros:0, respostas:[] };
           if (item.correct) pergunta.acertos += 1; else pergunta.erros += 1;
-          pergunta.respostas.push({ aluno:quem, resposta:String(item.answer || '').trim(), acertou:item.correct === true });
+          pergunta.respostas.push({ aluno:quem, resposta:String(item.answer || '').trim(), acertou:item.correct === true,
+            uid:resultado.uid, roundId:resultado.roundId || '', questionId:item.questionId || '' });
           perguntas.set(chave, pergunta);
 
           if (!tema) return;
@@ -1459,6 +1514,7 @@ ${item.text}`).join('\n\n')}`
     salvarRespostaDesafio, obterStatusDesafioAdmin, finalizarDesafioSemanal,
     notificarAberturaDesafio, lembrarDesafioManha, lembrarDesafioNoite,
     gerarDesafiosAtrasados, gerarDesafioDaSemana, gerarDesafioDaTurma,
+    aceitarRespostaDesafio,
   };
 }
 
