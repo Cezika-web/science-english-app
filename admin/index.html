@@ -2802,8 +2802,7 @@
         while (no && no.tagName !== 'H2') { partes.push(no); no = no.nextElementSibling; }
         // Pós-aula que embrulha cada seção num cartão não tem irmãos depois do
         // título: aí o conteúdo é o do próprio bloco, sem repetir o título.
-        let texto = partes.map(item => item.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean).join('
-');
+        let texto = partes.map(item => item.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean).join('\n');
         if (!texto && titulo.parentElement) {
           texto = titulo.parentElement.textContent.replace(titulo.textContent, '').replace(/\s+/g, ' ').trim();
         }
@@ -7349,9 +7348,7 @@
     document.addEventListener('click', async evento => {
       const botao = evento.target.closest('.aceitar-resposta');
       if (!botao) return;
-      if (!confirm('Dar essa resposta como certa?
-
-O aluno ganha os 100 pontos da pergunta e essa forma passa a ser aceita no gabarito, para ninguém mais errar pelo mesmo motivo.')) return;
+      if (!confirm('Dar essa resposta como certa?\n\nO aluno ganha os 100 pontos da pergunta e essa forma passa a ser aceita no gabarito, para ninguém mais errar pelo mesmo motivo.')) return;
       botao.disabled = true; botao.textContent = 'Corrigindo...';
       try {
         const aceitar = httpsCallable(fns, 'aceitarRespostaDesafio', { timeout:60000 });
