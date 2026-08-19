@@ -486,7 +486,7 @@
     .calendar-event.available { z-index:3; }
     /* Aula cancelada continua na grade, para ele lembrar que aquele horário era
        de alguém — mas riscada e sem cor, bem longe do laranja do disponível. */
-    .calendar-event.cancelada { background:repeating-linear-gradient(135deg,#f8fafc,#f8fafc 5px,#eef2f7 5px,#eef2f7 10px); border-color:#cbd5e1; color:#94a3b8; z-index:2; }
+    .calendar-event.cancelada, .calendar-event.cancelada.junta { background:repeating-linear-gradient(135deg,#f8fafc,#f8fafc 5px,#eef2f7 5px,#eef2f7 10px); border-color:#cbd5e1; color:#94a3b8; z-index:2; }
     .calendar-event.cancelada strong { text-decoration:line-through; }
     /* Aula junta usa o MESMO verde das outras: o primeiro da hora fica igual a
        uma aula sozinha e os seguintes vão perdendo tom. Sem faixa nem realce —
@@ -1500,10 +1500,11 @@
           </div>
           <div class="field" id="f-hora-por-dia" style="display:none;"><label>Horário de cada dia</label><div class="hora-dias" id="f-hora-dias"></div></div>
           <div class="calendar-form-grid">
-            <div class="field"><label for="f-mensalidade">Mensalidade (R$)</label><input type="number" id="f-mensalidade" min="0" step="0.01" placeholder="250,00" /></div>
+            <div class="field"><label for="f-mensalidade" id="f-mensalidade-label">Mensalidade (R$)</label><input type="number" id="f-mensalidade" min="0" step="0.01" placeholder="250,00" /></div>
             <div class="field"><label for="f-vencimento">Dia do vencimento</label><input type="number" id="f-vencimento" min="1" max="31" value="10" /></div>
           </div>
-          <div class="field" style="margin-top:14px;"><label for="f-ciclo">Como esse aluno paga</label><select id="f-ciclo"><option value="monthly">Uma vez por mês</option><option value="biweekly">Quinzenal — duas vezes por mês</option></select></div>
+          <div class="field" style="margin-top:14px;"><label for="f-ciclo">Como esse aluno paga</label><select id="f-ciclo"><option value="monthly">Uma vez por mês</option><option value="biweekly">Quinzenal — duas vezes por mês</option><option value="annual">Anual — paga o ano inteiro de uma vez</option></select></div>
+          <div class="field" id="f-anual-field" style="display:none;"><label for="f-anual-mes">Mês em que o anual foi (ou será) pago</label><input type="month" id="f-anual-mes" /></div>
           <div class="field"><label for="f-pagamento">Este mês, o aluno</label><select id="f-pagamento"><option value="pendente">Ainda vai pagar — fica pendente no Financeiro</option><option value="pago">Já pagou — entra como recebido</option></select></div>
           <div class="field"><label>Data de início das aulas</label><input type="date" id="f-inicio" /></div>
           <p style="margin:-4px 0 16px;padding:10px 12px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A;font-size:.78rem;line-height:1.5;">📅 Os dias e o horário já entram sozinhos na <strong>Agenda</strong> como aula semanal, e a mensalidade já entra no <strong>Financeiro</strong>. <span id="f-mensalidade-hint"></span></p>
@@ -2438,8 +2439,12 @@
     // Quem divide a mesma faixa de horário fica um EMBAIXO do outro, repartindo
     // a altura da hora. Cada aluno continua com o evento dele — não viram um só.
     function calendarLanes(eventos, chaveDia) {
+      // Cancelada fica na ÚLTIMA faixa do quadrado — quem vale naquela hora
+      // continua em cima. O início segue sendo o primeiro critério, senão o
+      // agrupamento por horário se perde.
       const ordenados = [...eventos].sort((um, outro) =>
         calendarMinutes(um.startTime) - calendarMinutes(outro.startTime)
+        || (calendarCancelada(um, chaveDia) ? 1 : 0) - (calendarCancelada(outro, chaveDia) ? 1 : 0)
         || calendarMinutes(um.endTime) - calendarMinutes(outro.endTime)
         || String(um.title || '').localeCompare(String(outro.title || ''), 'pt-BR'));
       const grupos = [];
@@ -2537,23 +2542,17 @@
             porHora.push({ ...item, startTime:calendarTime(minuto), endTime:calendarTime(Math.min(minuto + 60, fim)), fatiada:true });
           }
         });
-        // Aula cancelada não disputa espaço: fica atrás, ocupando a hora toda, e
-        // quem vale naquele horário reparte o espaço entre si. Cancelei a do Gu
-        // e pus reposição no lugar: a reposição é que tem de aparecer.
-        const cancelados = porHora.filter(item => calendarCancelada(item, key));
-        const ativos = porHora.filter(item => !calendarCancelada(item, key));
-        const fundo = cancelados.map(event => {
-          const top = Math.max(0, (calendarMinutes(event.startTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
-          const bottom = Math.min(height, (calendarMinutes(event.endTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
-          if (bottom <= 0 || top >= height || bottom-top < 3) return '';
-          const legenda = `${event.startTime}–${event.endTime}`;
-          return `<button type="button" class="calendar-event cancelada" data-event-id="${esc(event.id)}" style="top:${top+1}px;height:${Math.max(13, bottom-top-2)}px;--event-color:${calendarEventColor(event)}" title="${esc(event.title || legenda)} · cancelada"><strong>${esc(event.title || 'Compromisso')}</strong><span>${esc(legenda)}</span></button>`;
-        }).join('');
-        const events = fundo + calendarLanes(ativos, key).map(({ event, faixa, faixas, oculto, restantes, recolher, chave }) => {
+        // Aula cancelada REPARTE o quadrado com quem ficou no lugar dela, em
+        // vez de ficar atrás. Escondida embaixo do outro bloco, ela sumia da
+        // grade: ele não via de quem era o horário nem conseguia clicar para
+        // desfazer o cancelamento — foi o que aconteceu na quarta do Gu, com a
+        // reposição do Lucas e Gabriel por cima.
+        const events = calendarLanes(porHora, key).map(({ event, faixa, faixas, oculto, restantes, recolher, chave }) => {
           const top = Math.max(0, (calendarMinutes(event.startTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
           const bottom = Math.min(height, (calendarMinutes(event.endTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
           if (bottom <= 0 || top >= height || bottom-top < 3) return '';
           const subtitle = `${event.startTime}–${event.endTime}${CALENDAR_REPEAT_LABELS[event.repeat] ? ` · ${CALENDAR_REPEAT_LABELS[event.repeat]}` : ''}`;
+          const cancelada = calendarCancelada(event, key);
           if (oculto) return '';
           // Dois ou mais na mesma hora: cada um fica com uma fatia da ALTURA,
           // um embaixo do outro. Não vira um evento só — cada aluno continua
@@ -2564,7 +2563,7 @@
           const mais = (restantes || recolher)
             ? `<button type="button" class="calendar-event-mais" data-expandir="${esc(chave)}" style="top:${meuTopo + minhaAltura - 14}px" title="${recolher ? 'Mostrar menos' : `Ver os ${restantes} que faltam nesta hora`}">${recolher ? '⋯ menos' : `⋯ +${restantes}`}</button>`
             : '';
-          return `<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}" data-event-id="${esc(event.id)}"${event.fatiada ? ` data-hora-inicio="${esc(event.startTime)}" data-hora-fim="${esc(event.endTime)}"` : ''} style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event)}${junta ? `;--event-mix:${calendarMistura(faixa)}%;--event-mix-borda:${calendarMistura(faixa, CALENDAR_INTENSIDADE_BORDA)}%` : ''}" title="${esc(event.title || subtitle)}"><strong>${esc(event.title || 'Compromisso')}</strong><span>${esc(subtitle)}</span></button>${mais}`;
+          return `<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}${cancelada ? ' cancelada' : ''}" data-event-id="${esc(event.id)}"${event.fatiada ? ` data-hora-inicio="${esc(event.startTime)}" data-hora-fim="${esc(event.endTime)}"` : ''} style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event)}${junta ? `;--event-mix:${calendarMistura(faixa)}%;--event-mix-borda:${calendarMistura(faixa, CALENDAR_INTENSIDADE_BORDA)}%` : ''}" title="${esc(event.title || subtitle)}${cancelada ? ' · cancelada' : ''}"><strong>${esc(event.title || 'Compromisso')}</strong><span>${esc(subtitle)}</span></button>${mais}`;
         }).join('');
         return `<div class="calendar-day-column${work ? '' : ' off-hours'}${key === todayKey ? ' today' : ''}${key === calendarSelectedDay ? ' picked' : ''}" data-date="${key}" style="height:${height}px">${events}</div>`;
       }).join('');
@@ -7285,7 +7284,11 @@
       data.perguntas.forEach(item => (item.respostas || []).forEach(resposta => {
         if (resposta.acertou) return;
         if (!porAluno.has(resposta.aluno)) porAluno.set(resposta.aluno, []);
-        porAluno.get(resposta.aluno).push({ ...item, resposta:resposta.resposta });
+        // Sem levar junto uid/roundId/questionId da resposta, o botão de dar o
+        // ponto some (ele só existe quando os três chegam até a linha).
+        porAluno.get(resposta.aluno).push({ ...item, resposta:resposta.resposta,
+          score:resposta.score || 0, parcial:resposta.parcial === true,
+          uid:resposta.uid || '', roundId:resposta.roundId || '', questionId:resposta.questionId || '' });
       }));
       // Sem `respostas` (função antiga ainda no ar) cai no que dá para mostrar.
       if (!porAluno.size) data.perguntas.filter(item => item.erros > 0)
@@ -7299,8 +7302,9 @@
           <div style="font-weight:700;margin:5px 0 2px;line-height:1.4;">${esc(item.prompt)}</div>
           ${item.context ? `<div style="font-size:.85rem;color:var(--muted);font-style:italic;margin-bottom:6px;">${esc(item.context)}</div>` : ''}
           <div style="font-size:.85rem;">${item.resposta
-            ? `Respondeu <code style="background:#fff;border:1px solid #FCA5A5;color:#991B1B;border-radius:6px;padding:1px 7px;font-family:ui-monospace,Menlo,monospace;font-size:.85em;">${esc(item.resposta)}</code>`
+            ? `Respondeu <code style="background:#fff;border:1px solid ${item.parcial ? '#FCD34D' : '#FCA5A5'};color:${item.parcial ? '#92400E' : '#991B1B'};border-radius:6px;padding:1px 7px;font-family:ui-monospace,Menlo,monospace;font-size:.85em;">${esc(item.resposta)}</code>`
             : '<em style="color:var(--muted);">não respondeu</em>'}
+            ${item.parcial ? `<span style="margin-left:6px;padding:1px 7px;border-radius:999px;background:#FEF3C7;color:#92400E;font-size:.74rem;font-weight:800;">chegou perto · ${item.score} de 100</span>` : ''}
             &nbsp;·&nbsp; certa: <strong style="color:#166534;">${esc(item.expected)}</strong></div>
           ${item.resposta && item.uid && item.roundId && item.questionId
             ? `<button type="button" class="aceitar-resposta" data-uid="${esc(item.uid)}" data-round="${esc(item.roundId)}" data-question="${esc(item.questionId)}" style="margin-top:7px;border:1px solid #BBF7D0;background:#F0FDF4;color:#166534;border-radius:8px;padding:5px 10px;font:inherit;font-size:.78rem;font-weight:800;cursor:pointer;">✓ Estava certa — dar o ponto</button>`
@@ -7414,11 +7418,22 @@
         return `<div style="padding:4px 9px;border-radius:7px;font-size:.79rem;${certa ? 'background:#F0FDF4;color:#166534;font-weight:700;' : 'color:var(--muted);'}">${esc(option.id.toUpperCase())}) ${esc(option.text)}${certa ? ' ✓' : ''}</div>`;
       }).join('');
       const foco = question.focus === 'weak' ? ' · ponto fraco' : question.focus === 'strong' ? ' · ponto forte' : '';
+      // Pergunta escrita não tem alternativa nenhuma: sem mostrar o gabarito
+      // aqui, o professor revisa a pergunta sem saber o que ela cobra.
+      const escrita = !(question.options || []).length;
+      const aceitas = (question.acceptedAnswers || []).filter(item => item);
+      const gabarito = !escrita ? '' : `
+        <div style="padding:7px 10px;border-radius:8px;background:#F0FDF4;border:1px solid #BBF7D0;font-size:.83rem;">
+          <strong style="color:#166534;">Resposta certa:</strong> ${esc(question.expected || '—')}
+        </div>
+        ${aceitas.length ? `<div style="font-size:.76rem;color:var(--muted);margin-top:4px;">Também aceita: ${aceitas.map(esc).join(' · ')}</div>` : ''}`;
       return `<div style="padding:12px 0;border-bottom:1px dashed var(--border);">
-        <div style="font-size:.71rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);">${index + 1} de ${parte.questions.length}${question.topic ? ` · ${esc(question.topic)}` : ''}${foco}</div>
+        <div style="font-size:.71rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);">${index + 1} de ${parte.questions.length}${question.topic ? ` · ${esc(question.topic)}` : ''}${foco}${escrita ? ' · escrita' : ' · múltipla escolha'}</div>
         <div style="font-weight:700;margin:5px 0 4px;">${esc(question.prompt)}</div>
         ${question.context ? `<div style="padding:7px 10px;border-radius:8px;background:var(--bg);font-size:.83rem;margin-bottom:6px;">${esc(question.context)}</div>` : ''}
+        ${question.hint ? `<div style="font-size:.77rem;color:#92400E;margin-bottom:6px;">💡 dica que o aluno vê: ${esc(question.hint)}</div>` : ''}
         <div style="display:grid;gap:3px;">${alternativas}</div>
+        ${gabarito}
         ${question.explanation ? `<div style="font-size:.77rem;color:var(--muted);margin-top:7px;">${esc(question.explanation)}</div>` : ''}
         ${parte.travada ? '' : `<div style="display:flex;gap:7px;margin-top:9px;flex-wrap:wrap;">
           <button class="btn-secondary challenge-regen" data-round="${esc(parte.roundId)}" data-question="${esc(question.id)}" type="button" style="padding:5px 11px;font-size:.76rem;">Gerar outra</button>
@@ -7721,11 +7736,32 @@ Salvar assim mesmo?`)) return;
     function sugerirMensalidade() {
       const horas = horasSemanaDoCadastro(), campo = document.getElementById('f-mensalidade'), dica = document.getElementById('f-mensalidade-hint');
       if (!horas) { dica.textContent = ''; return; }
-      const sugerida = Math.max(0, Math.round(MENSALIDADE_1H + MENSALIDADE_HORA_EXTRA * (horas - 1)));
+      const mensal = Math.max(0, Math.round(MENSALIDADE_1H + MENSALIDADE_HORA_EXTRA * (horas - 1)));
+      // No anual o campo é o valor do ANO: a sugestão vira doze mensalidades.
+      const anual = document.getElementById('f-ciclo').value === 'annual';
+      const sugerida = anual ? mensal * 12 : mensal;
       const horasTexto = String(horas).replace('.', ',');
       if (!mensalidadeEditadaNaMao) campo.value = sugerida;
-      dica.textContent = `São ${horasTexto}h por semana — sugestão de ${financeMoney(sugerida * 100)}${mensalidadeEditadaNaMao ? ' (você já ajustou o valor).' : '.'}`;
+      dica.textContent = `São ${horasTexto}h por semana — sugestão de ${financeMoney(sugerida * 100)}${anual ? ` no ano (${financeMoney(mensal * 100)} por mês)` : ''}${mensalidadeEditadaNaMao ? ' (você já ajustou o valor).' : '.'}`;
     }
+
+    // O anual troca o sentido do campo de valor: deixa de ser a mensalidade e
+    // passa a ser o valor do ano inteiro, que cai num mês só. O Financeiro já
+    // sabia lidar com isso (dilui em doze para os indicadores) — o que faltava
+    // era poder dizer isso já no cadastro, sem ter de editar depois.
+    function sincronizarCicloDoCadastro() {
+      const anual = document.getElementById('f-ciclo').value === 'annual';
+      document.getElementById('f-mensalidade-label').textContent = anual ? 'Valor do ano (R$)' : 'Mensalidade (R$)';
+      document.getElementById('f-mensalidade').placeholder = anual ? '3000,00' : '250,00';
+      document.getElementById('f-anual-field').style.display = anual ? 'block' : 'none';
+      const mes = document.getElementById('f-anual-mes');
+      if (anual && !mes.value) mes.value = financeMonthKey();
+      document.getElementById('f-pagamento').options[1].textContent = anual
+        ? 'Já pagou — o ano inteiro entra como recebido nesse mês'
+        : 'Já pagou — entra como recebido';
+      sugerirMensalidade();
+    }
+    document.getElementById('f-ciclo').addEventListener('change', sincronizarCicloDoCadastro);
 
     document.querySelectorAll('#f-dias-week input').forEach(box => box.addEventListener('change', sugerirMensalidade));
     ['f-hora','f-fim'].forEach(id => document.getElementById(id).addEventListener('change', sugerirMensalidade));
@@ -7742,8 +7778,11 @@ Salvar assim mesmo?`)) return;
       const mensalidade = Math.round(Number(document.getElementById('f-mensalidade').value) * 100);
       const vencimento = Number(document.getElementById('f-vencimento').value) || 10;
       const ciclo = document.getElementById('f-ciclo').value;
+      const anualMes = document.getElementById('f-anual-mes').value;
+      const ehAnual = ciclo === 'annual';
       const inicio = document.getElementById('f-inicio').value;
       if (!name || !email || !pass) { showMsg('create-msg', 'Preencha nome, e-mail e senha.', 'err'); return; }
+      if (ehAnual && !anualMes) { showMsg('create-msg', 'Escolha o mês em que o pagamento anual cai.', 'err'); return; }
       if (pass.length < 6)          { showMsg('create-msg', 'Senha mínima de 6 caracteres.', 'err'); return; }
       // Pergunta ANTES de criar o usuário: criar é irreversível, e desistir do
       // horário depois de criado deixaria o aluno pela metade.
@@ -7779,7 +7818,12 @@ Salvar assim mesmo?`)) return;
         if (Number.isFinite(mensalidade) && mensalidade > 0) {
           try {
             await setDoc(doc(db, 'schools', escolaAtual, 'financeStudents', cred.user.uid), {
-              studentUid: cred.user.uid, studentName: name, monthlyCents: mensalidade, dueDay: vencimento,
+              studentUid: cred.user.uid, studentName: name,
+              // No anual o campo de valor é o do ano; monthlyCents guarda o
+              // equivalente mensal, igual ao Financeiro > Editar.
+              monthlyCents: ehAnual ? Math.round(mensalidade / 12) : mensalidade,
+              annualCents: ehAnual ? mensalidade : null,
+              annualMonth: ehAnual ? anualMes : null, dueDay: vencimento,
               cycle: ciclo, dueDay2: ciclo === 'biweekly' ? Math.min(31, vencimento + 15) : null,
               paymentMethod: 'pix', active: true, createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(), updatedBy: auth.currentUser?.email || ''
@@ -7789,14 +7833,22 @@ Salvar assim mesmo?`)) return;
             // no Financeiro, pendência é a ausência de lançamento, e o professor
             // dá como pago depois, pelo botão de sempre.
             if (document.getElementById('f-pagamento').value === 'pago') {
-              const hoje = financeTodayKey(), mesRef = hoje.slice(0, 7);
-              const etapas = ciclo === 'biweekly'
+              const hoje = financeTodayKey();
+              // O anual entra no MÊS ESCOLHIDO, não no mês de hoje, e cobre os
+              // doze meses seguintes (coversMonths) — é isso que faz o painel
+              // mostrar o ganho diluído nos outros meses sem cobrar de novo.
+              const mesRef = ehAnual ? anualMes : hoje.slice(0, 7);
+              const ultimoDia = ehAnual ? new Date(Number(anualMes.slice(0, 4)), Number(anualMes.slice(5, 7)), 0).getDate() : 31;
+              const dataLancamento = ehAnual ? `${anualMes}-${String(Math.min(ultimoDia, vencimento)).padStart(2, '0')}` : hoje;
+              const etapas = ehAnual
+                ? [{ part:0, label:'Anual', valor:mensalidade, cobre:12 }]
+                : ciclo === 'biweekly'
                 ? [{ part:1, label:'1ª quinzena', valor:Math.round(mensalidade / 2) },
                    { part:2, label:'2ª quinzena', valor:mensalidade - Math.round(mensalidade / 2) }]
                 : [{ part:0, label:'Mensalidade', valor:mensalidade }];
               await Promise.all(etapas.map(etapa => addDoc(collection(db, 'schools', escolaAtual, 'financeTransactions'), {
-                type:'income', category:'tuition', amountCents:etapa.valor, date:hoje,
-                referenceMonth:mesRef, referencePart:etapa.part, coversMonths:1,
+                type:'income', category:'tuition', amountCents:etapa.valor, date:dataLancamento,
+                referenceMonth:mesRef, referencePart:etapa.part, coversMonths:etapa.cobre || 1,
                 studentUid:cred.user.uid, studentName:name,
                 description:`${etapa.label} · ${name}`,
                 createdAt:serverTimestamp(), createdBy:auth.currentUser?.email || '',
@@ -7807,7 +7859,7 @@ Salvar assim mesmo?`)) return;
           } catch (erroFinanceiro) { console.error('Financeiro do aluno:', erroFinanceiro); }
         }
         const extras = [naAgenda ? `${naAgenda} aula(s) na agenda` : '',
-          noFinanceiro ? `mensalidade de ${financeMoney(mensalidade)} no financeiro${jaPago ? ' (já dada como paga)' : ' (pendente)'}` : ''].filter(Boolean);
+          noFinanceiro ? `${ehAnual ? `anual de ${financeMoney(mensalidade)} em ${anualMes.split('-').reverse().join('/')}` : `mensalidade de ${financeMoney(mensalidade)}`} no financeiro${jaPago ? ' (já dada como paga)' : ' (pendente)'}` : ''].filter(Boolean);
         showMsg('create-msg', `✅ Aluno ${name} criado!${extras.length ? ` Já entrou com ${extras.join(' e ')}.` : ''}`, 'ok');
         ['f-name','f-email','f-pass','f-meta','f-hora','f-inicio'].forEach(id => document.getElementById(id).value = '');
         document.querySelectorAll('#f-dias-week input').forEach(c => c.checked = false);
