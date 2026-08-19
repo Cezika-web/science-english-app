@@ -7407,7 +7407,7 @@
         const obter = httpsCallable(fns, 'obterPerguntasDesafio', { timeout:120000 });
         const { data } = await obter({ weekKey:document.getElementById('challenge-week').value || '2026-08-17' });
         select.innerHTML = '<option value="">Selecione o aluno</option>' + data.students.map(item =>
-          `<option value="${item.uid}">${esc(item.name)} — ${item.prontas}/2 parte(s)${item.iniciadas ? ' · já começou' : ''}</option>`).join('');
+          `<option value="${item.uid}">${esc(item.name)} — ${item.prontas}/2 parte(s)${item.gerais ? ' · rodada geral' : ''}${item.iniciadas ? ' · já começou' : ''}</option>`).join('');
         select.value = escolhido;
       } catch (error) { select.innerHTML = `<option value="">Erro: ${esc(error.message)}</option>`; }
     }
@@ -7435,7 +7435,7 @@
         <div style="display:grid;gap:3px;">${alternativas}</div>
         ${gabarito}
         ${question.explanation ? `<div style="font-size:.77rem;color:var(--muted);margin-top:7px;">${esc(question.explanation)}</div>` : ''}
-        ${parte.travada ? '' : `<div style="display:flex;gap:7px;margin-top:9px;flex-wrap:wrap;">
+        ${parte.travada || parte.personalizada === false ? '' : `<div style="display:flex;gap:7px;margin-top:9px;flex-wrap:wrap;">
           <button class="btn-secondary challenge-regen" data-round="${esc(parte.roundId)}" data-question="${esc(question.id)}" type="button" style="padding:5px 11px;font-size:.76rem;">Gerar outra</button>
           <button class="btn-secondary challenge-regen-tema" data-round="${esc(parte.roundId)}" data-question="${esc(question.id)}" type="button" style="padding:5px 11px;font-size:.76rem;">Gerar com tema</button>
         </div>`}
@@ -7446,9 +7446,12 @@
       if (!parte.publicada) return `<div style="margin-bottom:14px;padding:11px 13px;border-radius:11px;background:#FFF7ED;border:1px solid #FED7AA;color:#9A3412;font-size:.8rem;">Parte ${parte.part} ainda não foi gerada para este aluno.</div>`;
       const trava = parte.travada
         ? '<span style="padding:2px 9px;border-radius:999px;background:#FEF3C7;color:#92400E;font-size:.71rem;font-weight:800;">o aluno já começou — não dá para trocar</span>' : '';
+      const origem = parte.personalizada === false
+        ? '<span style="padding:2px 9px;border-radius:999px;background:#E8F3FF;color:#0D5AA7;font-size:.71rem;font-weight:800;">rodada geral usada pelo aluno</span>'
+        : '<span style="padding:2px 9px;border-radius:999px;background:#F5F3FF;color:#5B21B6;font-size:.71rem;font-weight:800;">rodada individual</span>';
       return `<div style="margin-bottom:20px;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding-bottom:8px;border-bottom:1px solid var(--border);">
-          <strong style="font-size:.95rem;">Parte ${parte.part}</strong>${trava}
+          <strong style="font-size:.95rem;">Parte ${parte.part}</strong><span style="display:flex;gap:6px;flex-wrap:wrap;">${origem}${trava}</span>
         </div>
         ${parte.questions.map((question, index) => renderChallengeQuestion(parte, question, index)).join('')}
       </div>`;

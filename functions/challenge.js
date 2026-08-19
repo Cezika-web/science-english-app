@@ -1396,13 +1396,15 @@ ${item.text}`).join('\n\n')}`
           const student = studentDoc.data();
           if (student.archived === true || student.challengeEnabled === false) continue;
           const [round1, round2, sub1, sub2] = await Promise.all([
-            studentDoc.ref.collection('challengeRounds').doc(schedule.part1.roundId).get(),
-            studentDoc.ref.collection('challengeRounds').doc(schedule.part2.roundId).get(),
+            resolveRound(studentDoc.id, schedule.part1.roundId),
+            resolveRound(studentDoc.id, schedule.part2.roundId),
             studentDoc.ref.collection('challengeSubmissions').doc(schedule.part1.roundId).get(),
             studentDoc.ref.collection('challengeSubmissions').doc(schedule.part2.roundId).get(),
           ]);
+          const resolved = [round1, round2].filter(item => item.roundSnap.exists);
           linhas.push({ uid:studentDoc.id, name:student.name || student.firstName || 'Aluno',
-            level:student.level || '', prontas:[round1, round2].filter(snap => snap.exists).length,
+            level:student.level || '', prontas:resolved.length,
+            gerais:resolved.filter(item => !item.personalized).length,
             iniciadas:[sub1, sub2].filter(snap => snap.exists).length });
         }
         return { weekKey, students:linhas.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')) };
@@ -1410,15 +1412,16 @@ ${item.text}`).join('\n\n')}`
 
       const partes = [];
       for (const item of [schedule.part1, schedule.part2]) {
-        const [roundSnap, keySnap, submissionSnap] = await Promise.all([
-          db.doc(`students/${uid}/challengeRounds/${item.roundId}`).get(),
-          answerKeyRef(uid, item.roundId, true).get(),
+        const [{ roundSnap, personalized }, submissionSnap] = await Promise.all([
+          resolveRound(uid, item.roundId),
           db.doc(`students/${uid}/challengeSubmissions/${item.roundId}`).get(),
         ]);
         if (!roundSnap.exists) { partes.push({ part:item.part, roundId:item.roundId, publicada:false }); continue; }
+        const keySnap = await answerKeyRef(uid, item.roundId, personalized).get();
         const chaves = new Map((keySnap.data()?.answers || []).map(answer => [answer.id, answer]));
         partes.push({
-          part:item.part, roundId:item.roundId, publicada:true, travada:submissionSnap.exists,
+          part:item.part, roundId:item.roundId, publicada:true, personalizada:personalized,
+          travada:submissionSnap.exists,
           abre:iso(item.opensAt), fecha:iso(item.closesAt),
           questions:(roundSnap.data().questions || []).map(question => ({ ...question, ...(chaves.get(question.id) || {}) })),
         });
