@@ -90,7 +90,7 @@
     .modal-drag { width: 40px; height: 4px; background: #E2E8F0; border-radius: 2px; margin: 12px auto 0; }
 
     .reader-frame { flex: 1; border: none; width: 100%; background: white; display: block; }
-    .scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; width: 100%; max-width: 100%; min-width: 0; }
 
     /* ── Interactive exercises ── */
     .ex-root, .ex-root *:not(svg):not(path) {
@@ -1855,7 +1855,7 @@ function ReviewReportModal({ report, onClose }) {
           <div style={{ flex:1 }}><div style={{ fontSize:11, color:'#6D28D9', fontWeight:800, textTransform:'uppercase' }}>Revisão concluída</div><div style={{ fontSize:18, fontWeight:800, color:'#0F172A' }}>{report.title || 'Resultado do Desafio de 90 Dias'}</div></div>
           <button onClick={onClose} style={{ width:34,height:34,borderRadius:'50%',border:'none',background:'#F1F5F9',fontSize:16,cursor:'pointer' }}>✕</button>
         </div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginTop:17 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,minmax(0,1fr))', gap:8, marginTop:17 }}>
           <ProgressStat label="Acertos" value={totals.correct ?? '—'} tone={PROGRESS_COLORS.good} />
           <ProgressStat label="Erros" value={totals.wrong ?? '—'} tone={totals.wrong?PROGRESS_COLORS.low:PROGRESS_COLORS.good} />
           <ProgressStat label="Resultado" value={Number.isFinite(totals.accuracy)?`${totals.accuracy}%`:'—'} tone={metricTone(totals.accuracy,'rate').color} />
@@ -2008,8 +2008,8 @@ function ProgressRing({ value, goal, label, sublabel }) {
   const ringColor = complete ? '#F59E0B' : 'var(--brand)';
   return (
     <GlassCard style={{ padding: 16, flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, borderRadius: 24, border: complete ? '1px solid rgba(245,158,11,0.4)' : GLASS.border, animation: complete ? 'ringpop 1.4s ease-in-out infinite' : 'none' }}>
-      <div style={{ position: 'relative', width: size, height: size }}>
-        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+      <div style={{ position: 'relative', width: '100%', maxWidth: size, aspectRatio: '1 / 1' }}>
+        <svg viewBox={`0 0 ${size} ${size}`} style={{ width: '100%', height: '100%', display: 'block', transform: 'rotate(-90deg)' }}>
           <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={complete ? 'rgba(245,158,11,0.15)' : 'rgba(var(--brand-rgb),0.12)'} strokeWidth={stroke} />
           <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={ringColor} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={off} style={{ transition: 'stroke-dashoffset 1s ease' }} />
         </svg>
@@ -2131,7 +2131,7 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) 
   const pendingActs = activities.filter(a => (a.status||'') !== 'corrected' && !a.finalizada).length;
 
   return (
-    <div className="scroll-area" style={{ padding: '16px 16px 8px' }}>
+    <div className="scroll-area" style={{ padding: '16px 16px 8px', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', overflowX: 'hidden' }}>
       <InstallBanner />
 
       {/* Anéis de progresso: aulas no ano + atividades da semana */}
@@ -2338,7 +2338,7 @@ function ExtrasSection({ extras, onOpenExtra }) {
       <div style={{ fontSize: 11, fontWeight: 800, color: '#9A6438', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>
         Escolha a habilidade para treinar
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 12 }}>
         {SKILLS.map(s => {
           const n = bySkill(s.id).filter(e => !e.finalizada).length;
           return (
@@ -2395,7 +2395,7 @@ function CorrecaoModal({ data, onClose }) {
 
         <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
           {/* Contagem geral */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 8, marginBottom: 16 }}>
             {cell(tot.correct, 'acertos', '#EAF3DE', '#3B6D11')}
             {cell(tot.bobo, 'erros bobos', '#FEFCE8', '#854F0B')}
             {cell(tot.mediano, 'erros medianos', '#FFF7ED', '#9A3412')}
@@ -2824,7 +2824,7 @@ function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOp
   };
 
   return (
-    <div className="scroll-area" style={{ padding: '16px 16px 8px' }}>
+    <div className="scroll-area" style={{ padding: '16px 16px 8px', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', overflowX: 'hidden' }}>
       <div style={{ display: 'flex', background: 'rgba(255,255,255,0.6)', borderRadius: 14, padding: 4, marginBottom: 16, border: '1px solid rgba(var(--brand-rgb),0.12)' }}>
         {['atividades', 'extras'].map(s => (
           <button key={s} onClick={() => setSub(s)} style={{
@@ -3244,7 +3244,7 @@ function VocabTab({ vocab }) {
   }, [verbSearch]);
 
   if (!listView) return (
-    <div className="scroll-area" style={{ padding:'16px', display:'flex', flexDirection:'column', gap:12, overflow:'hidden' }}>
+    <div className="scroll-area" style={{ padding:'16px', display:'flex', flexDirection:'column', gap:12, overflow:'hidden', width:'100%', maxWidth:'100%', minWidth:0, boxSizing:'border-box' }}>
       {[
         ['vocab','ABC','Meu vocabulário',`${vocab.length} palavra${vocab.length !== 1 ? 's' : ''}`,'rgba(var(--brand-rgb),.1)','var(--brand)'],
         ['verbs','↻','Verbos irregulares',`${IRREGULAR_VERBS.length} verbos`,'#FBF7F1','#8B5E34'],
@@ -3262,7 +3262,7 @@ function VocabTab({ vocab }) {
   );
 
   return (
-    <div className="scroll-area" style={{ padding: '16px 16px 8px' }}>
+    <div className="scroll-area" style={{ padding: '16px 16px 8px', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', overflowX: 'hidden' }}>
       <div style={{ position:'sticky', top:0, zIndex:3, background:'#F6F1EA', paddingBottom:10, marginBottom:4 }}>
         <button onClick={() => setListView(null)} style={{ width:'100%', border:'1px solid rgba(var(--brand-rgb),.16)', borderRadius:14, padding:'12px 14px', background:'rgba(255,255,255,.78)', cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:12, textAlign:'left' }}>
           <span style={{ width:32, height:32, borderRadius:'50%', background:'#F1F5F9', display:'flex', alignItems:'center', justifyContent:'center', color:'#475569', fontSize:18 }}>‹</span>
@@ -3465,7 +3465,7 @@ function PerfilTab({ student, onLogout, onPatchStudent, reviews = [], ownReview,
   const actBtn = (color = 'var(--brand)') => ({ width: 92, padding: '10px 0', textAlign: 'center', borderRadius: 12, border: 'none', cursor: 'pointer', background: color, color: '#fff', fontWeight: 700, fontSize: 13, marginRight: 6, marginTop: 4, fontFamily: 'inherit', flexShrink: 0 });
 
   if (showReviewsPage) return (
-    <div className="scroll-area" style={{ padding:'14px 16px 20px' }}>
+    <div className="scroll-area" style={{ padding:'14px 16px 20px', width:'100%', maxWidth:'100%', minWidth:0, boxSizing:'border-box', overflowX:'hidden' }}>
       <button type="button" onClick={() => setShowReviewsPage(false)} style={{ width:'100%', border:'1px solid rgba(var(--brand-rgb),.16)', borderRadius:14, padding:'11px 13px', background:'rgba(255,255,255,.78)', cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:11, textAlign:'left', marginBottom:12 }}>
         <span style={{ width:32, height:32, borderRadius:'50%', background:'#F1F5F9', display:'flex', alignItems:'center', justifyContent:'center', color:'#475569', fontSize:18 }}>‹</span>
         <span><strong style={{ display:'block', color:'#0F172A', fontSize:14.5 }}>Avaliações do curso</strong><span style={{ color:'#64748B', fontSize:11.5 }}>Voltar para o perfil</span></span>
@@ -3539,7 +3539,7 @@ function PerfilTab({ student, onLogout, onPatchStudent, reviews = [], ownReview,
   );
 
   return (
-    <div className="scroll-area" style={{ padding: '16px 16px 8px' }}>
+    <div className="scroll-area" style={{ padding: '16px 16px 8px', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', overflowX: 'hidden' }}>
       <GlassCard style={{ padding: '28px 20px', textAlign: 'center', marginBottom: 14 }}>
         <div style={{ position: 'relative', width: 88, height: 88, margin: '0 auto 12px' }}>
           {student?.photo ? (
@@ -4610,7 +4610,7 @@ function App() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', maxWidth: 480, margin: '0 auto', background: '#F6F1EA' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', maxWidth: 480, minWidth: 0, margin: '0 auto', background: '#F6F1EA' }}>
       {mirror && (
         <div style={{ background: '#1E40AF', color: '#fff', fontSize: 12.5, fontWeight: 700, textAlign: 'center', padding: '7px 12px', flexShrink: 0 }}>
           👁 Modo espelho — {student?.name || student?.firstName || 'aluno'} (somente leitura)
