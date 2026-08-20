@@ -489,10 +489,10 @@
     .calendar-event.cancelada, .calendar-event.cancelada.junta { background:repeating-linear-gradient(135deg,#f8fafc,#f8fafc 5px,#eef2f7 5px,#eef2f7 10px); border-color:#cbd5e1; color:#94a3b8; z-index:2; }
     .calendar-event.cancelada strong { text-decoration:line-through; }
     /* Aula junta usa o MESMO verde das outras: o primeiro da hora fica igual a
-       uma aula sozinha e os seguintes vão perdendo tom. Sem faixa nem realce —
-       ele não quer que a dupla se destaque das demais aulas. Só o horário sai,
-       porque a fatia é baixa demais para caber duas linhas. */
+       uma aula sozinha e os seguintes vão perdendo tom. Uma moldura verde-escura
+       envolve o horário inteiro para mostrar, de relance, que é uma dupla. */
     .calendar-event.junta { background:color-mix(in srgb, var(--event-color) var(--event-mix,11%), #fff); border-color:color-mix(in srgb, var(--event-color) var(--event-mix-borda,20%), #fff); padding:2px 7px; display:flex; align-items:baseline; gap:5px; }
+    .calendar-dupla-outline { position:absolute; left:0; right:0; z-index:6; box-sizing:border-box; border:2px solid #15803d; border-radius:8px; box-shadow:inset 0 0 0 1px rgba(255,255,255,.68); pointer-events:none; }
     /* Numa fatia de ~22px não cabem duas linhas, então o horário vai ao LADO do
        nome — colado nele. Nenhum dos dois estica (sem flex-grow), senão o nome
        empurraria o horário para a borda direita. Os dois encolhem se faltar
@@ -2472,10 +2472,16 @@
         const aberto = calendarExpandido.has(chave);
         const visiveis = (grupo.length <= CALENDAR_MAX_NA_HORA || aberto) ? grupo.length : CALENDAR_MAX_NA_HORA;
         const restantes = grupo.length - visiveis;
+        // A moldura vale só para aulas com a faixa exatamente igual. Uma aula
+        // sobreposta a compromisso/reposição por acaso não vira "dupla".
+        const aulas = grupo.filter(event => event.type === 'lesson');
+        const ehDupla = aulas.length > 1 && aulas.length === grupo.length && aulas.every(event =>
+          event.startTime === aulas[0].startTime && event.endTime === aulas[0].endTime);
         grupo.forEach((event, indice) => saida.push({
           event, chave, faixa:indice, faixas:visiveis, oculto:indice >= visiveis,
           restantes:indice === visiveis - 1 ? restantes : 0,
           recolher:indice === visiveis - 1 && aberto && grupo.length > CALENDAR_MAX_NA_HORA,
+          ehDupla,
         }));
       });
       return saida;
@@ -2492,7 +2498,9 @@
       const inicioExpediente = calendarMinutes(calendarSettings.dayStart);
       const fimExpediente = calendarMinutes(calendarSettings.dayEnd);
       let livres = [[inicioExpediente, fimExpediente]];
-      eventos.filter(item => !calendarCancelada(item, chaveDia)).forEach(item => {
+      // Cancelada continua sendo horário do aluno: aparece listrada e reserva a
+      // faixa. Cancelar serve para controle/reposição, não para abrir uma vaga.
+      eventos.forEach(item => {
         const inicioOcupado = calendarMinutes(item.startTime), fimOcupado = calendarMinutes(item.endTime);
         livres = livres.flatMap(([inicioLivre, fimLivre]) => {
           if (fimOcupado <= inicioLivre || inicioOcupado >= fimLivre) return [[inicioLivre, fimLivre]];
@@ -2575,7 +2583,7 @@
         // grade: ele não via de quem era o horário nem conseguia clicar para
         // desfazer o cancelamento — foi o que aconteceu na quarta do Gu, com a
         // reposição do Lucas e Gabriel por cima.
-        const events = calendarLanes(porHora, key).map(({ event, faixa, faixas, oculto, restantes, recolher, chave }) => {
+        const events = calendarLanes(porHora, key).map(({ event, faixa, faixas, oculto, restantes, recolher, chave, ehDupla }) => {
           const top = Math.max(0, (calendarMinutes(event.startTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
           const bottom = Math.min(height, (calendarMinutes(event.endTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
           if (bottom <= 0 || top >= height || bottom-top < 3) return '';
@@ -2591,7 +2599,9 @@
           const mais = (restantes || recolher)
             ? `<button type="button" class="calendar-event-mais" data-expandir="${esc(chave)}" style="top:${meuTopo + minhaAltura - 14}px" title="${recolher ? 'Mostrar menos' : `Ver os ${restantes} que faltam nesta hora`}">${recolher ? '⋯ menos' : `⋯ +${restantes}`}</button>`
             : '';
-          return `<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}${cancelada ? ' cancelada' : ''}" data-event-id="${esc(event.id)}"${event.fatiada ? ` data-hora-inicio="${esc(event.startTime)}" data-hora-fim="${esc(event.endTime)}"` : ''} style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event)}${junta ? `;--event-mix:${calendarMistura(faixa)}%;--event-mix-borda:${calendarMistura(faixa, CALENDAR_INTENSIDADE_BORDA)}%` : ''}" title="${esc(event.title || subtitle)}${cancelada ? ' · cancelada' : ''}"><strong>${esc(event.title || 'Compromisso')}</strong><span>${esc(subtitle)}</span></button>${mais}`;
+          const moldura = ehDupla && faixa === 0
+            ? `<div class="calendar-dupla-outline" style="top:${top}px;height:${Math.max(22,bottom-top)}px" aria-hidden="true"></div>` : '';
+          return `${moldura}<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}${cancelada ? ' cancelada' : ''}" data-event-id="${esc(event.id)}"${event.fatiada ? ` data-hora-inicio="${esc(event.startTime)}" data-hora-fim="${esc(event.endTime)}"` : ''} style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event)}${junta ? `;--event-mix:${calendarMistura(faixa)}%;--event-mix-borda:${calendarMistura(faixa, CALENDAR_INTENSIDADE_BORDA)}%` : ''}" title="${esc(event.title || subtitle)}${cancelada ? ' · cancelada' : ''}"><strong>${esc(event.title || 'Compromisso')}</strong><span>${esc(subtitle)}</span></button>${mais}`;
         }).join('');
         return `<div class="calendar-day-column${work ? '' : ' off-hours'}${key === todayKey ? ' today' : ''}${key === calendarSelectedDay ? ' picked' : ''}" data-date="${key}" style="height:${height}px">${events}</div>`;
       }).join('');
