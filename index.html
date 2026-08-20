@@ -4243,7 +4243,9 @@ function App() {
   async function loadChallengeSeason() {
     const fb = await getFB();
     const obter = fb.httpsCallable(fb.functions, 'obterTemporadaDesafio');
-    const response = await obter({});
+    // No modo espelho, o autenticado é o administrador, mas a temporada que
+    // deve ser carregada é a do aluno aberto no painel.
+    const response = await obter(mirror ? { uid:mirrorUid.current } : {});
     return response.data;
   }
 

@@ -1318,7 +1318,11 @@ ${item.text}`).join('\n\n')}`
   const obterTemporadaDesafio = onCall(
     { region:REGION, timeoutSeconds:60, memory:'256MiB' },
     async request => {
-      const uid = requireAuth(request);
+      const quemChamou = requireAuth(request);
+      const alvo = String(request.data?.uid || '').trim();
+      // Repete a mesma regra do estado semanal: somente administradores podem
+      // consultar a temporada de outro UID, usada pelo modo espelho.
+      const uid = alvo && adminEmails.includes(request.auth.token?.email || '') ? alvo : quemChamou;
       await assertStudent(uid);
       const now = new Date();
       const currentWeekKey = weekKeyFor(now);
