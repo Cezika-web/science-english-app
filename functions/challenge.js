@@ -171,6 +171,29 @@ function normalizeAnswer(value) {
     .toLowerCase().replace(/[“”‘’]/g, "'").replace(/[^a-z0-9']/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
+// A IA pode nomear o mesmo ponto gramatical de dezenas de maneiras. Para a
+// pauta do professor interessa a família do erro, não cada microvariação. Já
+// vocabulário específico é memória lexical e não entra como falha gramatical.
+function canonicalChallengeTopic(value) {
+  const topic = String(value || '').trim();
+  const normalized = normalizeAnswer(topic);
+  if (!normalized) return '';
+  if (/\b(vocabulary|vocabulario)\b/.test(normalized)) return '';
+  if (/\b(present perfect|have has been|already|yet|ever|never)\b/.test(normalized)) return 'Present Perfect';
+  if (/\btag questions?\b/.test(normalized)) return 'Tag Questions';
+  if (/\b(possessive|possessivo|possessivos|apostrophe s|apostrofo s|its vs|your their)\b/.test(normalized)) return 'Possessivos';
+  if (/\b(causative|causativo|causativa|have pessoa|get pessoa)\b/.test(normalized)) return 'Causativo';
+  if (/\b(going to|will|future|futuro)\b/.test(normalized)) return 'Futuro — will / going to';
+  if (/\bthere is\b|\bthere are\b/.test(normalized)) return 'There is / There are';
+  if (/\b(to be|verbo be|verb be|is vs are|was vs were|was were|am is are)\b/.test(normalized)) return 'Verbo to be';
+  if (/\bwould\b/.test(normalized)) return 'Modal — would';
+  if (/\b(can|can't|cannot|could)\b/.test(normalized)) return 'Modal — can / could';
+  if (/\bshould\b/.test(normalized)) return 'Modal — should';
+  if (/\b(must|have to)\b/.test(normalized)) return 'Modal — must / have to';
+  if (/\b(may|might)\b/.test(normalized)) return 'Modal — may / might';
+  return topic;
+}
+
 function validateQuestion(question, index) {
   const id = String(question?.id || `q${index + 1}`).trim();
   const prompt = String(question?.prompt || '').trim();
@@ -1528,7 +1551,8 @@ ${item.text}`).join('\n\n')}`
         aluno.partes += 1;
         (resultado.details || []).forEach(item => {
           const chaveItem = gabarito.get(item.questionId) || {};
-          const tema = String(item.topic || chaveItem.topic || '').trim();
+          const temaOriginal = String(item.topic || chaveItem.topic || '').trim();
+          const tema = canonicalChallengeTopic(temaOriginal);
           if (item.correct) aluno.acertos += 1; else aluno.erros += 1;
 
           // Agrupa pelo enunciado, não pelo id. Rodada personalizada dá o mesmo
@@ -1721,6 +1745,6 @@ ${item.text}`).join('\n\n')}`
 
 export const challengeInternals = Object.freeze({
   localDateParts, addDays, weekKeyFor, nextMonday, scheduleFor, stageFor,
-  normalizeAnswer, validateQuestion, scoreAnswers, dateFrom, assertFocusMix,
+  normalizeAnswer, canonicalChallengeTopic, validateQuestion, scoreAnswers, dateFrom, assertFocusMix,
   assertFormatMix, formatOf, FORMAT_MIX, FORMAT_THRESHOLD, groupScheduleFor,
 });
