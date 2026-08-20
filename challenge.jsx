@@ -94,7 +94,7 @@ function ChallengeSeason({ carregar, initialData, onClose }) {
     return dia && mes ? `Semana de ${dia}/${mes}` : key;
   };
 
-  return <div style={{ position:'absolute', inset:0, zIndex:4, background:'#F3F7FC', overflowY:'auto' }}>
+  return <div style={{ position:'fixed', inset:0, zIndex:10030, width:'100%', maxWidth:480, height:'100dvh', margin:'0 auto', boxSizing:'border-box', background:'#F3F7FC', overflowY:'auto', overflowX:'hidden', overscrollBehavior:'contain' }}>
     <ChallengeSubpageHeader title="Minha temporada" subtitle="Todas as semanas somadas" onClose={onClose} />
     <div style={{ padding:'18px 16px 32px' }}>
       {erro && <div style={{ padding:14, borderRadius:14, background:'#FFF1F2', color:'#B3261E', fontSize:12.5 }}>{erro}</div>}
@@ -287,6 +287,9 @@ function ChallengeHub({ challengeState, selectedChallenge, onBack, onStart, onJo
     return () => { alive = false; };
   }, [selectedChallenge?.kind]);
   if (selectedChallenge?.kind === 'private') return <ChallengePrivateHub challenge={selectedChallenge} onBack={onBack} onJoin={onJoinChallenge} />;
+  // Temporada é uma tela, não um painel por cima do hub. Renderizar só ela
+  // impede o conteúdo anterior de reaparecer atrás no desktop durante o scroll.
+  if (panel === 'season') return <ChallengeSeason carregar={onLoadSeason} initialData={seasonData} onClose={() => setPanel(null)} />;
   const state = challengeStatus(challengeState);
   const canStart = challengeState?.phase === 'open' && challengeState?.canStart && !challengeState?.completed;
   return <div style={{ position:'fixed', inset:0, zIndex:10020, background:'#F3F7FC', maxWidth:480, margin:'0 auto', overflowY:'auto' }}>
@@ -297,7 +300,6 @@ function ChallengeHub({ challengeState, selectedChallenge, onBack, onStart, onJo
       <button onClick={() => setPanel('season')} style={{ width:'100%', display:'flex', alignItems:'center', gap:12, marginTop:12, padding:'14px 15px', borderRadius:17, border:'1px solid #DCE7F4', background:'#fff', fontFamily:'inherit', textAlign:'left' }}><span style={{ width:40, height:40, borderRadius:13, display:'flex', alignItems:'center', justifyContent:'center', background:'#E7F3FF', fontSize:20 }}>📊</span><span style={{ flex:1 }}><strong style={{ display:'block', color:'#071B3A', fontSize:13.5 }}>Minha temporada</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:10.5, marginTop:2 }}>Gráfico, erros, porcentagem e histórico</span></span><span style={{ color:'#8EA0B5', fontSize:20 }}>›</span></button>
     </div>
     {panel === 'rules' && <ChallengeRules onClose={() => setPanel(null)} />}
-    {panel === 'season' && <ChallengeSeason carregar={onLoadSeason} initialData={seasonData} onClose={() => setPanel(null)} />}
   </div>;
 }
 
