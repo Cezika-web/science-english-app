@@ -2358,7 +2358,11 @@
         const schoolAccent = escolas.find(school => school.id === requestedSchool)?.theme?.accent || CALENDAR_DEFAULTS.lessonColor;
         calendarSettings = { ...CALENDAR_DEFAULTS, lessonColor:schoolAccent, ...(settingsSnap.exists() ? settingsSnap.data() : {}) };
         calendarSettings.workingDays = Array.isArray(calendarSettings.workingDays) ? calendarSettings.workingDays.map(Number) : CALENDAR_DEFAULTS.workingDays;
-        calendarEvents = eventsSnap.docs.map(item => ({ id:item.id, ...item.data() }));
+        // As vagas não são mais compromissos cadastrados. Elas são calculadas
+        // a partir do expediente menos tudo o que está ocupado. Documentos antigos
+        // de `available` ficam ignorados para não duplicar nem esconder uma vaga.
+        calendarEvents = eventsSnap.docs.map(item => ({ id:item.id, ...item.data() }))
+          .filter(item => item.type !== 'available');
         calendarApplyTheme(); calendarFillStudents(); renderCalendar();
       } catch (error) {
         console.error('Agenda:', error);
@@ -2476,6 +2480,32 @@
 
     const calendarEstreito = () => window.innerWidth <= 760;
 
+    // A aba Alunos é a fonte dos horários fixos. Na Agenda, toda parte do
+    // expediente sem aula/compromisso nasce automaticamente como vaga vermelha.
+    // Nada é gravado no Firestore: ao mover ou arquivar um aluno, basta a aula
+    // antiga sair para a vaga reaparecer imediatamente.
+    function calendarVagasAutomaticas(date, eventos, chaveDia) {
+      if (!calendarSettings.workingDays.includes(date.getDay())) return [];
+      const inicioExpediente = calendarMinutes(calendarSettings.dayStart);
+      const fimExpediente = calendarMinutes(calendarSettings.dayEnd);
+      let livres = [[inicioExpediente, fimExpediente]];
+      eventos.filter(item => !calendarCancelada(item, chaveDia)).forEach(item => {
+        const inicioOcupado = calendarMinutes(item.startTime), fimOcupado = calendarMinutes(item.endTime);
+        livres = livres.flatMap(([inicioLivre, fimLivre]) => {
+          if (fimOcupado <= inicioLivre || inicioOcupado >= fimLivre) return [[inicioLivre, fimLivre]];
+          const partes = [];
+          if (inicioOcupado > inicioLivre) partes.push([inicioLivre, Math.min(inicioOcupado, fimLivre)]);
+          if (fimOcupado < fimLivre) partes.push([Math.max(fimOcupado, inicioLivre), fimLivre]);
+          return partes;
+        });
+      });
+      return livres.filter(([inicio, fim]) => fim > inicio).map(([inicio, fim], indice) => ({
+        id:`__vaga-automatica-${chaveDia}-${indice}`, type:'available', title:'Horário disponível',
+        date:chaveDia, startTime:calendarTime(inicio), endTime:calendarTime(fim),
+        repeat:'none', automatica:true, fatiada:true,
+      }));
+    }
+
     // Girar o aparelho troca a largura e, com ela, o formato do grid — que é
     // montado no JS. Sem isto a agenda ficaria com o desenho da orientação velha.
     let calendarEstreitoAtual = calendarEstreito();
@@ -2525,34 +2555,10 @@
       const columns = days.map(date => {
         const key = calendarDateKey(date), work = calendarSettings.workingDays.includes(date.getDay());
         const doDia = calendarEvents.filter(event => calendarOccursOn(event,date));
-        // "Horário disponível" some somente no pedaço que ficou ocupado. Se o
-        // bloco vermelho vai de 07h a 09h e entrou uma aula de 08h a 09h, 07h–08h
-        // continua aparecendo. Antes qualquer interseção apagava o bloco inteiro.
-        // Aula cancelada não ocupa nada, então o disponível reaparece embaixo.
-        const ocupam = doDia.filter(item => item.type !== 'available' && !calendarCancelada(item, key));
-        const naGrade = doDia.flatMap(item => {
-          if (item.type !== 'available') return [item];
-          let livres = [[calendarMinutes(item.startTime), calendarMinutes(item.endTime)]];
-          ocupam.forEach(outro => {
-            const inicioOcupado = calendarMinutes(outro.startTime), fimOcupado = calendarMinutes(outro.endTime);
-            livres = livres.flatMap(([inicioLivre, fimLivre]) => {
-              if (fimOcupado <= inicioLivre || inicioOcupado >= fimLivre) return [[inicioLivre, fimLivre]];
-              const partes = [];
-              if (inicioOcupado > inicioLivre) partes.push([inicioLivre, Math.min(inicioOcupado, fimLivre)]);
-              if (fimOcupado < fimLivre) partes.push([Math.max(fimOcupado, inicioLivre), fimLivre]);
-              return partes;
-            });
-          });
-          return livres.filter(([inicio, fim]) => fim > inicio).map(([inicio, fim]) => ({
-            ...item, startTime:calendarTime(inicio), endTime:calendarTime(fim),
-            // Mantém a série original no banco; estes são apenas recortes visuais.
-            fatiada:inicio !== calendarMinutes(item.startTime) || fim !== calendarMinutes(item.endTime),
-          }));
-        });
+        const naGrade = [...doDia, ...calendarVagasAutomaticas(date, doDia, key)];
         // "Horário disponível" longo vira uma tira por hora. É assim que ele lê a
-        // agenda — "esta hora está livre" — e clicar num bloco de 15h às 22h dava
-        // uma reposição de sete horas. Só a exibição muda: no banco continua um
-        // bloco só, então editar e excluir seguem valendo para a faixa inteira.
+        // agenda — "esta hora está livre" — e cada tira abre uma reposição somente
+        // naquela hora. A vaga é visual e sempre se recalcula a partir do expediente.
         const porHora = [];
         naGrade.forEach(item => {
           const inicio = calendarMinutes(item.startTime), fim = calendarMinutes(item.endTime);
@@ -3575,7 +3581,7 @@
       if (!escolaAtual || !eventos.length) return null;
       const snap = await getDocs(collection(db, 'schools', escolaAtual, 'calendarEvents'));
       const existentes = snap.docs.map(item => ({ id:item.id, ...item.data() }))
-        .filter(item => !calendarEhAulaDoCadastro(item, uid));
+        .filter(item => item.type !== 'available' && !calendarEhAulaDoCadastro(item, uid));
       for (const evento of eventos) {
         const bate = existentes.find(item => calendarSeriesOverlap(evento, item));
         if (bate) return bate;
@@ -4922,8 +4928,13 @@
           } else if (action === 'archive') {
             if (!confirm(`Enviar ${name} para Ex-alunos?`)) return;
             await updateDoc(doc(db, 'students', uid), { archived: true, archivedAt: serverTimestamp() });
+            // Ex-aluno deixa de ocupar horário. A vaga vermelha reaparece porque
+            // é calculada automaticamente a partir do expediente livre.
+            await syncStudentLessons([{ uid, aulaDias:[] }]);
           } else if (action === 'reactivate') {
             await updateDoc(doc(db, 'students', uid), { archived: false });
+            const student = allStudents.find(item => item.uid === uid);
+            if (student) await syncStudentLessons([student]);
           } else if (action === 'delete') {
             if (!confirm(`Excluir DEFINITIVAMENTE ${name}?\n\nApaga o perfil, pos-aulas, atividades e vocabulario dele. Esta acao NAO pode ser desfeita.`)) return;
             await deleteStudent(uid);
@@ -4941,6 +4952,7 @@
 
     async function deleteStudent(uid) {
       // Apaga subcoleções conhecidas e depois o documento do aluno
+      await syncStudentLessons([{ uid, aulaDias:[] }]);
       for (const sub of ['posaulas', 'activities', 'vocabulario']) {
         try { await deleteSubcollection(uid, sub); } catch(e) { console.warn('sub', sub, e); }
       }
