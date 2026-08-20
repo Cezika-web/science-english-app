@@ -874,7 +874,10 @@
           <div class="form-card" style="margin:16px 0 0;">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
               <h2 style="margin:0;">Resultado e temporada</h2>
-              <button class="btn-secondary" id="challenge-results-refresh" type="button">Atualizar</button>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn-secondary" id="challenge-rescore" type="button">Recalcular pontos escritos</button>
+                <button class="btn-secondary" id="challenge-results-refresh" type="button">Atualizar</button>
+              </div>
             </div>
             <p style="font-size:.84rem;color:var(--muted);line-height:1.5;margin:8px 0 14px;">Como foi a semana, o acumulado desde o começo e — o mais útil — quais perguntas a turma errou junto.</p>
             <div id="challenge-results-body"><div class="loading">Carregando...</div></div>
@@ -7275,7 +7278,7 @@
         ? '<p style="color:var(--muted);font-size:.84rem;">Ninguém concluiu nenhuma parte nesta semana ainda.</p>'
         : `<div style="display:grid;gap:5px;">${data.alunos.map((aluno, index) => `<div style="display:flex;align-items:center;gap:10px;padding:7px 9px;border-radius:9px;background:var(--card);border:1px solid var(--border);">
             <strong style="width:30px;text-align:center;color:var(--muted);">${index + 1}º</strong>
-            <span style="flex:1;min-width:0;">${esc(aluno.name)}</span>
+            <span style="flex:1;min-width:0;"><strong style="display:block;">${esc(aluno.name)}</strong><small style="display:block;color:var(--muted);margin-top:2px;">Parte 1: ${Number(aluno.part1Score || 0)} PTS · Parte 2: ${Number(aluno.part2Score || 0)} PTS</small></span>
             <small style="color:var(--muted);white-space:nowrap;">${aluno.acertos}✓ ${aluno.erros}✗ · ${aluno.partes}/2</small>
             <strong>${Number(aluno.score).toLocaleString('pt-BR')}</strong>
           </div>`).join('')}</div>`;
@@ -7354,13 +7357,33 @@
         ${conteudo}
       </div>`;
 
-      return bloco(`Semana de ${esc(data.weekKey)}`, semana, data.revelado ? ' · resultado liberado' : ' · ainda em disputa')
-        + bloco('Assuntos que a turma errou — a pauta da próxima aula', temas)
-        + bloco('Erros por aluno — abra para ver o que respondeu', mapa)
-        + bloco('Temporada — acumulado desde o começo', data.temporada.length
-          ? `<div style="display:grid;gap:5px;">${data.temporada.map(linhaRanking).join('')}</div>`
-          : '<p style="color:var(--muted);font-size:.84rem;">A primeira semana ainda não fechou.</p>');
+      const tab = (id, label, active = false) => `<button type="button" class="challenge-results-tab" data-panel="${id}" style="flex:1;min-width:110px;border:0;border-radius:9px;padding:9px 11px;background:${active ? '#fff' : 'transparent'};color:${active ? '#0D3F82' : 'var(--muted)'};box-shadow:${active ? '0 2px 8px rgba(15,23,42,.1)' : 'none'};font:inherit;font-size:.82rem;font-weight:800;cursor:pointer;">${label}</button>`;
+      const panel = (id, content, active = false) => `<div data-challenge-results-panel="${id}" style="display:${active ? 'block' : 'none'};margin-top:15px;">${content}</div>`;
+      const rankingContent = bloco(`Semana de ${esc(data.weekKey)}`, semana, data.revelado ? ' · resultado liberado' : ' · ainda em disputa');
+      const errorsContent = bloco('Assuntos que a turma errou — pauta da próxima aula', temas)
+        + bloco('Erros por aluno — abra para ver as respostas', mapa);
+      const seasonContent = bloco('Temporada — acumulado desde o começo', data.temporada.length
+        ? `<div style="display:grid;gap:5px;">${data.temporada.map(linhaRanking).join('')}</div>`
+        : '<p style="color:var(--muted);font-size:.84rem;">A primeira semana ainda não fechou.</p>');
+      return `<div style="display:flex;gap:5px;flex-wrap:wrap;padding:5px;border-radius:12px;background:#E8EEF5;">${tab('ranking','🏆 Ranking',true)}${tab('errors','⚠️ Erros')}${tab('season','📊 Temporada')}</div>`
+        + panel('ranking', rankingContent, true) + panel('errors', errorsContent) + panel('season', seasonContent);
     }
+
+    document.addEventListener('click', evento => {
+      const tab = evento.target.closest('.challenge-results-tab');
+      if (!tab) return;
+      const body = tab.closest('#challenge-results-body');
+      if (!body) return;
+      body.querySelectorAll('.challenge-results-tab').forEach(button => {
+        const active = button === tab;
+        button.style.background = active ? '#fff' : 'transparent';
+        button.style.color = active ? '#0D3F82' : 'var(--muted)';
+        button.style.boxShadow = active ? '0 2px 8px rgba(15,23,42,.1)' : 'none';
+      });
+      body.querySelectorAll('[data-challenge-results-panel]').forEach(panel => {
+        panel.style.display = panel.dataset.challengeResultsPanel === tab.dataset.panel ? 'block' : 'none';
+      });
+    });
 
     async function loadChallengeResults() {
       const body = document.getElementById('challenge-results-body');
@@ -7391,6 +7414,18 @@
     });
 
     document.getElementById('challenge-results-refresh').onclick = loadChallengeResults;
+    document.getElementById('challenge-rescore').onclick = async () => {
+      if (!confirm('Recalcular as respostas escritas desta semana com pontos proporcionais?\n\nRespostas em branco ou totalmente erradas continuam com zero.')) return;
+      const button = document.getElementById('challenge-rescore');
+      button.disabled = true; button.textContent = 'Recalculando...';
+      try {
+        const recalcular = httpsCallable(fns, 'recalcularPontuacaoDesafio', { timeout:120000 });
+        const { data } = await recalcular({ weekKey:document.getElementById('challenge-week').value || '2026-08-17' });
+        await loadChallengeResults();
+        alert(`Pontuação atualizada para ${data.documents || 0} resultado(s).`);
+      } catch (error) { alert('Erro ao recalcular: ' + error.message); }
+      finally { button.disabled = false; button.textContent = 'Recalcular pontos escritos'; }
+    };
 
     // Semanas manuais ficam numa lista em challengeSettings/auto; os dois crons
     // do desafio consultam essa lista antes de chamar a IA.

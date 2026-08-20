@@ -2205,6 +2205,7 @@ export const obterPerguntasDesafio = challengeFunctions.obterPerguntasDesafio;
 export const regerarPerguntaDesafio = challengeFunctions.regerarPerguntaDesafio;
 export const obterTemporadaDesafio = challengeFunctions.obterTemporadaDesafio;
 export const obterResultadoDesafioAdmin = challengeFunctions.obterResultadoDesafioAdmin;
+export const recalcularPontuacaoDesafio = challengeFunctions.recalcularPontuacaoDesafio;
 
 export const avisarAtrasoNoApp = createCobrancaFunctions({ db }).avisarAtrasoNoApp;
 

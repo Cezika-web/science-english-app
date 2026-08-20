@@ -213,21 +213,57 @@ function validateQuestion(question, index) {
   return { publicQuestion, answerKey };
 }
 
+function answerTokens(value) {
+  return normalizeAnswer(value).split(' ').map(token => token.replace(/^'+|'+$/g, '')).filter(Boolean);
+}
+
+// Distância de edição por palavra. Cada palavra correta preserva uma fração da
+// nota, enquanto inserções, trocas e omissões descontam separadamente.
+function wordDistance(a, b) {
+  const row = Array.from({ length:b.length + 1 }, (_, index) => index);
+  for (let i = 1; i <= a.length; i += 1) {
+    let diagonal = row[0]; row[0] = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const previous = row[j];
+      row[j] = a[i - 1] === b[j - 1] ? diagonal
+        : 1 + Math.min(diagonal, row[j], row[j - 1]);
+      diagonal = previous;
+    }
+  }
+  return row[b.length];
+}
+
+function scoreWrittenAnswer(value, acceptedAnswers) {
+  const response = answerTokens(value);
+  if (!response.length) return 0;
+  const candidates = (acceptedAnswers || []).map(answerTokens).filter(tokens => tokens.length);
+  if (!candidates.length) return 0;
+  let best = 0;
+  candidates.forEach(expected => {
+    const base = Math.max(response.length, expected.length, 1);
+    const similarity = Math.max(0, 1 - wordDistance(response, expected) / base);
+    best = Math.max(best, similarity);
+  });
+  // Passos de 5 pontos deixam a nota legível, sem apagar diferenças pequenas.
+  return Math.max(0, Math.min(100, Math.round(best * 20) * 5));
+}
+
 function scoreAnswers(publicQuestions, keys, answers) {
   const answersById = new Map((answers || []).map(answer => [String(answer.questionId), String(answer.value || '')]));
   const keysById = new Map(keys.map(key => [key.id, key]));
   return publicQuestions.map(question => {
     const key = keysById.get(question.id) || {};
     const value = answersById.get(question.id) || '';
-    const correct = question.type === 'multipleChoice'
-      ? value === key.correctOption
-      : (key.acceptedAnswers || []).includes(normalizeAnswer(value));
+    const score = question.type === 'multipleChoice'
+      ? (value === key.correctOption ? 100 : 0)
+      : scoreWrittenAnswer(value, key.acceptedAnswers);
+    const correct = score === 100;
     const selectedOption = question.options?.find(option => option.id === value)?.text || value;
     return {
       questionId:question.id, prompt:question.prompt, context:question.context || '',
       answer:selectedOption, expected:key.expected || '', explanation:key.explanation || '',
       type:question.type, ...(key.topic ? { topic:key.topic } : {}),
-      score:correct ? 100 : 0, correct,
+      score, correct, ...(score > 0 && score < 100 ? { parcial:true } : {}),
     };
   });
 }
@@ -346,15 +382,18 @@ export function createChallengeFunctions({
       if (result.groupId) return;
       const current = totals.get(result.uid) || {
         uid:result.uid, name:result.studentName || 'Aluno', score:0, partsCompleted:0,
-        completedAt:result.completedAt,
+        part1Score:0, part2Score:0, completedAt:result.completedAt,
       };
       current.score += Number(result.score || 0);
+      if (Number(result.part) === 1) current.part1Score += Number(result.score || 0);
+      if (Number(result.part) === 2) current.part2Score += Number(result.score || 0);
       current.partsCompleted += 1;
       if ((result.completedAt?.toMillis?.() || Infinity) < (current.completedAt?.toMillis?.() || Infinity)) current.completedAt = result.completedAt;
       totals.set(result.uid, current);
     });
     const ranking = rankByScore([...totals.values()]).map(row => ({
       uid:row.uid, name:row.name, score:row.score,
+      part1Score:row.part1Score, part2Score:row.part2Score,
       partsCompleted:row.partsCompleted, position:row.position,
     }));
     const schedule = scheduleFor(weekKey);
@@ -1305,9 +1344,11 @@ ${item.text}`).join('\n\n')}`
       const cadastro = alunos.get(result.uid) || {};
       const atual = totais.get(result.uid) || {
         uid:result.uid, name:result.studentName || cadastro.name || 'Aluno',
-        photo:cadastro.photo || '', score:0, partsCompleted:0,
+        photo:cadastro.photo || '', score:0, part1Score:0, part2Score:0, partsCompleted:0,
       };
       atual.score += Number(result.score || 0);
+      if (Number(result.part) === 1) atual.part1Score += Number(result.score || 0);
+      if (Number(result.part) === 2) atual.part2Score += Number(result.score || 0);
       atual.partsCompleted += 1;
       if (result.studentName) atual.name = result.studentName;
       totais.set(result.uid, atual);
@@ -1374,6 +1415,9 @@ ${item.text}`).join('\n\n')}`
       const publicRanking = ranking => ranking.map(row => ({
         name:row.name, photo:row.photo || parcial.ranking.find(item => item.uid === row.uid)?.photo || '',
         score:Number(row.score || 0), semanas:Number(row.semanas || 0),
+        ...(row.part1Score != null || row.part2Score != null ? {
+          part1Score:Number(row.part1Score || 0), part2Score:Number(row.part2Score || 0),
+        } : {}),
         position:row.position, isOwn:row.uid === uid,
       }));
       return {
@@ -1401,6 +1445,41 @@ ${item.text}`).join('\n\n')}`
             .sort((a, b) => b.quantidade - a.quantidade).slice(0, 5),
         },
       };
+    }
+  );
+
+  // Reaplica a regra proporcional aos resultados já gravados. É uma ação
+  // administrativa explícita: útil quando a régua de correção escrita muda.
+  const recalcularPontuacaoDesafio = onCall(
+    { region:REGION, timeoutSeconds:120, memory:'256MiB' },
+    async request => {
+      requireAdmin(request, adminEmails);
+      const weekKey = String(request.data?.weekKey || weekKeyFor()).trim();
+      const snaps = await db.collection('_challengeResults').where('weekKey', '==', weekKey).get();
+      const batch = db.batch();
+      const atualizados = [];
+      snaps.docs.forEach(doc => {
+        const result = doc.data();
+        const details = (result.details || []).map(item => {
+          if (item.type === 'multipleChoice' || item.correct === true) {
+            return { ...item, score:item.correct === true ? 100 : Number(item.score || 0),
+              correct:item.correct === true };
+          }
+          const score = scoreWrittenAnswer(item.answer, [item.expected]);
+          const next = { ...item, score, correct:score === 100 };
+          if (score > 0 && score < 100) next.parcial = true;
+          else delete next.parcial;
+          return next;
+        });
+        const score = details.reduce((sum, item) => sum + Number(item.score || 0), 0);
+        batch.set(doc.ref, { details, score, rescoredAt:FieldValue.serverTimestamp() }, { merge:true });
+        atualizados.push({ uid:result.uid, name:result.studentName || 'Aluno',
+          part:Number(result.part || 0), before:Number(result.score || 0), score });
+      });
+      if (snaps.size) await batch.commit();
+      const rankingSnap = await db.doc(`challengeRankings/${weekKey}`).get();
+      if (rankingSnap.exists) await buildRanking(weekKey);
+      return { ok:true, weekKey, documents:snaps.size, atualizados };
     }
   );
 
@@ -1441,8 +1520,11 @@ ${item.text}`).join('\n\n')}`
         const gabarito = gabaritos.get(doc.id) || new Map();
         const quem = resultado.studentName || 'Aluno';
         const aluno = alunos.get(resultado.uid) || {
-          uid:resultado.uid, name:quem, score:0, partes:0, acertos:0, erros:0 };
+          uid:resultado.uid, name:quem, score:0, part1Score:0, part2Score:0,
+          partes:0, acertos:0, erros:0 };
         aluno.score += Number(resultado.score || 0);
+        if (Number(resultado.part) === 1) aluno.part1Score += Number(resultado.score || 0);
+        if (Number(resultado.part) === 2) aluno.part2Score += Number(resultado.score || 0);
         aluno.partes += 1;
         (resultado.details || []).forEach(item => {
           const chaveItem = gabarito.get(item.questionId) || {};
@@ -1459,6 +1541,7 @@ ${item.text}`).join('\n\n')}`
             acertos:0, erros:0, respostas:[] };
           if (item.correct) pergunta.acertos += 1; else pergunta.erros += 1;
           pergunta.respostas.push({ aluno:quem, resposta:String(item.answer || '').trim(), acertou:item.correct === true,
+            score:Number(item.score || 0), parcial:item.parcial === true,
             uid:resultado.uid, roundId:resultado.roundId || '', questionId:item.questionId || '' });
           perguntas.set(chave, pergunta);
 
@@ -1628,6 +1711,7 @@ ${item.text}`).join('\n\n')}`
     publicarDesafioSemanal, gerarDesafiosPersonalizados, obterDesafioSemanal, iniciarDesafioSemanal,
     obterPerguntasDesafio, regerarPerguntaDesafio,
     obterTemporadaDesafio, obterResultadoDesafioAdmin,
+    recalcularPontuacaoDesafio,
     salvarRespostaDesafio, obterStatusDesafioAdmin, finalizarDesafioSemanal,
     notificarAberturaDesafio, lembrarDesafioManha, lembrarDesafioNoite,
     gerarDesafiosAtrasados, gerarDesafioDaSemana, gerarDesafioDaTurma,
