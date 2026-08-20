@@ -178,11 +178,12 @@ function canonicalChallengeTopic(value) {
   const topic = String(value || '').trim();
   const normalized = normalizeAnswer(topic);
   if (!normalized) return '';
-  if (/\b(vocabulary|vocabulario)\b/.test(normalized)) return '';
+  if (/\b(vocabulary|vocabulario|common responses|farewell)\b/.test(normalized)
+    || /\binvent x discover\b/.test(normalized)) return '';
   if (/\b(present perfect|have has been|already|yet|ever|never)\b/.test(normalized)) return 'Present Perfect';
   if (/\btag questions?\b/.test(normalized)) return 'Tag Questions';
   if (/\b(possessive|possessivo|possessivos|apostrophe s|apostrofo s|its vs|your their)\b/.test(normalized)) return 'Possessivos';
-  if (/\b(causative|causativo|causativa|have pessoa|get pessoa)\b/.test(normalized)) return 'Causativo';
+  if (/\b(causative|causatives|causativo|causativos|causativa|causativas|have pessoa|get pessoa)\b/.test(normalized)) return 'Causativo';
   if (/\b(going to|will|future|futuro)\b/.test(normalized)) return 'Futuro — will / going to';
   if (/\bthere is\b|\bthere are\b/.test(normalized)) return 'There is / There are';
   if (/\b(to be|verbo be|verb be|is vs are|was vs were|was were|am is are)\b/.test(normalized)) return 'Verbo to be';
@@ -191,6 +192,7 @@ function canonicalChallengeTopic(value) {
   if (/\bshould\b/.test(normalized)) return 'Modal — should';
   if (/\b(must|have to)\b/.test(normalized)) return 'Modal — must / have to';
   if (/\b(may|might)\b/.test(normalized)) return 'Modal — may / might';
+  if (/\b(agreement|concordancia verbal)\b/.test(normalized)) return 'Concordância verbal';
   return topic;
 }
 
