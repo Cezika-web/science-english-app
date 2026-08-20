@@ -222,8 +222,8 @@ function ChallengeRankingsHome({ data, loading, error }) {
     {data && <React.Fragment>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,minmax(0,1fr))', gap:7, marginTop:13 }}>{[['semana','Semana'],['mes','Mês'],['ano','Ano']].map(([key,label]) => <button key={key} onClick={() => setPeriod(key)} style={{ padding:'11px 4px', borderRadius:13, border:`1px solid ${period === key ? '#82C3F3' : '#E1E9F2'}`, background:period === key ? '#EAF5FF' : '#F8FAFC', fontFamily:'inherit' }}><strong style={{ display:'block', color:'#0D3F82', fontSize:17 }}>{own(key).position ? `${own(key).position}º` : '—'}</strong><span style={{ display:'block', color:'#70839A', fontSize:9, marginTop:3 }}>{label}</span></button>)}</div>
       <div style={{ display:'flex', padding:4, marginTop:12, borderRadius:13, background:'#E5EDF6' }}>{[['semana','Semana'],['mes','Mês'],['ano','Ano']].map(([key,label]) => <button key={key} onClick={() => setPeriod(key)} style={{ flex:1, padding:8, border:0, borderRadius:10, background:period === key ? '#fff' : 'transparent', color:period === key ? '#0D3F82' : '#70839A', fontFamily:'inherit', fontSize:10.5, fontWeight:900 }}>{label}</button>)}</div>
-      {selected.partial && <div style={{ marginTop:9, padding:'9px 11px', borderRadius:11, background:'#F0F7FF', color:'#41617F', fontSize:10, lineHeight:1.45 }}>Até domingo, somente sua posição e seus pontos ficam visíveis. Os outros participantes permanecem ocultos.</div>}
-      <div style={{ marginTop:9 }}><ChallengeRanking ranking={selected.rows || []} privateMode={selected.partial === true} /></div>
+      {selected.private && <div style={{ marginTop:9, padding:'9px 11px', borderRadius:11, background:'#F0F7FF', color:'#41617F', fontSize:10, lineHeight:1.45 }}>Até domingo, somente sua posição e seus pontos ficam visíveis. Os outros participantes permanecem ocultos.</div>}
+      <div style={{ marginTop:9 }}><ChallengeRanking ranking={selected.rows || []} privateMode={selected.private === true} /></div>
     </React.Fragment>}
   </div>;
 }

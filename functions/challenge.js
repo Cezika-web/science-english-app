@@ -1388,7 +1388,8 @@ ${item.text}`).join('\n\n')}`
       const alvo = String(request.data?.uid || '').trim();
       // Repete a mesma regra do estado semanal: somente administradores podem
       // consultar a temporada de outro UID, usada pelo modo espelho.
-      const uid = alvo && adminEmails.includes(request.auth.token?.email || '') ? alvo : quemChamou;
+      const adminMirror = Boolean(alvo && adminEmails.includes(request.auth.token?.email || ''));
+      const uid = adminMirror ? alvo : quemChamou;
       await assertStudent(uid);
       const now = new Date();
       const currentWeekKey = weekKeyFor(now);
@@ -1417,15 +1418,16 @@ ${item.text}`).join('\n\n')}`
       // O aluno vê somente a própria posição; se houver empate, recebe apenas a
       // quantidade de pessoas escondidas naquela mesma colocação.
       const minhaLinhaSemanal = semanaRankingCompleto.find(row => row.uid === uid);
-      const semanaRanking = semanaJaFechou ? semanaRankingCompleto : (minhaLinhaSemanal ? [{
+      const semanaRanking = (semanaJaFechou || adminMirror) ? semanaRankingCompleto : (minhaLinhaSemanal ? [{
         ...minhaLinhaSemanal,
         hiddenPeers:Math.max(0, semanaRankingCompleto.filter(row => row.position === minhaLinhaSemanal.position).length - 1),
       }] : []);
       // Mês, ano e geral também ignoram a semana ainda aberta. Caso contrário,
       // a diferença no acumulado denunciaria quanto cada colega já pontuou.
-      const mesRanking = rankingAcumulado(semanasFechadas.filter(item => item.weekKey.startsWith(currentMonth)));
-      const anoRanking = rankingAcumulado(semanasFechadas.filter(item => item.weekKey.startsWith(currentYear)));
-      const geral = rankingAcumulado(semanasFechadas);
+      const semanasParaRanking = adminMirror ? semanas : semanasFechadas;
+      const mesRanking = rankingAcumulado(semanasParaRanking.filter(item => item.weekKey.startsWith(currentMonth)));
+      const anoRanking = rankingAcumulado(semanasParaRanking.filter(item => item.weekKey.startsWith(currentYear)));
+      const geral = rankingAcumulado(semanasParaRanking);
 
       const desempenho = new Map();
       const erros = new Map();
@@ -1468,7 +1470,8 @@ ${item.text}`).join('\n\n')}`
             participantes:semana.participantes } : null;
         }).filter(Boolean),
         rankings:{
-          semana:{ label:'Esta semana', partial:!semanaJaFechou, rows:publicRanking(semanaRanking) },
+          semana:{ label:'Esta semana', partial:!semanaJaFechou,
+            private:!semanaJaFechou && !adminMirror, rows:publicRanking(semanaRanking) },
           mes:{ label:'Este mês', rows:publicRanking(mesRanking) },
           ano:{ label:'Este ano', rows:publicRanking(anoRanking) },
         },
