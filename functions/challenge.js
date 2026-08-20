@@ -1398,10 +1398,13 @@ ${item.text}`).join('\n\n')}`
         db.collection('_challengeResults').where('uid', '==', uid).get(),
       ]);
       const semanaJaFechou = fechadas.some(semana => semana.weekKey === currentWeekKey);
-      const semanasBase = semanaJaFechou ? fechadas : [{
+      const semanasFechadas = fechadas.map(semana => ({ ...semana,
+        ranking:rankByScore(semana.ranking || []),
+      }));
+      const semanasBase = semanaJaFechou ? semanasFechadas : [{
         weekKey:currentWeekKey, participantes:parcial.ranking.length,
         ranking:parcial.ranking, partial:true,
-      }, ...fechadas];
+      }, ...semanasFechadas];
       // Também normaliza documentos antigos, gravados antes da regra de empate
       // denso, para a interface nunca mostrar dois critérios de posição.
       const semanas = semanasBase.map(semana => ({ ...semana,
@@ -1420,15 +1423,16 @@ ${item.text}`).join('\n\n')}`
       }] : []);
       // Mês, ano e geral também ignoram a semana ainda aberta. Caso contrário,
       // a diferença no acumulado denunciaria quanto cada colega já pontuou.
-      const mesRanking = rankingAcumulado(fechadas.filter(item => item.weekKey.startsWith(currentMonth)));
-      const anoRanking = rankingAcumulado(fechadas.filter(item => item.weekKey.startsWith(currentYear)));
-      const geral = rankingAcumulado(fechadas);
+      const mesRanking = rankingAcumulado(semanasFechadas.filter(item => item.weekKey.startsWith(currentMonth)));
+      const anoRanking = rankingAcumulado(semanasFechadas.filter(item => item.weekKey.startsWith(currentYear)));
+      const geral = rankingAcumulado(semanasFechadas);
 
       const desempenho = new Map();
       const erros = new Map();
+      const weekKeysFechadas = new Set(semanasFechadas.map(semana => semana.weekKey));
       meusResultados.docs.forEach(doc => {
         const result = doc.data();
-        if (result.groupId) return;
+        if (result.groupId || !weekKeysFechadas.has(result.weekKey)) return;
         const linha = desempenho.get(result.weekKey) || { weekKey:result.weekKey, score:0, acertos:0, erros:0 };
         linha.score += Number(result.score || 0);
         (result.details || []).forEach(detail => {
@@ -1445,7 +1449,7 @@ ${item.text}`).join('\n\n')}`
       const acertos = evolucao.reduce((sum, row) => sum + row.acertos, 0);
       const totalErros = evolucao.reduce((sum, row) => sum + row.erros, 0);
       const respondidas = acertos + totalErros;
-      const melhoresPosicoes = semanas.map(semana => (semana.ranking || [])
+      const melhoresPosicoes = semanasFechadas.map(semana => (semana.ranking || [])
         .find(row => row.uid === uid)?.position).filter(Number.isFinite);
       const publicRanking = ranking => ranking.map(row => ({
         name:row.name, photo:row.photo || parcial.ranking.find(item => item.uid === row.uid)?.photo || '',
@@ -1457,7 +1461,7 @@ ${item.text}`).join('\n\n')}`
         ...(row.hiddenPeers ? { hiddenPeers:Number(row.hiddenPeers) } : {}),
       }));
       return {
-        minhasSemanas:semanas.map(semana => {
+        minhasSemanas:semanasFechadas.map(semana => {
           const linha = (semana.ranking || []).find(row => row.uid === uid);
           return linha ? { weekKey:semana.weekKey, score:linha.score,
             position:linha.position, partesFeitas:linha.partsCompleted,
