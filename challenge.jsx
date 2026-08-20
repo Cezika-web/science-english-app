@@ -162,8 +162,8 @@ function ChallengeSeasonAnalytics({ analytics = {} }) {
   </div>;
 }
 
-function ChallengeRanking({ ranking = [] }) {
-  if (!ranking.length) return <div style={{ padding:20, color:'#7B8DA3', fontSize:11.5, textAlign:'center' }}>Nenhum participante nesta semana.</div>;
+function ChallengeRanking({ ranking = [], privateMode = false }) {
+  if (!ranking.length) return <div style={{ padding:20, color:'#7B8DA3', fontSize:11.5, textAlign:'center' }}>{privateMode ? 'Você ainda não tem posição nesta semana.' : 'Nenhuma classificação disponível ainda.'}</div>;
   const podiumGroups = [2,1,3].map(position => ({ position, people:ranking.filter(row => row.position === position) }));
   const others = ranking.filter(row => row.position > 3);
   return <div>
@@ -195,11 +195,12 @@ function ChallengePodiumPlace({ position, people = [] }) {
     3:{ medal:'🥉', height:46, color:'#C9864B', background:'linear-gradient(180deg,#E9B27A,#BD7540)' },
   }[position];
   const shown = people.slice(0, 3);
+  const hiddenPeers = people.reduce((total, person) => total + Number(person.hiddenPeers || 0), 0);
   const topScore = people[0]?.score || 0;
   return <div style={{ minWidth:0, textAlign:'center', opacity:people.length ? 1 : .42 }}>
     <div style={{ minHeight:78, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-end' }}>
       <div style={{ display:'flex', justifyContent:'center', paddingLeft:shown.length > 1 ? 12 : 0 }}>{shown.map((person,index) => <span key={`${person.name}-${index}`} title={person.name} style={{ marginLeft:index ? -12 : 0, position:'relative', zIndex:shown.length-index }}><ChallengeAvatar person={person} size={position === 1 ? 54 : 46} /></span>)}</div>
-      {people.length > 3 && <span style={{ marginTop:-8, zIndex:5, padding:'2px 6px', borderRadius:999, background:'#0D3F82', color:'#fff', fontSize:8, fontWeight:900 }}>+{people.length - 3}</span>}
+      {(hiddenPeers > 0 || people.length > 3) && <span style={{ marginTop:-8, zIndex:5, padding:'2px 6px', borderRadius:999, background:'#0D3F82', color:'#fff', fontSize:8, fontWeight:900 }}>+{hiddenPeers || people.length - 3}</span>}
       <strong style={{ display:'block', width:'100%', marginTop:5, color:'#173654', fontSize:9.5, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{people.length ? people.map(person => String(person.name).split(' ')[0]).join(' · ') : '—'}</strong>
       <span style={{ display:'block', color:'#0D5AA7', fontSize:9, fontWeight:900 }}>{Number(topScore).toLocaleString('pt-BR')} PTS</span>
       {people.length === 1 && <ChallengePartScores row={people[0]} centered />}
@@ -221,7 +222,8 @@ function ChallengeRankingsHome({ data, loading, error }) {
     {data && <React.Fragment>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,minmax(0,1fr))', gap:7, marginTop:13 }}>{[['semana','Semana'],['mes','Mês'],['ano','Ano']].map(([key,label]) => <button key={key} onClick={() => setPeriod(key)} style={{ padding:'11px 4px', borderRadius:13, border:`1px solid ${period === key ? '#82C3F3' : '#E1E9F2'}`, background:period === key ? '#EAF5FF' : '#F8FAFC', fontFamily:'inherit' }}><strong style={{ display:'block', color:'#0D3F82', fontSize:17 }}>{own(key).position ? `${own(key).position}º` : '—'}</strong><span style={{ display:'block', color:'#70839A', fontSize:9, marginTop:3 }}>{label}</span></button>)}</div>
       <div style={{ display:'flex', padding:4, marginTop:12, borderRadius:13, background:'#E5EDF6' }}>{[['semana','Semana'],['mes','Mês'],['ano','Ano']].map(([key,label]) => <button key={key} onClick={() => setPeriod(key)} style={{ flex:1, padding:8, border:0, borderRadius:10, background:period === key ? '#fff' : 'transparent', color:period === key ? '#0D3F82' : '#70839A', fontFamily:'inherit', fontSize:10.5, fontWeight:900 }}>{label}</button>)}</div>
-      <div style={{ marginTop:9 }}><ChallengeRanking ranking={selected.rows || []} /></div>
+      {selected.partial && <div style={{ marginTop:9, padding:'9px 11px', borderRadius:11, background:'#F0F7FF', color:'#41617F', fontSize:10, lineHeight:1.45 }}>Até domingo, somente sua posição e seus pontos ficam visíveis. Os outros participantes permanecem ocultos.</div>}
+      <div style={{ marginTop:9 }}><ChallengeRanking ranking={selected.rows || []} privateMode={selected.partial === true} /></div>
     </React.Fragment>}
   </div>;
 }

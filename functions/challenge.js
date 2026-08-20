@@ -1409,10 +1409,20 @@ ${item.text}`).join('\n\n')}`
       }));
       const currentMonth = currentWeekKey.slice(0, 7);
       const currentYear = currentWeekKey.slice(0, 4);
-      const semanaRanking = (semanas.find(item => item.weekKey === currentWeekKey)?.ranking || []);
-      const mesRanking = rankingAcumulado(semanas.filter(item => item.weekKey.startsWith(currentMonth)));
-      const anoRanking = rankingAcumulado(semanas.filter(item => item.weekKey.startsWith(currentYear)));
-      const geral = rankingAcumulado(semanas);
+      const semanaRankingCompleto = (semanas.find(item => item.weekKey === currentWeekKey)?.ranking || []);
+      // Até o fechamento de domingo, ninguém recebe nomes ou notas dos colegas.
+      // O aluno vê somente a própria posição; se houver empate, recebe apenas a
+      // quantidade de pessoas escondidas naquela mesma colocação.
+      const minhaLinhaSemanal = semanaRankingCompleto.find(row => row.uid === uid);
+      const semanaRanking = semanaJaFechou ? semanaRankingCompleto : (minhaLinhaSemanal ? [{
+        ...minhaLinhaSemanal,
+        hiddenPeers:Math.max(0, semanaRankingCompleto.filter(row => row.position === minhaLinhaSemanal.position).length - 1),
+      }] : []);
+      // Mês, ano e geral também ignoram a semana ainda aberta. Caso contrário,
+      // a diferença no acumulado denunciaria quanto cada colega já pontuou.
+      const mesRanking = rankingAcumulado(fechadas.filter(item => item.weekKey.startsWith(currentMonth)));
+      const anoRanking = rankingAcumulado(fechadas.filter(item => item.weekKey.startsWith(currentYear)));
+      const geral = rankingAcumulado(fechadas);
 
       const desempenho = new Map();
       const erros = new Map();
@@ -1444,6 +1454,7 @@ ${item.text}`).join('\n\n')}`
           part1Score:Number(row.part1Score || 0), part2Score:Number(row.part2Score || 0),
         } : {}),
         position:row.position, isOwn:row.uid === uid,
+        ...(row.hiddenPeers ? { hiddenPeers:Number(row.hiddenPeers) } : {}),
       }));
       return {
         minhasSemanas:semanas.map(semana => {
