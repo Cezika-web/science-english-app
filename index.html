@@ -42,6 +42,34 @@
 
     #root { height: 100%; width: 100%; max-width: 100%; min-width: 0; display: flex; flex-direction: column; overflow-x: hidden; }
 
+    /* O celular continua sendo a base. Em telas grandes, o app aproveita o
+       espaço disponível e deixa de parecer um telefone ampliado no centro. */
+    @media (min-width: 900px) {
+      body { background: #ECE8E1; }
+      .student-app-shell {
+        max-width: 1040px !important;
+        border-left: 1px solid rgba(15,23,42,.08);
+        border-right: 1px solid rgba(15,23,42,.08);
+        box-shadow: 0 0 42px rgba(15,23,42,.08);
+      }
+      .student-app-shell > .scroll-area { padding-left: 28px !important; padding-right: 28px !important; }
+      .challenge-hub-screen, .challenge-season-screen {
+        max-width: 1000px !important;
+        box-shadow: 0 0 44px rgba(7,27,58,.14);
+      }
+      .challenge-hub-content {
+        display: grid;
+        grid-template-columns: minmax(0, 1.18fr) minmax(330px, .82fr);
+        align-items: start;
+        gap: 18px;
+        padding: 0 24px 34px !important;
+      }
+      .challenge-hub-actions { min-width: 0; }
+      .challenge-season-content { max-width: 900px; margin: 0 auto; padding: 24px 28px 40px !important; }
+      .modal-overlay { align-items: center; justify-content: center; padding: 24px; }
+      .modal-sheet { max-width: 760px; max-height: 88vh; border-radius: 24px; }
+    }
+
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes conffall {
@@ -4612,7 +4640,7 @@ function App() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', maxWidth: 480, minWidth: 0, margin: '0 auto', background: '#F6F1EA' }}>
+    <div className="student-app-shell" style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', maxWidth: 480, minWidth: 0, margin: '0 auto', background: '#F6F1EA' }}>
       {mirror && (
         <div style={{ background: '#1E40AF', color: '#fff', fontSize: 12.5, fontWeight: 700, textAlign: 'center', padding: '7px 12px', flexShrink: 0 }}>
           👁 Modo espelho — {student?.name || student?.firstName || 'aluno'} (somente leitura)
