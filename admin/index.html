@@ -2522,14 +2522,30 @@
       const columns = days.map(date => {
         const key = calendarDateKey(date), work = calendarSettings.workingDays.includes(date.getDay());
         const doDia = calendarEvents.filter(event => calendarOccursOn(event,date));
-        // "Horário disponível" some no dia em que algo ocupa aquela faixa —
-        // marcar reposição no vago é deixar de estar vago. Some só a OCORRÊNCIA:
-        // na semana seguinte o bloco volta sozinho, porque a série continua. E
-        // aula cancelada não ocupa nada, então o disponível reaparece embaixo.
+        // "Horário disponível" some somente no pedaço que ficou ocupado. Se o
+        // bloco vermelho vai de 07h a 09h e entrou uma aula de 08h a 09h, 07h–08h
+        // continua aparecendo. Antes qualquer interseção apagava o bloco inteiro.
+        // Aula cancelada não ocupa nada, então o disponível reaparece embaixo.
         const ocupam = doDia.filter(item => item.type !== 'available' && !calendarCancelada(item, key));
-        const naGrade = doDia.filter(item => item.type !== 'available' || !ocupam.some(outro =>
-          calendarMinutes(outro.startTime) < calendarMinutes(item.endTime)
-          && calendarMinutes(outro.endTime) > calendarMinutes(item.startTime)));
+        const naGrade = doDia.flatMap(item => {
+          if (item.type !== 'available') return [item];
+          let livres = [[calendarMinutes(item.startTime), calendarMinutes(item.endTime)]];
+          ocupam.forEach(outro => {
+            const inicioOcupado = calendarMinutes(outro.startTime), fimOcupado = calendarMinutes(outro.endTime);
+            livres = livres.flatMap(([inicioLivre, fimLivre]) => {
+              if (fimOcupado <= inicioLivre || inicioOcupado >= fimLivre) return [[inicioLivre, fimLivre]];
+              const partes = [];
+              if (inicioOcupado > inicioLivre) partes.push([inicioLivre, Math.min(inicioOcupado, fimLivre)]);
+              if (fimOcupado < fimLivre) partes.push([Math.max(fimOcupado, inicioLivre), fimLivre]);
+              return partes;
+            });
+          });
+          return livres.filter(([inicio, fim]) => fim > inicio).map(([inicio, fim]) => ({
+            ...item, startTime:calendarTime(inicio), endTime:calendarTime(fim),
+            // Mantém a série original no banco; estes são apenas recortes visuais.
+            fatiada:inicio !== calendarMinutes(item.startTime) || fim !== calendarMinutes(item.endTime),
+          }));
+        });
         // "Horário disponível" longo vira uma tira por hora. É assim que ele lê a
         // agenda — "esta hora está livre" — e clicar num bloco de 15h às 22h dava
         // uma reposição de sete horas. Só a exibição muda: no banco continua um
@@ -3543,6 +3559,12 @@
     // As aulas antigas vêm do banco, não da lista em memória: isto também roda
     // a partir da aba Alunos, onde a agenda pode nunca ter sido carregada — e aí
     // apagar pela lista em memória não apagaria nada e duplicaria a série.
+    // Também reconhece as séries semanais antigas, criadas antes do campo
+    // source:'cadastro'. Elas têm aluno vinculado, mas não seriam encontradas
+    // pela consulta antiga e ficavam na quarta quando o aluno passava para terça.
+    const calendarEhAulaDoCadastro = (event, uid) => event.studentUid === uid
+      && event.type === 'lesson' && (event.source === 'cadastro' || event.repeat === 'weekly');
+
     // O aviso de aula junta agora nasce no cadastro, não só na Agenda: busca no
     // banco porque daqui a agenda pode nunca ter sido aberta. Devolve o primeiro
     // compromisso que bate, ignorando as aulas do próprio aluno.
@@ -3550,7 +3572,7 @@
       if (!escolaAtual || !eventos.length) return null;
       const snap = await getDocs(collection(db, 'schools', escolaAtual, 'calendarEvents'));
       const existentes = snap.docs.map(item => ({ id:item.id, ...item.data() }))
-        .filter(item => !(item.source === 'cadastro' && item.studentUid === uid));
+        .filter(item => !calendarEhAulaDoCadastro(item, uid));
       for (const evento of eventos) {
         const bate = existentes.find(item => calendarSeriesOverlap(evento, item));
         if (bate) return bate;
@@ -3564,9 +3586,13 @@
         const events = studentLessonEvents(student);
         if (!events.length && !replace) continue;
         if (replace) {
+          // Uma consulta só por aluno inclui tanto a série atual quanto a versão
+          // legada sem `source`. Além de corrigir a mudança de dia, isso elimina
+          // duplicatas antigas do mesmo aluno na próxima edição do cadastro.
           const antigas = await getDocs(query(collection(db,'schools',escolaAtual,'calendarEvents'),
-            where('source','==','cadastro'), where('studentUid','==',student.uid)));
-          await Promise.all(antigas.docs.map(item => deleteDoc(item.ref)));
+            where('studentUid','==',student.uid)));
+          await Promise.all(antigas.docs.filter(item => calendarEhAulaDoCadastro(item.data(), student.uid))
+            .map(item => deleteDoc(item.ref)));
         }
         await Promise.all(events.map(event => addDoc(collection(db,'schools',escolaAtual,'calendarEvents'),
           { ...event, createdAt:serverTimestamp(), createdBy:auth.currentUser?.email || '', updatedAt:serverTimestamp() })));
