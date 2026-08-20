@@ -320,6 +320,22 @@ export function createChallengeFunctions({
     personalized ? `_challengeAnswerKeys/${roundId}_${uid}` : `_challengeAnswerKeys/${roundId}`
   );
 
+  // Colocação densa: pontuações iguais ocupam exatamente a mesma posição e o
+  // próximo total diferente avança uma casa (1, 1, 2, 3). Assim sempre há
+  // primeiro, segundo e terceiro lugares, mesmo quando o pódio tem empates.
+  function rankByScore(rows, scoreField = 'score') {
+    const ordered = [...rows].sort((a, b) => Number(b[scoreField] || 0) - Number(a[scoreField] || 0)
+      || Number(b.partsCompleted || b.semanas || 0) - Number(a.partsCompleted || a.semanas || 0)
+      || String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR'));
+    let lastScore = null, position = 0;
+    return ordered.map(row => {
+      const score = Number(row[scoreField] || 0);
+      if (lastScore === null || score !== lastScore) position += 1;
+      lastScore = score;
+      return { ...row, position };
+    });
+  }
+
   async function buildRanking(weekKey) {
     const resultSnaps = await db.collection('_challengeResults').where('weekKey', '==', weekKey).get();
     const totals = new Map();
@@ -337,16 +353,10 @@ export function createChallengeFunctions({
       if ((result.completedAt?.toMillis?.() || Infinity) < (current.completedAt?.toMillis?.() || Infinity)) current.completedAt = result.completedAt;
       totals.set(result.uid, current);
     });
-    const rows = [...totals.values()].sort((a,b) => b.score - a.score
-      || b.partsCompleted - a.partsCompleted
-      || (a.completedAt?.toMillis?.() || Infinity) - (b.completedAt?.toMillis?.() || Infinity)
-      || a.name.localeCompare(b.name, 'pt-BR'));
-    let lastScore = null, lastParts = null, position = 0;
-    const ranking = rows.map((row, index) => {
-      if (row.score !== lastScore || row.partsCompleted !== lastParts) position = index + 1;
-      lastScore = row.score; lastParts = row.partsCompleted;
-      return { uid:row.uid, name:row.name, score:row.score, partsCompleted:row.partsCompleted, position };
-    });
+    const ranking = rankByScore([...totals.values()]).map(row => ({
+      uid:row.uid, name:row.name, score:row.score,
+      partsCompleted:row.partsCompleted, position:row.position,
+    }));
     const schedule = scheduleFor(weekKey);
     await db.doc(`challengeRankings/${weekKey}`).set({
       weekKey, ranking, participantCount:ranking.length, revealAt:schedule.revealAt,
@@ -1257,15 +1267,52 @@ ${item.text}`).join('\n\n')}`
       });
     });
     semanas.sort((a, b) => b.weekKey.localeCompare(a.weekKey));
-    const geral = [...totais.values()].sort((a, b) => b.total - a.total
-      || b.semanas - a.semanas || a.name.localeCompare(b.name, 'pt-BR'));
-    let ultimoTotal = null, ultimasSemanas = null, posicao = 0;
-    geral.forEach((row, index) => {
-      if (row.total !== ultimoTotal || row.semanas !== ultimasSemanas) posicao = index + 1;
-      ultimoTotal = row.total; ultimasSemanas = row.semanas;
-      row.position = posicao;
-    });
+    const geral = rankByScore([...totais.values()], 'total');
     return { semanas, geral };
+  }
+
+  function rankingAcumulado(semanas) {
+    const totais = new Map();
+    semanas.forEach(semana => (semana.ranking || []).forEach(row => {
+      const atual = totais.get(row.uid) || {
+        uid:row.uid, name:row.name || 'Aluno', score:0, semanas:0,
+      };
+      atual.score += Number(row.score || 0);
+      atual.semanas += 1;
+      if (row.name) atual.name = row.name;
+      totais.set(row.uid, atual);
+    }));
+    return rankByScore([...totais.values()]);
+  }
+
+  async function rankingParcialDaSemana(weekKey) {
+    const [resultSnaps, studentSnaps] = await Promise.all([
+      db.collection('_challengeResults').where('weekKey', '==', weekKey).get(),
+      db.collection('students').get(),
+    ]);
+    const totais = new Map();
+    // O cadastro só serve para completar nome e foto. A pessoa entra no
+    // ranking apenas quando existe resultado de pelo menos uma parte.
+    const alunos = new Map();
+    studentSnaps.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.archived === true || data.challengeEnabled === false) return;
+      alunos.set(doc.id, { name:data.name || data.firstName || 'Aluno', photo:data.photo || '' });
+    });
+    resultSnaps.docs.forEach(doc => {
+      const result = doc.data();
+      if (result.groupId) return;
+      const cadastro = alunos.get(result.uid) || {};
+      const atual = totais.get(result.uid) || {
+        uid:result.uid, name:result.studentName || cadastro.name || 'Aluno',
+        photo:cadastro.photo || '', score:0, partsCompleted:0,
+      };
+      atual.score += Number(result.score || 0);
+      atual.partsCompleted += 1;
+      if (result.studentName) atual.name = result.studentName;
+      totais.set(result.uid, atual);
+    });
+    return { ranking:rankByScore([...totais.values()]), resultSnaps };
   }
 
   const obterTemporadaDesafio = onCall(
@@ -1273,7 +1320,58 @@ ${item.text}`).join('\n\n')}`
     async request => {
       const uid = requireAuth(request);
       await assertStudent(uid);
-      const { semanas, geral } = await loadSeason();
+      const now = new Date();
+      const currentWeekKey = weekKeyFor(now);
+      const [{ semanas:fechadas }, parcial, meusResultados] = await Promise.all([
+        loadSeason(now),
+        rankingParcialDaSemana(currentWeekKey),
+        db.collection('_challengeResults').where('uid', '==', uid).get(),
+      ]);
+      const semanaJaFechou = fechadas.some(semana => semana.weekKey === currentWeekKey);
+      const semanasBase = semanaJaFechou ? fechadas : [{
+        weekKey:currentWeekKey, participantes:parcial.ranking.length,
+        ranking:parcial.ranking, partial:true,
+      }, ...fechadas];
+      // Também normaliza documentos antigos, gravados antes da regra de empate
+      // denso, para a interface nunca mostrar dois critérios de posição.
+      const semanas = semanasBase.map(semana => ({ ...semana,
+        ranking:rankByScore(semana.ranking || []),
+      }));
+      const currentMonth = currentWeekKey.slice(0, 7);
+      const currentYear = currentWeekKey.slice(0, 4);
+      const semanaRanking = (semanas.find(item => item.weekKey === currentWeekKey)?.ranking || []);
+      const mesRanking = rankingAcumulado(semanas.filter(item => item.weekKey.startsWith(currentMonth)));
+      const anoRanking = rankingAcumulado(semanas.filter(item => item.weekKey.startsWith(currentYear)));
+      const geral = rankingAcumulado(semanas);
+
+      const desempenho = new Map();
+      const erros = new Map();
+      meusResultados.docs.forEach(doc => {
+        const result = doc.data();
+        if (result.groupId) return;
+        const linha = desempenho.get(result.weekKey) || { weekKey:result.weekKey, score:0, acertos:0, erros:0 };
+        linha.score += Number(result.score || 0);
+        (result.details || []).forEach(detail => {
+          if (detail.correct) linha.acertos += 1;
+          else {
+            linha.erros += 1;
+            const tema = String(detail.topic || detail.prompt || 'Revisão geral').trim();
+            erros.set(tema, Number(erros.get(tema) || 0) + 1);
+          }
+        });
+        desempenho.set(result.weekKey, linha);
+      });
+      const evolucao = [...desempenho.values()].sort((a, b) => a.weekKey.localeCompare(b.weekKey));
+      const acertos = evolucao.reduce((sum, row) => sum + row.acertos, 0);
+      const totalErros = evolucao.reduce((sum, row) => sum + row.erros, 0);
+      const respondidas = acertos + totalErros;
+      const melhoresPosicoes = semanas.map(semana => (semana.ranking || [])
+        .find(row => row.uid === uid)?.position).filter(Number.isFinite);
+      const publicRanking = ranking => ranking.map(row => ({
+        name:row.name, photo:row.photo || parcial.ranking.find(item => item.uid === row.uid)?.photo || '',
+        score:Number(row.score || 0), semanas:Number(row.semanas || 0),
+        position:row.position, isOwn:row.uid === uid,
+      }));
       return {
         minhasSemanas:semanas.map(semana => {
           const linha = (semana.ranking || []).find(row => row.uid === uid);
@@ -1281,11 +1379,23 @@ ${item.text}`).join('\n\n')}`
             position:linha.position, partesFeitas:linha.partsCompleted,
             participantes:semana.participantes } : null;
         }).filter(Boolean),
-        geral:geral.map(row => ({ name:row.name, total:row.total, semanas:row.semanas,
+        rankings:{
+          semana:{ label:'Esta semana', partial:!semanaJaFechou, rows:publicRanking(semanaRanking) },
+          mes:{ label:'Este mês', rows:publicRanking(mesRanking) },
+          ano:{ label:'Este ano', rows:publicRanking(anoRanking) },
+        },
+        geral:geral.map(row => ({ name:row.name, total:row.score, semanas:row.semanas,
           position:row.position, isOwn:row.uid === uid })),
-        meuTotal:geral.find(row => row.uid === uid)?.total || 0,
+        meuTotal:geral.find(row => row.uid === uid)?.score || 0,
         minhaPosicao:geral.find(row => row.uid === uid)?.position || null,
-        melhorPosicao:geral.find(row => row.uid === uid)?.melhor || null,
+        melhorPosicao:melhoresPosicoes.length ? Math.min(...melhoresPosicoes) : null,
+        analytics:{
+          respondidas, acertos, erros:totalErros,
+          percentualErro:respondidas ? Math.round(totalErros * 100 / respondidas) : 0,
+          evolucao,
+          principaisErros:[...erros.entries()].map(([tema, quantidade]) => ({ tema, quantidade }))
+            .sort((a, b) => b.quantidade - a.quantidade).slice(0, 5),
+        },
       };
     }
   );

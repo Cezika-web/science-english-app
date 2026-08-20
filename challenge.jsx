@@ -73,20 +73,21 @@ function ChallengeRules({ onClose }) {
 
 // A semana isolada esquece tudo na segunda. Aqui ficam as semanas anteriores e
 // o acumulado — é o que transforma o desafio em temporada e faz o aluno voltar.
-function ChallengeSeason({ carregar, onClose }) {
-  const [dados, setDados] = React.useState(null);
+function ChallengeSeason({ carregar, initialData, onClose }) {
+  const [dados, setDados] = React.useState(initialData || null);
   const [erro, setErro] = React.useState('');
   // Ref para o efeito rodar uma vez só: se dependesse de `carregar`, uma função
   // recriada a cada render deixaria o painel buscando em laço.
   const carregarRef = React.useRef(carregar);
   carregarRef.current = carregar;
   React.useEffect(() => {
+    if (initialData) return undefined;
     let vivo = true;
     Promise.resolve(carregarRef.current())
       .then(resultado => { if (vivo) setDados(resultado || { minhasSemanas:[], geral:[] }); })
       .catch(falha => { if (vivo) setErro(falha?.message || 'Não foi possível carregar agora.'); });
     return () => { vivo = false; };
-  }, []);
+  }, [initialData]);
 
   const semanaLabel = key => {
     const [, mes, dia] = String(key || '').split('-');
@@ -113,6 +114,8 @@ function ChallengeSeason({ carregar, onClose }) {
           </div>}
         </div>
 
+        <ChallengeSeasonAnalytics analytics={dados.analytics} />
+
         <div style={{ marginTop:18, fontSize:11, fontWeight:900, letterSpacing:1, color:'#0D5AA7', textTransform:'uppercase' }}>Suas semanas</div>
         {dados.minhasSemanas.length
           ? <div style={{ display:'grid', gap:7, marginTop:9 }}>{dados.minhasSemanas.map(semana =>
@@ -136,9 +139,84 @@ function ChallengeSeason({ carregar, onClose }) {
   </div>;
 }
 
+function ChallengeSeasonAnalytics({ analytics = {} }) {
+  const evolution = analytics.evolucao || [];
+  const maxScore = Math.max(...evolution.map(item => Number(item.score || 0)), 1);
+  return <div style={{ marginTop:16 }}>
+    <div style={{ fontSize:11, fontWeight:900, letterSpacing:1, color:'#0D5AA7', textTransform:'uppercase' }}>Seu desempenho</div>
+    <div style={{ display:'grid', gridTemplateColumns:'repeat(3,minmax(0,1fr))', gap:8, marginTop:9 }}>
+      {[
+        ['Perguntas',analytics.respondidas || 0],
+        ['Erros',analytics.erros || 0],
+        ['% de erro',`${analytics.percentualErro || 0}%`],
+      ].map(([label,value]) => <div key={label} style={{ padding:'13px 6px', textAlign:'center', borderRadius:14, background:'#fff', border:'1px solid #DCE7F4' }}><strong style={{ display:'block', color:'#0D3F82', fontSize:17 }}>{value}</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:9.5, marginTop:3 }}>{label}</span></div>)}
+    </div>
+    <div style={{ marginTop:10, padding:14, borderRadius:16, background:'#fff', border:'1px solid #DCE7F4' }}>
+      <strong style={{ color:'#213B5B', fontSize:12.5 }}>Evolução semanal</strong>
+      {evolution.length ? <div style={{ height:96, display:'flex', alignItems:'flex-end', gap:8, marginTop:12 }}>{evolution.map(item => <div key={item.weekKey} style={{ flex:1, minWidth:0, textAlign:'center' }}><strong style={{ display:'block', color:'#0D5AA7', fontSize:9.5, marginBottom:4 }}>{item.score}</strong><div style={{ height:Math.max(12,Math.round(Number(item.score || 0) / maxScore * 58)), borderRadius:'7px 7px 3px 3px', background:'linear-gradient(180deg,#5DE1FF,#147AE0)' }} /><span style={{ display:'block', color:'#7B8DA3', fontSize:8, marginTop:4 }}>{String(item.weekKey).slice(5)}</span></div>)}</div> : <p style={{ color:'#7B8DA3', fontSize:11, lineHeight:1.5, margin:'9px 0 0' }}>O gráfico começa a ganhar forma conforme novas semanas forem concluídas.</p>}
+    </div>
+    <div style={{ marginTop:10, padding:14, borderRadius:16, background:'#fff', border:'1px solid #DCE7F4' }}>
+      <strong style={{ color:'#213B5B', fontSize:12.5 }}>Principais erros</strong>
+      {(analytics.principaisErros || []).length ? <div style={{ display:'grid', gap:7, marginTop:10 }}>{analytics.principaisErros.map(item => <div key={item.tema} style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 10px', borderRadius:11, background:'#FFF7F3' }}><span style={{ flex:1, minWidth:0, color:'#6B3E31', fontSize:10.5, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{item.tema}</span><strong style={{ color:'#B33A3A', fontSize:11 }}>{item.quantidade}×</strong></div>)}</div> : <p style={{ color:'#7B8DA3', fontSize:11, margin:'9px 0 0' }}>Ainda não há erros suficientes para identificar um padrão.</p>}
+    </div>
+  </div>;
+}
+
 function ChallengeRanking({ ranking = [] }) {
   if (!ranking.length) return <div style={{ padding:20, color:'#7B8DA3', fontSize:11.5, textAlign:'center' }}>Nenhum participante nesta semana.</div>;
-  return <div style={{ display:'grid', gap:7 }}>{ranking.map(row => <div key={`${row.position}-${row.name}`} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 11px', borderRadius:13, background:row.isOwn ? '#E9F5FF' : '#F7FAFD', border:`1px solid ${row.isOwn ? '#B9DDFB' : '#E5EDF5'}` }}><span style={{ width:26, textAlign:'center', fontWeight:900, color:row.position <= 3 ? '#B27D09' : '#64748B' }}>{row.position}º</span><span style={{ flex:1, minWidth:0, color:row.isOwn ? '#0D3F82' : '#213B5B', fontSize:12, fontWeight:row.isOwn ? 900 : 750, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{row.name}{row.isOwn ? ' · você' : ''}</span><strong style={{ color:'#0D5AA7', fontSize:12 }}>{Number(row.score || 0).toLocaleString('pt-BR')} <small>PTS</small></strong></div>)}</div>;
+  const podiumGroups = [2,1,3].map(position => ({ position, people:ranking.filter(row => row.position === position) }));
+  const others = ranking.filter(row => row.position > 3);
+  return <div>
+    <div style={{ display:'grid', gridTemplateColumns:'repeat(3,minmax(0,1fr))', gap:6, alignItems:'end', padding:'10px 2px 0' }}>
+      {podiumGroups.map(group => <ChallengePodiumPlace key={group.position} position={group.position} people={group.people} />)}
+    </div>
+    {others.length > 0 && <div style={{ display:'grid', gap:7, marginTop:11 }}>{others.map((row,index) => <div key={`${row.position}-${row.name}-${index}`} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 11px', borderRadius:13, background:row.isOwn ? '#E9F5FF' : '#F7FAFD', border:`1px solid ${row.isOwn ? '#82C3F3' : '#E5EDF5'}` }}><span style={{ width:26, textAlign:'center', fontWeight:900, color:row.isOwn ? '#0D5AA7' : '#64748B' }}>{row.position}º</span><ChallengeAvatar person={row} size={34} /><span style={{ flex:1, minWidth:0, color:row.isOwn ? '#0D3F82' : '#213B5B', fontSize:12, fontWeight:row.isOwn ? 900 : 750, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{row.name}{row.isOwn ? ' · você' : ''}</span><strong style={{ color:'#0D5AA7', fontSize:12 }}>{Number(row.score || 0).toLocaleString('pt-BR')} <small>PTS</small></strong></div>)}</div>}
+  </div>;
+}
+
+function ChallengeAvatar({ person = {}, size = 46 }) {
+  const [failed, setFailed] = React.useState(false);
+  const initial = String(person.name || '?').trim().charAt(0).toUpperCase() || '?';
+  const style = { width:size, height:size, flexShrink:0, borderRadius:'50%', border:'3px solid #fff', boxShadow:'0 4px 12px rgba(7,27,58,.16)', objectFit:'cover', background:'#DCE9F5' };
+  return person.photo && !failed
+    ? <img src={person.photo} alt={`Foto de ${person.name || 'participante'}`} onError={() => setFailed(true)} style={style} />
+    : <span aria-label={`${person.name || 'Participante'} sem foto`} style={{ ...style, display:'inline-flex', alignItems:'center', justifyContent:'center', color:'#52708F', fontSize:Math.round(size * .38), fontWeight:900 }}>{initial}</span>;
+}
+
+function ChallengePodiumPlace({ position, people = [] }) {
+  const config = {
+    1:{ medal:'🥇', height:82, color:'#F4C84A', background:'linear-gradient(180deg,#FFE88C,#EAB52F)' },
+    2:{ medal:'🥈', height:61, color:'#AEB9C7', background:'linear-gradient(180deg,#E7EDF3,#AAB7C7)' },
+    3:{ medal:'🥉', height:46, color:'#C9864B', background:'linear-gradient(180deg,#E9B27A,#BD7540)' },
+  }[position];
+  const shown = people.slice(0, 3);
+  const topScore = people[0]?.score || 0;
+  return <div style={{ minWidth:0, textAlign:'center', opacity:people.length ? 1 : .42 }}>
+    <div style={{ minHeight:78, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-end' }}>
+      <div style={{ display:'flex', justifyContent:'center', paddingLeft:shown.length > 1 ? 12 : 0 }}>{shown.map((person,index) => <span key={`${person.name}-${index}`} title={person.name} style={{ marginLeft:index ? -12 : 0, position:'relative', zIndex:shown.length-index }}><ChallengeAvatar person={person} size={position === 1 ? 54 : 46} /></span>)}</div>
+      {people.length > 3 && <span style={{ marginTop:-8, zIndex:5, padding:'2px 6px', borderRadius:999, background:'#0D3F82', color:'#fff', fontSize:8, fontWeight:900 }}>+{people.length - 3}</span>}
+      <strong style={{ display:'block', width:'100%', marginTop:5, color:'#173654', fontSize:9.5, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{people.length ? people.map(person => String(person.name).split(' ')[0]).join(' · ') : '—'}</strong>
+      <span style={{ display:'block', color:'#0D5AA7', fontSize:9, fontWeight:900 }}>{Number(topScore).toLocaleString('pt-BR')} PTS</span>
+    </div>
+    <div style={{ height:config.height, display:'flex', alignItems:'flex-start', justifyContent:'center', marginTop:5, paddingTop:9, borderRadius:'10px 10px 3px 3px', color:'#fff', background:config.background, boxShadow:'inset 0 1px rgba(255,255,255,.45)' }}><strong style={{ fontSize:20, textShadow:'0 1px 2px rgba(0,0,0,.18)' }}>{config.medal}<span style={{ display:'block', fontSize:10, marginTop:2 }}>{position}º LUGAR</span></strong></div>
+  </div>;
+}
+
+function ChallengeRankingsHome({ data, loading, error }) {
+  const [period, setPeriod] = React.useState('semana');
+  const periods = data?.rankings || {};
+  const selected = periods[period] || { rows:[] };
+  const own = key => periods[key]?.rows?.find(row => row.isOwn) || {};
+  return <div style={{ padding:16, borderRadius:20, background:'#fff', border:'1px solid #DCE7F4', boxShadow:'0 10px 24px rgba(7,27,58,.08)' }}>
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10 }}><div><span style={{ display:'block', color:'#0D5AA7', fontSize:9.5, fontWeight:900, letterSpacing:1, textTransform:'uppercase' }}>Classificação</span><strong style={{ display:'block', color:'#071B3A', fontSize:17, marginTop:3 }}>Onde você está agora</strong></div>{selected.partial && <span style={{ padding:'6px 8px', borderRadius:9, background:'#FFF4D8', color:'#906100', fontSize:8.5, fontWeight:900 }}>PARCIAL</span>}</div>
+    {loading && <div style={{ padding:22, textAlign:'center', color:'#7B8DA3', fontSize:11.5 }}>Carregando posições…</div>}
+    {error && <div style={{ marginTop:10, padding:11, borderRadius:12, background:'#FFF1F2', color:'#B3261E', fontSize:11 }}>{error}</div>}
+    {data && <React.Fragment>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,minmax(0,1fr))', gap:7, marginTop:13 }}>{[['semana','Semana'],['mes','Mês'],['ano','Ano']].map(([key,label]) => <button key={key} onClick={() => setPeriod(key)} style={{ padding:'11px 4px', borderRadius:13, border:`1px solid ${period === key ? '#82C3F3' : '#E1E9F2'}`, background:period === key ? '#EAF5FF' : '#F8FAFC', fontFamily:'inherit' }}><strong style={{ display:'block', color:'#0D3F82', fontSize:17 }}>{own(key).position ? `${own(key).position}º` : '—'}</strong><span style={{ display:'block', color:'#70839A', fontSize:9, marginTop:3 }}>{label}</span></button>)}</div>
+      <div style={{ display:'flex', padding:4, marginTop:12, borderRadius:13, background:'#E5EDF6' }}>{[['semana','Semana'],['mes','Mês'],['ano','Ano']].map(([key,label]) => <button key={key} onClick={() => setPeriod(key)} style={{ flex:1, padding:8, border:0, borderRadius:10, background:period === key ? '#fff' : 'transparent', color:period === key ? '#0D3F82' : '#70839A', fontFamily:'inherit', fontSize:10.5, fontWeight:900 }}>{label}</button>)}</div>
+      <div style={{ marginTop:9 }}><ChallengeRanking ranking={selected.rows || []} /></div>
+    </React.Fragment>}
+  </div>;
 }
 
 function ChallengeResults({ state }) {
@@ -150,8 +228,6 @@ function ChallengeResults({ state }) {
       const key = `${part.part}-${index}`, open = openQuestion === key;
       return <div key={key} style={{ border:`1px solid ${detail.correct ? '#B8E8D5' : '#F0D1C8'}`, borderRadius:13, overflow:'hidden' }}><button onClick={() => setOpenQuestion(open ? null : key)} style={{ width:'100%', display:'flex', alignItems:'center', gap:9, padding:11, border:0, background:detail.correct ? '#F1FBF7' : '#FFF7F3', textAlign:'left', fontFamily:'inherit' }}><span>{detail.correct ? '✅' : '❌'}</span><span style={{ flex:1, color:'#213B5B', fontSize:11.5, fontWeight:750 }}>{detail.prompt}</span><strong style={{ color:detail.correct ? '#168C72' : '#B33A3A' }}>{detail.score}</strong></button>{open && <div style={{ padding:11, color:'#53677E', fontSize:11, lineHeight:1.5 }}><div><strong>Sua resposta:</strong> {detail.answer || 'Sem resposta'}</div><div style={{ marginTop:5 }}><strong>Resposta correta:</strong> {detail.expected}</div>{detail.explanation && <div style={{ marginTop:5 }}><strong>Explicação:</strong> {detail.explanation}</div>}</div>}</div>;
     })}</div></div>)}
-    <div style={{ marginTop:16, color:'#0D5AA7', fontSize:10, fontWeight:900, textTransform:'uppercase', letterSpacing:.9 }}>Ranking da semana</div>
-    <div style={{ marginTop:8, padding:12, borderRadius:17, background:'#fff', border:'1px solid #DCE7F4' }}><ChallengeRanking ranking={state.ranking || []} /></div>
   </div>;
 }
 
@@ -162,35 +238,53 @@ function ChallengePrivateHub({ challenge, onBack, onJoin }) {
 // Quinta-feira a Parte 1 fecha e a nota dela sai na hora, sem esperar domingo.
 // Quem nao respondeu ve o zero: e o preco de nao ter entrado ate quarta.
 function ChallengeParte1({ parte1 }) {
+  const [openQuestion, setOpenQuestion] = React.useState(null);
   if (!parte1) return null;
   const acertos = (parte1.details || []).filter(item => item.correct).length;
   const total = (parte1.details || []).length;
   const bom = parte1.concluida && parte1.score >= 300;
-  return <div style={{ padding:15, marginBottom:12, borderRadius:18, background:'#fff', border:`1px solid ${parte1.concluida ? '#CFE9DC' : '#F3C9C9'}` }}>
+  return <div style={{ padding:15, marginTop:12, borderRadius:18, background:'#fff', border:`1px solid ${parte1.concluida ? '#CFE9DC' : '#F3C9C9'}` }}>
     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:10 }}>
       <span style={{ color:'#0D5AA7', fontSize:9.5, fontWeight:900, letterSpacing:1.1 }}>PARTE 1 · ENCERRADA</span>
       <strong style={{ fontSize:19, color:parte1.concluida ? (bom ? '#15713A' : '#B45309') : '#B91C1C' }}>{parte1.score}<span style={{ fontSize:11, color:'#94A3B8' }}> / {parte1.maxScore}</span></strong>
     </div>
     <p style={{ margin:'6px 0 0', color:'#64748B', fontSize:12, lineHeight:1.5 }}>
       {parte1.concluida
-        ? `Voce acertou ${acertos} de ${total}. A Parte 2 esta valendo ate sabado.`
-        : 'Voce nao respondeu a Parte 1 ate quarta, entao ela ficou zerada. A Parte 2 ainda da tempo, ate sabado.'}
+        ? `Você acertou ${acertos} de ${total}. Confira cada pergunta abaixo.`
+        : 'Você não respondeu a Parte 1 até quarta, então ela ficou zerada. A Parte 2 ainda dá tempo, até sábado.'}
     </p>
+    {(parte1.details || []).length > 0 && <div style={{ display:'grid', gap:7, marginTop:11 }}>{parte1.details.map((detail,index) => {
+      const open = openQuestion === index;
+      return <div key={detail.questionId || index} style={{ border:`1px solid ${detail.correct ? '#B8E8D5' : '#F0D1C8'}`, borderRadius:13, overflow:'hidden' }}><button onClick={() => setOpenQuestion(open ? null : index)} style={{ width:'100%', display:'flex', alignItems:'center', gap:9, padding:11, border:0, background:detail.correct ? '#F1FBF7' : '#FFF7F3', textAlign:'left', fontFamily:'inherit' }}><span>{detail.correct ? '✅' : '❌'}</span><span style={{ flex:1, minWidth:0, color:'#213B5B', fontSize:11.5, fontWeight:750 }}>Pergunta {index + 1}</span><strong style={{ color:detail.correct ? '#168C72' : '#B33A3A' }}>{detail.score} PTS</strong><span style={{ color:'#8293A7' }}>{open ? '⌃' : '⌄'}</span></button>{open && <div style={{ padding:11, color:'#53677E', fontSize:11, lineHeight:1.5 }}><strong style={{ display:'block', color:'#213B5B', marginBottom:7 }}>{detail.prompt}</strong><div><strong>Sua resposta:</strong> {detail.answer || 'Sem resposta'}</div><div style={{ marginTop:5 }}><strong>Resposta correta:</strong> {detail.expected}</div>{detail.explanation && <div style={{ marginTop:7, padding:'8px 9px', borderRadius:9, background:'#F4F7FA' }}><strong>Por quê:</strong> {detail.explanation}</div>}</div>}</div>;
+    })}</div>}
   </div>;
 }
 
 function ChallengeHub({ challengeState, selectedChallenge, onBack, onStart, onJoinChallenge, onRefresh, onLoadSeason }) {
   const [panel, setPanel] = React.useState(null);
+  const [seasonData, setSeasonData] = React.useState(null);
+  const [seasonError, setSeasonError] = React.useState('');
+  const loadSeasonRef = React.useRef(onLoadSeason);
+  loadSeasonRef.current = onLoadSeason;
+  React.useEffect(() => {
+    if (selectedChallenge?.kind === 'private') return undefined;
+    let alive = true;
+    Promise.resolve(loadSeasonRef.current()).then(data => { if (alive) setSeasonData(data); })
+      .catch(error => { if (alive) setSeasonError(error?.message || 'Não foi possível carregar as posições.'); });
+    return () => { alive = false; };
+  }, [selectedChallenge?.kind]);
   if (selectedChallenge?.kind === 'private') return <ChallengePrivateHub challenge={selectedChallenge} onBack={onBack} onJoin={onJoinChallenge} />;
   const state = challengeStatus(challengeState);
   const canStart = challengeState?.phase === 'open' && challengeState?.canStart && !challengeState?.completed;
   return <div style={{ position:'fixed', inset:0, zIndex:10020, background:'#F3F7FC', maxWidth:480, margin:'0 auto', overflowY:'auto' }}>
-    <div style={{ minHeight:225, padding:'calc(env(safe-area-inset-top,0px) + 14px) 18px 28px', color:'#fff', background:challengeBlue }}><div style={{ display:'flex', justifyContent:'space-between' }}><button onClick={onBack} style={challengeRoundButton}>‹</button><span style={{ fontSize:10.5, fontWeight:900, color:'#B9F2FF', letterSpacing:1.3 }}>SCIENCE ENGLISH</span><span style={{ width:36 }} /></div><div style={{ textAlign:'center', marginTop:22 }}><div style={{ fontSize:38 }}>🏆</div><div style={{ color:'#A9EEFF', fontSize:10.5, fontWeight:900, letterSpacing:1.4, marginTop:7 }}>DESAFIO SEMANAL</div><h1 style={{ fontSize:25, margin:'7px 0 5px' }}>Desafio Science English</h1><p style={{ margin:0, color:'rgba(255,255,255,.73)', fontSize:12.5 }}>O que vale é dominar o que você já estudou.</p></div></div>
+    <div style={{ minHeight:174, padding:'calc(env(safe-area-inset-top,0px) + 14px) 18px 26px', color:'#fff', background:challengeBlue }}><div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}><button onClick={onBack} style={challengeRoundButton}>‹</button><span style={{ fontSize:10.5, fontWeight:900, color:'#B9F2FF', letterSpacing:1.3 }}>SCIENCE ENGLISH</span><button onClick={() => setPanel('rules')} aria-label="Regras" style={{ ...challengeRoundButton, fontSize:15 }}>?</button></div><div style={{ marginTop:20 }}><div style={{ color:'#A9EEFF', fontSize:9.5, fontWeight:900, letterSpacing:1.3 }}>🏆 DESAFIO SCIENCE ENGLISH</div><h1 style={{ fontSize:23, margin:'6px 0 3px' }}>Classificação e desafio</h1><p style={{ margin:0, color:'rgba(255,255,255,.73)', fontSize:11.5 }}>Veja sua posição e acompanhe sua evolução.</p></div></div>
     <div style={{ padding:'0 16px 28px', marginTop:-24 }}>
-      {challengeState?.phase === 'results' ? <ChallengeResults state={challengeState} /> : <React.Fragment><ChallengeParte1 parte1={challengeState?.parte1} /><div style={{ padding:18, background:'#fff', border:'1px solid #DCE7F4', borderRadius:22, boxShadow:'0 12px 28px rgba(7,27,58,.1)' }}><div style={{ display:'flex', justifyContent:'space-between', gap:10 }}><div><span style={{ display:'block', color:'#0D5AA7', fontSize:9.5, fontWeight:900, textTransform:'uppercase' }}>{state.badge}</span><strong style={{ display:'block', color:'#071B3A', fontSize:17, marginTop:3 }}>{state.title}</strong></div>{challengeState?.part && <span style={{ padding:'7px 9px', height:'fit-content', borderRadius:10, color:'#0D5AA7', background:'#E8F3FF', fontSize:10.5, fontWeight:900 }}>PARTE {challengeState.part}</span>}</div><p style={{ color:'#64748B', fontSize:11.5, lineHeight:1.5 }}>{state.detail}</p>{canStart && <button onClick={onStart} style={{ width:'100%', border:0, borderRadius:14, padding:14, color:'#fff', background:'linear-gradient(135deg,#147AE0,#0757A5)', fontFamily:'inherit', fontSize:13, fontWeight:900 }}>{challengeState.started ? 'CONTINUAR DESAFIO' : 'COMEÇAR DESAFIO'} →</button>}{challengeState?.completed && <div style={{ padding:12, borderRadius:13, background:'#E7F8F1', color:'#14745C', fontSize:12, fontWeight:850, textAlign:'center' }}>✓ Parte concluída e respostas confirmadas</div>}{(challengeState?.phase === 'unpublished' || challengeState?.phase === 'waiting') && <button onClick={onRefresh} style={{ width:'100%', border:'1px solid #D7E3F1', borderRadius:13, padding:12, background:'#fff', color:'#0D5AA7', fontWeight:850 }}>ATUALIZAR</button>}<div style={{ display:'flex', gap:8, marginTop:12 }}><button onClick={() => setPanel('rules')} style={{ flex:1, border:0, background:'transparent', color:'#0D5AA7', fontFamily:'inherit', fontSize:11.5, fontWeight:800 }}>Regras e pontuação</button><button onClick={() => setPanel('season')} style={{ flex:1, border:0, background:'transparent', color:'#0D5AA7', fontFamily:'inherit', fontSize:11.5, fontWeight:800 }}>Minha temporada</button></div></div></React.Fragment>}
+      <ChallengeRankingsHome data={seasonData} loading={!seasonData && !seasonError} error={seasonError} />
+      {challengeState?.phase === 'results' ? <div style={{ marginTop:12 }}><ChallengeResults state={challengeState} /></div> : <React.Fragment><div style={{ marginTop:12, padding:18, background:'#fff', border:'1px solid #DCE7F4', borderRadius:20 }}><div style={{ display:'flex', justifyContent:'space-between', gap:10 }}><div><span style={{ display:'block', color:'#0D5AA7', fontSize:9.5, fontWeight:900, textTransform:'uppercase' }}>{state.badge}</span><strong style={{ display:'block', color:'#071B3A', fontSize:17, marginTop:3 }}>{state.title}</strong></div>{challengeState?.part && <span style={{ padding:'7px 9px', height:'fit-content', borderRadius:10, color:'#0D5AA7', background:'#E8F3FF', fontSize:10.5, fontWeight:900 }}>PARTE {challengeState.part}</span>}</div><p style={{ color:'#64748B', fontSize:11.5, lineHeight:1.5 }}>{state.detail}</p>{canStart && <button onClick={onStart} style={{ width:'100%', border:0, borderRadius:14, padding:14, color:'#fff', background:'linear-gradient(135deg,#147AE0,#0757A5)', fontFamily:'inherit', fontSize:13, fontWeight:900 }}>{challengeState.started ? 'CONTINUAR DESAFIO' : 'COMEÇAR DESAFIO'} →</button>}{challengeState?.completed && <div style={{ padding:12, borderRadius:13, background:'#E7F8F1', color:'#14745C', fontSize:12, fontWeight:850, textAlign:'center' }}>✓ Parte concluída e respostas confirmadas</div>}{(challengeState?.phase === 'unpublished' || challengeState?.phase === 'waiting') && <button onClick={onRefresh} style={{ width:'100%', border:'1px solid #D7E3F1', borderRadius:13, padding:12, background:'#fff', color:'#0D5AA7', fontWeight:850 }}>ATUALIZAR</button>}</div><ChallengeParte1 parte1={challengeState?.parte1} /></React.Fragment>}
+      <button onClick={() => setPanel('season')} style={{ width:'100%', display:'flex', alignItems:'center', gap:12, marginTop:12, padding:'14px 15px', borderRadius:17, border:'1px solid #DCE7F4', background:'#fff', fontFamily:'inherit', textAlign:'left' }}><span style={{ width:40, height:40, borderRadius:13, display:'flex', alignItems:'center', justifyContent:'center', background:'#E7F3FF', fontSize:20 }}>📊</span><span style={{ flex:1 }}><strong style={{ display:'block', color:'#071B3A', fontSize:13.5 }}>Minha temporada</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:10.5, marginTop:2 }}>Gráfico, erros, porcentagem e histórico</span></span><span style={{ color:'#8EA0B5', fontSize:20 }}>›</span></button>
     </div>
     {panel === 'rules' && <ChallengeRules onClose={() => setPanel(null)} />}
-    {panel === 'season' && <ChallengeSeason carregar={onLoadSeason} onClose={() => setPanel(null)} />}
+    {panel === 'season' && <ChallengeSeason carregar={onLoadSeason} initialData={seasonData} onClose={() => setPanel(null)} />}
   </div>;
 }
 
