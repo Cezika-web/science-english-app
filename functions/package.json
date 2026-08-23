@@ -6,6 +6,9 @@
   "engines": {
     "node": "22"
   },
+  "scripts": {
+    "test:challenge": "node scripts/test_challenge_scoring.mjs"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.112.4",
     "firebase-admin": "^13.0.0",

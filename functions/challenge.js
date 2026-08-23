@@ -78,7 +78,9 @@ function formatOf(question) {
 
 const FORMAT_RULES = {
   text:'Resposta escrita: o aluno digita. Deixe options vazio e correctOption vazio, e preencha acceptedAnswers '
-    + 'com TODAS as formas corretas de escrever a resposta. Mínimo de 3 palavras, nunca uma palavra só, e curta o '
+    + 'com TODAS as formas corretas de escrever a resposta: fragmento que completa a lacuna, frase completa, '
+    + 'contrações, formas sem contração, conectores opcionais e versões mais específicas que preservem o mesmo sentido. '
+    + 'Mínimo de 3 palavras, nunca uma palavra só, e curta o '
     + 'suficiente para ser digitada em 45 segundos no celular. A pergunta precisa admitir uma única construção '
     + 'natural, porque a correção compara texto — maiúscula, acento e pontuação são ignorados.',
   trueFalse:'Verdadeiro ou falso: exatamente duas alternativas, {"id":"a","text":"True"} e {"id":"b","text":"False"}, '
@@ -242,6 +244,30 @@ function answerTokens(value) {
   return normalizeAnswer(value).split(' ').map(token => token.replace(/^'+|'+$/g, '')).filter(Boolean);
 }
 
+function orderedSubsequence(needle, haystack) {
+  let index = 0;
+  for (const token of haystack) {
+    if (token === needle[index]) index += 1;
+    if (index === needle.length) return true;
+  }
+  return false;
+}
+
+function polarityOf(tokens) {
+  const negative = tokens.filter(token => token === 'not' || token === 'no' || token === 'never'
+    || /n't$/.test(token) || ['cannot','neither','nobody','nothing','nowhere'].includes(token)).length;
+  return negative > 0 ? 'negative' : 'positive';
+}
+
+// O aluno pode responder só o trecho pedido ou repetir a frase inteira. Também
+// pode acrescentar um modificador válido: "a basketball game" continua contendo
+// a construção "a game". A ordem das palavras e a polaridade precisam continuar
+// iguais, para nunca aceitar "I do not like it" como variante de "I like it".
+function preservesExpectedConstruction(response, expected) {
+  if (expected.length < 2 || response.length < expected.length) return false;
+  return polarityOf(response) === polarityOf(expected) && orderedSubsequence(expected, response);
+}
+
 // Distância de edição por palavra. Cada palavra correta preserva uma fração da
 // nota, enquanto inserções, trocas e omissões descontam separadamente.
 function wordDistance(a, b) {
@@ -265,6 +291,10 @@ function scoreWrittenAnswer(value, acceptedAnswers) {
   if (!candidates.length) return 0;
   let best = 0;
   candidates.forEach(expected => {
+    if (preservesExpectedConstruction(response, expected)) {
+      best = 1;
+      return;
+    }
     const base = Math.max(response.length, expected.length, 1);
     const similarity = Math.max(0, 1 - wordDistance(response, expected) / base);
     best = Math.max(best, similarity);
@@ -529,7 +559,7 @@ export function createChallengeFunctions({
         'Em format="trueFalse": exatamente duas alternativas, {"id":"a","text":"True"} e {"id":"b","text":"False"}, correctOption com a letra certa, acceptedAnswers vazio. ' +
         'Em format="text": options vazio, correctOption vazio, e acceptedAnswers com TODAS as formas corretas de escrever a resposta. ' +
         'A resposta escrita tem no MÍNIMO 3 palavras — nunca uma palavra só. Deve caber em 45 segundos digitando no celular: uma oração curta, não um parágrafo nem redação. ' +
-        'A correção é automática e compara texto, então a pergunta precisa admitir uma única construção natural — sem margem para sinônimo ou ordem diferente. Em acceptedAnswers liste EXAUSTIVAMENTE toda variação válida: contração e forma completa ("don\'t" e "do not"), grafia americana e britânica, e as alternâncias de palavra que um aluno correto poderia escrever. Se a pergunta admitir muitas respostas certas diferentes, reformule para fechar o alvo. Maiúscula, acento e pontuação são ignorados na correção, então não dependa deles. ' +
+        'A correção é automática e compara construções, então a pergunta precisa admitir um alvo gramatical inequívoco. Em acceptedAnswers liste EXAUSTIVAMENTE toda variação válida: contração e forma completa ("don\'t" e "do not"), grafia americana e britânica, resposta curta e frase completa, conectores opcionais e palavras mais específicas que mantenham o mesmo sentido e a mesma regra. Não restrinja o gabarito a uma cópia literal quando outra formulação natural também responde corretamente. Se a pergunta admitir sentidos realmente diferentes, reformule para fechar o alvo. Maiúscula, acento e pontuação são ignorados na correção, então não dependa deles. ' +
         'Em todos os formatos: uma única resposta inequívoca e explicação pedagógica curta. ' +
         'Quando houver resultado da semana anterior, calibre por ele: acima de 80% dos pontos, suba a dificuldade de forma perceptível (nuance mais fina, distratores mais próximos); abaixo de 40%, mantenha exigente mas alcançável. Os erros da semana passada são pista forte de fragilidade — cubra o mesmo ponto gramatical com contexto novo, nunca repetindo a pergunta. ' +
         'Não copie exercícios literalmente. Não mencione ao aluno que um item é fraqueza ou força.' }],
@@ -701,29 +731,43 @@ ${item.text}`).join('\n\n')}`
       const detalhes = resultSnap.data().details || [];
       const alvo = detalhes.find(item => item.questionId === questionId);
       if (!alvo) throw new HttpsError('not-found', 'Pergunta não encontrada neste resultado.');
-      if (alvo.correct) return { ok:true, jaEstavaCerta:true };
 
       const novos = detalhes.map(item => item.questionId === questionId
-        ? { ...item, score:100, correct:true, aceitaPeloProfessor:true } : item);
+        ? { ...item, score:100, correct:true, parcial:false,
+            aceitaPeloProfessor:true, teacherReviewed:true } : item);
       const score = novos.reduce((soma, item) => soma + Number(item.score || 0), 0);
-      await resultRef.set({ details:novos, score, updatedAt:FieldValue.serverTimestamp() }, { merge:true });
 
       // O gabarito também aprende: a mesma variante deixa de ser erro para quem
       // ainda vai responder, e some do "erro coletivo" na próxima atualização.
       let noGabarito = false;
       const resposta = String(alvo.answer || '').trim();
+      let chaveRef = null;
+      let respostasAtualizadas = null;
       if (resposta) {
-        const chaveRef = answerKeyRef(uid, roundId, true);
-        const chaveSnap = await chaveRef.get();
+        const chavePessoal = answerKeyRef(uid, roundId, true);
+        const chaveGeral = answerKeyRef(uid, roundId, false);
+        const [pessoalSnap, geralSnap] = await Promise.all([chavePessoal.get(), chaveGeral.get()]);
+        const chaveSnap = pessoalSnap.exists ? pessoalSnap : geralSnap;
+        chaveRef = pessoalSnap.exists ? chavePessoal : geralSnap.exists ? chaveGeral : null;
         if (chaveSnap.exists) {
           const respostas = chaveSnap.data().answers || [];
-          const atualizadas = respostas.map(item => item.id === questionId
+          respostasAtualizadas = respostas.map(item => item.id === questionId
             ? { ...item, acceptedAnswers:[...new Set([...(item.acceptedAnswers || []), normalizeAnswer(resposta)])].filter(Boolean) }
             : item);
-          await chaveRef.set({ answers:atualizadas, updatedAt:FieldValue.serverTimestamp() }, { merge:true });
           noGabarito = true;
         }
       }
+
+      const batch = db.batch();
+      batch.set(resultRef, {
+        details:novos, score, teacherReviewedAt:FieldValue.serverTimestamp(),
+        updatedAt:FieldValue.serverTimestamp(),
+      }, { merge:true });
+      if (chaveRef && respostasAtualizadas) {
+        batch.set(chaveRef, { answers:respostasAtualizadas,
+          updatedAt:FieldValue.serverTimestamp() }, { merge:true });
+      }
+      await batch.commit();
 
       // A semana já fechada precisa do ranking refeito, senão a posição fica
       // com a nota velha.
@@ -732,7 +776,7 @@ ${item.text}`).join('\n\n')}`
         const rankingSnap = await db.doc(`challengeRankings/${weekKey}`).get();
         if (rankingSnap.exists) await buildRanking(weekKey);
       }
-      return { ok:true, score, noGabarito };
+      return { ok:true, score, noGabarito, jaEstavaCerta:alvo.correct === true };
     }
   );
 
@@ -1499,22 +1543,40 @@ ${item.text}`).join('\n\n')}`
       requireAdmin(request, adminEmails);
       const weekKey = String(request.data?.weekKey || weekKeyFor()).trim();
       const snaps = await db.collection('_challengeResults').where('weekKey', '==', weekKey).get();
-      const batch = db.batch();
-      const atualizados = [];
-      snaps.docs.forEach(doc => {
+      const preparados = await Promise.all(snaps.docs.map(async doc => {
         const result = doc.data();
+        const roundId = String(result.roundId || '');
+        const [pessoal, geral] = roundId ? await Promise.all([
+          answerKeyRef(result.uid, roundId, true).get(),
+          answerKeyRef(result.uid, roundId, false).get(),
+        ]) : [{ exists:false }, { exists:false }];
+        const keySnap = pessoal.exists ? pessoal : geral;
+        const keys = new Map((keySnap.data?.()?.answers || []).map(item => [item.id, item]));
         const details = (result.details || []).map(item => {
-          if (item.type === 'multipleChoice' || item.correct === true) {
+          // A decisão explícita do professor é final: um recálculo nunca pode
+          // retirar os pontos, a posição ou um selo que já foram confirmados.
+          if (item.teacherReviewed === true || item.aceitaPeloProfessor === true) {
+            return { ...item, score:100, correct:true, parcial:false };
+          }
+          if (item.type === 'multipleChoice') {
             return { ...item, score:item.correct === true ? 100 : Number(item.score || 0),
               correct:item.correct === true };
           }
-          const score = scoreWrittenAnswer(item.answer, [item.expected]);
+          const key = keys.get(item.questionId) || {};
+          const acceptedAnswers = Array.isArray(key.acceptedAnswers) && key.acceptedAnswers.length
+            ? key.acceptedAnswers : [key.expected || item.expected];
+          const score = scoreWrittenAnswer(item.answer, acceptedAnswers);
           const next = { ...item, score, correct:score === 100 };
           if (score > 0 && score < 100) next.parcial = true;
           else delete next.parcial;
           return next;
         });
         const score = details.reduce((sum, item) => sum + Number(item.score || 0), 0);
+        return { doc, result, details, score };
+      }));
+      const batch = db.batch();
+      const atualizados = [];
+      preparados.forEach(({ doc, result, details, score }) => {
         batch.set(doc.ref, { details, score, rescoredAt:FieldValue.serverTimestamp() }, { merge:true });
         atualizados.push({ uid:result.uid, name:result.studentName || 'Aluno',
           part:Number(result.part || 0), before:Number(result.score || 0), score });
@@ -1765,6 +1827,6 @@ ${item.text}`).join('\n\n')}`
 
 export const challengeInternals = Object.freeze({
   localDateParts, addDays, weekKeyFor, nextMonday, scheduleFor, stageFor,
-  normalizeAnswer, canonicalChallengeTopic, validateQuestion, scoreAnswers, dateFrom, assertFocusMix,
+  normalizeAnswer, canonicalChallengeTopic, validateQuestion, scoreWrittenAnswer, scoreAnswers, dateFrom, assertFocusMix,
   assertFormatMix, formatOf, FORMAT_MIX, FORMAT_THRESHOLD, groupScheduleFor,
 });
