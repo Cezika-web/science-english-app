@@ -381,6 +381,24 @@ export function createChallengeFunctions({
   db, getMessaging, adminEmails, anthropicApiKey = null, Anthropic = null,
   model = 'claude-sonnet-5', loadPostLesson = null, registrarUso = null,
 }) {
+  async function loadCurrentStudentProfiles() {
+    const snaps = await db.collection('students').get();
+    return new Map(snaps.docs.map(doc => {
+      const data = doc.data();
+      return [doc.id, {
+        name:data.name || data.firstName || 'Aluno',
+        photo:data.photo || '',
+      }];
+    }));
+  }
+
+  function applyCurrentStudentProfiles(rows = [], profiles = new Map()) {
+    return rows.map(row => {
+      const profile = profiles.get(row.uid);
+      return profile ? { ...row, name:profile.name, photo:profile.photo || row.photo || '' } : row;
+    });
+  }
+
   async function assertStudent(uid) {
     const snap = await db.doc(`students/${uid}`).get();
     if (!snap.exists || snap.data().archived === true || snap.data().challengeEnabled === false) {
@@ -428,7 +446,10 @@ export function createChallengeFunctions({
   }
 
   async function buildRanking(weekKey) {
-    const resultSnaps = await db.collection('_challengeResults').where('weekKey', '==', weekKey).get();
+    const [resultSnaps, profiles] = await Promise.all([
+      db.collection('_challengeResults').where('weekKey', '==', weekKey).get(),
+      loadCurrentStudentProfiles(),
+    ]);
     const totals = new Map();
     resultSnaps.docs.forEach(doc => {
       const result = doc.data();
@@ -436,7 +457,7 @@ export function createChallengeFunctions({
       // vantagem a quem tem dupla, que joga 20 perguntas contra as 10 dos outros.
       if (result.groupId) return;
       const current = totals.get(result.uid) || {
-        uid:result.uid, name:result.studentName || 'Aluno', score:0, partsCompleted:0,
+        uid:result.uid, name:profiles.get(result.uid)?.name || result.studentName || 'Aluno', score:0, partsCompleted:0,
         part1Score:0, part2Score:0, completedAt:result.completedAt,
       };
       current.score += Number(result.score || 0);
@@ -1175,9 +1196,12 @@ ${item.text}`).join('\n\n')}`
           await buildRanking(weekKey);
           rankingSnap = await db.doc(`challengeRankings/${weekKey}`).get();
         }
-        const resultSnaps = await Promise.all([1,2].map(part => db.doc(`_challengeResults/${weekKey}-part-${part}_${uid}`).get()));
+        const [resultSnaps, profiles] = await Promise.all([
+          Promise.all([1,2].map(part => db.doc(`_challengeResults/${weekKey}-part-${part}_${uid}`).get())),
+          loadCurrentStudentProfiles(),
+        ]);
         const parts = resultSnaps.filter(snap => snap.exists).map(snap => snap.data()).sort((a,b) => a.part - b.part);
-        const ranking = (rankingSnap.data()?.ranking || []).map(row => ({
+        const ranking = applyCurrentStudentProfiles(rankingSnap.data()?.ranking || [], profiles).map(row => ({
           name:row.name, score:row.score, partsCompleted:row.partsCompleted, position:row.position, isOwn:row.uid === uid,
         }));
         const own = ranking.find(row => row.isOwn) || null;
@@ -1529,15 +1553,19 @@ ${item.text}`).join('\n\n')}`
   // de cada semana revelada é somada, montando o acumulado e o ranking geral.
   // Sai dos documentos de ranking (um por semana), não dos resultados soltos.
   async function loadSeason(now = new Date()) {
-    const snaps = await db.collection('challengeRankings').get();
+    const [snaps, profiles] = await Promise.all([
+      db.collection('challengeRankings').get(),
+      loadCurrentStudentProfiles(),
+    ]);
     const semanas = [], totais = new Map();
     snaps.docs.forEach(doc => {
       const data = doc.data();
       const revealAt = data.revealAt?.toDate?.() || new Date(data.revealAt);
       if (!(revealAt <= now)) return;                    // semana ainda não revelada
+      const rankingAtualizado = applyCurrentStudentProfiles(data.ranking || [], profiles);
       semanas.push({ weekKey:data.weekKey, participantes:data.participantCount || 0,
-        ranking:data.ranking || [] });
-      (data.ranking || []).forEach(row => {
+        ranking:rankingAtualizado });
+      rankingAtualizado.forEach(row => {
         const atual = totais.get(row.uid) || { uid:row.uid, name:row.name || 'Aluno', total:0, semanas:0, melhor:null };
         atual.total += Number(row.score || 0);
         atual.semanas += 1;
@@ -1584,14 +1612,14 @@ ${item.text}`).join('\n\n')}`
       if (result.groupId) return;
       const cadastro = alunos.get(result.uid) || {};
       const atual = totais.get(result.uid) || {
-        uid:result.uid, name:result.studentName || cadastro.name || 'Aluno',
+        uid:result.uid, name:cadastro.name || result.studentName || 'Aluno',
         photo:cadastro.photo || '', score:0, part1Score:0, part2Score:0, partsCompleted:0,
       };
       atual.score += Number(result.score || 0);
       if (Number(result.part) === 1) atual.part1Score += Number(result.score || 0);
       if (Number(result.part) === 2) atual.part2Score += Number(result.score || 0);
       atual.partsCompleted += 1;
-      if (result.studentName) atual.name = result.studentName;
+      if (cadastro.name) atual.name = cadastro.name;
       totais.set(result.uid, atual);
     });
     return { ranking:rankByScore([...totais.values()]), resultSnaps };

@@ -193,6 +193,12 @@ function ChallengeAvatar({ person = {}, size = 46 }) {
     : <span aria-label={`${person.name || 'Participante'} sem foto`} style={{ ...style, display:'inline-flex', alignItems:'center', justifyContent:'center', color:'#52708F', fontSize:Math.round(size * .38), fontWeight:900 }}>{initial}</span>;
 }
 
+function challengeCompactName(name = '') {
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return parts[0] || '—';
+  return `${parts[0]} ${parts[parts.length - 1].charAt(0).toUpperCase()}.`;
+}
+
 function ChallengePodiumPlace({ position, people = [] }) {
   const config = {
     1:{ medal:'🥇', height:82, color:'#F4C84A', background:'linear-gradient(180deg,#FFE88C,#EAB52F)' },
@@ -206,10 +212,10 @@ function ChallengePodiumPlace({ position, people = [] }) {
     <div style={{ minHeight:78, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-end' }}>
       <div style={{ display:'flex', justifyContent:'center', paddingLeft:shown.length > 1 ? 12 : 0 }}>{shown.map((person,index) => <span key={`${person.name}-${index}`} title={person.name} style={{ marginLeft:index ? -12 : 0, position:'relative', zIndex:shown.length-index }}><ChallengeAvatar person={person} size={position === 1 ? 54 : 46} /></span>)}</div>
       {(hiddenPeers > 0 || people.length > 3) && <span style={{ marginTop:-8, zIndex:5, padding:'2px 6px', borderRadius:999, background:'#0D3F82', color:'#fff', fontSize:8, fontWeight:900 }}>+{hiddenPeers || people.length - 3}</span>}
-      <strong style={{ display:'block', width:'100%', marginTop:5, color:'#173654', fontSize:9.5, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{people.length ? people.map(person => String(person.name).split(' ')[0]).join(' · ') : '—'}</strong>
+      <strong style={{ display:'block', width:'100%', marginTop:5, color:'#173654', fontSize:9.5, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{people.length ? people.map(person => challengeCompactName(person.name)).join(' · ') : '—'}</strong>
       <span style={{ display:'block', color:'#0D5AA7', fontSize:9, fontWeight:900 }}>{Number(topScore).toLocaleString('pt-BR')} PTS</span>
       {people.length === 1 && <ChallengePartScores row={people[0]} centered />}
-      {people.length > 1 && people.some(person => person.part1Score != null || person.part2Score != null) && <span style={{ display:'block', color:'#70839A', fontSize:7, lineHeight:1.35, marginTop:3 }}>{people.slice(0,3).map(person => `${String(person.name).split(' ')[0]}: P1 ${Number(person.part1Score || 0)} · P2 ${Number(person.part2Score || 0)}`).join(' | ')}</span>}
+      {people.length > 1 && people.some(person => person.part1Score != null || person.part2Score != null) && <span style={{ display:'block', color:'#70839A', fontSize:7, lineHeight:1.35, marginTop:3 }}>{people.slice(0,3).map(person => `${challengeCompactName(person.name)}: P1 ${Number(person.part1Score || 0)} · P2 ${Number(person.part2Score || 0)}`).join(' | ')}</span>}
     </div>
     <div style={{ height:config.height, display:'flex', alignItems:'flex-start', justifyContent:'center', marginTop:5, paddingTop:9, borderRadius:'10px 10px 3px 3px', color:'#fff', background:config.background, boxShadow:'inset 0 1px rgba(255,255,255,.45)' }}><strong style={{ fontSize:20, textShadow:'0 1px 2px rgba(0,0,0,.18)' }}>{config.medal}<span style={{ display:'block', fontSize:10, marginTop:2 }}>{position}º LUGAR</span></strong></div>
   </div>;
