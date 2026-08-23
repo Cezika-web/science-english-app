@@ -459,6 +459,141 @@ export function createChallengeFunctions({
     return ranking;
   }
 
+  const POINT_BADGE_LEVELS = [1000,5000,10000,25000,50000,100000,250000];
+
+  function publicChallengeBadge(doc) {
+    const data = doc.data();
+    return {
+      id:doc.id, kind:data.kind || 'challenge', icon:data.icon || '🏅',
+      title:data.title || 'Selo conquistado', message:data.message || '',
+      weekKey:data.weekKey || '', score:Number(data.score || 0),
+      awardedAt:iso(data.awardedAt), viewed:data.viewedAt != null,
+    };
+  }
+
+  async function loadChallengeBadges(uid) {
+    const snaps = await db.collection(`students/${uid}/challengeBadges`).get();
+    const badges = snaps.docs.map(publicChallengeBadge).sort((a, b) =>
+      String(b.awardedAt || '').localeCompare(String(a.awardedAt || '')) || a.title.localeCompare(b.title, 'pt-BR')
+    );
+    return { badges, pendingBadges:badges.filter(item => !item.viewed) };
+  }
+
+  async function createBadgeIfMissing(uid, badge) {
+    const ref = db.doc(`students/${uid}/challengeBadges/${badge.id}`);
+    return db.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      if (snap.exists) return false;
+      tx.create(ref, { ...badge, viewedAt:null, awardedAt:FieldValue.serverTimestamp() });
+      return true;
+    });
+  }
+
+  function weeklyBadgesFor(row, results, totalPoints) {
+    const badges = [];
+    if (row.position === 1) badges.push({
+      id:`weekly-champion-${row.weekKey}`, kind:'weekly-champion', icon:'🏆',
+      title:'Campeão da semana!', weekKey:row.weekKey, score:row.score,
+      message:`Parabéns! Você ficou em 1º lugar no Desafio Science English com ${Number(row.score).toLocaleString('pt-BR')} PTS.`,
+    });
+    results.sort((a, b) => Number(a.part || 0) - Number(b.part || 0)).forEach(result => {
+      const details = result.details || [];
+      if (!details.length) return;
+      const hits = details.filter(item => Number(item.score || 0) >= 80).length;
+      if (hits > 0) badges.push({
+        id:`hits-${row.weekKey}-part-${result.part}-${hits}`, kind:'round-hits',
+        icon:hits === details.length ? '🎯' : hits >= 4 ? '⭐' : '🏅',
+        title:`${hits} de ${details.length} na Parte ${result.part}!`, weekKey:row.weekKey,
+        score:Number(result.score || 0),
+        message:`Você acertou ${hits} ${hits === 1 ? 'pergunta' : 'perguntas'} na Parte ${result.part} desta semana.`,
+      });
+      if (details.every(item => Number(item.score || 0) === 100)) badges.push({
+        id:`perfect-${row.weekKey}-part-${result.part}`, kind:'perfect-round', icon:'💯',
+        title:`100% perfeito · Parte ${result.part}`, weekKey:row.weekKey,
+        score:Number(result.score || 0), message:'Todas as cinco respostas receberam 100 PTS. Rodada perfeita!',
+      });
+    });
+    POINT_BADGE_LEVELS.filter(level => totalPoints >= level).forEach(level => badges.push({
+      id:`points-${level}`, kind:'points-milestone', icon:'💎',
+      title:`${level.toLocaleString('pt-BR')} pontos!`, weekKey:row.weekKey, score:totalPoints,
+      message:`Você alcançou ${level.toLocaleString('pt-BR')} pontos acumulados no Desafio Science English.`,
+    }));
+    return badges;
+  }
+
+  async function notifyNewBadges(studentDoc, weekKey, row, created) {
+    if (!created.length) return { sent:0, failed:0, skipped:'sem-novos-selos' };
+    const student = studentDoc.data();
+    const tokens = [...new Set([student.fcmToken,
+      ...(Array.isArray(student.fcmTokens) ? student.fcmTokens : [])].filter(Boolean))];
+    const logRef = studentDoc.ref.collection('challengeBadgeNotifications').doc(weekKey);
+    const reserved = await db.runTransaction(async tx => {
+      const snap = await tx.get(logRef);
+      if (snap.exists && snap.data().status === 'sent') return false;
+      tx.set(logRef, { weekKey, badgeIds:created.map(item => item.id), status:'sending',
+        updatedAt:FieldValue.serverTimestamp() }, { merge:true });
+      return true;
+    });
+    if (!reserved) return { sent:0, failed:0, skipped:'ja-enviado' };
+    if (!tokens.length) {
+      await logRef.set({ status:'sem-token', updatedAt:FieldValue.serverTimestamp() }, { merge:true });
+      return { sent:0, failed:0, skipped:'sem-token' };
+    }
+    const champion = row.position === 1;
+    const title = champion ? '🏆 Você ficou em 1º lugar!' : '🏅 Você conquistou novos selos!';
+    const body = champion
+      ? `Parabéns, ${String(row.name || 'campeão').split(' ')[0]}! Você venceu a semana com ${Number(row.score).toLocaleString('pt-BR')} PTS. Abra o app para receber seu selo.`
+      : `Você conquistou ${created.length} ${created.length === 1 ? 'novo selo' : 'novos selos'} no Desafio Science English.`;
+    try {
+      const response = await getMessaging().sendEachForMulticast({
+        tokens, notification:{ title, body },
+        data:{ type:'challenge-badges', weekKey, badgeCount:String(created.length) },
+        webpush:{ headers:{ Urgency:'high' }, fcmOptions:{ link:APP_URL } },
+      });
+      await logRef.set({ status:'sent', sent:response.successCount, failed:response.failureCount,
+        sentAt:FieldValue.serverTimestamp() }, { merge:true });
+      return { sent:response.successCount, failed:response.failureCount };
+    } catch (error) {
+      await logRef.set({ status:'failed', error:String(error.message || error).slice(0,500),
+        updatedAt:FieldValue.serverTimestamp() }, { merge:true });
+      throw error;
+    }
+  }
+
+  async function awardWeeklyBadges(weekKey) {
+    const [rankingSnap, resultsSnap, allRankings] = await Promise.all([
+      db.doc(`challengeRankings/${weekKey}`).get(),
+      db.collection('_challengeResults').where('weekKey', '==', weekKey).get(),
+      db.collection('challengeRankings').get(),
+    ]);
+    if (!rankingSnap.exists) return { weekKey, awarded:[], skipped:'ranking-ainda-nao-existe' };
+    const resultsByUid = new Map();
+    resultsSnap.docs.forEach(doc => {
+      const result = doc.data();
+      if (result.groupId) return;
+      const current = resultsByUid.get(result.uid) || [];
+      current.push(result); resultsByUid.set(result.uid, current);
+    });
+    const totalPointsByUid = new Map();
+    allRankings.docs.forEach(doc => (doc.data().ranking || []).forEach(row =>
+      totalPointsByUid.set(row.uid, Number(totalPointsByUid.get(row.uid) || 0) + Number(row.score || 0))
+    ));
+    const awarded = [];
+    for (const rankingRow of rankingSnap.data().ranking || []) {
+      const studentDoc = await db.doc(`students/${rankingRow.uid}`).get();
+      if (!studentDoc.exists) continue;
+      const totalPoints = Number(totalPointsByUid.get(rankingRow.uid) || 0);
+      const row = { ...rankingRow, weekKey };
+      const candidates = weeklyBadgesFor(row, resultsByUid.get(row.uid) || [], totalPoints);
+      const created = [];
+      for (const badge of candidates) if (await createBadgeIfMissing(row.uid, badge)) created.push(badge);
+      const notification = await notifyNewBadges(studentDoc, weekKey, row, created).catch(error => ({ error:error.message }));
+      if (created.length) awarded.push({ uid:row.uid, name:row.name, position:row.position,
+        badgeIds:created.map(item => item.id), notification });
+    }
+    return { weekKey, awarded };
+  }
+
   async function personalizationInput(studentDoc, now = new Date()) {
     const uid = studentDoc.id;
     const cutoff = new Date(now.getTime() - LOOKBACK_DAYS * 86400000);
@@ -1016,9 +1151,11 @@ ${item.text}`).join('\n\n')}`
       // ser o DO ALUNO — antes vinha o de quem chamou, e como ele não é aluno a
       // chamada quebrava. Só admin pode pedir por outro uid.
       const alvo = String(request.data?.uid || '').trim();
-      const uid = alvo && adminEmails.includes(request.auth.token?.email || '') ? alvo : quemChamou;
+      const adminMirror = Boolean(alvo && adminEmails.includes(request.auth.token?.email || ''));
+      const uid = adminMirror ? alvo : quemChamou;
       const studentSnap = await assertStudent(uid);
       const student = studentSnap.data();
+      const badgeState = await loadChallengeBadges(uid);
       const now = new Date();
       const weekKey = weekKeyFor(now);
       const schedule = scheduleFor(weekKey);
@@ -1028,6 +1165,7 @@ ${item.text}`).join('\n\n')}`
         enabled:true, weekKey, title:weekSnap.exists ? weekSnap.data().title : 'Desafio Science English',
         phase:weekSnap.exists ? stage.phase : 'unpublished', part:stage.part,
         startsAt:iso(schedule.startsAt), revealAt:iso(schedule.revealAt), endsAt:iso(schedule.endsAt),
+        badges:badgeState.badges, pendingBadges:adminMirror ? [] : badgeState.pendingBadges,
       };
       if (!weekSnap.exists) return base;
 
@@ -1184,6 +1322,40 @@ ${item.text}`).join('\n\n')}`
   const finalizarDesafioSemanal = onSchedule(
     { region:REGION, schedule:'5 0 * * 0', timeZone:TIME_ZONE, timeoutSeconds:300, memory:'256MiB' },
     async () => buildRanking(weekKeyFor())
+  );
+
+  // O ranking fecha à meia-noite, mas o selo só sai no domingo à noite. Essa
+  // janela permite que o professor revise respostas duvidosas sem anunciar um
+  // campeão e precisar retirar o troféu depois.
+  const premiarCampeoesSemanais = onSchedule(
+    { region:REGION, schedule:'0 18 * * 0', timeZone:TIME_ZONE, timeoutSeconds:300, memory:'256MiB' },
+    async () => awardWeeklyBadges(weekKeyFor())
+  );
+
+  const concederSelosDesafio = onCall(
+    { region:REGION, timeoutSeconds:300, memory:'256MiB' },
+    async request => {
+      requireAdmin(request, adminEmails);
+      const weekKey = String(request.data?.weekKey || weekKeyFor()).trim();
+      return awardWeeklyBadges(weekKey);
+    }
+  );
+
+  const marcarSelosDesafioVistos = onCall(
+    { region:REGION, timeoutSeconds:60, memory:'256MiB' },
+    async request => {
+      const uid = requireAuth(request);
+      const badgeIds = [...new Set((Array.isArray(request.data?.badgeIds) ? request.data.badgeIds : [])
+        .map(String).map(item => item.trim()).filter(Boolean).slice(0, 30))];
+      if (!badgeIds.length) return { ok:true, updated:0 };
+      const refs = badgeIds.map(id => db.doc(`students/${uid}/challengeBadges/${id}`));
+      const snaps = await db.getAll(...refs);
+      const batch = db.batch();
+      const existing = snaps.filter(snap => snap.exists);
+      existing.forEach(snap => batch.update(snap.ref, { viewedAt:FieldValue.serverTimestamp() }));
+      await batch.commit();
+      return { ok:true, updated:existing.length };
+    }
   );
 
   async function sendOpeningNotifications() {
@@ -1506,7 +1678,9 @@ ${item.text}`).join('\n\n')}`
         position:row.position, isOwn:row.uid === uid,
         ...(row.hiddenPeers ? { hiddenPeers:Number(row.hiddenPeers) } : {}),
       }));
+      const badgeState = await loadChallengeBadges(uid);
       return {
+        badges:badgeState.badges,
         minhasSemanas:semanasFechadas.map(semana => {
           const linha = (semana.ranking || []).find(row => row.uid === uid);
           return linha ? { weekKey:semana.weekKey, score:linha.score,
@@ -1821,7 +1995,8 @@ ${item.text}`).join('\n\n')}`
     salvarRespostaDesafio, obterStatusDesafioAdmin, finalizarDesafioSemanal,
     notificarAberturaDesafio, lembrarDesafioManha, lembrarDesafioNoite,
     gerarDesafiosAtrasados, gerarDesafioDaSemana, gerarDesafioDaTurma,
-    aceitarRespostaDesafio,
+    aceitarRespostaDesafio, premiarCampeoesSemanais, concederSelosDesafio,
+    marcarSelosDesafioVistos,
   };
 }
 

@@ -1799,22 +1799,26 @@ function collectProgressMilestones(student, posaulas, activities) {
   return reached;
 }
 
-function AchievementModal({ items, onView, onClose }) {
+function AchievementModal({ items, onView, onClose, viewLabel = 'Ver meu progresso', eyebrow = 'Nova conquista' }) {
+  const [index, setIndex] = useState(0);
+  const scrollRef = useRef(null);
+  useEffect(() => { setIndex(0); scrollRef.current?.scrollTo({ left:0 }); }, [items]);
   if (!items?.length) return null;
   return (
     <div role="dialog" aria-modal="true" aria-label="Nova conquista" style={{ position:'fixed', inset:0, zIndex:10020, background:'rgba(15,23,42,.55)', display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
-      <div style={{ width:'100%', maxWidth:390, background:'#FFFDF9', borderRadius:26, padding:'26px 22px 20px', boxShadow:'0 24px 70px rgba(15,23,42,.28)', textAlign:'center', border:'1px solid rgba(var(--brand-rgb),.16)' }}>
-        <div style={{ fontSize:48, lineHeight:1 }}>{items[0].icon}</div>
-        <div style={{ fontSize:12, fontWeight:800, color:'var(--brand)', letterSpacing:1, textTransform:'uppercase', marginTop:12 }}>Nova conquista</div>
-        <div style={{ fontSize:23, fontWeight:800, color:'#0F172A', marginTop:7 }}>{items[0].title}</div>
-        <div style={{ fontSize:14, color:'#475569', lineHeight:1.55, marginTop:9 }}>{items[0].message}</div>
-        {items.length > 1 && (
-          <div style={{ marginTop:14, padding:'10px 12px', borderRadius:12, background:'rgba(var(--brand-rgb),.08)', color:'var(--brand-dark)', fontSize:12.5, fontWeight:700 }}>
-            + {items.length-1} nova{items.length>2?'s':''} conquista{items.length>2?'s':''}: {items.slice(1).map(i=>i.title).join(' · ')}
-          </div>
-        )}
-        <button onClick={onView} style={{ width:'100%', border:'none', borderRadius:14, padding:'13px 18px', marginTop:18, background:'var(--brand)', color:'#fff', fontFamily:'inherit', fontSize:14.5, fontWeight:800, cursor:'pointer' }}>Ver meu progresso</button>
-        <button onClick={onClose} style={{ width:'100%', border:'none', background:'transparent', color:'#64748B', padding:'11px', fontFamily:'inherit', fontSize:13, fontWeight:600, cursor:'pointer' }}>Agora não</button>
+      <div style={{ width:'100%', maxWidth:390, background:'#FFFDF9', borderRadius:26, padding:'18px 0 14px', boxShadow:'0 24px 70px rgba(15,23,42,.28)', textAlign:'center', border:'1px solid rgba(var(--brand-rgb),.16)', overflow:'hidden' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'0 18px 4px' }}><span style={{ color:'#64748B', fontSize:11, fontWeight:800 }}>{index + 1} de {items.length}</span><button onClick={onClose} aria-label="Fechar todos os selos" style={{ width:32, height:32, border:0, borderRadius:'50%', background:'#EEF2F7', color:'#52657A', fontSize:18, cursor:'pointer' }}>×</button></div>
+        <div ref={scrollRef} onScroll={event => setIndex(Math.round(event.currentTarget.scrollLeft / Math.max(event.currentTarget.clientWidth,1)))} style={{ display:'flex', overflowX:'auto', scrollSnapType:'x mandatory', scrollbarWidth:'none' }}>
+          {items.map((item,itemIndex) => <div key={item.id || `${item.title}-${itemIndex}`} style={{ flex:'0 0 100%', boxSizing:'border-box', padding:'8px 24px 4px', scrollSnapAlign:'start' }}>
+            <div style={{ fontSize:52, lineHeight:1 }}>{item.icon}</div>
+            <div style={{ fontSize:11, fontWeight:850, color:'var(--brand)', letterSpacing:1, textTransform:'uppercase', marginTop:12 }}>{eyebrow}</div>
+            <div style={{ fontSize:23, fontWeight:800, color:'#0F172A', marginTop:7 }}>{item.title}</div>
+            <div style={{ minHeight:44, fontSize:14, color:'#475569', lineHeight:1.55, marginTop:9 }}>{item.message}</div>
+          </div>)}
+        </div>
+        {items.length > 1 && <div aria-label="Navegação dos selos" style={{ display:'flex', justifyContent:'center', gap:6, marginTop:8 }}>{items.map((item,itemIndex) => <button key={`dot-${item.id || itemIndex}`} onClick={() => scrollRef.current?.scrollTo({ left:(scrollRef.current.clientWidth || 0) * itemIndex, behavior:'smooth' })} style={{ width:index === itemIndex ? 18 : 7, height:7, padding:0, border:0, borderRadius:999, background:index === itemIndex ? 'var(--brand)' : '#CBD5E1', cursor:'pointer' }} />)}</div>}
+        <div style={{ padding:'0 20px' }}><button onClick={onView} style={{ width:'100%', border:'none', borderRadius:14, padding:'13px 18px', marginTop:16, background:'var(--brand)', color:'#fff', fontFamily:'inherit', fontSize:14.5, fontWeight:800, cursor:'pointer' }}>{viewLabel}</button>
+        <button onClick={onClose} style={{ width:'100%', border:'none', background:'transparent', color:'#64748B', padding:'11px', fontFamily:'inherit', fontSize:13, fontWeight:600, cursor:'pointer' }}>Fechar tudo</button></div>
       </div>
     </div>
   );
@@ -4057,6 +4061,7 @@ function App() {
   const [showNotifBtn, setShowNotifBtn] = useState(false);
   const [celebrate, setCelebrate]       = useState(false);
   const [achievementItems, setAchievementItems] = useState(null);
+  const [challengeBadgeItems, setChallengeBadgeItems] = useState(null);
   // Aviso de mensalidade atrasada: aparece uma vez, na abertura do app, e some
   // ao ser fechado. Nunca fica preso na tela principal.
   const [avisoCobrancaFechado, setAvisoCobrancaFechado] = useState(false);
@@ -4257,6 +4262,10 @@ function App() {
       // próprio César, que não é aluno, e a parte de baixo ficava travada.
       const response = await obter(mirror ? { uid:mirrorUid.current } : {});
       setChallengeState(response.data || { enabled:true, phase:'unpublished' });
+      if (!mirror && response.data?.pendingBadges?.length) {
+        setChallengeBadgeItems(current => current?.length ? current : response.data.pendingBadges);
+        setCelebrate(true);
+      }
       if (pendingChallenge.current) {
         pendingChallenge.current = false;
         setTab('aulas'); setSelectedChallenge(null); setChallengeView('hub');
@@ -4268,6 +4277,24 @@ function App() {
       setChallengeState(current => ({ ...current, enabled:true, loadError:true }));
       return null;
     }
+  }
+
+  async function closeChallengeBadges({ openChallenge = false } = {}) {
+    const items = challengeBadgeItems || [];
+    setChallengeBadgeItems(null);
+    if (openChallenge) {
+      setTab('aulas'); setSelectedChallenge(null); setChallengeView('hub');
+    }
+    if (mirror || !items.length) return;
+    try {
+      const fb = await getFB();
+      const marcar = fb.httpsCallable(fb.functions, 'marcarSelosDesafioVistos');
+      await marcar({ badgeIds:items.map(item => item.id) });
+      setChallengeState(current => ({ ...current,
+        pendingBadges:[], badges:(current.badges || []).map(item =>
+          items.some(seen => seen.id === item.id) ? { ...item, viewed:true } : item),
+      }));
+    } catch (error) { console.error('Confirmação dos selos do desafio:', error); }
   }
 
   async function loadData(uid, fb) {
@@ -4682,15 +4709,23 @@ function App() {
       <AvisoModal aviso={avisos[0] || null} onConfirmar={confirmarAviso} />
 
       <CourseReviewPrompt
-        open={showCourseReviewPrompt && !avisos.length && !reviewReady && !achievementItems}
+        open={showCourseReviewPrompt && !avisos.length && !reviewReady && !challengeBadgeItems && !achievementItems}
         onReview={openCourseReviewFromPrompt}
         onLater={postponeCourseReview}
       />
 
       <AchievementModal
-        items={achievementItems}
+        items={!challengeBadgeItems ? achievementItems : null}
         onView={() => { setAchievementItems(null); setTab('progresso'); }}
         onClose={() => setAchievementItems(null)}
+      />
+
+      <AchievementModal
+        items={!avisos.length && !reviewReady ? challengeBadgeItems : null}
+        eyebrow="Novo selo do desafio"
+        viewLabel="Ver meus selos"
+        onView={() => closeChallengeBadges({ openChallenge:true })}
+        onClose={() => closeChallengeBadges()}
       />
 
       <ReviewReadyModal

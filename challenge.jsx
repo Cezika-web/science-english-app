@@ -114,6 +114,11 @@ function ChallengeSeason({ carregar, initialData, onClose }) {
           </div>}
         </div>
 
+        <div style={{ marginTop:16, fontSize:11, fontWeight:900, letterSpacing:1, color:'#0D5AA7', textTransform:'uppercase' }}>Meus selos</div>
+        {(dados.badges || []).length
+          ? <div style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:8, marginTop:9 }}>{dados.badges.map(badge => <div key={badge.id} style={{ minWidth:0, padding:'14px 10px', borderRadius:16, textAlign:'center', background:'#fff', border:'1px solid #DCE7F4' }}><span style={{ display:'block', fontSize:30 }}>{badge.icon || '🏅'}</span><strong style={{ display:'block', color:'#173654', fontSize:11.5, lineHeight:1.3, marginTop:7 }}>{badge.title}</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:9, lineHeight:1.35, marginTop:4 }}>{badge.weekKey ? `Semana ${String(badge.weekKey).slice(8,10)}/${String(badge.weekKey).slice(5,7)}` : 'Conquista acumulada'}</span></div>)}</div>
+          : <div style={{ marginTop:9, padding:14, borderRadius:15, background:'#fff', border:'1px solid #DCE7F4', color:'#64748B', fontSize:11.5, lineHeight:1.5 }}>Seus selos de acertos, pontuação e vitórias aparecerão aqui.</div>}
+
         <ChallengeSeasonAnalytics analytics={dados.analytics} />
 
         <div style={{ marginTop:18, fontSize:11, fontWeight:900, letterSpacing:1, color:'#0D5AA7', textTransform:'uppercase' }}>Suas semanas</div>
