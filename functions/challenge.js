@@ -102,6 +102,12 @@ function addDays(dateKey, days) {
   return value.toISOString().slice(0, 10);
 }
 
+// A semana pertence ao mês onde cai a quinta-feira. Assim 31/08–06/09 é a
+// primeira semana de setembro, e 28/09–04/10 já abre outubro.
+function monthKeyForWeek(weekKey) {
+  return addDays(weekKey, 3).slice(0, 7);
+}
+
 function weekKeyFor(date = new Date()) {
   const local = localDateParts(date);
   const weekday = { Sun:0, Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6 }[local.weekday];
@@ -1329,16 +1335,25 @@ ${item.text}`).join('\n\n')}`
         db.doc(`_challengeGenerationJobs/${weekKey}`).get(),
         db.collection('students').get(),
       ]);
-      const submissionPairs = await Promise.all(students.docs.map(async studentDoc => ({
+      const activeStudents = students.docs.filter(studentDoc => {
+        const student = studentDoc.data();
+        return student.archived !== true && student.challengeEnabled !== false;
+      });
+      const submissionPairs = await Promise.all(activeStudents.map(async studentDoc => ({
+        uid:studentDoc.id,
+        name:studentDoc.data().name || studentDoc.data().firstName || 'Aluno',
         part1:await studentDoc.ref.collection('challengeSubmissions').doc(schedule.part1.roundId).get(),
         part2:await studentDoc.ref.collection('challengeSubmissions').doc(schedule.part2.roundId).get(),
       })));
       const completed = part => submissionPairs.filter(pair => pair[part].exists && pair[part].data().completed === true).length;
+      const completedNames = part => submissionPairs
+        .filter(pair => pair[part].exists && pair[part].data().completed === true)
+        .map(pair => pair.name).sort((a, b) => a.localeCompare(b, 'pt-BR'));
       return {
         weekKey, published:week.exists,
         personalized:generationJob.exists ? generationJob.data() : null,
-        part1:{ published:part1.exists || generationJob.data()?.completed > 0, questions:part1.data()?.questionCount || (generationJob.data()?.completed ? 5 : 0), completed:completed('part1') },
-        part2:{ published:part2.exists || generationJob.data()?.completed > 0, questions:part2.data()?.questionCount || (generationJob.data()?.completed ? 5 : 0), completed:completed('part2') },
+        part1:{ published:part1.exists || generationJob.data()?.completed > 0, questions:part1.data()?.questionCount || (generationJob.data()?.completed ? 5 : 0), completed:completed('part1'), completedNames:completedNames('part1') },
+        part2:{ published:part2.exists || generationJob.data()?.completed > 0, questions:part2.data()?.questionCount || (generationJob.data()?.completed ? 5 : 0), completed:completed('part2'), completedNames:completedNames('part2') },
       };
     }
   );
@@ -1655,21 +1670,20 @@ ${item.text}`).join('\n\n')}`
       const semanas = semanasBase.map(semana => ({ ...semana,
         ranking:rankByScore(semana.ranking || []),
       }));
-      const currentMonth = currentWeekKey.slice(0, 7);
+      const currentMonth = monthKeyForWeek(currentWeekKey);
       const currentYear = currentWeekKey.slice(0, 4);
       const semanaRankingCompleto = (semanas.find(item => item.weekKey === currentWeekKey)?.ranking || []);
       // Até o fechamento de domingo, ninguém recebe nomes ou notas dos colegas.
       // O aluno vê somente a própria posição; se houver empate, recebe apenas a
       // quantidade de pessoas escondidas naquela mesma colocação.
-      const minhaLinhaSemanal = semanaRankingCompleto.find(row => row.uid === uid);
-      const semanaRanking = (semanaJaFechou || adminMirror) ? semanaRankingCompleto : (minhaLinhaSemanal ? [{
-        ...minhaLinhaSemanal,
-        hiddenPeers:Math.max(0, semanaRankingCompleto.filter(row => row.position === minhaLinhaSemanal.position).length - 1),
-      }] : []);
+      // A classificação semanal é oficial, não uma corrida parcial. Enquanto a
+      // semana está aberta ninguém ocupa pódio — nem no espelho do professor.
+      // Os resultados já respondidos continuam salvos e entram no domingo.
+      const semanaRanking = semanaJaFechou ? semanaRankingCompleto : [];
       // Mês, ano e geral também ignoram a semana ainda aberta. Caso contrário,
-      // a diferença no acumulado denunciaria quanto cada colega já pontuou.
-      const semanasParaRanking = adminMirror ? semanas : semanasFechadas;
-      const mesRanking = rankingAcumulado(semanasParaRanking.filter(item => item.weekKey.startsWith(currentMonth)));
+      // o acumulado denunciaria a pontuação parcial antes do fechamento.
+      const semanasParaRanking = semanasFechadas;
+      const mesRanking = rankingAcumulado(semanasParaRanking.filter(item => monthKeyForWeek(item.weekKey) === currentMonth));
       const anoRanking = rankingAcumulado(semanasParaRanking.filter(item => item.weekKey.startsWith(currentYear)));
       const geral = rankingAcumulado(semanasParaRanking);
 
@@ -1706,6 +1720,26 @@ ${item.text}`).join('\n\n')}`
         position:row.position, isOwn:row.uid === uid,
         ...(row.hiddenPeers ? { hiddenPeers:Number(row.hiddenPeers) } : {}),
       }));
+      const monthKeys = [...new Set([
+        currentMonth,
+        ...semanas.filter(item => item.weekKey >= LAUNCH_WEEK).map(item => monthKeyForWeek(item.weekKey)),
+      ])].sort((a, b) => b.localeCompare(a));
+      const meses = monthKeys.map(monthKey => {
+        const fechadasDoMes = semanasFechadas.filter(item => monthKeyForWeek(item.weekKey) === monthKey);
+        const semanasDoMes = semanas.filter(item => monthKeyForWeek(item.weekKey) === monthKey)
+          .sort((a, b) => b.weekKey.localeCompare(a.weekKey))
+          .map(semana => {
+            const fechada = semanasFechadas.some(item => item.weekKey === semana.weekKey);
+            const lideres = fechada ? (semana.ranking || []).filter(row => row.position === 1) : [];
+            return {
+              weekKey:semana.weekKey, fechada, participantes:fechada ? Number(semana.participantes || 0) : 0,
+              lideres:lideres.map(row => row.name), pontos:lideres.length ? Number(lideres[0].score || 0) : 0,
+            };
+          });
+        const label = new Intl.DateTimeFormat('pt-BR', { month:'long', year:'numeric', timeZone:'UTC' })
+          .format(new Date(`${monthKey}-01T12:00:00Z`));
+        return { key:monthKey, label, rows:publicRanking(rankingAcumulado(fechadasDoMes)), semanas:semanasDoMes };
+      });
       const badgeState = await loadChallengeBadges(uid);
       return {
         badges:badgeState.badges,
@@ -1716,11 +1750,12 @@ ${item.text}`).join('\n\n')}`
             participantes:semana.participantes } : null;
         }).filter(Boolean),
         rankings:{
-          semana:{ label:'Esta semana', partial:!semanaJaFechou,
+          semana:{ label:'Esta semana', partial:!semanaJaFechou, locked:!semanaJaFechou,
             private:!semanaJaFechou && !adminMirror, rows:publicRanking(semanaRanking) },
           mes:{ label:'Este mês', rows:publicRanking(mesRanking) },
           ano:{ label:'Este ano', rows:publicRanking(anoRanking) },
         },
+        meses,
         geral:geral.map(row => ({ name:row.name, total:row.score, semanas:row.semanas,
           position:row.position, isOwn:row.uid === uid })),
         meuTotal:geral.find(row => row.uid === uid)?.score || 0,
@@ -1796,11 +1831,14 @@ ${item.text}`).join('\n\n')}`
     { region:REGION, timeoutSeconds:120, memory:'256MiB' },
     async request => {
       requireAdmin(request, adminEmails);
-      const weekKey = String(request.data?.weekKey || weekKeyFor()).trim();
-      const [resultSnaps, rankingSnap, season] = await Promise.all([
+      const requestedWeekKey = String(request.data?.weekKey || '').trim();
+      const season = await loadSeason();
+      // Sem semana explícita, o histórico abre no resultado fechado mais recente.
+      // A semana corrente nunca ocupa esta área enquanto ainda está em andamento.
+      const weekKey = requestedWeekKey || season.semanas[0]?.weekKey || weekKeyFor();
+      const [resultSnaps, rankingSnap] = await Promise.all([
         db.collection('_challengeResults').where('weekKey', '==', weekKey).get(),
         db.doc(`challengeRankings/${weekKey}`).get(),
-        loadSeason(),
       ]);
 
       // O tema de cada pergunta mora no gabarito, não no resultado gravado. Sem
@@ -1867,6 +1905,25 @@ ${item.text}`).join('\n\n')}`
         respostas:pergunta.respostas.sort((a, b) => a.acertou === b.acertou
           ? a.aluno.localeCompare(b.aluno, 'pt-BR') : (a.acertou ? 1 : -1)) });
 
+      const monthKeys = [...new Set(season.semanas.map(semana => monthKeyForWeek(semana.weekKey)))]
+        .sort((a, b) => b.localeCompare(a));
+      const historicoMeses = monthKeys.map(monthKey => {
+        const semanas = season.semanas.filter(semana => monthKeyForWeek(semana.weekKey) === monthKey)
+          .sort((a, b) => b.weekKey.localeCompare(a.weekKey));
+        const label = new Intl.DateTimeFormat('pt-BR', { month:'long', year:'numeric', timeZone:'UTC' })
+          .format(new Date(`${monthKey}-01T12:00:00Z`));
+        return {
+          key:monthKey,
+          label,
+          ranking:rankingAcumulado(semanas).map(row => ({
+            name:row.name, total:row.score, semanas:row.semanas, position:row.position,
+          })),
+          semanas:semanas.map(semana => ({
+            weekKey:semana.weekKey, participantes:Number(semana.participantes || 0),
+          })),
+        };
+      });
+
       return {
         weekKey,
         revelado:rankingSnap.exists,
@@ -1879,6 +1936,7 @@ ${item.text}`).join('\n\n')}`
           || a.tema.localeCompare(b.tema, 'pt-BR')),
         temporada:season.geral.map(row => ({ name:row.name, total:row.total,
           semanas:row.semanas, position:row.position })),
+        historicoMeses,
       };
     }
   );
@@ -2029,7 +2087,7 @@ ${item.text}`).join('\n\n')}`
 }
 
 export const challengeInternals = Object.freeze({
-  localDateParts, addDays, weekKeyFor, nextMonday, scheduleFor, stageFor,
+  localDateParts, addDays, monthKeyForWeek, weekKeyFor, nextMonday, scheduleFor, stageFor,
   normalizeAnswer, canonicalChallengeTopic, validateQuestion, scoreWrittenAnswer, scoreAnswers, dateFrom, assertFocusMix,
   assertFormatMix, formatOf, FORMAT_MIX, FORMAT_THRESHOLD, groupScheduleFor,
 });

@@ -2210,7 +2210,9 @@ export const premiarCampeoesSemanais = challengeFunctions.premiarCampeoesSemanai
 export const concederSelosDesafio = challengeFunctions.concederSelosDesafio;
 export const marcarSelosDesafioVistos = challengeFunctions.marcarSelosDesafioVistos;
 
-export const avisarAtrasoNoApp = createCobrancaFunctions({ db }).avisarAtrasoNoApp;
+const cobrancaFunctions = createCobrancaFunctions({ db, adminEmails:ADMIN_EMAILS });
+export const avisarAtrasoNoApp = cobrancaFunctions.avisarAtrasoNoApp;
+export const enviarCobrancaManual = cobrancaFunctions.enviarCobrancaManual;
 
 export const ajustarCreditos = onCall(
   { ...OPCOES_PADRAO, timeoutSeconds: 60, memory: '256MiB' },

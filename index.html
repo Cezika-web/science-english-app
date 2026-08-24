@@ -1043,7 +1043,7 @@ const TABS = [
 ];
 
 // Cobrança em atraso. O professor liga aluno por aluno; o servidor só grava o
-// aviso depois de cinco dias de atraso real. Aqui é só mostrar e sair da frente.
+// aviso depois de três dias de atraso real. Aqui é só mostrar e sair da frente.
 function AvisoCobranca({ aviso, nome, onClose }) {
   const valor = (Number(aviso.valorCentavos || 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const vencimento = String(aviso.venceEm || '').split('-').reverse().join('/');
@@ -4076,6 +4076,24 @@ function App() {
     activeChallenges:[...(challengeSimulation?.activeChallenges || []), ...classChallenges.filter(group => group.active !== false)]
   };
 
+  // A cobrança é deliberadamente silenciosa: não há push. Ela é registrada como
+  // exibida somente quando o aluno abre o app real (o espelho nunca conta).
+  useEffect(() => {
+    const aviso = student?.avisoCobranca;
+    if (mirror || !user?.uid || !aviso?.ativo || aviso.exibidoEm) return;
+    let cancelado = false;
+    (async () => {
+      try {
+        const fb = await getFB();
+        await fb.updateDoc(fb.doc(fb.db, 'students', user.uid), {
+          'avisoCobranca.exibidoEm': fb.serverTimestamp(),
+        });
+        if (!cancelado) setStudent(atual => ({ ...atual, avisoCobranca:{ ...atual.avisoCobranca, exibidoEm:new Date() } }));
+      } catch (error) { console.warn('Leitura da cobrança:', error.message); }
+    })();
+    return () => { cancelado = true; };
+  }, [mirror, user?.uid, student?.avisoCobranca?.ativo, student?.avisoCobranca?.avisoId]);
+
   // ── Comemoração (confete): dispara na hora que completa, em qualquer aba ──
   useEffect(() => {
     if (!student) return;
@@ -4638,6 +4656,19 @@ function App() {
     showToast(allDone ? 'Parte salva! Atividade completa 🎉' : 'Parte salva!');
   }
 
+  async function confirmarAvisoCobranca() {
+    setAvisoCobrancaFechado(true);
+    if (mirror || !user?.uid) return;
+    setStudent(atual => ({ ...atual, avisoCobranca:{ ...atual.avisoCobranca, ativo:false, confirmadoEm:new Date() } }));
+    try {
+      const fb = await getFB();
+      await fb.updateDoc(fb.doc(fb.db, 'students', user.uid), {
+        'avisoCobranca.ativo':false,
+        'avisoCobranca.confirmadoEm':fb.serverTimestamp(),
+      });
+    } catch (error) { console.warn('Confirmação da cobrança:', error.message); }
+  }
+
   return (
     <div className="student-app-shell" style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', maxWidth: 480, minWidth: 0, margin: '0 auto', background: '#F6F1EA' }}>
       {mirror && (
@@ -4658,7 +4689,7 @@ function App() {
       <BottomNav active={tab} onChange={setTab} />
 
       {!mirror && student?.avisoCobranca?.ativo && !avisoCobrancaFechado &&
-        <AvisoCobranca aviso={student.avisoCobranca} nome={student.firstName || ''} onClose={() => setAvisoCobrancaFechado(true)} />}
+        <AvisoCobranca aviso={student.avisoCobranca} nome={student.firstName || ''} onClose={confirmarAvisoCobranca} />}
 
       {challengeView && <ChallengeHub
         student={student}

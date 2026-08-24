@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { challengeInternals } from '../challenge.js';
 
-const { scoreWrittenAnswer } = challengeInternals;
+const { scoreWrittenAnswer, monthKeyForWeek } = challengeInternals;
 
 const cases = [
   {
@@ -42,4 +42,9 @@ for (const item of cases) {
   if (item.maximum != null) assert.ok(score <= item.maximum, `${item.name}: recebeu ${score}`);
 }
 
-console.log(`OK — ${cases.length} cenários de correção validados.`);
+assert.equal(monthKeyForWeek('2026-08-17'), '2026-08', '17/08 fica na 3ª semana de agosto');
+assert.equal(monthKeyForWeek('2026-08-24'), '2026-08', '24/08 fica na 4ª semana de agosto');
+assert.equal(monthKeyForWeek('2026-08-31'), '2026-09', '31/08 abre a 1ª semana de setembro');
+assert.equal(monthKeyForWeek('2026-09-28'), '2026-10', '28/09 abre a 1ª semana de outubro');
+
+console.log(`OK — ${cases.length} cenários de correção e calendário mensal validados.`);

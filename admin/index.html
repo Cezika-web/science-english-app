@@ -848,10 +848,26 @@
       <div class="tab-panel" id="tab-challenge">
         <div class="duas-colunas">
           <div class="form-card" style="margin:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;"><h2 style="margin:0;">Semana atual</h2><button class="btn-secondary" id="challenge-refresh" type="button">Atualizar</button></div>
+            <div id="challenge-status" style="margin-top:14px;"><div class="loading">Carregando...</div></div>
+            <div style="margin-top:16px;padding:13px;border-radius:12px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A;font-size:.78rem;line-height:1.5;"><strong>Programação automática</strong><br>Parte 1: segunda 00h → quarta 23h59<br>Parte 2: quinta 00h → sábado 23h59<br>Resultado: domingo 00h</div>
+          </div>
+
+          <div class="form-card" style="margin:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+              <h2 style="margin:0;">Perguntas da semana atual</h2>
+              <button class="btn-secondary" id="challenge-review-refresh" type="button">Atualizar</button>
+            </div>
+            <p style="font-size:.84rem;color:var(--muted);line-height:1.5;margin:8px 0 14px;">Escolha o aluno para ver as perguntas publicadas e o gabarito. Dá para trocar uma pergunta enquanto ele não tiver começado a parte.</p>
+            <select class="form-input" id="challenge-review-student" style="margin-bottom:12px;"><option value="">Selecione o aluno</option></select>
+            <div id="challenge-review-body"></div>
+          </div>
+
+          <div class="form-card" style="margin:0;">
             <h2 style="margin-bottom:5px;">🏆 Publicar desafio semanal</h2>
             <p style="font-size:.84rem;color:var(--muted);line-height:1.5;margin:0 0 15px;">A semana precisa ter duas partes de 5 perguntas. Os gabaritos são enviados ao servidor e nunca aparecem no aplicativo do aluno.</p>
             <label class="form-label" for="challenge-week">Segunda-feira da semana</label>
-            <input class="form-input" id="challenge-week" type="date" value="2026-08-17" style="margin-bottom:12px;">
+            <input class="form-input" id="challenge-week" type="date" style="margin-bottom:12px;">
             <button class="btn-primary" id="challenge-generate-personalized" type="button" style="width:100%;margin-bottom:10px;">Gerar desafios individuais dos últimos 90 dias</button>
             <label style="display:flex;align-items:flex-start;gap:9px;font-size:.82rem;margin-bottom:16px;padding:10px 12px;border-radius:10px;background:#FFFBEB;border:1px solid #FDE68A;color:#78350F;cursor:pointer;">
               <input id="challenge-manual-week" type="checkbox" style="margin-top:2px;">
@@ -864,31 +880,16 @@
             <p style="font-size:.78rem;color:var(--muted);line-height:1.5;margin:12px 0 0;">Este JSON vale para <strong>todos</strong> os alunos e não gasta IA. Cada parte é opcional — dá para mandar só as 5 da Parte 1. Quem já tem perguntas individuais continua com as dele; o JSON atende quem não tem.</p>
           </div>
 
-          <div class="form-card" style="margin:16px 0 0;">
+          <div class="form-card" style="margin:0;">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-              <h2 style="margin:0;">Perguntas de cada aluno</h2>
-              <button class="btn-secondary" id="challenge-review-refresh" type="button">Atualizar</button>
-            </div>
-            <p style="font-size:.84rem;color:var(--muted);line-height:1.5;margin:8px 0 14px;">Escolha o aluno para ver as 10 perguntas com o gabarito. Dá para trocar uma pergunta sem refazer as outras, enquanto ele não tiver começado a parte.</p>
-            <select class="form-input" id="challenge-review-student" style="margin-bottom:12px;"><option value="">Selecione o aluno</option></select>
-            <div id="challenge-review-body"></div>
-          </div>
-
-          <div class="form-card" style="margin:16px 0 0;">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-              <h2 style="margin:0;">Resultado e temporada</h2>
+              <h2 style="margin:0;">Histórico por mês</h2>
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <button class="btn-secondary" id="challenge-rescore" type="button">Recalcular pontos escritos</button>
                 <button class="btn-secondary" id="challenge-results-refresh" type="button">Atualizar</button>
               </div>
             </div>
-            <p style="font-size:.84rem;color:var(--muted);line-height:1.5;margin:8px 0 14px;">Como foi a semana, o acumulado desde o começo e — o mais útil — quais perguntas a turma errou junto.</p>
+            <p style="font-size:.84rem;color:var(--muted);line-height:1.5;margin:8px 0 14px;">Os resultados só aparecem aqui depois que a semana fecha. Abra um mês para ver o ranking geral e cada semana concluída.</p>
             <div id="challenge-results-body"><div class="loading">Carregando...</div></div>
-          </div>
-          <div class="form-card" style="margin:0;">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;"><h2 style="margin:0;">Status da semana</h2><button class="btn-secondary" id="challenge-refresh" type="button">Atualizar</button></div>
-            <div id="challenge-status" style="margin-top:14px;"><div class="loading">Carregando...</div></div>
-            <div style="margin-top:16px;padding:13px;border-radius:12px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A;font-size:.78rem;line-height:1.5;"><strong>Programação automática</strong><br>Parte 1: segunda 00h → quarta 23h59<br>Parte 2: quinta 00h → sábado 23h59<br>Resultado: domingo 00h</div>
           </div>
         </div>
       </div>
@@ -1789,7 +1790,7 @@
         <div class="field" style="margin-top:14px;"><label for="finance-profile-method">Forma habitual de pagamento</label><select id="finance-profile-method"><option value="pix">PIX</option><option value="card">Cartão</option><option value="cash">Dinheiro</option><option value="transfer">Transferência</option><option value="other">Outro</option></select></div>
         <label style="display:flex;align-items:center;gap:9px;font-size:.82rem;margin-top:8px;"><input id="finance-profile-active" type="checkbox" checked> Cobrança mensal ativa</label>
         <label style="display:flex;align-items:center;gap:9px;font-size:.82rem;margin-top:8px;"><input id="finance-profile-notify" type="checkbox"> Avisar este aluno no app quando atrasar</label>
-        <small style="display:block;margin-top:5px;color:var(--muted);font-size:.72rem;line-height:1.45;">Desligado por padrão. Ligado, o aviso aparece quando ele abre o app, cinco dias depois de ficar atrasado — nunca antes do vencimento e nunca para quem está em dia.</small>
+        <small style="display:block;margin-top:5px;color:var(--muted);font-size:.72rem;line-height:1.45;">Desligado por padrão. Ligado, o aviso aparece quando ele abre o app, três dias depois de ficar atrasado — nunca antes do vencimento e nunca para quem está em dia.</small>
         <div class="form-msg" id="finance-profile-msg"></div>
         <button class="btn-add" id="finance-profile-save" type="button" style="width:100%;margin-top:18px;">Salvar mensalidade</button>
       </div>
@@ -3317,7 +3318,7 @@
       const ehAula = calendarPopDraft.type === 'lesson';
       const botao = document.getElementById('calendar-pop-reposicao');
       botao.classList.toggle('on', ehReposicao);
-      botao.textContent = ehReposicao ? '🔄 Reposição — toque para desfazer' : '🔄 Marcar reposição';
+      botao.textContent = ehReposicao ? '🔄 Reposição — toque para desfazer' : '🔄 Marcar esta aula como reposição';
       // Reposição se marca em horário livre. Em cima da aula de um aluno não
       // dá — para liberar aquele horário ele cancela a aula primeiro, e aí o
       // botão aparece na própria aula cancelada.
@@ -3386,7 +3387,9 @@
       // quando algo passa a ocupá-la.
       if (janela) {
         const dia = ocorrencia || event.date || '';
-        event = { type:'reposicao', date:dia, startTime:janela.startTime, endTime:janela.endTime, repeat:'none' };
+        // A faixa apenas representa uma hora livre. Ela só vira reposição
+        // depois que o professor toca explicitamente no botão de reposição.
+        event = { type:'available', date:dia, startTime:janela.startTime, endTime:janela.endTime, repeat:'none' };
         ocorrencia = dia;
       }
       calendarPopDraft = { type:'lesson', ...event, ocorrencia:ocorrencia || event.date || '', janela };
@@ -3845,10 +3848,10 @@
     }
 
     // O atraso começa no dia SEGUINTE ao vencimento: vence dia 15, fica atrasado
-    // dia 16, e o primeiro aviso sai cinco dias depois disso — dia 21. Quem está
+    // dia 16, e o botão de cobrança aparece com três dias completos de atraso.
     // em dia ou ainda nem venceu devolve número negativo e não entra em lista
     // nenhuma.
-    const FINANCE_AVISO_DIAS=[5,10];
+    const FINANCE_AVISO_DIAS=3;
     function financeLateDays(part) {
       const venc=new Date(`${part.dueKey}T00:00:00`),hoje=new Date(`${financeTodayKey()}T00:00:00`);
       return Math.floor((hoje-venc)/86400000)-1;
@@ -3866,8 +3869,10 @@
           if(status.key!=='overdue') return;
           const dias=financeLateDays(part);
           if(dias<0) return;
-          linhas.push({uid:profile.studentUid,nome:profile.studentName||'Aluno',dias,
-            falta:part.amount-status.received,etapa:part.label,avisa:profile.avisarAtraso===true});
+          const aluno=allStudents.find(item=>item.uid===profile.studentUid);
+          linhas.push({uid:profile.studentUid,nome:profile.studentName||'Aluno',dias,mes:month,
+            falta:part.amount-status.received,etapa:part.label,avisa:profile.avisarAtraso===true,
+            aviso:aluno?.avisoCobranca||null});
         });
       });
       return linhas.sort((a,b)=>b.dias-a.dias);
@@ -3876,17 +3881,45 @@
     function renderFinanceLateAlert(month) {
       const box=document.getElementById('finance-late-alert'),atrasados=financeLateStudents(month);
       if(!atrasados.length) { box.innerHTML=''; return; }
-      const marco=dias=>FINANCE_AVISO_DIAS.filter(d=>dias>=d).pop()||0;
+      const estadoAviso=item=> {
+        const aviso=item.aviso;
+        if(!aviso||aviso.mes!==item.mes||aviso.etapa!==item.etapa) return '';
+        if(aviso.confirmadoEm) return 'confirmou no app';
+        if(aviso.exibidoEm) return 'abriu o app';
+        if(aviso.enviadoEm||aviso.atualizadoEm) return 'aguardando abrir o app';
+        return '';
+      };
       const linha=item=>`<div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline;padding:6px 0;border-top:1px solid #FDE68A;">
         <span><strong>${esc(item.nome)}</strong> <span style="color:#92400E;">· ${item.dias} dia(s) de atraso${item.etapa==='Mensalidade'?'':` · ${esc(item.etapa)}`}</span></span>
-        <span style="white-space:nowrap;"><strong>${financeMoney(item.falta)}</strong>${marco(item.dias)?` <span style="padding:1px 6px;border-radius:999px;background:#B45309;color:#fff;font-size:.66rem;font-weight:800;">cobrar · ${marco(item.dias)}d</span>`:''}${item.avisa?' <span title="o aluno vê o aviso ao abrir o app">🔔</span>':''}</span>
+        <span style="display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap;"><strong style="white-space:nowrap;">${financeMoney(item.falta)}</strong>
+          ${estadoAviso(item)?`<span style="font-size:.66rem;color:#92400E;white-space:nowrap;">✓ ${estadoAviso(item)}</span>`:''}
+          ${item.dias>=FINANCE_AVISO_DIAS?`<button type="button" data-finance-cobrar="${esc(item.uid)}" data-finance-nome="${esc(item.nome)}" style="border:0;border-radius:999px;background:#B45309;color:#fff;padding:3px 9px;font-family:inherit;font-size:.68rem;font-weight:900;cursor:pointer;">${estadoAviso(item)?'Cobrar novamente':'Cobrar'}</button>`:''}
+          ${item.avisa?' <span title="aviso automático ativado para este aluno">🔔</span>':''}</span>
       </div>`;
-      const aCobrar=atrasados.filter(item=>marco(item.dias)).length;
+      const aCobrar=atrasados.filter(item=>item.dias>=FINANCE_AVISO_DIAS).length;
       box.innerHTML=`<div style="margin-bottom:14px;padding:12px 14px;border-radius:12px;background:#FFFBEB;border:1px solid #FDE68A;color:#78350F;font-size:.8rem;">
         <strong style="font-size:.86rem;">⏰ ${atrasados.length} pagamento(s) em atraso</strong>
-        ${aCobrar?`<span style="margin-left:6px;color:#92400E;">— ${aCobrar} já passou do prazo de cobrança</span>`:''}
+        ${aCobrar?`<span style="margin-left:6px;color:#92400E;">— ${aCobrar} para cobrar</span>`:''}
         ${atrasados.map(linha).join('')}
       </div>`;
+      box.querySelectorAll('[data-finance-cobrar]').forEach(button=>button.onclick=async()=> {
+        const uid=button.dataset.financeCobrar,nome=button.dataset.financeNome||'aluno';
+        const original=button.textContent;
+        button.disabled=true; button.textContent='Enviando…';
+        try {
+          const cobrar=httpsCallable(fns,'enviarCobrancaManual',{timeout:60000});
+          await cobrar({uid,escolaId:escolaAtual});
+          const aluno=allStudents.find(item=>item.uid===uid);
+          const atraso=atrasados.find(item=>item.uid===uid);
+          if(aluno&&atraso) aluno.avisoCobranca={
+            ativo:true,mes:month,etapa:atraso.etapa,enviadoEm:new Date(),origem:'manual',entrega:'na-abertura-do-app'
+          };
+          renderFinanceLateAlert(month);
+        } catch(error) {
+          button.disabled=false; button.textContent=original;
+          alert(`Não foi possível cobrar ${nome}: ${error.message}`);
+        }
+      });
     }
 
     function financeProfileReceived(profile,month) {
@@ -7258,6 +7291,22 @@
     }
 
     // ── DESAFIO SEMANAL ─────────────────────────────────────────────────
+    function challengeCurrentWeekKey(date = new Date()) {
+      const value = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const weekday = value.getDay();
+      value.setDate(value.getDate() - (weekday === 0 ? 6 : weekday - 1));
+      return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
+    }
+
+    function challengeWeekLabel(weekKey) {
+      const thursday = new Date(`${weekKey}T12:00:00`);
+      thursday.setDate(thursday.getDate() + 3);
+      const ordinal = Math.ceil(thursday.getDate() / 7);
+      const month = new Intl.DateTimeFormat('pt-BR', { month:'long' }).format(thursday);
+      const monday = new Intl.DateTimeFormat('pt-BR', { day:'2-digit', month:'2-digit' }).format(new Date(`${weekKey}T12:00:00`));
+      return `${ordinal}ª semana de ${month} · ${monday}`;
+    }
+
     async function loadChallengeTemplate() {
       const area = document.getElementById('challenge-json');
       const msg = document.getElementById('challenge-msg');
@@ -7266,7 +7315,6 @@
         if (!response.ok) throw new Error('Modelo não encontrado.');
         const data = await response.json();
         area.value = JSON.stringify(data, null, 2);
-        document.getElementById('challenge-week').value = data.weekKey || '2026-08-17';
         showMsg('challenge-msg', '✅ Semana 1 carregada: 5 perguntas na Parte 1 e 5 na Parte 2.', 'ok');
       } catch (error) { showMsg('challenge-msg', 'Erro ao carregar modelo: ' + error.message, 'err'); }
     }
@@ -7274,15 +7322,23 @@
     async function loadChallengeAdmin() {
       const status = document.getElementById('challenge-status');
       if (!status) return;
+      const weekInput = document.getElementById('challenge-week');
+      if (!weekInput.value) weekInput.value = challengeCurrentWeekKey();
       if (!document.getElementById('challenge-json').value.trim()) await loadChallengeTemplate();
       status.innerHTML = '<div class="loading">Consultando servidor...</div>';
       try {
-        const weekKey = document.getElementById('challenge-week').value || '2026-08-17';
+        const weekKey = weekInput.value || challengeCurrentWeekKey();
         const obter = httpsCallable(fns, 'obterStatusDesafioAdmin', { timeout:60000 });
         const { data } = await obter({ weekKey });
         const personal = data.personalized;
-        const line = (label, part) => `<div style="display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-top:1px solid var(--border);"><span><strong>${label}</strong><br><small style="color:var(--muted);">${part.questions} perguntas · ${part.completed} concluída(s)</small></span><span style="color:${part.published ? '#15803D' : '#B45309'};font-weight:800;">${part.published ? '✓ Publicada' : 'Pendente'}</span></div>`;
-        status.innerHTML = `<div style="padding:12px;border-radius:12px;background:${data.published ? '#F0FDF4' : '#FFF7ED'};color:${data.published ? '#166534' : '#9A3412'};font-weight:800;">${data.published ? '✅ Semana publicada e programada' : '⚠️ Semana ainda não publicada'}</div>${line('Parte 1', data.part1)}${line('Parte 2', data.part2)}`;
+        const line = (label, part) => {
+          const names = Array.isArray(part.completedNames) ? part.completedNames : [];
+          return `<div style="padding:12px 0;border-top:1px solid var(--border);">
+            <div style="display:flex;justify-content:space-between;gap:10px;"><span><strong>${label}</strong><br><small style="color:var(--muted);">${part.questions} perguntas · ${part.completed} concluída(s)</small></span><span style="color:${part.published ? '#15803D' : '#B45309'};font-weight:800;">${part.published ? '✓ Publicada' : 'Pendente'}</span></div>
+            <div style="margin-top:8px;font-size:.76rem;color:var(--muted);line-height:1.5;">${names.length ? `<strong style="color:var(--text);">Responderam:</strong> ${names.map(esc).join(' · ')}` : 'Ninguém concluiu esta parte ainda.'}</div>
+          </div>`;
+        };
+        status.innerHTML = `<div style="font-size:.75rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">${esc(challengeWeekLabel(data.weekKey))}</div><div style="padding:12px;border-radius:12px;background:${data.published ? '#F0FDF4' : '#FFF7ED'};color:${data.published ? '#166534' : '#9A3412'};font-weight:800;">${data.published ? '✅ Semana publicada e programada' : '⚠️ Semana ainda não publicada'}</div>${line('Parte 1', data.part1)}${line('Parte 2', data.part2)}`;
         if (personal) status.insertAdjacentHTML('beforeend', `<div style="margin-top:12px;padding:12px;border-radius:12px;background:#F5F3FF;color:#5B21B6;font-weight:700;">Personalização: ${Number(personal.completed || 0)}/${Number(personal.total || 0)} alunos prontos${personal.failed ? ` · ${personal.failed} falha(s)` : ''}</div>`);
         await loadChallengeManualWeek();
         await loadChallengeReviewStudents();
@@ -7391,11 +7447,44 @@
       const seasonContent = bloco('Temporada — acumulado desde o começo', data.temporada.length
         ? `<div style="display:grid;gap:5px;">${data.temporada.map(linhaRanking).join('')}</div>`
         : '<p style="color:var(--muted);font-size:.84rem;">A primeira semana ainda não fechou.</p>');
-      return `<div style="display:flex;gap:5px;flex-wrap:wrap;padding:5px;border-radius:12px;background:#E8EEF5;">${tab('ranking','🏆 Ranking',true)}${tab('errors','⚠️ Erros')}${tab('season','📊 Temporada')}</div>`
+      const detail = `<div style="display:flex;gap:5px;flex-wrap:wrap;padding:5px;border-radius:12px;background:#E8EEF5;">${tab('ranking','🏆 Semana',true)}${tab('errors','⚠️ Erros')}${tab('season','📊 Temporada')}</div>`
         + panel('ranking', rankingContent, true) + panel('errors', errorsContent) + panel('season', seasonContent);
+      const months = Array.isArray(data.historicoMeses) ? data.historicoMeses : [];
+      if (!months.length) return '<p style="color:var(--muted);font-size:.84rem;">Nenhuma semana foi finalizada ainda.</p>';
+      const activeMonth = months.find(month => month.semanas.some(item => item.weekKey === data.weekKey)) || months[0];
+      const monthButton = month => `<button type="button" class="challenge-history-month" data-month="${esc(month.key)}" style="border:1px solid ${month.key === activeMonth.key ? '#93C5FD' : 'var(--border)'};border-radius:999px;padding:7px 12px;background:${month.key === activeMonth.key ? '#E8F3FF' : 'var(--card)'};color:${month.key === activeMonth.key ? '#0D5AA7' : 'var(--muted)'};font:inherit;font-size:.78rem;font-weight:800;cursor:pointer;text-transform:capitalize;">${esc(month.label)}</button>`;
+      const monthPanel = month => {
+        const monthly = month.ranking.length
+          ? `<div style="display:grid;gap:5px;">${month.ranking.map(linhaRanking).join('')}</div>`
+          : '<p style="color:var(--muted);font-size:.84rem;">Ainda não há pontos fechados neste mês.</p>';
+        const weekButtons = month.semanas.map(item => `<button type="button" class="challenge-history-week" data-week="${esc(item.weekKey)}" style="border:1px solid ${item.weekKey === data.weekKey ? '#93C5FD' : 'var(--border)'};border-radius:10px;padding:9px 11px;background:${item.weekKey === data.weekKey ? '#E8F3FF' : 'var(--card)'};color:${item.weekKey === data.weekKey ? '#0D5AA7' : 'var(--text)'};font:inherit;font-size:.76rem;font-weight:800;cursor:pointer;text-align:left;">${esc(challengeWeekLabel(item.weekKey))}<small style="display:block;color:var(--muted);margin-top:2px;">${item.participantes} participante(s)</small></button>`).join('');
+        return `<div data-challenge-history-panel="${esc(month.key)}" style="display:${month.key === activeMonth.key ? 'block' : 'none'};margin-top:15px;">
+          ${bloco(`Ranking geral de ${esc(month.label)}`, monthly)}
+          ${bloco(`Semanas de ${esc(month.label)}`, `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:7px;">${weekButtons}</div>`)}
+          ${month.key === activeMonth.key ? detail : ''}
+        </div>`;
+      };
+      return `<div style="display:flex;gap:7px;flex-wrap:wrap;">${months.map(monthButton).join('')}</div>${months.map(monthPanel).join('')}`;
     }
 
     document.addEventListener('click', evento => {
+      const month = evento.target.closest('.challenge-history-month');
+      if (month) {
+        const body = month.closest('#challenge-results-body');
+        if (!body) return;
+        body.querySelectorAll('.challenge-history-month').forEach(button => {
+          const active = button === month;
+          button.style.background = active ? '#E8F3FF' : 'var(--card)';
+          button.style.color = active ? '#0D5AA7' : 'var(--muted)';
+          button.style.borderColor = active ? '#93C5FD' : 'var(--border)';
+        });
+        body.querySelectorAll('[data-challenge-history-panel]').forEach(panel => {
+          panel.style.display = panel.dataset.challengeHistoryPanel === month.dataset.month ? 'block' : 'none';
+        });
+        return;
+      }
+      const week = evento.target.closest('.challenge-history-week');
+      if (week) { loadChallengeResults(week.dataset.week); return; }
       const tab = evento.target.closest('.challenge-results-tab');
       if (!tab) return;
       const body = tab.closest('#challenge-results-body');
@@ -7411,13 +7500,15 @@
       });
     });
 
-    async function loadChallengeResults() {
+    let challengeHistoryWeekKey = '';
+    async function loadChallengeResults(weekKey = challengeHistoryWeekKey) {
       const body = document.getElementById('challenge-results-body');
       if (!body) return;
       body.innerHTML = '<div class="loading">Consultando servidor...</div>';
       try {
         const obter = httpsCallable(fns, 'obterResultadoDesafioAdmin', { timeout:120000 });
-        const { data } = await obter({ weekKey:document.getElementById('challenge-week').value || '2026-08-17' });
+        const { data } = await obter(weekKey ? { weekKey } : {});
+        challengeHistoryWeekKey = data.weekKey || '';
         body.innerHTML = renderChallengeResults(data);
       } catch (error) { body.innerHTML = `<div class="form-msg err" style="display:block;">Erro: ${esc(error.message)}</div>`; }
     }
@@ -7446,7 +7537,7 @@
       button.disabled = true; button.textContent = 'Recalculando...';
       try {
         const recalcular = httpsCallable(fns, 'recalcularPontuacaoDesafio', { timeout:120000 });
-        const { data } = await recalcular({ weekKey:document.getElementById('challenge-week').value || '2026-08-17' });
+        const { data } = await recalcular({ weekKey:challengeHistoryWeekKey || challengeCurrentWeekKey() });
         await loadChallengeResults();
         alert(`Pontuação atualizada para ${data.documents || 0} resultado(s).`);
       } catch (error) { alert('Erro ao recalcular: ' + error.message); }
@@ -7457,7 +7548,7 @@
     // do desafio consultam essa lista antes de chamar a IA.
     async function loadChallengeManualWeek() {
       const caixa = document.getElementById('challenge-manual-week');
-      const weekKey = document.getElementById('challenge-week').value || '2026-08-17';
+      const weekKey = document.getElementById('challenge-week').value || challengeCurrentWeekKey();
       try {
         const snap = await getDoc(doc(db, 'challengeSettings', 'auto'));
         const manuais = snap.exists() ? snap.data().manualWeeks : null;
@@ -7466,7 +7557,7 @@
     }
 
     document.getElementById('challenge-manual-week').onchange = async (evento) => {
-      const caixa = evento.target, weekKey = document.getElementById('challenge-week').value || '2026-08-17';
+      const caixa = evento.target, weekKey = document.getElementById('challenge-week').value || challengeCurrentWeekKey();
       caixa.disabled = true;
       try {
         const snap = await getDoc(doc(db, 'challengeSettings', 'auto'));
@@ -7492,7 +7583,7 @@
       const escolhido = select.value;
       try {
         const obter = httpsCallable(fns, 'obterPerguntasDesafio', { timeout:120000 });
-        const { data } = await obter({ weekKey:document.getElementById('challenge-week').value || '2026-08-17' });
+        const { data } = await obter({ weekKey:document.getElementById('challenge-week').value || challengeCurrentWeekKey() });
         select.innerHTML = '<option value="">Selecione o aluno</option>' + data.students.map(item =>
           `<option value="${item.uid}">${esc(item.name)} — ${item.prontas}/2 parte(s)${item.gerais ? ' · rodada geral' : ''}${item.iniciadas ? ' · já começou' : ''}</option>`).join('');
         select.value = escolhido;
@@ -7551,7 +7642,7 @@
       body.innerHTML = '<div class="loading">Carregando perguntas...</div>';
       try {
         const obter = httpsCallable(fns, 'obterPerguntasDesafio', { timeout:120000 });
-        const { data } = await obter({ weekKey:document.getElementById('challenge-week').value || '2026-08-17', uid });
+        const { data } = await obter({ weekKey:document.getElementById('challenge-week').value || challengeCurrentWeekKey(), uid });
         body.innerHTML = (data.partes || []).map(renderChallengePart).join('') || '<p style="color:var(--muted);font-size:.84rem;">Nada publicado nesta semana.</p>';
         const trocar = async (button, tema) => {
           const antes = button.textContent;
@@ -7580,7 +7671,7 @@
 
     document.getElementById('challenge-generate-personalized').onclick = async () => {
       const button = document.getElementById('challenge-generate-personalized');
-      const weekKey = document.getElementById('challenge-week').value || '2026-08-17';
+      const weekKey = document.getElementById('challenge-week').value || challengeCurrentWeekKey();
       button.disabled = true;
       button.textContent = 'Analisando pós-aulas e desempenho...';
       showMsg('challenge-msg', 'A geração pode levar alguns minutos. Não feche esta página.', 'ok');

@@ -223,18 +223,41 @@ function ChallengePodiumPlace({ position, people = [] }) {
 
 function ChallengeRankingsHome({ data, loading, error }) {
   const [period, setPeriod] = React.useState('semana');
+  const [monthKey, setMonthKey] = React.useState('');
   const periods = data?.rankings || {};
-  const selected = periods[period] || { rows:[] };
-  const own = key => periods[key]?.rows?.find(row => row.isOwn) || {};
+  const months = data?.meses || [];
+  React.useEffect(() => {
+    if (months.length && !months.some(month => month.key === monthKey)) setMonthKey(months[0].key);
+  }, [data, monthKey]);
+  const selectedMonth = months.find(month => month.key === monthKey) || months[0] || null;
+  const selected = period === 'mes' && selectedMonth
+    ? { ...(periods.mes || {}), rows:selectedMonth.rows || [] }
+    : (periods[period] || { rows:[] });
+  const own = key => (key === 'mes' && selectedMonth ? selectedMonth.rows : periods[key]?.rows)?.find(row => row.isOwn) || {};
+  const weekLabel = key => {
+    const [,month,day] = String(key || '').split('-');
+    return day && month ? `Semana de ${day}/${month}` : key;
+  };
   return <div style={{ padding:16, borderRadius:20, background:'#fff', border:'1px solid #DCE7F4', boxShadow:'0 10px 24px rgba(7,27,58,.08)' }}>
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10 }}><div><span style={{ display:'block', color:'#0D5AA7', fontSize:9.5, fontWeight:900, letterSpacing:1, textTransform:'uppercase' }}>Classificação</span><strong style={{ display:'block', color:'#071B3A', fontSize:17, marginTop:3 }}>Onde você está agora</strong></div>{selected.partial && <span style={{ padding:'6px 8px', borderRadius:9, background:'#FFF4D8', color:'#906100', fontSize:8.5, fontWeight:900 }}>PARCIAL</span>}</div>
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10 }}><div><span style={{ display:'block', color:'#0D5AA7', fontSize:9.5, fontWeight:900, letterSpacing:1, textTransform:'uppercase' }}>Classificação</span><strong style={{ display:'block', color:'#071B3A', fontSize:17, marginTop:3 }}>Onde você está agora</strong></div>{selected.partial && <span style={{ padding:'6px 8px', borderRadius:9, background:'#FFF4D8', color:'#906100', fontSize:8.5, fontWeight:900 }}>{selected.locked ? 'EM ANDAMENTO' : 'PARCIAL'}</span>}</div>
     {loading && <div style={{ padding:22, textAlign:'center', color:'#7B8DA3', fontSize:11.5 }}>Carregando posições…</div>}
     {error && <div style={{ marginTop:10, padding:11, borderRadius:12, background:'#FFF1F2', color:'#B3261E', fontSize:11 }}>{error}</div>}
     {data && <React.Fragment>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,minmax(0,1fr))', gap:7, marginTop:13 }}>{[['semana','Semana'],['mes','Mês'],['ano','Ano']].map(([key,label]) => <button key={key} onClick={() => setPeriod(key)} style={{ padding:'11px 4px', borderRadius:13, border:`1px solid ${period === key ? '#82C3F3' : '#E1E9F2'}`, background:period === key ? '#EAF5FF' : '#F8FAFC', fontFamily:'inherit' }}><strong style={{ display:'block', color:'#0D3F82', fontSize:17 }}>{own(key).position ? `${own(key).position}º` : '—'}</strong><span style={{ display:'block', color:'#70839A', fontSize:9, marginTop:3 }}>{label}</span></button>)}</div>
       <div style={{ display:'flex', padding:4, marginTop:12, borderRadius:13, background:'#E5EDF6' }}>{[['semana','Semana'],['mes','Mês'],['ano','Ano']].map(([key,label]) => <button key={key} onClick={() => setPeriod(key)} style={{ flex:1, padding:8, border:0, borderRadius:10, background:period === key ? '#fff' : 'transparent', color:period === key ? '#0D3F82' : '#70839A', fontFamily:'inherit', fontSize:10.5, fontWeight:900 }}>{label}</button>)}</div>
+      {period === 'mes' && months.length > 0 && <div style={{ display:'flex', gap:7, overflowX:'auto', marginTop:10, paddingBottom:2 }}>{months.map(month => <button key={month.key} onClick={() => setMonthKey(month.key)} style={{ flex:'0 0 auto', border:`1px solid ${selectedMonth?.key === month.key ? '#82C3F3' : '#DCE7F4'}`, borderRadius:999, padding:'7px 11px', background:selectedMonth?.key === month.key ? '#EAF5FF' : '#fff', color:'#0D3F82', fontFamily:'inherit', fontSize:10, fontWeight:900, textTransform:'capitalize' }}>{month.label}</button>)}</div>}
       {selected.private && <div style={{ marginTop:9, padding:'9px 11px', borderRadius:11, background:'#F0F7FF', color:'#41617F', fontSize:10, lineHeight:1.45 }}>Até domingo, somente sua posição e seus pontos ficam visíveis. Os outros participantes permanecem ocultos.</div>}
-      <div style={{ marginTop:9 }}><ChallengeRanking ranking={selected.rows || []} privateMode={selected.private === true} /></div>
+      {period === 'mes' && selectedMonth && <div style={{ marginTop:12, color:'#0D5AA7', fontSize:9.5, fontWeight:900, letterSpacing:.8, textTransform:'uppercase' }}>Ranking geral de {selectedMonth.label}</div>}
+      {selected.locked && !(selected.rows || []).length
+        ? <div style={{ marginTop:9, padding:'18px 14px', borderRadius:15, background:'#F7FAFD', border:'1px solid #E1E9F2', color:'#64748B', fontSize:11.5, lineHeight:1.55, textAlign:'center' }}><strong style={{ display:'block', color:'#0D3F82', fontSize:13 }}>Classificação semanal zerada</strong>Ninguém ocupa o pódio enquanto a semana está em andamento. O ranking oficial entra no fechamento.</div>
+        : <div style={{ marginTop:9 }}><ChallengeRanking ranking={selected.rows || []} privateMode={selected.private === true} /></div>}
+      {period === 'mes' && selectedMonth && <div style={{ marginTop:16 }}>
+        <div style={{ color:'#0D5AA7', fontSize:9.5, fontWeight:900, letterSpacing:.8, textTransform:'uppercase' }}>Semanas de {selectedMonth.label}</div>
+        <div style={{ display:'grid', gap:7, marginTop:8 }}>{(selectedMonth.semanas || []).map(week => <div key={week.weekKey} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 11px', borderRadius:13, background:'#F7FAFD', border:'1px solid #E1E9F2' }}>
+          <span style={{ flex:1, minWidth:0 }}><strong style={{ display:'block', color:'#213B5B', fontSize:11.5 }}>{weekLabel(week.weekKey)}</strong><span style={{ display:'block', color:'#70839A', fontSize:9.5, marginTop:2 }}>{week.fechada ? `${(week.lideres || []).join(' · ') || 'Sem vencedor'} · ${week.participantes} participante(s)` : 'Em andamento · classificação zerada'}</span></span>
+          <strong style={{ color:week.fechada ? '#0D5AA7' : '#94A3B8', fontSize:11 }}>{Number(week.pontos || 0).toLocaleString('pt-BR')} PTS</strong>
+        </div>)}</div>
+      </div>}
     </React.Fragment>}
   </div>;
 }
