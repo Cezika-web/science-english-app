@@ -77,6 +77,7 @@ function ChallengeSeason({ carregar, initialData, onClose }) {
   const [dados, setDados] = React.useState(initialData || null);
   const [erro, setErro] = React.useState('');
   const [semanaAberta, setSemanaAberta] = React.useState(null);
+  const [mesAberto, setMesAberto] = React.useState(() => String(initialData?.minhasSemanas?.[0]?.weekKey || '').slice(0, 7) || null);
   // Ref para o efeito rodar uma vez só: se dependesse de `carregar`, uma função
   // recriada a cada render deixaria o painel buscando em laço.
   const carregarRef = React.useRef(carregar);
@@ -108,11 +109,15 @@ function ChallengeSeason({ carregar, initialData, onClose }) {
     if (!mapa.has(monthKey)) {
       const label = new Intl.DateTimeFormat('pt-BR', { month:'long', year:'numeric', timeZone:'UTC' })
         .format(new Date(`${monthKey}-01T12:00:00Z`));
-      mapa.set(monthKey, { key:monthKey, label, semanas:[] });
+      mapa.set(monthKey, { key:monthKey, label, semanas:[], pontos:0 });
     }
     mapa.get(monthKey).semanas.push(semana);
+    mapa.get(monthKey).pontos += Number(semana.score || 0);
     return mapa;
   }, new Map()).values()];
+  React.useEffect(() => {
+    if (!mesAberto && semanasPorMes.length) setMesAberto(semanasPorMes[0].key);
+  }, [dados]);
 
   return <div className="challenge-season-screen" style={{ position:'fixed', inset:0, zIndex:10030, width:'100%', maxWidth:480, height:'100dvh', margin:'0 auto', boxSizing:'border-box', background:'#F3F7FC', overflowY:'auto', overflowX:'hidden', overscrollBehavior:'contain' }}>
     <ChallengeSubpageHeader title="Minha temporada" subtitle="Todas as semanas somadas" onClose={onClose} />
@@ -141,12 +146,18 @@ function ChallengeSeason({ carregar, initialData, onClose }) {
 
         <div style={{ marginTop:20, fontSize:11, fontWeight:900, letterSpacing:1, color:'#0D5AA7', textTransform:'uppercase' }}>Histórico de respostas</div>
         {dados.minhasSemanas.length
-          ? <div style={{ display:'grid', gap:12, marginTop:9 }}>{semanasPorMes.map(grupo => <section key={grupo.key} style={{ padding:10, borderRadius:17, background:'#EAF2FB', border:'1px solid #D7E5F3' }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'1px 2px 8px' }}>
-                <strong style={{ color:'#0D3F82', fontSize:12.5, textTransform:'capitalize' }}>{grupo.label}</strong>
-                <span style={{ color:'#71869D', fontSize:9.5 }}>{grupo.semanas.length} semana(s)</span>
-              </div>
-              <div style={{ display:'grid', gap:7 }}>{grupo.semanas.map(semana => {
+          ? <div style={{ display:'grid', gap:9, marginTop:9 }}>{semanasPorMes.map(grupo => {
+              const mesEstaAberto = mesAberto === grupo.key;
+              return <section key={grupo.key} style={{ borderRadius:17, background:'#EAF2FB', border:`1px solid ${mesEstaAberto ? '#8ABFE7' : '#D7E5F3'}`, overflow:'hidden' }}>
+                <button type="button" aria-expanded={mesEstaAberto} onClick={() => { setMesAberto(mesEstaAberto ? null : grupo.key); setSemanaAberta(null); }} style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'12px', border:0, background:mesEstaAberto ? '#DDECF9' : '#EAF2FB', fontFamily:'inherit', textAlign:'left' }}>
+                  <span style={{ width:36, height:36, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:11, background:'#fff', fontSize:17 }}>🗓️</span>
+                  <span style={{ flex:1, minWidth:0 }}>
+                    <strong style={{ display:'block', color:'#0D3F82', fontSize:13, textTransform:'capitalize' }}>{grupo.label}</strong>
+                    <span style={{ display:'block', color:'#71869D', fontSize:9.5, marginTop:2 }}>{grupo.semanas.length} semana(s) · {Number(grupo.pontos || 0).toLocaleString('pt-BR')} PTS</span>
+                  </span>
+                  <span style={{ color:'#52799C', fontSize:18 }}>{mesEstaAberto ? '⌃' : '⌄'}</span>
+                </button>
+                {mesEstaAberto && <div style={{ display:'grid', gap:7, padding:10, paddingTop:8 }}>{grupo.semanas.map(semana => {
                 const aberta = semanaAberta === semana.weekKey;
                 return <div key={semana.weekKey} style={{ borderRadius:13, background:'#fff', border:`1px solid ${aberta ? '#7CB9EA' : '#DCE7F4'}`, overflow:'hidden', boxShadow:aberta ? '0 6px 16px rgba(13,90,167,.09)' : 'none' }}>
                   <button type="button" onClick={() => setSemanaAberta(aberta ? null : semana.weekKey)} aria-expanded={aberta} style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'12px', border:0, background:'#fff', fontFamily:'inherit', textAlign:'left' }}>
@@ -161,8 +172,9 @@ function ChallengeSeason({ carregar, initialData, onClose }) {
                   </button>
                   {aberta && <ChallengeSeasonAnswers partes={semana.partes || []} />}
                 </div>;
-              })}</div>
-            </section>)}</div>
+              })}</div>}
+              </section>;
+            })}</div>
           : <div style={{ marginTop:9, padding:15, borderRadius:15, background:'#fff', border:'1px solid #DCE7F4', color:'#64748B', fontSize:11.5, lineHeight:1.55 }}>
               Sua primeira semana ainda não fechou. O resultado sai no domingo e entra aqui.
             </div>}
