@@ -739,35 +739,39 @@ export function createChallengeFunctions({
           : 'Primeira semana dele no desafio — use o nível CEFR como referência.'}`
       }],
     };
-    // Respostas longas às vezes terminavam no limite no meio de uma string JSON.
-    // Uma nova tentativa com mais espaço recupera o aluno sem depender do cron do
-    // dia seguinte e sem refazer quem já tem as duas rodadas publicadas.
-    let response = await client.messages.create({ ...requestPayload, max_tokens:12000 });
-    let text = response.content.find(block => block.type === 'text')?.text;
-    if (!text) throw new Error('A IA não devolveu as perguntas.');
-    let generated;
-    try {
-      generated = JSON.parse(text);
-    } catch (firstError) {
-      response = await client.messages.create({ ...requestPayload, max_tokens:20000 });
-      text = response.content.find(block => block.type === 'text')?.text;
-      if (!text) throw firstError;
-      generated = JSON.parse(text);
+    // Respostas longas às vezes terminam no limite ou chegam com uma das partes
+    // incompleta. Valida o pacote inteiro e repete com mais espaço antes de
+    // desistir, sem refazer quem já tem as duas rodadas publicadas.
+    let generated, prepared, lastError;
+    const usage = {};
+    for (const maxTokens of [12000, 20000, 24000]) {
+      const response = await client.messages.create({ ...requestPayload, max_tokens:maxTokens });
+      Object.entries(response.usage || {}).forEach(([key, value]) => {
+        if (Number.isFinite(Number(value))) usage[key] = Number(usage[key] || 0) + Number(value);
+      });
+      const text = response.content.find(block => block.type === 'text')?.text;
+      try {
+        if (!text) throw new Error('A IA não devolveu as perguntas.');
+        generated = JSON.parse(text);
+        prepared = [generated.part1, generated.part2].map((questions, partIndex) => {
+          if (!Array.isArray(questions) || questions.length !== 5) throw new Error(`Parte ${partIndex + 1} incompleta.`);
+          const normalized = questions.map((question, index) => ({
+            ...question, id:`p${partIndex + 1}q${index + 1}`,
+            // trueFalse é múltipla escolha de duas alternativas — nem o app do aluno
+            // nem a correção precisam de um terceiro caminho para ele.
+            type:question.format === 'text' ? 'text' : 'multipleChoice',
+          }));
+          assertFocusMix(normalized, partIndex + 1);
+          assertFormatMix(normalized, partIndex + 1, formato);
+          const checked = normalized.map(validateQuestion);
+          return { questions:checked.map(item => item.publicQuestion), keys:checked.map(item => item.answerKey) };
+        });
+        lastError = null;
+        break;
+      } catch (error) { lastError = error; }
     }
-    const prepared = [generated.part1, generated.part2].map((questions, partIndex) => {
-      if (!Array.isArray(questions) || questions.length !== 5) throw new Error(`Parte ${partIndex + 1} incompleta.`);
-      const normalized = questions.map((question, index) => ({
-        ...question, id:`p${partIndex + 1}q${index + 1}`,
-        // trueFalse é múltipla escolha de duas alternativas — nem o app do aluno
-        // nem a correção precisam de um terceiro caminho para ele.
-        type:question.format === 'text' ? 'text' : 'multipleChoice',
-      }));
-      assertFocusMix(normalized, partIndex + 1);
-      assertFormatMix(normalized, partIndex + 1, formato);
-      const checked = normalized.map(validateQuestion);
-      return { questions:checked.map(item => item.publicQuestion), keys:checked.map(item => item.answerKey) };
-    });
-    return { prepared, analysis:generated.analysis, sourceKind, usage:response.usage,
+    if (lastError || !prepared) throw lastError || new Error('Não foi possível montar as duas partes do desafio.');
+    return { prepared, analysis:generated.analysis, sourceKind, usage,
       sources:materials.map(item => ({ id:item.id, title:item.title, date:item.date })) };
   }
 
