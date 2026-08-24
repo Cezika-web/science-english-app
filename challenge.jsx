@@ -100,8 +100,19 @@ function ChallengeSeason({ carregar, initialData, onClose }) {
 
   const semanaLabel = key => {
     const [, mes, dia] = String(key || '').split('-');
-    return dia && mes ? `Semana de ${dia}/${mes}` : key;
+    const numero = Math.max(1, Math.ceil(Number(dia || 1) / 7));
+    return dia && mes ? `${numero}ª semana · ${dia}/${mes}` : key;
   };
+  const semanasPorMes = [...(dados?.minhasSemanas || []).reduce((mapa, semana) => {
+    const monthKey = String(semana.weekKey || '').slice(0, 7);
+    if (!mapa.has(monthKey)) {
+      const label = new Intl.DateTimeFormat('pt-BR', { month:'long', year:'numeric', timeZone:'UTC' })
+        .format(new Date(`${monthKey}-01T12:00:00Z`));
+      mapa.set(monthKey, { key:monthKey, label, semanas:[] });
+    }
+    mapa.get(monthKey).semanas.push(semana);
+    return mapa;
+  }, new Map()).values()];
 
   return <div className="challenge-season-screen" style={{ position:'fixed', inset:0, zIndex:10030, width:'100%', maxWidth:480, height:'100dvh', margin:'0 auto', boxSizing:'border-box', background:'#F3F7FC', overflowY:'auto', overflowX:'hidden', overscrollBehavior:'contain' }}>
     <ChallengeSubpageHeader title="Minha temporada" subtitle="Todas as semanas somadas" onClose={onClose} />
@@ -128,27 +139,35 @@ function ChallengeSeason({ carregar, initialData, onClose }) {
           ? <div style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:8, marginTop:9 }}>{dados.badges.map(badge => <div key={badge.id} style={{ minWidth:0, padding:'14px 10px', borderRadius:16, textAlign:'center', background:'#fff', border:'1px solid #DCE7F4' }}><span style={{ display:'block', fontSize:30 }}>{badge.icon || '🏅'}</span><strong style={{ display:'block', color:'#173654', fontSize:11.5, lineHeight:1.3, marginTop:7 }}>{badge.title}</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:9, lineHeight:1.35, marginTop:4 }}>{badge.weekKey ? `Semana ${String(badge.weekKey).slice(8,10)}/${String(badge.weekKey).slice(5,7)}` : 'Conquista acumulada'}</span></div>)}</div>
           : <div style={{ marginTop:9, padding:14, borderRadius:15, background:'#fff', border:'1px solid #DCE7F4', color:'#64748B', fontSize:11.5, lineHeight:1.5 }}>Seus selos de acertos, pontuação e vitórias aparecerão aqui.</div>}
 
-        <ChallengeSeasonAnalytics analytics={dados.analytics} />
-
-        <div style={{ marginTop:18, fontSize:11, fontWeight:900, letterSpacing:1, color:'#0D5AA7', textTransform:'uppercase' }}>Suas semanas</div>
+        <div style={{ marginTop:20, fontSize:11, fontWeight:900, letterSpacing:1, color:'#0D5AA7', textTransform:'uppercase' }}>Histórico de respostas</div>
         {dados.minhasSemanas.length
-          ? <div style={{ display:'grid', gap:7, marginTop:9 }}>{dados.minhasSemanas.map(semana => {
-              const aberta = semanaAberta === semana.weekKey;
-              return <div key={semana.weekKey} style={{ borderRadius:14, background:'#fff', border:'1px solid #DCE7F4', overflow:'hidden' }}>
-                <button type="button" onClick={() => setSemanaAberta(aberta ? null : semana.weekKey)} aria-expanded={aberta} style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'11px 12px', border:0, background:'#fff', fontFamily:'inherit', textAlign:'left' }}>
-                  <span style={{ flex:1, minWidth:0 }}>
-                    <strong style={{ display:'block', color:'#213B5B', fontSize:12.5 }}>{semanaLabel(semana.weekKey)}</strong>
-                    <span style={{ color:'#64748B', fontSize:10.5 }}>{semana.position}º entre {semana.participantes} · {semana.partesFeitas || 0} de 2 partes</span>
-                  </span>
-                  <strong style={{ color:'#0D5AA7', fontSize:13 }}>{Number(semana.score || 0).toLocaleString('pt-BR')}</strong>
-                  <span style={{ color:'#8293A7', fontSize:16 }}>{aberta ? '⌃' : '⌄'}</span>
-                </button>
-                {aberta && <ChallengeSeasonAnswers partes={semana.partes || []} />}
-              </div>;
-            })}</div>
+          ? <div style={{ display:'grid', gap:12, marginTop:9 }}>{semanasPorMes.map(grupo => <section key={grupo.key} style={{ padding:10, borderRadius:17, background:'#EAF2FB', border:'1px solid #D7E5F3' }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'1px 2px 8px' }}>
+                <strong style={{ color:'#0D3F82', fontSize:12.5, textTransform:'capitalize' }}>{grupo.label}</strong>
+                <span style={{ color:'#71869D', fontSize:9.5 }}>{grupo.semanas.length} semana(s)</span>
+              </div>
+              <div style={{ display:'grid', gap:7 }}>{grupo.semanas.map(semana => {
+                const aberta = semanaAberta === semana.weekKey;
+                return <div key={semana.weekKey} style={{ borderRadius:13, background:'#fff', border:`1px solid ${aberta ? '#7CB9EA' : '#DCE7F4'}`, overflow:'hidden', boxShadow:aberta ? '0 6px 16px rgba(13,90,167,.09)' : 'none' }}>
+                  <button type="button" onClick={() => setSemanaAberta(aberta ? null : semana.weekKey)} aria-expanded={aberta} style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'12px', border:0, background:'#fff', fontFamily:'inherit', textAlign:'left' }}>
+                    <span style={{ width:34, height:34, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:11, background:'#E7F3FF', fontSize:16 }}>📅</span>
+                    <span style={{ flex:1, minWidth:0 }}>
+                      <strong style={{ display:'block', color:'#213B5B', fontSize:12.5 }}>{semanaLabel(semana.weekKey)}</strong>
+                      <span style={{ display:'block', color:'#64748B', fontSize:9.8, marginTop:2 }}>{semana.position}º lugar · {semana.partesFeitas || 0}/2 partes</span>
+                      <span style={{ display:'block', color:'#0D5AA7', fontSize:9.5, fontWeight:800, marginTop:4 }}>{aberta ? 'Fechar respostas' : 'Ver perguntas e respostas'}</span>
+                    </span>
+                    <strong style={{ color:'#0D5AA7', fontSize:13 }}>{Number(semana.score || 0).toLocaleString('pt-BR')} <small>PTS</small></strong>
+                    <span style={{ color:'#8293A7', fontSize:16 }}>{aberta ? '⌃' : '⌄'}</span>
+                  </button>
+                  {aberta && <ChallengeSeasonAnswers partes={semana.partes || []} />}
+                </div>;
+              })}</div>
+            </section>)}</div>
           : <div style={{ marginTop:9, padding:15, borderRadius:15, background:'#fff', border:'1px solid #DCE7F4', color:'#64748B', fontSize:11.5, lineHeight:1.55 }}>
               Sua primeira semana ainda não fechou. O resultado sai no domingo e entra aqui.
             </div>}
+
+        <ChallengeSeasonAnalytics analytics={dados.analytics} />
 
         <div style={{ marginTop:18, fontSize:11, fontWeight:900, letterSpacing:1, color:'#0D5AA7', textTransform:'uppercase' }}>Ranking geral</div>
         <div style={{ marginTop:9, padding:12, borderRadius:17, background:'#fff', border:'1px solid #DCE7F4' }}>
@@ -206,10 +225,6 @@ function ChallengeSeasonAnalytics({ analytics = {} }) {
     <div style={{ marginTop:10, padding:14, borderRadius:16, background:'#fff', border:'1px solid #DCE7F4' }}>
       <strong style={{ color:'#213B5B', fontSize:12.5 }}>Evolução semanal</strong>
       {evolution.length ? <div style={{ height:96, display:'flex', alignItems:'flex-end', gap:8, marginTop:12 }}>{evolution.map(item => <div key={item.weekKey} style={{ flex:1, minWidth:0, textAlign:'center' }}><strong style={{ display:'block', color:'#0D5AA7', fontSize:9.5, marginBottom:4 }}>{item.score}</strong><div style={{ height:Math.max(12,Math.round(Number(item.score || 0) / maxScore * 58)), borderRadius:'7px 7px 3px 3px', background:'linear-gradient(180deg,#5DE1FF,#147AE0)' }} /><span style={{ display:'block', color:'#7B8DA3', fontSize:8, marginTop:4 }}>{String(item.weekKey).slice(5)}</span></div>)}</div> : <p style={{ color:'#7B8DA3', fontSize:11, lineHeight:1.5, margin:'9px 0 0' }}>O gráfico começa a ganhar forma conforme novas semanas forem concluídas.</p>}
-    </div>
-    <div style={{ marginTop:10, padding:14, borderRadius:16, background:'#fff', border:'1px solid #DCE7F4' }}>
-      <strong style={{ color:'#213B5B', fontSize:12.5 }}>Principais erros</strong>
-      {(analytics.principaisErros || []).length ? <div style={{ display:'grid', gap:7, marginTop:10 }}>{analytics.principaisErros.map(item => <div key={item.tema} style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 10px', borderRadius:11, background:'#FFF7F3' }}><span style={{ flex:1, minWidth:0, color:'#6B3E31', fontSize:10.5, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{item.tema}</span><strong style={{ color:'#B33A3A', fontSize:11 }}>{item.quantidade}×</strong></div>)}</div> : <p style={{ color:'#7B8DA3', fontSize:11, margin:'9px 0 0' }}>Ainda não há erros suficientes para identificar um padrão.</p>}
     </div>
   </div>;
 }
