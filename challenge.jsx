@@ -170,6 +170,18 @@ function ChallengeSeasonAnswers({ partes = [] }) {
         return <div key={detail.questionId || index} style={{ padding:10, borderRadius:11, border:'1px solid #DCE7F4', background:'#fff', color:'#53677E', fontSize:10.5, lineHeight:1.45 }}>
           <div style={{ display:'flex', gap:7, alignItems:'flex-start' }}><span>{detail.correct ? '✅' : parcial ? '🟡' : '❌'}</span><strong style={{ flex:1, color:'#213B5B' }}>{detail.prompt}</strong><strong style={{ color:tone }}>{detail.score}</strong></div>
           {detail.context && <div style={{ marginTop:6, color:'#7B8DA3', fontStyle:'italic' }}>{detail.context}</div>}
+          {detail.type === 'multipleChoice' && (detail.options || []).length > 0 && <div style={{ display:'grid', gap:5, marginTop:8 }}>{detail.options.map(option => {
+            const selected = String(detail.selectedOptionId || '') === String(option.id || '') || (!detail.selectedOptionId && String(option.text || '').trim().toLowerCase() === String(detail.answer || '').trim().toLowerCase());
+            const correta = String(option.text || '').trim().toLowerCase() === String(detail.expected || '').trim().toLowerCase();
+            const border = correta ? '#86D7B8' : selected ? '#F0A69A' : '#DCE7F4';
+            const background = correta ? '#EAF9F3' : selected ? '#FFF1EE' : '#F8FAFC';
+            const color = correta ? '#126B51' : selected ? '#A43B2E' : '#53677E';
+            return <div key={option.id} style={{ display:'flex', gap:7, alignItems:'center', padding:'7px 8px', borderRadius:9, border:`1px solid ${border}`, background, color }}>
+              <strong style={{ width:19, height:19, borderRadius:6, display:'flex', alignItems:'center', justifyContent:'center', background:correta ? '#BCEBDB' : selected ? '#FFD5CE' : '#E8EEF5', fontSize:9 }}>{String(option.id || '').toUpperCase()}</strong>
+              <span style={{ flex:1 }}>{option.text}</span>
+              {correta && <strong>✓ correta</strong>}{selected && !correta && <strong>marcou</strong>}
+            </div>;
+          })}</div>}
           <div style={{ marginTop:7 }}><strong>Sua resposta:</strong> {detail.answer || 'Sem resposta'}</div>
           <div style={{ marginTop:3 }}><strong>Resposta correta:</strong> {detail.expected || '—'}</div>
           {detail.explanation && <div style={{ marginTop:6, padding:'7px 8px', borderRadius:8, background:'#F2F6FA' }}><strong>Por quê:</strong> {detail.explanation}</div>}

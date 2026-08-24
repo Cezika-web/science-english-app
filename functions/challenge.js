@@ -324,6 +324,10 @@ function scoreAnswers(publicQuestions, keys, answers) {
       questionId:question.id, prompt:question.prompt, context:question.context || '',
       answer:selectedOption, expected:key.expected || '', explanation:key.explanation || '',
       type:question.type, ...(key.topic ? { topic:key.topic } : {}),
+      ...(question.type === 'multipleChoice' ? {
+        selectedOptionId:value,
+        options:(question.options || []).map(option => ({ id:option.id, text:option.text })),
+      } : {}),
       score, correct, ...(score > 0 && score < 100 ? { parcial:true } : {}),
     };
   });
@@ -1749,21 +1753,45 @@ ${item.text}`).join('\n\n')}`
       const erros = new Map();
       const respostasPorSemana = new Map();
       const weekKeysFechadas = new Set(semanasFechadas.map(semana => semana.weekKey));
+      // Resultados antigos guardavam a resposta escolhida, mas não a lista de
+      // alternativas. Recupera a rodada original para o histórico também poder
+      // reconstruir A/B/C/D sem alterar a nota já fechada.
+      const perguntasPorRodada = new Map();
+      await Promise.all(meusResultados.docs.map(async doc => {
+        const result = doc.data();
+        if (result.groupId || !result.roundId || !weekKeysFechadas.has(result.weekKey)) return;
+        try {
+          const { roundSnap } = await resolveRound(uid, result.roundId);
+          if (roundSnap.exists) perguntasPorRodada.set(result.roundId,
+            new Map((roundSnap.data().questions || []).map(question => [question.id, question])));
+        } catch (error) {
+          console.error(`Alternativas históricas de ${result.roundId}:`, error.message);
+        }
+      }));
       meusResultados.docs.forEach(doc => {
         const result = doc.data();
         if (result.groupId || !weekKeysFechadas.has(result.weekKey)) return;
+        const perguntas = perguntasPorRodada.get(result.roundId) || new Map();
         const partes = respostasPorSemana.get(result.weekKey) || [];
         partes.push({
           part:Number(result.part || 0), score:Number(result.score || 0),
           maxScore:Number(result.maxScore || 500),
-          details:(result.details || []).map(detail => ({
-            questionId:String(detail.questionId || ''), prompt:String(detail.prompt || ''),
-            context:String(detail.context || ''), answer:String(detail.answer || ''),
-            expected:String(detail.expected || ''), explanation:String(detail.explanation || ''),
-            type:detail.type === 'text' ? 'text' : 'multipleChoice',
-            score:Number(detail.score || 0), correct:detail.correct === true,
-            ...(detail.parcial === true ? { parcial:true } : {}),
-          })),
+          details:(result.details || []).map(detail => {
+            const pergunta = perguntas.get(detail.questionId) || {};
+            const options = Array.isArray(detail.options) && detail.options.length
+              ? detail.options : (Array.isArray(pergunta.options) ? pergunta.options : []);
+            const selectedOptionId = String(detail.selectedOptionId ||
+              options.find(option => normalizeAnswer(option.text) === normalizeAnswer(detail.answer))?.id || '');
+            return {
+              questionId:String(detail.questionId || ''), prompt:String(detail.prompt || ''),
+              context:String(detail.context || ''), answer:String(detail.answer || ''),
+              expected:String(detail.expected || ''), explanation:String(detail.explanation || ''),
+              type:detail.type === 'text' ? 'text' : 'multipleChoice', selectedOptionId,
+              options:options.map(option => ({ id:String(option.id || ''), text:String(option.text || '') })),
+              score:Number(detail.score || 0), correct:detail.correct === true,
+              ...(detail.parcial === true ? { parcial:true } : {}),
+            };
+          }),
         });
         respostasPorSemana.set(result.weekKey, partes);
         const linha = desempenho.get(result.weekKey) || { weekKey:result.weekKey, score:0, acertos:0, erros:0 };
