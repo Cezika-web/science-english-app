@@ -723,6 +723,7 @@ export function createChallengeFunctions({
         'Em format="multipleChoice": quatro alternativas plausíveis (a, b, c, d), correctOption com a letra certa, acceptedAnswers vazio. ' +
         'Em format="trueFalse": exatamente duas alternativas, {"id":"a","text":"True"} e {"id":"b","text":"False"}, correctOption com a letra certa, acceptedAnswers vazio. ' +
         'Em format="text": options vazio, correctOption vazio, e acceptedAnswers com TODAS as formas corretas de escrever a resposta. ' +
+        'IMPORTANTE: context e hint aparecem ao aluno ANTES de ele responder. Eles podem orientar a situação ou o conceito, mas nunca podem conter a resposta esperada, uma tradução direta que entregue o alvo, a alternativa correta ou a resposta de qualquer aluno. ' +
         'A resposta escrita tem no MÍNIMO 3 palavras — nunca uma palavra só. Deve caber em 45 segundos digitando no celular: uma oração curta, não um parágrafo nem redação. ' +
         'A correção é automática e compara construções, então a pergunta precisa admitir um alvo gramatical inequívoco. Em acceptedAnswers liste EXAUSTIVAMENTE toda variação válida: contração e forma completa ("don\'t" e "do not"), grafia americana e britânica, resposta curta e frase completa, conectores opcionais e palavras mais específicas que mantenham o mesmo sentido e a mesma regra. Não restrinja o gabarito a uma cópia literal quando outra formulação natural também responde corretamente. Se a pergunta admitir sentidos realmente diferentes, reformule para fechar o alvo. Maiúscula, acento e pontuação são ignorados na correção, então não dependa deles. ' +
         'Em todos os formatos: uma única resposta inequívoca e explicação pedagógica curta. ' +
@@ -797,6 +798,7 @@ export function createChallengeFunctions({
         'Em CADA parte, produza exatamente 3 perguntas focus=weak e 2 focus=strong. ' +
         'Em CADA parte o formato é exatamente: 3 perguntas format="text", 1 format="trueFalse" e 1 format="multipleChoice". ' +
         FORMAT_RULES.multipleChoice + ' ' + FORMAT_RULES.trueFalse + ' ' + FORMAT_RULES.text + ' ' +
+        'Context e hint aparecem antes da resposta: dê apenas orientação conceitual, sem revelar a resposta esperada, tradução direta do alvo, alternativa correta ou resposta de qualquer aluno. ' +
         'Em todos os formatos: uma única resposta inequívoca e explicação pedagógica curta em português. Não copie exercícios literalmente.' }],
       output_config:{ format:{ type:'json_schema', schema:PERSONALIZED_CHALLENGE_SCHEMA } },
       messages:[{ role:'user', content:
@@ -2133,6 +2135,7 @@ ${item.text}`).join('\n\n')}`
         system:[{ type:'text', text:
           'Você reescreve UMA pergunta de um desafio de inglês. Use somente fatos linguísticos, vocabulário e contextos presentes nos materiais fornecidos. ' +
           `${FORMAT_RULES[formatoOriginal]} Uma única resposta inequívoca e explicação pedagógica curta em português. ` +
+          'Context e hint aparecem antes da resposta: dê apenas orientação conceitual, sem revelar a resposta esperada, tradução direta do alvo, alternativa correta ou resposta de qualquer aluno. ' +
           'A nova pergunta não pode repetir a que está sendo trocada nem nenhuma das outras da rodada. ' +
           'Mantenha o mesmo grau de dificuldade e o mesmo foco da original, a menos que o professor peça outra coisa.' }],
         output_config:{ format:{ type:'json_schema', schema:SINGLE_QUESTION_SCHEMA } },
