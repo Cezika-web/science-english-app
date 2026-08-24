@@ -81,7 +81,15 @@ function ChallengeSeason({ carregar, initialData, onClose }) {
   const carregarRef = React.useRef(carregar);
   carregarRef.current = carregar;
   React.useEffect(() => {
-    if (initialData) return undefined;
+    // O hub começa a buscar a temporada antes de esta tela abrir. Se o aluno
+    // entrar aqui durante essa busca, initialData chega depois da montagem —
+    // useState não acompanha mudanças da prop sozinho e a tela ficava presa em
+    // "Carregando..." mesmo com a resposta já disponível no componente pai.
+    if (initialData) {
+      setDados(initialData);
+      setErro('');
+      return undefined;
+    }
     let vivo = true;
     Promise.resolve(carregarRef.current())
       .then(resultado => { if (vivo) setDados(resultado || { minhasSemanas:[], geral:[] }); })
