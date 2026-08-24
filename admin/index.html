@@ -567,7 +567,8 @@
     /* Duas colunas viram uma no celular. Com minimo fixo na coluna da direita,
        a da esquerda virava uma tira de 79px e o texto saia letra por letra. */
     .duas-colunas { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr); gap:16px; align-items:start; }
-    @media (max-width:860px) { .duas-colunas { grid-template-columns:minmax(0,1fr); } }
+    .challenge-history-layout { display:grid; grid-template-columns:minmax(180px,.34fr) minmax(0,1fr); gap:14px; align-items:start; }
+    @media (max-width:860px) { .duas-colunas { grid-template-columns:minmax(0,1fr); } .challenge-history-layout { grid-template-columns:minmax(0,1fr); } }
 
     @media (max-width:760px) {
       .container { padding-left:12px; padding-right:12px; }
@@ -7339,7 +7340,14 @@
           </div>`;
         };
         status.innerHTML = `<div style="font-size:.75rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">${esc(challengeWeekLabel(data.weekKey))}</div><div style="padding:12px;border-radius:12px;background:${data.published ? '#F0FDF4' : '#FFF7ED'};color:${data.published ? '#166534' : '#9A3412'};font-weight:800;">${data.published ? '✅ Semana publicada e programada' : '⚠️ Semana ainda não publicada'}</div>${line('Parte 1', data.part1)}${line('Parte 2', data.part2)}`;
-        if (personal) status.insertAdjacentHTML('beforeend', `<div style="margin-top:12px;padding:12px;border-radius:12px;background:#F5F3FF;color:#5B21B6;font-weight:700;">Personalização: ${Number(personal.completed || 0)}/${Number(personal.total || 0)} alunos prontos${personal.failed ? ` · ${personal.failed} falha(s)` : ''}</div>`);
+        if (personal) {
+          const missing = Array.isArray(personal.missing) ? personal.missing : [];
+          status.insertAdjacentHTML('beforeend', `<div style="margin-top:12px;padding:12px;border-radius:12px;background:${missing.length ? '#FFF7ED' : '#F5F3FF'};color:${missing.length ? '#9A3412' : '#5B21B6'};font-weight:700;">
+            Personalização: ${Number(personal.completed || 0)}/${Number(personal.total || 0)} alunos prontos${missing.length ? `<div style="font-size:.75rem;font-weight:600;line-height:1.5;margin-top:6px;"><strong>Sem perguntas:</strong> ${missing.map(esc).join(' · ')}</div><button type="button" id="challenge-generate-missing" class="btn-secondary" style="margin-top:9px;background:#fff;">Gerar somente para quem está sem perguntas</button>` : ''}
+          </div>`);
+          const generateMissing = document.getElementById('challenge-generate-missing');
+          if (generateMissing) generateMissing.onclick = () => document.getElementById('challenge-generate-personalized').click();
+        }
         await loadChallengeManualWeek();
         await loadChallengeReviewStudents();
         await loadChallengeResults();
@@ -7363,6 +7371,7 @@
             <span style="flex:1;min-width:0;"><strong style="display:block;">${esc(aluno.name)}</strong><small style="display:block;color:var(--muted);margin-top:2px;">Parte 1: ${Number(aluno.part1Score || 0)} PTS · Parte 2: ${Number(aluno.part2Score || 0)} PTS</small></span>
             <small style="color:var(--muted);white-space:nowrap;">${aluno.acertos}✓ ${aluno.erros}✗ · ${aluno.partes}/2</small>
             <strong>${Number(aluno.score).toLocaleString('pt-BR')}</strong>
+            <button type="button" class="challenge-retry" data-uid="${esc(aluno.uid)}" data-name="${esc(aluno.name)}" data-week="${esc(data.weekKey)}" style="border:1px solid #BFDBFE;border-radius:8px;padding:5px 8px;background:#EFF6FF;color:#0D5AA7;font:inherit;font-size:.7rem;font-weight:800;cursor:pointer;white-space:nowrap;">↻ Nova tentativa</button>
           </div>`).join('')}</div>`;
 
       // Com rodada personalizada cada aluno vê uma frase diferente, então o que
@@ -7459,15 +7468,41 @@
           : '<p style="color:var(--muted);font-size:.84rem;">Ainda não há pontos fechados neste mês.</p>';
         const weekButtons = month.semanas.map(item => `<button type="button" class="challenge-history-week" data-week="${esc(item.weekKey)}" style="border:1px solid ${item.weekKey === data.weekKey ? '#93C5FD' : 'var(--border)'};border-radius:10px;padding:9px 11px;background:${item.weekKey === data.weekKey ? '#E8F3FF' : 'var(--card)'};color:${item.weekKey === data.weekKey ? '#0D5AA7' : 'var(--text)'};font:inherit;font-size:.76rem;font-weight:800;cursor:pointer;text-align:left;">${esc(challengeWeekLabel(item.weekKey))}<small style="display:block;color:var(--muted);margin-top:2px;">${item.participantes} participante(s)</small></button>`).join('');
         return `<div data-challenge-history-panel="${esc(month.key)}" style="display:${month.key === activeMonth.key ? 'block' : 'none'};margin-top:15px;">
-          ${bloco(`Ranking geral de ${esc(month.label)}`, monthly)}
-          ${bloco(`Semanas de ${esc(month.label)}`, `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:7px;">${weekButtons}</div>`)}
-          ${month.key === activeMonth.key ? detail : ''}
+          <div class="challenge-history-layout">
+            <aside style="padding:12px;border:1px solid var(--border);border-radius:12px;background:#F8FAFC;">
+              <div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px;">Semanas de ${esc(month.label)}</div>
+              <div style="display:grid;gap:7px;">${weekButtons}</div>
+            </aside>
+            <section style="min-width:0;">
+              ${month.key === activeMonth.key ? detail : '<p style="color:var(--muted);font-size:.84rem;">Escolha uma semana ao lado.</p>'}
+              <details style="margin-top:16px;border:1px solid var(--border);border-radius:12px;background:var(--card);">
+                <summary style="cursor:pointer;padding:12px 14px;font-size:.82rem;font-weight:800;color:#0D5AA7;">Ver ranking geral de ${esc(month.label)}</summary>
+                <div style="padding:0 14px 14px;">${monthly}</div>
+              </details>
+            </section>
+          </div>
         </div>`;
       };
       return `<div style="display:flex;gap:7px;flex-wrap:wrap;">${months.map(monthButton).join('')}</div>${months.map(monthPanel).join('')}`;
     }
 
-    document.addEventListener('click', evento => {
+    document.addEventListener('click', async evento => {
+      const retry = evento.target.closest('.challenge-retry');
+      if (retry) {
+        const part = Number(prompt(`Qual parte ${retry.dataset.name} precisa refazer?\n\nDigite 1 ou 2.`));
+        if (![1, 2].includes(part)) return;
+        if (!confirm(`Liberar uma nova tentativa da Parte ${part} para ${retry.dataset.name}?\n\nA nota antiga permanece até a nova tentativa ser concluída.`)) return;
+        retry.disabled = true; retry.textContent = 'Liberando...';
+        try {
+          const reopen = httpsCallable(fns, 'reabrirDesafioAluno', { timeout:60000 });
+          await reopen({ uid:retry.dataset.uid, weekKey:retry.dataset.week, part });
+          retry.textContent = `✓ Parte ${part} liberada por 3 dias`;
+        } catch (error) {
+          retry.disabled = false; retry.textContent = '↻ Nova tentativa';
+          alert(`Não foi possível liberar: ${error.message}`);
+        }
+        return;
+      }
       const month = evento.target.closest('.challenge-history-month');
       if (month) {
         const body = month.closest('#challenge-results-body');

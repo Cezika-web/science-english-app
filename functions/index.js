@@ -2202,6 +2202,7 @@ export const gerarDesafioDaSemana = challengeFunctions.gerarDesafioDaSemana;
 export const gerarDesafioDaTurma = challengeFunctions.gerarDesafioDaTurma;
 export const aceitarRespostaDesafio = challengeFunctions.aceitarRespostaDesafio;
 export const obterPerguntasDesafio = challengeFunctions.obterPerguntasDesafio;
+export const reabrirDesafioAluno = challengeFunctions.reabrirDesafioAluno;
 export const regerarPerguntaDesafio = challengeFunctions.regerarPerguntaDesafio;
 export const obterTemporadaDesafio = challengeFunctions.obterTemporadaDesafio;
 export const obterResultadoDesafioAdmin = challengeFunctions.obterResultadoDesafioAdmin;

@@ -704,11 +704,14 @@ export function createChallengeFunctions({
     // acabou de entrar, e não se joga um A1 direto em cinco perguntas escritas.
     const formato = anterior && Number(anterior.score) >= FORMAT_THRESHOLD ? 'escrita' : 'assistido';
     const isAmorzinho = student.slug === 'amorzinho' || String(student.name || '').toLowerCase() === 'amorzinho';
-    const materials = input.posts.length ? input.posts : isAmorzinho ? input.activityMaterials : [];
-    const sourceKind = input.posts.length ? 'pós-aulas' : 'atividades recentes da Amorzinho';
-    if (!materials.length) throw new Error('Nenhum pós-aula utilizável nos últimos 90 dias.');
-    const response = await client.messages.create({
-      model, max_tokens:12000,
+    // Atividades recentes são uma fonte legítima para qualquer aluno que ainda
+    // não tenha pós-aula utilizável. Antes só a Amorzinho recebia esse fallback,
+    // deixando alunos novos sem desafio nenhum.
+    const materials = input.posts.length ? input.posts : input.activityMaterials;
+    const sourceKind = input.posts.length ? 'pós-aulas' : 'atividades recentes';
+    if (!materials.length) throw new Error('Nenhum pós-aula ou atividade utilizável nos últimos 90 dias.');
+    const requestPayload = {
+      model,
       system:[{ type:'text', text:
         `Você cria desafios individuais de inglês para o Science English. Use SOMENTE fatos linguísticos, vocabulário e contextos presentes nos ${sourceKind} fornecidos. ` +
         `A dificuldade deve ser HARD em relação ao nível CEFR do aluno${isAmorzinho ? ' e, para a Amorzinho, especialmente exigente' : ''}: exija aplicação, discriminação de nuances e recuperação ativa, sem ensinar conteúdo novo. ` +
@@ -735,10 +738,22 @@ export function createChallengeFunctions({
           ? `${anterior.score} de ${anterior.maxScore} pontos (${Math.round(anterior.score / anterior.maxScore * 100)}%). Errou: ${anterior.erros.length ? JSON.stringify(anterior.erros) : 'nada'}.`
           : 'Primeira semana dele no desafio — use o nível CEFR como referência.'}`
       }],
-    });
-    const text = response.content.find(block => block.type === 'text')?.text;
+    };
+    // Respostas longas às vezes terminavam no limite no meio de uma string JSON.
+    // Uma nova tentativa com mais espaço recupera o aluno sem depender do cron do
+    // dia seguinte e sem refazer quem já tem as duas rodadas publicadas.
+    let response = await client.messages.create({ ...requestPayload, max_tokens:12000 });
+    let text = response.content.find(block => block.type === 'text')?.text;
     if (!text) throw new Error('A IA não devolveu as perguntas.');
-    const generated = JSON.parse(text);
+    let generated;
+    try {
+      generated = JSON.parse(text);
+    } catch (firstError) {
+      response = await client.messages.create({ ...requestPayload, max_tokens:20000 });
+      text = response.content.find(block => block.type === 'text')?.text;
+      if (!text) throw firstError;
+      generated = JSON.parse(text);
+    }
     const prepared = [generated.part1, generated.part2].map((questions, partIndex) => {
       if (!Array.isArray(questions) || questions.length !== 5) throw new Error(`Parte ${partIndex + 1} incompleta.`);
       const normalized = questions.map((question, index) => ({
@@ -1184,6 +1199,32 @@ ${item.text}`).join('\n\n')}`
       const student = studentSnap.data();
       const badgeState = await loadChallengeBadges(uid);
       const now = new Date();
+      // Uma reposição individual fica acima da semana corrente até ser concluída.
+      // A tentativa antiga continua intacta; só é substituída quando a nova acaba.
+      const retrySnap = await studentSnap.ref.collection('challengeRetries').doc('active').get();
+      if (retrySnap.exists) {
+        const retry = retrySnap.data();
+        const expiresAt = retry.expiresAt?.toDate?.() || new Date(retry.expiresAt);
+        if (expiresAt > now && retry.roundId) {
+          const [roundSnap, submissionSnap] = await Promise.all([
+            studentSnap.ref.collection('challengeRounds').doc(retry.roundId).get(),
+            studentSnap.ref.collection('challengeSubmissions').doc(retry.roundId).get(),
+          ]);
+          if (roundSnap.exists) {
+            const round = roundSnap.data(), submission = submissionSnap.exists ? submissionSnap.data() : null;
+            return {
+              enabled:true, retry:true, weekKey:retry.weekKey, title:'Nova tentativa liberada',
+              phase:'open', part:Number(retry.part || round.part),
+              startsAt:iso(round.opensAt), revealAt:iso(expiresAt), endsAt:iso(expiresAt),
+              badges:badgeState.badges, pendingBadges:adminMirror ? [] : badgeState.pendingBadges,
+              canStart:submission?.completed !== true, completed:submission?.completed === true,
+              started:Boolean(submission), nextIndex:Number(submission?.answers?.length || 0),
+              round:{ roundId:round.roundId, part:round.part, questionCount:round.questionCount,
+                opensAt:iso(round.opensAt), closesAt:iso(round.closesAt), questions:round.questions || [] },
+            };
+          }
+        }
+      }
       const weekKey = weekKeyFor(now);
       const schedule = scheduleFor(weekKey);
       const stage = stageFor(now, schedule);
@@ -1261,13 +1302,13 @@ ${item.text}`).join('\n\n')}`
       const uid = requireAuth(request);
       await assertStudent(uid);
       const roundId = String(request.data?.roundId || '');
-      await assertOpenRound(uid, roundId);
+      const { round } = await assertOpenRound(uid, roundId);
       const ref = db.doc(`students/${uid}/challengeSubmissions/${roundId}`);
       const result = await db.runTransaction(async tx => {
         const snap = await tx.get(ref);
         if (snap.exists && snap.data().completed === true) throw new HttpsError('already-exists', 'Esta tentativa já foi concluída.');
         if (!snap.exists) tx.create(ref, {
-          roundId, weekKey:roundId.slice(0, 10), part:Number(roundId.slice(-1)), answers:[],
+          roundId, weekKey:round.weekKey || roundId.slice(0, 10), part:Number(round.part || 0), answers:[],
           completed:false, status:'in_progress', startedAt:FieldValue.serverTimestamp(), updatedAt:FieldValue.serverTimestamp(),
         });
         return { started:true, nextIndex:Number(snap.data()?.answers?.length || 0) };
@@ -1290,8 +1331,8 @@ ${item.text}`).join('\n\n')}`
       const questions = round.questions || [];
       const keys = keySnap.data().answers || [];
       const submissionRef = db.doc(`students/${uid}/challengeSubmissions/${roundId}`);
-      const resultRef = db.doc(`_challengeResults/${roundId}_${uid}`);
-      return db.runTransaction(async tx => {
+      const resultRef = db.doc(`_challengeResults/${round.retryResultId || `${roundId}_${uid}`}`);
+      const saved = await db.runTransaction(async tx => {
         const snap = await tx.get(submissionRef);
         if (!snap.exists) throw new HttpsError('failed-precondition', 'Comece o desafio antes de responder.');
         const submission = snap.data();
@@ -1313,12 +1354,16 @@ ${item.text}`).join('\n\n')}`
           tx.set(resultRef, {
             uid, studentName:studentSnap.data().name || studentSnap.data().firstName || 'Aluno',
             roundId, weekKey:round.weekKey, part:round.part, score, maxScore:questions.length * 100,
+            ...(round.retryOf ? { retryOf:round.retryOf, retakenAt:FieldValue.serverTimestamp() } : {}),
             ...(round.groupId ? { groupId:round.groupId, groupName:round.groupName || '' } : {}),
             details, completedAt:FieldValue.serverTimestamp(),
           });
+          if (round.retryOf) tx.delete(db.doc(`students/${uid}/challengeRetries/active`));
         }
         return { saved:true, completed, nextIndex:nextAnswers.length };
       });
+      if (saved.completed && round.retryOf) await buildRanking(round.weekKey);
+      return saved;
     }
   );
 
@@ -1342,6 +1387,8 @@ ${item.text}`).join('\n\n')}`
       const submissionPairs = await Promise.all(activeStudents.map(async studentDoc => ({
         uid:studentDoc.id,
         name:studentDoc.data().name || studentDoc.data().firstName || 'Aluno',
+        round1:await studentDoc.ref.collection('challengeRounds').doc(schedule.part1.roundId).get(),
+        round2:await studentDoc.ref.collection('challengeRounds').doc(schedule.part2.roundId).get(),
         part1:await studentDoc.ref.collection('challengeSubmissions').doc(schedule.part1.roundId).get(),
         part2:await studentDoc.ref.collection('challengeSubmissions').doc(schedule.part2.roundId).get(),
       })));
@@ -1349,9 +1396,14 @@ ${item.text}`).join('\n\n')}`
       const completedNames = part => submissionPairs
         .filter(pair => pair[part].exists && pair[part].data().completed === true)
         .map(pair => pair.name).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      const hasRound = (pair, part) => pair[`round${part}`].exists || (part === 1 ? part1 : part2).exists;
+      const fullyReady = submissionPairs.filter(pair => hasRound(pair, 1) && hasRound(pair, 2));
+      const missing = submissionPairs.filter(pair => !hasRound(pair, 1) || !hasRound(pair, 2))
+        .map(pair => pair.name).sort((a, b) => a.localeCompare(b, 'pt-BR'));
       return {
         weekKey, published:week.exists,
-        personalized:generationJob.exists ? generationJob.data() : null,
+        personalized:generationJob.exists ? { ...generationJob.data(), completed:fullyReady.length,
+          total:submissionPairs.length, failed:missing.length, missing } : null,
         part1:{ published:part1.exists || generationJob.data()?.completed > 0, questions:part1.data()?.questionCount || (generationJob.data()?.completed ? 5 : 0), completed:completed('part1'), completedNames:completedNames('part1') },
         part2:{ published:part2.exists || generationJob.data()?.completed > 0, questions:part2.data()?.questionCount || (generationJob.data()?.completed ? 5 : 0), completed:completed('part2'), completedNames:completedNames('part2') },
       };
@@ -1993,6 +2045,47 @@ ${item.text}`).join('\n\n')}`
     }
   );
 
+  const reabrirDesafioAluno = onCall(
+    { region:REGION, timeoutSeconds:60, memory:'256MiB' },
+    async request => {
+      requireAdmin(request, adminEmails);
+      const uid = String(request.data?.uid || '').trim();
+      const weekKey = String(request.data?.weekKey || '').trim();
+      const part = Number(request.data?.part || 0);
+      if (!uid || !/^\d{4}-\d{2}-\d{2}$/.test(weekKey) || ![1, 2].includes(part)) {
+        throw new HttpsError('invalid-argument', 'Informe aluno, semana e parte válidos.');
+      }
+      const studentDoc = await db.doc(`students/${uid}`).get();
+      if (!studentDoc.exists) throw new HttpsError('not-found', 'Aluno não encontrado.');
+      const originalRoundId = `${weekKey}-part-${part}`;
+      const { roundSnap, personalized } = await resolveRound(uid, originalRoundId);
+      if (!roundSnap.exists) throw new HttpsError('not-found', 'As perguntas originais desta parte não foram encontradas.');
+      const keySnap = await answerKeyRef(uid, originalRoundId, personalized).get();
+      if (!keySnap.exists) throw new HttpsError('not-found', 'O gabarito original desta parte não foi encontrado.');
+      const now = new Date(), expiresAt = new Date(now.getTime() + 72 * 60 * 60 * 1000);
+      const retryRoundId = `${originalRoundId}-retry-${Date.now()}`;
+      const original = roundSnap.data();
+      const batch = db.batch();
+      batch.set(studentDoc.ref.collection('challengeRounds').doc(retryRoundId), {
+        ...original, roundId:retryRoundId, weekKey, part, personalized:true,
+        retryOf:originalRoundId, retryResultId:`${originalRoundId}_${uid}`,
+        opensAt:new Date(now.getTime() - 60 * 1000), closesAt:expiresAt,
+        status:'published', updatedAt:FieldValue.serverTimestamp(),
+      });
+      batch.set(answerKeyRef(uid, retryRoundId, true), {
+        ...keySnap.data(), uid, roundId:retryRoundId, weekKey, part,
+        retryOf:originalRoundId, updatedAt:FieldValue.serverTimestamp(),
+      });
+      batch.set(studentDoc.ref.collection('challengeRetries').doc('active'), {
+        uid, weekKey, part, roundId:retryRoundId, originalRoundId,
+        createdAt:FieldValue.serverTimestamp(), expiresAt,
+        createdBy:request.auth.token?.email || '',
+      });
+      await batch.commit();
+      return { ok:true, uid, weekKey, part, roundId:retryRoundId, expiresAt:expiresAt.toISOString() };
+    }
+  );
+
   // Troca UMA pergunta, mantendo as outras quatro. O tema é opcional: sem ele a
   // IA só refaz no mesmo grau de dificuldade e no mesmo foco da original.
   const regerarPerguntaDesafio = onCall(
@@ -2075,7 +2168,7 @@ ${item.text}`).join('\n\n')}`
 
   return {
     publicarDesafioSemanal, gerarDesafiosPersonalizados, obterDesafioSemanal, iniciarDesafioSemanal,
-    obterPerguntasDesafio, regerarPerguntaDesafio,
+    obterPerguntasDesafio, reabrirDesafioAluno, regerarPerguntaDesafio,
     obterTemporadaDesafio, obterResultadoDesafioAdmin,
     recalcularPontuacaoDesafio,
     salvarRespostaDesafio, obterStatusDesafioAdmin, finalizarDesafioSemanal,
