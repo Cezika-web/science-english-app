@@ -1747,10 +1747,25 @@ ${item.text}`).join('\n\n')}`
 
       const desempenho = new Map();
       const erros = new Map();
+      const respostasPorSemana = new Map();
       const weekKeysFechadas = new Set(semanasFechadas.map(semana => semana.weekKey));
       meusResultados.docs.forEach(doc => {
         const result = doc.data();
         if (result.groupId || !weekKeysFechadas.has(result.weekKey)) return;
+        const partes = respostasPorSemana.get(result.weekKey) || [];
+        partes.push({
+          part:Number(result.part || 0), score:Number(result.score || 0),
+          maxScore:Number(result.maxScore || 500),
+          details:(result.details || []).map(detail => ({
+            questionId:String(detail.questionId || ''), prompt:String(detail.prompt || ''),
+            context:String(detail.context || ''), answer:String(detail.answer || ''),
+            expected:String(detail.expected || ''), explanation:String(detail.explanation || ''),
+            type:detail.type === 'text' ? 'text' : 'multipleChoice',
+            score:Number(detail.score || 0), correct:detail.correct === true,
+            ...(detail.parcial === true ? { parcial:true } : {}),
+          })),
+        });
+        respostasPorSemana.set(result.weekKey, partes);
         const linha = desempenho.get(result.weekKey) || { weekKey:result.weekKey, score:0, acertos:0, erros:0 };
         linha.score += Number(result.score || 0);
         (result.details || []).forEach(detail => {
@@ -1805,7 +1820,8 @@ ${item.text}`).join('\n\n')}`
           const linha = (semana.ranking || []).find(row => row.uid === uid);
           return linha ? { weekKey:semana.weekKey, score:linha.score,
             position:linha.position, partesFeitas:linha.partsCompleted,
-            participantes:semana.participantes } : null;
+            participantes:semana.participantes,
+            partes:(respostasPorSemana.get(semana.weekKey) || []).sort((a, b) => a.part - b.part) } : null;
         }).filter(Boolean),
         rankings:{
           semana:{ label:'Esta semana', partial:!semanaJaFechou, locked:!semanaJaFechou,

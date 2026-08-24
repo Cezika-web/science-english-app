@@ -76,6 +76,7 @@ function ChallengeRules({ onClose }) {
 function ChallengeSeason({ carregar, initialData, onClose }) {
   const [dados, setDados] = React.useState(initialData || null);
   const [erro, setErro] = React.useState('');
+  const [semanaAberta, setSemanaAberta] = React.useState(null);
   // Ref para o efeito rodar uma vez só: se dependesse de `carregar`, uma função
   // recriada a cada render deixaria o painel buscando em laço.
   const carregarRef = React.useRef(carregar);
@@ -131,14 +132,20 @@ function ChallengeSeason({ carregar, initialData, onClose }) {
 
         <div style={{ marginTop:18, fontSize:11, fontWeight:900, letterSpacing:1, color:'#0D5AA7', textTransform:'uppercase' }}>Suas semanas</div>
         {dados.minhasSemanas.length
-          ? <div style={{ display:'grid', gap:7, marginTop:9 }}>{dados.minhasSemanas.map(semana =>
-              <div key={semana.weekKey} style={{ display:'flex', alignItems:'center', gap:10, padding:'11px 12px', borderRadius:14, background:'#fff', border:'1px solid #DCE7F4' }}>
-                <span style={{ flex:1, minWidth:0 }}>
-                  <strong style={{ display:'block', color:'#213B5B', fontSize:12.5 }}>{semanaLabel(semana.weekKey)}</strong>
-                  <span style={{ color:'#64748B', fontSize:10.5 }}>{semana.position}º entre {semana.participantes} · {semana.partesFeitas || 0} de 2 partes</span>
-                </span>
-                <strong style={{ color:'#0D5AA7', fontSize:13 }}>{Number(semana.score || 0).toLocaleString('pt-BR')}</strong>
-              </div>)}</div>
+          ? <div style={{ display:'grid', gap:7, marginTop:9 }}>{dados.minhasSemanas.map(semana => {
+              const aberta = semanaAberta === semana.weekKey;
+              return <div key={semana.weekKey} style={{ borderRadius:14, background:'#fff', border:'1px solid #DCE7F4', overflow:'hidden' }}>
+                <button type="button" onClick={() => setSemanaAberta(aberta ? null : semana.weekKey)} aria-expanded={aberta} style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'11px 12px', border:0, background:'#fff', fontFamily:'inherit', textAlign:'left' }}>
+                  <span style={{ flex:1, minWidth:0 }}>
+                    <strong style={{ display:'block', color:'#213B5B', fontSize:12.5 }}>{semanaLabel(semana.weekKey)}</strong>
+                    <span style={{ color:'#64748B', fontSize:10.5 }}>{semana.position}º entre {semana.participantes} · {semana.partesFeitas || 0} de 2 partes</span>
+                  </span>
+                  <strong style={{ color:'#0D5AA7', fontSize:13 }}>{Number(semana.score || 0).toLocaleString('pt-BR')}</strong>
+                  <span style={{ color:'#8293A7', fontSize:16 }}>{aberta ? '⌃' : '⌄'}</span>
+                </button>
+                {aberta && <ChallengeSeasonAnswers partes={semana.partes || []} />}
+              </div>;
+            })}</div>
           : <div style={{ marginTop:9, padding:15, borderRadius:15, background:'#fff', border:'1px solid #DCE7F4', color:'#64748B', fontSize:11.5, lineHeight:1.55 }}>
               Sua primeira semana ainda não fechou. O resultado sai no domingo e entra aqui.
             </div>}
@@ -149,6 +156,26 @@ function ChallengeSeason({ carregar, initialData, onClose }) {
         </div>
       </React.Fragment>}
     </div>
+  </div>;
+}
+
+function ChallengeSeasonAnswers({ partes = [] }) {
+  if (!partes.length) return <div style={{ padding:'11px 12px', borderTop:'1px solid #E6EDF5', color:'#64748B', fontSize:11.5 }}>As respostas desta semana ainda não estão disponíveis.</div>;
+  return <div style={{ padding:'4px 12px 12px', borderTop:'1px solid #E6EDF5', background:'#F8FBFF' }}>
+    {partes.map(parte => <div key={parte.part} style={{ marginTop:10 }}>
+      <div style={{ display:'flex', justifyContent:'space-between', color:'#0D5AA7', fontSize:10.5, fontWeight:900 }}><span>PARTE {parte.part}</span><span>{parte.score} / {parte.maxScore} PTS</span></div>
+      <div style={{ display:'grid', gap:7, marginTop:7 }}>{(parte.details || []).map((detail, index) => {
+        const parcial = detail.parcial === true || (!detail.correct && Number(detail.score || 0) > 0);
+        const tone = detail.correct ? '#168C72' : parcial ? '#A7630B' : '#B33A3A';
+        return <div key={detail.questionId || index} style={{ padding:10, borderRadius:11, border:'1px solid #DCE7F4', background:'#fff', color:'#53677E', fontSize:10.5, lineHeight:1.45 }}>
+          <div style={{ display:'flex', gap:7, alignItems:'flex-start' }}><span>{detail.correct ? '✅' : parcial ? '🟡' : '❌'}</span><strong style={{ flex:1, color:'#213B5B' }}>{detail.prompt}</strong><strong style={{ color:tone }}>{detail.score}</strong></div>
+          {detail.context && <div style={{ marginTop:6, color:'#7B8DA3', fontStyle:'italic' }}>{detail.context}</div>}
+          <div style={{ marginTop:7 }}><strong>Sua resposta:</strong> {detail.answer || 'Sem resposta'}</div>
+          <div style={{ marginTop:3 }}><strong>Resposta correta:</strong> {detail.expected || '—'}</div>
+          {detail.explanation && <div style={{ marginTop:6, padding:'7px 8px', borderRadius:8, background:'#F2F6FA' }}><strong>Por quê:</strong> {detail.explanation}</div>}
+        </div>;
+      })}</div>
+    </div>)}
   </div>;
 }
 
