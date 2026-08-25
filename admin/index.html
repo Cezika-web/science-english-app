@@ -7309,6 +7309,20 @@
       return `${ordinal}ª semana de ${month} · ${monday}`;
     }
 
+    function renderChallengeAnswerOptions(item) {
+      const options = Array.isArray(item.options) ? item.options : [];
+      if (!options.length) return '';
+      return `<div style="display:grid;gap:4px;margin-top:6px;">${options.map(option => {
+        const selected = String(option.id) === String(item.selectedOptionId || '');
+        const correct = String(option.id) === String(item.correctOptionId || '');
+        const background = correct ? '#F0FDF4' : selected ? '#FEF2F2' : '#F8FAFC';
+        const border = correct ? '#86EFAC' : selected ? '#FCA5A5' : 'var(--border)';
+        const color = correct ? '#166534' : selected ? '#991B1B' : 'var(--muted)';
+        const badge = selected && correct ? ' · marcada e correta' : selected ? ' · marcada' : correct ? ' · correta' : '';
+        return `<div style="padding:5px 8px;border:1px solid ${border};border-radius:7px;background:${background};color:${color};font-size:.75rem;"><strong>${esc(String(option.id || '').toUpperCase())})</strong> ${esc(option.text || '')}${badge ? `<strong>${badge}</strong>` : ''}</div>`;
+      }).join('')}</div>`;
+    }
+
     async function loadChallengeTemplate() {
       const area = document.getElementById('challenge-json');
       const msg = document.getElementById('challenge-msg');
@@ -7344,6 +7358,7 @@
             </summary>
             <div style="padding:0 11px 10px;display:grid;gap:6px;">${(student.details || []).map((item, index) => `<div style="border-top:1px solid var(--border);padding-top:7px;font-size:.76rem;line-height:1.4;">
               <div style="display:flex;gap:7px;align-items:flex-start;"><strong style="color:${item.correct ? '#15803D' : '#B91C1C'};">${item.correct ? '✓ Certa' : '✗ Errada'}</strong><span style="flex:1;">${index + 1}. ${esc(item.prompt || 'Pergunta')}</span></div>
+              ${renderChallengeAnswerOptions(item)}
               <div style="color:var(--muted);margin-top:3px;">Respondeu: <strong style="color:var(--text);">${esc(item.answer || 'Não respondeu')}</strong>${item.correct ? '' : ` · correta: <strong style="color:#166534;">${esc(item.expected || '')}</strong>`}</div>
             </div>`).join('') || '<div style="color:var(--muted);font-size:.76rem;">As respostas ainda estão sendo consolidadas.</div>'}</div>
           </details>`).join('');
@@ -7421,6 +7436,8 @@
         // ponto some (ele só existe quando os três chegam até a linha).
         porAluno.get(resposta.aluno).push({ ...item, resposta:resposta.resposta,
           score:resposta.score || 0, parcial:resposta.parcial === true,
+          type:resposta.type || 'text', selectedOptionId:resposta.selectedOptionId || '',
+          correctOptionId:resposta.correctOptionId || '', options:resposta.options || [],
           uid:resposta.uid || '', roundId:resposta.roundId || '', questionId:resposta.questionId || '' });
       }));
       // Sem `respostas` (função antiga ainda no ar) cai no que dá para mostrar.
@@ -7434,6 +7451,7 @@
           <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;color:var(--muted);">Parte ${item.part}${item.tema ? ` <em style="font-style:normal;color:#5B21B6;background:#F5F3FF;border-radius:5px;padding:1px 6px;margin-left:5px;">${esc(item.tema)}</em>` : ''}</div>
           <div style="font-weight:700;margin:5px 0 2px;line-height:1.4;">${esc(item.prompt)}</div>
           ${item.context ? `<div style="font-size:.85rem;color:var(--muted);font-style:italic;margin-bottom:6px;"><strong style="font-style:normal;">Contexto mostrado antes da resposta:</strong> ${esc(item.context)}</div>` : ''}
+          ${renderChallengeAnswerOptions(item)}
           <div style="font-size:.85rem;">${item.resposta
             ? `Respondeu <code style="background:#fff;border:1px solid ${item.parcial ? '#FCD34D' : '#FCA5A5'};color:${item.parcial ? '#92400E' : '#991B1B'};border-radius:6px;padding:1px 7px;font-family:ui-monospace,Menlo,monospace;font-size:.85em;">${esc(item.resposta)}</code>`
             : '<em style="color:var(--muted);">não respondeu</em>'}

@@ -1422,15 +1422,28 @@ ${item.text}`).join('\n\n')}`
         .map(pair => {
           const result = resultByStudentPart.get(`${pair.uid}:${part}`) || {};
           const details = Array.isArray(result.details) ? result.details : [];
+          const questions = new Map((pair[`round${part}`].data()?.questions || [])
+            .map(question => [String(question.id), question]));
           return {
             uid:pair.uid, name:pair.name, answered:details.filter(item => String(item.answer || '').trim()).length,
             correct:details.filter(item => item.correct === true).length,
             wrong:details.filter(item => item.correct !== true).length,
             score:Number(result.score || 0), maxScore:Number(result.maxScore || 0),
-            details:details.map(item => ({
-              prompt:item.prompt || '', answer:item.answer || '', expected:item.expected || '',
-              correct:item.correct === true, score:Number(item.score || 0), parcial:item.parcial === true,
-            })),
+            details:details.map(item => {
+              const question = questions.get(String(item.questionId || '')) || {};
+              const options = Array.isArray(item.options) && item.options.length
+                ? item.options : (Array.isArray(question.options) ? question.options : []);
+              const selectedOptionId = String(item.selectedOptionId ||
+                options.find(option => normalizeAnswer(option.text) === normalizeAnswer(item.answer))?.id || '');
+              const correctOptionId = String(options.find(option =>
+                normalizeAnswer(option.text) === normalizeAnswer(item.expected))?.id || '');
+              return {
+                prompt:item.prompt || '', answer:item.answer || '', expected:item.expected || '',
+                type:item.type === 'text' ? 'text' : 'multipleChoice', selectedOptionId, correctOptionId,
+                options:options.map(option => ({ id:String(option.id || ''), text:String(option.text || '') })),
+                correct:item.correct === true, score:Number(item.score || 0), parcial:item.parcial === true,
+              };
+            }),
           };
         }).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
       const hasRound = (pair, part) => pair[`round${part}`].exists || (part === 1 ? part1 : part2).exists;
@@ -1974,15 +1987,19 @@ ${item.text}`).join('\n\n')}`
       // ele não dá para somar o erro da turma: com rodada personalizada cada
       // aluno vê uma frase diferente do mesmo assunto, e o assunto é a pauta.
       const gabaritos = new Map();
+      const perguntasPorResultado = new Map();
       await Promise.all(resultSnaps.docs.map(async doc => {
         const { roundId, uid } = doc.data();
         if (!roundId) return;
-        const [pessoal, geral] = await Promise.all([
+        const [pessoal, geral, rodada] = await Promise.all([
           db.doc(`_challengeAnswerKeys/${roundId}_${uid}`).get(),
           db.doc(`_challengeAnswerKeys/${roundId}`).get(),
+          resolveRound(uid, roundId),
         ]);
         const respostas = (pessoal.exists ? pessoal : geral).data()?.answers || [];
         gabaritos.set(doc.id, new Map(respostas.map(resposta => [resposta.id, resposta])));
+        perguntasPorResultado.set(doc.id, new Map((rodada.roundSnap.data()?.questions || [])
+          .map(question => [String(question.id), question])));
       }));
 
       const perguntas = new Map();
@@ -2002,6 +2019,13 @@ ${item.text}`).join('\n\n')}`
         aluno.partes += 1;
         (resultado.details || []).forEach(item => {
           const chaveItem = gabarito.get(item.questionId) || {};
+          const perguntaOriginal = perguntasPorResultado.get(doc.id)?.get(String(item.questionId || '')) || {};
+          const opcoes = Array.isArray(item.options) && item.options.length
+            ? item.options : (Array.isArray(perguntaOriginal.options) ? perguntaOriginal.options : []);
+          const selectedOptionId = String(item.selectedOptionId ||
+            opcoes.find(option => normalizeAnswer(option.text) === normalizeAnswer(item.answer))?.id || '');
+          const correctOptionId = String(opcoes.find(option =>
+            normalizeAnswer(option.text) === normalizeAnswer(item.expected))?.id || '');
           const temaOriginal = String(item.topic || chaveItem.topic || '').trim();
           const tema = canonicalChallengeTopic(temaOriginal);
           if (item.correct) aluno.acertos += 1; else aluno.erros += 1;
@@ -2017,6 +2041,8 @@ ${item.text}`).join('\n\n')}`
           if (item.correct) pergunta.acertos += 1; else pergunta.erros += 1;
           pergunta.respostas.push({ aluno:quem, resposta:String(item.answer || '').trim(), acertou:item.correct === true,
             score:Number(item.score || 0), parcial:item.parcial === true,
+            type:item.type === 'text' ? 'text' : 'multipleChoice', selectedOptionId, correctOptionId,
+            options:opcoes.map(option => ({ id:String(option.id || ''), text:String(option.text || '') })),
             uid:resultado.uid, roundId:resultado.roundId || '', questionId:item.questionId || '' });
           perguntas.set(chave, pergunta);
 
