@@ -360,6 +360,8 @@ function ChallengeParte1({ parte1 }) {
   const [openQuestion, setOpenQuestion] = React.useState(null);
   if (!parte1) return null;
   const acertos = (parte1.details || []).filter(item => item.correct).length;
+  const parciais = (parte1.details || []).filter(item => !item.correct && Number(item.score || 0) > 0).length;
+  const semPontos = (parte1.details || []).filter(item => !item.correct && Number(item.score || 0) <= 0).length;
   const total = (parte1.details || []).length;
   const bom = parte1.concluida && parte1.score >= 300;
   return <div style={{ padding:15, marginTop:12, borderRadius:18, background:'#fff', border:`1px solid ${parte1.concluida ? '#CFE9DC' : '#F3C9C9'}` }}>
@@ -369,7 +371,7 @@ function ChallengeParte1({ parte1 }) {
     </div>
     <p style={{ margin:'6px 0 0', color:'#64748B', fontSize:12, lineHeight:1.5 }}>
       {parte1.concluida
-        ? `Você acertou ${acertos} de ${total}. Confira cada pergunta abaixo.`
+        ? `${acertos} correta(s) · ${parciais} parcial(is) · ${semPontos} sem pontuar. Confira cada pergunta abaixo.`
         : 'Você não respondeu a Parte 1 até quarta, então ela ficou zerada. A Parte 2 ainda dá tempo, até sábado.'}
     </p>
     {(parte1.details || []).length > 0 && <div style={{ display:'grid', gap:7, marginTop:11 }}>{parte1.details.map((detail,index) => {

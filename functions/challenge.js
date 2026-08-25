@@ -1440,7 +1440,8 @@ ${item.text}`).join('\n\n')}`
           return {
             uid:pair.uid, name:pair.name, answered:details.filter(item => String(item.answer || '').trim()).length,
             correct:details.filter(item => item.correct === true).length,
-            wrong:details.filter(item => item.correct !== true).length,
+            partial:details.filter(item => item.correct !== true && Number(item.score || 0) > 0).length,
+            wrong:details.filter(item => item.correct !== true && Number(item.score || 0) <= 0).length,
             score:Number(result.score || 0), maxScore:Number(result.maxScore || 0),
             details:details.map(item => {
               const question = questions.get(String(item.questionId || '')) || {};
@@ -1454,7 +1455,8 @@ ${item.text}`).join('\n\n')}`
                 prompt:item.prompt || '', answer:item.answer || '', expected:item.expected || '',
                 type:item.type === 'text' ? 'text' : 'multipleChoice', selectedOptionId, correctOptionId,
                 options:options.map(option => ({ id:String(option.id || ''), text:String(option.text || '') })),
-                correct:item.correct === true, score:Number(item.score || 0), parcial:item.parcial === true,
+                correct:item.correct === true, score:Number(item.score || 0),
+                parcial:item.correct !== true && Number(item.score || 0) > 0,
               };
             }),
           };
