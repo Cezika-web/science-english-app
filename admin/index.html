@@ -1959,21 +1959,27 @@
       const presentKeys = new Set();
       const extraKeys = new Set();
       const held = (posts || []).length;
-      const matchScheduledDate = date => {
+      const explicitMakeupKey = post => {
+        const raw = post?.makeupForDate || post?.reposicaoDe || post?.replacementForDate;
+        if (typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+        return adminDateKey(raw);
+      };
+      const matchScheduledDate = (date, post) => {
         if (!date) return '';
-        for (let daysBack = 0; daysBack <= 3; daysBack++) {
-          const key = adminDateKey(adminAddDays(date,-daysBack));
-          if (candidateKeys.has(key) && !presentKeys.has(key)) return key;
-        }
-        return '';
+        const forced = explicitMakeupKey(post);
+        if (forced && candidateKeys.has(forced) && !presentKeys.has(forced)) return forced;
+        const referenceKey = adminDateKey(date);
+        return [...candidateKeys]
+          .filter(key => key <= referenceKey && !presentKeys.has(key))
+          .sort()
+          .pop() || '';
       };
       const orderedPosts = (posts || []).map(post => ({ post, reference:adminPostReferenceDate(post) }))
         .sort((a,b) => (a.reference?.getTime() || 0) - (b.reference?.getTime() || 0));
       const unmatchedPosts = [];
       orderedPosts.forEach(entry => {
         const explicit = adminDateKey(entry.post.classDate);
-        if (explicit && !presentKeys.has(explicit)) {
-          candidateKeys.add(explicit);
+        if (explicit && candidateKeys.has(explicit) && !presentKeys.has(explicit)) {
           presentKeys.add(explicit);
           entry.exactMatch = true;
         }
@@ -1981,23 +1987,14 @@
       orderedPosts.forEach(({ post, reference, exactMatch }) => {
         const explicit = adminDateKey(post.classDate);
         if (exactMatch) return;
-        const matched = matchScheduledDate(reference);
+        const matched = matchScheduledDate(reference, post);
         if (matched) presentKeys.add(matched);
         else unmatchedPosts.push({ post, reference, explicit });
       });
-      const availableKeys = [...candidateKeys].filter(key => !presentKeys.has(key)).sort();
       unmatchedPosts.forEach(({ post, reference, explicit }) => {
         const referenceKey = adminDateKey(reference);
-        const limitKey = reference ? adminDateKey(adminAddDays(reference,14)) : '';
-        const availableIndex = referenceKey
-          ? availableKeys.findIndex(key => key >= referenceKey && (!limitKey || key <= limitKey))
-          : -1;
-        if (availableIndex >= 0) {
-          presentKeys.add(availableKeys.splice(availableIndex,1)[0]);
-        } else {
-          const extra = explicit || adminDateKey(post.createdAt) || referenceKey;
-          if (extra) extraKeys.add(extra);
-        }
+        const extra = explicit || adminDateKey(post.createdAt) || referenceKey;
+        if (extra) extraKeys.add(extra);
       });
 
       if (held && (!start || !lessonDays.size || !presentKeys.size)) {

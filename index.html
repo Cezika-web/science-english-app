@@ -1535,17 +1535,29 @@ function calculateAttendance(student, posaulas) {
 
   // Registros novos têm classDate e entram exatamente no dia da aula. Nos
   // antigos, a data pode ser a da publicação: procuramos a aula agendada mais
-  // próxima, até três dias antes. Cada registro ocupa no máximo uma aula.
+  // próxima anteriormente. Cada registro ocupa no máximo uma aula.
   const presentKeys = new Set();
   const extraClassKeys = new Set();
+  // A presença continua pertencendo à data prevista, mas guardamos a data
+  // real da reposição para explicar o asterisco na linha do tempo.
+  const makeupByScheduledKey = new Map();
   const held = (posaulas || []).length;
-  const matchScheduledDate = date => {
+  const explicitMakeupKey = post => {
+    const raw = post?.makeupForDate || post?.reposicaoDe || post?.replacementForDate;
+    if (typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+    return dateKey(raw);
+  };
+  const matchScheduledDate = (date, post) => {
     if (!date) return '';
-    for (let daysBack = 0; daysBack <= 3; daysBack++) {
-      const key = dateKey(addDays(date,-daysBack));
-      if (candidateKeys.has(key) && !presentKeys.has(key)) return key;
-    }
-    return '';
+    const forced = explicitMakeupKey(post);
+    if (forced && candidateKeys.has(forced) && !presentKeys.has(forced)) return forced;
+    const referenceKey = dateKey(date);
+    // Aula num dia fora da grade é reposição: quita a falta prevista mais
+    // próxima anteriormente. Nunca empurra essa presença para uma aula futura.
+    return [...candidateKeys]
+      .filter(key => key <= referenceKey && !presentKeys.has(key))
+      .sort()
+      .pop() || '';
   };
   const orderedPosts = (posaulas || []).map(post => ({ post, reference:postReferenceDate(post) }))
     .sort((a,b) => (a.reference?.getTime() || 0) - (b.reference?.getTime() || 0));
@@ -1555,11 +1567,7 @@ function calculateAttendance(student, posaulas) {
   // ocupar a aula que já possui classDate confiável.
   orderedPosts.forEach(entry => {
     const explicitKey = dateKey(entry.post.classDate);
-    if (explicitKey && !presentKeys.has(explicitKey)) {
-      // classDate é a data confirmada pelo professor. Incluí-la também nas
-      // candidatas impede que um cadastro antigo/incompleto transforme uma
-      // aula comprovada em falta ou desloque a presença para outro dia.
-      candidateKeys.add(explicitKey);
+    if (explicitKey && candidateKeys.has(explicitKey) && !presentKeys.has(explicitKey)) {
       presentKeys.add(explicitKey);
       entry.exactMatch = true;
     }
@@ -1568,28 +1576,22 @@ function calculateAttendance(student, posaulas) {
     const explicitKey = dateKey(post.classDate);
     if (exactMatch) return;
     // classDate/createdAt pode representar o envio, não a aula. Se a data não
-    // coincidir com a grade, procura a aula prevista nos três dias anteriores.
-    const matched = matchScheduledDate(reference);
-    if (matched) presentKeys.add(matched);
+    // coincidir com a grade, procura a falta prevista mais próxima anteriormente.
+    const matched = matchScheduledDate(reference, post);
+    if (matched) {
+      presentKeys.add(matched);
+      const actualKey = dateKey(reference);
+      if (actualKey && actualKey !== matched) makeupByScheduledKey.set(matched, actualKey);
+    }
     else unmatchedPosts.push({ post, reference, explicitKey });
   });
 
-  // Semanas intensivas podem ter mais pós-aulas que dias fixos na grade. Cada
-  // registro adicional comprova uma aula e preenche, em ordem, a próxima aula
-  // prevista ainda livre, limitada a duas semanas da data do registro.
-  const availableKeys = [...candidateKeys].filter(key => !presentKeys.has(key)).sort();
+  // Se não há falta anterior para quitar, é uma aula extra. Ela conta em
+  // "realizadas", mas não ocupa uma aula futura nem altera a porcentagem.
   unmatchedPosts.forEach(({ post, reference, explicitKey }) => {
     const referenceKey = dateKey(reference);
-    const limitKey = reference ? dateKey(addDays(reference,14)) : '';
-    const availableIndex = referenceKey
-      ? availableKeys.findIndex(key => key >= referenceKey && (!limitKey || key <= limitKey))
-      : -1;
-    if (availableIndex >= 0) {
-      presentKeys.add(availableKeys.splice(availableIndex,1)[0]);
-    } else {
-      const extraKey = explicitKey || dateKey(post.createdAt) || referenceKey;
-      if (extraKey) extraClassKeys.add(extraKey);
-    }
+    const extraKey = explicitKey || dateKey(post.createdAt) || referenceKey;
+    if (extraKey) extraClassKeys.add(extraKey);
   });
 
   // Sem data de início/dias fixos (ou com cadastro incompatível com o legado),
@@ -1617,6 +1619,7 @@ function calculateAttendance(student, posaulas) {
       untracked:0,
       trackingStartKey:'',
       inferredOnly:true,
+      makeups:[],
     };
   }
   const trackingStartKey = [...presentKeys].sort()[0] || '';
@@ -1647,9 +1650,10 @@ function calculateAttendance(student, posaulas) {
   // a segunda-feira que iniciava a semana, parecendo registrar falta no dia errado.
   const points = scheduled.map(item => ({
     key:item.key,
-    label:item.date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),
+    label:`${item.date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}${makeupByScheduledKey.has(item.key) ? '*' : ''}`,
     weekday:item.date.toLocaleDateString('pt-BR',{weekday:'short'}).replace('.',''),
     present:item.present,
+    makeupDate:makeupByScheduledKey.get(item.key) || '',
     value:item.present ? 100 : 0,
     color:item.present ? PROGRESS_COLORS.good : PROGRESS_COLORS.low,
   }));
@@ -1657,7 +1661,16 @@ function calculateAttendance(student, posaulas) {
     key:item.key,
     label:item.date.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'}).replace('.', ''),
   }));
-  return { held, misses, scheduled:scheduled.length, attendedScheduled, rate, points, currentStreak, maxStreak, missedDates, untracked, trackingStartKey, inferredOnly:false };
+  const makeups = scheduled.filter(item => makeupByScheduledKey.has(item.key)).map(item => {
+    const actualKey = makeupByScheduledKey.get(item.key);
+    return {
+      scheduledKey:item.key,
+      scheduledLabel:item.date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),
+      actualKey,
+      actualLabel:new Date(`${actualKey}T00:00:00`).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),
+    };
+  });
+  return { held, misses, scheduled:scheduled.length, attendedScheduled, rate, points, currentStreak, maxStreak, missedDates, makeups, untracked, trackingStartKey, inferredOnly:false };
 }
 
 function calculateExerciseProgress(activities) {
@@ -1936,6 +1949,9 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
           <span style={{ fontSize:19 }}>🏆</span>
           <span style={{ fontSize:12.5 }}><strong>Melhor sequência:</strong> {attendance.maxStreak} aula{attendance.maxStreak !== 1 ? 's' : ''} sem faltar</span>
         </div>
+        {attendance.makeups?.length > 0 && <div style={{ marginTop:10, padding:'10px 12px', borderRadius:12, background:'#EFF6FF', border:'1px solid #BFDBFE', color:'#1E40AF', fontSize:12, lineHeight:1.55 }}>
+          <strong>* Reposição:</strong> {attendance.makeups.map(item => `${item.scheduledLabel} reposta em ${item.actualLabel}`).join(' · ')}
+        </div>}
         {attendance.missedDates?.length > 0 && <div style={{ marginTop:10, padding:'10px 12px', borderRadius:12, background:'#FEF2F2', border:'1px solid #FECACA', color:'#991B1B', fontSize:12, lineHeight:1.55 }}>
           <strong>Datas das faltas:</strong> {attendance.missedDates.map(item => item.label).join(' · ')}
         </div>}
