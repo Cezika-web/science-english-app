@@ -3876,61 +3876,54 @@
       return { start:new Date(year,monthNumber-1,1), end:new Date(year,monthNumber,0), year, monthNumber };
     }
 
-    // Horas de uma semana típica: no mês corrente usa a semana de hoje; em
-    // outro mês, a semana do dia 15. Como as aulas são séries semanais, esse
-    // é o retrato da carga semanal dele.
-    function financeWeekStartFor(month) {
-      const hoje=new Date(),atual=calendarDateKey(hoje).slice(0,7);
-      const base=month===atual?hoje:new Date(Number(month.slice(0,4)),Number(month.slice(5,7))-1,15);
-      return calendarWeekStartDate(base);
-    }
-
-    // Mesmo aluno, mesmo dia, mesmo horario: conta uma vez so. A agenda pode ter
-    // a serie repetida (defeito antigo do sincronismo), e o financeiro nao pode
-    // dobrar as horas por causa disso -- nem depender de faxina manual.
-    function financeMinutosDoDia(date) {
-      const contados=new Set(); let minutes=0;
-      financeCalendarEvents.filter(event=>event.type==='lesson'&&financeLessonOccursOn(event,date)).forEach(event=> {
-        const chave=[event.studentUid||event.title||'',event.startTime,event.endTime].join('|');
-        if(contados.has(chave)) return;
-        contados.add(chave);
-        minutes+=Math.max(0,calendarMinutes(event.endTime)-calendarMinutes(event.startTime));
+    // Carga horária fixa contratada. Só entram séries regulares de alunos.
+    // Reposição, aula avulsa, experimental e cancelamento não alteram o KPI.
+    // Horários simultâneos (dupla/turma) são unidos: uma hora trabalhando vale
+    // uma hora, mesmo que haja mais de um aluno na sala.
+    function financeFixedMinutesByWeekday() {
+      const intervals = Array.from({length:7},()=>[]);
+      const activeUids = new Set(allStudents.filter(student=>!student.archived).map(student=>student.uid));
+      const today = financeTodayKey();
+      financeCalendarEvents.filter(event=> {
+        const repeat=event.repeat||'none';
+        return event.type==='lesson'
+          && repeat!=='none'
+          && repeat!=='monthly'
+          && (!event.studentUid||activeUids.has(event.studentUid))
+          && (!event.repeatUntil||event.repeatUntil>=today);
+      }).forEach(event=> {
+        const start=calendarMinutes(event.startTime),end=calendarMinutes(event.endTime);
+        if(end<=start) return;
+        const repeat=event.repeat||'none';
+        const days=repeat==='daily'
+          ? [0,1,2,3,4,5,6]
+          : repeat==='custom'
+            ? (event.repeatDays||[]).map(Number).filter(day=>day>=0&&day<=6)
+            : [new Date(`${event.date}T00:00:00`).getDay()];
+        [...new Set(days)].forEach(day=>intervals[day].push([start,end]));
       });
-      return minutes;
+      return intervals.map(dayIntervals=> {
+        const merged=[];
+        [...dayIntervals].sort((a,b)=>a[0]-b[0]||a[1]-b[1]).forEach(([start,end])=> {
+          const last=merged[merged.length-1];
+          if(last&&start<=last[1]) last[1]=Math.max(last[1],end);
+          else merged.push([start,end]);
+        });
+        return merged.reduce((sum,[start,end])=>sum+end-start,0);
+      });
     }
 
-    function financeHoursForWeek(month) {
-      const inicio=financeWeekStartFor(month); let minutes=0;
-      for(let index=0;index<7;index+=1) minutes+=financeMinutosDoDia(calendarAddDays(inicio,index));
+    function financeHoursForWeek() {
+      const minutes=financeFixedMinutesByWeekday().reduce((sum,value)=>sum+value,0);
       return Math.round(minutes/6)/10;
     }
 
-    // Para a conta de horas, uma aula semanal que já existe no mês vale o mês
-    // inteiro. Sem isso, o mês em que a agenda foi cadastrada aparece pela
-    // metade — foi o que fez agosto mostrar 101h em vez de ~130h.
-    function financeLessonOccursOn(event,date) {
-      const repeat=event.repeat||'none',key=calendarDateKey(date);
-      if(repeat==='none') return event.date===key;
-      if(!event.date) return false;
-      if(event.repeatUntil&&key>event.repeatUntil) return false;
-      if(event.date.slice(0,7)>key.slice(0,7)) return false; // a série ainda não existia neste mês
-      if(repeat==='daily') return true;
-      if(repeat==='custom') return (event.repeatDays||[]).map(Number).includes(date.getDay());
-      const first=new Date(`${event.date}T00:00:00`);
-      if(repeat==='weekly') return first.getDay()===date.getDay();
-      if(repeat==='monthly') { const ultimo=new Date(date.getFullYear(),date.getMonth()+1,0).getDate(); return date.getDate()===Math.min(first.getDate(),ultimo); }
-      return false;
-    }
-
-    // Horas do MÊS INTEIRO — é o que faz o ganho por hora variar de mês para mês,
-    // porque cada mês tem uma quantidade diferente de cada dia da semana.
-    // `until` limita ao dia de hoje, só para mostrar o quanto já foi dado.
-    function financeHoursForMonth(month,until=null) {
-      const {start,end}=financeMonthBounds(month);
-      const cutoff=until&&until<end?until:end;
-      if(start>cutoff) return 0;
-      let minutes=0;
-      for(let date=new Date(start);date<=cutoff;date=calendarAddDays(date,1)) minutes+=financeMinutosDoDia(date);
+    // O mês varia somente porque pode ter quatro ou cinco ocorrências de cada
+    // dia da grade. Cancelamentos e reposições continuam sem alterar a conta.
+    function financeHoursForMonth(month) {
+      const minutesByDay=financeFixedMinutesByWeekday();
+      const {start,end}=financeMonthBounds(month); let minutes=0;
+      for(let date=new Date(start);date<=end;date=calendarAddDays(date,1)) minutes+=minutesByDay[date.getDay()]||0;
       return Math.round(minutes/6)/10;
     }
 
@@ -4133,16 +4126,12 @@
       document.getElementById('finance-profit').textContent=financeMoney(profit);
       document.getElementById('finance-profit-note').textContent=profit<0?'as despesas passaram os ganhos':'ganhos menos despesas';
       const profitCard=document.getElementById('finance-profit-card'); profitCard.classList.toggle('negative',profit<0); profitCard.classList.toggle('positive',profit>0);
-      const horasSemana=financeHoursForWeek(month),mostrando=financeHoursScope==='week'?horasSemana:hours;
+      const horasSemana=financeHoursForWeek(),mostrando=financeHoursScope==='week'?horasSemana:hours;
       document.getElementById('finance-hours').textContent=`${String(mostrando).replace('.',',')}h`;
       document.querySelectorAll('#finance-hours-toggle button').forEach(button=>button.classList.toggle('on',button.dataset.scope===financeHoursScope));
-      // Mês em andamento: o total é do mês fechado, mas mostra o quanto já foi dado.
-      const agora=new Date(); agora.setHours(23,59,59,999);
-      const limites=financeMonthBounds(month),emAndamento=limites.start<=agora&&agora<limites.end;
-      const horasAteHoje=emAndamento?financeHoursForMonth(month,agora):hours;
       document.getElementById('finance-hours-note').textContent=financeHoursScope==='week'
-        ? `no mês dá ${String(hours).replace('.',',')}h`
-        : (emAndamento?`mês inteiro · ${String(horasAteHoje).replace('.',',')}h até hoje`:'no mês inteiro');
+        ? `carga fixa · no mês dá ${String(hours).replace('.',',')}h`
+        : 'grade regular · conforme os dias deste mês';
 
       const profileMap=new Map(financeProfiles.map(profile=>[profile.studentUid,profile]));
       const activeStudents=allStudents.filter(student=>!student.archived);
@@ -4169,12 +4158,13 @@
       document.getElementById('finance-diluted-note').textContent=diluido.fatiaAnual
         ? `ganhos do mês + ${financeMoney(diluido.fatiaAnual)} de anuais`
         : 'nenhum anual ativo — igual aos ganhos do mês';
-      // Hora-aula pelo PREVISTO do mês: as horas são do mês inteiro, então o
-      // dinheiro também precisa ser o do mês inteiro. Usar só o recebido fazia
-      // o valor cair sozinho em mês que ainda não foi pago.
-      const taxaPrevista=hours?Math.round(expected/hours):0,taxaRecebida=hours?Math.round(income/hours):0;
-      document.getElementById('finance-hour-rate').textContent=financeMoney(taxaPrevista);
-      document.getElementById('finance-hour-rate-note').textContent=`previsto · recebido dá ${financeMoney(taxaRecebida)}/h`;
+      // Valor fixo da carteira atual: mensalidades contratadas divididas pela
+      // carga mensal média. Pagamentos, mês selecionado e faltas não alteram.
+      const receitaMensalContratada=configured.reduce((sum,profile)=>sum+Number(profile.monthlyCents||0),0);
+      const horasMensaisMedias=financeHoursForWeek()*52/12;
+      const taxaFixa=horasMensaisMedias?Math.round(receitaMensalContratada/horasMensaisMedias):0;
+      document.getElementById('finance-hour-rate').textContent=financeMoney(taxaFixa);
+      document.getElementById('finance-hour-rate-note').textContent='mensalidades contratadas ÷ carga média mensal';
       document.getElementById('finance-students-body').innerHTML=activeStudents.map(student=> {
         const profile=profileMap.get(student.uid);
         if(!profile||profile.active===false||!Number(profile.monthlyCents)) return `<tr><td><strong>${esc(student.name||student.firstName||'Aluno')}</strong></td><td>—</td><td>—</td><td><span class="finance-status unset">Não configurado</span></td><td><button class="finance-row-btn finance-configure" data-uid="${esc(student.uid)}">Configurar</button></td></tr>`;
