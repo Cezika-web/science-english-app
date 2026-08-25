@@ -431,6 +431,25 @@ function dataDaAulaEmDate(texto) {
   return valida ? d : null;
 }
 
+/**
+ * O título é exibido no histórico, mas a data também é um contrato de dados:
+ * nunca publicamos uma pós-aula gerada pela IA com apenas o assunto no título.
+ * Se o H1 já trouxer uma data, preserva; caso contrário prefixa a data da aula.
+ */
+function tituloPosAulaComData(data, titulo) {
+  const dataLimpa = String(data || '').trim();
+  const assunto = String(titulo || '').replace(/\s+/g, ' ').trim();
+  const prefixo = dataLimpa ? `Pós-aula ${dataLimpa}` : 'Pós-aula';
+  if (!assunto) return prefixo;
+  const temData = /(?:^|\D)\d{1,2}[\/-]\d{1,2}[\/-](?:20)?\d{2}(?:\D|$)/.test(assunto);
+  if (temData) return assunto;
+  if (/^p[oó]s[- ]?aula\b/i.test(assunto)) {
+    const complemento = assunto.replace(/^p[oó]s[- ]?aula\s*[-–—:·]?\s*/i, '').trim();
+    return complemento ? `${prefixo} · ${complemento}` : prefixo;
+  }
+  return `${prefixo} · ${assunto}`;
+}
+
 /** Extrai do HTML os números do bloco padronizado de Talk Time. */
 function extrairTalkTime(html) {
   const linha = (classe) => String(html || '').match(new RegExp(`<tr[^>]*class=["'][^"']*${classe}[^"']*["'][^>]*>([\\s\\S]*?)<\\/tr>`, 'i'))?.[1] || '';
@@ -858,7 +877,7 @@ export const gerarPosAula = onCall(
         },
       });
 
-      resultados.push({ uid, nome: aluno.name || '', html, titulo, talkTime: extrairTalkTime(html) });
+      resultados.push({ uid, nome: aluno.name || '', html, titulo:tituloPosAulaComData(dataAula, titulo), talkTime: extrairTalkTime(html) });
     }
 
     lote.set(draftRef, {
@@ -1203,7 +1222,7 @@ export const publicarPosAula = onCall(
 
       const ref = db.doc(`students/${uid}/posaulas/${jobRef.id}-${uid}`);
       lote.set(ref, {
-        title: titulo || `Pós-aula ${data || ''}`.trim(),
+        title: tituloPosAulaComData(data, titulo),
         html,
         createdAt: dataAula || FieldValue.serverTimestamp(),
         ...(dataAula && { classDate: dataAula }),
@@ -1862,7 +1881,8 @@ async function concluirJobPosAula(client, doc) {
       continue;
     }
     const tituloMatch = html.match(/<h1>([\s\S]*?)<\/h1>/i);
-    const titulo = tituloMatch ? tituloMatch[1].replace(/<[^>]*>/g, '').trim() : `Pós-aula ${job.data || ''}`.trim();
+    const tituloBruto = tituloMatch ? tituloMatch[1].replace(/<[^>]*>/g, '').trim() : '';
+    const titulo = tituloPosAulaComData(job.data, tituloBruto);
     posaulas.push({ uid: aluno.uid, nome: aluno.nome || '', html, titulo, talkTime: extrairTalkTime(html) });
     custoTotal += registrarUso(lote, {
       tipo: 'posaula', uid: aluno.uid, escolaId: job.escolaId, uso: resposta.usage, fator: 0.5,

@@ -1383,12 +1383,13 @@ ${item.text}`).join('\n\n')}`
       requireAdmin(request, adminEmails);
       const weekKey = String(request.data?.weekKey || weekKeyFor()).trim();
       const schedule = scheduleFor(weekKey);
-      const [week, part1, part2, generationJob, students] = await Promise.all([
+      const [week, part1, part2, generationJob, students, results] = await Promise.all([
         db.doc(`challengeWeeks/${weekKey}`).get(),
         db.doc(`challengeRounds/${schedule.part1.roundId}`).get(),
         db.doc(`challengeRounds/${schedule.part2.roundId}`).get(),
         db.doc(`_challengeGenerationJobs/${weekKey}`).get(),
         db.collection('students').get(),
+        db.collection('_challengeResults').where('weekKey', '==', weekKey).get(),
       ]);
       const activeStudents = students.docs.filter(studentDoc => {
         const student = studentDoc.data();
@@ -1406,6 +1407,32 @@ ${item.text}`).join('\n\n')}`
       const completedNames = part => submissionPairs
         .filter(pair => pair[part].exists && pair[part].data().completed === true)
         .map(pair => pair.name).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      const resultByStudentPart = new Map();
+      results.docs.forEach(doc => {
+        const result = doc.data();
+        if (!result.uid || ![1, 2].includes(Number(result.part))) return;
+        const key = `${result.uid}:${Number(result.part)}`;
+        const previous = resultByStudentPart.get(key);
+        const time = result.completedAt?.toMillis?.() || result.retakenAt?.toMillis?.() || 0;
+        const previousTime = previous?.completedAt?.toMillis?.() || previous?.retakenAt?.toMillis?.() || -1;
+        if (!previous || time >= previousTime) resultByStudentPart.set(key, result);
+      });
+      const completedStudents = part => submissionPairs
+        .filter(pair => pair[`part${part}`].exists && pair[`part${part}`].data().completed === true)
+        .map(pair => {
+          const result = resultByStudentPart.get(`${pair.uid}:${part}`) || {};
+          const details = Array.isArray(result.details) ? result.details : [];
+          return {
+            uid:pair.uid, name:pair.name, answered:details.filter(item => String(item.answer || '').trim()).length,
+            correct:details.filter(item => item.correct === true).length,
+            wrong:details.filter(item => item.correct !== true).length,
+            score:Number(result.score || 0), maxScore:Number(result.maxScore || 0),
+            details:details.map(item => ({
+              prompt:item.prompt || '', answer:item.answer || '', expected:item.expected || '',
+              correct:item.correct === true, score:Number(item.score || 0), parcial:item.parcial === true,
+            })),
+          };
+        }).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
       const hasRound = (pair, part) => pair[`round${part}`].exists || (part === 1 ? part1 : part2).exists;
       const fullyReady = submissionPairs.filter(pair => hasRound(pair, 1) && hasRound(pair, 2));
       const missing = submissionPairs.filter(pair => !hasRound(pair, 1) || !hasRound(pair, 2))
@@ -1414,8 +1441,8 @@ ${item.text}`).join('\n\n')}`
         weekKey, published:week.exists,
         personalized:generationJob.exists ? { ...generationJob.data(), completed:fullyReady.length,
           total:submissionPairs.length, failed:missing.length, missing } : null,
-        part1:{ published:part1.exists || generationJob.data()?.completed > 0, questions:part1.data()?.questionCount || (generationJob.data()?.completed ? 5 : 0), completed:completed('part1'), completedNames:completedNames('part1') },
-        part2:{ published:part2.exists || generationJob.data()?.completed > 0, questions:part2.data()?.questionCount || (generationJob.data()?.completed ? 5 : 0), completed:completed('part2'), completedNames:completedNames('part2') },
+        part1:{ published:part1.exists || generationJob.data()?.completed > 0, questions:part1.data()?.questionCount || (generationJob.data()?.completed ? 5 : 0), total:submissionPairs.length, completed:completed('part1'), completedNames:completedNames('part1'), completedStudents:completedStudents(1) },
+        part2:{ published:part2.exists || generationJob.data()?.completed > 0, questions:part2.data()?.questionCount || (generationJob.data()?.completed ? 5 : 0), total:submissionPairs.length, completed:completed('part2'), completedNames:completedNames('part2'), completedStudents:completedStudents(2) },
       };
     }
   );

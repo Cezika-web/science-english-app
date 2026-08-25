@@ -1972,7 +1972,8 @@
       const unmatchedPosts = [];
       orderedPosts.forEach(entry => {
         const explicit = adminDateKey(entry.post.classDate);
-        if (explicit && candidateKeys.has(explicit) && !presentKeys.has(explicit)) {
+        if (explicit && !presentKeys.has(explicit)) {
+          candidateKeys.add(explicit);
           presentKeys.add(explicit);
           entry.exactMatch = true;
         }
@@ -7333,10 +7334,22 @@
         const { data } = await obter({ weekKey });
         const personal = data.personalized;
         const line = (label, part) => {
-          const names = Array.isArray(part.completedNames) ? part.completedNames : [];
+          const students = Array.isArray(part.completedStudents) ? part.completedStudents : [];
+          const total = Number(part.total || 0);
+          const details = students.map(student => `<details style="margin-top:8px;border:1px solid var(--border);border-radius:10px;background:var(--card);">
+            <summary style="cursor:pointer;padding:9px 11px;display:flex;align-items:center;gap:8px;font-size:.8rem;flex-wrap:wrap;">
+              <strong style="flex:1 1 180px;min-width:0;">${esc(student.name)}</strong>
+              <span style="color:var(--muted);white-space:nowrap;">${Number(student.answered || 0)}/${Number(part.questions || 0)} respondidas</span>
+              <strong style="color:${Number(student.wrong || 0) ? '#B91C1C' : '#15803D'};white-space:nowrap;">${Number(student.correct || 0)}✓ ${Number(student.wrong || 0)}✗</strong>
+            </summary>
+            <div style="padding:0 11px 10px;display:grid;gap:6px;">${(student.details || []).map((item, index) => `<div style="border-top:1px solid var(--border);padding-top:7px;font-size:.76rem;line-height:1.4;">
+              <div style="display:flex;gap:7px;align-items:flex-start;"><strong style="color:${item.correct ? '#15803D' : '#B91C1C'};">${item.correct ? '✓ Certa' : '✗ Errada'}</strong><span style="flex:1;">${index + 1}. ${esc(item.prompt || 'Pergunta')}</span></div>
+              <div style="color:var(--muted);margin-top:3px;">Respondeu: <strong style="color:var(--text);">${esc(item.answer || 'Não respondeu')}</strong>${item.correct ? '' : ` · correta: <strong style="color:#166534;">${esc(item.expected || '')}</strong>`}</div>
+            </div>`).join('') || '<div style="color:var(--muted);font-size:.76rem;">As respostas ainda estão sendo consolidadas.</div>'}</div>
+          </details>`).join('');
           return `<div style="padding:12px 0;border-top:1px solid var(--border);">
-            <div style="display:flex;justify-content:space-between;gap:10px;"><span><strong>${label}</strong><br><small style="color:var(--muted);">${part.questions} perguntas · ${part.completed} concluída(s)</small></span><span style="color:${part.published ? '#15803D' : '#B45309'};font-weight:800;">${part.published ? '✓ Publicada' : 'Pendente'}</span></div>
-            <div style="margin-top:8px;font-size:.76rem;color:var(--muted);line-height:1.5;">${names.length ? `<strong style="color:var(--text);">Responderam:</strong> ${names.map(esc).join(' · ')}` : 'Ninguém concluiu esta parte ainda.'}</div>
+            <div style="display:flex;justify-content:space-between;gap:10px;"><span><strong>${label}</strong><br><small style="color:var(--muted);">${part.questions} perguntas · ${part.completed} fizeram · ${Math.max(0, total - Number(part.completed || 0))} não fizeram</small></span><span style="color:${part.published ? '#15803D' : '#B45309'};font-weight:800;">${part.published ? '✓ Publicada' : 'Pendente'}</span></div>
+            <div style="margin-top:8px;font-size:.76rem;color:var(--muted);line-height:1.5;">${students.length ? details : 'Ninguém concluiu esta parte ainda.'}</div>
           </div>`;
         };
         status.innerHTML = `<div style="font-size:.75rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">${esc(challengeWeekLabel(data.weekKey))}</div><div style="padding:12px;border-radius:12px;background:${data.published ? '#F0FDF4' : '#FFF7ED'};color:${data.published ? '#166534' : '#9A3412'};font-weight:800;">${data.published ? '✅ Semana publicada e programada' : '⚠️ Semana ainda não publicada'}</div>${line('Parte 1', data.part1)}${line('Parte 2', data.part2)}`;
@@ -7386,7 +7399,7 @@
         return `<div style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:11px;border:1px solid ${fatia >= 50 ? '#FCA5A5' : 'var(--border)'};background:${fatia >= 50 ? '#FEF2F2' : 'var(--card)'};">
           <span style="width:76px;height:7px;border-radius:5px;background:#F1F5F9;overflow:hidden;flex:none;"><i style="display:block;height:100%;width:${fatia}%;background:#EF4444;"></i></span>
           <span style="flex:1;min-width:0;font-weight:700;font-size:.93rem;">${esc(item.tema)}</span>
-          <span style="font-size:.78rem;white-space:nowrap;color:#92400E;">${esc(item.quemErrou.join(', '))}</span>
+          <span style="font-size:.78rem;white-space:nowrap;color:#92400E;">${esc(item.quemErrou.slice().sort((a,b) => a.localeCompare(b, 'pt-BR')).join(', '))}</span>
           <span style="font-size:.78rem;color:var(--muted);white-space:nowrap;min-width:104px;text-align:right;">${item.erros} erro(s) · ${item.acertos} acerto(s)</span>
         </div>`;
       };
@@ -7434,7 +7447,7 @@
 
       const mapa = !porAluno.size
         ? '<p style="color:var(--muted);font-size:.84rem;">Nenhum erro registrado ainda.</p>'
-        : [...porAluno.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], 'pt-BR'))
+        : [...porAluno.entries()].sort((a, b) => a[0].localeCompare(b[0], 'pt-BR'))
             .map(([quem, itens]) => `<details style="border:1px solid var(--border);border-radius:12px;margin-bottom:7px;">
               <summary style="cursor:pointer;padding:11px 14px;display:flex;align-items:center;gap:10px;font-size:.9rem;">
                 <span style="flex:1;min-width:0;font-weight:700;">${esc(quem)}</span>

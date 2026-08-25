@@ -1555,7 +1555,11 @@ function calculateAttendance(student, posaulas) {
   // ocupar a aula que já possui classDate confiável.
   orderedPosts.forEach(entry => {
     const explicitKey = dateKey(entry.post.classDate);
-    if (explicitKey && candidateKeys.has(explicitKey) && !presentKeys.has(explicitKey)) {
+    if (explicitKey && !presentKeys.has(explicitKey)) {
+      // classDate é a data confirmada pelo professor. Incluí-la também nas
+      // candidatas impede que um cadastro antigo/incompleto transforme uma
+      // aula comprovada em falta ou desloque a presença para outro dia.
+      candidateKeys.add(explicitKey);
       presentKeys.add(explicitKey);
       entry.exactMatch = true;
     }
