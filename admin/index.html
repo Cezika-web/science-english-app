@@ -1665,11 +1665,16 @@
         <input type="hidden" id="calendar-event-id">
         <div class="field">
           <label for="calendar-event-type">Tipo</label>
-          <select id="calendar-event-type"><option value="lesson">Aula de aluno</option><option value="available">Horário disponível</option><option value="personal">Compromisso particular</option><option value="blocked">Horário bloqueado</option></select>
+          <select id="calendar-event-type"><option value="lesson">Aula de aluno</option><option value="reposicao">Reposição</option><option value="experimental">Aula experimental</option><option value="available">Horário disponível</option><option value="personal">Compromisso particular</option><option value="blocked">Horário bloqueado</option></select>
         </div>
         <div class="field" id="calendar-student-field">
           <label for="calendar-event-student">Aluno</label>
           <select id="calendar-event-student"><option value="">Selecione o aluno</option></select>
+        </div>
+        <div class="field" id="calendar-makeup-field" style="display:none;">
+          <label for="calendar-event-makeup-for">Esta reposição compensa</label>
+          <select id="calendar-event-makeup-for"><option value="">Escolha o aluno primeiro</option></select>
+          <small style="display:block;margin-top:5px;color:var(--muted);font-size:.72rem;line-height:1.4;">A falta mais recente vem selecionada automaticamente. Você pode trocar a data.</small>
         </div>
         <div class="field">
           <label for="calendar-event-title">Título</label>
@@ -1736,6 +1741,9 @@
     <button class="calendar-pop-reposicao" id="calendar-pop-reposicao" type="button">🔄 Marcar reposição</button>
     <div class="calendar-pop-row" id="calendar-pop-student-row" style="display:none;grid-template-columns:1fr;">
       <select id="calendar-pop-student" aria-label="Aluno"><option value="">Selecione o aluno</option></select>
+    </div>
+    <div class="calendar-pop-row" id="calendar-pop-makeup-row" style="display:none;grid-template-columns:1fr;">
+      <select id="calendar-pop-makeup-for" aria-label="Aula compensada"><option value="">Escolha o aluno primeiro</option></select>
     </div>
     <div class="calendar-pop-row">
       <input id="calendar-pop-start" type="time" step="900" aria-label="Começa">
@@ -1830,7 +1838,7 @@
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import { getFirestore, collection, getDocs, getDoc, doc, setDoc, addDoc, updateDoc, deleteDoc,
-             query, orderBy, serverTimestamp, where, deleteField }
+             query, orderBy, serverTimestamp, where, deleteField, writeBatch }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { getFunctions, httpsCallable }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
@@ -1959,27 +1967,21 @@
       const presentKeys = new Set();
       const extraKeys = new Set();
       const held = (posts || []).length;
-      const explicitMakeupKey = post => {
-        const raw = post?.makeupForDate || post?.reposicaoDe || post?.replacementForDate;
-        if (typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-        return adminDateKey(raw);
-      };
-      const matchScheduledDate = (date, post) => {
+      const matchScheduledDate = date => {
         if (!date) return '';
-        const forced = explicitMakeupKey(post);
-        if (forced && candidateKeys.has(forced) && !presentKeys.has(forced)) return forced;
-        const referenceKey = adminDateKey(date);
-        return [...candidateKeys]
-          .filter(key => key <= referenceKey && !presentKeys.has(key))
-          .sort()
-          .pop() || '';
+        for (let daysBack = 0; daysBack <= 3; daysBack++) {
+          const key = adminDateKey(adminAddDays(date,-daysBack));
+          if (candidateKeys.has(key) && !presentKeys.has(key)) return key;
+        }
+        return '';
       };
       const orderedPosts = (posts || []).map(post => ({ post, reference:adminPostReferenceDate(post) }))
         .sort((a,b) => (a.reference?.getTime() || 0) - (b.reference?.getTime() || 0));
       const unmatchedPosts = [];
       orderedPosts.forEach(entry => {
         const explicit = adminDateKey(entry.post.classDate);
-        if (explicit && candidateKeys.has(explicit) && !presentKeys.has(explicit)) {
+        if (explicit && !presentKeys.has(explicit)) {
+          candidateKeys.add(explicit);
           presentKeys.add(explicit);
           entry.exactMatch = true;
         }
@@ -1987,14 +1989,28 @@
       orderedPosts.forEach(({ post, reference, exactMatch }) => {
         const explicit = adminDateKey(post.classDate);
         if (exactMatch) return;
-        const matched = matchScheduledDate(reference, post);
+        const matched = matchScheduledDate(reference);
         if (matched) presentKeys.add(matched);
         else unmatchedPosts.push({ post, reference, explicit });
       });
+      const availableKeys = [...candidateKeys].filter(key => !presentKeys.has(key)).sort();
       unmatchedPosts.forEach(({ post, reference, explicit }) => {
         const referenceKey = adminDateKey(reference);
-        const extra = explicit || adminDateKey(post.createdAt) || referenceKey;
-        if (extra) extraKeys.add(extra);
+        const limitKey = reference ? adminDateKey(adminAddDays(reference,14)) : '';
+        const availableIndex = referenceKey
+          ? availableKeys.findIndex(key => key >= referenceKey && (!limitKey || key <= limitKey))
+          : -1;
+        if (availableIndex >= 0) {
+          presentKeys.add(availableKeys.splice(availableIndex,1)[0]);
+        } else {
+          const extra = explicit || adminDateKey(post.createdAt) || referenceKey;
+          if (extra) extraKeys.add(extra);
+        }
+      });
+
+      Object.values(student?.attendanceMakeups || {}).forEach(makeup => {
+        const scheduledKey = String(makeup?.scheduledDate || '');
+        if (/^\d{4}-\d{2}-\d{2}$/.test(scheduledKey) && candidateKeys.has(scheduledKey)) presentKeys.add(scheduledKey);
       });
 
       if (held && (!start || !lessonDays.size || !presentKeys.size)) {
@@ -2006,6 +2022,7 @@
           untracked:0,
           trackingStartKey:'',
           inferredOnly:true,
+          missedDates:[],
         };
       }
       const trackingStartKey = [...presentKeys].sort()[0] || '';
@@ -2029,6 +2046,7 @@
       scheduled.forEach(item => { currentStreak = item.present ? currentStreak + 1 : 0; });
       const attended = scheduled.filter(item => item.present).length;
       const misses = scheduled.length - attended;
+      const missedDates = scheduled.filter(item => !item.present).map(item => item.key);
       return {
         held,
         misses,
@@ -2037,6 +2055,7 @@
         untracked,
         trackingStartKey,
         inferredOnly:false,
+        missedDates,
       };
     }
 
@@ -3068,6 +3087,107 @@
       openBriefing(uid, aluno?.name || aluno?.firstName || '', document.getElementById('calendar-event-notes').value.trim());
     };
 
+    const calendarMakeupMissesCache = new Map();
+    const calendarMakeupDateLabel = key => new Date(`${key}T00:00:00`).toLocaleDateString('pt-BR', {
+      weekday:'short', day:'2-digit', month:'2-digit', year:'numeric'
+    }).replace('.', '');
+
+    async function calendarMakeupMisses(uid) {
+      if (!uid) return [];
+      if (!calendarMakeupMissesCache.has(uid)) {
+        calendarMakeupMissesCache.set(uid, (async () => {
+          const student = allStudents.find(item => item.uid === uid);
+          if (!student) return [];
+          const snap = await getDocs(query(collection(db, 'students', uid, 'posaulas'), orderBy('createdAt', 'desc')));
+          const posts = snap.docs.map(item => ({ id:item.id, ...item.data() }));
+          return adminAttendanceStats(student, posts).missedDates || [];
+        })().catch(error => {
+          calendarMakeupMissesCache.delete(uid);
+          throw error;
+        }));
+      }
+      return calendarMakeupMissesCache.get(uid);
+    }
+
+    async function calendarFillMakeupDates(selectId, uid, eventDate, selected = '') {
+      const select = document.getElementById(selectId);
+      if (!select) return;
+      if (!uid) { select.innerHTML = '<option value="">Escolha o aluno primeiro</option>'; return; }
+      select.innerHTML = '<option value="">Buscando faltas…</option>';
+      select.disabled = true;
+      try {
+        let missed = (await calendarMakeupMisses(uid)).filter(key => !eventDate || key <= eventDate);
+        if (selected && (!eventDate || selected <= eventDate) && !missed.includes(selected)) missed.push(selected);
+        missed = [...new Set(missed)].sort().reverse();
+        select.innerHTML = missed.length
+          ? missed.map(key => `<option value="${key}">Aula de ${calendarMakeupDateLabel(key)}</option>`).join('')
+          : '<option value="">Nenhuma falta anterior encontrada</option>';
+        select.value = selected && missed.includes(selected) ? selected : (missed[0] || '');
+      } catch (error) {
+        select.innerHTML = '<option value="">Não foi possível carregar as faltas</option>';
+      } finally { select.disabled = false; }
+    }
+
+    async function calendarSaveWithAttendance(id, event) {
+      const previous = id ? calendarEvents.find(item => item.id === id) : null;
+      const eventRef = id
+        ? doc(db, 'schools', escolaAtual, 'calendarEvents', id)
+        : doc(collection(db, 'schools', escolaAtual, 'calendarEvents'));
+      const batch = writeBatch(db);
+      const stored = { ...event };
+      if (id && event.type !== 'reposicao') stored.makeupForDate = deleteField();
+      if (id) batch.set(eventRef, stored, { merge:true });
+      else batch.set(eventRef, { ...stored, createdAt:serverTimestamp(), createdBy:auth.currentUser?.email || '' });
+
+      const studentPatches = new Map();
+      const patchStudent = (uid, value) => {
+        if (!uid) return;
+        if (!studentPatches.has(uid)) studentPatches.set(uid, {});
+        studentPatches.get(uid)[`attendanceMakeups.${eventRef.id}`] = value;
+      };
+      if (previous?.type === 'reposicao' && previous.studentUid) patchStudent(previous.studentUid, deleteField());
+      if (event.type === 'reposicao' && event.studentUid && event.makeupForDate) {
+        patchStudent(event.studentUid, {
+          scheduledDate:event.makeupForDate,
+          makeupDate:event.date,
+          calendarEventId:eventRef.id,
+        });
+      }
+      studentPatches.forEach((fields, uid) => batch.update(doc(db, 'students', uid), fields));
+      await batch.commit();
+
+      // Mantém os próximos seletores corretos sem precisar recarregar todo o painel.
+      if (previous?.type === 'reposicao' && previous.studentUid) {
+        const student = allStudents.find(item => item.uid === previous.studentUid);
+        if (student?.attendanceMakeups) delete student.attendanceMakeups[eventRef.id];
+      }
+      if (event.type === 'reposicao' && event.studentUid && event.makeupForDate) {
+        const student = allStudents.find(item => item.uid === event.studentUid);
+        if (student) {
+          student.attendanceMakeups ||= {};
+          student.attendanceMakeups[eventRef.id] = { scheduledDate:event.makeupForDate, makeupDate:event.date, calendarEventId:eventRef.id };
+        }
+      }
+      calendarMakeupMissesCache.delete(previous?.studentUid || '');
+      calendarMakeupMissesCache.delete(event.studentUid || '');
+      return eventRef.id;
+    }
+
+    async function calendarDeleteWithAttendance(id) {
+      const previous = calendarEvents.find(item => item.id === id);
+      const batch = writeBatch(db);
+      batch.delete(doc(db, 'schools', escolaAtual, 'calendarEvents', id));
+      if (previous?.type === 'reposicao' && previous.studentUid) {
+        batch.update(doc(db, 'students', previous.studentUid), { [`attendanceMakeups.${id}`]:deleteField() });
+      }
+      await batch.commit();
+      if (previous?.type === 'reposicao' && previous.studentUid) {
+        const student = allStudents.find(item => item.uid === previous.studentUid);
+        if (student?.attendanceMakeups) delete student.attendanceMakeups[id];
+        calendarMakeupMissesCache.delete(previous.studentUid);
+      }
+    }
+
     function openCalendarEvent(event = {}) {
       calendarFillStudents(); const editing = Boolean(event.id);
       document.getElementById('calendar-event-id').value = event.id || '';
@@ -3083,26 +3203,36 @@
       document.getElementById('calendar-event-notes').value = event.notes || '';
       document.getElementById('calendar-event-modal-title').textContent = editing ? 'Editar compromisso' : 'Novo compromisso';
       document.getElementById('calendar-event-delete').style.display = editing ? 'block' : 'none';
-      showMsg('calendar-event-msg','','info'); calendarSyncEventForm(); document.getElementById('calendar-event-modal').classList.add('open');
+      showMsg('calendar-event-msg','','info'); calendarSyncEventForm();
+      calendarFillMakeupDates('calendar-event-makeup-for', event.studentUid || '', event.date || calendarDateKey(new Date()), event.makeupForDate || '');
+      document.getElementById('calendar-event-modal').classList.add('open');
     }
 
     let calendarModalDraft = { repeatDays:[] };
 
     function calendarSyncEventForm() {
       const type = document.getElementById('calendar-event-type').value, repeat = document.getElementById('calendar-event-repeat').value;
-      document.getElementById('calendar-student-field').style.display = type === 'lesson' ? 'block' : 'none';
+      const comAluno = type === 'lesson' || type === 'reposicao';
+      document.getElementById('calendar-student-field').style.display = comAluno ? 'block' : 'none';
+      document.getElementById('calendar-makeup-field').style.display = type === 'reposicao' ? 'block' : 'none';
       // A pauta só faz sentido em aula de aluno, e só depois de escolher quem é.
       const botaoPautaModal = document.getElementById('calendar-event-briefing');
       const mostraPauta = type === 'lesson' && Boolean(document.getElementById('calendar-event-student').value);
       botaoPautaModal.style.display = mostraPauta ? 'inline-block' : 'none';
       if (mostraPauta) briefingAplicarEstado(botaoPautaModal);
       document.getElementById('calendar-repeat-until-field').style.display = repeat !== 'none' ? 'block' : 'none';
+      const repeatSelect = document.getElementById('calendar-event-repeat');
+      repeatSelect.disabled = type === 'reposicao' || type === 'experimental';
+      if (repeatSelect.disabled) {
+        repeatSelect.value = 'none';
+        document.getElementById('calendar-repeat-until-field').style.display = 'none';
+      }
       if (repeat === 'custom' && !calendarModalDraft.repeatDays.length) {
         const date = document.getElementById('calendar-event-date').value;
         if (date) calendarModalDraft.repeatDays = [new Date(`${date}T00:00:00`).getDay()];
       }
       renderCalendarDayChips('calendar-event-days', 'calendar-event-repeat', calendarModalDraft);
-      document.getElementById('calendar-event-title').placeholder = type === 'lesson' ? 'Ex.: Aula de conversação' : type === 'available' ? 'Ex.: Horário disponível' : type === 'personal' ? 'Ex.: Médico' : 'Ex.: Indisponível';
+      document.getElementById('calendar-event-title').placeholder = type === 'lesson' ? 'Ex.: Aula de conversação' : type === 'reposicao' ? 'Reposição do aluno' : type === 'available' ? 'Ex.: Horário disponível' : type === 'personal' ? 'Ex.: Médico' : 'Ex.: Indisponível';
     }
 
     // Com repetição diária/semanal/mensal/personalizada não dá pra comparar por
@@ -3128,17 +3258,21 @@
     async function saveCalendarEvent() {
       const id = document.getElementById('calendar-event-id').value, type = document.getElementById('calendar-event-type').value;
       const studentSelect = document.getElementById('calendar-event-student'), student = allStudents.find(item => item.uid === studentSelect.value);
+      const comAluno = type === 'lesson' || type === 'reposicao';
       const event = {
-        type, studentUid:type === 'lesson' ? studentSelect.value : '', studentName:type === 'lesson' ? (student?.name || student?.firstName || '') : '',
-        title:document.getElementById('calendar-event-title').value.trim() || (type === 'lesson' && student ? `Aula · ${student.name || student.firstName}` : type === 'available' ? 'Horário disponível' : type === 'personal' ? 'Compromisso particular' : 'Horário bloqueado'),
+        type, studentUid:comAluno ? studentSelect.value : '', studentName:comAluno ? (student?.name || student?.firstName || '') : '',
+        title:document.getElementById('calendar-event-title').value.trim() || (type === 'lesson' && student ? `Aula · ${student.name || student.firstName}` : type === 'reposicao' && student ? `Reposição · ${student.name || student.firstName}` : type === 'available' ? 'Horário disponível' : type === 'personal' ? 'Compromisso particular' : 'Horário bloqueado'),
         date:document.getElementById('calendar-event-date').value, startTime:document.getElementById('calendar-event-start').value, endTime:document.getElementById('calendar-event-end').value,
         repeat:document.getElementById('calendar-event-repeat').value,
         repeatDays:document.getElementById('calendar-event-repeat').value === 'custom' ? calendarModalDraft.repeatDays.map(Number) : [],
         repeatUntil:document.getElementById('calendar-event-repeat').value !== 'none' ? document.getElementById('calendar-event-repeat-until').value : '',
+        makeupForDate:type === 'reposicao' ? document.getElementById('calendar-event-makeup-for').value : '',
         notes:document.getElementById('calendar-event-notes').value.trim(), timezone:'America/Sao_Paulo', updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || ''
       };
       if (!event.date || !event.startTime || !event.endTime) return showMsg('calendar-event-msg','Preencha data, início e término.','err');
-      if (type === 'lesson' && !event.studentUid) return showMsg('calendar-event-msg','Escolha o aluno desta aula.','err');
+      if (comAluno && !event.studentUid) return showMsg('calendar-event-msg','Escolha o aluno desta aula.','err');
+      if (type === 'reposicao' && !event.makeupForDate) return showMsg('calendar-event-msg','Escolha qual falta esta reposição compensa.','err');
+      if (type === 'reposicao' && event.makeupForDate > event.date) return showMsg('calendar-event-msg','A reposição não pode compensar uma aula futura.','err');
       if (event.repeat === 'custom' && !event.repeatDays.length) return showMsg('calendar-event-msg','Escolha pelo menos um dia da semana.','err');
       if (calendarMinutes(event.endTime) <= calendarMinutes(event.startTime)) return showMsg('calendar-event-msg','O horário final precisa ser depois do inicial.','err');
       if (event.repeatUntil && event.repeatUntil < event.date) return showMsg('calendar-event-msg','A repetição não pode terminar antes da primeira aula.','err');
@@ -3146,8 +3280,7 @@
       if (conflict && !confirmarAulaJunta(conflict)) return;
       const button = document.getElementById('calendar-event-save'); button.disabled = true;
       try {
-        if (id) await setDoc(doc(db,'schools',escolaAtual,'calendarEvents',id),event,{merge:true});
-        else await addDoc(collection(db,'schools',escolaAtual,'calendarEvents'),{...event,createdAt:serverTimestamp(),createdBy:auth.currentUser?.email || ''});
+        await calendarSaveWithAttendance(id, event);
         document.getElementById('calendar-event-modal').classList.remove('open'); await loadCalendar();
       } catch (error) { showMsg('calendar-event-msg',`Erro ao salvar: ${error.message}`,'err'); }
       finally { button.disabled = false; }
@@ -3179,7 +3312,7 @@
       if (!id || !confirm('Excluir este compromisso? Se ele for semanal, toda a série será removida.')) return;
       const button = document.getElementById('calendar-event-delete'); button.disabled = true;
       try {
-        await deleteDoc(doc(db,'schools',escolaAtual,'calendarEvents',id));
+        await calendarDeleteWithAttendance(id);
         document.getElementById('calendar-event-modal').classList.remove('open'); await loadCalendar();
       } catch (error) { showMsg('calendar-event-msg',`Erro ao excluir: ${error.message}`,'err'); }
       finally { button.disabled = false; }
@@ -3193,13 +3326,19 @@
     document.getElementById('calendar-class-new').onclick = event => calendarQuickNew('lesson', event.currentTarget);
     document.getElementById('calendar-event-save').onclick = saveCalendarEvent;
     document.getElementById('calendar-event-delete').onclick = deleteCalendarEvent;
-    document.getElementById('calendar-event-type').onchange = calendarSyncEventForm;
+    document.getElementById('calendar-event-type').onchange = () => {
+      calendarSyncEventForm();
+      calendarFillMakeupDates('calendar-event-makeup-for', document.getElementById('calendar-event-student').value, document.getElementById('calendar-event-date').value, '');
+    };
     document.getElementById('calendar-event-repeat').onchange = calendarSyncEventForm;
     document.getElementById('calendar-event-student').onchange = event => {
       const student = allStudents.find(item => item.uid === event.target.value), title = document.getElementById('calendar-event-title');
-      if (student && (!title.value || title.value.startsWith('Aula · '))) title.value = `Aula · ${student.name || student.firstName}`;
+      const type = document.getElementById('calendar-event-type').value;
+      if (student && (!title.value || title.value.startsWith('Aula · ') || title.value.startsWith('Reposição · '))) title.value = `${type === 'reposicao' ? 'Reposição' : 'Aula'} · ${student.name || student.firstName}`;
       calendarSyncEventForm();
+      calendarFillMakeupDates('calendar-event-makeup-for', event.target.value, document.getElementById('calendar-event-date').value, '');
     };
+    document.getElementById('calendar-event-date').onchange = () => calendarFillMakeupDates('calendar-event-makeup-for', document.getElementById('calendar-event-student').value, document.getElementById('calendar-event-date').value, document.getElementById('calendar-event-makeup-for').value);
     document.getElementById('calendar-event-close').onclick = () => document.getElementById('calendar-event-modal').classList.remove('open');
     document.getElementById('calendar-settings-open').onclick = openCalendarSettings;
     document.getElementById('calendar-settings-open-mobile').onclick = openCalendarSettings;
@@ -3308,13 +3447,16 @@
       calendarPopDraft.type = evento.target.value;
       document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle(calendarPopDraft.type);
       if (!calendarPopDraft.id && calendarPopDraft.type !== 'lesson') document.getElementById('calendar-pop-repeat').value = 'none';
-      sincronizarReposicao(); renderCalendarPopColors(); renderCalendarPopPalette(); renderCalendarPopDays();
+      sincronizarReposicao();
+      calendarFillMakeupDates('calendar-pop-makeup-for', document.getElementById('calendar-pop-student').value, calendarPopDraft.date, calendarPopDraft.makeupForDate || '');
+      renderCalendarPopColors(); renderCalendarPopPalette(); renderCalendarPopDays();
     };
 
     function sincronizarReposicao() {
       if (!calendarPopDraft) return;
       const ehReposicao = calendarPopDraft.type === 'reposicao';
       const ehAula = calendarPopDraft.type === 'lesson';
+      const comAluno = ehAula || ehReposicao;
       const botao = document.getElementById('calendar-pop-reposicao');
       botao.classList.toggle('on', ehReposicao);
       botao.textContent = ehReposicao ? '🔄 Reposição — toque para desfazer' : '🔄 Marcar esta aula como reposição';
@@ -3324,8 +3466,8 @@
       const aulaOcupada = Boolean(calendarPopDraft.id && ehAula
         && !calendarCancelada(calendarPopDraft, calendarPopDraft.ocorrencia));
       botao.style.display = aulaOcupada ? 'none' : 'block';
-      // Reposição e aula experimental não têm dono: ele escreve no título.
-      document.getElementById('calendar-pop-student-row').style.display = ehAula ? 'grid' : 'none';
+      document.getElementById('calendar-pop-student-row').style.display = comAluno ? 'grid' : 'none';
+      document.getElementById('calendar-pop-makeup-row').style.display = ehReposicao ? 'grid' : 'none';
       document.getElementById('calendar-pop-tipo').value = calendarPopDraft.type;
       const campoRepeticao = document.getElementById('calendar-pop-repeat');
       campoRepeticao.disabled = TIPOS_SEM_REPETICAO.includes(calendarPopDraft.type);
@@ -3347,12 +3489,16 @@
         document.getElementById('calendar-pop-delete').style.display = 'none';
         document.getElementById('calendar-pop-cancelar').style.display = 'none';
         document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle('reposicao');
-        sincronizarReposicao(); renderCalendarPopColors(); renderCalendarPopPalette(); renderCalendarPopDays();
+        sincronizarReposicao();
+        calendarFillMakeupDates('calendar-pop-makeup-for', '', dia, '');
+        renderCalendarPopColors(); renderCalendarPopPalette(); renderCalendarPopDays();
         return;
       }
       calendarPopDraft.type = calendarPopDraft.type === 'reposicao' ? 'lesson' : 'reposicao';
       document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle(calendarPopDraft.type);
-      sincronizarReposicao(); renderCalendarPopColors(); renderCalendarPopPalette(); renderCalendarPopDays();
+      sincronizarReposicao();
+      calendarFillMakeupDates('calendar-pop-makeup-for', document.getElementById('calendar-pop-student').value, calendarPopDraft.date, calendarPopDraft.makeupForDate || '');
+      renderCalendarPopColors(); renderCalendarPopPalette(); renderCalendarPopDays();
     };
 
     function renderCalendarPopColors() {
@@ -3363,6 +3509,7 @@
         calendarPopDraft.type = button.dataset.type;
         document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle(calendarPopDraft.type);
         sincronizarReposicao();
+        calendarFillMakeupDates('calendar-pop-makeup-for', document.getElementById('calendar-pop-student').value, calendarPopDraft.date, calendarPopDraft.makeupForDate || '');
         renderCalendarPopColors(); renderCalendarPopPalette(); renderCalendarPopDays();
       });
     }
@@ -3401,6 +3548,7 @@
       calendarFillStudents();
       document.getElementById('calendar-pop-student').value = event.studentUid || '';
       sincronizarReposicao();
+      calendarFillMakeupDates('calendar-pop-makeup-for', event.studentUid || '', event.date || '', event.makeupForDate || '');
       calendarPopDraft.repeatDays = (event.repeatDays || []).map(Number);
       document.getElementById('calendar-pop-delete').style.display = event.id ? 'block' : 'none';
       // Pauta só em aula de aluno já salva — num bloco novo ainda não há o que resumir.
@@ -3437,12 +3585,16 @@
       const startTime = document.getElementById('calendar-pop-start').value, endTime = document.getElementById('calendar-pop-end').value;
       if (!startTime || !endTime) return calendarPopFail('Preencha o horário.');
       if (calendarMinutes(endTime) <= calendarMinutes(startTime)) return calendarPopFail('O fim precisa ser depois do início.');
-      const comAluno = type === 'lesson';
+      const comAluno = type === 'lesson' || type === 'reposicao';
       const uidEscolhido = comAluno ? (document.getElementById('calendar-pop-student').value || calendarPopDraft.studentUid || '') : '';
       const student = allStudents.find(item => item.uid === uidEscolhido);
       const repeat = TIPOS_SEM_REPETICAO.includes(type) ? 'none' : document.getElementById('calendar-pop-repeat').value;
       const repeatDays = repeat === 'custom' ? (calendarPopDraft.repeatDays || []).map(Number) : [];
       if (repeat === 'custom' && !repeatDays.length) return calendarPopFail('Escolha pelo menos um dia da semana.');
+      if (comAluno && !uidEscolhido) return calendarPopFail('Escolha o aluno desta aula.');
+      const makeupForDate = type === 'reposicao' ? document.getElementById('calendar-pop-makeup-for').value : '';
+      if (type === 'reposicao' && !makeupForDate) return calendarPopFail('Escolha qual falta esta reposição compensa.');
+      if (type === 'reposicao' && makeupForDate > calendarPopDraft.date) return calendarPopFail('A reposição não pode compensar uma aula futura.');
       const payload = {
         type, studentUid:comAluno ? uidEscolhido : '',
         studentName:comAluno && student ? (student.name || student.firstName || '') : '',
@@ -3450,6 +3602,7 @@
           || (student ? `${calendarDefaultTitle(type)} · ${student.firstName || (student.name || '').split(' ')[0]}` : calendarDefaultTitle(type)),
         date:calendarPopDraft.date, startTime, endTime, repeat, repeatDays, color:calendarPopDraft.color || '',
         repeatUntil:repeat !== 'none' ? (calendarPopDraft.repeatUntil || '') : '',
+        makeupForDate,
         notes:calendarPopDraft.notes || '', timezone:'America/Sao_Paulo',
         updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || ''
       };
@@ -3457,8 +3610,7 @@
       if (conflict && !confirmarAulaJunta(conflict)) return;
       const button = document.getElementById('calendar-pop-save'); button.disabled = true;
       try {
-        if (calendarPopDraft.id) await setDoc(doc(db,'schools',escolaAtual,'calendarEvents',calendarPopDraft.id), payload, { merge:true });
-        else await addDoc(collection(db,'schools',escolaAtual,'calendarEvents'), { ...payload, createdAt:serverTimestamp(), createdBy:auth.currentUser?.email || '' });
+        await calendarSaveWithAttendance(calendarPopDraft.id || '', payload);
         closeCalendarPop(); await loadCalendar();
       } catch (error) { calendarPopFail(`Erro ao salvar: ${error.message}`); }
       finally { button.disabled = false; }
@@ -3467,7 +3619,7 @@
     async function deleteCalendarPop() {
       if (!calendarPopDraft?.id || !confirm('Excluir este compromisso? Se ele for semanal, toda a série será removida.')) return;
       const button = document.getElementById('calendar-pop-delete'); button.disabled = true;
-      try { await deleteDoc(doc(db,'schools',escolaAtual,'calendarEvents',calendarPopDraft.id)); closeCalendarPop(); await loadCalendar(); }
+      try { await calendarDeleteWithAttendance(calendarPopDraft.id); closeCalendarPop(); await loadCalendar(); }
       catch (error) { calendarPopFail(`Erro ao excluir: ${error.message}`); }
       finally { button.disabled = false; }
     }
@@ -3477,6 +3629,14 @@
         calendarPopDraft.repeatDays = [new Date(`${calendarPopDraft.date}T00:00:00`).getDay()]; // começa no dia do próprio compromisso
       }
       renderCalendarPopDays();
+    };
+    document.getElementById('calendar-pop-student').onchange = event => {
+      const student = allStudents.find(item => item.uid === event.target.value);
+      if (calendarPopDraft?.type === 'reposicao' && student) {
+        const title = document.getElementById('calendar-pop-title');
+        if (!title.value || title.value.startsWith('Reposição')) title.value = `Reposição · ${student.name || student.firstName}`;
+      }
+      calendarFillMakeupDates('calendar-pop-makeup-for', event.target.value, calendarPopDraft?.date || '', '');
     };
     // Aula repetida vem de um defeito antigo: o sincronismo apagava as aulas
     // velhas olhando a lista em memória, que fora da Agenda vinha vazia — então
@@ -3543,6 +3703,8 @@
         startTime:document.getElementById('calendar-pop-start').value,
         endTime:document.getElementById('calendar-pop-end').value,
         repeat:document.getElementById('calendar-pop-repeat').value,
+        studentUid:document.getElementById('calendar-pop-student').value || '',
+        makeupForDate:document.getElementById('calendar-pop-makeup-for').value || '',
       };
       closeCalendarPop(); openCalendarEvent(draft);
     };

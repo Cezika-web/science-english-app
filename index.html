@@ -1542,22 +1542,13 @@ function calculateAttendance(student, posaulas) {
   // real da reposição para explicar o asterisco na linha do tempo.
   const makeupByScheduledKey = new Map();
   const held = (posaulas || []).length;
-  const explicitMakeupKey = post => {
-    const raw = post?.makeupForDate || post?.reposicaoDe || post?.replacementForDate;
-    if (typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-    return dateKey(raw);
-  };
-  const matchScheduledDate = (date, post) => {
+  const matchScheduledDate = date => {
     if (!date) return '';
-    const forced = explicitMakeupKey(post);
-    if (forced && candidateKeys.has(forced) && !presentKeys.has(forced)) return forced;
-    const referenceKey = dateKey(date);
-    // Aula num dia fora da grade é reposição: quita a falta prevista mais
-    // próxima anteriormente. Nunca empurra essa presença para uma aula futura.
-    return [...candidateKeys]
-      .filter(key => key <= referenceKey && !presentKeys.has(key))
-      .sort()
-      .pop() || '';
+    for (let daysBack = 0; daysBack <= 3; daysBack++) {
+      const key = dateKey(addDays(date,-daysBack));
+      if (candidateKeys.has(key) && !presentKeys.has(key)) return key;
+    }
+    return '';
   };
   const orderedPosts = (posaulas || []).map(post => ({ post, reference:postReferenceDate(post) }))
     .sort((a,b) => (a.reference?.getTime() || 0) - (b.reference?.getTime() || 0));
@@ -1567,7 +1558,8 @@ function calculateAttendance(student, posaulas) {
   // ocupar a aula que já possui classDate confiável.
   orderedPosts.forEach(entry => {
     const explicitKey = dateKey(entry.post.classDate);
-    if (explicitKey && candidateKeys.has(explicitKey) && !presentKeys.has(explicitKey)) {
+    if (explicitKey && !presentKeys.has(explicitKey)) {
+      candidateKeys.add(explicitKey);
       presentKeys.add(explicitKey);
       entry.exactMatch = true;
     }
@@ -1577,21 +1569,34 @@ function calculateAttendance(student, posaulas) {
     if (exactMatch) return;
     // classDate/createdAt pode representar o envio, não a aula. Se a data não
     // coincidir com a grade, procura a falta prevista mais próxima anteriormente.
-    const matched = matchScheduledDate(reference, post);
-    if (matched) {
-      presentKeys.add(matched);
-      const actualKey = dateKey(reference);
-      if (actualKey && actualKey !== matched) makeupByScheduledKey.set(matched, actualKey);
-    }
+    const matched = matchScheduledDate(reference);
+    if (matched) presentKeys.add(matched);
     else unmatchedPosts.push({ post, reference, explicitKey });
   });
 
-  // Se não há falta anterior para quitar, é uma aula extra. Ela conta em
-  // "realizadas", mas não ocupa uma aula futura nem altera a porcentagem.
+  const availableKeys = [...candidateKeys].filter(key => !presentKeys.has(key)).sort();
   unmatchedPosts.forEach(({ post, reference, explicitKey }) => {
     const referenceKey = dateKey(reference);
-    const extraKey = explicitKey || dateKey(post.createdAt) || referenceKey;
-    if (extraKey) extraClassKeys.add(extraKey);
+    const limitKey = reference ? dateKey(addDays(reference,14)) : '';
+    const availableIndex = referenceKey
+      ? availableKeys.findIndex(key => key >= referenceKey && (!limitKey || key <= limitKey))
+      : -1;
+    if (availableIndex >= 0) {
+      presentKeys.add(availableKeys.splice(availableIndex,1)[0]);
+    } else {
+      const extraKey = explicitKey || dateKey(post.createdAt) || referenceKey;
+      if (extraKey) extraClassKeys.add(extraKey);
+    }
+  });
+
+  // Reposição só existe quando foi marcada explicitamente na agenda. O evento
+  // grava no aluno qual falta foi compensada e em que dia a reposição ocorreu.
+  Object.values(student?.attendanceMakeups || {}).forEach(makeup => {
+    const scheduledKey = String(makeup?.scheduledDate || '');
+    const actualKey = String(makeup?.makeupDate || '');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(scheduledKey) || !candidateKeys.has(scheduledKey)) return;
+    presentKeys.add(scheduledKey);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(actualKey)) makeupByScheduledKey.set(scheduledKey, actualKey);
   });
 
   // Sem data de início/dias fixos (ou com cadastro incompatível com o legado),
