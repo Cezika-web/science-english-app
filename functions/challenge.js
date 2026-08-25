@@ -246,6 +246,51 @@ function validateQuestion(question, index) {
   return { publicQuestion, answerKey };
 }
 
+function prepareManualStudentChallenge(student, position = 0) {
+  const uid = String(student?.uid || '').trim();
+  if (!uid) throw new HttpsError('invalid-argument', `Aluno ${position + 1} sem UID.`);
+  const prepared = [student?.part1, student?.part2].map((questions, partIndex) => {
+    if (!Array.isArray(questions) || questions.length !== 5) {
+      throw new HttpsError('invalid-argument',
+        `${student?.studentName || uid}: a Parte ${partIndex + 1} precisa ter exatamente 5 perguntas.`);
+    }
+    const normalized = questions.map((question, questionIndex) => ({
+      ...question,
+      id:String(question?.id || `p${partIndex + 1}q${questionIndex + 1}`).trim(),
+      type:question?.type === 'text' ? 'text' : 'multipleChoice',
+    }));
+    const ids = normalized.map(question => question.id);
+    if (new Set(ids).size !== ids.length) {
+      throw new HttpsError('invalid-argument',
+        `${student?.studentName || uid}: há IDs repetidos na Parte ${partIndex + 1}.`);
+    }
+    try {
+      assertFocusMix(normalized, partIndex + 1);
+      const formats = normalized.map(formatOf);
+      const text = formats.filter(item => item === 'text').length;
+      const trueFalse = formats.filter(item => item === 'trueFalse').length;
+      const multipleChoice = formats.filter(item => item === 'multipleChoice').length;
+      const supported = (text === 5 && trueFalse === 0 && multipleChoice === 0)
+        || (text === 3 && trueFalse === 1 && multipleChoice === 1);
+      if (!supported) throw new Error('use 5 escritas, ou 3 escritas + 1 verdadeiro/falso + 1 múltipla escolha');
+    } catch (error) {
+      throw new HttpsError('invalid-argument',
+        `${student?.studentName || uid}, Parte ${partIndex + 1}: ${error.message}`);
+    }
+    const checked = normalized.map(validateQuestion);
+    return {
+      questions:checked.map(item => item.publicQuestion),
+      keys:checked.map(item => item.answerKey),
+    };
+  });
+  return {
+    uid,
+    studentName:String(student?.studentName || '').trim(),
+    analysis:student?.analysis && typeof student.analysis === 'object' ? student.analysis : {},
+    prepared,
+  };
+}
+
 function answerTokens(value) {
   return normalizeAnswer(value).split(' ').map(token => token.replace(/^'+|'+$/g, '')).filter(Boolean);
 }
@@ -1205,6 +1250,111 @@ ${item.text}`).join('\n\n')}`
       await batch.commit();
       return { ok:true, weekKey, rounds:[schedule.part1, schedule.part2]
         .filter((_, index) => prepared[index]).map(item => item.roundId) };
+    }
+  );
+
+  // Pacote único criado fora da API paga: uma entrada por aluno, mas uma só
+  // publicação no painel. As rodadas são gravadas exatamente no mesmo caminho
+  // das rodadas personalizadas geradas pela IA, então o aplicativo, a correção,
+  // o ranking e o histórico continuam usando o fluxo já consolidado.
+  const publicarDesafiosPersonalizadosManuais = onCall(
+    { region:REGION, timeoutSeconds:300, memory:'512MiB' },
+    async request => {
+      requireAdmin(request, adminEmails);
+      const data = request.data || {};
+      const weekKey = String(data.weekKey || '').trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(weekKey)
+          || new Date(`${weekKey}T12:00:00Z`).getUTCDay() !== 1) {
+        throw new HttpsError('invalid-argument', 'Escolha uma segunda-feira válida.');
+      }
+      if (!Array.isArray(data.students) || !data.students.length || data.students.length > 100) {
+        throw new HttpsError('invalid-argument', 'O pacote precisa ter de 1 a 100 alunos.');
+      }
+
+      const preparedStudents = data.students.map(prepareManualStudentChallenge);
+      const uids = preparedStudents.map(student => student.uid);
+      if (new Set(uids).size !== uids.length) {
+        throw new HttpsError('invalid-argument', 'O pacote contém o mesmo UID mais de uma vez.');
+      }
+
+      const studentsSnap = await db.collection('students').get();
+      const activeStudents = studentsSnap.docs.filter(doc => {
+        const student = doc.data();
+        return student.archived !== true && student.challengeEnabled !== false;
+      });
+      const activeByUid = new Map(activeStudents.map(doc => [doc.id, doc]));
+      const unknown = preparedStudents.filter(student => !activeByUid.has(student.uid));
+      if (unknown.length) {
+        throw new HttpsError('invalid-argument',
+          `UIDs não encontrados ou sem desafio ativo: ${unknown.map(item => item.studentName || item.uid).join(', ')}.`);
+      }
+      const sentUids = new Set(uids);
+      const missing = activeStudents.filter(doc => !sentUids.has(doc.id)).map(doc =>
+        doc.data().name || doc.data().firstName || doc.id);
+      if (missing.length) {
+        throw new HttpsError('failed-precondition',
+          `O pacote não contém todos os alunos ativos. Faltando: ${missing.join(', ')}.`);
+      }
+
+      const schedule = scheduleFor(weekKey);
+      const submissionRefs = preparedStudents.flatMap(student => [schedule.part1, schedule.part2]
+        .map(round => db.doc(`students/${student.uid}/challengeSubmissions/${round.roundId}`)));
+      const submissions = submissionRefs.length ? await db.getAll(...submissionRefs) : [];
+      const started = new Set(submissions.filter(snap => snap.exists).map(snap =>
+        snap.ref.parent.parent?.id).filter(Boolean));
+      if (started.size) {
+        const names = [...started].map(uid => {
+          const doc = activeByUid.get(uid);
+          return doc?.data().name || doc?.data().firstName || uid;
+        });
+        throw new HttpsError('failed-precondition',
+          `Não dá para substituir perguntas depois que o aluno começou: ${names.join(', ')}.`);
+      }
+
+      const settingsRef = db.doc('challengeSettings/auto');
+      const settingsSnap = await settingsRef.get();
+      const currentManualWeeks = settingsSnap.exists && Array.isArray(settingsSnap.data().manualWeeks)
+        ? settingsSnap.data().manualWeeks : [];
+      const batch = db.batch();
+      batch.set(db.doc(`challengeWeeks/${weekKey}`), {
+        weekKey, title:String(data.title || 'Desafio Science English').trim(), active:true,
+        personalized:true, manual:true, generatedCount:preparedStudents.length,
+        expectedCount:activeStudents.length, startsAt:schedule.startsAt,
+        revealAt:schedule.revealAt, endsAt:schedule.endsAt,
+        updatedAt:FieldValue.serverTimestamp(), publishedBy:request.auth.token?.email || '',
+      }, { merge:true });
+      batch.set(settingsRef, {
+        manualWeeks:[...new Set([...currentManualWeeks, weekKey])],
+        updatedAt:FieldValue.serverTimestamp(),
+      }, { merge:true });
+      batch.set(db.doc(`_challengeGenerationJobs/${weekKey}`), {
+        weekKey, status:'completed', manual:true, total:activeStudents.length,
+        completed:preparedStudents.length, failed:0,
+        requestedBy:request.auth.token?.email || '', finishedAt:FieldValue.serverTimestamp(),
+      }, { merge:true });
+
+      preparedStudents.forEach(student => {
+        [schedule.part1, schedule.part2].forEach((round, index) => {
+          const profile = activeByUid.get(student.uid).data();
+          batch.set(db.doc(`students/${student.uid}/challengeRounds/${round.roundId}`), {
+            roundId:round.roundId, weekKey, part:round.part, personalized:true,
+            manual:true, source:'pacote-json', opensAt:round.opensAt, closesAt:round.closesAt,
+            questionCount:5, questions:student.prepared[index].questions,
+            difficulty:'personalizado', status:'published', updatedAt:FieldValue.serverTimestamp(),
+          });
+          batch.set(answerKeyRef(student.uid, round.roundId, true), {
+            uid:student.uid, studentName:profile.name || profile.firstName || student.studentName,
+            roundId:round.roundId, weekKey, part:round.part,
+            answers:student.prepared[index].keys, analysis:student.analysis,
+            source:'pacote-json', updatedAt:FieldValue.serverTimestamp(),
+          });
+        });
+      });
+      await batch.commit();
+      return {
+        ok:true, weekKey, students:preparedStudents.length,
+        questions:preparedStudents.length * 10, manual:true,
+      };
     }
   );
 
@@ -2286,7 +2436,8 @@ ${item.text}`).join('\n\n')}`
   );
 
   return {
-    publicarDesafioSemanal, gerarDesafiosPersonalizados, obterDesafioSemanal, iniciarDesafioSemanal,
+    publicarDesafioSemanal, publicarDesafiosPersonalizadosManuais,
+    gerarDesafiosPersonalizados, obterDesafioSemanal, iniciarDesafioSemanal,
     obterPerguntasDesafio, reabrirDesafioAluno, regerarPerguntaDesafio,
     obterTemporadaDesafio, obterResultadoDesafioAdmin,
     recalcularPontuacaoDesafio,
@@ -2301,5 +2452,6 @@ ${item.text}`).join('\n\n')}`
 export const challengeInternals = Object.freeze({
   localDateParts, addDays, monthKeyForWeek, weekKeyFor, nextMonday, scheduleFor, stageFor,
   normalizeAnswer, canonicalChallengeTopic, validateQuestion, scoreWrittenAnswer, scoreAnswers, dateFrom, assertFocusMix,
-  assertFormatMix, formatOf, FORMAT_MIX, FORMAT_THRESHOLD, groupScheduleFor,
+  assertFormatMix, formatOf, prepareManualStudentChallenge,
+  FORMAT_MIX, FORMAT_THRESHOLD, groupScheduleFor,
 });

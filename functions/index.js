@@ -2208,6 +2208,7 @@ const challengeFunctions = createChallengeFunctions({
   loadPostLesson:conteudoDaPosAula, registrarUso,
 });
 export const publicarDesafioSemanal = challengeFunctions.publicarDesafioSemanal;
+export const publicarDesafiosPersonalizadosManuais = challengeFunctions.publicarDesafiosPersonalizadosManuais;
 export const gerarDesafiosPersonalizados = challengeFunctions.gerarDesafiosPersonalizados;
 export const obterDesafioSemanal = challengeFunctions.obterDesafioSemanal;
 export const iniciarDesafioSemanal = challengeFunctions.iniciarDesafioSemanal;

@@ -866,7 +866,7 @@
 
           <div class="form-card" style="margin:0;">
             <h2 style="margin-bottom:5px;">🏆 Publicar desafio semanal</h2>
-            <p style="font-size:.84rem;color:var(--muted);line-height:1.5;margin:0 0 15px;">A semana precisa ter duas partes de 5 perguntas. Os gabaritos são enviados ao servidor e nunca aparecem no aplicativo do aluno.</p>
+            <p style="font-size:.84rem;color:var(--muted);line-height:1.5;margin:0 0 15px;">Cole um pacote único com os desafios personalizados de todos os alunos, ou um desafio geral. Cada aluno continua com duas partes de 5 perguntas; os gabaritos vão para o servidor e nunca aparecem antes da correção.</p>
             <label class="form-label" for="challenge-week">Segunda-feira da semana</label>
             <input class="form-input" id="challenge-week" type="date" style="margin-bottom:12px;">
             <button class="btn-primary" id="challenge-generate-personalized" type="button" style="width:100%;margin-bottom:10px;">Gerar desafios individuais dos últimos 90 dias</button>
@@ -874,11 +874,11 @@
               <input id="challenge-manual-week" type="checkbox" style="margin-top:2px;">
               <span><strong>Esta semana é manual</strong><br>A IA não roda nesta semana — nem a leva de domingo, nem as entradas tardias. Todo mundo usa o JSON que você publicar abaixo. Sem custo de API.</span>
             </label>
-            <label class="form-label" for="challenge-json">Perguntas e gabaritos (JSON)</label>
-            <textarea id="challenge-json" style="width:100%;min-height:390px;box-sizing:border-box;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.76rem;line-height:1.45;resize:vertical;" placeholder="Carregue o modelo da primeira semana ou cole outro JSON."></textarea>
-            <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:12px;"><button class="btn-secondary" id="challenge-load-template" type="button">Carregar Semana 1</button><button class="btn-primary" id="challenge-publish" type="button">Publicar as 10 perguntas</button></div>
+            <label class="form-label" for="challenge-json">Pacote personalizado ou desafio geral (JSON)</label>
+            <textarea id="challenge-json" style="width:100%;min-height:390px;box-sizing:border-box;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.76rem;line-height:1.45;resize:vertical;" placeholder="Cole aqui o JSON único gerado pela skill Desafio da Semana."></textarea>
+            <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:12px;"><button class="btn-secondary" id="challenge-load-template" type="button">Carregar exemplo geral</button><button class="btn-primary" id="challenge-publish" type="button">Validar e publicar</button></div>
             <div class="form-msg" id="challenge-msg" style="display:none;"></div>
-            <p style="font-size:.78rem;color:var(--muted);line-height:1.5;margin:12px 0 0;">Este JSON vale para <strong>todos</strong> os alunos e não gasta IA. Cada parte é opcional — dá para mandar só as 5 da Parte 1. Quem já tem perguntas individuais continua com as dele; o JSON atende quem não tem.</p>
+            <p style="font-size:.78rem;color:var(--muted);line-height:1.5;margin:12px 0 0;">O pacote da skill traz <strong>todos os alunos em um único JSON</strong> e publica perguntas individuais sem chamar a API de IA. O modelo geral continua disponível como alternativa e usa as mesmas 10 perguntas para todos.</p>
           </div>
 
           <div class="form-card" style="margin:0;">
@@ -7916,6 +7916,25 @@
       try {
         const payload = JSON.parse(document.getElementById('challenge-json').value || '{}');
         payload.weekKey = document.getElementById('challenge-week').value || payload.weekKey;
+        if (Array.isArray(payload.students)) {
+          if (!payload.students.length) throw new Error('O pacote não contém alunos.');
+          payload.students.forEach((student, index) => {
+            const name = student.studentName || student.uid || `Aluno ${index + 1}`;
+            if (!student.uid) throw new Error(`${name}: faltou o UID.`);
+            if (!Array.isArray(student.part1) || student.part1.length !== 5
+                || !Array.isArray(student.part2) || student.part2.length !== 5) {
+              throw new Error(`${name}: o pacote precisa ter 5 perguntas na Parte 1 e 5 na Parte 2.`);
+            }
+          });
+          if (!confirm(`Publicar 10 perguntas personalizadas para ${payload.students.length} aluno(s)?\n\nA semana será marcada como manual e a API de IA não será chamada.`)) return;
+          button.disabled = true; button.textContent = 'Validando todos os alunos...';
+          const publicarPacote = httpsCallable(fns, 'publicarDesafiosPersonalizadosManuais', { timeout:300000 });
+          const { data } = await publicarPacote(payload);
+          showMsg('challenge-msg',
+            `✅ ${data.students} alunos e ${data.questions} perguntas publicados. Semana manual: sem geração pela API de IA.`, 'ok');
+          await loadChallengeAdmin();
+          return;
+        }
         if (!Array.isArray(payload.part1) || payload.part1.length !== 5 || !Array.isArray(payload.part2) || payload.part2.length !== 5) {
           throw new Error('O JSON precisa ter exatamente 5 perguntas em cada parte.');
         }
@@ -7925,7 +7944,7 @@
         showMsg('challenge-msg', '✅ As 10 perguntas foram publicadas. A abertura e o resultado serão automáticos.', 'ok');
         await loadChallengeAdmin();
       } catch (error) { showMsg('challenge-msg', 'Erro: ' + error.message, 'err'); }
-      finally { button.disabled = false; button.textContent = 'Publicar as 10 perguntas'; }
+      finally { button.disabled = false; button.textContent = 'Validar e publicar'; }
     };
 
     // ── CREATE STUDENT ──────────────────────────────────────────────────

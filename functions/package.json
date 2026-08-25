@@ -7,7 +7,7 @@
     "node": "22"
   },
   "scripts": {
-    "test:challenge": "node scripts/test_challenge_scoring.mjs"
+    "test:challenge": "node scripts/test_challenge_scoring.mjs && node scripts/test_challenge_manual_import.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.112.4",
