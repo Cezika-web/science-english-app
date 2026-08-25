@@ -259,6 +259,14 @@ function orderedSubsequence(needle, haystack) {
   return false;
 }
 
+function contiguousSubsequence(needle, haystack) {
+  if (!needle.length || haystack.length < needle.length) return false;
+  for (let start = 0; start <= haystack.length - needle.length; start += 1) {
+    if (needle.every((token, index) => token === haystack[start + index])) return true;
+  }
+  return false;
+}
+
 function polarityOf(tokens) {
   const negative = tokens.filter(token => token === 'not' || token === 'no' || token === 'never'
     || /n't$/.test(token) || ['cannot','neither','nobody','nothing','nowhere'].includes(token)).length;
@@ -271,7 +279,12 @@ function polarityOf(tokens) {
 // iguais, para nunca aceitar "I do not like it" como variante de "I like it".
 function preservesExpectedConstruction(response, expected) {
   if (expected.length < 2 || response.length < expected.length) return false;
-  return polarityOf(response) === polarityOf(expected) && orderedSubsequence(expected, response);
+  // Se a resposta esperada aparece inteira e em sequência, o restante pode ser
+  // contexto legítimo: "I haven't tried it, but it looks delicious" contém a
+  // resposta correta mesmo tendo uma negação em outra oração. Para sequências
+  // não contíguas, a polaridade ainda protege contra "I do not like it".
+  return contiguousSubsequence(expected, response)
+    || (polarityOf(response) === polarityOf(expected) && orderedSubsequence(expected, response));
 }
 
 // Distância de edição por palavra. Cada palavra correta preserva uma fração da

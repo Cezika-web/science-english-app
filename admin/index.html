@@ -7353,11 +7353,12 @@
           const details = students.map(student => `<details style="margin-top:8px;border:1px solid var(--border);border-radius:10px;background:var(--card);">
             <summary style="cursor:pointer;padding:9px 11px;display:flex;align-items:center;gap:8px;font-size:.8rem;flex-wrap:wrap;">
               <strong style="flex:1 1 180px;min-width:0;">${esc(student.name)}</strong>
+              <strong style="color:#0D5AA7;white-space:nowrap;">${Number(student.score || 0)}/${Number(student.maxScore || 0)} PTS</strong>
               <span style="color:var(--muted);white-space:nowrap;">${Number(student.answered || 0)}/${Number(part.questions || 0)} respondidas</span>
               <strong style="color:${Number(student.wrong || 0) ? '#B91C1C' : '#15803D'};white-space:nowrap;">${Number(student.correct || 0)}✓ ${Number(student.wrong || 0)}✗</strong>
             </summary>
             <div style="padding:0 11px 10px;display:grid;gap:6px;">${(student.details || []).map((item, index) => `<div style="border-top:1px solid var(--border);padding-top:7px;font-size:.76rem;line-height:1.4;">
-              <div style="display:flex;gap:7px;align-items:flex-start;"><strong style="color:${item.correct ? '#15803D' : '#B91C1C'};">${item.correct ? '✓ Certa' : '✗ Errada'}</strong><span style="flex:1;">${index + 1}. ${esc(item.prompt || 'Pergunta')}</span></div>
+              <div style="display:flex;gap:7px;align-items:flex-start;"><strong style="color:${item.correct ? '#15803D' : item.parcial ? '#B45309' : '#B91C1C'};white-space:nowrap;">${item.correct ? '✓ Certa' : item.parcial ? '● Parcial' : '✗ Errada'} · ${Number(item.score || 0)} PTS</strong><span style="flex:1;">${index + 1}. ${esc(item.prompt || 'Pergunta')}</span></div>
               ${renderChallengeAnswerOptions(item)}
               <div style="color:var(--muted);margin-top:3px;">Respondeu: <strong style="color:var(--text);">${esc(item.answer || 'Não respondeu')}</strong>${item.correct ? '' : ` · correta: <strong style="color:#166534;">${esc(item.expected || '')}</strong>`}</div>
             </div>`).join('') || '<div style="color:var(--muted);font-size:.76rem;">As respostas ainda estão sendo consolidadas.</div>'}</div>

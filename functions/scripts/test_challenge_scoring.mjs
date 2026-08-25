@@ -29,6 +29,12 @@ const cases = [
     expected:100,
   },
   {
+    name:'aceita alvo afirmativo em outra oração mesmo com negação no contexto',
+    answer:"I haven't tried the cake yet, but based on its appearance, it looks delicious.",
+    accepted:['it looks delicious'],
+    expected:100,
+  },
+  {
     name:'não aceita inversão de polaridade',
     answer:'I do not like it',
     accepted:['I like it'],
