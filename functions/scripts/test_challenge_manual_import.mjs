@@ -5,19 +5,19 @@ const { prepareManualStudentChallenge } = challengeInternals;
 
 const textQuestion = (id, focus) => ({
   id, type:'text', focus, topic:'Simple Present', prompt:`Escreva a frase ${id}.`,
-  context:'Rotina de trabalho.', hint:'Use o presente simples.', options:[], correctOption:'',
+  context:'Rotina de trabalho.', hint:'', options:[], correctOption:'',
   expected:'I work every day.', acceptedAnswers:['I work every day', 'I work every day.'],
   explanation:'O presente simples descreve rotinas.',
 });
 const trueFalseQuestion = (id, focus) => ({
   id, type:'multipleChoice', focus, topic:'Simple Present', prompt:'A frase está correta?',
-  context:'She works every day.', hint:'Observe a terceira pessoa.',
+  context:'She works every day.', hint:'',
   options:[{ id:'a', text:'True' }, { id:'b', text:'False' }], correctOption:'a',
   expected:'True', acceptedAnswers:[], explanation:'Com she, work recebe -s.',
 });
 const multipleChoiceQuestion = (id, focus) => ({
   id, type:'multipleChoice', focus, topic:'Simple Present', prompt:'Escolha a forma correta.',
-  context:'He ___ at home.', hint:'Observe a terceira pessoa.',
+  context:'He ___ at home.', hint:'',
   options:[{ id:'a', text:'work' }, { id:'b', text:'works' }, { id:'c', text:'working' }, { id:'d', text:'worked' }],
   correctOption:'b', expected:'works', acceptedAnswers:[], explanation:'Com he, usamos works.',
 });
@@ -49,5 +49,25 @@ assert.throws(() => prepareManualStudentChallenge({
   uid:'student-3', studentName:'Sem foco',
   part1:part('p1').map(question => ({ ...question, focus:'strong' })), part2:part('p2'),
 }), /3 perguntas de pontos fracos/);
+
+assert.throws(() => prepareManualStudentChallenge({
+  uid:'student-4', studentName:'Com dica',
+  part1:part('p1').map((question, index) => index ? question : ({ ...question, hint:'Use the base form.' })),
+  part2:part('p2'),
+}), /hint precisa ficar vazio/);
+
+assert.throws(() => prepareManualStudentChallenge({
+  uid:'student-5', studentName:'Com fórmula',
+  part1:part('p1').map((question, index) => index ? question : ({ ...question, prompt:'Use the past participle.' })),
+  part2:part('p2'),
+}), /dica gramatical explícita/);
+
+assert.throws(() => prepareManualStudentChallenge({
+  uid:'student-6', studentName:'Tradução escondida',
+  part1:part('p1').map((question, index) => index ? question : ({
+    ...question, prompt:'Translate to English:', context:'Situação: alguém precisa resolver um problema.',
+  })),
+  part2:part('p2'),
+}), /frase exata que será traduzida/);
 
 console.log('Manual challenge package tests passed.');

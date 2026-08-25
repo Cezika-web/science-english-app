@@ -211,6 +211,24 @@ function validateQuestion(question, index) {
   const hint = String(question?.hint || '').trim();
   const type = question?.type === 'text' ? 'text' : 'multipleChoice';
   if (!id || !prompt) throw new HttpsError('invalid-argument', `Pergunta ${index + 1} sem id ou enunciado.`);
+  // O desafio mede recuperação ativa. Dicas gramaticais antes da resposta
+  // entregam justamente o raciocínio que o aluno precisa demonstrar.
+  if (hint) {
+    throw new HttpsError('invalid-argument', `Pergunta ${index + 1}: o campo hint precisa ficar vazio.`);
+  }
+  const explicitScaffolding = [
+    /\b(base form|past participle|present participle|present perfect|past perfect|simple past|simple present|active causative|passive causative|causative|infinitive|gerund|auxiliary verb|modal verb)\b/i,
+    /\b(forma base|partic[ií]pio passado|partic[ií]pio presente|presente perfeito|passado perfeito|passado simples|presente simples|causativo|infinitivo|ger[uú]ndio|verbo auxiliar|verbo modal)\b/i,
+  ];
+  if (explicitScaffolding.some(pattern => pattern.test(prompt))) {
+    throw new HttpsError('invalid-argument',
+      `Pergunta ${index + 1}: o enunciado não pode dar uma dica gramatical explícita.`);
+  }
+  const translation = /\b(translate|traduza|tradução)\b/i.test(prompt);
+  if (translation && (!context || /^(situa[cç][aã]o|contexto)\s*:/i.test(context))) {
+    throw new HttpsError('invalid-argument',
+      `Pergunta ${index + 1}: coloque em context a frase exata que será traduzida, não uma descrição da situação.`);
+  }
 
   const focus = question?.focus === 'strong' ? 'strong' : question?.focus === 'weak' ? 'weak' : '';
   const topic = String(question?.topic || '').trim();
@@ -785,7 +803,7 @@ export function createChallengeFunctions({
         'Em format="multipleChoice": quatro alternativas plausíveis (a, b, c, d), correctOption com a letra certa, acceptedAnswers vazio. ' +
         'Em format="trueFalse": exatamente duas alternativas, {"id":"a","text":"True"} e {"id":"b","text":"False"}, correctOption com a letra certa, acceptedAnswers vazio. ' +
         'Em format="text": options vazio, correctOption vazio, e acceptedAnswers com TODAS as formas corretas de escrever a resposta. ' +
-        'IMPORTANTE: context e hint aparecem ao aluno ANTES de ele responder. Eles podem orientar a situação ou o conceito, mas nunca podem conter a resposta esperada, uma tradução direta que entregue o alvo, a alternativa correta ou a resposta de qualquer aluno. ' +
+        'IMPORTANTE: hint deve ser SEMPRE uma string vazia. O prompt deve dizer somente a ação neutra (por exemplo, "Translate to English:" ou "Complete the sentence:") e o texto exato da tarefa deve ficar em context. Em tradução, context precisa conter a frase literal completa que o aluno traduzirá — nunca apenas "Situação:" ou uma descrição vaga. Antes da resposta, nunca cite nome de tempo verbal, estrutura gramatical, voz ativa/passiva, causative, infinitive, base form, past participle, fórmula, regra ou qualquer pista de como construir a resposta. ' +
         'A resposta escrita tem no MÍNIMO 3 palavras — nunca uma palavra só. Deve caber em 45 segundos digitando no celular: uma oração curta, não um parágrafo nem redação. ' +
         'A correção é automática e compara construções, então a pergunta precisa admitir um alvo gramatical inequívoco. Em acceptedAnswers liste EXAUSTIVAMENTE toda variação válida: contração e forma completa ("don\'t" e "do not"), grafia americana e britânica, resposta curta e frase completa, conectores opcionais e palavras mais específicas que mantenham o mesmo sentido e a mesma regra. Não restrinja o gabarito a uma cópia literal quando outra formulação natural também responde corretamente. Se a pergunta admitir sentidos realmente diferentes, reformule para fechar o alvo. Maiúscula, acento e pontuação são ignorados na correção, então não dependa deles. ' +
         'Em todos os formatos: uma única resposta inequívoca e explicação pedagógica curta. ' +
@@ -860,7 +878,7 @@ export function createChallengeFunctions({
         'Em CADA parte, produza exatamente 3 perguntas focus=weak e 2 focus=strong. ' +
         'Em CADA parte o formato é exatamente: 3 perguntas format="text", 1 format="trueFalse" e 1 format="multipleChoice". ' +
         FORMAT_RULES.multipleChoice + ' ' + FORMAT_RULES.trueFalse + ' ' + FORMAT_RULES.text + ' ' +
-        'Context e hint aparecem antes da resposta: dê apenas orientação conceitual, sem revelar a resposta esperada, tradução direta do alvo, alternativa correta ou resposta de qualquer aluno. ' +
+        'hint deve ser SEMPRE uma string vazia. O prompt deve conter apenas a ação neutra e o texto exato da tarefa deve ficar em context. Em tradução, context precisa conter a frase literal completa que o aluno traduzirá, nunca uma descrição vaga. Antes da resposta, não cite tempo verbal, estrutura gramatical, voz ativa/passiva, causative, infinitive, base form, past participle, fórmula ou regra. ' +
         'Em todos os formatos: uma única resposta inequívoca e explicação pedagógica curta em português. Não copie exercícios literalmente.' }],
       output_config:{ format:{ type:'json_schema', schema:PERSONALIZED_CHALLENGE_SCHEMA } },
       messages:[{ role:'user', content:
@@ -1602,7 +1620,8 @@ ${item.text}`).join('\n\n')}`
               const correctOptionId = String(options.find(option =>
                 normalizeAnswer(option.text) === normalizeAnswer(item.expected))?.id || '');
               return {
-                prompt:item.prompt || '', answer:item.answer || '', expected:item.expected || '',
+                prompt:item.prompt || '', context:item.context || question.context || '',
+                answer:item.answer || '', expected:item.expected || '',
                 type:item.type === 'text' ? 'text' : 'multipleChoice', selectedOptionId, correctOptionId,
                 options:options.map(option => ({ id:String(option.id || ''), text:String(option.text || '') })),
                 correct:item.correct === true, score:Number(item.score || 0),
@@ -2397,7 +2416,7 @@ ${item.text}`).join('\n\n')}`
         system:[{ type:'text', text:
           'Você reescreve UMA pergunta de um desafio de inglês. Use somente fatos linguísticos, vocabulário e contextos presentes nos materiais fornecidos. ' +
           `${FORMAT_RULES[formatoOriginal]} Uma única resposta inequívoca e explicação pedagógica curta em português. ` +
-          'Context e hint aparecem antes da resposta: dê apenas orientação conceitual, sem revelar a resposta esperada, tradução direta do alvo, alternativa correta ou resposta de qualquer aluno. ' +
+          'hint deve ser SEMPRE uma string vazia. O prompt deve conter apenas a ação neutra e o texto exato da tarefa deve ficar em context. Em tradução, context precisa conter a frase literal completa que o aluno traduzirá, nunca uma descrição vaga. Antes da resposta, não cite tempo verbal, estrutura gramatical, voz ativa/passiva, causative, infinitive, base form, past participle, fórmula ou regra. ' +
           'A nova pergunta não pode repetir a que está sendo trocada nem nenhuma das outras da rodada. ' +
           'Mantenha o mesmo grau de dificuldade e o mesmo foco da original, a menos que o professor peça outra coisa.' }],
         output_config:{ format:{ type:'json_schema', schema:SINGLE_QUESTION_SCHEMA } },
