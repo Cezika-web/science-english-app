@@ -2292,6 +2292,141 @@ const SKILLS = [
   { id: 'writing',   label: 'Writing',   icon: '✍️', desc: 'Escreva melhor' },
 ];
 
+const SOUND_LAB_SOUNDS = [
+  { id:'i-long', ipa:'iː', group:'vowel', kind:'vogal longa', words:['see','green','teacher'], tip:'Mantenha o som longo, com os lábios levemente abertos.' },
+  { id:'i-short', ipa:'ɪ', group:'vowel', kind:'vogal curta', words:['sit','little','busy'], tip:'Faça um som curto e relaxado, sem alongar como “ii”.' },
+  { id:'e', ipa:'e', group:'vowel', kind:'vogal curta', words:['bed','head','many'], tip:'Abra a boca moderadamente e mantenha a língua à frente.' },
+  { id:'ae', ipa:'æ', group:'vowel', kind:'vogal curta', words:['cat','happy','black'], tip:'Abra mais a boca; o som fica entre “é” e “á”.' },
+  { id:'strut', ipa:'ʌ', group:'vowel', kind:'vogal curta', words:['cup','love','money'], tip:'Produza um som central e curto, sem arredondar os lábios.' },
+  { id:'a-long', ipa:'ɑː', group:'vowel', kind:'vogal longa', words:['father','car','start'], tip:'Mantenha a boca aberta, a língua baixa e sustente o som.' },
+  { id:'o-short', ipa:'ɒ', group:'vowel', kind:'vogal curta', words:['hot','clock','want'], tip:'Use um som curto com os lábios arredondados; ele varia conforme o sotaque.' },
+  { id:'aw-long', ipa:'ɔː', group:'vowel', kind:'vogal longa', words:['law','talk','door'], tip:'Arredonde os lábios e sustente o som.' },
+  { id:'u-short', ipa:'ʊ', group:'vowel', kind:'vogal curta', words:['book','good','woman'], tip:'Faça um som curto e relaxado, com leve arredondamento.' },
+  { id:'u-long', ipa:'uː', group:'vowel', kind:'vogal longa', words:['blue','food','student'], tip:'Arredonde os lábios e mantenha o som por mais tempo.' },
+  { id:'er-long', ipa:'ɜː', group:'vowel', kind:'vogal central longa', words:['bird','work','learn'], tip:'Mantenha a língua no centro; no inglês americano há um “r” mais forte.' },
+  { id:'schwa', ipa:'ə', group:'vowel', kind:'schwa', words:['about','teacher','support'], tip:'É o som neutro e fraco das sílabas sem tonicidade.' },
+  { id:'ay', ipa:'eɪ', group:'vowel', kind:'ditongo', words:['day','name','eight'], tip:'Deslize de “e” para “i” sem separar em duas sílabas.' },
+  { id:'eye', ipa:'aɪ', group:'vowel', kind:'ditongo', words:['my','time','light'], tip:'Comece com a boca aberta e deslize para um “i” curto.' },
+  { id:'oy', ipa:'ɔɪ', group:'vowel', kind:'ditongo', words:['boy','voice','enjoy'], tip:'Comece com os lábios arredondados e deslize para “i”.' },
+  { id:'oh', ipa:'əʊ', group:'vowel', kind:'ditongo', words:['go','home','open'], tip:'Deslize de um som central para os lábios arredondados.' },
+  { id:'ow', ipa:'aʊ', group:'vowel', kind:'ditongo', words:['now','house','about'], tip:'Comece aberto e termine com os lábios arredondados.' },
+  { id:'ear', ipa:'ɪə', group:'vowel', kind:'ditongo', words:['near','here','idea'], tip:'Deslize de “i” curto para o centro; no americano costuma haver /r/.' },
+  { id:'air', ipa:'eə', group:'vowel', kind:'ditongo', words:['hair','care','where'], tip:'Deslize de “e” para o centro; no americano costuma haver /r/.' },
+  { id:'ure', ipa:'ʊə', group:'vowel', kind:'ditongo', words:['tour','pure','cure'], tip:'Deslize de “u” curto para o centro; este som varia bastante por sotaque.' },
+  { id:'p', ipa:'p', group:'consonant', kind:'consoante surda', words:['pen','happy','stop'], tip:'Feche os lábios e solte um pequeno sopro, sem vibrar a garganta.' },
+  { id:'b', ipa:'b', group:'consonant', kind:'consoante sonora', words:['book','baby','job'], tip:'Use a posição de /p/, mas com vibração na garganta.' },
+  { id:'t', ipa:'t', group:'consonant', kind:'consoante surda', words:['tea','water','cat'], tip:'Toque a ponta da língua atrás dos dentes superiores.' },
+  { id:'d', ipa:'d', group:'consonant', kind:'consoante sonora', words:['day','ready','good'], tip:'Use a posição de /t/, mas com vibração na garganta.' },
+  { id:'k', ipa:'k', group:'consonant', kind:'consoante surda', words:['key','back','school'], tip:'A parte de trás da língua bloqueia e depois solta o ar.' },
+  { id:'g', ipa:'g', group:'consonant', kind:'consoante sonora', words:['go','bigger','bag'], tip:'Use a posição de /k/, mas com vibração na garganta.' },
+  { id:'f', ipa:'f', group:'consonant', kind:'fricativa surda', words:['fine','coffee','life'], tip:'Encoste os dentes superiores no lábio inferior e deixe o ar passar.' },
+  { id:'v', ipa:'v', group:'consonant', kind:'fricativa sonora', words:['very','seven','love'], tip:'Use a posição de /f/, mas com vibração na garganta.' },
+  { id:'th-voiceless', ipa:'θ', group:'consonant', kind:'TH surdo', words:['think','nothing','bath'], tip:'Coloque a ponta da língua entre os dentes e sopre sem vibração.' },
+  { id:'th-voiced', ipa:'ð', group:'consonant', kind:'TH sonoro', words:['this','mother','breathe'], tip:'Coloque a língua entre os dentes e use vibração na garganta.' },
+  { id:'s', ipa:'s', group:'consonant', kind:'fricativa surda', words:['see','lesson','rice'], tip:'Deixe o ar passar continuamente pelo centro, sem vibração.' },
+  { id:'z', ipa:'z', group:'consonant', kind:'fricativa sonora', words:['zoo','easy','eyes'], tip:'Use a posição de /s/, mas com vibração na garganta.' },
+  { id:'sh', ipa:'ʃ', group:'consonant', kind:'som de SH', words:['she','nation','fish'], tip:'Arredonde levemente os lábios e solte ar contínuo, sem vibração.' },
+  { id:'zh', ipa:'ʒ', group:'consonant', kind:'som de vision', words:['vision','measure','usual'], tip:'Use a posição de /ʃ/, mas com vibração na garganta.' },
+  { id:'h', ipa:'h', group:'consonant', kind:'sopro glotal', words:['house','behind','who'], tip:'Produza um sopro aberto e evite transformá-lo em /r/.' },
+  { id:'ch', ipa:'tʃ', group:'consonant', kind:'som de CH', words:['chair','teacher','watch'], tip:'Bloqueie e solte o ar como um único som.' },
+  { id:'j', ipa:'dʒ', group:'consonant', kind:'som de J', words:['job','engine','bridge'], tip:'É a versão sonora de /tʃ/, com vibração na garganta.' },
+  { id:'m', ipa:'m', group:'consonant', kind:'nasal', words:['man','summer','time'], tip:'Feche os lábios e deixe o ar sair pelo nariz.' },
+  { id:'n', ipa:'n', group:'consonant', kind:'nasal', words:['no','dinner','sun'], tip:'Coloque a língua atrás dos dentes e deixe o ar sair pelo nariz.' },
+  { id:'ng', ipa:'ŋ', group:'consonant', kind:'nasal de -ng', words:['sing','English','long'], tip:'Eleve a parte de trás da língua e não acrescente /g/ ao final.' },
+  { id:'l', ipa:'l', group:'consonant', kind:'lateral', words:['light','yellow','feel'], tip:'Toque a língua atrás dos dentes e deixe o ar passar pelos lados.' },
+  { id:'r', ipa:'r', group:'consonant', kind:'R inglês', words:['red','around','car'], tip:'Não toque o céu da boca e não vibre a ponta da língua.' },
+  { id:'y', ipa:'j', group:'consonant', kind:'som de Y', words:['yes','use','music'], tip:'Deslize rapidamente para a vogal seguinte.' },
+  { id:'w', ipa:'w', group:'consonant', kind:'semivogal', words:['we','away','quick'], tip:'Arredonde os lábios e deslize para a vogal seguinte.' },
+];
+
+function SoundLabExplorer() {
+  const [filter, setFilter] = useState('all');
+  const [activeId, setActiveId] = useState(SOUND_LAB_SOUNDS[0].id);
+  const [playing, setPlaying] = useState('');
+  const active = SOUND_LAB_SOUNDS.find(sound => sound.id === activeId) || SOUND_LAB_SOUNDS[0];
+  const visible = SOUND_LAB_SOUNDS.filter(sound => filter === 'all' || sound.group === filter);
+
+  const stopAudio = () => {
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    setPlaying('');
+  };
+
+  useEffect(() => () => stopAudio(), []);
+
+  const playPhoneme = () => {
+    stopAudio();
+    setPlaying(`sound:${active.id}`);
+    pronounceEnglish(active.words[0], {
+      onEnd:() => setPlaying(''),
+      onError:() => { setPlaying(''); showToast('Este aparelho ainda não tem voz em inglês.'); },
+    });
+  };
+
+  const playWord = word => {
+    stopAudio();
+    setPlaying(`word:${word}`);
+    pronounceEnglish(word, {
+      onEnd:() => setPlaying(''),
+      onError:() => { setPlaying(''); showToast('Este aparelho ainda não tem voz em inglês.'); },
+    });
+  };
+
+  return (
+    <div>
+      <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:14 }}>
+        {[
+          ['all','Todos',44], ['vowel','Vogais',20], ['consonant','Consoantes',24],
+        ].map(([id,label,count]) => (
+          <button key={id} type="button" onClick={() => setFilter(id)} aria-pressed={filter === id} style={{
+            border:filter === id ? '1px solid var(--brand)' : '1px solid #DDE4EE', borderRadius:999,
+            background:filter === id ? 'var(--brand)' : '#fff', color:filter === id ? '#fff' : '#475569',
+            padding:'7px 11px', fontFamily:'inherit', fontSize:12, fontWeight:700, cursor:'pointer',
+          }}>{label} ({count})</button>
+        ))}
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(64px,1fr))', gap:8, marginBottom:14 }}>
+        {visible.map(sound => {
+          const selected = sound.id === active.id;
+          return (
+            <button key={sound.id} type="button" onClick={() => { stopAudio(); setActiveId(sound.id); }} aria-pressed={selected} style={{
+              minHeight:66, borderRadius:12, padding:'7px 5px', cursor:'pointer', fontFamily:'inherit',
+              border:selected ? '2px solid var(--brand)' : '1px solid #DDE4EE',
+              background:selected ? 'rgba(var(--brand-rgb),.1)' : '#fff', color:'#0F172A',
+            }}>
+              <span style={{ display:'block', fontSize:21, fontWeight:800 }}>/{sound.ipa}/</span>
+              <span style={{ display:'block', fontSize:10.5, color:'#64748B', marginTop:2 }}>{sound.words[0]}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <GlassCard style={{ padding:18, background:'linear-gradient(145deg,rgba(var(--brand-rgb),.08),rgba(255,255,255,.96))' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+          <div>
+            <div style={{ fontSize:38, fontWeight:800, color:'#0F172A' }}>/{active.ipa}/</div>
+            <div style={{ fontSize:12, color:'#64748B' }}>{active.kind}</div>
+          </div>
+          <button type="button" onClick={playPhoneme} style={{ border:'none', borderRadius:12, padding:'11px 14px', background:'var(--brand)', color:'#fff', fontFamily:'inherit', fontWeight:800, cursor:'pointer' }}>
+            {playing === `sound:${active.id}` ? '🔊 Tocando' : '▶ Ouvir exemplo'}
+          </button>
+        </div>
+        <div style={{ marginTop:12, color:'#475569', fontSize:13.5, lineHeight:1.55 }}>{active.tip}</div>
+        <div style={{ marginTop:14, paddingTop:13, borderTop:'1px solid rgba(15,23,42,.09)' }}>
+          <div style={{ fontSize:11, fontWeight:800, color:'#64748B', textTransform:'uppercase', letterSpacing:.5, marginBottom:8 }}>Palavras de exemplo</div>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+            {active.words.map(word => (
+              <button key={word} type="button" onClick={() => playWord(word)} style={{ border:'1px solid #D7DEE9', background:'#fff', color:'#26364D', borderRadius:10, padding:'9px 11px', fontFamily:'inherit', fontWeight:700, cursor:'pointer' }}>
+                {playing === `word:${word}` ? '🔊' : '▶'} {word}
+              </button>
+            ))}
+          </div>
+        </div>
+      </GlassCard>
+    </div>
+  );
+}
+
 // Converte um array de `questions` em HTML respondível pelo motor de exercícios.
 // Usado quando o extra não traz `content` HTML pronto (fallback).
 function questionsToHtml(questions) {
@@ -2311,10 +2446,31 @@ function questionsToHtml(questions) {
 
 function ExtrasSection({ extras, onOpenExtra }) {
   const [skill, setSkill] = useState(null);
+  const [soundLabOpen, setSoundLabOpen] = useState(false);
 
   // O aluno só vê extras não corrigidos (o histórico é do professor)
   const pendentes = extras.filter(e => e.status !== 'corrected');
   const bySkill = (id) => pendentes.filter(e => e.skill === id);
+
+  if (soundLabOpen) {
+    return (
+      <div>
+        <button onClick={() => setSoundLabOpen(false)} style={{
+          display:'flex', alignItems:'center', gap:8, background:'none', border:'none',
+          color:'var(--brand-dark)', fontWeight:700, fontSize:14, cursor:'pointer', fontFamily:'inherit',
+          padding:'4px 0', marginBottom:12,
+        }}>&#8249; Voltar para Extras</button>
+        <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+          <div style={{ fontSize:30 }}>🔊</div>
+          <div>
+            <div style={{ fontSize:18, fontWeight:800, color:'#0F172A' }}>Laboratório de Sons</div>
+            <div style={{ fontSize:12.5, color:'#64748B' }}>Descubra e pratique os 44 sons do inglês</div>
+          </div>
+        </div>
+        <SoundLabExplorer />
+      </div>
+    );
+  }
 
   if (skill) {
     const list = bySkill(skill.id);
@@ -2384,6 +2540,18 @@ function ExtrasSection({ extras, onOpenExtra }) {
           );
         })}
       </div>
+      <GlassCard tappable onClick={() => setSoundLabOpen(true)} style={{
+        marginTop:12, padding:'16px 18px', display:'flex', alignItems:'center', gap:14,
+        background:'linear-gradient(135deg,rgba(var(--brand-rgb),.12),rgba(255,255,255,.96))',
+        border:'1px solid rgba(var(--brand-rgb),.24)',
+      }}>
+        <div style={{ width:50, height:50, borderRadius:14, background:'var(--brand)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, flexShrink:0 }}>🔊</div>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ fontSize:16, fontWeight:800, color:'#0F172A' }}>Laboratório de Sons</div>
+          <div style={{ fontSize:12, color:'#64748B', marginTop:2 }}>Explore os 44 sons do inglês e ouça exemplos</div>
+        </div>
+        <span aria-hidden="true" style={{ fontSize:24, color:'var(--brand-dark)' }}>›</span>
+      </GlassCard>
     </div>
   );
 }
