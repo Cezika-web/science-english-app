@@ -354,6 +354,58 @@ function ChallengePrivateHub({ challenge, onBack, onJoin }) {
   return <div style={{ position:'fixed', inset:0, zIndex:10020, maxWidth:480, margin:'0 auto', background:'#F3F7FC', overflowY:'auto' }}><div style={{ padding:'calc(env(safe-area-inset-top,0px) + 14px) 18px 30px', color:'#fff', background:'linear-gradient(135deg,#073D43,#087982,#20A9A0)' }}><button onClick={onBack} style={challengeRoundButton}>‹</button><div style={{ textAlign:'center', marginTop:20 }}><div style={{ fontSize:36 }}>⚔️</div><h1 style={{ fontSize:23 }}>{challenge?.title || 'Desafio da turma'}</h1><p style={{ color:'rgba(255,255,255,.75)' }}>{challenge?.participantLabel || `${challenge?.participantCount || 2} participantes`}</p></div></div><div style={{ margin:-20, marginTop:-20, padding:36 }}><div style={{ padding:17, borderRadius:20, background:'#fff', border:'1px solid #DCE7F4' }}><strong style={{ color:'#0D3F82' }}>Desafio coletivo cadastrado</strong><p style={{ color:'#64748B', fontSize:12, lineHeight:1.5 }}>As rodadas coletivas serão ativadas depois do lançamento do desafio geral.</p>{!challenge?.joined && <button onClick={() => onJoin?.(challenge)} style={{ width:'100%', border:0, borderRadius:13, padding:13, background:'#087982', color:'#fff', fontWeight:900 }}>PARTICIPAR</button>}</div></div></div>;
 }
 
+function ChallengeDuels({ onClose, onLoad, onCreate, onRespond, onPlay }) {
+  const [tab, setTab] = React.useState('create');
+  const [data, setData] = React.useState(null);
+  const [selected, setSelected] = React.useState('');
+  const [busy, setBusy] = React.useState('');
+  const [message, setMessage] = React.useState('');
+  const load = React.useCallback(async () => {
+    setMessage('');
+    try { setData(await onLoad()); }
+    catch (error) { setMessage(error?.message || 'Não foi possível carregar os desafios.'); }
+  }, [onLoad]);
+  React.useEffect(() => { load(); }, [load]);
+  React.useEffect(() => {
+    const refresh = () => load();
+    window.addEventListener('peer-duel-updated', refresh);
+    return () => window.removeEventListener('peer-duel-updated', refresh);
+  }, [load]);
+  const act = async (key, task, success) => {
+    setBusy(key); setMessage('');
+    try { await task(); setMessage(success); await load(); }
+    catch (error) { setMessage(error?.message || 'Não foi possível concluir.'); }
+    finally { setBusy(''); }
+  };
+  const invites = (data?.duels || []).filter(item => item.invitedUid && !item.isCreator && ['pending','generation_error'].includes(item.status));
+  const mine = (data?.duels || []).filter(item => item.isCreator || ['accepted','preparing'].includes(item.status));
+  const dateLabel = key => {
+    const [year, month, day] = String(key || '').split('-');
+    return day ? `${day}/${month}/${year}` : '';
+  };
+  const statusLabel = duel => duel.status === 'accepted' ? 'Aceito' : duel.status === 'preparing' ? 'Preparando perguntas'
+    : duel.status === 'declined' ? 'Recusado' : duel.status === 'generation_error' ? 'Precisa tentar novamente' : 'Aguardando resposta';
+  return <div style={{ position:'absolute', inset:0, zIndex:4, background:'#F3F7FC', overflowY:'auto' }}>
+    <ChallengeSubpageHeader title="Desafiar alguém" subtitle="Disputas particulares entre alunos" onClose={onClose} />
+    <div style={{ padding:'16px 16px 34px' }}>
+      <div style={{ display:'flex', padding:4, borderRadius:14, background:'#E3ECF6' }}>{[['create','Criar'],['invites',`Convites${invites.length ? ` · ${invites.length}` : ''}`],['mine','Meus desafios']].map(([id,label]) => <button key={id} onClick={() => setTab(id)} style={{ flex:1, border:0, borderRadius:11, padding:'9px 3px', background:tab === id ? '#fff' : 'transparent', color:tab === id ? '#0D3F82' : '#70839A', boxShadow:tab === id ? '0 3px 9px rgba(7,27,58,.09)' : 'none', fontFamily:'inherit', fontSize:10.5, fontWeight:900 }}>{label}</button>)}</div>
+      {!data && !message && <div style={{ padding:24, textAlign:'center', color:'#70839A', fontSize:12 }}>Carregando alunos…</div>}
+      {message && <div role="status" style={{ marginTop:12, padding:'11px 12px', borderRadius:13, background:message.startsWith('✓') ? '#E7F8F1' : '#FFF4E5', color:message.startsWith('✓') ? '#14745C' : '#8A5200', fontSize:11.5, lineHeight:1.45 }}>{message}</div>}
+      {tab === 'create' && data && <React.Fragment>
+        <div style={{ marginTop:14, padding:16, borderRadius:18, color:'#fff', background:challengeBlue }}><span style={{ color:'#A9EEFF', fontSize:9.5, fontWeight:900, letterSpacing:1 }}>NOVO DESAFIO PARTICULAR</span><strong style={{ display:'block', fontSize:18, marginTop:5 }}>Quem você quer desafiar?</strong><p style={{ margin:'6px 0 0', color:'rgba(255,255,255,.72)', fontSize:11.5, lineHeight:1.5 }}>Vocês recebem as mesmas 10 perguntas. O placar fica separado do ranking geral.</p></div>
+        <div style={{ display:'grid', gap:7, marginTop:13 }}>{(data.opponents || []).map(student => <button key={student.uid} onClick={() => setSelected(student.uid)} style={{ display:'flex', alignItems:'center', gap:10, padding:'11px', borderRadius:14, border:`1.5px solid ${selected === student.uid ? '#147AE0' : '#DCE7F4'}`, background:selected === student.uid ? '#EDF7FF' : '#fff', fontFamily:'inherit', textAlign:'left' }}><span style={{ width:36, height:36, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background:selected === student.uid ? '#147AE0' : '#E7EFF8', color:selected === student.uid ? '#fff' : '#49627D', fontWeight:900 }}>{student.name.slice(0,1).toUpperCase()}</span><strong style={{ flex:1, color:'#183451' }}>{student.name}</strong><span style={{ color:'#147AE0', fontSize:18 }}>{selected === student.uid ? '✓' : ''}</span></button>)}</div>
+        {!(data.opponents || []).length && <div style={{ marginTop:13, padding:14, borderRadius:14, background:'#fff', color:'#64748B', fontSize:12 }}>Não há outro aluno disponível na sua escola agora.</div>}
+        <button disabled={!selected || !!busy} onClick={() => act('create', () => onCreate(selected), '✓ Convite enviado. O desafio começa na próxima segunda depois que o aluno aceitar.')} style={{ width:'100%', border:0, borderRadius:14, padding:14, marginTop:13, background:selected && !busy ? 'linear-gradient(135deg,#147AE0,#0757A5)' : '#DCE5EF', color:selected && !busy ? '#fff' : '#7F91A5', fontFamily:'inherit', fontSize:12.5, fontWeight:900 }}>{busy === 'create' ? 'ENVIANDO…' : 'ENVIAR DESAFIO'}</button>
+      </React.Fragment>}
+      {tab === 'invites' && data && <div style={{ display:'grid', gap:9, marginTop:14 }}>{invites.map(duel => <div key={duel.id} style={{ padding:16, borderRadius:18, background:'#fff', border:'1px solid #B9DDFB' }}><strong style={{ display:'block', color:'#071B3A', fontSize:14 }}>{duel.opponentName} desafiou você</strong><span style={{ display:'block', color:'#64748B', fontSize:10.5, marginTop:4 }}>10 perguntas · começa na próxima segunda</span>{duel.generationError && <span style={{ display:'block', color:'#B45309', fontSize:10.5, marginTop:7 }}>As perguntas ainda não ficaram prontas. Toque em aceitar novamente.</span>}<div style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:8, marginTop:13 }}><button disabled={!!busy} onClick={() => act(`no-${duel.id}`, () => onRespond(duel.id, false), '✓ Convite recusado.')} style={{ border:'1px solid #D8E2EC', borderRadius:12, padding:10, background:'#fff', color:'#6B7E93', fontFamily:'inherit', fontWeight:900 }}>RECUSAR</button><button disabled={!!busy} onClick={() => act(`yes-${duel.id}`, () => onRespond(duel.id, true), '✓ Desafio aceito e perguntas preparadas!')} style={{ border:0, borderRadius:12, padding:10, background:'#147AE0', color:'#fff', fontFamily:'inherit', fontWeight:900 }}>{busy === `yes-${duel.id}` ? 'PREPARANDO…' : 'ACEITAR'}</button></div></div>)}{!invites.length && <div style={{ padding:20, textAlign:'center', borderRadius:16, background:'#fff', color:'#64748B', fontSize:12 }}>Nenhum convite aguardando você.</div>}</div>}
+      {tab === 'mine' && data && <div style={{ display:'grid', gap:9, marginTop:14 }}>{mine.map(duel => {
+        const state = duel.state || {}, playable = state.phase === 'open' && state.canStart && state.round;
+        return <div key={duel.id} style={{ padding:15, borderRadius:17, background:'#fff', border:'1px solid #B9DDFB' }}><div style={{ display:'flex', justifyContent:'space-between', gap:10 }}><span><span style={{ display:'block', color:'#0D5AA7', fontSize:9, fontWeight:900, textTransform:'uppercase' }}>{statusLabel(duel)}</span><strong style={{ display:'block', color:'#102C4E', fontSize:14, marginTop:4 }}>Você × {duel.opponentName}</strong></span>{duel.weekKey && <span style={{ padding:'6px 8px', height:'fit-content', borderRadius:9, background:'#E8F3FF', color:'#0D5AA7', fontSize:9, fontWeight:900 }}>{dateLabel(duel.weekKey)}</span>}</div>{duel.scores?.length > 0 && <div style={{ display:'flex', gap:8, marginTop:11 }}>{duel.scores.map(row => <span key={row.uid} style={{ flex:1, padding:9, borderRadius:10, background:'#F4F8FC', color:'#213B5B', fontSize:10.5 }}><strong>{row.name}</strong><span style={{ display:'block', color:'#0D5AA7', marginTop:2 }}>{row.score} PTS</span></span>)}</div>}{playable && <button onClick={() => onPlay(state)} style={{ width:'100%', marginTop:12, border:0, borderRadius:12, padding:12, background:'#087982', color:'#fff', fontFamily:'inherit', fontWeight:900 }}>{state.started ? 'CONTINUAR DUELO' : 'JOGAR PARTE ' + state.part} →</button>}{state.completed && <div style={{ marginTop:10, padding:10, borderRadius:11, background:'#E7F8F1', color:'#14745C', textAlign:'center', fontSize:11, fontWeight:850 }}>✓ Sua parte está concluída</div>}{state.phase === 'upcoming' && <p style={{ margin:'9px 0 0', color:'#64748B', fontSize:10.5 }}>As perguntas abrem na segunda-feira.</p>}</div>;
+      })}{!mine.length && <div style={{ padding:20, textAlign:'center', borderRadius:16, background:'#fff', color:'#64748B', fontSize:12 }}>Você ainda não criou nem aceitou desafios.</div>}</div>}
+    </div>
+  </div>;
+}
+
 // Quinta-feira a Parte 1 fecha e a nota dela sai na hora, sem esperar domingo.
 // Quem nao respondeu ve o zero: e o preco de nao ter entrado ate quarta.
 function ChallengeParte1({ parte1 }) {
@@ -383,7 +435,7 @@ function ChallengeParte1({ parte1 }) {
   </div>;
 }
 
-function ChallengeHub({ challengeState, selectedChallenge, onBack, onStart, onJoinChallenge, onRefresh, onLoadSeason }) {
+function ChallengeHub({ challengeState, selectedChallenge, onBack, onStart, onJoinChallenge, onRefresh, onLoadSeason, onLoadDuels, onCreateDuel, onRespondDuel, onPlayDuel }) {
   const [panel, setPanel] = React.useState(null);
   const [seasonData, setSeasonData] = React.useState(null);
   const [seasonError, setSeasonError] = React.useState('');
@@ -407,11 +459,14 @@ function ChallengeHub({ challengeState, selectedChallenge, onBack, onStart, onJo
     <div className="challenge-hub-content" style={{ padding:'0 16px 28px', marginTop:-24 }}>
       <ChallengeRankingsHome data={seasonData} loading={!seasonData && !seasonError} error={seasonError} />
       <div className="challenge-hub-actions">
+        <button onClick={() => setPanel('duels')} style={{ width:'100%', display:'flex', alignItems:'center', gap:12, marginTop:12, padding:'14px 15px', borderRadius:17, border:0, background:'linear-gradient(135deg,#087982,#20A9A0)', color:'#fff', fontFamily:'inherit', textAlign:'left', boxShadow:'0 8px 18px rgba(8,121,130,.2)' }}><span style={{ width:40, height:40, borderRadius:13, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(255,255,255,.16)', fontSize:20 }}>⚔️</span><span style={{ flex:1 }}><strong style={{ display:'block', fontSize:13.5 }}>Desafiar alguém</strong><span style={{ display:'block', color:'rgba(255,255,255,.75)', fontSize:10.5, marginTop:2 }}>Convide um aluno para uma disputa particular</span></span><span style={{ fontSize:20 }}>›</span></button>
+        <button onClick={() => setPanel('rules')} style={{ width:'100%', display:'flex', alignItems:'center', gap:12, marginTop:9, padding:'12px 15px', borderRadius:17, border:'1px solid #DCE7F4', background:'#fff', color:'#0D3F82', fontFamily:'inherit', textAlign:'left' }}><span style={{ width:36, height:36, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', background:'#E7F3FF', fontSize:17 }}>?</span><span style={{ flex:1 }}><strong style={{ display:'block', fontSize:13 }}>Regras e pontuação</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:10.5, marginTop:2 }}>Veja como funciona e quantos pontos vale</span></span><span style={{ color:'#8EA0B5', fontSize:20 }}>›</span></button>
         {challengeState?.phase === 'results' ? <div style={{ marginTop:12 }}><ChallengeResults state={challengeState} /></div> : <React.Fragment><div style={{ marginTop:12, padding:18, background:'#fff', border:'1px solid #DCE7F4', borderRadius:20 }}><div style={{ display:'flex', justifyContent:'space-between', gap:10 }}><div><span style={{ display:'block', color:'#0D5AA7', fontSize:9.5, fontWeight:900, textTransform:'uppercase' }}>{state.badge}</span><strong style={{ display:'block', color:'#071B3A', fontSize:17, marginTop:3 }}>{state.title}</strong></div>{challengeState?.part && <span style={{ padding:'7px 9px', height:'fit-content', borderRadius:10, color:'#0D5AA7', background:'#E8F3FF', fontSize:10.5, fontWeight:900 }}>PARTE {challengeState.part}</span>}</div><p style={{ color:'#64748B', fontSize:11.5, lineHeight:1.5 }}>{state.detail}</p>{canStart && <button onClick={onStart} style={{ width:'100%', border:0, borderRadius:14, padding:14, color:'#fff', background:'linear-gradient(135deg,#147AE0,#0757A5)', fontFamily:'inherit', fontSize:13, fontWeight:900 }}>{challengeState.started ? 'CONTINUAR DESAFIO' : 'COMEÇAR DESAFIO'} →</button>}{challengeState?.completed && <div style={{ padding:12, borderRadius:13, background:'#E7F8F1', color:'#14745C', fontSize:12, fontWeight:850, textAlign:'center' }}>✓ Parte concluída e respostas confirmadas</div>}{(challengeState?.phase === 'unpublished' || challengeState?.phase === 'waiting') && <button onClick={onRefresh} style={{ width:'100%', border:'1px solid #D7E3F1', borderRadius:13, padding:12, background:'#fff', color:'#0D5AA7', fontWeight:850 }}>ATUALIZAR</button>}</div><ChallengeParte1 parte1={challengeState?.parte1} /></React.Fragment>}
         <button onClick={() => setPanel('season')} style={{ width:'100%', display:'flex', alignItems:'center', gap:12, marginTop:12, padding:'14px 15px', borderRadius:17, border:'1px solid #DCE7F4', background:'#fff', fontFamily:'inherit', textAlign:'left' }}><span style={{ width:40, height:40, borderRadius:13, display:'flex', alignItems:'center', justifyContent:'center', background:'#E7F3FF', fontSize:20 }}>📊</span><span style={{ flex:1 }}><strong style={{ display:'block', color:'#071B3A', fontSize:13.5 }}>Minha temporada</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:10.5, marginTop:2 }}>Gráfico, erros, porcentagem e histórico</span></span><span style={{ color:'#8EA0B5', fontSize:20 }}>›</span></button>
       </div>
     </div>
     {panel === 'rules' && <ChallengeRules onClose={() => setPanel(null)} />}
+    {panel === 'duels' && <ChallengeDuels onClose={() => setPanel(null)} onLoad={onLoadDuels} onCreate={onCreateDuel} onRespond={onRespondDuel} onPlay={onPlayDuel} />}
   </div>;
 }
 

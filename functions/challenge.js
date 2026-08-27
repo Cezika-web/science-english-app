@@ -1052,6 +1052,167 @@ ${item.text}`).join('\n\n')}`
     return { written:rounds.map(item => item.part), membros:membros.length };
   }
 
+  async function publishPeerDuelRounds(client, duelId, duel, weekKey) {
+    const membros = (await Promise.all((duel.participantUids || []).map(uid => db.doc(`students/${uid}`).get())))
+      .filter(snap => snap.exists && snap.data().archived !== true && snap.data().challengeEnabled !== false);
+    if (membros.length !== 2) throw new HttpsError('failed-precondition', 'O duelo precisa ter dois alunos ativos.');
+    const output = await generateForGroup(client, { name:duel.title || 'Duelo entre alunos' }, membros, weekKey);
+    const schedule = groupScheduleFor(weekKey, duelId);
+    const batch = db.batch();
+    [schedule.part1, schedule.part2].forEach(item => {
+      const index = item.part - 1;
+      membros.forEach(membro => {
+        batch.set(membro.ref.collection('challengeRounds').doc(item.roundId), {
+          roundId:item.roundId, weekKey, part:item.part, personalized:true,
+          groupId:duelId, groupName:duel.title || 'Duelo entre alunos', peerDuel:true,
+          schoolId:duel.schoolId || '', opensAt:item.opensAt, closesAt:item.closesAt,
+          questionCount:5, questions:output.prepared[index].questions,
+          difficulty:'duelo', status:'published', updatedAt:FieldValue.serverTimestamp(),
+        });
+        batch.set(answerKeyRef(membro.id, item.roundId, true), {
+          uid:membro.id, roundId:item.roundId, weekKey, part:item.part, groupId:duelId,
+          answers:output.prepared[index].keys, analysis:output.analysis,
+          sources:output.sources, updatedAt:FieldValue.serverTimestamp(),
+        });
+      });
+    });
+    if (registrarUso && output.usage) registrarUso(batch, {
+      tipo:'desafio-entre-alunos', uid:membros[0].id, escolaId:duel.schoolId || '',
+      uso:output.usage, extra:{ weekKey, duelId },
+    });
+    await batch.commit();
+  }
+
+  async function publicPeerDuel(doc, uid, now = new Date()) {
+    const duel = doc.data();
+    const opponentIndex = (duel.participantUids || []).findIndex(item => item !== uid);
+    const opponentUid = opponentIndex >= 0 ? duel.participantUids[opponentIndex] : '';
+    const opponentName = opponentIndex >= 0 ? (duel.participantNames || [])[opponentIndex] || 'Aluno' : 'Aluno';
+    const base = {
+      id:doc.id, status:duel.status || 'pending', weekKey:duel.weekKey || '',
+      creatorUid:duel.creatorUid || '', invitedUid:duel.invitedUid || '', opponentUid, opponentName,
+      isCreator:duel.creatorUid === uid, title:duel.title || `Você × ${opponentName}`,
+      createdAt:iso(duel.createdAt), generationError:duel.generationError || '',
+    };
+    if (duel.status !== 'accepted' || duel.generated !== true || !duel.weekKey) return base;
+    const schedule = groupScheduleFor(duel.weekKey, doc.id);
+    const stage = stageFor(now, schedule);
+    const state = {
+      enabled:true, peerDuel:true, duelId:doc.id, weekKey:duel.weekKey, title:base.title,
+      phase:stage.phase, part:stage.part, startsAt:iso(schedule.startsAt),
+      revealAt:iso(schedule.revealAt), endsAt:iso(schedule.endsAt),
+    };
+    if (stage.phase === 'open') {
+      const slot = stage.part === 1 ? schedule.part1 : schedule.part2;
+      const [roundSnap, submissionSnap] = await Promise.all([
+        db.doc(`students/${uid}/challengeRounds/${slot.roundId}`).get(),
+        db.doc(`students/${uid}/challengeSubmissions/${slot.roundId}`).get(),
+      ]);
+      if (roundSnap.exists) {
+        const round = roundSnap.data(), submission = submissionSnap.exists ? submissionSnap.data() : null;
+        Object.assign(state, {
+          canStart:submission?.completed !== true, completed:submission?.completed === true,
+          started:Boolean(submission), nextIndex:Number(submission?.answers?.length || 0),
+          round:{ roundId:round.roundId, part:round.part, questionCount:round.questionCount,
+            opensAt:iso(round.opensAt), closesAt:iso(round.closesAt), questions:publicChallengeQuestions(round.questions) },
+        });
+      }
+    }
+    const resultSnaps = await Promise.all((duel.participantUids || []).flatMap(participantUid => [1, 2].map(part =>
+      db.doc(`_challengeResults/${groupScheduleFor(duel.weekKey, doc.id)[`part${part}`].roundId}_${participantUid}`).get())));
+    const scores = (duel.participantUids || []).map((participantUid, index) => ({
+      uid:participantUid, name:(duel.participantNames || [])[index] || 'Aluno',
+      score:resultSnaps.filter(snap => snap.exists && snap.data().uid === participantUid)
+        .reduce((sum, snap) => sum + Number(snap.data().score || 0), 0),
+    }));
+    return { ...base, state, scores };
+  }
+
+  const obterDesafiosEntreAlunos = onCall(
+    { region:REGION, timeoutSeconds:60, memory:'256MiB' },
+    async request => {
+      const uid = requireAuth(request);
+      const studentSnap = await assertStudent(uid);
+      const student = studentSnap.data();
+      const [studentsSnap, duelsSnap] = await Promise.all([
+        db.collection('students').get(),
+        db.collection('_challengeDuels').where('participantUids', 'array-contains', uid).get(),
+      ]);
+      const opponents = studentsSnap.docs.filter(doc => doc.id !== uid && doc.data().archived !== true
+        && doc.data().challengeEnabled !== false && String(doc.data().schoolId || '') === String(student.schoolId || ''))
+        .map(doc => ({ uid:doc.id, name:doc.data().firstName || String(doc.data().name || 'Aluno').split(/\s+/)[0] }));
+      const duels = await Promise.all(duelsSnap.docs.map(doc => publicPeerDuel(doc, uid)));
+      duels.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+      return { opponents:opponents.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')), duels };
+    }
+  );
+
+  const criarDesafioEntreAlunos = onCall(
+    { region:REGION, timeoutSeconds:60, memory:'256MiB' },
+    async request => {
+      const uid = requireAuth(request);
+      const opponentUid = String(request.data?.opponentUid || '').trim();
+      if (!opponentUid || opponentUid === uid) throw new HttpsError('invalid-argument', 'Escolha outro aluno.');
+      const [creatorSnap, opponentSnap] = await Promise.all([assertStudent(uid), assertStudent(opponentUid)]);
+      const creator = creatorSnap.data(), opponent = opponentSnap.data();
+      if (!creator.schoolId || creator.schoolId !== opponent.schoolId) {
+        throw new HttpsError('permission-denied', 'Só é possível desafiar alunos da mesma escola.');
+      }
+      const existing = await db.collection('_challengeDuels').where('participantUids', 'array-contains', uid).get();
+      const duplicate = existing.docs.some(doc => {
+        const duel = doc.data();
+        const activeAccepted = duel.status === 'accepted' && duel.weekKey
+          && scheduleFor(duel.weekKey).endsAt.getTime() >= Date.now();
+        return (duel.participantUids || []).includes(opponentUid)
+          && (['pending','preparing'].includes(duel.status) || activeAccepted);
+      });
+      if (duplicate) throw new HttpsError('already-exists', 'Já existe um desafio aberto entre vocês.');
+      const creatorName = creator.firstName || String(creator.name || 'Aluno').split(/\s+/)[0];
+      const opponentName = opponent.firstName || String(opponent.name || 'Aluno').split(/\s+/)[0];
+      const ref = db.collection('_challengeDuels').doc();
+      await ref.set({
+        schoolId:creator.schoolId, creatorUid:uid, invitedUid:opponentUid,
+        participantUids:[uid, opponentUid], participantNames:[creatorName, opponentName],
+        title:`${creatorName} × ${opponentName}`, status:'pending', generated:false,
+        createdAt:FieldValue.serverTimestamp(), updatedAt:FieldValue.serverTimestamp(),
+      });
+      return { ok:true, id:ref.id };
+    }
+  );
+
+  const responderDesafioEntreAlunos = onCall(
+    { region:REGION, secrets:anthropicApiKey ? [anthropicApiKey] : [], timeoutSeconds:600, memory:'1GiB' },
+    async request => {
+      const uid = requireAuth(request);
+      const duelId = String(request.data?.duelId || '').trim();
+      const accept = request.data?.accept === true;
+      const ref = db.doc(`_challengeDuels/${duelId}`);
+      const snap = await ref.get();
+      if (!snap.exists) throw new HttpsError('not-found', 'Desafio não encontrado.');
+      const duel = snap.data();
+      if (duel.invitedUid !== uid) throw new HttpsError('permission-denied', 'Este convite não é seu.');
+      if (!['pending','generation_error'].includes(duel.status)) {
+        throw new HttpsError('failed-precondition', 'Este convite já foi respondido.');
+      }
+      if (!accept) {
+        await ref.set({ status:'declined', respondedAt:FieldValue.serverTimestamp(), updatedAt:FieldValue.serverTimestamp() }, { merge:true });
+        return { ok:true, status:'declined' };
+      }
+      if (!Anthropic || !anthropicApiKey) throw new HttpsError('failed-precondition', 'A geração do desafio não foi configurada.');
+      const weekKey = nextMonday(new Date());
+      await ref.set({ status:'preparing', weekKey, generationError:'', respondedAt:FieldValue.serverTimestamp(), updatedAt:FieldValue.serverTimestamp() }, { merge:true });
+      try {
+        const client = new Anthropic({ apiKey:anthropicApiKey.value() });
+        await publishPeerDuelRounds(client, duelId, duel, weekKey);
+        await ref.set({ status:'accepted', generated:true, acceptedAt:FieldValue.serverTimestamp(), updatedAt:FieldValue.serverTimestamp() }, { merge:true });
+        return { ok:true, status:'accepted', weekKey };
+      } catch (error) {
+        await ref.set({ status:'generation_error', generationError:String(error.message || error).slice(0, 500), updatedAt:FieldValue.serverTimestamp() }, { merge:true });
+        throw new HttpsError('internal', 'O convite foi aceito, mas as perguntas não ficaram prontas. Tente aceitar novamente.');
+      }
+    }
+  );
+
   // Criar a dupla tem de fazer o desafio dela aparecer na hora, e não só na leva
   // de domingo — foi o que ele pediu: "assim que for criado, já tem que aparecer
   // no aplicativo deles os dois desafios".
@@ -2618,6 +2779,7 @@ ${item.text}`).join('\n\n')}`
     notificarAberturaDesafio, lembrarDesafioManha, lembrarDesafioNoite,
     gerarDesafiosAtrasados, gerarDesafioDaSemana, gerarDesafioDaTurma,
     aceitarRespostaDesafio, ajustarPontuacaoRespostaDesafio,
+    obterDesafiosEntreAlunos, criarDesafioEntreAlunos, responderDesafioEntreAlunos,
     premiarCampeoesSemanais, concederSelosDesafio,
     marcarSelosDesafioVistos,
   };

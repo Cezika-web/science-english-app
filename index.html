@@ -4445,6 +4445,7 @@ function App() {
   const [challengeState, setChallengeState] = useState({ enabled:true, phase:'upcoming', weekKey:'2026-08-17' });
   const [classChallenges, setClassChallenges] = useState([]);
   const [selectedChallenge, setSelectedChallenge] = useState(null);
+  const [peerGameState, setPeerGameState] = useState(null);
   const [readerPost, setReaderPost]     = useState(null);
   const [openActivity, setOpenActivity] = useState(null);
   const [openPart, setOpenPart]         = useState(null);
@@ -4665,6 +4666,27 @@ function App() {
     const response = await obter(mirror ? { uid:mirrorUid.current } : {});
     return response.data;
   }
+
+  const loadPeerDuels = React.useCallback(async () => {
+    if (mirror) return { opponents:[], duels:[] };
+    const fb = await getFB();
+    const obter = fb.httpsCallable(fb.functions, 'obterDesafiosEntreAlunos');
+    return (await obter({})).data;
+  }, [mirror]);
+
+  const createPeerDuel = React.useCallback(async opponentUid => {
+    if (mirror) throw new Error('No modo espelho, esta área é somente leitura.');
+    const fb = await getFB();
+    const criar = fb.httpsCallable(fb.functions, 'criarDesafioEntreAlunos');
+    return (await criar({ opponentUid })).data;
+  }, [mirror]);
+
+  const respondPeerDuel = React.useCallback(async (duelId, accept) => {
+    if (mirror) throw new Error('No modo espelho, esta área é somente leitura.');
+    const fb = await getFB();
+    const responder = fb.httpsCallable(fb.functions, 'responderDesafioEntreAlunos', { timeout:600000 });
+    return (await responder({ duelId, accept })).data;
+  }, [mirror]);
 
   async function refreshChallengeState(fbOverride = null) {
     try {
@@ -5093,6 +5115,10 @@ function App() {
         previewAllowed={challengePreviewAccess}
         onRefresh={() => refreshChallengeState()}
         onLoadSeason={loadChallengeSeason}
+        onLoadDuels={loadPeerDuels}
+        onCreateDuel={createPeerDuel}
+        onRespondDuel={respondPeerDuel}
+        onPlayDuel={setPeerGameState}
         onBack={() => { setChallengeView(null); setSelectedChallenge(null); }}
         onStart={() => setChallengeView('game')}
         onJoinChallenge={async (challenge) => {
@@ -5123,6 +5149,21 @@ function App() {
           const response = await salvar({ roundId, questionId, value });
           if (response.data?.completed) await refreshChallengeState(fb);
           return response.data;
+        }}
+      />}
+      {peerGameState && <ChallengeGame
+        challengeState={peerGameState}
+        onExit={() => setPeerGameState(null)}
+        onFinish={() => { setPeerGameState(null); window.dispatchEvent(new Event('peer-duel-updated')); }}
+        onStart={async roundId => {
+          if (mirror) throw new Error('Aqui você só acompanha — quem responde é o aluno.');
+          const fb = await getFB();
+          return (await fb.httpsCallable(fb.functions, 'iniciarDesafioSemanal')({ roundId })).data;
+        }}
+        onSaveAnswer={async ({ roundId, questionId, value }) => {
+          if (mirror) throw new Error('Aqui você só acompanha — quem responde é o aluno.');
+          const fb = await getFB();
+          return (await fb.httpsCallable(fb.functions, 'salvarRespostaDesafio')({ roundId, questionId, value })).data;
         }}
       />}
 
