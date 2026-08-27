@@ -7511,6 +7511,9 @@
               ${item.context ? `<div style="margin:5px 0;padding:7px 9px;border-radius:8px;background:#F8FAFC;border:1px solid var(--border);color:var(--text);"><strong>Texto/contexto:</strong> ${esc(item.context)}</div>` : ''}
               ${renderChallengeAnswerOptions(item)}
               <div style="color:var(--muted);margin-top:3px;">Respondeu: <strong style="color:var(--text);">${esc(item.answer || 'Não respondeu')}</strong>${item.correct ? '' : ` · correta: <strong style="color:#166534;">${esc(item.expected || '')}</strong>`}</div>
+              ${!item.correct && item.answer && student.uid && student.roundId && item.questionId
+                ? `<button type="button" class="aceitar-resposta" data-uid="${esc(student.uid)}" data-round="${esc(student.roundId)}" data-question="${esc(item.questionId)}" style="margin-top:7px;border:1px solid #86EFAC;background:#F0FDF4;color:#166534;border-radius:8px;padding:6px 11px;font:inherit;font-size:.76rem;font-weight:800;cursor:pointer;">✓ Marcar como resposta certa</button>`
+                : ''}
             </div>`).join('') || '<div style="color:var(--muted);font-size:.76rem;">As respostas ainda estão sendo consolidadas.</div>'}</div>
           </details>`).join('');
           return `<div style="padding:12px 0;border-top:1px solid var(--border);">
@@ -7609,7 +7612,7 @@
             ${item.parcial ? `<span style="margin-left:6px;padding:1px 7px;border-radius:999px;background:#FEF3C7;color:#92400E;font-size:.74rem;font-weight:800;">chegou perto · ${item.score} de 100</span>` : ''}
             &nbsp;·&nbsp; certa: <strong style="color:#166534;">${esc(item.expected)}</strong></div>
           ${item.resposta && item.uid && item.roundId && item.questionId
-            ? `<button type="button" class="aceitar-resposta" data-uid="${esc(item.uid)}" data-round="${esc(item.roundId)}" data-question="${esc(item.questionId)}" style="margin-top:7px;border:1px solid #BBF7D0;background:#F0FDF4;color:#166534;border-radius:8px;padding:5px 10px;font:inherit;font-size:.78rem;font-weight:800;cursor:pointer;">✓ Estava certa — dar o ponto</button>`
+            ? `<button type="button" class="aceitar-resposta" data-uid="${esc(item.uid)}" data-round="${esc(item.roundId)}" data-question="${esc(item.questionId)}" style="margin-top:7px;border:1px solid #BBF7D0;background:#F0FDF4;color:#166534;border-radius:8px;padding:5px 10px;font:inherit;font-size:.78rem;font-weight:800;cursor:pointer;">✓ Marcar como resposta certa</button>`
             : ''}
           ${item.explanation ? `<div style="margin-top:6px;font-size:.82rem;color:var(--muted);background:#F8FAFC;border-left:3px solid var(--border);padding:6px 10px;border-radius:0 8px 8px 0;line-height:1.45;"><strong>Explicação da correção — só aparece depois:</strong> ${esc(item.explanation)}</div>` : ''}
         </div>`;
@@ -7740,9 +7743,9 @@
       try {
         const aceitar = httpsCallable(fns, 'aceitarRespostaDesafio', { timeout:60000 });
         await aceitar({ uid:botao.dataset.uid, roundId:botao.dataset.round, questionId:botao.dataset.question });
-        await loadChallengeResults();
+        await loadChallengeAdmin();
       } catch (error) {
-        botao.disabled = false; botao.textContent = '✓ Estava certa — dar o ponto';
+        botao.disabled = false; botao.textContent = '✓ Marcar como resposta certa';
         alert('Erro ao dar o ponto: ' + error.message);
       }
     });
@@ -7826,7 +7829,7 @@
         <div style="font-size:.71rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);">${index + 1} de ${parte.questions.length}${question.topic ? ` · ${esc(question.topic)}` : ''}${foco}${escrita ? ' · escrita' : ' · múltipla escolha'}</div>
         <div style="font-weight:700;margin:5px 0 4px;">${esc(question.prompt)}</div>
         ${question.context ? `<div style="padding:7px 10px;border-radius:8px;background:var(--bg);font-size:.83rem;margin-bottom:6px;">${esc(question.context)}</div>` : ''}
-        ${question.hint ? `<div style="font-size:.77rem;color:#92400E;margin-bottom:6px;">💡 dica que o aluno vê: ${esc(question.hint)}</div>` : ''}
+        ${question.hint ? `<div style="font-size:.77rem;color:#92400E;margin-bottom:6px;">⚠️ campo legado oculto do aluno: ${esc(question.hint)}</div>` : ''}
         <div style="display:grid;gap:3px;">${alternativas}</div>
         ${gabarito}
         ${question.explanation ? `<div style="font-size:.77rem;color:var(--muted);margin-top:7px;">${esc(question.explanation)}</div>` : ''}

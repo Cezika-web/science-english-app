@@ -80,8 +80,8 @@ const FORMAT_RULES = {
   text:'Resposta escrita: o aluno digita. Deixe options vazio e correctOption vazio, e preencha acceptedAnswers '
     + 'com TODAS as formas corretas de escrever a resposta: fragmento que completa a lacuna, frase completa, '
     + 'contrações, formas sem contração, conectores opcionais e versões mais específicas que preservem o mesmo sentido. '
-    + 'Mínimo de 3 palavras, nunca uma palavra só, e curta o '
-    + 'suficiente para ser digitada em 45 segundos no celular. A pergunta precisa admitir uma única construção '
+    + 'Em exercícios com lacuna, aceite obrigatoriamente só a palavra ou trecho que entra na lacuna; nos demais, '
+    + 'peça uma resposta curta o suficiente para ser digitada em 45 segundos no celular. A pergunta precisa admitir uma única construção '
     + 'natural, porque a correção compara texto — maiúscula, acento e pontuação são ignorados.',
   trueFalse:'Verdadeiro ou falso: exatamente duas alternativas, {"id":"a","text":"True"} e {"id":"b","text":"False"}, '
     + 'correctOption com a letra certa e acceptedAnswers vazio.',
@@ -204,6 +204,49 @@ function canonicalChallengeTopic(value) {
   return topic;
 }
 
+// Mesmo rodadas antigas podem ter `hint` gravado. O aluno nunca deve receber
+// esse campo: além de a tela ignorá-lo, removemos a propriedade na resposta do
+// servidor para uma dica legada não reaparecer por engano no futuro.
+function publicChallengeQuestions(questions) {
+  return (Array.isArray(questions) ? questions : []).map(question => {
+    const { hint, ...publicQuestion } = question || {};
+    return publicQuestion;
+  });
+}
+
+// Em exercícios de lacuna, responder somente o que falta é uma resposta completa.
+// Além de orientar o gerador, inferimos o trecho ausente a partir da frase-modelo
+// para proteger o aluno quando um pacote trouxer apenas a sentença inteira no gabarito.
+function acceptedAnswersWithBlankFragments(question, acceptedAnswers) {
+  const answers = [...new Set((acceptedAnswers || []).map(normalizeAnswer).filter(Boolean))];
+  const source = `${String(question?.prompt || '')}\n${String(question?.context || '')}`;
+  const blank = /_{2,}|\[\s*blank\s*\]/i.exec(source);
+  if (!blank) return answers;
+
+  const before = source.slice(0, blank.index);
+  const after = source.slice(blank.index + blank[0].length).replace(/^\s*\([^)]*\)/, '');
+  const left = answerTokens(before);
+  const right = answerTokens(after);
+  const candidates = [...new Set([...answers, normalizeAnswer(question?.expected)].filter(Boolean))];
+
+  candidates.forEach(candidate => {
+    const expected = answerTokens(candidate);
+    if (expected.length < 2) return;
+    let leftMatch = 0;
+    for (let size = 1; size < expected.length && size <= left.length; size += 1) {
+      if (left.slice(-size).every((token, index) => token === expected[index])) leftMatch = size;
+    }
+    let rightMatch = 0;
+    for (let size = 1; size < expected.length - leftMatch && size <= right.length; size += 1) {
+      const expectedSuffix = expected.slice(expected.length - size);
+      if (right.slice(0, size).every((token, index) => token === expectedSuffix[index])) rightMatch = size;
+    }
+    const fragment = expected.slice(leftMatch, expected.length - rightMatch).join(' ');
+    if (fragment && (leftMatch > 0 || rightMatch > 0)) answers.push(fragment);
+  });
+  return [...new Set(answers)];
+}
+
 function validateQuestion(question, index) {
   const id = String(question?.id || `q${index + 1}`).trim();
   const prompt = String(question?.prompt || '').trim();
@@ -232,7 +275,7 @@ function validateQuestion(question, index) {
 
   const focus = question?.focus === 'strong' ? 'strong' : question?.focus === 'weak' ? 'weak' : '';
   const topic = String(question?.topic || '').trim();
-  const publicQuestion = { id, type, prompt, context, hint };
+  const publicQuestion = { id, type, prompt, context };
   const answerKey = {
     id,
     expected:String(question?.expected || '').trim(),
@@ -256,8 +299,8 @@ function validateQuestion(question, index) {
     answerKey.correctOption = correctOption;
     if (!answerKey.expected) answerKey.expected = options.find(option => option.id === correctOption)?.text || '';
   } else {
-    const acceptedAnswers = (Array.isArray(question?.acceptedAnswers) ? question.acceptedAnswers : [question?.expected])
-      .map(normalizeAnswer).filter(Boolean);
+    const acceptedAnswers = acceptedAnswersWithBlankFragments(question,
+      Array.isArray(question?.acceptedAnswers) ? question.acceptedAnswers : [question?.expected]);
     if (!acceptedAnswers.length) throw new HttpsError('invalid-argument', `Pergunta ${index + 1} não tem resposta esperada.`);
     answerKey.acceptedAnswers = [...new Set(acceptedAnswers)];
   }
@@ -804,7 +847,7 @@ export function createChallengeFunctions({
         'Em format="trueFalse": exatamente duas alternativas, {"id":"a","text":"True"} e {"id":"b","text":"False"}, correctOption com a letra certa, acceptedAnswers vazio. ' +
         'Em format="text": options vazio, correctOption vazio, e acceptedAnswers com TODAS as formas corretas de escrever a resposta. ' +
         'IMPORTANTE: hint deve ser SEMPRE uma string vazia. O prompt deve dizer somente a ação neutra (por exemplo, "Translate to English:" ou "Complete the sentence:") e o texto exato da tarefa deve ficar em context. Em tradução, context precisa conter a frase literal completa que o aluno traduzirá — nunca apenas "Situação:" ou uma descrição vaga. Antes da resposta, nunca cite nome de tempo verbal, estrutura gramatical, voz ativa/passiva, causative, infinitive, base form, past participle, fórmula, regra ou qualquer pista de como construir a resposta. ' +
-        'A resposta escrita tem no MÍNIMO 3 palavras — nunca uma palavra só. Deve caber em 45 segundos digitando no celular: uma oração curta, não um parágrafo nem redação. ' +
+        'Em exercício com lacuna, o aluno pode responder somente a palavra ou o trecho ausente; inclua esse fragmento e a frase completa em acceptedAnswers. Nos demais exercícios escritos, peça uma oração curta, nunca um parágrafo ou redação. Toda resposta deve caber em 45 segundos digitando no celular. ' +
         'A correção é automática e compara construções, então a pergunta precisa admitir um alvo gramatical inequívoco. Em acceptedAnswers liste EXAUSTIVAMENTE toda variação válida: contração e forma completa ("don\'t" e "do not"), grafia americana e britânica, resposta curta e frase completa, conectores opcionais e palavras mais específicas que mantenham o mesmo sentido e a mesma regra. Não restrinja o gabarito a uma cópia literal quando outra formulação natural também responde corretamente. Se a pergunta admitir sentidos realmente diferentes, reformule para fechar o alvo. Maiúscula, acento e pontuação são ignorados na correção, então não dependa deles. ' +
         'Em todos os formatos: uma única resposta inequívoca e explicação pedagógica curta. ' +
         'Quando houver resultado da semana anterior, calibre por ele: acima de 80% dos pontos, suba a dificuldade de forma perceptível (nuance mais fina, distratores mais próximos); abaixo de 40%, mantenha exigente mas alcançável. Os erros da semana passada são pista forte de fragilidade — cubra o mesmo ponto gramatical com contexto novo, nunca repetindo a pergunta. ' +
@@ -1411,7 +1454,7 @@ ${item.text}`).join('\n\n')}`
               canStart:submission?.completed !== true, completed:submission?.completed === true,
               started:Boolean(submission), nextIndex:Number(submission?.answers?.length || 0),
               round:{ roundId:round.roundId, part:round.part, questionCount:round.questionCount,
-                opensAt:iso(round.opensAt), closesAt:iso(round.closesAt), questions:round.questions || [] },
+                opensAt:iso(round.opensAt), closesAt:iso(round.closesAt), questions:publicChallengeQuestions(round.questions) },
             };
           }
         }
@@ -1482,7 +1525,7 @@ ${item.text}`).join('\n\n')}`
         completed:submission?.completed === true,
         started:Boolean(submission), nextIndex:Number(submission?.answers?.length || 0),
         round:{ roundId:round.roundId, part:round.part, questionCount:round.questionCount,
-          opensAt:iso(round.opensAt), closesAt:iso(round.closesAt), questions:round.questions || [] },
+          opensAt:iso(round.opensAt), closesAt:iso(round.closesAt), questions:publicChallengeQuestions(round.questions) },
       };
     }
   );
@@ -1606,7 +1649,8 @@ ${item.text}`).join('\n\n')}`
           const questions = new Map((pair[`round${part}`].data()?.questions || [])
             .map(question => [String(question.id), question]));
           return {
-            uid:pair.uid, name:pair.name, answered:details.filter(item => String(item.answer || '').trim()).length,
+            uid:pair.uid, name:pair.name, roundId:String(result.roundId || ''),
+            answered:details.filter(item => String(item.answer || '').trim()).length,
             correct:details.filter(item => item.correct === true).length,
             partial:details.filter(item => item.correct !== true && Number(item.score || 0) > 0).length,
             wrong:details.filter(item => item.correct !== true && Number(item.score || 0) <= 0).length,
@@ -1620,6 +1664,7 @@ ${item.text}`).join('\n\n')}`
               const correctOptionId = String(options.find(option =>
                 normalizeAnswer(option.text) === normalizeAnswer(item.expected))?.id || '');
               return {
+                questionId:String(item.questionId || ''),
                 prompt:item.prompt || '', context:item.context || question.context || '',
                 answer:item.answer || '', expected:item.expected || '',
                 type:item.type === 'text' ? 'text' : 'multipleChoice', selectedOptionId, correctOptionId,
@@ -2470,7 +2515,7 @@ ${item.text}`).join('\n\n')}`
 
 export const challengeInternals = Object.freeze({
   localDateParts, addDays, monthKeyForWeek, weekKeyFor, nextMonday, scheduleFor, stageFor,
-  normalizeAnswer, canonicalChallengeTopic, validateQuestion, scoreWrittenAnswer, scoreAnswers, dateFrom, assertFocusMix,
+  normalizeAnswer, canonicalChallengeTopic, publicChallengeQuestions, acceptedAnswersWithBlankFragments, validateQuestion, scoreWrittenAnswer, scoreAnswers, dateFrom, assertFocusMix,
   assertFormatMix, formatOf, prepareManualStudentChallenge,
   FORMAT_MIX, FORMAT_THRESHOLD, groupScheduleFor,
 });

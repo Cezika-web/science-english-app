@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { challengeInternals } from '../challenge.js';
 
-const { prepareManualStudentChallenge } = challengeInternals;
+const { prepareManualStudentChallenge, publicChallengeQuestions, validateQuestion } = challengeInternals;
 
 const textQuestion = (id, focus) => ({
   id, type:'text', focus, topic:'Simple Present', prompt:`Escreva a frase ${id}.`,
@@ -39,7 +39,23 @@ assert.equal(prepared.prepared[0].questions.length, 5);
 assert.equal(prepared.prepared[0].keys.length, 5);
 assert.equal(prepared.prepared[0].questions[0].acceptedAnswers, undefined,
   'gabarito escrito não pode aparecer na pergunta pública');
+assert.equal(prepared.prepared[0].questions[0].hint, undefined,
+  'dica não pode aparecer na pergunta pública');
 assert.deepEqual(prepared.prepared[0].keys[0].acceptedAnswers, ['i work every day']);
+
+assert.deepEqual(publicChallengeQuestions([
+  { id:'legada', prompt:'Complete.', context:'Frase.', hint:'Use -es.' },
+]), [{ id:'legada', prompt:'Complete.', context:'Frase.' }],
+'rodada antiga também precisa sair do servidor sem hint');
+
+const lacuna = validateQuestion({
+  id:'lacuna', type:'text', focus:'weak', topic:'Simple Present',
+  prompt:'Complete a frase: My father ___ (watch) TV every night.', context:'', hint:'',
+  options:[], correctOption:'', acceptedAnswers:['My father watches TV every night.'],
+  expected:'My father watches TV every night.', explanation:'Watch recebe -es.',
+}, 0);
+assert.ok(lacuna.answerKey.acceptedAnswers.includes('watches'),
+  'o conteúdo isolado da lacuna precisa ser aceito como resposta completa');
 
 assert.throws(() => prepareManualStudentChallenge({
   uid:'student-2', studentName:'Incompleto', part1:part('p1').slice(0, 4), part2:part('p2'),
