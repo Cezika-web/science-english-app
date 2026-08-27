@@ -7545,16 +7545,29 @@
       const uid = String(item.uid || ''), roundId = String(item.roundId || ''), questionId = String(item.questionId || '');
       if (!answer || !uid || !roundId || !questionId) return '';
       const score = Math.max(0, Math.min(100, Math.round(Number(item.score || 0))));
+      const tag = String(item.teacherScoreTag || '');
+      const reason = String(item.teacherScoreReason || '');
+      const tagOption = (value, label) => `<option value="${value}"${tag === value ? ' selected' : ''}>${label}</option>`;
       const correctButton = item.correct
         ? ''
         : `<button type="button" class="aceitar-resposta" data-uid="${esc(uid)}" data-round="${esc(roundId)}" data-question="${esc(questionId)}" style="border:1px solid #86EFAC;background:#F0FDF4;color:#166534;border-radius:8px;padding:6px 11px;font:inherit;font-size:.76rem;font-weight:800;cursor:pointer;">✓ Marcar como resposta certa</button>`;
-      return `<div style="margin-top:7px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+      return `<div class="challenge-score-editor" style="margin-top:7px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
         ${correctButton}
-        <span class="challenge-score-editor" style="display:inline-flex;align-items:center;gap:5px;padding:4px 6px;border:1px solid #BFDBFE;background:#EFF6FF;border-radius:8px;color:#1E3A8A;font-size:.75rem;font-weight:800;">
+        <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 6px;border:1px solid #BFDBFE;background:#EFF6FF;border-radius:8px;color:#1E3A8A;font-size:.75rem;font-weight:800;">
           Pontos
           <input class="challenge-score-value" type="number" min="0" max="100" step="1" value="${score}" aria-label="Nova pontuação" style="width:58px;border:1px solid #93C5FD;border-radius:6px;padding:3px 5px;font:inherit;background:#fff;color:#0F172A;">
-          <button type="button" class="ajustar-pontuacao-resposta" data-uid="${esc(uid)}" data-round="${esc(roundId)}" data-question="${esc(questionId)}" style="border:0;background:#2563EB;color:#fff;border-radius:6px;padding:5px 8px;font:inherit;font-weight:800;cursor:pointer;">Aplicar</button>
         </span>
+        <select class="challenge-score-tag" aria-label="Motivo rápido da pontuação" style="min-width:190px;border:1px solid #CBD5E1;border-radius:8px;padding:7px 9px;font:inherit;font-size:.75rem;background:#fff;color:#334155;">
+          ${tagOption('', 'Motivo rápido (opcional)')}
+          ${tagOption('erro_foco', 'Erro no foco da questão')}
+          ${tagOption('erro_secundario', 'Erro secundário')}
+          ${tagOption('conteudo_recente', 'Conteúdo da última aula')}
+          ${tagOption('dificuldade_recorrente', 'Dificuldade recorrente')}
+          ${tagOption('resposta_incompleta', 'Resposta incompleta')}
+          ${tagOption('criterio_professor', 'Critério pedagógico')}
+        </select>
+        <input class="challenge-score-reason" type="text" maxlength="500" value="${esc(reason)}" placeholder="Comentário opcional sobre a nota" aria-label="Comentário sobre a pontuação" style="flex:1 1 240px;min-width:190px;border:1px solid #CBD5E1;border-radius:8px;padding:7px 9px;font:inherit;font-size:.75rem;background:#fff;color:#334155;">
+        <button type="button" class="ajustar-pontuacao-resposta" data-uid="${esc(uid)}" data-round="${esc(roundId)}" data-question="${esc(questionId)}" style="border:0;background:#2563EB;color:#fff;border-radius:7px;padding:7px 10px;font:inherit;font-size:.75rem;font-weight:800;cursor:pointer;">Aplicar</button>
       </div>`;
     }
 
@@ -7822,6 +7835,8 @@
       if (scoreButton) {
         const editor = scoreButton.closest('.challenge-score-editor');
         const input = editor?.querySelector('.challenge-score-value');
+        const tag = editor?.querySelector('.challenge-score-tag')?.value || '';
+        const reason = editor?.querySelector('.challenge-score-reason')?.value.trim() || '';
         const points = Number(input?.value);
         if (!Number.isInteger(points) || points < 0 || points > 100) {
           alert('Digite uma pontuação inteira de 0 a 100.');
@@ -7832,7 +7847,7 @@
         try {
           const ajustar = httpsCallable(fns, 'ajustarPontuacaoRespostaDesafio', { timeout:60000 });
           await ajustar({ uid:scoreButton.dataset.uid, roundId:scoreButton.dataset.round,
-            questionId:scoreButton.dataset.question, points });
+            questionId:scoreButton.dataset.question, points, tag, reason });
           await Promise.all([loadChallengeAdmin(), loadChallengeResults()]);
         } catch (error) {
           scoreButton.disabled = false; scoreButton.textContent = 'Aplicar';

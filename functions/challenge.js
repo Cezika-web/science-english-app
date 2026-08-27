@@ -474,10 +474,18 @@ function scoreAnswers(publicQuestions, keys, answers) {
   });
 }
 
-function withTeacherScore(item, value) {
+const TEACHER_SCORE_TAGS = new Set([
+  'erro_foco', 'erro_secundario', 'conteudo_recente',
+  'dificuldade_recorrente', 'resposta_incompleta', 'criterio_professor',
+]);
+
+function withTeacherScore(item, value, metadata = {}) {
   const score = Math.max(0, Math.min(100, Math.round(Number(value))));
   const next = { ...item, score, correct:score === 100, teacherScore:score,
     teacherReviewed:true, manualScore:true };
+  if (Object.prototype.hasOwnProperty.call(metadata, 'tag')) next.teacherScoreTag = metadata.tag || '';
+  if (Object.prototype.hasOwnProperty.call(metadata, 'reason')) next.teacherScoreReason = metadata.reason || '';
+  if (metadata.at) next.teacherScoreAt = metadata.at;
   if (score > 0 && score < 100) next.parcial = true;
   else delete next.parcial;
   if (score < 100) next.aceitaPeloProfessor = false;
@@ -779,9 +787,10 @@ export function createChallengeFunctions({
   async function personalizationInput(studentDoc, now = new Date()) {
     const uid = studentDoc.id;
     const cutoff = new Date(now.getTime() - LOOKBACK_DAYS * 86400000);
-    const [postSnaps, activitySnaps] = await Promise.all([
+    const [postSnaps, activitySnaps, challengeResultSnaps] = await Promise.all([
       studentDoc.ref.collection('posaulas').get(),
       studentDoc.ref.collection('activities').get(),
+      db.collection('_challengeResults').where('uid', '==', uid).get(),
     ]);
     const recentPosts = postSnaps.docs.filter(doc => {
       const data = doc.data();
@@ -829,7 +838,20 @@ export function createChallengeFunctions({
         }, 9000),
       };
     }).filter(activity => activity.text && activity.text !== '{}');
-    return { uid, posts:loadedPosts.filter(post => post.text), activityMaterials, corrections };
+    const manualAssessments = challengeResultSnaps.docs.flatMap(doc => {
+      const data = doc.data();
+      const resultDate = dateFrom(data.updatedAt || data.completedAt || data.retakenAt);
+      if (!resultDate || resultDate < cutoff || resultDate > now) return [];
+      return (data.details || []).filter(item => item.manualScore === true).map(item => ({
+        source:'ajuste_manual_desafio', date:resultDate.toISOString(), weekKey:data.weekKey || '',
+        topic:item.topic || '', prompt:compact(item.prompt || '', 700),
+        answer:compact(item.answer || '', 500), expected:compact(item.expected || '', 500),
+        score:Number(item.teacherScore ?? item.score ?? 0),
+        criterion:item.teacherScoreTag || '', teacherComment:compact(item.teacherScoreReason || '', 500),
+      }));
+    }).sort((a, b) => a.date.localeCompare(b.date)).slice(-30);
+    return { uid, posts:loadedPosts.filter(post => post.text), activityMaterials,
+      corrections:[...corrections, ...manualAssessments] };
   }
 
   // Como a leva roda depois do ranking sair, o resultado da semana anterior já
@@ -870,7 +892,7 @@ export function createChallengeFunctions({
       system:[{ type:'text', text:
         `Você cria desafios individuais de inglês para o Science English. Use SOMENTE fatos linguísticos, vocabulário e contextos presentes nos ${sourceKind} fornecidos. ` +
         `A dificuldade deve ser HARD em relação ao nível CEFR do aluno${isAmorzinho ? ' e, para a Amorzinho, especialmente exigente' : ''}: exija aplicação, discriminação de nuances e recuperação ativa, sem ensinar conteúdo novo. ` +
-        'Use as correções para identificar padrões reais. Quando não houver correções suficientes, trate conteúdos repetidos ou muito explicados como fragilidades prováveis e deixe isso claro apenas na análise. ' +
+        'Use as correções para identificar padrões reais. Ajustes manuais de nota feitos pelo professor são critérios pedagógicos autoritativos: considere a categoria, o comentário e a relação entre erro e pontuação para reconhecer o que é central, secundário ou recorrente para este aluno. Não copie a nota mecanicamente; aplique o padrão ao tópico e ao contexto. Quando não houver correções suficientes, trate conteúdos repetidos ou muito explicados como fragilidades prováveis e deixe isso claro apenas na análise. ' +
         'Em CADA parte, produza exatamente 3 perguntas focus=weak e 2 focus=strong. ' +
         (formato === 'escrita'
           ? 'Em CADA parte, todas as 5 perguntas devem ter format="text" — o aluno digita a resposta. '
@@ -1128,11 +1150,19 @@ ${item.text}`).join('\n\n')}`
       const roundId = String(request.data?.roundId || '').trim();
       const questionId = String(request.data?.questionId || '').trim();
       const points = Number(request.data?.points);
+      const tag = String(request.data?.tag || '').trim();
+      const reason = String(request.data?.reason || '').trim();
       if (!uid || !roundId || !questionId) {
         throw new HttpsError('invalid-argument', 'Faltou aluno, rodada ou pergunta.');
       }
       if (!Number.isInteger(points) || points < 0 || points > 100) {
         throw new HttpsError('invalid-argument', 'A pontuação precisa ser um número inteiro de 0 a 100.');
+      }
+      if (tag && !TEACHER_SCORE_TAGS.has(tag)) {
+        throw new HttpsError('invalid-argument', 'O motivo rápido da pontuação não é válido.');
+      }
+      if (reason.length > 500) {
+        throw new HttpsError('invalid-argument', 'O comentário pode ter no máximo 500 caracteres.');
       }
 
       const resultRef = db.doc(`_challengeResults/${roundId}_${uid}`);
@@ -1143,7 +1173,7 @@ ${item.text}`).join('\n\n')}`
         throw new HttpsError('not-found', 'Pergunta não encontrada neste resultado.');
       }
       const nextDetails = details.map(item => item.questionId === questionId
-        ? withTeacherScore(item, points) : item);
+        ? withTeacherScore(item, points, { tag, reason, at:new Date().toISOString() }) : item);
       const score = nextDetails.reduce((sum, item) => sum + Number(item.score || 0), 0);
       await resultRef.set({ details:nextDetails, score,
         teacherReviewedAt:FieldValue.serverTimestamp(), updatedAt:FieldValue.serverTimestamp() }, { merge:true });
@@ -1153,7 +1183,7 @@ ${item.text}`).join('\n\n')}`
         const rankingSnap = await db.doc(`challengeRankings/${weekKey}`).get();
         if (rankingSnap.exists) await buildRanking(weekKey);
       }
-      return { ok:true, points, score };
+      return { ok:true, points, score, tag, reason };
     }
   );
 
@@ -1742,6 +1772,8 @@ ${item.text}`).join('\n\n')}`
                 options:options.map(option => ({ id:String(option.id || ''), text:String(option.text || '') })),
                 correct:item.correct === true, score:Number(item.score || 0),
                 parcial:item.correct !== true && Number(item.score || 0) > 0,
+                teacherScoreTag:item.teacherScoreTag || '',
+                teacherScoreReason:item.teacherScoreReason || '',
               };
             }),
           };
@@ -2345,6 +2377,8 @@ ${item.text}`).join('\n\n')}`
           if (item.correct) pergunta.acertos += 1; else pergunta.erros += 1;
           pergunta.respostas.push({ aluno:quem, resposta:String(item.answer || '').trim(), acertou:item.correct === true,
             score:Number(item.score || 0), parcial:item.parcial === true,
+            teacherScoreTag:item.teacherScoreTag || '',
+            teacherScoreReason:item.teacherScoreReason || '',
             type:item.type === 'text' ? 'text' : 'multipleChoice', selectedOptionId, correctOptionId,
             options:opcoes.map(option => ({ id:String(option.id || ''), text:String(option.text || '') })),
             uid:resultado.uid, roundId:resultado.roundId || '', questionId:item.questionId || '' });

@@ -64,5 +64,12 @@ assert.deepEqual(withTeacherScore({ score:90, correct:false, parcial:true }, 0),
   score:0, correct:false, teacherScore:0, teacherReviewed:true, manualScore:true,
   aceitaPeloProfessor:false,
 }, 'zero pontos não permanece parcial');
+assert.deepEqual(withTeacherScore({ score:35, correct:false }, 45, {
+  tag:'erro_foco', reason:'Era o conteúdo principal da aula.', at:'2026-08-27T12:00:00.000Z',
+}), {
+  score:45, correct:false, teacherScore:45, teacherReviewed:true, manualScore:true,
+  teacherScoreTag:'erro_foco', teacherScoreReason:'Era o conteúdo principal da aula.',
+  teacherScoreAt:'2026-08-27T12:00:00.000Z', parcial:true, aceitaPeloProfessor:false,
+}, 'nota manual guarda o critério pedagógico');
 
 console.log(`OK — ${cases.length} cenários de correção e calendário mensal validados.`);
