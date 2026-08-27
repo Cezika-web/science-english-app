@@ -7540,6 +7540,24 @@
       }).join('')}</div>`;
     }
 
+    function renderChallengeScoreActions(item) {
+      const answer = String(item.answer || item.resposta || '').trim();
+      const uid = String(item.uid || ''), roundId = String(item.roundId || ''), questionId = String(item.questionId || '');
+      if (!answer || !uid || !roundId || !questionId) return '';
+      const score = Math.max(0, Math.min(100, Math.round(Number(item.score || 0))));
+      const correctButton = item.correct
+        ? ''
+        : `<button type="button" class="aceitar-resposta" data-uid="${esc(uid)}" data-round="${esc(roundId)}" data-question="${esc(questionId)}" style="border:1px solid #86EFAC;background:#F0FDF4;color:#166534;border-radius:8px;padding:6px 11px;font:inherit;font-size:.76rem;font-weight:800;cursor:pointer;">✓ Marcar como resposta certa</button>`;
+      return `<div style="margin-top:7px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+        ${correctButton}
+        <span class="challenge-score-editor" style="display:inline-flex;align-items:center;gap:5px;padding:4px 6px;border:1px solid #BFDBFE;background:#EFF6FF;border-radius:8px;color:#1E3A8A;font-size:.75rem;font-weight:800;">
+          Pontos
+          <input class="challenge-score-value" type="number" min="0" max="100" step="1" value="${score}" aria-label="Nova pontuação" style="width:58px;border:1px solid #93C5FD;border-radius:6px;padding:3px 5px;font:inherit;background:#fff;color:#0F172A;">
+          <button type="button" class="ajustar-pontuacao-resposta" data-uid="${esc(uid)}" data-round="${esc(roundId)}" data-question="${esc(questionId)}" style="border:0;background:#2563EB;color:#fff;border-radius:6px;padding:5px 8px;font:inherit;font-weight:800;cursor:pointer;">Aplicar</button>
+        </span>
+      </div>`;
+    }
+
     async function loadChallengeTemplate() {
       const area = document.getElementById('challenge-json');
       const msg = document.getElementById('challenge-msg');
@@ -7579,9 +7597,7 @@
               ${item.context ? `<div style="margin:5px 0;padding:7px 9px;border-radius:8px;background:#F8FAFC;border:1px solid var(--border);color:var(--text);"><strong>Texto/contexto:</strong> ${esc(item.context)}</div>` : ''}
               ${renderChallengeAnswerOptions(item)}
               <div style="color:var(--muted);margin-top:3px;">Respondeu: <strong style="color:var(--text);">${esc(item.answer || 'Não respondeu')}</strong>${item.correct ? '' : ` · correta: <strong style="color:#166534;">${esc(item.expected || '')}</strong>`}</div>
-              ${!item.correct && item.answer && student.uid && student.roundId && item.questionId
-                ? `<button type="button" class="aceitar-resposta" data-uid="${esc(student.uid)}" data-round="${esc(student.roundId)}" data-question="${esc(item.questionId)}" style="margin-top:7px;border:1px solid #86EFAC;background:#F0FDF4;color:#166534;border-radius:8px;padding:6px 11px;font:inherit;font-size:.76rem;font-weight:800;cursor:pointer;">✓ Marcar como resposta certa</button>`
-                : ''}
+              ${renderChallengeScoreActions({ ...item, uid:student.uid, roundId:student.roundId })}
             </div>`).join('') || '<div style="color:var(--muted);font-size:.76rem;">As respostas ainda estão sendo consolidadas.</div>'}</div>
           </details>`).join('');
           return `<div style="padding:12px 0;border-top:1px solid var(--border);">
@@ -7679,9 +7695,7 @@
             : '<em style="color:var(--muted);">não respondeu</em>'}
             ${item.parcial ? `<span style="margin-left:6px;padding:1px 7px;border-radius:999px;background:#FEF3C7;color:#92400E;font-size:.74rem;font-weight:800;">chegou perto · ${item.score} de 100</span>` : ''}
             &nbsp;·&nbsp; certa: <strong style="color:#166534;">${esc(item.expected)}</strong></div>
-          ${item.resposta && item.uid && item.roundId && item.questionId
-            ? `<button type="button" class="aceitar-resposta" data-uid="${esc(item.uid)}" data-round="${esc(item.roundId)}" data-question="${esc(item.questionId)}" style="margin-top:7px;border:1px solid #BBF7D0;background:#F0FDF4;color:#166534;border-radius:8px;padding:5px 10px;font:inherit;font-size:.78rem;font-weight:800;cursor:pointer;">✓ Marcar como resposta certa</button>`
-            : ''}
+          ${renderChallengeScoreActions({ ...item, answer:item.resposta, correct:false })}
           ${item.explanation ? `<div style="margin-top:6px;font-size:.82rem;color:var(--muted);background:#F8FAFC;border-left:3px solid var(--border);padding:6px 10px;border-radius:0 8px 8px 0;line-height:1.45;"><strong>Explicação da correção — só aparece depois:</strong> ${esc(item.explanation)}</div>` : ''}
         </div>`;
 
@@ -7804,6 +7818,28 @@
     // Variante válida que o gabarito não previu: em vez de o aluno perder ponto,
     // o professor dá como certa aqui. Corrige a nota dele e ensina o gabarito.
     document.addEventListener('click', async evento => {
+      const scoreButton = evento.target.closest('.ajustar-pontuacao-resposta');
+      if (scoreButton) {
+        const editor = scoreButton.closest('.challenge-score-editor');
+        const input = editor?.querySelector('.challenge-score-value');
+        const points = Number(input?.value);
+        if (!Number.isInteger(points) || points < 0 || points > 100) {
+          alert('Digite uma pontuação inteira de 0 a 100.');
+          input?.focus();
+          return;
+        }
+        scoreButton.disabled = true; scoreButton.textContent = 'Salvando...';
+        try {
+          const ajustar = httpsCallable(fns, 'ajustarPontuacaoRespostaDesafio', { timeout:60000 });
+          await ajustar({ uid:scoreButton.dataset.uid, roundId:scoreButton.dataset.round,
+            questionId:scoreButton.dataset.question, points });
+          await Promise.all([loadChallengeAdmin(), loadChallengeResults()]);
+        } catch (error) {
+          scoreButton.disabled = false; scoreButton.textContent = 'Aplicar';
+          alert('Erro ao alterar a pontuação: ' + error.message);
+        }
+        return;
+      }
       const botao = evento.target.closest('.aceitar-resposta');
       if (!botao) return;
       if (!confirm('Dar essa resposta como certa?\n\nO aluno ganha os 100 pontos da pergunta e essa forma passa a ser aceita no gabarito, para ninguém mais errar pelo mesmo motivo.')) return;
@@ -7811,7 +7847,7 @@
       try {
         const aceitar = httpsCallable(fns, 'aceitarRespostaDesafio', { timeout:60000 });
         await aceitar({ uid:botao.dataset.uid, roundId:botao.dataset.round, questionId:botao.dataset.question });
-        await loadChallengeAdmin();
+        await Promise.all([loadChallengeAdmin(), loadChallengeResults()]);
       } catch (error) {
         botao.disabled = false; botao.textContent = '✓ Marcar como resposta certa';
         alert('Erro ao dar o ponto: ' + error.message);

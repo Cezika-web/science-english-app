@@ -474,6 +474,16 @@ function scoreAnswers(publicQuestions, keys, answers) {
   });
 }
 
+function withTeacherScore(item, value) {
+  const score = Math.max(0, Math.min(100, Math.round(Number(value))));
+  const next = { ...item, score, correct:score === 100, teacherScore:score,
+    teacherReviewed:true, manualScore:true };
+  if (score > 0 && score < 100) next.parcial = true;
+  else delete next.parcial;
+  if (score < 100) next.aceitaPeloProfessor = false;
+  return next;
+}
+
 function requireAuth(request) {
   if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Entre no aplicativo para acessar o desafio.');
   return request.auth.uid;
@@ -1061,8 +1071,8 @@ ${item.text}`).join('\n\n')}`
       if (!alvo) throw new HttpsError('not-found', 'Pergunta não encontrada neste resultado.');
 
       const novos = detalhes.map(item => item.questionId === questionId
-        ? { ...item, score:100, correct:true, parcial:false,
-            aceitaPeloProfessor:true, teacherReviewed:true } : item);
+        ? { ...withTeacherScore(item, 100), parcial:false,
+            aceitaPeloProfessor:true } : item);
       const score = novos.reduce((soma, item) => soma + Number(item.score || 0), 0);
 
       // O gabarito também aprende: a mesma variante deixa de ser erro para quem
@@ -1105,6 +1115,45 @@ ${item.text}`).join('\n\n')}`
         if (rankingSnap.exists) await buildRanking(weekKey);
       }
       return { ok:true, score, noGabarito, jaEstavaCerta:alvo.correct === true };
+    }
+  );
+
+  // Ajuste pedagógico pontual: o professor pode manter parte dos pontos ou
+  // retirar alguns sem declarar que a variante inteira deve entrar no gabarito.
+  const ajustarPontuacaoRespostaDesafio = onCall(
+    { region:REGION, timeoutSeconds:60, memory:'256MiB' },
+    async request => {
+      requireAdmin(request, adminEmails);
+      const uid = String(request.data?.uid || '').trim();
+      const roundId = String(request.data?.roundId || '').trim();
+      const questionId = String(request.data?.questionId || '').trim();
+      const points = Number(request.data?.points);
+      if (!uid || !roundId || !questionId) {
+        throw new HttpsError('invalid-argument', 'Faltou aluno, rodada ou pergunta.');
+      }
+      if (!Number.isInteger(points) || points < 0 || points > 100) {
+        throw new HttpsError('invalid-argument', 'A pontuação precisa ser um número inteiro de 0 a 100.');
+      }
+
+      const resultRef = db.doc(`_challengeResults/${roundId}_${uid}`);
+      const resultSnap = await resultRef.get();
+      if (!resultSnap.exists) throw new HttpsError('not-found', 'Resultado não encontrado.');
+      const details = resultSnap.data().details || [];
+      if (!details.some(item => item.questionId === questionId)) {
+        throw new HttpsError('not-found', 'Pergunta não encontrada neste resultado.');
+      }
+      const nextDetails = details.map(item => item.questionId === questionId
+        ? withTeacherScore(item, points) : item);
+      const score = nextDetails.reduce((sum, item) => sum + Number(item.score || 0), 0);
+      await resultRef.set({ details:nextDetails, score,
+        teacherReviewedAt:FieldValue.serverTimestamp(), updatedAt:FieldValue.serverTimestamp() }, { merge:true });
+
+      const weekKey = resultSnap.data().weekKey;
+      if (weekKey && !resultSnap.data().groupId) {
+        const rankingSnap = await db.doc(`challengeRankings/${weekKey}`).get();
+        if (rankingSnap.exists) await buildRanking(weekKey);
+      }
+      return { ok:true, points, score };
     }
   );
 
@@ -2185,6 +2234,10 @@ ${item.text}`).join('\n\n')}`
         const details = (result.details || []).map(item => {
           // A decisão explícita do professor é final: um recálculo nunca pode
           // retirar os pontos, a posição ou um selo que já foram confirmados.
+          if (item.teacherScore !== undefined && item.teacherScore !== null
+            && Number.isFinite(Number(item.teacherScore))) {
+            return withTeacherScore(item, Number(item.teacherScore));
+          }
           if (item.teacherReviewed === true || item.aceitaPeloProfessor === true) {
             return { ...item, score:100, correct:true, parcial:false };
           }
@@ -2530,14 +2583,15 @@ ${item.text}`).join('\n\n')}`
     salvarRespostaDesafio, obterStatusDesafioAdmin, finalizarDesafioSemanal,
     notificarAberturaDesafio, lembrarDesafioManha, lembrarDesafioNoite,
     gerarDesafiosAtrasados, gerarDesafioDaSemana, gerarDesafioDaTurma,
-    aceitarRespostaDesafio, premiarCampeoesSemanais, concederSelosDesafio,
+    aceitarRespostaDesafio, ajustarPontuacaoRespostaDesafio,
+    premiarCampeoesSemanais, concederSelosDesafio,
     marcarSelosDesafioVistos,
   };
 }
 
 export const challengeInternals = Object.freeze({
   localDateParts, addDays, monthKeyForWeek, weekKeyFor, nextMonday, scheduleFor, stageFor,
-  normalizeAnswer, canonicalChallengeTopic, publicChallengeQuestions, acceptedAnswersWithBlankFragments, assertRequiredReferences, validateQuestion, scoreWrittenAnswer, scoreAnswers, dateFrom, assertFocusMix,
+  normalizeAnswer, canonicalChallengeTopic, publicChallengeQuestions, acceptedAnswersWithBlankFragments, assertRequiredReferences, validateQuestion, scoreWrittenAnswer, scoreAnswers, withTeacherScore, dateFrom, assertFocusMix,
   assertFormatMix, formatOf, prepareManualStudentChallenge,
   FORMAT_MIX, FORMAT_THRESHOLD, groupScheduleFor,
 });

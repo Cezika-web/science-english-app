@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { challengeInternals } from '../challenge.js';
 
-const { scoreWrittenAnswer, monthKeyForWeek } = challengeInternals;
+const { scoreWrittenAnswer, withTeacherScore, monthKeyForWeek } = challengeInternals;
 
 const cases = [
   {
@@ -52,5 +52,17 @@ assert.equal(monthKeyForWeek('2026-08-17'), '2026-08', '17/08 fica na 3ª semana
 assert.equal(monthKeyForWeek('2026-08-24'), '2026-08', '24/08 fica na 4ª semana de agosto');
 assert.equal(monthKeyForWeek('2026-08-31'), '2026-09', '31/08 abre a 1ª semana de setembro');
 assert.equal(monthKeyForWeek('2026-09-28'), '2026-10', '28/09 abre a 1ª semana de outubro');
+
+assert.deepEqual(withTeacherScore({ score:35, correct:false }, 90), {
+  score:90, correct:false, teacherScore:90, teacherReviewed:true, manualScore:true, parcial:true,
+  aceitaPeloProfessor:false,
+}, 'nota manual parcial fica protegida');
+assert.deepEqual(withTeacherScore({ score:90, correct:false, parcial:true }, 100), {
+  score:100, correct:true, teacherScore:100, teacherReviewed:true, manualScore:true,
+}, '100 pontos vira resposta correta');
+assert.deepEqual(withTeacherScore({ score:90, correct:false, parcial:true }, 0), {
+  score:0, correct:false, teacherScore:0, teacherReviewed:true, manualScore:true,
+  aceitaPeloProfessor:false,
+}, 'zero pontos não permanece parcial');
 
 console.log(`OK — ${cases.length} cenários de correção e calendário mensal validados.`);
