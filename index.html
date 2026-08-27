@@ -2337,28 +2337,116 @@ const SOUND_LAB_SOUNDS = [
   { id:'r', ipa:'r', group:'consonant', kind:'R inglês', words:['red','around','car'], tip:'Não toque o céu da boca e não vibre a ponta da língua.' },
   { id:'y', ipa:'j', group:'consonant', kind:'som de Y', words:['yes','use','music'], tip:'Deslize rapidamente para a vogal seguinte.' },
   { id:'w', ipa:'w', group:'consonant', kind:'semivogal', words:['we','away','quick'], tip:'Arredonde os lábios e deslize para a vogal seguinte.' },
+].map(sound => ({ ...sound, audio:`audio/phonemes/${sound.id}.wav` }));
+
+const SOUND_LAB_IPA_ALIASES = [
+  { symbol:'oʊ', ids:['oh'] }, { symbol:'ɝ', ids:['er-long'] }, { symbol:'ɚ', ids:['schwa','r'] },
+  { symbol:'əː', ids:['schwa'] },
+  { symbol:'ɡ', ids:['g'] }, { symbol:'ɹ', ids:['r'] }, { symbol:'ɛ', ids:['e'] },
+  { symbol:'ɐ', ids:['strut'] }, { symbol:'ɑ', ids:['a-long'] }, { symbol:'ɔ', ids:['aw-long'] },
+  { symbol:'i', ids:['i-long'] }, { symbol:'u', ids:['u-long'] }, { symbol:'ɫ', ids:['l'] },
 ];
+
+const SOUND_LAB_IPA_MATCHES = [
+  ...SOUND_LAB_SOUNDS.map(sound => ({ symbol:sound.ipa, ids:[sound.id] })),
+  ...SOUND_LAB_IPA_ALIASES,
+].sort((a,b) => b.symbol.length - a.symbol.length);
+
+function soundLabTokenizeIpa(value) {
+  const clean = String(value || '')
+    .normalize('NFC')
+    .replace(/[\/\[\](){}\s.ˈˌ͡‿-]/g, '');
+  const tokens = [];
+  let cursor = 0;
+  while (cursor < clean.length) {
+    const match = SOUND_LAB_IPA_MATCHES.find(item => clean.startsWith(item.symbol, cursor));
+    if (match) {
+      match.ids.forEach(id => tokens.push({ symbol:match.symbol, sound:SOUND_LAB_SOUNDS.find(item => item.id === id) || null }));
+      cursor += match.symbol.length;
+    } else {
+      const symbol = Array.from(clean.slice(cursor))[0];
+      tokens.push({ symbol, sound:null });
+      cursor += symbol.length;
+    }
+  }
+  return tokens;
+}
+
+function soundLabPickPhonetic(payload) {
+  const candidates = [];
+  if (Array.isArray(payload?.entries)) {
+    payload.entries.forEach(entry => {
+      (Array.isArray(entry?.pronunciations) ? entry.pronunciations : []).forEach(item => {
+        if (item?.type === 'ipa' && item?.text) candidates.push({ text:item.text, tags:item.tags || [], audio:'' });
+      });
+    });
+  }
+  const entries = Array.isArray(payload) ? payload : [];
+  (Array.isArray(entries) ? entries : []).forEach(entry => {
+    if (entry?.phonetic) candidates.push({ text:entry.phonetic, tags:[], audio:'' });
+    (Array.isArray(entry?.phonetics) ? entry.phonetics : []).forEach(item => {
+      if (item?.text) candidates.push({ text:item.text, tags:[], audio:item.audio || '' });
+    });
+  });
+  const unique = candidates.filter((item,index,list) => list.findIndex(other => other.text === item.text) === index);
+  unique.sort((a,b) => {
+    const score = item => (/(received pronunciation|british|uk)/i.test((item.tags || []).join(' ')) ? 10 : 0)
+      + (/(_gb_|-uk|\/uk\/)/i.test(item.audio) ? 6 : 0)
+      + (/[ɒɜ]|\u0259ʊ|ɑː/.test(item.text) ? 4 : 0)
+      - (/oʊ|ɝ|ɚ/.test(item.text) ? 2 : 0);
+    return score(b) - score(a);
+  });
+  return unique[0]?.text || '';
+}
 
 function SoundLabExplorer() {
   const [filter, setFilter] = useState('all');
   const [activeId, setActiveId] = useState(SOUND_LAB_SOUNDS[0].id);
   const [playing, setPlaying] = useState('');
+  const [wordInput, setWordInput] = useState('');
+  const [wordResult, setWordResult] = useState(null);
+  const [wordLoading, setWordLoading] = useState(false);
+  const audioRef = useRef(null);
+  const sequenceRef = useRef(0);
   const active = SOUND_LAB_SOUNDS.find(sound => sound.id === activeId) || SOUND_LAB_SOUNDS[0];
   const visible = SOUND_LAB_SOUNDS.filter(sound => filter === 'all' || sound.group === filter);
 
   const stopAudio = () => {
+    sequenceRef.current += 1;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    }
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     setPlaying('');
   };
 
   useEffect(() => () => stopAudio(), []);
 
-  const playPhoneme = () => {
+  const playSoundFile = (sound, key, sequenceToken) => new Promise(resolve => {
+    if (!sound || (sequenceToken != null && sequenceToken !== sequenceRef.current)) { resolve(false); return; }
+    const player = new Audio(sound.audio);
+    audioRef.current = player;
+    setPlaying(key);
+    const finish = ok => {
+      if (audioRef.current === player) audioRef.current = null;
+      resolve(ok);
+    };
+    player.onended = () => finish(true);
+    player.onerror = () => finish(false);
+    const promise = player.play();
+    if (promise?.catch) promise.catch(() => finish(false));
+  });
+
+  const playPhoneme = sound => {
     stopAudio();
-    setPlaying(`sound:${active.id}`);
-    pronounceEnglish(active.words[0], {
-      onEnd:() => setPlaying(''),
-      onError:() => { setPlaying(''); showToast('Este aparelho ainda não tem voz em inglês.'); },
+    const target = sound || active;
+    const token = sequenceRef.current;
+    playSoundFile(target, `sound:${target.id}`, token).then(ok => {
+      if (token !== sequenceRef.current) return;
+      setPlaying('');
+      if (!ok) showToast('Não consegui reproduzir este fonema agora.');
     });
   };
 
@@ -2371,8 +2459,87 @@ function SoundLabExplorer() {
     });
   };
 
+  const analyzeWord = async event => {
+    event.preventDefault();
+    const word = wordInput.trim().toLowerCase();
+    if (!/^[a-z]+(?:['-][a-z]+)*$/.test(word)) {
+      showToast('Digite uma palavra em inglês, sem números.');
+      return;
+    }
+    stopAudio();
+    setWordLoading(true);
+    setWordResult(null);
+    try {
+      const response = await fetch(`https://freedictionaryapi.com/api/v1/entries/en/${encodeURIComponent(word)}`);
+      if (!response.ok) throw new Error('not-found');
+      const entries = await response.json();
+      const phonetic = soundLabPickPhonetic(entries);
+      const tokens = soundLabTokenizeIpa(phonetic);
+      if (!phonetic || !tokens.some(token => token.sound)) throw new Error('no-phonetic');
+      setWordResult({ word, phonetic, tokens, sourceUrl:entries?.source?.url || '' });
+    } catch (error) {
+      setWordResult({ word, error:true, tokens:[] });
+    } finally {
+      setWordLoading(false);
+    }
+  };
+
+  const playWordPhonemes = async () => {
+    const sounds = (wordResult?.tokens || []).map(token => token.sound).filter(Boolean);
+    if (!sounds.length) return;
+    stopAudio();
+    const token = sequenceRef.current;
+    setPlaying('sequence');
+    for (const sound of sounds) {
+      if (token !== sequenceRef.current) return;
+      const ok = await playSoundFile(sound, 'sequence', token);
+      if (!ok) {
+        if (token === sequenceRef.current) showToast('Não consegui tocar a sequência completa.');
+        break;
+      }
+      await new Promise(resolve => setTimeout(resolve, 180));
+    }
+    if (token === sequenceRef.current) setPlaying('');
+  };
+
   return (
     <div>
+      <GlassCard style={{ padding:16, marginBottom:16, border:'1.5px solid rgba(var(--brand-rgb),.25)', background:'linear-gradient(145deg,#fff,rgba(var(--brand-rgb),.06))' }}>
+        <div style={{ fontSize:15, fontWeight:800, color:'#0F172A', marginBottom:4 }}>Monte uma palavra som por som</div>
+        <div style={{ fontSize:12.5, color:'#64748B', lineHeight:1.45, marginBottom:11 }}>Digite uma palavra em inglês para ver e ouvir cada fonema separadamente.</div>
+        <form onSubmit={analyzeWord} style={{ display:'flex', gap:8, alignItems:'stretch' }}>
+          <input value={wordInput} onChange={event => setWordInput(event.target.value)} placeholder="Ex.: teacher" autoCapitalize="none" autoCorrect="off" spellCheck="false" aria-label="Palavra em inglês" style={{ flex:1, minWidth:0, border:'1px solid #CBD5E1', borderRadius:11, padding:'11px 12px', fontFamily:'inherit', fontSize:15, color:'#0F172A', outline:'none' }} />
+          <button type="submit" disabled={wordLoading} style={{ border:'none', borderRadius:11, padding:'10px 14px', background:'var(--brand)', color:'#fff', fontFamily:'inherit', fontWeight:800, cursor:wordLoading?'wait':'pointer', opacity:wordLoading ? .72 : 1 }}>
+            {wordLoading ? 'Buscando…' : 'Executar'}
+          </button>
+        </form>
+        {wordResult?.error && <div role="alert" style={{ marginTop:11, padding:'10px 12px', borderRadius:10, background:'#FFF7ED', color:'#9A3412', fontSize:12.5 }}>Não encontrei a transcrição dessa palavra. Confira a escrita e tente novamente.</div>}
+        {wordResult && !wordResult.error && (
+          <div style={{ marginTop:14, paddingTop:13, borderTop:'1px solid rgba(15,23,42,.09)' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, flexWrap:'wrap' }}>
+              <div>
+                <div style={{ fontSize:17, fontWeight:800, color:'#0F172A' }}>{wordResult.word}</div>
+                <div style={{ fontSize:13, color:'#64748B', marginTop:1 }}>/{String(wordResult.phonetic).replace(/[\/\[\]]/g,'')}/</div>
+              </div>
+              <button type="button" onClick={playWordPhonemes} style={{ border:'1px solid rgba(var(--brand-rgb),.35)', borderRadius:10, padding:'8px 10px', background:'#fff', color:'var(--brand-dark)', fontFamily:'inherit', fontSize:12, fontWeight:800, cursor:'pointer' }}>
+                {playing === 'sequence' ? '🔊 Tocando…' : '▶ Ouvir todos, som por som'}
+              </button>
+            </div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:7, marginTop:11 }}>
+              {wordResult.tokens.map((token,index) => token.sound ? (
+                <button key={`${token.symbol}-${index}`} type="button" onClick={() => playPhoneme(token.sound)} title={`Ouvir o fonema /${token.sound.ipa}/`} style={{ border:'1px solid #D7DEE9', background:'#fff', color:'#0F172A', borderRadius:10, minWidth:48, padding:'9px 10px', fontFamily:'inherit', fontSize:18, fontWeight:800, cursor:'pointer' }}>
+                  {playing === `sound:${token.sound.id}` ? '🔊 ' : ''}/{token.sound.ipa}/
+                </button>
+              ) : (
+                <span key={`${token.symbol}-${index}`} title="Este símbolo não faz parte dos 44 sons deste laboratório" style={{ border:'1px dashed #CBD5E1', background:'#F8FAFC', color:'#64748B', borderRadius:10, minWidth:42, padding:'9px 10px', textAlign:'center', fontSize:16 }}>/{token.symbol}/</span>
+              ))}
+            </div>
+            <div style={{ fontSize:10.5, color:'#94A3B8', marginTop:9 }}>Toque em cada bloco para repetir o fonema. A transcrição pode variar conforme o sotaque.</div>
+          </div>
+        )}
+        <div style={{ fontSize:9.5, color:'#94A3B8', marginTop:10 }}>Transcrições: <a href="https://freedictionaryapi.com/" target="_blank" rel="noopener noreferrer" style={{ color:'inherit' }}>FreeDictionaryAPI.com</a>, com dados do Wiktionary (CC BY-SA 4.0).</div>
+      </GlassCard>
+
       <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:14 }}>
         {[
           ['all','Todos',44], ['vowel','Vogais',20], ['consonant','Consoantes',24],
@@ -2407,8 +2574,8 @@ function SoundLabExplorer() {
             <div style={{ fontSize:38, fontWeight:800, color:'#0F172A' }}>/{active.ipa}/</div>
             <div style={{ fontSize:12, color:'#64748B' }}>{active.kind}</div>
           </div>
-          <button type="button" onClick={playPhoneme} style={{ border:'none', borderRadius:12, padding:'11px 14px', background:'var(--brand)', color:'#fff', fontFamily:'inherit', fontWeight:800, cursor:'pointer' }}>
-            {playing === `sound:${active.id}` ? '🔊 Tocando' : '▶ Ouvir exemplo'}
+          <button type="button" onClick={() => playPhoneme(active)} aria-label={`Ouvir somente o fonema /${active.ipa}/`} style={{ border:'none', borderRadius:12, padding:'11px 14px', background:'var(--brand)', color:'#fff', fontFamily:'inherit', fontWeight:800, cursor:'pointer' }}>
+            {playing === `sound:${active.id}` ? '🔊 Tocando' : '▶ Ouvir o fonema'}
           </button>
         </div>
         <div style={{ marginTop:12, color:'#475569', fontSize:13.5, lineHeight:1.55 }}>{active.tip}</div>
