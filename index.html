@@ -1521,17 +1521,40 @@ function calculateAttendance(student, posaulas) {
     : null;
   const postDates = (posaulas || []).map(postReferenceDate).filter(Boolean).sort((a,b)=>a-b);
   const legacyStart = postDates.length ? addDays(postDates[0],-3) : null;
-  const start = courseStart && legacyStart
+  const historicalStart = courseStart && legacyStart
     ? new Date(Math.min(courseStart.getTime(),legacyStart.getTime()))
     : courseStart || legacyStart;
+  const scheduleStartRaw = student?.aulaDiasDesde;
+  const scheduleStart = scheduleStartRaw
+    ? (typeof scheduleStartRaw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(scheduleStartRaw)
+      ? new Date(`${scheduleStartRaw}T00:00:00`) : dateFrom(scheduleStartRaw))
+    : null;
+  const start = historicalStart;
   const cutoff = addDays(new Date(), -1); // o pós-aula normalmente chega no dia seguinte
   const exceptions = new Set((student?.aulaExcecoes || []).map(String));
   const candidateKeys = new Set();
-  if (start && !isNaN(start) && lessonDays.size) {
-    for (let d = new Date(start); d <= cutoff; d = addDays(d,1)) {
-      if (lessonDays.has(d.getDay())) candidateKeys.add(dateKey(d));
+  const attendanceDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? new Date(`${value}T00:00:00`) : dateFrom(value);
+  const historicalSchedules = (Array.isArray(student?.aulaDiasHistorico) ? student.aulaDiasHistorico : [])
+    .map(item => ({
+      days:new Set((Array.isArray(item?.dias) ? item.dias : []).map(Number).filter(day => day >= 0 && day <= 6)),
+      from:attendanceDate(item?.desde), to:attendanceDate(item?.ate),
+    })).filter(item => item.days.size && item.from && item.to);
+  const schedules = [...historicalSchedules, {
+    days:lessonDays,
+    from:scheduleStart || historicalStart,
+    to:cutoff,
+  }].filter(item => item.days.size && item.from && item.to);
+  // Cada grade vale somente dentro de sua vigência. Assim, a grade nova não
+  // inventa sábados no passado e a grade antiga continua preservada no histórico.
+  schedules.forEach(schedule => {
+    const from = historicalStart
+      ? new Date(Math.max(historicalStart.getTime(),schedule.from.getTime())) : schedule.from;
+    const to = new Date(Math.min(cutoff.getTime(),schedule.to.getTime()));
+    for (let d = new Date(from); d <= to; d = addDays(d,1)) {
+      if (schedule.days.has(d.getDay())) candidateKeys.add(dateKey(d));
     }
-  }
+  });
 
   // Registros novos têm classDate e entram exatamente no dia da aula. Nos
   // antigos, a data pode ser a da publicação: procuramos a aula agendada mais
@@ -1541,7 +1564,7 @@ function calculateAttendance(student, posaulas) {
   // A presença continua pertencendo à data prevista, mas guardamos a data
   // real da reposição para explicar o asterisco na linha do tempo.
   const makeupByScheduledKey = new Map();
-  const held = (posaulas || []).length;
+  const recordedHeld = (posaulas || []).length;
   const matchScheduledDate = date => {
     if (!date) return '';
     for (let daysBack = 0; daysBack <= 3; daysBack++) {
@@ -1602,7 +1625,7 @@ function calculateAttendance(student, posaulas) {
   // Sem data de início/dias fixos (ou com cadastro incompatível com o legado),
   // ainda existe uma certeza: cada pós-aula representa uma aula realizada.
   // Sem calendário suficiente para provar uma ausência, não inventamos faltas.
-  if (held && (!start || !lessonDays.size || !presentKeys.size)) {
+  if (recordedHeld && (!start || !schedules.length || !presentKeys.size)) {
     const points = (posaulas || []).map(postReferenceDate).filter(Boolean).sort((a,b)=>a-b).map(date => ({
       key:dateKey(date),
       label:date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),
@@ -1612,14 +1635,14 @@ function calculateAttendance(student, posaulas) {
       color:PROGRESS_COLORS.good,
     }));
     return {
-      held,
+      held:recordedHeld,
       misses:0,
-      scheduled:held,
-      attendedScheduled:held,
+      scheduled:recordedHeld,
+      attendedScheduled:recordedHeld,
       rate:100,
       points,
-      currentStreak:held,
-      maxStreak:held,
+      currentStreak:recordedHeld,
+      maxStreak:recordedHeld,
       missedDates:[],
       untracked:0,
       trackingStartKey:'',
@@ -1630,12 +1653,11 @@ function calculateAttendance(student, posaulas) {
   const trackingStartKey = [...presentKeys].sort()[0] || '';
   const untracked = trackingStartKey ? [...candidateKeys].filter(key => key < trackingStartKey).length : candidateKeys.size;
   const scheduled = [];
-  if (start && !isNaN(start) && lessonDays.size && trackingStartKey) {
+  if (candidateKeys.size && trackingStartKey) {
     const holidayCache = {};
-    for (let d = new Date(start); d <= cutoff; d = addDays(d,1)) {
-      if (!lessonDays.has(d.getDay())) continue;
-      const key = dateKey(d);
+    for (const key of [...candidateKeys].sort()) {
       if (key < trackingStartKey) continue; // antes do app: sem dados, nunca falta
+      const d = new Date(`${key}T00:00:00`);
       holidayCache[d.getFullYear()] ||= nationalHolidayKeys(d.getFullYear());
       // Feriado/cancelamento só sai da conta quando realmente não houve aula.
       // Se existe pós-aula, a aula aconteceu e vale para a sequência.
@@ -1643,14 +1665,26 @@ function calculateAttendance(student, posaulas) {
       scheduled.push({ date:new Date(d), key, present:presentKeys.has(key) });
     }
   }
-  let currentStreak = 0, maxStreak = 0;
-  scheduled.forEach(item => {
+  const attendanceBaseline = student?.attendanceBaseline || {};
+  const baselineThrough = /^\d{4}-\d{2}-\d{2}$/.test(String(attendanceBaseline.through || ''))
+    ? String(attendanceBaseline.through) : '';
+  const baselineAttended = baselineThrough ? Math.max(0, Number(attendanceBaseline.attended || 0)) : 0;
+  const baselineMisses = baselineThrough ? Math.max(0, Number(attendanceBaseline.misses || 0)) : 0;
+  const countedSchedule = baselineThrough ? scheduled.filter(item => item.key > baselineThrough) : scheduled;
+  let currentStreak = baselineThrough && baselineMisses === 0 ? baselineAttended : 0;
+  let maxStreak = currentStreak;
+  countedSchedule.forEach(item => {
     currentStreak = item.present ? currentStreak + 1 : 0;
     maxStreak = Math.max(maxStreak, currentStreak);
   });
-  const misses = scheduled.filter(x => !x.present).length;
-  const attendedScheduled = scheduled.length - misses;
-  const rate = scheduled.length ? Math.round(attendedScheduled/scheduled.length*100) : null;
+  const dynamicMisses = countedSchedule.filter(x => !x.present).length;
+  const misses = baselineMisses + dynamicMisses;
+  const attendedScheduled = baselineAttended + countedSchedule.length - dynamicMisses;
+  const scheduledCount = baselineAttended + baselineMisses + countedSchedule.length;
+  const rate = scheduledCount ? Math.round(attendedScheduled/scheduledCount*100) : null;
+  const held = baselineThrough
+    ? baselineAttended + (posaulas || []).filter(post => dateKey(postReferenceDate(post)) > baselineThrough).length
+    : recordedHeld;
   // Cada ponto representa a data real prevista da aula. Antes o rótulo usava
   // a segunda-feira que iniciava a semana, parecendo registrar falta no dia errado.
   const points = scheduled.map(item => ({
@@ -1662,7 +1696,7 @@ function calculateAttendance(student, posaulas) {
     value:item.present ? 100 : 0,
     color:item.present ? PROGRESS_COLORS.good : PROGRESS_COLORS.low,
   }));
-  const missedDates = scheduled.filter(item => !item.present).map(item => ({
+  const missedDates = countedSchedule.filter(item => !item.present).map(item => ({
     key:item.key,
     label:item.date.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'}).replace('.', ''),
   }));
@@ -1675,7 +1709,7 @@ function calculateAttendance(student, posaulas) {
       actualLabel:new Date(`${actualKey}T00:00:00`).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),
     };
   });
-  return { held, misses, scheduled:scheduled.length, attendedScheduled, rate, points, currentStreak, maxStreak, missedDates, makeups, untracked, trackingStartKey, inferredOnly:false };
+  return { held, misses, scheduled:scheduledCount, attendedScheduled, rate, points, currentStreak, maxStreak, missedDates, makeups, untracked, trackingStartKey, inferredOnly:false };
 }
 
 function calculateExerciseProgress(activities) {

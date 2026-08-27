@@ -1948,25 +1948,50 @@
       return days;
     }
 
+    function adminLessonChangePatch(student, nextDays) {
+      const previousDays = [...adminLessonDays(student || {})].sort((a,b) => a-b);
+      const normalizedNext = [...new Set((nextDays || []).map(Number))].filter(day => day >= 0 && day <= 6).sort((a,b) => a-b);
+      if (previousDays.join(',') === normalizedNext.join(',')) return {};
+      const today = adminDateKey(new Date());
+      const yesterday = adminDateKey(adminAddDays(new Date(), -1));
+      const history = Array.isArray(student?.aulaDiasHistorico) ? [...student.aulaDiasHistorico] : [];
+      const previousFrom = String(student?.aulaDiasDesde || student?.inicioCurso || '');
+      if (previousDays.length && /^\d{4}-\d{2}-\d{2}$/.test(previousFrom) && previousFrom <= yesterday) {
+        history.push({ dias:previousDays, desde:previousFrom, ate:yesterday });
+      }
+      return { aulaDiasDesde:today, aulaDiasHistorico:history };
+    }
+
     function adminAttendanceStats(student, posts) {
       const lessonDays = adminLessonDays(student, posts);
       const courseStart = adminDate(student?.inicioCurso);
       const postDates = (posts || []).map(adminPostReferenceDate).filter(Boolean).sort((a,b)=>a-b);
       const legacyStart = postDates.length ? adminAddDays(postDates[0],-3) : null;
-      const start = courseStart && legacyStart
+      const historicalStart = courseStart && legacyStart
         ? new Date(Math.min(courseStart.getTime(),legacyStart.getTime()))
         : courseStart || legacyStart;
+      const scheduleStart = adminDate(student?.aulaDiasDesde);
+      const start = historicalStart;
       const cutoff = adminAddDays(new Date(), -1);
       const candidateKeys = new Set();
-      if (start && lessonDays.size) {
-        for (let date = new Date(start); date <= cutoff; date = adminAddDays(date,1)) {
-          if (lessonDays.has(date.getDay())) candidateKeys.add(adminDateKey(date));
+      const historicalSchedules = (Array.isArray(student?.aulaDiasHistorico) ? student.aulaDiasHistorico : [])
+        .map(item => ({ days:new Set((Array.isArray(item?.dias) ? item.dias : []).map(Number).filter(day => day >= 0 && day <= 6)),
+          from:adminDate(item?.desde), to:adminDate(item?.ate) }))
+        .filter(item => item.days.size && item.from && item.to);
+      const schedules = [...historicalSchedules, { days:lessonDays, from:scheduleStart || historicalStart, to:cutoff }]
+        .filter(item => item.days.size && item.from && item.to);
+      schedules.forEach(schedule => {
+        const from = historicalStart
+          ? new Date(Math.max(historicalStart.getTime(),schedule.from.getTime())) : schedule.from;
+        const to = new Date(Math.min(cutoff.getTime(),schedule.to.getTime()));
+        for (let date = new Date(from); date <= to; date = adminAddDays(date,1)) {
+          if (schedule.days.has(date.getDay())) candidateKeys.add(adminDateKey(date));
         }
-      }
+      });
 
       const presentKeys = new Set();
       const extraKeys = new Set();
-      const held = (posts || []).length;
+      const recordedHeld = (posts || []).length;
       const matchScheduledDate = date => {
         if (!date) return '';
         for (let daysBack = 0; daysBack <= 3; daysBack++) {
@@ -2013,11 +2038,11 @@
         if (/^\d{4}-\d{2}-\d{2}$/.test(scheduledKey) && candidateKeys.has(scheduledKey)) presentKeys.add(scheduledKey);
       });
 
-      if (held && (!start || !lessonDays.size || !presentKeys.size)) {
+      if (recordedHeld && (!start || !schedules.length || !presentKeys.size)) {
         return {
-          held,
+          held:recordedHeld,
           misses:0,
-          currentStreak:held,
+          currentStreak:recordedHeld,
           rate:100,
           untracked:0,
           trackingStartKey:'',
@@ -2031,27 +2056,37 @@
       const exceptions = new Set((student?.aulaExcecoes || []).map(String));
       const scheduled = [];
       const holidayCache = {};
-      if (start && lessonDays.size && trackingStartKey) {
-        for (let date = new Date(start); date <= cutoff; date = adminAddDays(date,1)) {
-          if (!lessonDays.has(date.getDay())) continue;
-          const key = adminDateKey(date);
+      if (candidateKeys.size && trackingStartKey) {
+        for (const key of [...candidateKeys].sort()) {
           if (key < trackingStartKey) continue;
+          const date = new Date(`${key}T00:00:00`);
           holidayCache[date.getFullYear()] ||= adminHolidayKeys(date.getFullYear());
           if (!presentKeys.has(key) && (holidayCache[date.getFullYear()].has(key) || exceptions.has(key))) continue;
           scheduled.push({ key, present:presentKeys.has(key) });
         }
       }
 
-      let currentStreak = 0;
-      scheduled.forEach(item => { currentStreak = item.present ? currentStreak + 1 : 0; });
-      const attended = scheduled.filter(item => item.present).length;
-      const misses = scheduled.length - attended;
-      const missedDates = scheduled.filter(item => !item.present).map(item => item.key);
+      const attendanceBaseline = student?.attendanceBaseline || {};
+      const baselineThrough = /^\d{4}-\d{2}-\d{2}$/.test(String(attendanceBaseline.through || ''))
+        ? String(attendanceBaseline.through) : '';
+      const baselineAttended = baselineThrough ? Math.max(0, Number(attendanceBaseline.attended || 0)) : 0;
+      const baselineMisses = baselineThrough ? Math.max(0, Number(attendanceBaseline.misses || 0)) : 0;
+      const countedSchedule = baselineThrough ? scheduled.filter(item => item.key > baselineThrough) : scheduled;
+      let currentStreak = baselineThrough && baselineMisses === 0 ? baselineAttended : 0;
+      countedSchedule.forEach(item => { currentStreak = item.present ? currentStreak + 1 : 0; });
+      const dynamicMisses = countedSchedule.filter(item => !item.present).length;
+      const attended = baselineAttended + countedSchedule.length - dynamicMisses;
+      const misses = baselineMisses + dynamicMisses;
+      const scheduledCount = baselineAttended + baselineMisses + countedSchedule.length;
+      const held = baselineThrough
+        ? baselineAttended + (posts || []).filter(post => adminDateKey(adminPostReferenceDate(post)) > baselineThrough).length
+        : recordedHeld;
+      const missedDates = countedSchedule.filter(item => !item.present).map(item => item.key);
       return {
         held,
         misses,
         currentStreak,
-        rate: scheduled.length ? Math.round(attended / scheduled.length * 100) : null,
+        rate: scheduledCount ? Math.round(attended / scheduledCount * 100) : null,
         untracked,
         trackingStartKey,
         inferredOnly:false,
@@ -6204,6 +6239,8 @@
       const btn = document.getElementById('e-save');
       btn.disabled = true; btn.textContent = 'Salvando...';
       try {
+        const cadastroAtual = allStudents.find(student => student.uid === uid);
+        const mudancaDeGrade = adminLessonChangePatch(cadastroAtual, aula.aulaDias);
         await updateDoc(doc(db, 'students', uid), {
           name,
           firstName: name.split(' ')[0],
@@ -6217,6 +6254,7 @@
           aulaHorarios: aula.aulaHorarios,
           aulaFins: aula.aulaFins,
           aulaDuracao: aula.aulaDuracao,
+          ...mudancaDeGrade,
           inicioCurso: inicio || '',
           photo: editPhoto || '',
         });
@@ -8104,10 +8142,13 @@ Salvar assim mesmo?`)) return;
         // vira a mensalidade de cada um. Sem isso o grupo seria só um rótulo.
         let naAgenda = 0, noFinanceiro = 0;
         if (aula.aulaDias.length && aula.aulaHora) {
-          await Promise.all(members.map(student => updateDoc(doc(db, 'students', student.uid), {
-            diasAulas:aula.texto, aulaDias:aula.aulaDias, aulaHora:aula.aulaHora,
-            aulaHorarios:aula.aulaHorarios, aulaFins:aula.aulaFins, aulaDuracao:duracao,
-          })));
+          await Promise.all(members.map(student => {
+            return updateDoc(doc(db, 'students', student.uid), {
+              diasAulas:aula.texto, aulaDias:aula.aulaDias, aulaHora:aula.aulaHora,
+              aulaHorarios:aula.aulaHorarios, aulaFins:aula.aulaFins, aulaDuracao:duracao,
+              ...adminLessonChangePatch(student, aula.aulaDias),
+            });
+          }));
           naAgenda = await syncStudentLessons(members.map(student => ({
             uid:student.uid, name:student.name, firstName:student.firstName,
             aulaDias:aula.aulaDias, aulaHora:aula.aulaHora, aulaHorarios:aula.aulaHorarios, aulaFins:aula.aulaFins, aulaDuracao:duracao,
