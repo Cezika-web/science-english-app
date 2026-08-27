@@ -1537,6 +1537,19 @@
     </div>
   </div>
 
+  <!-- Histórico individual do desafio (somente admin) -->
+  <div class="modal-overlay" id="student-challenge-modal" style="z-index:1150;">
+    <div class="modal" style="max-width:980px;max-height:92vh;">
+      <div class="modal-header">
+        <h2 id="student-challenge-title">🏆 Desafios do aluno</h2>
+        <button class="btn-close" id="student-challenge-close">✕</button>
+      </div>
+      <div class="modal-body" id="student-challenge-body">
+        <div class="loading">Carregando desafios...</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Edit student modal -->
   <div class="modal-overlay" id="edit-modal">
     <div class="modal">
@@ -5131,6 +5144,7 @@
       }
       const badge = `<div class="badge-stack">${posBadge}${actBadge}</div>`;
       const menuItem = `<button class="kebab-item" data-action="mirror" data-uid="${s.uid}" data-name="${nm}">🪞 Espelho (ver área do aluno)</button>`
+        + `<button class="kebab-item" data-action="challenge" data-uid="${s.uid}" data-name="${nm}">🏆 Desafios do aluno</button>`
         + `<button class="kebab-item" data-action="edit" data-uid="${s.uid}" data-name="${nm}">✏️ Editar dados</button>`
         + `<button class="kebab-item" data-action="extras" data-uid="${s.uid}" data-name="${nm}">🎧 Atividades Extras</button>`
         + (archived
@@ -5177,6 +5191,9 @@
           const { action, uid, name } = item.dataset;
           if (action === 'mirror') {
             window.open('../?mirror=' + encodeURIComponent(uid), '_blank');
+            return;
+          } else if (action === 'challenge') {
+            openStudentChallenge(uid, name);
             return;
           } else if (action === 'edit') {
             openEditStudent(uid);
@@ -6867,6 +6884,8 @@
 
     document.getElementById('modal-close').onclick = () => document.getElementById('modal').classList.remove('open');
     document.getElementById('modal').onclick = e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); };
+    document.getElementById('student-challenge-close').onclick = () => document.getElementById('student-challenge-modal').classList.remove('open');
+    document.getElementById('student-challenge-modal').onclick = e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); };
 
     // ── PUBLICAR ATIVIDADES ──────────────────────────────────────────────
     document.getElementById('btn-parse-json').onclick = () => {
@@ -7538,6 +7557,94 @@
         const badge = selected && correct ? ' · marcada e correta' : selected ? ' · marcada' : correct ? ' · correta' : '';
         return `<div style="padding:5px 8px;border:1px solid ${border};border-radius:7px;background:${background};color:${color};font-size:.75rem;"><strong>${esc(String(option.id || '').toUpperCase())})</strong> ${esc(option.text || '')}${badge ? `<strong>${badge}</strong>` : ''}</div>`;
       }).join('')}</div>`;
+    }
+
+    function challengeAdminNormalize(value) {
+      return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[’']/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+    }
+
+    function renderStudentChallengeQuestion(item, index) {
+      const options = Array.isArray(item.options) ? item.options : [];
+      const correctOptionId = options.find(option =>
+        challengeAdminNormalize(option.text) === challengeAdminNormalize(item.expected))?.id || '';
+      const stateColor = item.correct ? '#15803D' : item.parcial ? '#C2410C' : '#B91C1C';
+      const stateLabel = item.correct ? 'Certa' : item.parcial ? 'Parcial' : 'Incorreta';
+      return `<div style="padding:13px;border:1px solid var(--border);border-radius:12px;background:#fff;">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
+          <strong style="font-size:.82rem;line-height:1.45;">${index + 1}. ${esc(item.prompt || 'Pergunta')}</strong>
+          <span style="white-space:nowrap;color:${stateColor};font-size:.76rem;font-weight:900;">${stateLabel} · ${Number(item.score || 0)} PTS</span>
+        </div>
+        ${item.context ? `<div style="margin-top:7px;padding:7px 9px;border-radius:8px;background:#F1F5F9;color:#475569;font-size:.76rem;"><strong>Contexto:</strong> ${esc(item.context)}</div>` : ''}
+        ${renderChallengeAnswerOptions({ ...item, correctOptionId })}
+        <div style="display:grid;gap:5px;margin-top:9px;font-size:.78rem;line-height:1.45;">
+          <div><span style="color:var(--muted);">Respondeu:</span> <strong>${esc(item.answer || '—')}</strong></div>
+          <div><span style="color:var(--muted);">Resposta correta:</span> <strong style="color:#166534;">${esc(item.expected || '—')}</strong></div>
+          ${item.explanation ? `<div style="padding:8px 9px;border-radius:8px;background:#EFF6FF;color:#1E3A8A;"><strong>Correção:</strong> ${esc(item.explanation)}</div>` : ''}
+        </div>
+      </div>`;
+    }
+
+    function renderStudentChallengeHistory(data, name) {
+      const weeks = Array.isArray(data.minhasSemanas) ? data.minhasSemanas : [];
+      const analytics = data.analytics || {};
+      const summary = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px;margin-bottom:18px;">
+        <div style="padding:12px;border-radius:12px;background:#EFF6FF;border:1px solid #BFDBFE;"><small style="color:#1E40AF;font-weight:800;">POSIÇÃO GERAL</small><strong style="display:block;margin-top:4px;font-size:1.25rem;color:#0D3F82;">${data.minhaPosicao ? `${data.minhaPosicao}º lugar` : '—'}</strong></div>
+        <div style="padding:12px;border-radius:12px;background:#F0FDF4;border:1px solid #BBF7D0;"><small style="color:#166534;font-weight:800;">PONTOS TOTAIS</small><strong style="display:block;margin-top:4px;font-size:1.25rem;color:#166534;">${Number(data.meuTotal || 0).toLocaleString('pt-BR')}</strong></div>
+        <div style="padding:12px;border-radius:12px;background:#FFF7ED;border:1px solid #FED7AA;"><small style="color:#9A3412;font-weight:800;">MELHOR COLOCAÇÃO</small><strong style="display:block;margin-top:4px;font-size:1.25rem;color:#9A3412;">${data.melhorPosicao ? `${data.melhorPosicao}º lugar` : '—'}</strong></div>
+        <div style="padding:12px;border-radius:12px;background:#F8FAFC;border:1px solid #CBD5E1;"><small style="color:#475569;font-weight:800;">RESPOSTAS</small><strong style="display:block;margin-top:4px;font-size:1.25rem;color:#334155;">${Number(analytics.acertos || 0)}/${Number(analytics.respondidas || 0)} certas</strong></div>
+      </div>`;
+      if (!weeks.length) return summary + `<div style="padding:22px;border:1px dashed #CBD5E1;border-radius:14px;text-align:center;color:var(--muted);"><strong>${esc(name)}</strong> ainda não tem uma semana de desafio encerrada.</div>`;
+
+      const monthsByKey = new Map();
+      weeks.slice().sort((a, b) => String(b.weekKey).localeCompare(String(a.weekKey))).forEach(week => {
+        const key = String(week.weekKey || '').slice(0, 7);
+        if (!monthsByKey.has(key)) monthsByKey.set(key, []);
+        monthsByKey.get(key).push(week);
+      });
+      const monthLabels = new Map((data.meses || []).map(month => [month.key, month.label]));
+      const months = [...monthsByKey.entries()].map(([key, monthWeeks], monthIndex) => {
+        const fallback = new Intl.DateTimeFormat('pt-BR', { month:'long', year:'numeric', timeZone:'UTC' })
+          .format(new Date(`${key}-01T12:00:00Z`));
+        const weekCards = monthWeeks.map((week, weekIndex) => {
+          const parts = Array.isArray(week.partes) ? week.partes : [];
+          const questionCount = parts.reduce((total, part) => total + (part.details || []).length, 0);
+          return `<details${monthIndex === 0 && weekIndex === 0 ? ' open' : ''} style="border:1px solid var(--border);border-radius:13px;background:#F8FAFC;overflow:hidden;">
+            <summary style="cursor:pointer;padding:13px 15px;font-weight:850;color:#0D3F82;">
+              <span style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
+                <span>${esc(challengeWeekLabel(week.weekKey))}</span>
+                <small style="color:var(--muted);font-weight:800;">${week.position ? `${week.position}º lugar` : 'sem posição'} · ${Number(week.score || 0).toLocaleString('pt-BR')} PTS · ${questionCount} pergunta(s)</small>
+              </span>
+            </summary>
+            <div style="padding:0 14px 14px;display:grid;gap:14px;">
+              ${parts.map(part => `<section>
+                <div style="display:flex;justify-content:space-between;gap:10px;margin:3px 0 8px;font-size:.79rem;font-weight:900;color:#334155;"><span>Parte ${Number(part.part || 0)}</span><span>${Number(part.score || 0)} / ${Number(part.maxScore || 500)} PTS</span></div>
+                <div style="display:grid;gap:8px;">${(part.details || []).map(renderStudentChallengeQuestion).join('') || '<span style="color:var(--muted);font-size:.78rem;">Sem respostas registradas.</span>'}</div>
+              </section>`).join('')}
+            </div>
+          </details>`;
+        }).join('');
+        return `<details${monthIndex === 0 ? ' open' : ''} style="margin-bottom:12px;border:1px solid #BFDBFE;border-radius:14px;background:#fff;overflow:hidden;">
+          <summary style="cursor:pointer;padding:14px 16px;background:#EFF6FF;color:#0D3F82;font-weight:900;text-transform:capitalize;">${esc(monthLabels.get(key) || fallback)} · ${monthWeeks.length} semana(s)</summary>
+          <div style="padding:12px;display:grid;gap:10px;">${weekCards}</div>
+        </details>`;
+      }).join('');
+      return summary + months;
+    }
+
+    async function openStudentChallenge(uid, name) {
+      const modal = document.getElementById('student-challenge-modal');
+      const body = document.getElementById('student-challenge-body');
+      document.getElementById('student-challenge-title').textContent = `🏆 Desafios de ${name}`;
+      body.innerHTML = '<div class="loading">Buscando semanas, respostas e classificação...</div>';
+      modal.classList.add('open');
+      try {
+        const obter = httpsCallable(fns, 'obterTemporadaDesafio', { timeout:120000 });
+        const { data } = await obter({ uid });
+        body.innerHTML = renderStudentChallengeHistory(data, name);
+      } catch (error) {
+        body.innerHTML = `<div class="form-msg err" style="display:block;">Não foi possível carregar os desafios: ${esc(error.message)}</div>`;
+      }
     }
 
     function renderChallengeScoreActions(item) {
