@@ -1962,6 +1962,14 @@
       return { aulaDiasDesde:today, aulaDiasHistorico:history };
     }
 
+    function adminLessonScheduleSignature(student) {
+      const days = [...adminLessonDays(student || {})].sort((a,b) => a-b);
+      const starts = student?.aulaHorarios && typeof student.aulaHorarios === 'object' ? student.aulaHorarios : {};
+      const ends = student?.aulaFins && typeof student.aulaFins === 'object' ? student.aulaFins : {};
+      return JSON.stringify(days.map(day => [day, starts[day] || starts[String(day)] || student?.aulaHora || '',
+        ends[day] || ends[String(day)] || '', Number(student?.aulaDuracao || 60)]));
+    }
+
     function adminAttendanceStats(student, posts) {
       const lessonDays = adminLessonDays(student, posts);
       const courseStart = adminDate(student?.inicioCurso);
@@ -3764,14 +3772,18 @@
       const porDia = student.aulaHorarios && typeof student.aulaHorarios === 'object' ? student.aulaHorarios : {};
       const finsPorDia = student.aulaFins && typeof student.aulaFins === 'object' ? student.aulaFins : {};
       const duration = Number(student.aulaDuracao) > 0 ? Number(student.aulaDuracao) : 60;
-      const weekStart = calendarWeekStartDate(new Date());
+      const effectiveRaw = adminDate(student.aulaDiasDesde) || new Date();
+      const effectiveDate = new Date(effectiveRaw.getFullYear(), effectiveRaw.getMonth(), effectiveRaw.getDate());
+      const weekStart = calendarWeekStartDate(effectiveDate);
       return days.map(day => {
         const startTime = porDia[day] || porDia[String(day)] || student.aulaHora || '';
         if (!startTime) return null;
+        let firstDate = calendarAddDays(weekStart, day);
+        if (firstDate < effectiveDate) firstDate = calendarAddDays(firstDate, 7);
         return {
           type:'lesson', studentUid:student.uid, studentName:student.name || student.firstName || '',
           title:`Aula · ${student.firstName || (student.name || '').split(' ')[0] || 'Aluno'}`,
-          date:calendarDateKey(calendarAddDays(weekStart, day)), startTime,
+          date:calendarDateKey(firstDate), startTime,
           endTime:finsPorDia[day] || finsPorDia[String(day)] || calendarTime(calendarMinutes(startTime) + duration),
           repeat:'weekly', repeatUntil:'', notes:'', timezone:'America/Sao_Paulo', source:'cadastro',
         };
@@ -3813,8 +3825,22 @@
           // duplicatas antigas do mesmo aluno na próxima edição do cadastro.
           const antigas = await getDocs(query(collection(db,'schools',escolaAtual,'calendarEvents'),
             where('studentUid','==',student.uid)));
+          const effectiveKey = student.aulaDiasDesde && /^\d{4}-\d{2}-\d{2}$/.test(student.aulaDiasDesde)
+            ? student.aulaDiasDesde : '';
+          const previousDay = effectiveKey ? calendarDateKey(calendarAddDays(new Date(`${effectiveKey}T00:00:00`), -1)) : '';
           await Promise.all(antigas.docs.filter(item => calendarEhAulaDoCadastro(item.data(), student.uid))
-            .map(item => deleteDoc(item.ref)));
+            .map(item => {
+              const old = item.data();
+              // Mudança de grade: a série antiga continua visível no passado e
+              // termina na véspera. Só séries criadas na própria vigência nova
+              // são substituídas, evitando duplicação ao salvar novamente.
+              if (effectiveKey && old.date < effectiveKey
+                && (!old.repeatUntil || old.repeatUntil >= effectiveKey)) {
+                return updateDoc(item.ref, { repeatUntil:previousDay, updatedAt:serverTimestamp() });
+              }
+              if (effectiveKey && old.repeatUntil && old.repeatUntil < effectiveKey) return Promise.resolve();
+              return deleteDoc(item.ref);
+            }));
         }
         await Promise.all(events.map(event => addDoc(collection(db,'schools',escolaAtual,'calendarEvents'),
           { ...event, createdAt:serverTimestamp(), createdBy:auth.currentUser?.email || '', updatedAt:serverTimestamp() })));
@@ -6241,6 +6267,9 @@
       try {
         const cadastroAtual = allStudents.find(student => student.uid === uid);
         const mudancaDeGrade = adminLessonChangePatch(cadastroAtual, aula.aulaDias);
+        const novaAgenda = { aulaDias:aula.aulaDias, aulaHora:aula.aulaHora, aulaHorarios:aula.aulaHorarios,
+          aulaFins:aula.aulaFins, aulaDuracao:aula.aulaDuracao };
+        const agendaMudou = adminLessonScheduleSignature(cadastroAtual) !== adminLessonScheduleSignature(novaAgenda);
         await updateDoc(doc(db, 'students', uid), {
           name,
           firstName: name.split(' ')[0],
@@ -6260,9 +6289,10 @@
         });
         // Mudou dia ou hora aqui, a agenda tem que acompanhar. Antes isso só
         // acontecia no botão "Preencher com as aulas dos alunos", que saiu.
-        await syncStudentLessons([{ uid, name, firstName:name.split(' ')[0],
-          aulaDias:aula.aulaDias, aulaHora:aula.aulaHora, aulaHorarios:aula.aulaHorarios,
-          aulaFins:aula.aulaFins, aulaDuracao:aula.aulaDuracao }]);
+        if (agendaMudou) {
+          await syncStudentLessons([{ uid, name, firstName:name.split(' ')[0], ...novaAgenda,
+            aulaDiasDesde:adminDateKey(new Date()) }]);
+        }
         btn.disabled = false; btn.textContent = 'Salvar alterações';
         document.getElementById('edit-modal').classList.remove('open');
         loadStudents();
@@ -8149,10 +8179,16 @@ Salvar assim mesmo?`)) return;
               ...adminLessonChangePatch(student, aula.aulaDias),
             });
           }));
-          naAgenda = await syncStudentLessons(members.map(student => ({
-            uid:student.uid, name:student.name, firstName:student.firstName,
-            aulaDias:aula.aulaDias, aulaHora:aula.aulaHora, aulaHorarios:aula.aulaHorarios, aulaFins:aula.aulaFins, aulaDuracao:duracao,
-          })));
+          const novaAgenda = { aulaDias:aula.aulaDias, aulaHora:aula.aulaHora, aulaHorarios:aula.aulaHorarios,
+            aulaFins:aula.aulaFins, aulaDuracao:duracao };
+          const agendaAlterada = members.filter(student =>
+            adminLessonScheduleSignature(student) !== adminLessonScheduleSignature(novaAgenda));
+          if (agendaAlterada.length) {
+            naAgenda = await syncStudentLessons(agendaAlterada.map(student => ({
+              uid:student.uid, name:student.name, firstName:student.firstName, ...novaAgenda,
+              aulaDiasDesde:adminDateKey(new Date()),
+            })));
+          }
         }
         if (total) {
           await Promise.all(members.map(student => setDoc(doc(db, 'schools', escolaAtual, 'financeStudents', student.uid), {
