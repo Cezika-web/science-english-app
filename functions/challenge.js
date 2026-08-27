@@ -587,6 +587,12 @@ export function createChallengeFunctions({
     const { roundSnap, personalized } = await resolveRound(uid, roundId);
     if (!roundSnap.exists) throw new HttpsError('not-found', 'Esta rodada ainda não foi publicada.');
     const round = roundSnap.data();
+    if (round.peerLive === true && round.groupId) {
+      const duelSnap = await db.doc(`_challengeDuels/${round.groupId}`).get();
+      if (!duelSnap.exists || !duelSnap.data().liveStartedAt) {
+        throw new HttpsError('failed-precondition', 'Espere os dois alunos marcarem que estão prontos.');
+      }
+    }
     const opensAt = round.opensAt?.toDate?.() || new Date(round.opensAt);
     const closesAt = round.closesAt?.toDate?.() || new Date(round.closesAt);
     if (now < opensAt) throw new HttpsError('failed-precondition', 'Esta rodada ainda não começou.');
@@ -1052,28 +1058,30 @@ ${item.text}`).join('\n\n')}`
     return { written:rounds.map(item => item.part), membros:membros.length };
   }
 
-  async function publishPeerDuelRounds(client, duelId, duel, weekKey) {
+  async function publishPeerDuelRound(client, duelId, duel, now = new Date()) {
     const membros = (await Promise.all((duel.participantUids || []).map(uid => db.doc(`students/${uid}`).get())))
       .filter(snap => snap.exists && snap.data().archived !== true && snap.data().challengeEnabled !== false);
     if (membros.length !== 2) throw new HttpsError('failed-precondition', 'O duelo precisa ter dois alunos ativos.');
+    const weekKey = weekKeyFor(now);
     const output = await generateForGroup(client, { name:duel.title || 'Duelo entre alunos' }, membros, weekKey);
-    const schedule = groupScheduleFor(weekKey, duelId);
+    const roundId = `duel-${duelId}`;
+    const opensAt = now;
+    const closesAt = new Date(now.getTime() + 7 * 86400000);
+    const questions = output.prepared.flatMap(part => part.questions);
+    const answers = output.prepared.flatMap(part => part.keys);
     const batch = db.batch();
-    [schedule.part1, schedule.part2].forEach(item => {
-      const index = item.part - 1;
-      membros.forEach(membro => {
-        batch.set(membro.ref.collection('challengeRounds').doc(item.roundId), {
-          roundId:item.roundId, weekKey, part:item.part, personalized:true,
-          groupId:duelId, groupName:duel.title || 'Duelo entre alunos', peerDuel:true,
-          schoolId:duel.schoolId || '', opensAt:item.opensAt, closesAt:item.closesAt,
-          questionCount:5, questions:output.prepared[index].questions,
-          difficulty:'duelo', status:'published', updatedAt:FieldValue.serverTimestamp(),
-        });
-        batch.set(answerKeyRef(membro.id, item.roundId, true), {
-          uid:membro.id, roundId:item.roundId, weekKey, part:item.part, groupId:duelId,
-          answers:output.prepared[index].keys, analysis:output.analysis,
-          sources:output.sources, updatedAt:FieldValue.serverTimestamp(),
-        });
+    membros.forEach(membro => {
+      batch.set(membro.ref.collection('challengeRounds').doc(roundId), {
+        roundId, weekKey, part:1, personalized:true, groupId:duelId,
+        groupName:duel.title || 'Duelo entre alunos', peerDuel:true,
+        peerLive:duel.mode === 'live', schoolId:duel.schoolId || '', opensAt, closesAt,
+        questionCount:10, questions, difficulty:'duelo', status:'published',
+        updatedAt:FieldValue.serverTimestamp(),
+      });
+      batch.set(answerKeyRef(membro.id, roundId, true), {
+        uid:membro.id, roundId, weekKey, part:1, groupId:duelId,
+        answers, analysis:output.analysis, sources:output.sources,
+        updatedAt:FieldValue.serverTimestamp(),
       });
     });
     if (registrarUso && output.usage) registrarUso(batch, {
@@ -1081,6 +1089,7 @@ ${item.text}`).join('\n\n')}`
       uso:output.usage, extra:{ weekKey, duelId },
     });
     await batch.commit();
+    return { roundId, weekKey, opensAt, closesAt };
   }
 
   async function publicPeerDuel(doc, uid, now = new Date()) {
@@ -1089,43 +1098,44 @@ ${item.text}`).join('\n\n')}`
     const opponentUid = opponentIndex >= 0 ? duel.participantUids[opponentIndex] : '';
     const opponentName = opponentIndex >= 0 ? (duel.participantNames || [])[opponentIndex] || 'Aluno' : 'Aluno';
     const base = {
-      id:doc.id, status:duel.status || 'pending', weekKey:duel.weekKey || '',
+      id:doc.id, status:duel.status || 'pending', mode:duel.mode || 'quick', weekKey:duel.weekKey || '',
       creatorUid:duel.creatorUid || '', invitedUid:duel.invitedUid || '', opponentUid, opponentName,
       isCreator:duel.creatorUid === uid, title:duel.title || `Você × ${opponentName}`,
-      createdAt:iso(duel.createdAt), generationError:duel.generationError || '',
+      isReady:(duel.readyUids || []).includes(uid), createdAt:iso(duel.createdAt),
+      generationError:duel.generationError || '',
     };
-    if (duel.status !== 'accepted' || duel.generated !== true || !duel.weekKey) return base;
-    const schedule = groupScheduleFor(duel.weekKey, doc.id);
-    const stage = stageFor(now, schedule);
+    if (duel.status !== 'accepted' || duel.generated !== true || !duel.roundId) return base;
+    const [roundSnap, submissionSnap] = await Promise.all([
+      db.doc(`students/${uid}/challengeRounds/${duel.roundId}`).get(),
+      db.doc(`students/${uid}/challengeSubmissions/${duel.roundId}`).get(),
+    ]);
+    const opensAt = dateFrom(duel.opensAt), closesAt = dateFrom(duel.closesAt);
+    const liveStarted = duel.mode !== 'live' || Boolean(duel.liveStartedAt);
+    const phase = duel.mode === 'live' && !liveStarted ? 'lobby'
+      : (closesAt && now > closesAt ? 'results' : 'open');
     const state = {
       enabled:true, peerDuel:true, duelId:doc.id, weekKey:duel.weekKey, title:base.title,
-      phase:stage.phase, part:stage.part, startsAt:iso(schedule.startsAt),
-      revealAt:iso(schedule.revealAt), endsAt:iso(schedule.endsAt),
+      phase, part:1, startsAt:iso(opensAt), endsAt:iso(closesAt),
+      live:duel.mode === 'live', liveStarted, readyUids:duel.readyUids || [],
     };
-    if (stage.phase === 'open') {
-      const slot = stage.part === 1 ? schedule.part1 : schedule.part2;
-      const [roundSnap, submissionSnap] = await Promise.all([
-        db.doc(`students/${uid}/challengeRounds/${slot.roundId}`).get(),
-        db.doc(`students/${uid}/challengeSubmissions/${slot.roundId}`).get(),
-      ]);
-      if (roundSnap.exists) {
-        const round = roundSnap.data(), submission = submissionSnap.exists ? submissionSnap.data() : null;
-        Object.assign(state, {
-          canStart:submission?.completed !== true, completed:submission?.completed === true,
-          started:Boolean(submission), nextIndex:Number(submission?.answers?.length || 0),
-          round:{ roundId:round.roundId, part:round.part, questionCount:round.questionCount,
-            opensAt:iso(round.opensAt), closesAt:iso(round.closesAt), questions:publicChallengeQuestions(round.questions) },
-        });
-      }
+    if (roundSnap.exists) {
+      const round = roundSnap.data(), submission = submissionSnap.exists ? submissionSnap.data() : null;
+      Object.assign(state, {
+        canStart:phase === 'open' && liveStarted && submission?.completed !== true,
+        completed:submission?.completed === true, started:Boolean(submission),
+        nextIndex:Number(submission?.answers?.length || 0),
+        round:{ roundId:round.roundId, part:1, questionCount:10,
+          opensAt:iso(round.opensAt), closesAt:iso(round.closesAt), questions:publicChallengeQuestions(round.questions) },
+      });
     }
-    const resultSnaps = await Promise.all((duel.participantUids || []).flatMap(participantUid => [1, 2].map(part =>
-      db.doc(`_challengeResults/${groupScheduleFor(duel.weekKey, doc.id)[`part${part}`].roundId}_${participantUid}`).get())));
+    const resultSnaps = await Promise.all((duel.participantUids || []).map(participantUid =>
+      db.doc(`_challengeResults/${duel.roundId}_${participantUid}`).get()));
+    const bothCompleted = resultSnaps.length === 2 && resultSnaps.every(snap => snap.exists);
     const scores = (duel.participantUids || []).map((participantUid, index) => ({
       uid:participantUid, name:(duel.participantNames || [])[index] || 'Aluno',
-      score:resultSnaps.filter(snap => snap.exists && snap.data().uid === participantUid)
-        .reduce((sum, snap) => sum + Number(snap.data().score || 0), 0),
+      score:Number(resultSnaps.find(snap => snap.exists && snap.data().uid === participantUid)?.data().score || 0),
     }));
-    return { ...base, state, scores };
+    return { ...base, state, bothCompleted, ...(bothCompleted ? { scores } : {}) };
   }
 
   const obterDesafiosEntreAlunos = onCall(
@@ -1152,6 +1162,8 @@ ${item.text}`).join('\n\n')}`
     async request => {
       const uid = requireAuth(request);
       const opponentUid = String(request.data?.opponentUid || '').trim();
+      const mode = String(request.data?.mode || 'quick').trim();
+      if (!['quick','live'].includes(mode)) throw new HttpsError('invalid-argument', 'Escolha duelo rápido ou ao vivo.');
       if (!opponentUid || opponentUid === uid) throw new HttpsError('invalid-argument', 'Escolha outro aluno.');
       const [creatorSnap, opponentSnap] = await Promise.all([assertStudent(uid), assertStudent(opponentUid)]);
       const creator = creatorSnap.data(), opponent = opponentSnap.data();
@@ -1161,8 +1173,7 @@ ${item.text}`).join('\n\n')}`
       const existing = await db.collection('_challengeDuels').where('participantUids', 'array-contains', uid).get();
       const duplicate = existing.docs.some(doc => {
         const duel = doc.data();
-        const activeAccepted = duel.status === 'accepted' && duel.weekKey
-          && scheduleFor(duel.weekKey).endsAt.getTime() >= Date.now();
+        const activeAccepted = duel.status === 'accepted' && dateFrom(duel.closesAt)?.getTime() >= Date.now();
         return (duel.participantUids || []).includes(opponentUid)
           && (['pending','preparing'].includes(duel.status) || activeAccepted);
       });
@@ -1173,7 +1184,7 @@ ${item.text}`).join('\n\n')}`
       await ref.set({
         schoolId:creator.schoolId, creatorUid:uid, invitedUid:opponentUid,
         participantUids:[uid, opponentUid], participantNames:[creatorName, opponentName],
-        title:`${creatorName} × ${opponentName}`, status:'pending', generated:false,
+        title:`${creatorName} × ${opponentName}`, mode, status:'pending', generated:false,
         createdAt:FieldValue.serverTimestamp(), updatedAt:FieldValue.serverTimestamp(),
       });
       return { ok:true, id:ref.id };
@@ -1199,17 +1210,54 @@ ${item.text}`).join('\n\n')}`
         return { ok:true, status:'declined' };
       }
       if (!Anthropic || !anthropicApiKey) throw new HttpsError('failed-precondition', 'A geração do desafio não foi configurada.');
-      const weekKey = nextMonday(new Date());
-      await ref.set({ status:'preparing', weekKey, generationError:'', respondedAt:FieldValue.serverTimestamp(), updatedAt:FieldValue.serverTimestamp() }, { merge:true });
+      const acceptedAt = new Date();
+      await ref.set({ status:'preparing', generationError:'', respondedAt:FieldValue.serverTimestamp(), updatedAt:FieldValue.serverTimestamp() }, { merge:true });
       try {
         const client = new Anthropic({ apiKey:anthropicApiKey.value() });
-        await publishPeerDuelRounds(client, duelId, duel, weekKey);
-        await ref.set({ status:'accepted', generated:true, acceptedAt:FieldValue.serverTimestamp(), updatedAt:FieldValue.serverTimestamp() }, { merge:true });
-        return { ok:true, status:'accepted', weekKey };
+        const published = await publishPeerDuelRound(client, duelId, duel, acceptedAt);
+        await ref.set({ status:'accepted', generated:true, ...published,
+          acceptedAt:FieldValue.serverTimestamp(), updatedAt:FieldValue.serverTimestamp() }, { merge:true });
+        return { ok:true, status:'accepted', weekKey:published.weekKey };
       } catch (error) {
         await ref.set({ status:'generation_error', generationError:String(error.message || error).slice(0, 500), updatedAt:FieldValue.serverTimestamp() }, { merge:true });
         throw new HttpsError('internal', 'O convite foi aceito, mas as perguntas não ficaram prontas. Tente aceitar novamente.');
       }
+    }
+  );
+
+  const marcarProntoDesafioAoVivo = onCall(
+    { region:REGION, timeoutSeconds:60, memory:'256MiB' },
+    async request => {
+      const uid = requireAuth(request);
+      const duelId = String(request.data?.duelId || '').trim();
+      const ref = db.doc(`_challengeDuels/${duelId}`);
+      const result = await db.runTransaction(async tx => {
+        const snap = await tx.get(ref);
+        if (!snap.exists) throw new HttpsError('not-found', 'Sala ao vivo não encontrada.');
+        const duel = snap.data();
+        if (!(duel.participantUids || []).includes(uid)) throw new HttpsError('permission-denied', 'Você não participa desta sala.');
+        if (duel.mode !== 'live' || duel.status !== 'accepted') throw new HttpsError('failed-precondition', 'Este não é um desafio ao vivo ativo.');
+        const readyUids = [...new Set([...(duel.readyUids || []), uid])];
+        const bothReady = (duel.participantUids || []).every(item => readyUids.includes(item));
+        tx.set(ref, { readyUids, ...(bothReady && !duel.liveStartedAt ? { liveStartedAt:new Date() } : {}),
+          updatedAt:FieldValue.serverTimestamp() }, { merge:true });
+        return { readyUids, bothReady, started:bothReady || Boolean(duel.liveStartedAt) };
+      });
+      return { ok:true, ...result };
+    }
+  );
+
+  const obterSalaDesafioAoVivo = onCall(
+    { region:REGION, timeoutSeconds:60, memory:'256MiB' },
+    async request => {
+      const uid = requireAuth(request);
+      const duelId = String(request.data?.duelId || '').trim();
+      const snap = await db.doc(`_challengeDuels/${duelId}`).get();
+      if (!snap.exists) throw new HttpsError('not-found', 'Sala ao vivo não encontrada.');
+      if (!(snap.data().participantUids || []).includes(uid)) {
+        throw new HttpsError('permission-denied', 'Você não participa desta sala.');
+      }
+      return publicPeerDuel(snap, uid);
     }
   );
 
@@ -2780,6 +2828,7 @@ ${item.text}`).join('\n\n')}`
     gerarDesafiosAtrasados, gerarDesafioDaSemana, gerarDesafioDaTurma,
     aceitarRespostaDesafio, ajustarPontuacaoRespostaDesafio,
     obterDesafiosEntreAlunos, criarDesafioEntreAlunos, responderDesafioEntreAlunos,
+    marcarProntoDesafioAoVivo, obterSalaDesafioAoVivo,
     premiarCampeoesSemanais, concederSelosDesafio,
     marcarSelosDesafioVistos,
   };

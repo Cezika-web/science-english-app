@@ -4446,6 +4446,7 @@ function App() {
   const [classChallenges, setClassChallenges] = useState([]);
   const [selectedChallenge, setSelectedChallenge] = useState(null);
   const [peerGameState, setPeerGameState] = useState(null);
+  const [peerLiveDuel, setPeerLiveDuel] = useState(null);
   const [readerPost, setReaderPost]     = useState(null);
   const [openActivity, setOpenActivity] = useState(null);
   const [openPart, setOpenPart]         = useState(null);
@@ -4674,11 +4675,11 @@ function App() {
     return (await obter({})).data;
   }, [mirror]);
 
-  const createPeerDuel = React.useCallback(async opponentUid => {
+  const createPeerDuel = React.useCallback(async (opponentUid, mode = 'quick') => {
     if (mirror) throw new Error('No modo espelho, esta área é somente leitura.');
     const fb = await getFB();
     const criar = fb.httpsCallable(fb.functions, 'criarDesafioEntreAlunos');
-    return (await criar({ opponentUid })).data;
+    return (await criar({ opponentUid, mode })).data;
   }, [mirror]);
 
   const respondPeerDuel = React.useCallback(async (duelId, accept) => {
@@ -4686,6 +4687,20 @@ function App() {
     const fb = await getFB();
     const responder = fb.httpsCallable(fb.functions, 'responderDesafioEntreAlunos', { timeout:600000 });
     return (await responder({ duelId, accept })).data;
+  }, [mirror]);
+
+  const readyPeerLiveDuel = React.useCallback(async duelId => {
+    if (mirror) throw new Error('No modo espelho, esta área é somente leitura.');
+    const fb = await getFB();
+    const ready = fb.httpsCallable(fb.functions, 'marcarProntoDesafioAoVivo');
+    return (await ready({ duelId })).data;
+  }, [mirror]);
+
+  const loadPeerLiveDuel = React.useCallback(async duelId => {
+    if (mirror) throw new Error('No modo espelho, esta área é somente leitura.');
+    const fb = await getFB();
+    const obter = fb.httpsCallable(fb.functions, 'obterSalaDesafioAoVivo');
+    return (await obter({ duelId })).data;
   }, [mirror]);
 
   async function refreshChallengeState(fbOverride = null) {
@@ -5116,9 +5131,11 @@ function App() {
         onRefresh={() => refreshChallengeState()}
         onLoadSeason={loadChallengeSeason}
         onLoadDuels={loadPeerDuels}
+        onLoadLiveDuel={loadPeerLiveDuel}
         onCreateDuel={createPeerDuel}
         onRespondDuel={respondPeerDuel}
         onPlayDuel={setPeerGameState}
+        onLiveDuel={setPeerLiveDuel}
         onBack={() => { setChallengeView(null); setSelectedChallenge(null); }}
         onStart={() => setChallengeView('game')}
         onJoinChallenge={async (challenge) => {
@@ -5165,6 +5182,13 @@ function App() {
           const fb = await getFB();
           return (await fb.httpsCallable(fb.functions, 'salvarRespostaDesafio')({ roundId, questionId, value })).data;
         }}
+      />}
+      {peerLiveDuel && <ChallengeLiveRoom
+        duel={peerLiveDuel}
+        onClose={() => setPeerLiveDuel(null)}
+        onLoad={loadPeerLiveDuel}
+        onReady={readyPeerLiveDuel}
+        onPlay={state => { setPeerLiveDuel(null); setPeerGameState(state); }}
       />}
 
       <ActivityModal activity={openActivity} onClose={handleCloseAll} onOpenPart={handleOpenPart} />
