@@ -57,6 +57,19 @@ const lacuna = validateQuestion({
 assert.ok(lacuna.answerKey.acceptedAnswers.includes('watches'),
   'o conteúdo isolado da lacuna precisa ser aceito como resposta completa');
 
+assert.throws(() => validateQuestion({
+  id:'referencia-errada', type:'text', focus:'weak', topic:'To be',
+  prompt:'Pergunte se os primos do seu amigo são casados.', context:'', hint:'',
+  acceptedAnswers:['Are your cousins married?'], expected:'Are your cousins married?', explanation:'',
+}, 0), /perdeu a relação possessiva/);
+const referenciaCorreta = validateQuestion({
+  id:'referencia-certa', type:'text', focus:'weak', topic:'To be',
+  prompt:'Pergunte se os primos do seu amigo são casados.', context:'', hint:'',
+  acceptedAnswers:["Are your friend's cousins married?"],
+  expected:"Are your friend's cousins married?", explanation:'',
+}, 0);
+assert.equal(referenciaCorreta.answerKey.expected, "Are your friend's cousins married?");
+
 assert.throws(() => prepareManualStudentChallenge({
   uid:'student-2', studentName:'Incompleto', part1:part('p1').slice(0, 4), part2:part('p2'),
 }), /exatamente 5 perguntas/);

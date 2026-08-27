@@ -247,6 +247,28 @@ function acceptedAnswersWithBlankFragments(question, acceptedAnswers) {
   return [...new Set(answers)];
 }
 
+function assertRequiredReferences(question, expected, index) {
+  const source = normalizeAnswer(`${question?.prompt || ''} ${question?.context || ''}`);
+  const answer = normalizeAnswer(expected);
+  const requirements = [
+    {
+      source:/\b(?:do seu amigo|da sua amiga)\b/,
+      answer:/\b(?:your friend's|of your friend)\b/,
+      label:"a relação possessiva 'do seu amigo/da sua amiga'",
+    },
+    {
+      source:/\b(?:dos seus amigos|das suas amigas)\b/,
+      answer:/\b(?:your friends'|of your friends)\b/,
+      label:"a relação possessiva 'dos seus amigos/das suas amigas'",
+    },
+  ];
+  const missing = requirements.find(item => item.source.test(source) && !item.answer.test(answer));
+  if (missing) {
+    throw new HttpsError('invalid-argument',
+      `Pergunta ${index + 1}: a resposta esperada perdeu ${missing.label}.`);
+  }
+}
+
 function validateQuestion(question, index) {
   const id = String(question?.id || `q${index + 1}`).trim();
   const prompt = String(question?.prompt || '').trim();
@@ -282,7 +304,6 @@ function validateQuestion(question, index) {
     explanation:String(question?.explanation || '').trim(),
     ...(focus ? { focus } : {}), ...(topic ? { topic } : {}),
   };
-
   if (type === 'multipleChoice') {
     const options = Array.isArray(question?.options) ? question.options.map((option, optionIndex) => ({
       id:String(option?.id || String.fromCharCode(97 + optionIndex)).trim(),
@@ -304,6 +325,7 @@ function validateQuestion(question, index) {
     if (!acceptedAnswers.length) throw new HttpsError('invalid-argument', `Pergunta ${index + 1} não tem resposta esperada.`);
     answerKey.acceptedAnswers = [...new Set(acceptedAnswers)];
   }
+  assertRequiredReferences(question, answerKey.expected, index);
   return { publicQuestion, answerKey };
 }
 
@@ -848,7 +870,7 @@ export function createChallengeFunctions({
         'Em format="text": options vazio, correctOption vazio, e acceptedAnswers com TODAS as formas corretas de escrever a resposta. ' +
         'IMPORTANTE: hint deve ser SEMPRE uma string vazia. O prompt deve dizer somente a ação neutra (por exemplo, "Translate to English:" ou "Complete the sentence:") e o texto exato da tarefa deve ficar em context. Em tradução, context precisa conter a frase literal completa que o aluno traduzirá — nunca apenas "Situação:" ou uma descrição vaga. Antes da resposta, nunca cite nome de tempo verbal, estrutura gramatical, voz ativa/passiva, causative, infinitive, base form, past participle, fórmula, regra ou qualquer pista de como construir a resposta. ' +
         'Em exercício com lacuna, o aluno pode responder somente a palavra ou o trecho ausente; inclua esse fragmento e a frase completa em acceptedAnswers. Nos demais exercícios escritos, peça uma oração curta, nunca um parágrafo ou redação. Toda resposta deve caber em 45 segundos digitando no celular. ' +
-        'A correção é automática e compara construções, então a pergunta precisa admitir um alvo gramatical inequívoco. Em acceptedAnswers liste EXAUSTIVAMENTE toda variação válida: contração e forma completa ("don\'t" e "do not"), grafia americana e britânica, resposta curta e frase completa, conectores opcionais e palavras mais específicas que mantenham o mesmo sentido e a mesma regra. Não restrinja o gabarito a uma cópia literal quando outra formulação natural também responde corretamente. Se a pergunta admitir sentidos realmente diferentes, reformule para fechar o alvo. Maiúscula, acento e pontuação são ignorados na correção, então não dependa deles. ' +
+        'A correção é automática e compara construções, então a pergunta precisa admitir um alvo gramatical inequívoco. Preserve obrigatoriamente todas as relações e referências do enunciado na resposta — posse, parentesco e de quem se fala; nunca simplifique "os primos do seu amigo" para "seus primos". Em acceptedAnswers liste EXAUSTIVAMENTE toda variação válida: contração e forma completa ("don\'t" e "do not"), grafia americana e britânica, resposta curta e frase completa, conectores opcionais e palavras mais específicas que mantenham o mesmo sentido e a mesma regra. Não restrinja o gabarito a uma cópia literal quando outra formulação natural também responde corretamente. Se a pergunta admitir sentidos realmente diferentes, reformule para fechar o alvo. Maiúscula, acento e pontuação são ignorados na correção, então não dependa deles. ' +
         'Em todos os formatos: uma única resposta inequívoca e explicação pedagógica curta. ' +
         'Quando houver resultado da semana anterior, calibre por ele: acima de 80% dos pontos, suba a dificuldade de forma perceptível (nuance mais fina, distratores mais próximos); abaixo de 40%, mantenha exigente mas alcançável. Os erros da semana passada são pista forte de fragilidade — cubra o mesmo ponto gramatical com contexto novo, nunca repetindo a pergunta. ' +
         'Não copie exercícios literalmente. Não mencione ao aluno que um item é fraqueza ou força.' }],
@@ -2515,7 +2537,7 @@ ${item.text}`).join('\n\n')}`
 
 export const challengeInternals = Object.freeze({
   localDateParts, addDays, monthKeyForWeek, weekKeyFor, nextMonday, scheduleFor, stageFor,
-  normalizeAnswer, canonicalChallengeTopic, publicChallengeQuestions, acceptedAnswersWithBlankFragments, validateQuestion, scoreWrittenAnswer, scoreAnswers, dateFrom, assertFocusMix,
+  normalizeAnswer, canonicalChallengeTopic, publicChallengeQuestions, acceptedAnswersWithBlankFragments, assertRequiredReferences, validateQuestion, scoreWrittenAnswer, scoreAnswers, dateFrom, assertFocusMix,
   assertFormatMix, formatOf, prepareManualStudentChallenge,
   FORMAT_MIX, FORMAT_THRESHOLD, groupScheduleFor,
 });
