@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Mateus Richter — CZK English</title>
+  <style>
+:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Horas, Endereços e Preposições — Lendo o Jornal do Bairro</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Mateus Richter &nbsp;•&nbsp;
+            <strong>Data:</strong> 08/29/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+
+        <section class="panel">
+          <p style="margin:0;font-weight:600;color:#14532D;">Fechamos a unidade juntando tudo: horas, dias, meses e números ordinários aplicados em textos reais — anúncios de jornal de bairro e duas conversas de telefone com endereço e horário de funcionamento.</p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 8px 0;">Começamos revisando as atividades da semana. O ponto que mais pegou você foi o som dos números ordinários: aquele som de <strong>V</strong> só existe em <em>five</em>. Assim que a palavra cresce ou vira ordinário — <em>fifteen, fifty, fifth</em> — o V já virou <strong>F</strong>. E tem um segundo detalhe: o <strong>E</strong> do final some quando o número vira ordinário. <em>Five → fifth, nine → ninth, twelve → twelfth</em>. Não é "fiveth" nem "nineth". Deixei as questões de <em>in / on / at</em> fora da correção de propósito, porque era exatamente o que a gente ia praticar em seguida.</p>
+            <p style="margin:0 0 8px 0;">Depois retomamos a linha da unidade: as horas com <em>a quarter after nine</em> (nove e quinze) e <em>a quarter to ten</em> (quinze para as dez), a diferença entre <em>late</em> e <em>on time</em>, e a regra das preposições — <strong>at</strong> para hora, <strong>on</strong> para dia da semana e <strong>in</strong> para mês. Com isso na mão, abrimos um jornal de bairro e você leu os anúncios em voz alta traduzindo: uma exposição de fotos no domingo, das 12h30 às 18h, na Fifth Avenue Gallery; uma palestra do Dr. Lenny Young para pessoas de 50 a 70 anos no dia 12 de maio, das 15h às 16h30, no quarto andar do City Center; a festa de 21 anos da Melanie no sábado, 13 de maio, das nove à meia-noite, no Sophia's Café; a farmácia aberta <em>24/7</em>; e os novos horários de um restaurante. Você mandou muito bem aqui — já dá para ler um jornal em inglês.</p>
+            <p style="margin:0 0 8px 0;">Na sequência veio o exercício de corrigir afirmações falsas sobre o jornal. Você percebeu sozinho que <em>Sophia's</em> era o nome do café e não a aniversariante (a aniversariante é a Melanie), que a festa é às nove <strong>da noite</strong> e não da manhã, e que quem fica em frente ao Sophia's Café é a farmácia. Também voltou aqui a expressão <strong>across from</strong> (em frente a / do outro lado de), que a gente já tinha visto faz um tempo.</p>
+            <p style="margin:0;">Fechamos com o exercício de áudio, o mais puxado do dia. Na primeira conversa, uma mulher liga para o <em>Jack's Restaurant</em> pedindo o endereço para ir a uma reunião. Você travou em duas palavras: <em>meeting</em> (reunião), que você entendeu como "manager", e <em>right</em> em <em>right down the street</em>, que aqui não é "direita" nem confirmação — é "bem", "exatamente". Também trabalhamos o <strong>There's</strong>, que não é "isto é": é <em>tem / existe</em> ("tem uma reunião", "tem um jogo"). Na segunda conversa, um supermercado na First Street, apareceram <em>from six to ten</em> (o <strong>from</strong> marca onde algo começa), <em>weekdays</em> — dias de semana, não fim de semana — e o <strong>on</strong> de <em>on First Street</em>, que aí é preposição de <strong>lugar</strong>, para nome de rua.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Frases usadas em aula</h2>
+          <div class="outline-card">
+            <ul>
+              <li><strong>"It's a quarter after nine."</strong> → São nove e quinze.</li>
+              <li><strong>"It's a quarter to ten."</strong> → São quinze para as dez.</li>
+              <li><strong>"There's a meeting at Jack's Restaurant."</strong> → Tem uma reunião no restaurante do Jack.</li>
+              <li><strong>"We're at 23 Main Street."</strong> → Estamos na Main Street, número 23.</li>
+              <li><strong>"Take the number 5 bus."</strong> → Pegue o ônibus número 5.</li>
+              <li><strong>"The restaurant is right down the street from the first bus stop."</strong> → O restaurante fica bem descendo a rua, a partir do primeiro ponto de ônibus.</li>
+              <li><strong>"It's across from a gas station."</strong> → Fica em frente a um posto de gasolina.</li>
+              <li><strong>"We're open 24/7."</strong> → Estamos abertos 24 horas por dia, 7 dias por semana.</li>
+              <li><strong>"We're open from six in the morning to ten at night."</strong> → Abrimos das seis da manhã às dez da noite.</li>
+              <li><strong>"The hours are the same on weekdays."</strong> → Os horários são os mesmos nos dias de semana.</li>
+              <li><strong>"It's 134 First Street."</strong> → É na First Street, número 134.</li>
+              <li><strong>"Please be on time."</strong> → Por favor, chegue no horário.</li>
+              <li><strong>"It's Melanie's twenty-first birthday."</strong> → É o aniversário de 21 anos da Melanie.</li>
+              <li><strong>"Be young, don't be old."</strong> → Seja jovem, não seja velho.</li>
+              <li><strong>"The pharmacy is across the street from Sophia's Café."</strong> → A farmácia fica em frente ao café da Sophia.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Key Vocabulary</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <div class="vocab-head">
+                <h3>across from</h3>
+                <button type="button" class="vocab-say" data-czk-say="across from"
+                        aria-label="Ouvir a pronúncia de across from" aria-pressed="false"
+                        title="Ouvir across from">&#128266;</button>
+              </div>
+              <p><em>(pt) em frente a / do outro lado de</em><br><small>Cuidado com o artigo: <em>across from <strong>a</strong> gas station</em> = em frente a um posto qualquer; <em>across from <strong>the</strong> pharmacy</em> = em frente àquela farmácia específica. Ex.: The restaurant is across from a gas station.</small></p>
+            </div>
+            <div class="vocab green">
+              <div class="vocab-head">
+                <h3>twenty-four seven</h3>
+                <button type="button" class="vocab-say" data-czk-say="twenty-four seven"
+                        aria-label="Ouvir a pronúncia de twenty-four seven" aria-pressed="false"
+                        title="Ouvir twenty-four seven">&#128266;</button>
+              </div>
+              <p><em>(pt) o tempo todo, sem parar</em><br><small>Escreve-se <strong>24/7</strong> e lê-se "twenty-four seven": 24 horas por dia, 7 dias por semana. Muito usado no comércio e também em rap. Ex.: We're open 24/7.</small></p>
+            </div>
+            <div class="vocab yellow">
+              <div class="vocab-head">
+                <h3>right down the street</h3>
+                <button type="button" class="vocab-say" data-czk-say="right down the street"
+                        aria-label="Ouvir a pronúncia de right down the street" aria-pressed="false"
+                        title="Ouvir right down the street">&#128266;</button>
+              </div>
+              <p><em>(pt) bem descendo a rua / logo ali na mesma rua</em><br><small>Aqui <strong>right</strong> não é "direita" nem "certo" — é "bem", "exatamente". Ex.: The restaurant is right down the street from the first bus stop.</small></p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Vocabulário da aula</h2>
+          <div class="outline-card">
+            <h3 style="margin-top:0;">Preposições — lugar</h3>
+            <ul>
+              <li><strong>on + nome de rua</strong> – na rua tal <em style="color:var(--muted);font-size:0.88rem;">Ex.: The supermarket is on First Street.</em></li>
+              <li><strong>at + número + rua</strong> – no endereço exato <em style="color:var(--muted);font-size:0.88rem;">Ex.: We're at 23 Main Street.</em></li>
+              <li><strong>across from</strong> – em frente a / do outro lado de</li>
+              <li><strong>down the street</strong> – descendo a rua, seguindo a rua</li>
+              <li><strong>right</strong> – bem, exatamente (reforça a posição)</li>
+            </ul>
+            <h3>Preposições — tempo</h3>
+            <ul>
+              <li><strong>at + hora</strong> – às... <em style="color:var(--muted);font-size:0.88rem;">Ex.: at six o'clock.</em></li>
+              <li><strong>on + dia da semana</strong> – na segunda, no sábado... <em style="color:var(--muted);font-size:0.88rem;">Ex.: on Sunday.</em></li>
+              <li><strong>in + mês</strong> – em maio, em setembro <em style="color:var(--muted);font-size:0.88rem;">Ex.: in May.</em></li>
+              <li><strong>from ... to ...</strong> – de... até... <em style="color:var(--muted);font-size:0.88rem;">Ex.: from six to ten.</em></li>
+            </ul>
+            <h3>Horas e horários</h3>
+            <ul>
+              <li><strong>a quarter after nine</strong> – nove e quinze</li>
+              <li><strong>a quarter to ten</strong> – quinze para as dez</li>
+              <li><strong>o'clock</strong> – em ponto</li>
+              <li><strong>in the morning</strong> – da manhã</li>
+              <li><strong>at night</strong> – da noite / à noite</li>
+              <li><strong>midnight</strong> – meia-noite</li>
+              <li><strong>on time</strong> – no horário, pontual</li>
+              <li><strong>late</strong> – atrasado</li>
+              <li><strong>weekdays</strong> – dias de semana <em style="color:var(--muted);font-size:0.88rem;">Não confunda com weekend (fim de semana).</em></li>
+              <li><strong>24/7 (twenty-four seven)</strong> – 24 horas, 7 dias por semana</li>
+            </ul>
+            <h3>Números ordinários</h3>
+            <ul>
+              <li><strong>first / third / fourth</strong> – primeiro / terceiro / quarto</li>
+              <li><strong>fifth</strong> – quinto <em style="color:var(--muted);font-size:0.88rem;">O V de "five" vira F e o E some.</em></li>
+              <li><strong>ninth</strong> – nono <em style="color:var(--muted);font-size:0.88rem;">"Nine" perde o E: não é "nineth".</em></li>
+              <li><strong>twelfth</strong> – décimo segundo <em style="color:var(--muted);font-size:0.88rem;">Mesma regra: o E de "twelve" vai embora.</em></li>
+              <li><strong>thirteenth / fourteenth</strong> – décimo terceiro / décimo quarto</li>
+              <li><strong>twenty-first</strong> – vigésimo primeiro <em style="color:var(--muted);font-size:0.88rem;">Ex.: Melanie's twenty-first birthday.</em></li>
+            </ul>
+            <h3>Do jornal do bairro</h3>
+            <ul>
+              <li><strong>exhibit</strong> – exposição, exibição</li>
+              <li><strong>gallery</strong> – galeria</li>
+              <li><strong>floor</strong> – andar <em style="color:var(--muted);font-size:0.88rem;">Ex.: fourth floor = quarto andar.</em></li>
+              <li><strong>seniors</strong> – pessoas mais velhas, idosos</li>
+              <li><strong>young / old</strong> – jovem / velho</li>
+              <li><strong>surprise</strong> – surpresa</li>
+              <li><strong>pharmacy</strong> – farmácia</li>
+              <li><strong>gas station</strong> – posto de gasolina</li>
+              <li><strong>bus stop</strong> – ponto de ônibus</li>
+              <li><strong>meeting</strong> – reunião</li>
+              <li><strong>chef</strong> – chefe de cozinha</li>
+            </ul>
+            <h3>Transporte</h3>
+            <ul>
+              <li><strong>take the bus</strong> – pegar o ônibus</li>
+              <li><strong>take a taxi</strong> – pegar um táxi</li>
+              <li><strong>go by car</strong> – ir de carro</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Correções importantes</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 10px 0;"><strong>1. "There is" não é "isto é"</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "There's a meeting" = "Isto é uma reunião"</p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong>"There's a meeting" = "Tem uma reunião"</strong> — <em>There is / There's</em> é o nosso <strong>tem</strong>, no sentido de existir: tem uma palestra, tem um jogo, tem uma aula. Quem traduz "isto é" é <em>this is</em>.</p>
+
+            <p style="margin:0 0 10px 0;"><strong>2. "meeting" ouvido como "manager"</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "There's a manager at Jack's Restaurant."</p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong>"There's a meeting at Jack's Restaurant."</strong> — <em>meeting</em> = reunião. As duas começam com som parecido, mas <em>meeting</em> tem o "i" longo (mii-ting) e só duas sílabas.</p>
+
+            <p style="margin:0 0 10px 0;"><strong>3. "right" não é "direita" nem confirmação</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "The restaurant is right down the street" = "o restaurante fica à direita"</p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong>"bem descendo a rua"</strong> — aqui <em>right</em> é intensificador: "bem", "exatamente". Igual em <em>right here</em> (bem aqui) e <em>right now</em> (agora mesmo).</p>
+
+            <p style="margin:0 0 10px 0;"><strong>4. Preposição com "night"</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "The pharmacy is open the night."</p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong>"The pharmacy is open at night."</strong> ou <strong>"open all night."</strong> — <em>at night</em> = à noite; <em>all night</em> = a noite toda. Nunca "the night" sozinho.</p>
+
+            <p style="margin:0 0 10px 0;"><strong>5. Faltou o "-teenth" no ordinário</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "Sunday is May fourth." (querendo dizer 14 de maio)</p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong>"Sunday is May fourteenth."</strong> — <em>fourth</em> é dia 4; <em>fourteenth</em> é dia 14. A sílaba do meio muda tudo.</p>
+
+            <p style="margin:0 0 10px 0;"><strong>6. Artigo depois de "across from"</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "It's across from the gas station."</p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong>"It's across from a gas station."</strong> — com <em>a</em>, porque é um posto qualquer, que ela ainda não conhece. O <em>the</em> só entra quando as duas pessoas já sabem de qual lugar se trata (como no <em>Sophia's Café</em>, que já tinha sido citado antes).</p>
+
+            <p style="margin:0 0 10px 0;"><strong>7. Preposições nas atividades da semana</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "on six o'clock" / "on May"</p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong>"at six o'clock" / "in May"</strong> — <strong>at</strong> antes de hora, <strong>in</strong> antes de mês, <strong>on</strong> antes de dia da semana e de nome de rua. Foi o erro mais comum da sua lista.</p>
+
+            <p style="margin:0 0 10px 0;"><strong>8. O som de V nos ordinários</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ "fiveth" / "nineth"</p>
+            <p style="margin:0 0 10px 0;color:#276749;">✅ <strong>"fifth" / "ninth"</strong> — o som de V só existe em <em>five</em>. Em <em>fifteen, fifty, fifth</em> ele já virou F. E o E do final some quando o número vira ordinário: <em>five → fifth, nine → ninth, twelve → twelfth</em>.</p>
+
+            <p style="margin:0;">💡 Você fez as atividades sem colar e por isso a nota caiu um pouco — mas foi a melhor coisa que podia ter feito. Erro que aparece é erro que a gente conserta; o que fica escondido pela cola, não.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Gravação da aula</h2>
+          <div class="media-row">
+            <a class="media-btn"
+               href="https://youtu.be/_gcYiR6fNEs"
+               target="_blank"
+               rel="noopener noreferrer"
+               role="button"
+               style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">
+              🎥 Assistir gravação
+            </a>
+          </div>
+        </section>
+
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>Tempo de Fala (Talk Time)</h2>
+          <table class="talk-table">
+            <thead>
+              <tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr>
+            </thead>
+            <tbody>
+              <tr class="row-teacher">
+                <td><span class="talk-label">César (Professor)</span></td>
+                <td><span class="talk-percent">55%</span></td>
+                <td class="talk-time">~33 minutos</td>
+              </tr>
+              <tr class="row-student">
+                <td><span class="talk-label">Mateus Richter</span></td>
+                <td><span class="talk-percent">45%</span></td>
+                <td class="talk-time">~27 minutos</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Homework</h2>
+          <div class="homework">
+            <p style="margin:0 0 8px 0;">📌 <strong>Lição de casa:</strong></p>
+            <ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+              <li>Treine <strong>in / on / at</strong>: <em>at</em> + hora, <em>on</em> + dia da semana e nome de rua, <em>in</em> + mês. Escreva 5 frases suas misturando os três.</li>
+              <li>Fale em voz alta os ordinários que perdem o E: <strong>fifth, ninth, twelfth</strong> — e depois <em>thirteenth, fourteenth, twenty-first</em>.</li>
+              <li>Repita as frases do exercício de áudio até saírem naturais: <em>right down the street</em>, <em>across from a gas station</em>, <em>from six to ten</em>.</li>
+              <li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana.</li>
+            </ul>
+          </div>
+          <div style="margin-top:14px;">
+            <a class="btn" href="https://wa.me" style="background:#25D366;border-radius:10px;box-shadow:none;">
+              💬 Falar comigo no WhatsApp
+            </a>
+          </div>
+        </section>
+
+      </main>
+
+      <footer>
+        <p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">
+          © 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com
+        </p>
+      </footer>
+
+    </article>
+  </div>
+
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body>
+</html>
