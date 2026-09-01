@@ -2326,6 +2326,60 @@ const SKILLS = [
   { id: 'writing',   label: 'Writing',   icon: '✍️', desc: 'Escreva melhor' },
 ];
 
+const SOUND_LAB_GUIDANCE = {
+  'i-long':       { difficulty:2, position:'Língua alta e bem à frente; lábios levemente esticados, como num sorriso.', action:'Sustente o som sem mudar a posição da boca.' },
+  'i-short':      { difficulty:3, position:'Língua alta e à frente, mas mais relaxada; mandíbula um pouco mais aberta.', action:'Faça um som bem curto. Evite alongar ou transformar em “i” do português.' },
+  'e':            { difficulty:2, position:'Língua no meio e à frente; boca moderadamente aberta e lábios relaxados.', action:'Mantenha a boca estável e produza um som curto, sem deslizar.' },
+  'ae':           { difficulty:4, position:'Língua baixa e à frente; abra bastante a mandíbula e mantenha os lábios esticados.', action:'Produza um som entre “é” e “á”, sem transformar em duas vogais.' },
+  'strut':        { difficulty:4, position:'Língua central e levemente baixa; lábios neutros e mandíbula relaxada.', action:'Solte um som curto e central, sem arredondar os lábios.' },
+  'a-long':       { difficulty:3, position:'Língua baixa e recuada; boca bem aberta e lábios neutros.', action:'Sustente a vogal com a garganta aberta, sem acrescentar um “r”.' },
+  'o-short':      { difficulty:4, position:'Língua baixa e recuada; mandíbula aberta e lábios arredondados.', action:'Faça um som curto e aberto. Ele varia bastante entre sotaques.' },
+  'aw-long':      { difficulty:3, position:'Língua no meio para trás; lábios arredondados e levemente projetados.', action:'Sustente o som sem fechar a boca no final.' },
+  'u-short':      { difficulty:4, position:'Língua alta e recuada, porém relaxada; lábios só um pouco arredondados.', action:'Produza um som curto. Não alongue como /uː/.' },
+  'u-long':       { difficulty:2, position:'Língua alta e recuada; lábios bem arredondados e projetados.', action:'Sustente o som de forma contínua.' },
+  'er-long':      { difficulty:4, position:'Língua no centro e na altura média; lábios neutros e mandíbula relaxada.', action:'Sustente a vogal central. No modelo britânico, não acrescente um “r” forte.' },
+  'schwa':        { difficulty:3, position:'Deixe língua, mandíbula e lábios completamente relaxados e centralizados.', action:'Produza o som mais curto e fraco possível; ele aparece em sílabas sem tonicidade.' },
+  'ay':           { difficulty:1, position:'Comece com a língua no meio e à frente; termine com a língua mais alta.', action:'Deslize suavemente de /e/ para /ɪ/ em uma única sílaba.' },
+  'eye':          { difficulty:1, position:'Comece com boca aberta e língua baixa; depois eleve a língua à frente.', action:'Feche um pouco a mandíbula durante o deslize, sem separar os dois sons.' },
+  'oy':           { difficulty:1, position:'Comece com os lábios arredondados e a língua atrás; termine com os lábios mais abertos.', action:'Deslize de /ɔ/ para /ɪ/ em uma única sílaba.' },
+  'oh':           { difficulty:2, position:'Comece com língua central e lábios neutros; leve a língua para trás e arredonde os lábios.', action:'Faça um único movimento contínuo até /ʊ/.' },
+  'ow':           { difficulty:1, position:'Comece com a boca aberta e língua baixa; termine com língua alta atrás e lábios arredondados.', action:'Deslize continuamente, sem criar duas sílabas.' },
+  'ear':          { difficulty:3, position:'Comece com a língua alta à frente; relaxe-a em direção ao centro.', action:'Deslize de /ɪ/ para /ə/. No inglês americano, pode aparecer um “r”.' },
+  'air':          { difficulty:3, position:'Comece com língua média à frente e mandíbula aberta; relaxe em direção ao centro.', action:'Deslize de /e/ para /ə/, mantendo uma única sílaba.' },
+  'ure':          { difficulty:4, position:'Comece com língua alta atrás e lábios arredondados; depois centralize e relaxe.', action:'Deslize de /ʊ/ para /ə/. A realização varia bastante conforme o sotaque.' },
+  'p':            { difficulty:1, position:'Feche os dois lábios e acumule ar atrás deles.', action:'Abra os lábios de uma vez e solte um pequeno sopro, sem vibrar a garganta.' },
+  'b':            { difficulty:1, position:'Feche os dois lábios, na mesma posição de /p/.', action:'Solte o ar enquanto vibra a garganta.' },
+  't':            { difficulty:2, position:'Encoste a ponta da língua na saliência logo atrás dos dentes superiores.', action:'Bloqueie e solte o ar rapidamente, sem vibrar a garganta.' },
+  'd':            { difficulty:2, position:'Encoste a ponta da língua na saliência logo atrás dos dentes superiores.', action:'Bloqueie e solte o ar rapidamente, com vibração na garganta.' },
+  'k':            { difficulty:1, position:'Encoste a parte de trás da língua no céu da boca macio.', action:'Segure e solte o ar de uma vez, sem vibrar a garganta.' },
+  'g':            { difficulty:1, position:'Encoste a parte de trás da língua no céu da boca macio.', action:'Segure e solte o ar de uma vez, com vibração na garganta.' },
+  'f':            { difficulty:1, position:'Encoste suavemente os dentes superiores no lábio inferior.', action:'Deixe o ar passar continuamente, sem vibrar a garganta.' },
+  'v':            { difficulty:2, position:'Encoste suavemente os dentes superiores no lábio inferior.', action:'Deixe o ar passar continuamente e vibre a garganta.' },
+  'th-voiceless': { difficulty:4, position:'Coloque só a ponta da língua entre os dentes, sem mordê-la.', action:'Sopre continuamente pelas laterais da língua, sem vibrar a garganta.' },
+  'th-voiced':    { difficulty:4, position:'Coloque só a ponta da língua entre os dentes, sem mordê-la.', action:'Deixe o ar passar e vibre a garganta durante todo o som.' },
+  's':            { difficulty:1, position:'Aproxime a ponta da língua da saliência atrás dos dentes; mantenha os dentes próximos.', action:'Forme um canal estreito no centro e sopre continuamente, sem vibração.' },
+  'z':            { difficulty:2, position:'Use a mesma posição de /s/, com dentes próximos e língua sem tocar o céu da boca.', action:'Deixe o ar passar pelo centro e vibre a garganta.' },
+  'sh':           { difficulty:1, position:'Leve a lâmina da língua para trás da saliência dos dentes e arredonde levemente os lábios.', action:'Solte ar contínuo, sem vibrar a garganta.' },
+  'zh':           { difficulty:2, position:'Use a posição de /ʃ/: língua um pouco recuada e lábios levemente arredondados.', action:'Mantenha o ar passando e vibre a garganta.' },
+  'h':            { difficulty:4, position:'Mantenha a boca preparada para a vogal seguinte; a língua não bloqueia o ar.', action:'Solte um sopro aberto pela garganta, sem força e sem transformar em “r”.' },
+  'ch':           { difficulty:2, position:'Encoste a lâmina da língua atrás da saliência dos dentes; arredonde levemente os lábios.', action:'Bloqueie e solte o ar com atrito como um único som, sem vibração.' },
+  'j':            { difficulty:2, position:'Use a mesma posição de /tʃ/, com a língua um pouco atrás da saliência dos dentes.', action:'Bloqueie e solte com atrito, vibrando a garganta.' },
+  'm':            { difficulty:1, position:'Feche os lábios e mantenha a língua relaxada.', action:'Vibre a garganta e deixe o ar sair pelo nariz.' },
+  'n':            { difficulty:1, position:'Encoste a ponta da língua atrás dos dentes superiores; mantenha os lábios relaxados.', action:'Vibre a garganta e deixe o ar sair pelo nariz.' },
+  'ng':           { difficulty:3, position:'Encoste a parte de trás da língua no céu da boca macio; não use a ponta da língua.', action:'Deixe o ar sair pelo nariz e não acrescente /g/ no final.' },
+  'l':            { difficulty:3, position:'Encoste a ponta da língua na saliência atrás dos dentes superiores.', action:'Deixe o ar passar pelos lados da língua. No fim da palavra, eleve também a parte de trás da língua.' },
+  'r':            { difficulty:4, position:'Eleve e recue levemente a ponta da língua, mas não deixe que ela toque o céu da boca.', action:'Arredonde um pouco os lábios, vibre a garganta e não bata nem enrole a língua.' },
+  'y':            { difficulty:1, position:'Aproxime o meio da língua do céu da boca duro; mantenha os lábios relaxados.', action:'Deslize rapidamente para a vogal seguinte, com vibração.' },
+  'w':            { difficulty:2, position:'Arredonde bem os lábios e eleve a parte de trás da língua.', action:'Deslize rapidamente para a vogal seguinte, sem criar uma vogal separada.' },
+};
+
+const SOUND_LAB_DIFFICULTIES = [
+  { label:'Fácil', color:'#22C55E' },
+  { label:'Atenção', color:'#EAB308' },
+  { label:'Desafiador', color:'#F97316' },
+  { label:'Avançado', color:'#EF4444' },
+];
+
 const SOUND_LAB_SOUNDS = [
   { id:'i-long', ipa:'iː', group:'vowel', kind:'vogal longa', words:['see','green','teacher'], tip:'Mantenha o som longo, com os lábios levemente abertos.' },
   { id:'i-short', ipa:'ɪ', group:'vowel', kind:'vogal curta', words:['sit','little','busy'], tip:'Faça um som curto e relaxado, sem alongar como “ii”.' },
@@ -2371,7 +2425,7 @@ const SOUND_LAB_SOUNDS = [
   { id:'r', ipa:'r', group:'consonant', kind:'R inglês', words:['red','around','car'], tip:'Não toque o céu da boca e não vibre a ponta da língua.' },
   { id:'y', ipa:'j', group:'consonant', kind:'som de Y', words:['yes','use','music'], tip:'Deslize rapidamente para a vogal seguinte.' },
   { id:'w', ipa:'w', group:'consonant', kind:'semivogal', words:['we','away','quick'], tip:'Arredonde os lábios e deslize para a vogal seguinte.' },
-].map(sound => ({ ...sound, audio:`audio/phonemes/${sound.id}.wav` }));
+].map(sound => ({ ...sound, ...SOUND_LAB_GUIDANCE[sound.id], audio:`audio/phonemes/${sound.id}.wav` }));
 
 const SOUND_LAB_IPA_ALIASES = [
   { symbol:'oʊ', ids:['oh'] }, { symbol:'ɝ', ids:['er-long'] }, { symbol:'ɚ', ids:['schwa','r'] },
@@ -2479,6 +2533,7 @@ function SoundLabExplorer() {
   const sequenceRef = useRef(0);
   const active = SOUND_LAB_SOUNDS.find(sound => sound.id === activeId) || SOUND_LAB_SOUNDS[0];
   const visible = SOUND_LAB_SOUNDS.filter(sound => filter === 'all' || sound.group === filter);
+  const difficulty = SOUND_LAB_DIFFICULTIES[(active.difficulty || 1) - 1];
 
   const stopAudio = () => {
     sequenceRef.current += 1;
@@ -2692,7 +2747,36 @@ function SoundLabExplorer() {
             {playing === `sound:${active.id}` ? '🔊 Tocando' : '▶ Ouvir o fonema'}
           </button>
         </div>
-        <div style={{ marginTop:12, color:'#475569', fontSize:13.5, lineHeight:1.55 }}>{active.tip}</div>
+        <div style={{ marginTop:14, padding:'13px 14px', borderRadius:12, background:'rgba(255,255,255,.78)', border:'1px solid rgba(15,23,42,.08)' }}>
+          <div style={{ fontSize:11, fontWeight:800, color:'#64748B', textTransform:'uppercase', letterSpacing:.5, marginBottom:9 }}>Como pronunciar</div>
+          <div style={{ display:'grid', gap:8 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'25px 1fr', gap:7, alignItems:'start' }}>
+              <span aria-hidden="true" style={{ fontSize:17 }}>👅</span>
+              <div><strong style={{ color:'#334155' }}>Língua, boca e lábios:</strong> <span style={{ color:'#475569' }}>{active.position}</span></div>
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'25px 1fr', gap:7, alignItems:'start' }}>
+              <span aria-hidden="true" style={{ fontSize:17 }}>💨</span>
+              <div><strong style={{ color:'#334155' }}>Ação, ar e voz:</strong> <span style={{ color:'#475569' }}>{active.action}</span></div>
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'25px 1fr', gap:7, alignItems:'start' }}>
+              <span aria-hidden="true" style={{ fontSize:17 }}>💡</span>
+              <div><strong style={{ color:'#334155' }}>Dica:</strong> <span style={{ color:'#475569' }}>{active.tip}</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ marginTop:12, padding:'12px 14px', borderRadius:12, background:'#fff', border:'1px solid #E2E8F0' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:10, marginBottom:8 }}>
+            <div style={{ fontSize:11.5, fontWeight:800, color:'#475569' }}>Dificuldade para falantes de português brasileiro</div>
+            <span style={{ fontSize:11, fontWeight:900, color:difficulty.color, whiteSpace:'nowrap' }}>{difficulty.label}</span>
+          </div>
+          <div role="img" aria-label={`Dificuldade ${active.difficulty} de 4: ${difficulty.label}`} style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:5 }}>
+            {SOUND_LAB_DIFFICULTIES.map((level,index) => (
+              <span key={level.label} style={{ height:8, borderRadius:999, background:index < active.difficulty ? level.color : '#E2E8F0', boxShadow:index === active.difficulty - 1 ? `0 0 0 2px ${level.color}33` : 'none' }} />
+            ))}
+          </div>
+          <div style={{ fontSize:9.5, color:'#94A3B8', marginTop:7 }}>Estimativa pedagógica: a dificuldade real pode variar de aluno para aluno.</div>
+        </div>
         <div style={{ marginTop:14, paddingTop:13, borderTop:'1px solid rgba(15,23,42,.09)' }}>
           <div style={{ fontSize:11, fontWeight:800, color:'#64748B', textTransform:'uppercase', letterSpacing:.5, marginBottom:8 }}>Palavras de exemplo</div>
           <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
@@ -2704,6 +2788,9 @@ function SoundLabExplorer() {
           </div>
         </div>
       </GlassCard>
+      <div style={{ fontSize:9.5, color:'#94A3B8', lineHeight:1.45, marginTop:10, textAlign:'center' }}>
+        Orientações articulatórias baseadas em <a href="https://soundsofspeech.uiowa.edu/" target="_blank" rel="noopener noreferrer" style={{ color:'inherit' }}>Sounds of Speech — University of Iowa</a> e em materiais abertos de fonética. Níveis adaptados às dificuldades recorrentes de brasileiros aprendendo inglês.
+      </div>
     </div>
   );
 }

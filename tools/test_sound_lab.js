@@ -5,7 +5,7 @@ const crypto = require('crypto');
 
 const repo = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(repo, 'index.html'), 'utf8');
-const start = html.indexOf('const SOUND_LAB_SOUNDS = [');
+const start = html.indexOf('const SOUND_LAB_GUIDANCE = {');
 const end = html.indexOf('function SoundLabExplorer()', start);
 if (start < 0 || end < 0) throw new Error('Sound lab helpers were not found.');
 
@@ -16,6 +16,9 @@ const { SOUND_LAB_SOUNDS, soundLabTokenizeIpa, soundLabPickPhonetic } = sandbox.
 
 if (SOUND_LAB_SOUNDS.length !== 44) throw new Error(`Expected 44 sounds, found ${SOUND_LAB_SOUNDS.length}.`);
 if (new Set(SOUND_LAB_SOUNDS.map(sound => sound.audio)).size !== 44) throw new Error('Audio paths are not unique.');
+if (SOUND_LAB_SOUNDS.some(sound => !sound.position || !sound.action || !sound.tip)) throw new Error('Every phoneme needs complete articulation guidance.');
+if (SOUND_LAB_SOUNDS.some(sound => !Number.isInteger(sound.difficulty) || sound.difficulty < 1 || sound.difficulty > 4)) throw new Error('Every phoneme needs a difficulty from 1 to 4.');
+if (new Set(SOUND_LAB_SOUNDS.map(sound => sound.id)).size !== 44) throw new Error('Phoneme ids must be unique.');
 
 const examples = [
   ['teacher', '/ˈtiː.t͡ʃəː/', ['t','iː','tʃ','ə']],
@@ -63,5 +66,6 @@ if (!/placeholder="Ex\.: teacher"/.test(html) || !/Ouvir todos, som por som/.tes
 if (!/freedictionaryapi\.com[\s\S]+api\.dictionaryapi\.dev/.test(html)) throw new Error('Pronunciation API fallback is missing.');
 if (!/useState\(0\.85\)/.test(html) || !/player\.playbackRate = soundSpeed/.test(html)) throw new Error('Slower phoneme playback is missing.');
 if (!/audioCacheRef = useRef\(new Map\(\)\)/.test(html)) throw new Error('Preloaded phoneme audio cache is missing.');
+if (!/Dificuldade para falantes de português brasileiro/.test(html) || !/Como pronunciar/.test(html)) throw new Error('Articulation guidance UI is missing.');
 
 console.log(`sound-lab-ok sounds=${SOUND_LAB_SOUNDS.length} wav=${fs.readdirSync(audioDir).filter(name => name.endsWith('.wav')).length} unique-audio=${hashes.size}`);
