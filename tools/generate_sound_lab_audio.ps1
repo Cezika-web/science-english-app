@@ -109,4 +109,6 @@ foreach ($entry in $phonemes.GetEnumerator()) {
   Write-Output ("generated {0} /{1}/ ({2} bytes)" -f $entry.Key, $entry.Value, $fileLength)
 }
 
+& (Join-Path $PSScriptRoot 'normalize_sound_lab_audio.ps1') -AudioDirectory $resolvedOutput
+
 Write-Output ("completed voice='{0}' files={1}" -f $englishVoice.GetDescription(), $phonemes.Count)

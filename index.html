@@ -2433,6 +2433,38 @@ function soundLabPickPhonetic(payload) {
   return unique[0]?.text || '';
 }
 
+async function soundLabFetchPronunciation(word) {
+  const sources = [
+    {
+      name:'FreeDictionaryAPI',
+      url:`https://freedictionaryapi.com/api/v1/entries/en/${encodeURIComponent(word)}`,
+    },
+    {
+      name:'DictionaryAPI',
+      url:`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`,
+    },
+  ];
+  for (const source of sources) {
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    const timeout = controller ? setTimeout(() => controller.abort(), 7000) : null;
+    try {
+      const response = await fetch(source.url, controller ? { signal:controller.signal } : undefined);
+      if (!response.ok) continue;
+      const payload = await response.json();
+      const phonetic = soundLabPickPhonetic(payload);
+      const tokens = soundLabTokenizeIpa(phonetic);
+      if (phonetic && tokens.some(token => token.sound)) {
+        return { phonetic, tokens, source:source.name, sourceUrl:payload?.source?.url || '' };
+      }
+    } catch (error) {
+      // A segunda fonte cobre bloqueios, indisponibilidade e limite da primeira.
+    } finally {
+      if (timeout) clearTimeout(timeout);
+    }
+  }
+  throw new Error('pronunciation-unavailable');
+}
+
 function SoundLabExplorer() {
   const [filter, setFilter] = useState('all');
   const [activeId, setActiveId] = useState(SOUND_LAB_SOUNDS[0].id);
@@ -2440,13 +2472,21 @@ function SoundLabExplorer() {
   const [wordInput, setWordInput] = useState('');
   const [wordResult, setWordResult] = useState(null);
   const [wordLoading, setWordLoading] = useState(false);
+  const [soundSpeed, setSoundSpeed] = useState(0.85);
   const audioRef = useRef(null);
+  const audioCacheRef = useRef(new Map());
+  const playbackFinishRef = useRef(null);
   const sequenceRef = useRef(0);
   const active = SOUND_LAB_SOUNDS.find(sound => sound.id === activeId) || SOUND_LAB_SOUNDS[0];
   const visible = SOUND_LAB_SOUNDS.filter(sound => filter === 'all' || sound.group === filter);
 
   const stopAudio = () => {
     sequenceRef.current += 1;
+    if (playbackFinishRef.current) {
+      const finishPlayback = playbackFinishRef.current;
+      playbackFinishRef.current = null;
+      finishPlayback(false);
+    }
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -2456,17 +2496,48 @@ function SoundLabExplorer() {
     setPlaying('');
   };
 
-  useEffect(() => () => stopAudio(), []);
+  useEffect(() => {
+    SOUND_LAB_SOUNDS.forEach(sound => {
+      const player = new Audio(new URL(sound.audio, document.baseURI).href);
+      player.preload = 'auto';
+      audioCacheRef.current.set(sound.id, player);
+    });
+    return () => {
+      stopAudio();
+      audioCacheRef.current.forEach(player => {
+        player.pause();
+        player.removeAttribute('src');
+        player.load();
+      });
+      audioCacheRef.current.clear();
+    };
+  }, []);
 
   const playSoundFile = (sound, key, sequenceToken) => new Promise(resolve => {
     if (!sound || (sequenceToken != null && sequenceToken !== sequenceRef.current)) { resolve(false); return; }
-    const player = new Audio(sound.audio);
+    const player = audioCacheRef.current.get(sound.id) || new Audio(new URL(sound.audio, document.baseURI).href);
+    audioCacheRef.current.set(sound.id, player);
+    player.pause();
+    player.currentTime = 0;
+    player.playbackRate = soundSpeed;
+    player.defaultPlaybackRate = soundSpeed;
+    player.preservesPitch = true;
     audioRef.current = player;
     setPlaying(key);
+    let settled = false;
+    let safetyTimer = null;
     const finish = ok => {
+      if (settled) return;
+      settled = true;
+      if (safetyTimer) clearTimeout(safetyTimer);
+      if (playbackFinishRef.current === finish) playbackFinishRef.current = null;
       if (audioRef.current === player) audioRef.current = null;
+      player.onended = null;
+      player.onerror = null;
       resolve(ok);
     };
+    playbackFinishRef.current = finish;
+    safetyTimer = setTimeout(() => finish(false), 8000);
     player.onended = () => finish(true);
     player.onerror = () => finish(false);
     const promise = player.play();
@@ -2504,13 +2575,8 @@ function SoundLabExplorer() {
     setWordLoading(true);
     setWordResult(null);
     try {
-      const response = await fetch(`https://freedictionaryapi.com/api/v1/entries/en/${encodeURIComponent(word)}`);
-      if (!response.ok) throw new Error('not-found');
-      const entries = await response.json();
-      const phonetic = soundLabPickPhonetic(entries);
-      const tokens = soundLabTokenizeIpa(phonetic);
-      if (!phonetic || !tokens.some(token => token.sound)) throw new Error('no-phonetic');
-      setWordResult({ word, phonetic, tokens, sourceUrl:entries?.source?.url || '' });
+      const result = await soundLabFetchPronunciation(word);
+      setWordResult({ word, ...result });
     } catch (error) {
       setWordResult({ word, error:true, tokens:[] });
     } finally {
@@ -2531,7 +2597,7 @@ function SoundLabExplorer() {
         if (token === sequenceRef.current) showToast('Não consegui tocar a sequência completa.');
         break;
       }
-      await new Promise(resolve => setTimeout(resolve, 180));
+      await new Promise(resolve => setTimeout(resolve, 320));
     }
     if (token === sequenceRef.current) setPlaying('');
   };
@@ -2571,8 +2637,22 @@ function SoundLabExplorer() {
             <div style={{ fontSize:10.5, color:'#94A3B8', marginTop:9 }}>Toque em cada bloco para repetir o fonema. A transcrição pode variar conforme o sotaque.</div>
           </div>
         )}
-        <div style={{ fontSize:9.5, color:'#94A3B8', marginTop:10 }}>Transcrições: <a href="https://freedictionaryapi.com/" target="_blank" rel="noopener noreferrer" style={{ color:'inherit' }}>FreeDictionaryAPI.com</a>, com dados do Wiktionary (CC BY-SA 4.0).</div>
+        <div style={{ fontSize:9.5, color:'#94A3B8', marginTop:10 }}>Transcrições: <a href="https://freedictionaryapi.com/" target="_blank" rel="noopener noreferrer" style={{ color:'inherit' }}>FreeDictionaryAPI.com</a> e <a href="https://dictionaryapi.dev/" target="_blank" rel="noopener noreferrer" style={{ color:'inherit' }}>DictionaryAPI.dev</a>, com dados abertos de dicionário.</div>
       </GlassCard>
+
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, marginBottom:14, padding:'10px 12px', border:'1px solid #DDE4EE', borderRadius:12, background:'#fff' }}>
+        <div>
+          <div style={{ fontSize:12.5, fontWeight:800, color:'#334155' }}>Velocidade dos fonemas</div>
+          <div style={{ fontSize:10.5, color:'#64748B', marginTop:2 }}>O modo devagar deixa cada som mais nítido.</div>
+        </div>
+        <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+          {[[0.85,'Devagar'],[1,'Normal']].map(([speed,label]) => (
+            <button key={speed} type="button" onClick={() => { stopAudio(); setSoundSpeed(speed); }} aria-pressed={soundSpeed === speed} style={{ border:soundSpeed === speed ? '1px solid var(--brand)' : '1px solid #CBD5E1', borderRadius:999, background:soundSpeed === speed ? 'rgba(var(--brand-rgb),.1)' : '#fff', color:soundSpeed === speed ? 'var(--brand-dark)' : '#475569', padding:'7px 10px', fontFamily:'inherit', fontSize:11.5, fontWeight:800, cursor:'pointer' }}>
+              {label} {String(speed).replace('.',',')}×
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:14 }}>
         {[

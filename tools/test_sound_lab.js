@@ -37,6 +37,7 @@ if (picked !== '/ˈtiː.t͡ʃəː/') throw new Error('British/RP transcription w
 
 const audioDir = path.join(repo, 'audio', 'phonemes');
 const hashes = new Set();
+const peaks = [];
 for (const sound of SOUND_LAB_SOUNDS) {
   const file = path.join(repo, sound.audio);
   const bytes = fs.readFileSync(file);
@@ -44,11 +45,23 @@ for (const sound of SOUND_LAB_SOUNDS) {
     throw new Error(`Invalid WAV file: ${sound.audio}`);
   }
   hashes.add(crypto.createHash('sha256').update(bytes).digest('hex'));
+  const dataChunk = bytes.indexOf(Buffer.from('data'));
+  if (dataChunk < 0) throw new Error(`Missing WAV data chunk: ${sound.audio}`);
+  const dataSize = bytes.readUInt32LE(dataChunk + 4);
+  let peak = 0;
+  for (let offset = dataChunk + 8; offset + 1 < dataChunk + 8 + dataSize; offset += 2) {
+    peak = Math.max(peak, Math.abs(bytes.readInt16LE(offset)));
+  }
+  peaks.push(peak);
 }
 if (hashes.size < 40) throw new Error(`Too many duplicate audio files: ${hashes.size} unique.`);
+if (Math.min(...peaks) < 18000) throw new Error(`Phoneme audio is too quiet: minimum peak ${Math.min(...peaks)}.`);
 
-if (!/new Audio\(sound\.audio\)/.test(html)) throw new Error('Phoneme playback is not using isolated audio.');
+if (!/new Audio\(new URL\(sound\.audio, document\.baseURI\)\.href\)/.test(html)) throw new Error('Phoneme playback is not using isolated audio.');
 if (/const playPhoneme[\s\S]{0,500}pronounceEnglish\(active\.words\[0\]/.test(html)) throw new Error('Phoneme playback still speaks the example word.');
 if (!/placeholder="Ex\.: teacher"/.test(html) || !/Ouvir todos, som por som/.test(html)) throw new Error('Word analyzer controls are missing.');
+if (!/freedictionaryapi\.com[\s\S]+api\.dictionaryapi\.dev/.test(html)) throw new Error('Pronunciation API fallback is missing.');
+if (!/useState\(0\.85\)/.test(html) || !/player\.playbackRate = soundSpeed/.test(html)) throw new Error('Slower phoneme playback is missing.');
+if (!/audioCacheRef = useRef\(new Map\(\)\)/.test(html)) throw new Error('Preloaded phoneme audio cache is missing.');
 
 console.log(`sound-lab-ok sounds=${SOUND_LAB_SOUNDS.length} wav=${fs.readdirSync(audioDir).filter(name => name.endsWith('.wav')).length} unique-audio=${hashes.size}`);
