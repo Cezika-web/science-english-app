@@ -1709,6 +1709,7 @@
           <textarea id="calendar-event-notes" maxlength="600" style="min-height:86px;font-family:inherit;" placeholder="Link, endereço ou lembrete particular"></textarea>
         </div>
         <div class="form-msg" id="calendar-event-msg"></div>
+        <div id="calendar-event-briefing-notice" role="status" style="display:none;margin-top:12px;padding:10px;border-radius:8px;background:#fff7ed;color:#9a3412;font-size:.83rem;">Esta aula ainda não está vinculada a um aluno. Selecione o aluno e salve para acessar a pauta.</div>
         <div class="calendar-modal-actions">
           <button class="calendar-delete" id="calendar-event-delete" type="button">Excluir</button>
           <button class="btn-secondary" id="calendar-event-briefing" type="button" style="display:none;">📋 Pauta desta aula</button>
@@ -1787,6 +1788,7 @@
     <div class="calendar-pop-label">Cor</div>
     <div class="calendar-pop-colors calendar-pop-palette" id="calendar-pop-palette"></div>
     <button class="btn-secondary" id="calendar-pop-briefing" type="button" style="display:none;width:100%;margin-top:12px;padding:9px;font-size:.83rem;">📋 Pauta desta aula</button>
+    <div id="calendar-pop-briefing-notice" role="status" style="display:none;margin-top:12px;padding:10px;border-radius:8px;background:#fff7ed;color:#9a3412;font-size:.83rem;">Esta aula ainda não está vinculada a um aluno. Selecione o aluno e salve para acessar a pauta.</div>
     <button class="btn-secondary" id="calendar-pop-cancelar" type="button" style="display:none;width:100%;margin-top:8px;padding:9px;font-size:.83rem;">🚫 Cancelar só esta aula</button>
     <div class="calendar-pop-actions">
       <button class="btn-add" id="calendar-pop-save" type="button">Salvar</button>
@@ -2849,6 +2851,22 @@
         : '';
     }
 
+    function calendarSyncBriefing(context, type, uid, canOpen = true) {
+      const alunoValido = allStudents.some(student => student.uid === uid && !student.archived);
+      const ehAula = type === 'lesson';
+      const button = document.getElementById(`calendar-${context}-briefing`);
+      const notice = document.getElementById(`calendar-${context}-briefing-notice`);
+      button.style.display = ehAula && alunoValido && canOpen ? (context === 'pop' ? 'block' : 'inline-block') : 'none';
+      notice.style.display = ehAula && !alunoValido ? 'block' : 'none';
+      if (ehAula && alunoValido && canOpen) briefingAplicarEstado(button);
+    }
+
+    function calendarSyncPopBriefing() {
+      if (!calendarPopDraft) return;
+      calendarSyncBriefing('pop', calendarPopDraft.type,
+        document.getElementById('calendar-pop-student').value, Boolean(calendarPopDraft.id));
+    }
+
     // Faixa de selos no topo: o que dá pra saber batendo o olho, antes de ler.
     // Só entra o que é acionável — nada de "está tudo em dia" ocupando espaço.
     function briefingSelos({ uid, aluno, posaula, atividades, linhaDesafio, houveDesafio }) {
@@ -3129,9 +3147,11 @@
     document.getElementById('briefing-close').onclick = () => document.getElementById('briefing-modal').classList.remove('open');
     document.getElementById('briefing-modal').onclick = (click) => { if (click.target.id === 'briefing-modal') click.currentTarget.classList.remove('open'); };
     document.getElementById('calendar-pop-briefing').onclick = () => {
-      if (!calendarPopDraft?.studentUid) return;
-      const uid = calendarPopDraft.studentUid, notas = calendarPopDraft.notes || '';
+      const uid = document.getElementById('calendar-pop-student').value;
+      if (calendarPopDraft?.type !== 'lesson' || !calendarPopDraft.id || !uid) return;
+      const notas = calendarPopDraft.notes || '';
       const aluno = allStudents.find(item => item.uid === uid);
+      if (!aluno || aluno.archived) return;
       closeCalendarPop();                       // sai da frente: a pauta abre limpa sobre a agenda
       openBriefing(uid, aluno?.name || aluno?.firstName || '', notas);
     };
@@ -3272,10 +3292,7 @@
       document.getElementById('calendar-student-field').style.display = comAluno ? 'block' : 'none';
       document.getElementById('calendar-makeup-field').style.display = type === 'reposicao' ? 'block' : 'none';
       // A pauta só faz sentido em aula de aluno, e só depois de escolher quem é.
-      const botaoPautaModal = document.getElementById('calendar-event-briefing');
-      const mostraPauta = type === 'lesson' && Boolean(document.getElementById('calendar-event-student').value);
-      botaoPautaModal.style.display = mostraPauta ? 'inline-block' : 'none';
-      if (mostraPauta) briefingAplicarEstado(botaoPautaModal);
+      calendarSyncBriefing('event', type, document.getElementById('calendar-event-student').value);
       document.getElementById('calendar-repeat-until-field').style.display = repeat !== 'none' ? 'block' : 'none';
       const repeatSelect = document.getElementById('calendar-event-repeat');
       repeatSelect.disabled = type === 'reposicao' || type === 'experimental';
@@ -3528,6 +3545,7 @@
       const campoRepeticao = document.getElementById('calendar-pop-repeat');
       campoRepeticao.disabled = TIPOS_SEM_REPETICAO.includes(calendarPopDraft.type);
       if (campoRepeticao.disabled) campoRepeticao.value = 'none';
+      calendarSyncPopBriefing();
     }
 
     document.getElementById('calendar-pop-reposicao').onclick = () => {
@@ -3608,10 +3626,7 @@
       calendarPopDraft.repeatDays = (event.repeatDays || []).map(Number);
       document.getElementById('calendar-pop-delete').style.display = event.id ? 'block' : 'none';
       // Pauta só em aula de aluno já salva — num bloco novo ainda não há o que resumir.
-      const botaoPauta = document.getElementById('calendar-pop-briefing');
-      const ehAula = Boolean(calendarPopDraft.type === 'lesson' && calendarPopDraft.studentUid && event.id);
-      botaoPauta.style.display = ehAula ? 'block' : 'none';
-      if (ehAula) briefingAplicarEstado(botaoPauta);
+      calendarSyncPopBriefing();
       const botaoCancelar = document.getElementById('calendar-pop-cancelar');
       const dia = calendarPopDraft.ocorrencia;
       const jaCancelada = Boolean(event.id && dia && calendarCancelada(event, dia));
@@ -3642,12 +3657,12 @@
       if (!startTime || !endTime) return calendarPopFail('Preencha o horário.');
       if (calendarMinutes(endTime) <= calendarMinutes(startTime)) return calendarPopFail('O fim precisa ser depois do início.');
       const comAluno = type === 'lesson' || type === 'reposicao';
-      const uidEscolhido = comAluno ? (document.getElementById('calendar-pop-student').value || calendarPopDraft.studentUid || '') : '';
+      const uidEscolhido = comAluno ? document.getElementById('calendar-pop-student').value : '';
       const student = allStudents.find(item => item.uid === uidEscolhido);
       const repeat = TIPOS_SEM_REPETICAO.includes(type) ? 'none' : document.getElementById('calendar-pop-repeat').value;
       const repeatDays = repeat === 'custom' ? (calendarPopDraft.repeatDays || []).map(Number) : [];
       if (repeat === 'custom' && !repeatDays.length) return calendarPopFail('Escolha pelo menos um dia da semana.');
-      if (comAluno && !uidEscolhido) return calendarPopFail('Escolha o aluno desta aula.');
+      if (comAluno && (!student || student.archived)) return calendarPopFail('Escolha o aluno desta aula.');
       const makeupForDate = type === 'reposicao' ? document.getElementById('calendar-pop-makeup-for').value : '';
       if (type === 'reposicao' && !makeupForDate) return calendarPopFail('Escolha qual falta esta reposição compensa.');
       if (type === 'reposicao' && makeupForDate > calendarPopDraft.date) return calendarPopFail('A reposição não pode compensar uma aula futura.');
@@ -3688,6 +3703,7 @@
     };
     document.getElementById('calendar-pop-student').onchange = event => {
       const student = allStudents.find(item => item.uid === event.target.value);
+      calendarSyncPopBriefing();
       if (calendarPopDraft?.type === 'reposicao' && student) {
         const title = document.getElementById('calendar-pop-title');
         if (!title.value || title.value.startsWith('Reposição')) title.value = `Reposição · ${student.name || student.firstName}`;
