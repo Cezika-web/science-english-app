@@ -9,6 +9,7 @@ import { montarTemplate, REGRAS_POS_AULA, garantirAudioPosAula } from './posaula
 import { REGRAS_ATIVIDADES, SCHEMA_ATIVIDADES, textoDaPosAula } from './atividades.js';
 import { createChallengeFunctions } from './challenge.js';
 import { createCobrancaFunctions } from './cobranca.js';
+import { activityPublicationMetadata } from './activity-publication.js';
 
 initializeApp();
 const db = getFirestore();
@@ -1707,9 +1708,11 @@ export const publicarAtividades = onCall(
 
     const lote = db.batch();
     const publicadas = [];
+    const publicationTime = new Date();
 
     for (const { uid, week, activities, vocabulario = [], nome, posaulas = [] } of lista) {
       const { aluno } = await carregarAlunoEEscola(email, uid);
+      const publication = activityPublicationMetadata(week, publicationTime);
 
       for (const act of activities) {
         // De qual pós-aula saiu esta atividade — é o que o botão "Consultar
@@ -1717,7 +1720,7 @@ export const publicarAtividades = onCall(
         const origem = posaulaDaAtividade(posaulas, act.sourceIndex);
 
         lote.set(db.collection(`students/${uid}/activities`).doc(), {
-          week: week || '',
+          ...publication,
           title: act.title || '',
           emoji: act.emoji || '📚',
           parts: act.parts || [],

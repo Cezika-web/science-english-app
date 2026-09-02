@@ -5722,7 +5722,7 @@
             ${vocab.map(v => `<div style="font-size:0.88rem;padding:3px 0;"><strong>${esc(v.en)}</strong> — ${esc(v.pt)}</div>`).join('')}
           </div>` : '';
 
-        previa.innerHTML = blocoVocab + leva.activities.map((a, k) => `
+        previa.innerHTML = `<p style="font-size:0.85rem;color:var(--muted);">Publicação: ${esc(activityPublicationMetadata().week)} (data de hoje, horário de São Paulo). Referência da aula: ${esc(leva.week || '—')}.</p>` + blocoVocab + leva.activities.map((a, k) => `
           <div style="margin-bottom:16px;padding:14px;${a.review90 ? 'background:#f5f3ff;border:1.5px solid #c4b5fd;border-radius:12px;' : ''}${!a.review90 && k < leva.activities.length - 1 ? 'border-bottom:1px solid var(--border);' : ''}">
             ${a.review90 ? '<div style="display:inline-block;margin-bottom:8px;padding:3px 8px;border-radius:999px;background:#ede9fe;color:#6d28d9;font-size:0.72rem;font-weight:800;">REVISÃO DE 90 DIAS · SEMANA ' + Number(a.review90Phase || 1) + '</div>' : ''}
             <div style="font-weight:700;margin-bottom:8px;">${a.emoji || '📚'} ${esc(a.title || '')}</div>
@@ -5854,7 +5854,7 @@
         const totalAtiv = levas.reduce((n, l) => n + l.activities.length, 0);
         tituloEl.textContent = levas.length > 1
           ? `${totalAtiv} atividades para ${levas.length} alunos`
-          : `${totalAtiv} atividade(s) — ${levas[0].week}`;
+          : `${totalAtiv} atividade(s) — publicação em ${activityPublicationMetadata().week}`;
 
         abas.innerHTML = levas.length > 1
           ? levas.map((l, i) => `<button type="button" data-i="${i}" style="padding:7px 13px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;font-weight:700;font-size:0.82rem;">${esc(l.nome)} <span style="opacity:0.7;font-weight:500;">${esc(l.nivel || '')}</span></button>`).join('')
@@ -6903,6 +6903,23 @@
     document.getElementById('student-challenge-close').onclick = () => document.getElementById('student-challenge-modal').classList.remove('open');
     document.getElementById('student-challenge-modal').onclick = e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); };
 
+    // O agrupamento usa o dia da publicação, não a semana reutilizada no JSON.
+    // Calcular uma única vez por lote evita separar atividades à meia-noite.
+    function activityPublicationMetadata(sourceWeek = '', now = new Date()) {
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
+      }).formatToParts(now);
+      const value = type => parts.find(part => part.type === type).value;
+      const publicationDate = `${value('year')}-${value('month')}-${value('day')}`;
+      const months = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO',
+        'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'];
+      return {
+        week: `${value('day')} DE ${months[Number(value('month')) - 1]} ${value('year')}`,
+        publicationDate,
+        sourceWeek: typeof sourceWeek === 'string' ? sourceWeek : '',
+      };
+    }
+
     // ── PUBLICAR ATIVIDADES ──────────────────────────────────────────────
     document.getElementById('btn-parse-json').onclick = () => {
       const raw = document.getElementById('pub-json').value.trim();
@@ -6935,10 +6952,12 @@
       document.getElementById('pub-preview-student').textContent =
         `Aluno: ${resolvedName}${resolvedUid ? '' : ' ⚠️ Selecione o aluno acima'}`;
 
+      const publication = activityPublicationMetadata(data.week);
       document.getElementById('pub-preview-list').innerHTML = data.activities.map(a => `
         <div class="prev-act">
           <div class="prev-act-head">${a.emoji || '📚'} ${esc(a.title || 'Atividade')}</div>
-          <div class="prev-act-sub">Semana: ${esc(data.week || '—')} · ${(a.parts || []).length} parte(s)</div>
+          <div class="prev-act-sub">Publicação: ${esc(publication.week)} (data de hoje, horário de São Paulo) · ${(a.parts || []).length} parte(s)</div>
+          ${publication.sourceWeek && publication.sourceWeek !== publication.week ? `<div class="prev-act-sub">Referência da aula no JSON: ${esc(publication.sourceWeek)} — não altera o grupo de publicação.</div>` : ''}
           ${(a.parts || []).map((p, i) => `
             <div class="prev-part">
               <div class="prev-part-head">Part ${i + 1} — ${esc(p.title || '')}${p.type ? ` (${esc(p.type)})` : ''}</div>
@@ -6964,10 +6983,14 @@
       try {
         const activitiesRef = collection(db, 'students', uid, 'activities');
         const { activities, week } = parsedActivityJson;
+        if (activities.length > 500) throw new Error('Publique no máximo 500 atividades por lote.');
+        // Recalcular no clique: a prévia pode ter sido aberta no dia anterior.
+        const publication = activityPublicationMetadata(week);
+        const batch = writeBatch(db);
 
         for (const act of activities) {
-          await addDoc(activitiesRef, {
-            week:      week || '',
+          batch.set(doc(activitiesRef), {
+            ...publication,
             title:     act.title || '',
             emoji:     act.emoji || '📚',
             parts:     act.parts || [],
@@ -6976,13 +6999,14 @@
             createdAt: serverTimestamp(),
           });
         }
+        await batch.commit();
 
         btn.textContent = '🚀 Publicar para o aluno';
         btn.disabled = false;
         document.getElementById('pub-preview').style.display = 'none';
         document.getElementById('pub-json').value = '';
         parsedActivityJson = null;
-        showMsg('pub-msg', `✅ ${activities.length} atividade(s) publicadas com sucesso! O aluno já pode ver no app.`, 'ok');
+        showMsg('pub-msg', `✅ ${activities.length} atividade(s) publicadas em ${publication.week}! O aluno já pode ver no app.`, 'ok');
       } catch(e) {
         btn.textContent = '🚀 Publicar para o aluno';
         btn.disabled = false;
