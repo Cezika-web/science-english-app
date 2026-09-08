@@ -1457,11 +1457,13 @@ function AttendanceChart({ type, points, pieSegments, pieCenter }) {
       <div style={{ display:'flex', minWidth:shown.length * 66 }}>
         {shown.map((point,index) => {
           const present = status(point);
+          const excused = Boolean(point.excused);
           return <div role="listitem" key={point.key} style={{ width:66, flexShrink:0, textAlign:'center', position:'relative' }}>
             {index < shown.length-1 && <span style={{ position:'absolute', top:15, left:'50%', width:'100%', height:3, background:'#E2E8F0' }} />}
-            <span style={{ position:'relative', zIndex:1, width:32, height:32, borderRadius:'50%', margin:'0 auto 7px', display:'flex', alignItems:'center', justifyContent:'center', background:present?PROGRESS_COLORS.good:PROGRESS_COLORS.low, color:'#fff', border:'3px solid #fff', boxShadow:'0 0 0 1px #E2E8F0', fontSize:16, fontWeight:900 }}>{present?'✓':'×'}</span>
-            <div style={{ fontSize:10.5, fontWeight:800, color:present?'#166534':'#991B1B', textTransform:'capitalize' }}>{point.weekday || ''}</div>
+            <span title={excused ? `Falta justificada — ${point.reason}` : (present ? 'Presença' : 'Falta')} style={{ position:'relative', zIndex:1, width:32, height:32, borderRadius:'50%', margin:'0 auto 7px', display:'flex', alignItems:'center', justifyContent:'center', background:excused?'#F59E0B':(present?PROGRESS_COLORS.good:PROGRESS_COLORS.low), color:'#fff', border:'3px solid #fff', boxShadow:'0 0 0 1px #E2E8F0', fontSize:16, fontWeight:900 }}>{excused?'–':(present?'✓':'×')}</span>
+            <div style={{ fontSize:10.5, fontWeight:800, color:excused?'#92400E':(present?'#166534':'#991B1B'), textTransform:'capitalize' }}>{point.weekday || ''}</div>
             <div style={{ fontSize:10, color:'#64748B', marginTop:1 }}>{point.label}</div>
+            {excused && <div style={{ fontSize:9, color:'#92400E', marginTop:1 }}>{point.reason}</div>}
           </div>;
         })}
       </div>
@@ -1653,6 +1655,7 @@ function calculateAttendance(student, posaulas) {
   const trackingStartKey = [...presentKeys].sort()[0] || '';
   const untracked = trackingStartKey ? [...candidateKeys].filter(key => key < trackingStartKey).length : candidateKeys.size;
   const scheduled = [];
+  const excused = [];
   if (candidateKeys.size && trackingStartKey) {
     const holidayCache = {};
     for (const key of [...candidateKeys].sort()) {
@@ -1661,7 +1664,12 @@ function calculateAttendance(student, posaulas) {
       holidayCache[d.getFullYear()] ||= nationalHolidayKeys(d.getFullYear());
       // Feriado/cancelamento só sai da conta quando realmente não houve aula.
       // Se existe pós-aula, a aula aconteceu e vale para a sequência.
-      if (!presentKeys.has(key) && (holidayCache[d.getFullYear()].has(key) || exceptions.has(key))) continue;
+      const holiday = holidayCache[d.getFullYear()].has(key);
+      const cancelled = exceptions.has(key);
+      if (!presentKeys.has(key) && (holiday || cancelled)) {
+        excused.push({ date:new Date(d), key, reason:holiday ? 'feriado' : 'aula cancelada' });
+        continue;
+      }
       scheduled.push({ date:new Date(d), key, present:presentKeys.has(key) });
     }
   }
@@ -1687,7 +1695,7 @@ function calculateAttendance(student, posaulas) {
     : recordedHeld;
   // Cada ponto representa a data real prevista da aula. Antes o rótulo usava
   // a segunda-feira que iniciava a semana, parecendo registrar falta no dia errado.
-  const points = scheduled.map(item => ({
+  const points = [...scheduled.map(item => ({
     key:item.key,
     label:`${item.date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}${makeupByScheduledKey.has(item.key) ? '*' : ''}`,
     weekday:item.date.toLocaleDateString('pt-BR',{weekday:'short'}).replace('.',''),
@@ -1695,7 +1703,16 @@ function calculateAttendance(student, posaulas) {
     makeupDate:makeupByScheduledKey.get(item.key) || '',
     value:item.present ? 100 : 0,
     color:item.present ? PROGRESS_COLORS.good : PROGRESS_COLORS.low,
-  }));
+  })), ...excused.map(item => ({
+    key:item.key,
+    label:item.date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),
+    weekday:item.date.toLocaleDateString('pt-BR',{weekday:'short'}).replace('.',''),
+    present:false,
+    excused:true,
+    reason:item.reason,
+    value:0,
+    color:'#F59E0B',
+  }))].sort((a,b) => a.key.localeCompare(b.key));
   const missedDates = countedSchedule.filter(item => !item.present).map(item => ({
     key:item.key,
     label:item.date.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'}).replace('.', ''),
@@ -1709,7 +1726,12 @@ function calculateAttendance(student, posaulas) {
       actualLabel:new Date(`${actualKey}T00:00:00`).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),
     };
   });
-  return { held, misses, scheduled:scheduledCount, attendedScheduled, rate, points, currentStreak, maxStreak, missedDates, makeups, untracked, trackingStartKey, inferredOnly:false };
+  const excusedDates = excused.map(item => ({
+    key:item.key,
+    label:item.date.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'}).replace('.', ''),
+    reason:item.reason,
+  }));
+  return { held, misses, scheduled:scheduledCount, attendedScheduled, rate, points, currentStreak, maxStreak, missedDates, excusedDates, makeups, untracked, trackingStartKey, inferredOnly:false };
 }
 
 function calculateExerciseProgress(activities) {
@@ -1993,6 +2015,9 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
         </div>}
         {attendance.missedDates?.length > 0 && <div style={{ marginTop:10, padding:'10px 12px', borderRadius:12, background:'#FEF2F2', border:'1px solid #FECACA', color:'#991B1B', fontSize:12, lineHeight:1.55 }}>
           <strong>Datas das faltas:</strong> {attendance.missedDates.map(item => item.label).join(' · ')}
+        </div>}
+        {attendance.excusedDates?.length > 0 && <div style={{ marginTop:10, padding:'10px 12px', borderRadius:12, background:'#FFFBEB', border:'1px solid #FDE68A', color:'#92400E', fontSize:12, lineHeight:1.55 }}>
+          <strong>Faltas justificadas:</strong> {attendance.excusedDates.map(item => `${item.label} — ${item.reason}`).join(' · ')}
         </div>}
       </ProgressSection>
 

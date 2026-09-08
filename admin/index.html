@@ -520,7 +520,7 @@
     .calendar-month-item { display:block; width:100%; margin-top:2px; border:1px solid color-mix(in srgb, var(--event-color) 20%, #fff); border-radius:5px; padding:2px 5px; background:color-mix(in srgb, var(--event-color) 11%, #fff); color:color-mix(in srgb, var(--event-color) 46%, #6b7a90); font:inherit; font-size:.555rem; font-weight:600; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
     .calendar-month-more { display:block; margin-top:2px; color:#94a3b8; font-size:.58rem; font-weight:700; }
     /* Popover leve para criar/editar — o modal completo fica no "mais opções" */
-    .calendar-pop { position:fixed; z-index:120; width:272px; padding:13px; border:1px solid #e2e8f0; border-radius:14px; background:#fff; box-shadow:0 18px 44px rgba(15,23,42,.22); display:none; }
+    .calendar-pop { position:fixed; z-index:120; width:272px; max-height:calc(100vh - 24px); padding:13px; border:1px solid #e2e8f0; border-radius:14px; background:#fff; box-shadow:0 18px 44px rgba(15,23,42,.22); display:none; overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; }
     .calendar-pop.open { display:block; }
     .calendar-pop input, .calendar-pop select { width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:9px; background:#fff; font:inherit; font-size:.82rem; color:#0f172a; }
     .calendar-pop input#calendar-pop-title { font-size:.92rem; font-weight:700; padding-right:32px; }
@@ -1687,7 +1687,7 @@
         <div class="field" id="calendar-makeup-field" style="display:none;">
           <label for="calendar-event-makeup-for">Esta reposição compensa</label>
           <select id="calendar-event-makeup-for"><option value="">Escolha o aluno primeiro</option></select>
-          <small style="display:block;margin-top:5px;color:var(--muted);font-size:.72rem;line-height:1.4;">A falta mais recente vem selecionada automaticamente. Você pode trocar a data.</small>
+          <small style="display:block;margin-top:5px;color:var(--muted);font-size:.72rem;line-height:1.4;">Mostra as faltas dos últimos 2 meses e as aulas previstas nas próximas 2 semanas.</small>
         </div>
         <div class="field">
           <label for="calendar-event-title">Título</label>
@@ -3185,6 +3185,23 @@
       return calendarMakeupMissesCache.get(uid);
     }
 
+    function calendarUpcomingLessons(uid) {
+      const student = allStudents.find(item => item.uid === uid);
+      if (!student) return [];
+      const lessonDays = adminLessonDays(student);
+      const exceptions = new Set((student.aulaExcecoes || []).map(String));
+      const today = new Date(); today.setHours(0,0,0,0);
+      const end = adminAddDays(today, 14);
+      const dates = [];
+      const holidayCache = {};
+      for (let date = new Date(today); date <= end; date = adminAddDays(date,1)) {
+        const key = adminDateKey(date);
+        holidayCache[date.getFullYear()] ||= adminHolidayKeys(date.getFullYear());
+        if (lessonDays.has(date.getDay()) && !exceptions.has(key) && !holidayCache[date.getFullYear()].has(key)) dates.push(key);
+      }
+      return dates;
+    }
+
     async function calendarFillMakeupDates(selectId, uid, eventDate, selected = '') {
       const select = document.getElementById(selectId);
       if (!select) return;
@@ -3192,13 +3209,23 @@
       select.innerHTML = '<option value="">Buscando faltas…</option>';
       select.disabled = true;
       try {
-        let missed = (await calendarMakeupMisses(uid)).filter(key => !eventDate || key <= eventDate);
-        if (selected && (!eventDate || selected <= eventDate) && !missed.includes(selected)) missed.push(selected);
+        const today = new Date(); today.setHours(0,0,0,0);
+        const todayKey = adminDateKey(today);
+        const pastStart = new Date(today); pastStart.setMonth(pastStart.getMonth() - 2);
+        const pastStartKey = adminDateKey(pastStart);
+        let missed = (await calendarMakeupMisses(uid)).filter(key => key >= pastStartKey && key < todayKey);
+        const future = calendarUpcomingLessons(uid).filter(key => key >= todayKey);
         missed = [...new Set(missed)].sort().reverse();
-        select.innerHTML = missed.length
-          ? missed.map(key => `<option value="${key}">Aula de ${calendarMakeupDateLabel(key)}</option>`).join('')
-          : '<option value="">Nenhuma falta anterior encontrada</option>';
-        select.value = selected && missed.includes(selected) ? selected : (missed[0] || '');
+        const allChoices = [...missed, ...future];
+        if (selected && !allChoices.includes(selected)) allChoices.push(selected);
+        const pastOptions = missed.map(key => `<option value="${key}">Falta de ${calendarMakeupDateLabel(key)}</option>`).join('');
+        const futureOptions = future.map(key => `<option value="${key}">Aula de ${calendarMakeupDateLabel(key)} (próxima)</option>`).join('');
+        const selectedOption = selected && !missed.includes(selected) && !future.includes(selected)
+          ? `<option value="${selected}">Aula de ${calendarMakeupDateLabel(selected)} (já vinculada)</option>` : '';
+        select.innerHTML = allChoices.length
+          ? `${pastOptions ? `<optgroup label="Faltas — últimos 2 meses">${pastOptions}</optgroup>` : ''}${futureOptions ? `<optgroup label="Próximas aulas — 2 semanas">${futureOptions}</optgroup>` : ''}${selectedOption}`
+          : '<option value="">Nenhuma falta recente ou próxima aula encontrada</option>';
+        select.value = selected && allChoices.includes(selected) ? selected : (missed[0] || future[0] || '');
       } catch (error) {
         select.innerHTML = '<option value="">Não foi possível carregar as faltas</option>';
       } finally { select.disabled = false; }
@@ -3345,7 +3372,6 @@
       if (!event.date || !event.startTime || !event.endTime) return showMsg('calendar-event-msg','Preencha data, início e término.','err');
       if (comAluno && !event.studentUid) return showMsg('calendar-event-msg','Escolha o aluno desta aula.','err');
       if (type === 'reposicao' && !event.makeupForDate) return showMsg('calendar-event-msg','Escolha qual falta esta reposição compensa.','err');
-      if (type === 'reposicao' && event.makeupForDate > event.date) return showMsg('calendar-event-msg','A reposição não pode compensar uma aula futura.','err');
       if (event.repeat === 'custom' && !event.repeatDays.length) return showMsg('calendar-event-msg','Escolha pelo menos um dia da semana.','err');
       if (calendarMinutes(event.endTime) <= calendarMinutes(event.startTime)) return showMsg('calendar-event-msg','O horário final precisa ser depois do inicial.','err');
       if (event.repeatUntil && event.repeatUntil < event.date) return showMsg('calendar-event-msg','A repetição não pode terminar antes da primeira aula.','err');
@@ -3665,7 +3691,6 @@
       if (comAluno && (!student || student.archived)) return calendarPopFail('Escolha o aluno desta aula.');
       const makeupForDate = type === 'reposicao' ? document.getElementById('calendar-pop-makeup-for').value : '';
       if (type === 'reposicao' && !makeupForDate) return calendarPopFail('Escolha qual falta esta reposição compensa.');
-      if (type === 'reposicao' && makeupForDate > calendarPopDraft.date) return calendarPopFail('A reposição não pode compensar uma aula futura.');
       const payload = {
         type, studentUid:comAluno ? uidEscolhido : '',
         studentName:comAluno && student ? (student.name || student.firstName || '') : '',
