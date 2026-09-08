@@ -1998,7 +1998,10 @@
         : courseStart || legacyStart;
       const scheduleStart = adminDate(student?.aulaDiasDesde);
       const start = historicalStart;
-      const cutoff = adminAddDays(new Date(), -1);
+      // Ex-aluno congela a frequência no desligamento; não pode acumular faltas
+      // novas só porque os dias antigos continuam guardados para reativação.
+      const archivedAt = student?.archived ? adminDate(student.archivedAt) : null;
+      const cutoff = adminAddDays(archivedAt || new Date(), -1);
       const candidateKeys = new Set();
       const historicalSchedules = (Array.isArray(student?.aulaDiasHistorico) ? student.aulaDiasHistorico : [])
         .map(item => ({ days:new Set((Array.isArray(item?.dias) ? item.dias : []).map(Number).filter(day => day >= 0 && day <= 6)),
@@ -5228,10 +5231,8 @@
             : `<span class="read-badge" style="background:#f3f4f6;color:var(--muted)">Sem pós-aula</span>`);
       // Badge de atividade: prioriza "prontas p/ corrigir" (verde). Se não houver, mostra pendentes (amarelo).
       let actBadge = '';
-      if (!archived) {
-        if (s.actToCorrect > 0)      actBadge = `<span class="act-badge tocorrect">✅ ${s.actToCorrect} p/ corrigir</span>`;
-        else if (s.actPending > 0)   actBadge = `<span class="act-badge pending">📝 ${s.actPending} pendente${s.actPending !== 1 ? 's' : ''}</span>`;
-      }
+      if (s.actToCorrect > 0)      actBadge = `<span class="act-badge tocorrect">✅ ${s.actToCorrect} p/ corrigir</span>`;
+      else if (s.actPending > 0)   actBadge = `<span class="act-badge pending">📝 ${s.actPending} pendente${s.actPending !== 1 ? 's' : ''}</span>`;
       const badge = `<div class="badge-stack">${posBadge}${actBadge}</div>`;
       const menuItem = `<button class="kebab-item" data-action="mirror" data-uid="${s.uid}" data-name="${nm}">🪞 Espelho (ver área do aluno)</button>`
         + `<button class="kebab-item" data-action="challenge" data-uid="${s.uid}" data-name="${nm}">🏆 Desafios do aluno</button>`
@@ -5292,15 +5293,12 @@
             openStudentExtras(uid, name);
             return;
           } else if (action === 'archive') {
-            if (!confirm(`Enviar ${name} para Ex-alunos?`)) return;
-            await updateDoc(doc(db, 'students', uid), { archived: true, archivedAt: serverTimestamp() });
-            // Ex-aluno deixa de ocupar horário. A vaga vermelha reaparece porque
-            // é calculada automaticamente a partir do expediente livre.
-            await syncStudentLessons([{ uid, aulaDias:[] }]);
+            if (!confirm(`Enviar ${name} para Ex-alunos?\n\nEle sai da agenda e do financeiro. Pagamentos recebidos, pós-aulas e atividades ficam preservados.`)) return;
+            try { await archiveStudent(uid); }
+            catch (error) { alert(`Não foi possível enviar ${name} para Ex-alunos: ${error.message}`); return; }
           } else if (action === 'reactivate') {
-            await updateDoc(doc(db, 'students', uid), { archived: false });
-            const student = allStudents.find(item => item.uid === uid);
-            if (student) await syncStudentLessons([student]);
+            try { await reactivateStudent(uid); }
+            catch (error) { alert(`Não foi possível reativar ${name}: ${error.message}`); return; }
           } else if (action === 'delete') {
             if (!confirm(`Excluir DEFINITIVAMENTE ${name}?\n\nApaga o perfil, pos-aulas, atividades e vocabulario dele. Esta acao NAO pode ser desfeita.`)) return;
             await deleteStudent(uid);
@@ -5309,6 +5307,84 @@
           loadStudents();
         };
       });
+    }
+
+    async function archiveStudent(uid) {
+      const studentRef = doc(db, 'students', uid);
+      const financeRef = doc(db, 'schools', escolaAtual, 'financeStudents', uid);
+      const [financeSnap, eventsSnap, transactionsSnap] = await Promise.all([
+        getDoc(financeRef),
+        getDocs(query(collection(db, 'schools', escolaAtual, 'calendarEvents'), where('studentUid', '==', uid))),
+        getDocs(query(collection(db, 'schools', escolaAtual, 'financeTransactions'), where('studentUid', '==', uid))),
+      ]);
+      const today = calendarDateKey(new Date());
+      const yesterday = calendarDateKey(calendarAddDays(new Date(), -1));
+      const currentMonth = today.slice(0, 7);
+      const studentPatch = { archived:true, archivedAt:serverTimestamp() };
+      const batch = writeBatch(db);
+
+      if (financeSnap.exists()) {
+        const finance = financeSnap.data();
+        batch.set(financeRef, {
+          active:false,
+          activeBeforeArchive:finance.active !== false,
+          archivedAt:serverTimestamp(),
+          updatedAt:serverTimestamp(),
+          updatedBy:auth.currentUser?.email || '',
+        }, { merge:true });
+      }
+
+      // O passado continua no calendário como histórico. Séries em andamento
+      // terminam ontem e compromissos futuros do aluno são removidos.
+      eventsSnap.docs.forEach(item => {
+        const event = item.data();
+        const repeats = event.repeat && event.repeat !== 'none';
+        const stillActive = !event.repeatUntil || event.repeatUntil >= today;
+        let removing = false;
+        if (repeats && stillActive) {
+          if (String(event.date || '') < today) batch.update(item.ref, {
+            repeatUntil:yesterday, updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || '',
+          });
+          else { batch.delete(item.ref); removing = true; }
+        } else if (!repeats && String(event.date || '') >= today) {
+          batch.delete(item.ref); removing = true;
+        }
+        if (removing && event.type === 'reposicao') studentPatch[`attendanceMakeups.${item.id}`] = deleteField();
+      });
+
+      // Cobranças pagas são história financeira. Somente previsões gravadas e
+      // parcelas futuras de séries saem; pendências virtuais somem ao desativar
+      // o perfil acima.
+      transactionsSnap.docs.forEach(item => {
+        const tx = item.data();
+        const futureSeries = Boolean(tx.seriesId) && String(tx.date || '').slice(0,7) > currentMonth;
+        if (tx.planned === true || futureSeries) batch.delete(item.ref);
+      });
+
+      batch.update(studentRef, studentPatch);
+      await batch.commit();
+      // Esta lista auxiliar tem regras mais restritas em algumas escolas; não
+      // deixa uma falha nela desfazer o desligamento principal.
+      try { await deleteDoc(doc(db, 'niveis', uid)); } catch (error) {}
+    }
+
+    async function reactivateStudent(uid) {
+      const student = allStudents.find(item => item.uid === uid);
+      const financeRef = doc(db, 'schools', escolaAtual, 'financeStudents', uid);
+      const financeSnap = await getDoc(financeRef);
+      const batch = writeBatch(db);
+      batch.update(doc(db, 'students', uid), { archived:false, archivedAt:deleteField() });
+      if (financeSnap.exists()) {
+        const finance = financeSnap.data();
+        const active = Object.prototype.hasOwnProperty.call(finance, 'activeBeforeArchive')
+          ? finance.activeBeforeArchive !== false : finance.active !== false;
+        batch.set(financeRef, {
+          active, activeBeforeArchive:deleteField(), archivedAt:deleteField(),
+          updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || '',
+        }, { merge:true });
+      }
+      await batch.commit();
+      if (student) await syncStudentLessons([{ ...student, aulaDiasDesde:calendarDateKey(new Date()) }]);
     }
 
     async function deleteSubcollection(uid, name) {
@@ -5326,28 +5402,29 @@
       try { await deleteDoc(doc(db, 'niveis', uid)); } catch(e) {}
     }
 
-    function populateStudentSelects(active) {
-      const opts = '<option value="">Selecione o aluno...</option>' +
-        active.map(s => `<option value="${s.uid}">${esc(s.name || s.firstName || 'Aluno')}</option>`).join('');
-      ['pub-student', 'voc-student'].forEach(id => {
-        const sel = document.getElementById(id);
-        if (sel) { const prev = sel.value; sel.innerHTML = opts; sel.value = prev; }
-      });
+    function populateStudentSelects(active, archived = []) {
+      const optionsFor = students => '<option value="">Selecione o aluno...</option>' +
+        students.map(s => `<option value="${s.uid}">${esc(s.name || s.firstName || 'Aluno')}${s.archived ? ' · ex-aluno' : ''}</option>`).join('');
+      const activityStudents = [...active, ...archived];
+      const pubSelect = document.getElementById('pub-student');
+      if (pubSelect) { const prev = pubSelect.value; pubSelect.innerHTML = optionsFor(activityStudents); pubSelect.value = prev; }
+      const vocabSelect = document.getElementById('voc-student');
+      if (vocabSelect) { const prev = vocabSelect.value; vocabSelect.innerHTML = optionsFor(active); vocabSelect.value = prev; }
 
       // Pós-aula e atividades aceitam turma, então usam caixas de marcar.
       const listas = [
-        { id: 'pa-alunos', vazio: 'Nenhum aluno cadastrado nesta escola.', picker: true },
-        { id: 'ga-alunos', vazio: 'Nenhum aluno cadastrado nesta escola.', picker: false },
+        { id: 'pa-alunos', students:active, vazio: 'Nenhum aluno cadastrado nesta escola.', picker: true },
+        { id: 'ga-alunos', students:activityStudents, vazio: 'Nenhum aluno ou ex-aluno cadastrado nesta escola.', picker: false },
       ];
-      for (const { id, vazio, picker } of listas) {
+      for (const { id, students, vazio, picker } of listas) {
         const cx = document.getElementById(id);
         if (!cx) continue;
         const marcados = new Set([...cx.querySelectorAll('input:checked')].map(c => c.value));
-        cx.innerHTML = active.length
-          ? active.map(s => `
+        cx.innerHTML = students.length
+          ? students.map(s => `
             <label ${picker ? `class="student-picker-option" data-search="${esc((s.name || s.firstName || 'Aluno').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[̀-ͯ]/g, ''))}"` : 'style="display:flex;gap:10px;align-items:center;padding:6px 0;cursor:pointer;"'}>
               <input type="checkbox" value="${s.uid}" ${marcados.has(s.uid) ? 'checked' : ''}>
-              <span ${picker ? 'class="picker-name"' : 'style="font-size:0.9rem;"'}>${esc(s.name || s.firstName || 'Aluno')}</span>
+              <span ${picker ? 'class="picker-name"' : 'style="font-size:0.9rem;"'}>${esc(s.name || s.firstName || 'Aluno')}${s.archived ? ' <small style="color:var(--muted);">· ex-aluno</small>' : ''}</span>
               ${s.level ? `<span ${picker ? 'class="picker-level"' : 'style="font-size:0.78rem;color:var(--muted);"'}>${esc(s.level)}</span>` : ''}
             </label>`).join('')
           : `<div style="font-size:0.85rem;color:var(--muted);">${vazio}</div>`;
@@ -6541,6 +6618,16 @@
     }
     document.getElementById('student-search').oninput = aplicarBuscaAluno;
 
+    function adminActivityCounts(activities) {
+      const current = activities.filter(activity => activity.status !== 'corrected');
+      return {
+        actToCorrect:current.filter(activity => activity.finalizada).length,
+        actPending:current.filter(activity => !activity.finalizada).length,
+        semAtividades:current.length === 0,
+        totalAtividades:activities.length,
+      };
+    }
+
     async function loadStudents() {
       const grid   = document.getElementById('students-grid');
       const exGrid = document.getElementById('exalunos-grid');
@@ -6619,9 +6706,7 @@
         const isRead  = !!latest?.readAt;
         if (isRead) readCount++;
         // Atividades atuais (não corrigidas): quantas o aluno já finalizou (prontas p/ corrigir) e quantas ainda estão pendentes
-        const currentActs = activities.filter(a => a.status !== 'corrected');
-        const actToCorrect = currentActs.filter(a => a.finalizada).length;
-        const actPending   = currentActs.filter(a => !a.finalizada).length;
+        const activityCounts = adminActivityCounts(activities);
         const ultimaPosData = dateOfAdm(latest?.classDate || latest?.createdAt || latest?.publishedAt);
         let referenciaSemPos = ultimaPosData;
         if (!referenciaSemPos) {
@@ -6637,22 +6722,31 @@
         const progress = adminProgressSummary(s, posts, activities);
         return {
           ...s, latestRead: isRead, latestTitle: latest?.title || null,
-          actToCorrect, actPending, semAtividades: currentActs.length === 0,
-          totalAtividades: activities.length, diasSemPosaula,
+          ...activityCounts, diasSemPosaula,
           semPosaulaAtrasada: diasSemPosaula > 5,
           nuncaTevePosaula: !latest,
           reviewReports, progress,
         };
       }));
 
-      populateStudentSelects(active);
+      // Ex-alunos continuam com a mesma visão de atividades: pendentes,
+      // finalizadas para corrigir e histórico. Carregamos só o necessário para
+      // os badges da lista; o detalhe completo abre sob demanda.
+      const archivedRows = await Promise.all(archived.map(async student => {
+        const actSnap = await getDocs(query(collection(db, 'students', student.uid, 'activities'), orderBy('createdAt', 'desc')))
+          .catch(() => ({ docs:[] }));
+        const activities = actSnap.docs.map(item => ({ id:item.id, ...item.data() }));
+        return { ...student, ...adminActivityCounts(activities) };
+      }));
+
+      populateStudentSelects(active, archivedRows);
       document.getElementById('stat-total').textContent  = active.length;
       document.getElementById('stat-read').textContent   = readCount;
       document.getElementById('stat-unread').textContent = active.length - readCount;
 
       grid.innerHTML = rows.map(s => studentRowHtml(s, false)).join('')
         || '<div class="loading">Nenhum aluno cadastrado.</div>';
-      exGrid.innerHTML = archived.map(s => studentRowHtml(s, true)).join('')
+      exGrid.innerHTML = archivedRows.map(s => studentRowHtml(s, true)).join('')
         || '<div class="loading">Nenhum ex-aluno.</div>';
 
       wireStudentGrid(grid);
@@ -6867,7 +6961,14 @@
                </div>`
             : '');
 
+      const exStudentActions = detailStudent.archived ? `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:16px;padding:12px 14px;border:1px solid #dbeafe;border-radius:12px;background:#eff6ff;color:#1e40af;">
+          <span><strong>Ex-aluno</strong><br><small>O histórico e as atividades continuam disponíveis.</small></span>
+          <button class="btn-add" id="ex-student-add-activities" type="button" style="padding:8px 12px;">＋ Adicionar atividades</button>
+        </div>` : '';
+
       body.innerHTML = `
+        ${exStudentActions}
         <div class="detail-section-title">📊 Progresso e estatísticas</div>
         ${progressOverviewHtml}
         <div class="detail-section-title">🧭 Revisões do aluno</div>
@@ -6877,6 +6978,11 @@
         <div class="detail-section-title" style="margin-top:18px;">✏️ Atividades publicadas <span class="grp-count">(mês → semana)</span></div>
         ${btnCorrigirIA}
         ${actHtml}`;
+
+      document.getElementById('ex-student-add-activities')?.addEventListener('click', () => {
+        document.getElementById('modal').classList.remove('open');
+        abrirGeradorParaAluno(uid, 'atividades');
+      });
 
       body.querySelectorAll('.student-review90-report').forEach(button => {
         button.onclick = () => openReview90ReportAdmin(uid, name, reviewReports[Number(button.dataset.index)]);
