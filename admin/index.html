@@ -520,8 +520,9 @@
     .calendar-month-item { display:block; width:100%; margin-top:2px; border:1px solid color-mix(in srgb, var(--event-color) 20%, #fff); border-radius:5px; padding:2px 5px; background:color-mix(in srgb, var(--event-color) 11%, #fff); color:color-mix(in srgb, var(--event-color) 46%, #6b7a90); font:inherit; font-size:.555rem; font-weight:600; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
     .calendar-month-more { display:block; margin-top:2px; color:#94a3b8; font-size:.58rem; font-weight:700; }
     /* Popover leve para criar/editar — o modal completo fica no "mais opções" */
-    .calendar-pop { position:fixed; z-index:120; width:272px; max-height:calc(100vh - 24px); padding:13px; border:1px solid #e2e8f0; border-radius:14px; background:#fff; box-shadow:0 18px 44px rgba(15,23,42,.22); display:none; overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; }
-    .calendar-pop.open { display:block; }
+    .calendar-pop { position:fixed; z-index:120; width:272px; max-height:calc(100vh - 24px); border:1px solid #e2e8f0; border-radius:14px; background:#fff; box-shadow:0 18px 44px rgba(15,23,42,.22); display:none; overflow:hidden; }
+    .calendar-pop.open { display:flex; flex-direction:column; }
+    .calendar-pop-body { min-height:0; padding:13px; overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; }
     .calendar-pop input, .calendar-pop select { width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:9px; background:#fff; font:inherit; font-size:.82rem; color:#0f172a; }
     .calendar-pop input#calendar-pop-title { font-size:.92rem; font-weight:700; padding-right:32px; }
     .calendar-pop-close { position:absolute; top:9px; right:9px; z-index:2; width:26px; height:26px; padding:0; border:0; border-radius:8px; background:transparent; color:#94a3b8; font-family:inherit; font-size:19px; line-height:1; cursor:pointer; }
@@ -545,7 +546,7 @@
     .calendar-pop-colors { display:flex; gap:7px; margin-top:11px; }
     .calendar-pop-colors button { width:24px; height:24px; padding:0; border-radius:50%; border:2px solid transparent; outline:1px solid #e2e8f0; cursor:pointer; }
     .calendar-pop-colors button.on { border-color:#0f172a; outline-color:transparent; }
-    .calendar-pop-actions { display:flex; gap:7px; margin-top:12px; }
+    .calendar-pop-actions { display:flex; flex:none; gap:7px; padding:10px 13px 13px; border-top:1px solid #e2e8f0; background:#fff; box-shadow:0 -5px 14px rgba(15,23,42,.06); }
     .calendar-pop-actions .btn-add { flex:1; padding:9px; font-size:.83rem; }
     .calendar-pop-actions .calendar-delete { display:none; padding:9px 12px; font-size:.83rem; }
     .calendar-pop-more { width:100%; margin-top:9px; padding:0; border:0; background:none; color:var(--muted); font:inherit; font-size:.72rem; text-decoration:underline; cursor:pointer; }
@@ -1687,7 +1688,7 @@
         <div class="field" id="calendar-makeup-field" style="display:none;">
           <label for="calendar-event-makeup-for">Esta reposição compensa</label>
           <select id="calendar-event-makeup-for"><option value="">Escolha o aluno primeiro</option></select>
-          <small style="display:block;margin-top:5px;color:var(--muted);font-size:.72rem;line-height:1.4;">Mostra as faltas dos últimos 2 meses e as aulas previstas nas próximas 2 semanas.</small>
+          <small style="display:block;margin-top:5px;color:var(--muted);font-size:.72rem;line-height:1.4;">Mostra as faltas recentes, até 2 aulas anteriores e as próximas 2 semanas.</small>
         </div>
         <div class="field">
           <label for="calendar-event-title">Título</label>
@@ -1751,6 +1752,7 @@
 
   <div class="calendar-pop" id="calendar-pop">
     <button class="calendar-pop-close" id="calendar-pop-close" type="button" aria-label="Fechar">×</button>
+    <div class="calendar-pop-body">
     <input id="calendar-pop-title" maxlength="100" placeholder="Nome do compromisso">
     <button class="calendar-pop-reposicao" id="calendar-pop-reposicao" type="button">🔄 Marcar reposição</button>
     <div class="calendar-pop-row" id="calendar-pop-student-row" style="display:none;grid-template-columns:1fr;">
@@ -1790,12 +1792,13 @@
     <button class="btn-secondary" id="calendar-pop-briefing" type="button" style="display:none;width:100%;margin-top:12px;padding:9px;font-size:.83rem;">📋 Pauta desta aula</button>
     <div id="calendar-pop-briefing-notice" role="status" style="display:none;margin-top:12px;padding:10px;border-radius:8px;background:#fff7ed;color:#9a3412;font-size:.83rem;">Esta aula ainda não está vinculada a um aluno. Selecione o aluno e salve para acessar a pauta.</div>
     <button class="btn-secondary" id="calendar-pop-cancelar" type="button" style="display:none;width:100%;margin-top:8px;padding:9px;font-size:.83rem;">🚫 Cancelar só esta aula</button>
+    <div class="calendar-pop-msg" id="calendar-pop-msg"></div>
+    <button class="calendar-pop-more" id="calendar-pop-more" type="button">mais opções (aluno, observações…)</button>
+    </div>
     <div class="calendar-pop-actions">
       <button class="btn-add" id="calendar-pop-save" type="button">Salvar</button>
       <button class="calendar-delete" id="calendar-pop-delete" type="button">Excluir</button>
     </div>
-    <div class="calendar-pop-msg" id="calendar-pop-msg"></div>
-    <button class="calendar-pop-more" id="calendar-pop-more" type="button">mais opções (aluno, observações…)</button>
   </div>
 
   <div class="modal-overlay" id="finance-profile-modal">
@@ -3202,6 +3205,27 @@
       return dates;
     }
 
+    // A frequência só consegue confirmar uma falta depois da primeira presença.
+    // Para aluno novo, ainda assim precisamos deixar o professor vincular uma
+    // reposição à ocorrência anterior — inclusive quando ela caiu em feriado.
+    function calendarPreviousLessons(uid, limit = 2) {
+      const student = allStudents.find(item => item.uid === uid);
+      if (!student) return [];
+      const lessonDays = adminLessonDays(student);
+      const courseStartKey = adminDateKey(student.inicioCurso);
+      const today = new Date(); today.setHours(0,0,0,0);
+      const dates = [];
+      for (let date = adminAddDays(today,-1); dates.length < limit; date = adminAddDays(date,-1)) {
+        const key = adminDateKey(date);
+        if (courseStartKey && key < courseStartKey) break;
+        if (lessonDays.has(date.getDay())) dates.push(key);
+        // Sem início cadastrado, dois meses bastam para impedir uma busca sem fim
+        // quando o aluno ainda não possui dias semanais válidos.
+        if (!courseStartKey && date < adminAddDays(today,-62)) break;
+      }
+      return dates;
+    }
+
     async function calendarFillMakeupDates(selectId, uid, eventDate, selected = '') {
       const select = document.getElementById(selectId);
       if (!select) return;
@@ -3214,18 +3238,20 @@
         const pastStart = new Date(today); pastStart.setMonth(pastStart.getMonth() - 2);
         const pastStartKey = adminDateKey(pastStart);
         let missed = (await calendarMakeupMisses(uid)).filter(key => key >= pastStartKey && key < todayKey);
+        const previous = calendarPreviousLessons(uid);
         const future = calendarUpcomingLessons(uid).filter(key => key >= todayKey);
         missed = [...new Set(missed)].sort().reverse();
-        const allChoices = [...missed, ...future];
+        const past = [...new Set([...missed, ...previous])].sort().reverse();
+        const allChoices = [...past, ...future];
         if (selected && !allChoices.includes(selected)) allChoices.push(selected);
-        const pastOptions = missed.map(key => `<option value="${key}">Falta de ${calendarMakeupDateLabel(key)}</option>`).join('');
+        const pastOptions = past.map(key => `<option value="${key}">${missed.includes(key) ? 'Falta' : 'Aula'} de ${calendarMakeupDateLabel(key)}${missed.includes(key) ? '' : ' (anterior)'}</option>`).join('');
         const futureOptions = future.map(key => `<option value="${key}">Aula de ${calendarMakeupDateLabel(key)} (próxima)</option>`).join('');
-        const selectedOption = selected && !missed.includes(selected) && !future.includes(selected)
+        const selectedOption = selected && !past.includes(selected) && !future.includes(selected)
           ? `<option value="${selected}">Aula de ${calendarMakeupDateLabel(selected)} (já vinculada)</option>` : '';
         select.innerHTML = allChoices.length
-          ? `${pastOptions ? `<optgroup label="Faltas — últimos 2 meses">${pastOptions}</optgroup>` : ''}${futureOptions ? `<optgroup label="Próximas aulas — 2 semanas">${futureOptions}</optgroup>` : ''}${selectedOption}`
+          ? `${pastOptions ? `<optgroup label="Aulas anteriores e faltas recentes">${pastOptions}</optgroup>` : ''}${futureOptions ? `<optgroup label="Próximas aulas — 2 semanas">${futureOptions}</optgroup>` : ''}${selectedOption}`
           : '<option value="">Nenhuma falta recente ou próxima aula encontrada</option>';
-        select.value = selected && allChoices.includes(selected) ? selected : (missed[0] || future[0] || '');
+        select.value = selected && allChoices.includes(selected) ? selected : (missed[0] || previous[0] || future[0] || '');
       } catch (error) {
         select.innerHTML = '<option value="">Não foi possível carregar as faltas</option>';
       } finally { select.disabled = false; }
@@ -3615,11 +3641,18 @@
     }
 
     function calendarPlacePop(anchor) {
-      const pop = document.getElementById('calendar-pop'), size = pop.getBoundingClientRect();
+      const pop = document.getElementById('calendar-pop');
+      // O popover pode crescer depois de aberto (por exemplo, ao marcar
+      // reposição). Limitar pela área abaixo da posição escolhida mantém o
+      // rodapé com Salvar dentro da tela; só o corpo passa a rolar.
+      pop.style.maxHeight = 'calc(100vh - 24px)';
+      const size = pop.getBoundingClientRect();
       let left = (anchor ? anchor.right : window.innerWidth / 2) + 9;
       if (left + size.width > window.innerWidth - 12) left = Math.max(12, (anchor ? anchor.left : window.innerWidth / 2) - size.width - 9);
       const top = Math.min(Math.max(12, (anchor ? anchor.top : 120) - 8), window.innerHeight - size.height - 12);
-      pop.style.left = `${left}px`; pop.style.top = `${Math.max(12, top)}px`;
+      const safeTop = Math.max(12, top);
+      pop.style.left = `${left}px`; pop.style.top = `${safeTop}px`;
+      pop.style.maxHeight = `${Math.max(180, window.innerHeight - safeTop - 12)}px`;
     }
 
     // `ocorrencia` é o dia em que ele clicou, que numa série semanal não é o
@@ -3663,6 +3696,7 @@
       document.getElementById('calendar-pop-msg').style.display = 'none';
       renderCalendarPopColors(); renderCalendarPopPalette(); renderCalendarPopDays();
       document.getElementById('calendar-pop').classList.add('open');
+      document.querySelector('.calendar-pop-body').scrollTop = 0;
       calendarPlacePop(anchor);
       setTimeout(() => document.getElementById('calendar-pop-title').focus(), 20);
     }
