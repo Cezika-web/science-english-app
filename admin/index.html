@@ -2424,7 +2424,21 @@
     function calendarDefaultTitle(type) {
       return type === 'available' ? 'Horário disponível' : type === 'blocked' ? 'Horário bloqueado'
         : type === 'personal' ? 'Compromisso particular' : type === 'reposicao' ? 'Reposição'
-        : type === 'experimental' ? 'Aula experimental' : 'Aula';
+        : type === 'experimental' ? 'Experimental' : 'Aula';
+    }
+
+    // O tipo precisa ficar evidente no cartão mesmo quando o título salvo contém
+    // apenas o nome (caso do "Vlad") ou veio de um registro antigo. Normalizar só
+    // na exibição preserva o texto digitado pelo professor e corrige o histórico.
+    function calendarDisplayTitle(event = {}) {
+      const raw = String(event.title || '').trim();
+      if (event.type !== 'reposicao' && event.type !== 'experimental') return raw || 'Compromisso';
+      const label = event.type === 'reposicao' ? 'Reposição' : 'Experimental';
+      const subject = raw
+        .replace(/^aula\s+experimental\s*(?:[·:—-]\s*)?/i, '')
+        .replace(/^(?:reposi[cç][aã]o|experimental)\s*(?:[·:—-]\s*)?/i, '')
+        .trim() || String(event.studentName || '').trim();
+      return subject ? `${label} · ${subject}` : label;
     }
 
     async function loadCalendar() {
@@ -2668,6 +2682,7 @@
           const bottom = Math.min(height, (calendarMinutes(event.endTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
           if (bottom <= 0 || top >= height || bottom-top < 3) return '';
           const subtitle = `${event.startTime}–${event.endTime}${CALENDAR_REPEAT_LABELS[event.repeat] ? ` · ${CALENDAR_REPEAT_LABELS[event.repeat]}` : ''}`;
+          const displayTitle = calendarDisplayTitle(event);
           const cancelada = calendarCancelada(event, key);
           if (oculto) return '';
           // Dois ou mais na mesma hora: cada um fica com uma fatia da ALTURA,
@@ -2681,7 +2696,7 @@
             : '';
           const moldura = ehDupla && faixa === 0
             ? `<div class="calendar-dupla-outline" style="top:${top}px;height:${Math.max(22,bottom-top)}px" aria-hidden="true"></div>` : '';
-          return `${moldura}<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}${cancelada ? ' cancelada' : ''}" data-event-id="${esc(event.id)}"${event.fatiada ? ` data-hora-inicio="${esc(event.startTime)}" data-hora-fim="${esc(event.endTime)}"` : ''} style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event)}${junta ? `;--event-mix:${calendarMistura(faixa)}%;--event-mix-borda:${calendarMistura(faixa, CALENDAR_INTENSIDADE_BORDA)}%` : ''}" title="${esc(event.title || subtitle)}${cancelada ? ' · cancelada' : ''}"><strong>${esc(event.title || 'Compromisso')}</strong><span>${esc(subtitle)}</span></button>${mais}`;
+          return `${moldura}<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}${cancelada ? ' cancelada' : ''}" data-event-id="${esc(event.id)}"${event.fatiada ? ` data-hora-inicio="${esc(event.startTime)}" data-hora-fim="${esc(event.endTime)}"` : ''} style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event)}${junta ? `;--event-mix:${calendarMistura(faixa)}%;--event-mix-borda:${calendarMistura(faixa, CALENDAR_INTENSIDADE_BORDA)}%` : ''}" title="${esc(displayTitle || subtitle)}${cancelada ? ' · cancelada' : ''}"><strong>${esc(displayTitle)}</strong><span>${esc(subtitle)}</span></button>${mais}`;
         }).join('');
         return `<div class="calendar-day-column${work ? '' : ' off-hours'}${key === todayKey ? ' today' : ''}${key === calendarSelectedDay ? ' picked' : ''}" data-date="${key}" style="height:${height}px">${events}</div>`;
       }).join('');
@@ -2792,7 +2807,7 @@
         return `<div class="calendar-month-cell${date.getMonth() !== cursor.getMonth() ? ' outside' : ''}${key === todayKey ? ' today' : ''}${key === calendarSelectedDay ? ' picked' : ''}" data-month-date="${key}">`
           + `<span class="calendar-month-day">${date.getDate()}</span>`
           + calendarHolidaysOn(date).map(item => `<span class="calendar-holiday ${item.type}" title="${esc(item.name)}">${esc(item.name)}</span>`).join('')
-          + shown.map(event => `<button type="button" class="calendar-month-item" data-event-id="${esc(event.id)}" style="--event-color:${calendarEventColor(event)}" title="${esc(event.title || '')}">${event.startTime} ${esc(event.title || 'Compromisso')}</button>`).join('')
+          + shown.map(event => `<button type="button" class="calendar-month-item" data-event-id="${esc(event.id)}" style="--event-color:${calendarEventColor(event)}" title="${esc(calendarDisplayTitle(event))}">${event.startTime} ${esc(calendarDisplayTitle(event))}</button>`).join('')
           + (items.length > 3 ? `<span class="calendar-month-more">+${items.length - 3}</span>` : '') + '</div>';
       }).join('');
       grid.querySelectorAll('.calendar-month-item').forEach(button => button.onclick = click => {
