@@ -3142,6 +3142,31 @@ function AudioRecorder({ existingUrl, readOnly, onBlob }) {
   );
 }
 
+// Uma atividade pode pedir três falas independentes. Cada cartão usa o mesmo
+// gravador já testado nos Extras, mas guarda seu próprio arquivo e URL.
+function OralExercisePanel({ exercise, saved = {}, readOnly = false, lockCompleted = false, onChange }) {
+  const prompts = Array.isArray(exercise?.prompts) ? exercise.prompts : [];
+  if (!prompts.length) return null;
+  return (
+    <section style={{ marginTop:22, padding:16, borderRadius:16, background:'#FFFBEB', border:'1px solid #FDE68A' }}>
+      <div style={{ fontSize:12, fontWeight:900, color:'#92400E', textTransform:'uppercase', letterSpacing:.5 }}>🎤 Produção oral · {prompts.length} gravações</div>
+      {exercise?.instruction && <div style={{ marginTop:7, color:'#78350F', fontSize:13, lineHeight:1.55 }}>{exercise.instruction}</div>}
+      <div style={{ display:'grid', gap:12, marginTop:14 }}>
+        {prompts.map((prompt, index) => {
+          const id = prompt.id || `clip-${index + 1}`;
+          const stored = saved?.[id] || {};
+          return <div key={id} style={{ padding:13, borderRadius:14, background:'#fff', border:'1px solid #FED7AA' }}>
+            <div style={{ color:'#7C2D12', fontSize:13.5, fontWeight:800, lineHeight:1.45 }}>{index + 1}. {prompt.prompt || 'Grave sua resposta em inglês.'}</div>
+            {prompt.hint && <div style={{ color:'#9A6438', fontSize:11.5, lineHeight:1.45, margin:'5px 0 10px' }}>{prompt.hint}</div>}
+            <AudioRecorder key={`${id}:${stored.url || ''}`} existingUrl={stored.url || ''} readOnly={readOnly || (lockCompleted && !!stored.url)}
+              onBlob={(blob, ext) => onChange && onChange(id, { blob, ext, cleared:!blob })} />
+          </div>;
+        })}
+      </div>
+    </section>
+  );
+}
+
 function ExtraModal({ extra, onClose, onFinish, onSaveDraft, mirror }) {
   const contentRef = useRef(null);
   const valuesRef  = useRef({});
@@ -4375,10 +4400,12 @@ function PosaulaPeek({ open, activity, posaulas, onClose }) {
   );
 }
 
-function PartModal({ part, activity, posaulas, onBack, onClose, onFinish, onSaveDraft }) {
+function PartModal({ part, activity, posaulas, onBack, onClose, onFinish, onSaveDraft, mirror = false }) {
   const contentRef = useRef(null);
   const valuesRef  = useRef({});
+  const oralDraftsRef = useRef({});
   const [stats, setStats]   = useState({ total: 0, filled: 0 });
+  const [oralVersion, setOralVersion] = useState(0);
   const [saving, setSaving] = useState(false);
   const [peek, setPeek]     = useState(false);
 
@@ -4386,6 +4413,13 @@ function PartModal({ part, activity, posaulas, onBack, onClose, onFinish, onSave
   const fb_item   = activity?.feedback && part ? (activity.feedback[part.id || part.title]) : null;
   const isCorrected = activity?.status === 'corrected';
   const alreadyDone = !!(activity?.partsDone && activity.partsDone[partId]);
+  const oralPrompts = Array.isArray(part?.oralExercise?.prompts) ? part.oralExercise.prompts : [];
+  const savedOral = (activity?.respostas?.[partId]?._oral) || {};
+
+  useEffect(() => {
+    oralDraftsRef.current = {};
+    setOralVersion(value => value + 1);
+  }, [partId]);
 
   useEffect(() => {
     if (!part || !contentRef.current) return;
@@ -4423,15 +4457,25 @@ function PartModal({ part, activity, posaulas, onBack, onClose, onFinish, onSave
     return () => { clearTimeout(draftTimer); flushDraft(); };
   }, [part]);
 
-  const total     = stats.total;
-  const filled    = stats.filled;
+  const oralFilled = oralPrompts.filter((prompt, index) => {
+    const id = prompt.id || `clip-${index + 1}`;
+    const draft = oralDraftsRef.current[id];
+    if (draft?.cleared) return false;
+    return Boolean(draft?.blob || savedOral?.[id]?.url);
+  }).length;
+  const total     = stats.total + oralPrompts.length;
+  const filled    = stats.filled + oralFilled;
   const canFinish = total === 0 ? true : filled >= total;
   const pct       = total === 0 ? 100 : Math.round((filled / total) * 100);
 
   const handleFinish = async () => {
     if (!canFinish || saving) return;
     setSaving(true);
-    await onFinish(partId, { values: { ...valuesRef.current }, respondidos: filled, total, pct });
+    const oral = oralPrompts.map((prompt, index) => {
+      const id = prompt.id || `clip-${index + 1}`;
+      return { id, ...(oralDraftsRef.current[id] || {}), existing:savedOral?.[id] || null };
+    });
+    await onFinish(partId, { values: { ...valuesRef.current }, oral, respondidos: filled, total, pct });
     setSaving(false);
   };
 
@@ -4461,6 +4505,9 @@ function PartModal({ part, activity, posaulas, onBack, onClose, onFinish, onSave
             }}>&#128196; {activity?.review90 ? 'Revisar pós-aulas desta atividade' : 'Consultar pós-aula'}</button>
           </div>
           <div ref={contentRef} />
+          <OralExercisePanel key={partId} exercise={part?.oralExercise} saved={savedOral}
+            readOnly={mirror} lockCompleted={isCorrected}
+            onChange={(id, value) => { oralDraftsRef.current[id] = value; setOralVersion(version => version + 1); }} />
         </div>
 
         {fb_item && (
@@ -4473,7 +4520,7 @@ function PartModal({ part, activity, posaulas, onBack, onClose, onFinish, onSave
           </div>
         )}
 
-        {!isCorrected && (
+        {(!isCorrected || (!mirror && oralPrompts.length > 0 && oralFilled < oralPrompts.length)) && (
           <div style={{ padding: '12px 16px', paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid #F1F5F9', flexShrink: 0 }}>
             {!canFinish && (
               <div style={{ fontSize: 12, color: '#D97706', marginBottom: 8, textAlign: 'center', fontWeight: 600 }}>
@@ -4486,7 +4533,7 @@ function PartModal({ part, activity, posaulas, onBack, onClose, onFinish, onSave
               background: canFinish ? 'linear-gradient(180deg,var(--brand-light),var(--brand))' : '#CBD5E1',
               color: '#fff', boxShadow: canFinish ? '0 8px 20px rgba(var(--brand-rgb),0.3)' : 'none',
             }}>
-              {saving ? 'Salvando...' : alreadyDone ? '✓ Salvar alteracoes' : 'Finalizei esta parte'}
+              {saving ? 'Salvando...' : isCorrected ? '🎤 Enviar gravações' : alreadyDone ? '✓ Salvar alteracoes' : 'Finalizei esta parte'}
             </button>
           </div>
         )}
@@ -5254,7 +5301,10 @@ function App() {
 
     // total exercises across ALL parts (for the activity-level %)
     let sumTotal = 0;
-    parts.forEach(p => { sumTotal += countExercises(p.content); });
+    parts.forEach(p => {
+      const oralCount = Array.isArray(p?.oralExercise?.prompts) ? p.oralExercise.prompts.length : 0;
+      sumTotal += countExercises(p.content) + oralCount;
+    });
 
     const prevParts = (openActivity.conclusao && openActivity.conclusao.parts) || {};
     const newParts  = { ...prevParts, [partId]: { respondidos: result.respondidos, total: result.total, pct: result.pct } };
@@ -5265,17 +5315,33 @@ function App() {
     const newDone   = { ...(openActivity.partsDone || {}), [partId]: true };
     const allDone   = parts.every(p => newDone[p.id || p.title]);
     const conclusao = { parts: newParts, atividadePct };
-    const respostas = { ...(openActivity.respostas || {}), [partId]: result.values };
 
     try {
+      const existingOral = openActivity.respostas?.[partId]?._oral || {};
+      const oralSaved = {};
+      for (const clip of (result.oral || [])) {
+        if (clip.blob) {
+          const ext = clip.ext || 'webm';
+          const path = `extras/${user.uid}/activity-${actId}/${partId}-${clip.id}-${Date.now()}.${ext}`;
+          const sref = fb.storageRef(fb.storage, path);
+          await fb.uploadBytes(sref, clip.blob, { contentType:clip.blob.type || 'audio/webm' });
+          oralSaved[clip.id] = { url:await fb.getDownloadURL(sref), path };
+        } else if (!clip.cleared && (clip.existing?.url || existingOral[clip.id]?.url)) {
+          oralSaved[clip.id] = clip.existing?.url ? clip.existing : existingOral[clip.id];
+        }
+      }
+      const partAnswers = { ...result.values, ...((result.oral || []).length ? { _oral:oralSaved } : {}) };
+      const respostas = { ...(openActivity.respostas || {}), [partId]:partAnswers };
+      const completingOralAfterCorrection = openActivity.status === 'corrected' && (result.oral || []).some(clip => clip.blob);
       await fb.updateDoc(fb.doc(fb.db, 'students', user.uid, 'activities', actId), {
         respostas, partsDone: newDone, conclusao, finalizada: allDone,
+        ...(completingOralAfterCorrection ? { oralReviewPending:true, oralSubmittedAt:fb.serverTimestamp() } : {}),
       });
+      const updated = { ...openActivity, respostas, partsDone: newDone, conclusao, finalizada: allDone,
+        ...(completingOralAfterCorrection ? { oralReviewPending:true, oralSubmittedAt:new Date() } : {}) };
+      setActivities(prev => prev.map(a => a.id === actId ? updated : a));
+      setOpenActivity(updated);
     } catch(e) { showToast('Erro ao salvar: ' + e.message); return; }
-
-    const updated = { ...openActivity, respostas, partsDone: newDone, conclusao, finalizada: allDone };
-    setActivities(prev => prev.map(a => a.id === actId ? updated : a));
-    setOpenActivity(updated);
     showToast(allDone ? 'Parte salva! Atividade completa 🎉' : 'Parte salva!');
   }
 
@@ -5384,7 +5450,7 @@ function App() {
       />}
 
       <ActivityModal activity={openActivity} onClose={handleCloseAll} onOpenPart={handleOpenPart} />
-      <PartModal part={openPart} activity={openActivity} posaulas={posaulas} onBack={handleClosePart} onClose={handleCloseAll} onFinish={handleFinishPart} onSaveDraft={handleSaveDraftPart} />
+      <PartModal part={openPart} activity={openActivity} posaulas={posaulas} onBack={handleClosePart} onClose={handleCloseAll} onFinish={handleFinishPart} onSaveDraft={handleSaveDraftPart} mirror={mirror} />
       <ExtraModal extra={openExtra} onClose={() => setOpenExtra(null)} onFinish={handleFinishExtra} onSaveDraft={handleSaveDraftExtra} mirror={mirror} />
       <CorrecaoModal data={openCorrecao} onClose={() => setOpenCorrecao(null)} />
 

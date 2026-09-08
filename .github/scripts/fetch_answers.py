@@ -18,8 +18,10 @@ Saída: texto UTF-8 no stdout. No Windows, redirecione para arquivo:
 import argparse
 import json
 import os
+from pathlib import Path
 import re
 import sys
+from urllib.parse import urlparse
 
 import requests
 from google.oauth2 import service_account
@@ -74,10 +76,49 @@ def s(field):
     return (field or {}).get("stringValue", "")
 
 
+def firestore_value(field):
+    """Converte um valor da API REST do Firestore para tipos Python."""
+    field = field or {}
+    if "stringValue" in field:
+        return field["stringValue"]
+    if "booleanValue" in field:
+        return field["booleanValue"]
+    if "integerValue" in field:
+        return int(field["integerValue"])
+    if "doubleValue" in field:
+        return float(field["doubleValue"])
+    if "nullValue" in field:
+        return None
+    if "arrayValue" in field:
+        return [firestore_value(item) for item in field["arrayValue"].get("values", [])]
+    if "mapValue" in field:
+        return {key: firestore_value(value) for key, value in field["mapValue"].get("fields", {}).items()}
+    return None
+
+
+def download_audio(url, target_dir, stem):
+    if not url or not target_dir:
+        return ""
+    response = requests.get(url, timeout=60)
+    response.raise_for_status()
+    content_type = response.headers.get("content-type", "audio/webm").split(";")[0]
+    suffixes = {"audio/mp4": ".m4a", "audio/aac": ".m4a", "audio/mpeg": ".mp3", "audio/ogg": ".ogg"}
+    suffix = suffixes.get(content_type)
+    if not suffix:
+        suffix = Path(urlparse(url).path).suffix if Path(urlparse(url).path).suffix in {".webm", ".m4a", ".mp3", ".ogg", ".wav"} else ".webm"
+    folder = Path(target_dir)
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / f"{stem}{suffix}"
+    path.write_bytes(response.content)
+    return str(path.resolve())
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("student", help="nome ou slug do aluno")
     ap.add_argument("--sa", help="caminho do service-account.json")
+    ap.add_argument("--audio-dir", help="pasta para baixar as gravações originais")
+    ap.add_argument("--only-awaiting", action="store_true", help="mostra só atividades finalizadas aguardando correção")
     args = ap.parse_args()
 
     creds, project_id = load_credentials(args.sa)
@@ -106,10 +147,14 @@ def main():
         week = s(fields.get("week"))
         finalizada = fields.get("finalizada", {}).get("booleanValue", False)
         status = s(fields.get("status"))
+        oral_review_pending = fields.get("oralReviewPending", {}).get("booleanValue", False)
+        if args.only_awaiting and (not finalizada or (status == "corrected" and not oral_review_pending)):
+            continue
         respostas = (fields.get("respostas", {})
                      .get("mapValue", {}).get("fields", {}))
 
-        estado = "CORRIGIDA" if status == "corrected" else \
+        estado = "ÁUDIO FINALIZADO (aguardando correção)" if oral_review_pending else \
+                 "CORRIGIDA" if status == "corrected" else \
                  "FINALIZADA (aguardando correcao)" if finalizada else "PENDENTE"
 
         print("=" * 66)
@@ -131,6 +176,7 @@ def main():
             ptype = s(pf.get("type"))
             content = s(pf.get("content"))
             questions = html_questions(content)
+            oral = firestore_value(pf.get("oralExercise")) or {}
 
             ans_map = (respostas.get(pid, {})
                        .get("mapValue", {}).get("fields", {}))
@@ -141,6 +187,21 @@ def main():
                 a = a if a.strip() else "(em branco)"
                 print(f"  {i+1}. {q}")
                 print(f"     >> RESPOSTA DO ALUNO: {a}")
+            oral_saved = firestore_value(ans_map.get("_oral")) or {}
+            for i, prompt in enumerate(oral.get("prompts", [])):
+                clip_id = prompt.get("id") or f"clip-{i+1}"
+                print(f"  ORAL {i+1}. {prompt.get('prompt') or 'Grave sua resposta em inglês.'}")
+                clip = oral_saved.get(clip_id) or {}
+                url = clip.get("url", "") if isinstance(clip, dict) else ""
+                if url:
+                    safe_stem = re.sub(r"[^a-zA-Z0-9_-]+", "-", f"{doc['name'].split('/')[-1]}-{pid}-{clip_id}")
+                    try:
+                        path = download_audio(url, args.audio_dir, safe_stem)
+                        print(f"     >> ÁUDIO DO ALUNO: {path or url}")
+                    except Exception as error:
+                        print(f"     >> ÁUDIO DO ALUNO: erro ao baixar ({error})")
+                else:
+                    print("     >> ÁUDIO DO ALUNO: (não enviado)")
         print()
 
 

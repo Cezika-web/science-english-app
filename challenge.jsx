@@ -5,6 +5,14 @@ const CHALLENGE_TIME_SECONDS = 45;
 const challengeBlue = 'linear-gradient(135deg,#071B3A 0%,#0D3F82 58%,#087CC1 100%)';
 const challengeRoundButton = { width:36, height:36, borderRadius:'50%', border:'1px solid rgba(255,255,255,.22)', background:'rgba(255,255,255,.1)', color:'#fff', fontSize:20, cursor:'pointer', fontFamily:'inherit' };
 
+// A quinta-feira define o mês da rodada: 31/08–06/09 é a primeira semana de
+// setembro, não uma quinta semana de agosto.
+function challengeMonthKeyForWeek(weekKey) {
+  const thursday = new Date(`${weekKey}T12:00:00`);
+  thursday.setDate(thursday.getDate() + 3);
+  return `${thursday.getFullYear()}-${String(thursday.getMonth() + 1).padStart(2, '0')}`;
+}
+
 function challengeStatus(state = {}) {
   if (state.phase === 'open') {
     if (state.completed) return { badge:'CONCLUÍDA', title:`Parte ${state.part} concluída`, detail:state.part === 1 ? 'Suas respostas estão salvas. A nota desta parte sai na quinta.' : 'Suas respostas estão salvas. O resultado sai no domingo.', tone:'#DFF7E8', color:'#15713A' };
@@ -78,7 +86,8 @@ function ChallengeSeason({ carregar, initialData, onClose }) {
   const [dados, setDados] = React.useState(initialData || null);
   const [erro, setErro] = React.useState('');
   const [semanaAberta, setSemanaAberta] = React.useState(null);
-  const [mesAberto, setMesAberto] = React.useState(() => String(initialData?.minhasSemanas?.[0]?.weekKey || '').slice(0, 7) || null);
+  const [mesAberto, setMesAberto] = React.useState(() => initialData?.minhasSemanas?.[0]?.weekKey
+    ? challengeMonthKeyForWeek(initialData.minhasSemanas[0].weekKey) : null);
   // Ref para o efeito rodar uma vez só: se dependesse de `carregar`, uma função
   // recriada a cada render deixaria o painel buscando em laço.
   const carregarRef = React.useRef(carregar);
@@ -101,12 +110,14 @@ function ChallengeSeason({ carregar, initialData, onClose }) {
   }, [initialData]);
 
   const semanaLabel = key => {
-    const [, mes, dia] = String(key || '').split('-');
-    const numero = Math.max(1, Math.ceil(Number(dia || 1) / 7));
-    return dia && mes ? `${numero}ª semana · ${dia}/${mes}` : key;
+    if (!key) return key;
+    const monday = new Date(`${key}T12:00:00`), thursday = new Date(monday);
+    thursday.setDate(thursday.getDate() + 3);
+    const numero = Math.max(1, Math.ceil(thursday.getDate() / 7));
+    return `${numero}ª semana de ${new Intl.DateTimeFormat('pt-BR',{month:'long'}).format(thursday)} · ${String(monday.getDate()).padStart(2,'0')}/${String(monday.getMonth()+1).padStart(2,'0')}`;
   };
   const semanasPorMes = [...(dados?.minhasSemanas || []).reduce((mapa, semana) => {
-    const monthKey = String(semana.weekKey || '').slice(0, 7);
+    const monthKey = challengeMonthKeyForWeek(semana.weekKey);
     if (!mapa.has(monthKey)) {
       const label = new Intl.DateTimeFormat('pt-BR', { month:'long', year:'numeric', timeZone:'UTC' })
         .format(new Date(`${monthKey}-01T12:00:00Z`));

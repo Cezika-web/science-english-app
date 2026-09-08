@@ -7336,7 +7336,7 @@
 
       // Só mostra atividades que ainda NÃO foram corrigidas — as corrigidas somem daqui.
       const acts = actsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
-        .filter(a => a.status !== 'corrected');
+        .filter(a => a.status !== 'corrected' || a.oralReviewPending === true);
       if (acts.length === 0) {
         document.getElementById('cor-activities-list').innerHTML = '';
         document.getElementById('cor-activities-section').style.display = 'none';
@@ -7349,7 +7349,7 @@
           <input type="radio" name="cor-act" value="${a.id}" />
           <div class="act-select-info">
             <div class="act-select-title">${a.emoji || '📚'} ${esc(a.title || 'Atividade')}</div>
-            <div class="act-select-meta">Semana: ${esc(a.week || '—')} · Status: ${a.finalizada ? '📝 Aguardando correção' : '⏳ Não finalizada'}</div>
+            <div class="act-select-meta">Semana: ${esc(a.week || '—')} · Status: ${a.oralReviewPending ? '🎤 Áudio aguardando correção' : a.finalizada ? '📝 Aguardando correção' : '⏳ Não finalizada'}</div>
           </div>
         </label>`).join('');
 
@@ -7383,6 +7383,7 @@
           ...(parsedCorrectionJson.correcao && { correcao: parsedCorrectionJson.correcao }),
           ...(parsedCorrectionJson.patterns && { patterns: parsedCorrectionJson.patterns }),
           ...(parsedCorrectionJson.pedagogico && { pedagogico: parsedCorrectionJson.pedagogico }),
+          oralReviewPending: false,
           correctedAt: serverTimestamp(),
         });
 
@@ -7873,6 +7874,14 @@
       return `${ordinal}ª semana de ${month} · ${monday}`;
     }
 
+    // A semana pertence ao mês em que cai a quinta-feira. Assim, a rodada
+    // 31/08–06/09 aparece em setembro, igual ao rótulo e ao cálculo do servidor.
+    function challengeMonthKeyForWeek(weekKey) {
+      const thursday = new Date(`${weekKey}T12:00:00`);
+      thursday.setDate(thursday.getDate() + 3);
+      return `${thursday.getFullYear()}-${String(thursday.getMonth() + 1).padStart(2, '0')}`;
+    }
+
     function renderChallengeAnswerOptions(item) {
       const options = Array.isArray(item.options) ? item.options : [];
       if (!options.length) return '';
@@ -7926,7 +7935,7 @@
 
       const monthsByKey = new Map();
       weeks.slice().sort((a, b) => String(b.weekKey).localeCompare(String(a.weekKey))).forEach(week => {
-        const key = String(week.weekKey || '').slice(0, 7);
+        const key = challengeMonthKeyForWeek(week.weekKey);
         if (!monthsByKey.has(key)) monthsByKey.set(key, []);
         monthsByKey.get(key).push(week);
       });
