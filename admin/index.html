@@ -826,7 +826,7 @@
             <label><input type="checkbox" data-d="5">Sex</label>
             <label><input type="checkbox" data-d="6">Sáb</label>
           </div>
-          <label class="hora-mesma"><input type="checkbox" id="g-hora-mesma" checked><span><strong>Todas as aulas são no mesmo horário</strong><small>Desmarque se algum dia tem hora diferente — aparece um campo por dia.</small></span></label>
+          <label class="hora-mesma"><input type="checkbox" id="g-hora-mesma" checked><span><strong>Usar o mesmo horário em todos os dias</strong><small>Ao marcar dois dias, os horários separados aparecem automaticamente. Marque esta opção apenas se forem iguais.</small></span></label>
           <div id="g-hora-unica"><label class="form-label" for="g-hora">Horário da aula</label>
             <div class="hora-faixa" style="margin-bottom:14px;"><input class="form-input" id="g-hora" type="time" step="900"><span class="ate">até</span><input class="form-input" id="g-fim" type="time" step="900"><button type="button" class="hora-mais15" data-fim="g-fim">+15</button><span class="hora-duracao" id="g-duracao-nota"></span></div>
           </div>
@@ -1503,7 +1503,7 @@
               <label><input type="checkbox" data-d="6">Sáb</label>
             </div>
           </div>
-          <label class="hora-mesma"><input type="checkbox" id="f-hora-mesma" checked><span><strong>Todas as aulas são no mesmo horário</strong><small>Desmarque se algum dia tem hora diferente — aparece um campo por dia.</small></span></label>
+          <label class="hora-mesma"><input type="checkbox" id="f-hora-mesma" checked><span><strong>Usar o mesmo horário em todos os dias</strong><small>Ao marcar dois dias, os horários separados aparecem automaticamente. Ex.: 08:00 em um dia e 08:15 no outro.</small></span></label>
           <div class="field" id="f-hora-unica"><label>Horário da aula</label>
             <div class="hora-faixa"><input type="time" id="f-hora" step="900" /><span class="ate">até</span><input type="time" id="f-fim" step="900" /><button type="button" class="hora-mais15" data-fim="f-fim">+15</button><span class="hora-duracao" id="f-duracao-nota"></span></div>
           </div>
@@ -1597,7 +1597,7 @@
             <label><input type="checkbox" data-d="6">Sáb</label>
           </div>
         </div>
-        <label class="hora-mesma"><input type="checkbox" id="e-hora-mesma" checked><span><strong>Todas as aulas são no mesmo horário</strong><small>Desmarque se algum dia tem hora diferente — aparece um campo por dia.</small></span></label>
+        <label class="hora-mesma"><input type="checkbox" id="e-hora-mesma" checked><span><strong>Usar o mesmo horário em todos os dias</strong><small>Ao marcar dois dias, os horários separados aparecem automaticamente. Ex.: 08:00 em um dia e 08:15 no outro.</small></span></label>
         <div class="field" id="e-hora-unica"><label>Horário da aula</label>
           <div class="hora-faixa"><input type="time" id="e-hora" step="900" /><span class="ate">até</span><input type="time" id="e-fim" step="900" /><button type="button" class="hora-mais15" data-fim="e-fim">+15</button><span class="hora-duracao" id="e-duracao-nota"></span></div>
         </div>
@@ -6399,9 +6399,10 @@
         };
         guardarDuracao();
         if (!fim.value) ajustarFim(inicio, fim);
-        inicio.onchange = () => ajustarFim(inicio, fim);
-        fim.onchange = guardarDuracao;
-        linha.querySelector('[data-papel=mais]').onclick = evento => { evento.preventDefault(); ajustarFim(inicio, fim, { doPasso:AULA_PASSO_MIN }); };
+        const atualizarValor = () => { if (prefixo === 'f' && typeof sugerirMensalidade === 'function') sugerirMensalidade(); };
+        inicio.onchange = () => { ajustarFim(inicio, fim); atualizarValor(); };
+        fim.onchange = () => { guardarDuracao(); atualizarValor(); };
+        linha.querySelector('[data-papel=mais]').onclick = evento => { evento.preventDefault(); ajustarFim(inicio, fim, { doPasso:AULA_PASSO_MIN }); atualizarValor(); };
       });
     }
 
@@ -6417,7 +6418,18 @@
     ['f','e','g'].forEach(prefixo => {
       document.getElementById(`${prefixo}-hora-mesma`).addEventListener('change', () => sincronizarModoHora(prefixo));
       document.querySelectorAll(`#${prefixo}-dias-week input`).forEach(caixa =>
-        caixa.addEventListener('change', () => { if (aulaModoPorDia(prefixo)) renderHorasPorDia(prefixo); }));
+        caixa.addEventListener('change', () => {
+          const dias = aulaDiasSelecionados(`${prefixo}-dias-week`);
+          const mesmaHora = document.getElementById(`${prefixo}-hora-mesma`);
+          // Ao escolher uma segunda aula semanal, mostra imediatamente um horário
+          // para cada dia. O professor ainda pode marcar "mesmo horário" se quiser.
+          if (dias.length > 1 && mesmaHora.checked) {
+            mesmaHora.checked = false;
+            sincronizarModoHora(prefixo);
+          } else if (aulaModoPorDia(prefixo)) {
+            renderHorasPorDia(prefixo);
+          }
+        }));
       const inicio = document.getElementById(`${prefixo}-hora`), fim = document.getElementById(`${prefixo}-fim`);
       inicio.addEventListener('change', () => { ajustarFim(inicio, fim); sincronizarFaixa(prefixo); });
       fim.addEventListener('change', () => sincronizarFaixa(prefixo));
