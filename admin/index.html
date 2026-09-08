@@ -1791,6 +1791,9 @@
     <div class="calendar-pop-colors calendar-pop-palette" id="calendar-pop-palette"></div>
     <button class="btn-secondary" id="calendar-pop-briefing" type="button" style="display:none;width:100%;margin-top:12px;padding:9px;font-size:.83rem;">📋 Pauta desta aula</button>
     <div id="calendar-pop-briefing-notice" role="status" style="display:none;margin-top:12px;padding:10px;border-radius:8px;background:#fff7ed;color:#9a3412;font-size:.83rem;">Esta aula ainda não está vinculada a um aluno. Selecione o aluno e salve para acessar a pauta.</div>
+    <div class="calendar-pop-row" id="calendar-pop-cancel-scope-row" style="display:none;grid-template-columns:1fr;margin-top:8px;">
+      <select id="calendar-pop-cancel-scope" aria-label="Quem terá esta aula cancelada"></select>
+    </div>
     <button class="btn-secondary" id="calendar-pop-cancelar" type="button" style="display:none;width:100%;margin-top:8px;padding:9px;font-size:.83rem;">🚫 Cancelar só esta aula</button>
     <div class="calendar-pop-msg" id="calendar-pop-msg"></div>
     <button class="calendar-pop-more" id="calendar-pop-more" type="button">mais opções (aluno, observações…)</button>
@@ -2350,6 +2353,7 @@
     let calendarHover = null;        // {date, minutes} sob o mouse — destino do Ctrl+V
     let calendarSettings = { ...CALENDAR_DEFAULTS };
     let calendarEvents = [];
+    const calendarDisplayEvents = new Map();
     let calendarWeekStart = calendarWeekStartDate(new Date());
     let calendarSelectedDay = ''; // dia em destaque na coluna; vazio = nenhum
     let calendarView = 'week';    // 'day' | 'week' | 'month'
@@ -2390,7 +2394,52 @@
       document.getElementById('calendar-settings-save').style.background = color;
     }
 
-    const calendarCancelada = (event, chaveDia) => (event.canceladas || []).includes(chaveDia);
+    const calendarCancelada = (event, chaveDia) => event.groupVirtual
+      ? (event.memberEvents || []).every(item => (item.canceladas || []).includes(chaveDia))
+      : (event.canceladas || []).includes(chaveDia);
+
+    const calendarGroupValue = id => `group:${id}`;
+    function calendarEntity(value) {
+      if (String(value || '').startsWith('group:')) {
+        const group = classGroups.find(item => item.id === String(value).slice(6) && item.active !== false);
+        if (!group) return null;
+        const members = (group.memberUids || []).map(uid => allStudents.find(student => student.uid === uid && !student.archived)).filter(Boolean);
+        return { kind:'group', value:calendarGroupValue(group.id), group, members,
+          memberUids:members.map(item => item.uid), memberNames:members.map(item => item.name || item.firstName || 'Aluno'),
+          label:group.name || members.map(item => item.firstName || (item.name || '').split(' ')[0]).join(' e ') };
+      }
+      const student = allStudents.find(item => item.uid === value && !item.archived);
+      return student ? { kind:'student', value:student.uid, student, members:[student], memberUids:[student.uid],
+        memberNames:[student.name || student.firstName || 'Aluno'], label:student.name || student.firstName || 'Aluno' } : null;
+    }
+
+    function calendarMergeGroups(events, date) {
+      const key = calendarDateKey(date), consumed = new Set(), merged = [];
+      classGroups.filter(group => group.active !== false && (group.memberUids || []).length > 1).forEach(group => {
+        const memberSet = new Set(group.memberUids || []);
+        const candidates = events.filter(event => !consumed.has(event.id) && event.type === 'lesson'
+          && memberSet.has(event.studentUid) && event.source === 'cadastro');
+        const byTime = new Map();
+        candidates.forEach(event => {
+          const slot = `${event.startTime}|${event.endTime}`;
+          if (!byTime.has(slot)) byTime.set(slot, []);
+          byTime.get(slot).push(event);
+        });
+        byTime.forEach(memberEvents => {
+          if (memberEvents.length < 2) return;
+          memberEvents.forEach(item => consumed.add(item.id));
+          const first = memberEvents[0];
+          const memberNames = memberEvents.map(item => item.studentName || 'Aluno');
+          const virtual = { ...first, id:`__group-${group.id}-${key}-${first.startTime}`, groupVirtual:true,
+            groupId:group.id, groupName:group.name || memberNames.join(' e '),
+            memberUids:memberEvents.map(item => item.studentUid), memberNames, memberEvents,
+            studentUid:'', studentName:group.name || memberNames.join(' e '), title:`Aula · ${group.name || memberNames.join(' e ')}` };
+          merged.push(virtual); calendarDisplayEvents.set(virtual.id, virtual);
+        });
+      });
+      events.filter(event => !consumed.has(event.id)).forEach(event => { merged.push(event); calendarDisplayEvents.set(event.id, event); });
+      return merged;
+    }
 
     function calendarOccursOn(event, date) {
       const key = calendarDateKey(date), repeat = event.repeat || 'none';
@@ -2450,9 +2499,10 @@
       const grid = document.getElementById('calendar-grid');
       grid.innerHTML = '<div class="calendar-empty">Carregando a agenda...</div>'; calendarLoadedSchool = requestedSchool; calendarShouldScroll = true;
       try {
-        const [settingsSnap, eventsSnap] = await Promise.all([
+        const [settingsSnap, eventsSnap, groupsSnap] = await Promise.all([
           getDoc(doc(db, 'schools', requestedSchool, 'calendarSettings', 'work')),
           getDocs(collection(db, 'schools', requestedSchool, 'calendarEvents')),
+          getDocs(collection(db, 'schools', requestedSchool, 'classGroups')),
         ]);
         if (calendarLoadedSchool !== requestedSchool || escolaAtual !== requestedSchool) return;
         const schoolAccent = escolas.find(school => school.id === requestedSchool)?.theme?.accent || CALENDAR_DEFAULTS.lessonColor;
@@ -2463,6 +2513,8 @@
         // de `available` ficam ignorados para não duplicar nem esconder uma vaga.
         calendarEvents = eventsSnap.docs.map(item => ({ id:item.id, ...item.data() }))
           .filter(item => item.type !== 'available');
+        classGroups = groupsSnap.docs.map(item => ({ id:item.id, ...item.data() }))
+          .sort((a,b) => (a.name || '').localeCompare(b.name || '', 'pt-BR'));
         calendarApplyTheme(); calendarFillStudents(); renderCalendar();
       } catch (error) {
         console.error('Agenda:', error);
@@ -2471,8 +2523,12 @@
     }
 
     function calendarFillStudents() {
-      const opcoes = '<option value="">Selecione o aluno</option>' + allStudents.filter(student => !student.archived)
-        .map(student => `<option value="${esc(student.uid)}">${esc(student.name || student.firstName || 'Aluno')}</option>`).join('');
+      const grupos = classGroups.filter(group => group.active !== false && (group.memberUids || []).filter(uid =>
+        allStudents.some(student => student.uid === uid && !student.archived)).length > 1);
+      const opcoes = '<option value="">Selecione aluno, dupla ou grupo</option>'
+        + (grupos.length ? `<optgroup label="Duplas e grupos">${grupos.map(group => `<option value="${esc(calendarGroupValue(group.id))}">${esc(group.name || (group.memberNames || []).join(' e '))}</option>`).join('')}</optgroup>` : '')
+        + `<optgroup label="Alunos individuais">${allStudents.filter(student => !student.archived)
+          .map(student => `<option value="${esc(student.uid)}">${esc(student.name || student.firstName || 'Aluno')}</option>`).join('')}</optgroup>`;
       ['calendar-event-student', 'calendar-pop-student'].forEach(id => {
         const select = document.getElementById(id); if (!select) return;
         const current = select.value;
@@ -2626,6 +2682,7 @@
     function renderCalendar() {
       calendarApplyTheme();
       if (calendarView === 'month') return renderCalendarMonth();
+      calendarDisplayEvents.clear();
       // A grade sempre mostra a janela larga (05:00–23:00), como no Notion; o
       // expediente salvo continua valendo, só não limita mais o que aparece.
       const startMinutes = Math.min(calendarMinutes(calendarSettings.dayStart), calendarMinutes(CALENDAR_VIEW_START));
@@ -2662,7 +2719,7 @@
       const labels = Array.from({ length:hours }, (_, index) => `<div class="calendar-hour-label">${calendarTime(startMinutes + index*60)}</div>`).join('');
       const columns = days.map(date => {
         const key = calendarDateKey(date), work = calendarSettings.workingDays.includes(date.getDay());
-        const doDia = calendarEvents.filter(event => calendarOccursOn(event,date));
+        const doDia = calendarMergeGroups(calendarEvents.filter(event => calendarOccursOn(event,date)), date);
         const naGrade = [...doDia, ...calendarVagasAutomaticas(date, doDia, key)];
         // "Horário disponível" longo vira uma tira por hora. É assim que ele lê a
         // agenda — "esta hora está livre" — e cada tira abre uma reposição somente
@@ -2774,7 +2831,7 @@
       document.querySelectorAll('.calendar-event').forEach(button => button.onclick = click => {
         click.stopPropagation();
         clearCalendarSelection(); button.classList.add('editing'); // marca qual compromisso está sendo editado
-        openCalendarPop(calendarEvents.find(item => item.id === button.dataset.eventId) || {}, button.getBoundingClientRect(),
+        openCalendarPop(calendarDisplayEvents.get(button.dataset.eventId) || calendarEvents.find(item => item.id === button.dataset.eventId) || {}, button.getBoundingClientRect(),
           button.closest('.calendar-day-column')?.dataset.date || '',
           button.dataset.horaInicio ? { startTime:button.dataset.horaInicio, endTime:button.dataset.horaFim } : null);
       });
@@ -2793,6 +2850,7 @@
     }
 
     function renderCalendarMonth() {
+      calendarDisplayEvents.clear();
       const cursor = new Date(calendarMiniCursor.getFullYear(), calendarMiniCursor.getMonth(), 1);
       const first = calendarAddDays(cursor, -cursor.getDay()), todayKey = calendarDateKey(new Date());
       document.getElementById('calendar-range-title').textContent = cursor.toLocaleDateString('pt-BR', { month:'long', year:'numeric' });
@@ -2804,7 +2862,7 @@
       grid.style.gridTemplateColumns = 'repeat(7,minmax(0,1fr))';
       grid.innerHTML = Array.from({ length:42 }, (_, index) => {
         const date = calendarAddDays(first, index), key = calendarDateKey(date);
-        const items = calendarEvents.filter(event => calendarOccursOn(event, date))
+        const items = calendarMergeGroups(calendarEvents.filter(event => calendarOccursOn(event, date)), date)
           .sort((one, other) => calendarMinutes(one.startTime) - calendarMinutes(other.startTime));
         const shown = items.slice(0, 3);
         return `<div class="calendar-month-cell${date.getMonth() !== cursor.getMonth() ? ' outside' : ''}${key === todayKey ? ' today' : ''}${key === calendarSelectedDay ? ' picked' : ''}" data-month-date="${key}">`
@@ -2815,7 +2873,7 @@
       }).join('');
       grid.querySelectorAll('.calendar-month-item').forEach(button => button.onclick = click => {
         click.stopPropagation(); clearCalendarSelection(); button.classList.add('editing');
-        openCalendarPop(calendarEvents.find(item => item.id === button.dataset.eventId) || {}, button.getBoundingClientRect());
+        openCalendarPop(calendarDisplayEvents.get(button.dataset.eventId) || calendarEvents.find(item => item.id === button.dataset.eventId) || {}, button.getBoundingClientRect());
       });
       grid.querySelectorAll('[data-month-date]').forEach(cell => cell.onclick = () => { // clicar no dia abre a visão de dia
         const chosen = new Date(`${cell.dataset.monthDate}T00:00:00`);
@@ -2873,12 +2931,13 @@
     }
 
     function calendarSyncBriefing(context, type, uid, canOpen = true) {
-      const alunoValido = allStudents.some(student => student.uid === uid && !student.archived);
+      const entity = calendarEntity(uid);
+      const alunoValido = entity?.kind === 'student';
       const ehAula = type === 'lesson';
       const button = document.getElementById(`calendar-${context}-briefing`);
       const notice = document.getElementById(`calendar-${context}-briefing-notice`);
       button.style.display = ehAula && alunoValido && canOpen ? (context === 'pop' ? 'block' : 'inline-block') : 'none';
-      notice.style.display = ehAula && !alunoValido ? 'block' : 'none';
+      notice.style.display = ehAula && !entity ? 'block' : 'none';
       if (ehAula && alunoValido && canOpen) briefingAplicarEstado(button);
     }
 
@@ -3247,7 +3306,8 @@
     async function calendarFillMakeupDates(selectId, uid, eventDate, selected = '') {
       const select = document.getElementById(selectId);
       if (!select) return;
-      if (!uid) { select.innerHTML = '<option value="">Escolha o aluno primeiro</option>'; return; }
+      const entity = calendarEntity(uid);
+      if (!entity) { select.innerHTML = '<option value="">Escolha o aluno, dupla ou grupo primeiro</option>'; return; }
       select.innerHTML = '<option value="">Buscando faltas…</option>';
       select.disabled = true;
       try {
@@ -3255,9 +3315,11 @@
         const todayKey = adminDateKey(today);
         const pastStart = new Date(today); pastStart.setMonth(pastStart.getMonth() - 2);
         const pastStartKey = adminDateKey(pastStart);
-        let missed = (await calendarMakeupMisses(uid)).filter(key => key >= pastStartKey && key < todayKey);
-        const previous = calendarPreviousLessons(uid);
-        const future = calendarUpcomingLessons(uid).filter(key => key >= todayKey);
+        let missed = (await Promise.all(entity.memberUids.map(calendarMakeupMisses))).flat()
+          .filter(key => key >= pastStartKey && key < todayKey);
+        const scheduleUid = entity.memberUids[0];
+        const previous = calendarPreviousLessons(scheduleUid);
+        const future = calendarUpcomingLessons(scheduleUid).filter(key => key >= todayKey);
         missed = [...new Set(missed)].sort().reverse();
         const past = [...new Set([...missed, ...previous])].sort().reverse();
         const allChoices = [...past, ...future];
@@ -3292,31 +3354,32 @@
         if (!studentPatches.has(uid)) studentPatches.set(uid, {});
         studentPatches.get(uid)[`attendanceMakeups.${eventRef.id}`] = value;
       };
-      if (previous?.type === 'reposicao' && previous.studentUid) patchStudent(previous.studentUid, deleteField());
-      if (event.type === 'reposicao' && event.studentUid && event.makeupForDate) {
-        patchStudent(event.studentUid, {
+      const previousUids = previous?.memberUids?.length ? previous.memberUids : [previous?.studentUid].filter(Boolean);
+      const eventUids = event.memberUids?.length ? event.memberUids : [event.studentUid].filter(Boolean);
+      if (previous?.type === 'reposicao') previousUids.forEach(uid => patchStudent(uid, deleteField()));
+      if (event.type === 'reposicao' && event.makeupForDate) {
+        eventUids.forEach(uid => patchStudent(uid, {
           scheduledDate:event.makeupForDate,
           makeupDate:event.date,
           calendarEventId:eventRef.id,
-        });
+        }));
       }
       studentPatches.forEach((fields, uid) => batch.update(doc(db, 'students', uid), fields));
       await batch.commit();
 
       // Mantém os próximos seletores corretos sem precisar recarregar todo o painel.
-      if (previous?.type === 'reposicao' && previous.studentUid) {
-        const student = allStudents.find(item => item.uid === previous.studentUid);
+      if (previous?.type === 'reposicao') previousUids.forEach(uid => {
+        const student = allStudents.find(item => item.uid === uid);
         if (student?.attendanceMakeups) delete student.attendanceMakeups[eventRef.id];
-      }
-      if (event.type === 'reposicao' && event.studentUid && event.makeupForDate) {
-        const student = allStudents.find(item => item.uid === event.studentUid);
+      });
+      if (event.type === 'reposicao' && event.makeupForDate) eventUids.forEach(uid => {
+        const student = allStudents.find(item => item.uid === uid);
         if (student) {
           student.attendanceMakeups ||= {};
           student.attendanceMakeups[eventRef.id] = { scheduledDate:event.makeupForDate, makeupDate:event.date, calendarEventId:eventRef.id };
         }
-      }
-      calendarMakeupMissesCache.delete(previous?.studentUid || '');
-      calendarMakeupMissesCache.delete(event.studentUid || '');
+      });
+      [...previousUids, ...eventUids].forEach(uid => calendarMakeupMissesCache.delete(uid));
       return eventRef.id;
     }
 
@@ -3324,22 +3387,23 @@
       const previous = calendarEvents.find(item => item.id === id);
       const batch = writeBatch(db);
       batch.delete(doc(db, 'schools', escolaAtual, 'calendarEvents', id));
-      if (previous?.type === 'reposicao' && previous.studentUid) {
-        batch.update(doc(db, 'students', previous.studentUid), { [`attendanceMakeups.${id}`]:deleteField() });
-      }
+      const previousUids = previous?.memberUids?.length ? previous.memberUids : [previous?.studentUid].filter(Boolean);
+      if (previous?.type === 'reposicao') previousUids.forEach(uid =>
+        batch.update(doc(db, 'students', uid), { [`attendanceMakeups.${id}`]:deleteField() }));
       await batch.commit();
-      if (previous?.type === 'reposicao' && previous.studentUid) {
-        const student = allStudents.find(item => item.uid === previous.studentUid);
+      if (previous?.type === 'reposicao') previousUids.forEach(uid => {
+        const student = allStudents.find(item => item.uid === uid);
         if (student?.attendanceMakeups) delete student.attendanceMakeups[id];
-        calendarMakeupMissesCache.delete(previous.studentUid);
-      }
+        calendarMakeupMissesCache.delete(uid);
+      });
     }
 
     function openCalendarEvent(event = {}) {
       calendarFillStudents(); const editing = Boolean(event.id);
       document.getElementById('calendar-event-id').value = event.id || '';
       document.getElementById('calendar-event-type').value = event.type || 'lesson';
-      document.getElementById('calendar-event-student').value = event.studentUid || '';
+      const selectedEntity = event.groupId ? calendarGroupValue(event.groupId) : (event.studentUid || '');
+      document.getElementById('calendar-event-student').value = selectedEntity;
       document.getElementById('calendar-event-title').value = event.title || '';
       document.getElementById('calendar-event-date').value = event.date || calendarDateKey(new Date());
       document.getElementById('calendar-event-start').value = event.startTime || calendarSettings.dayStart || '08:00';
@@ -3351,7 +3415,7 @@
       document.getElementById('calendar-event-modal-title').textContent = editing ? 'Editar compromisso' : 'Novo compromisso';
       document.getElementById('calendar-event-delete').style.display = editing ? 'block' : 'none';
       showMsg('calendar-event-msg','','info'); calendarSyncEventForm();
-      calendarFillMakeupDates('calendar-event-makeup-for', event.studentUid || '', event.date || calendarDateKey(new Date()), event.makeupForDate || '');
+      calendarFillMakeupDates('calendar-event-makeup-for', selectedEntity, event.date || calendarDateKey(new Date()), event.makeupForDate || '');
       document.getElementById('calendar-event-modal').classList.add('open');
     }
 
@@ -3401,11 +3465,14 @@
 
     async function saveCalendarEvent() {
       const id = document.getElementById('calendar-event-id').value, type = document.getElementById('calendar-event-type').value;
-      const studentSelect = document.getElementById('calendar-event-student'), student = allStudents.find(item => item.uid === studentSelect.value);
+      const studentSelect = document.getElementById('calendar-event-student'), entity = calendarEntity(studentSelect.value);
+      const student = entity?.kind === 'student' ? entity.student : null;
       const comAluno = type === 'lesson' || type === 'reposicao';
       const event = {
-        type, studentUid:comAluno ? studentSelect.value : '', studentName:comAluno ? (student?.name || student?.firstName || '') : '',
-        title:document.getElementById('calendar-event-title').value.trim() || (type === 'lesson' && student ? `Aula · ${student.name || student.firstName}` : type === 'reposicao' && student ? `Reposição · ${student.name || student.firstName}` : type === 'available' ? 'Horário disponível' : type === 'personal' ? 'Compromisso particular' : 'Horário bloqueado'),
+        type, studentUid:comAluno && entity?.kind === 'student' ? entity.value : '', studentName:comAluno ? (entity?.label || '') : '',
+        groupId:comAluno && entity?.kind === 'group' ? entity.group.id : '', groupName:comAluno && entity?.kind === 'group' ? entity.label : '',
+        memberUids:comAluno && entity?.kind === 'group' ? entity.memberUids : [], memberNames:comAluno && entity?.kind === 'group' ? entity.memberNames : [],
+        title:document.getElementById('calendar-event-title').value.trim() || (comAluno && entity ? `${calendarDefaultTitle(type)} · ${entity.label}` : type === 'available' ? 'Horário disponível' : type === 'personal' ? 'Compromisso particular' : 'Horário bloqueado'),
         date:document.getElementById('calendar-event-date').value, startTime:document.getElementById('calendar-event-start').value, endTime:document.getElementById('calendar-event-end').value,
         repeat:document.getElementById('calendar-event-repeat').value,
         repeatDays:document.getElementById('calendar-event-repeat').value === 'custom' ? calendarModalDraft.repeatDays.map(Number) : [],
@@ -3414,7 +3481,7 @@
         notes:document.getElementById('calendar-event-notes').value.trim(), timezone:'America/Sao_Paulo', updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || ''
       };
       if (!event.date || !event.startTime || !event.endTime) return showMsg('calendar-event-msg','Preencha data, início e término.','err');
-      if (comAluno && !event.studentUid) return showMsg('calendar-event-msg','Escolha o aluno desta aula.','err');
+      if (comAluno && !entity) return showMsg('calendar-event-msg','Escolha o aluno, dupla ou grupo desta aula.','err');
       if (type === 'reposicao' && !event.makeupForDate) return showMsg('calendar-event-msg','Escolha qual falta esta reposição compensa.','err');
       if (event.repeat === 'custom' && !event.repeatDays.length) return showMsg('calendar-event-msg','Escolha pelo menos um dia da semana.','err');
       if (calendarMinutes(event.endTime) <= calendarMinutes(event.startTime)) return showMsg('calendar-event-msg','O horário final precisa ser depois do inicial.','err');
@@ -3475,9 +3542,9 @@
     };
     document.getElementById('calendar-event-repeat').onchange = calendarSyncEventForm;
     document.getElementById('calendar-event-student').onchange = event => {
-      const student = allStudents.find(item => item.uid === event.target.value), title = document.getElementById('calendar-event-title');
+      const entity = calendarEntity(event.target.value), title = document.getElementById('calendar-event-title');
       const type = document.getElementById('calendar-event-type').value;
-      if (student && (!title.value || title.value.startsWith('Aula · ') || title.value.startsWith('Reposição · '))) title.value = `${type === 'reposicao' ? 'Reposição' : 'Aula'} · ${student.name || student.firstName}`;
+      if (entity && (!title.value || title.value.startsWith('Aula · ') || title.value.startsWith('Reposição · '))) title.value = `${type === 'reposicao' ? 'Reposição' : 'Aula'} · ${entity.label}`;
       calendarSyncEventForm();
       calendarFillMakeupDates('calendar-event-makeup-for', event.target.value, document.getElementById('calendar-event-date').value, '');
     };
@@ -3697,20 +3764,35 @@
       const campoRepeticao = document.getElementById('calendar-pop-repeat');
       campoRepeticao.value = ['daily','weekly','monthly','custom'].includes(event.repeat) ? event.repeat : 'none';
       calendarFillStudents();
-      document.getElementById('calendar-pop-student').value = event.studentUid || '';
+      const selectedEntity = event.groupId ? calendarGroupValue(event.groupId) : (event.studentUid || '');
+      document.getElementById('calendar-pop-student').value = selectedEntity;
       sincronizarReposicao();
-      calendarFillMakeupDates('calendar-pop-makeup-for', event.studentUid || '', event.date || '', event.makeupForDate || '');
+      calendarFillMakeupDates('calendar-pop-makeup-for', selectedEntity, event.date || '', event.makeupForDate || '');
       calendarPopDraft.repeatDays = (event.repeatDays || []).map(Number);
-      document.getElementById('calendar-pop-delete').style.display = event.id ? 'block' : 'none';
+      document.getElementById('calendar-pop-delete').style.display = event.id && !event.groupVirtual ? 'block' : 'none';
+      document.getElementById('calendar-pop-more').style.display = event.groupVirtual ? 'none' : 'block';
       // Pauta só em aula de aluno já salva — num bloco novo ainda não há o que resumir.
       calendarSyncPopBriefing();
       const botaoCancelar = document.getElementById('calendar-pop-cancelar');
+      const scopeRow = document.getElementById('calendar-pop-cancel-scope-row');
+      const scope = document.getElementById('calendar-pop-cancel-scope');
       const dia = calendarPopDraft.ocorrencia;
       const jaCancelada = Boolean(event.id && dia && calendarCancelada(event, dia));
       botaoCancelar.style.display = event.id && dia ? 'block' : 'none';
+      if (event.groupVirtual) {
+        const todos = event.memberEvents || [];
+        scope.innerHTML = `<option value="all">${jaCancelada ? 'Desfazer para toda a dupla/turma' : 'Cancelar para toda a dupla/turma'}</option>`
+          + todos.map(item => {
+            const cancelado = (item.canceladas || []).includes(dia);
+            return `<option value="${esc(item.id)}">${cancelado ? 'Desfazer para' : 'Cancelar só para'} ${esc(item.studentName || 'Aluno')}</option>`;
+          }).join('');
+        scopeRow.style.display = 'grid';
+      } else {
+        scope.innerHTML = ''; scopeRow.style.display = 'none';
+      }
       botaoCancelar.textContent = jaCancelada
         ? `↩️ Desfazer o cancelamento de ${dia.split('-').reverse().join('/')}`
-        : `🚫 Cancelar só a aula de ${dia ? dia.split('-').reverse().join('/') : 'hoje'}`;
+        : `🚫 Cancelar a aula de ${dia ? dia.split('-').reverse().join('/') : 'hoje'}`;
       document.getElementById('calendar-pop-msg').style.display = 'none';
       renderCalendarPopColors(); renderCalendarPopPalette(); renderCalendarPopDays();
       document.getElementById('calendar-pop').classList.add('open');
@@ -3736,18 +3818,23 @@
       if (calendarMinutes(endTime) <= calendarMinutes(startTime)) return calendarPopFail('O fim precisa ser depois do início.');
       const comAluno = type === 'lesson' || type === 'reposicao';
       const uidEscolhido = comAluno ? document.getElementById('calendar-pop-student').value : '';
-      const student = allStudents.find(item => item.uid === uidEscolhido);
+      const entity = calendarEntity(uidEscolhido);
+      const student = entity?.kind === 'student' ? entity.student : null;
       const repeat = TIPOS_SEM_REPETICAO.includes(type) ? 'none' : document.getElementById('calendar-pop-repeat').value;
       const repeatDays = repeat === 'custom' ? (calendarPopDraft.repeatDays || []).map(Number) : [];
       if (repeat === 'custom' && !repeatDays.length) return calendarPopFail('Escolha pelo menos um dia da semana.');
-      if (comAluno && (!student || student.archived)) return calendarPopFail('Escolha o aluno desta aula.');
+      if (comAluno && !entity) return calendarPopFail('Escolha o aluno, dupla ou grupo desta aula.');
       const makeupForDate = type === 'reposicao' ? document.getElementById('calendar-pop-makeup-for').value : '';
       if (type === 'reposicao' && !makeupForDate) return calendarPopFail('Escolha qual falta esta reposição compensa.');
       const payload = {
-        type, studentUid:comAluno ? uidEscolhido : '',
-        studentName:comAluno && student ? (student.name || student.firstName || '') : '',
+        type, studentUid:comAluno && entity?.kind === 'student' ? entity.value : '',
+        studentName:comAluno ? (entity?.label || '') : '',
+        groupId:comAluno && entity?.kind === 'group' ? entity.group.id : '',
+        groupName:comAluno && entity?.kind === 'group' ? entity.label : '',
+        memberUids:comAluno && entity?.kind === 'group' ? entity.memberUids : [],
+        memberNames:comAluno && entity?.kind === 'group' ? entity.memberNames : [],
         title:document.getElementById('calendar-pop-title').value.trim()
-          || (student ? `${calendarDefaultTitle(type)} · ${student.firstName || (student.name || '').split(' ')[0]}` : calendarDefaultTitle(type)),
+          || (entity ? `${calendarDefaultTitle(type)} · ${entity.label}` : calendarDefaultTitle(type)),
         date:calendarPopDraft.date, startTime, endTime, repeat, repeatDays, color:calendarPopDraft.color || '',
         repeatUntil:repeat !== 'none' ? (calendarPopDraft.repeatUntil || '') : '',
         makeupForDate,
@@ -3758,7 +3845,15 @@
       if (conflict && !confirmarAulaJunta(conflict)) return;
       const button = document.getElementById('calendar-pop-save'); button.disabled = true;
       try {
-        await calendarSaveWithAttendance(calendarPopDraft.id || '', payload);
+        if (calendarPopDraft.groupVirtual && type === 'lesson') {
+          await Promise.all((calendarPopDraft.memberEvents || []).map(memberEvent =>
+            calendarSaveWithAttendance(memberEvent.id, {
+              ...payload, studentUid:memberEvent.studentUid, studentName:memberEvent.studentName,
+              title:memberEvent.title || `Aula · ${(memberEvent.studentName || 'Aluno').split(' ')[0]}`,
+            })));
+        } else {
+          await calendarSaveWithAttendance(calendarPopDraft.id || '', payload);
+        }
         closeCalendarPop(); await loadCalendar();
       } catch (error) { calendarPopFail(`Erro ao salvar: ${error.message}`); }
       finally { button.disabled = false; }
@@ -3779,11 +3874,11 @@
       renderCalendarPopDays();
     };
     document.getElementById('calendar-pop-student').onchange = event => {
-      const student = allStudents.find(item => item.uid === event.target.value);
+      const entity = calendarEntity(event.target.value);
       calendarSyncPopBriefing();
-      if (calendarPopDraft?.type === 'reposicao' && student) {
+      if (calendarPopDraft?.type === 'reposicao' && entity) {
         const title = document.getElementById('calendar-pop-title');
-        if (!title.value || title.value.startsWith('Reposição')) title.value = `Reposição · ${student.name || student.firstName}`;
+        if (!title.value || title.value.startsWith('Reposição')) title.value = `Reposição · ${entity.label}`;
       }
       calendarFillMakeupDates('calendar-pop-makeup-for', event.target.value, calendarPopDraft?.date || '', '');
     };
@@ -3828,19 +3923,29 @@
     document.getElementById('calendar-pop-cancelar').onclick = async () => {
       const id = calendarPopDraft?.id, dia = calendarPopDraft?.ocorrencia;
       if (!id || !dia || !escolaAtual) return;
-      const evento = calendarEvents.find(item => item.id === id) || {};
-      const atuais = Array.isArray(evento.canceladas) ? evento.canceladas : [];
-      const cancelando = !atuais.includes(dia);
-      const canceladas = cancelando ? [...atuais, dia] : atuais.filter(item => item !== dia);
+      const evento = calendarPopDraft.groupVirtual ? calendarPopDraft : (calendarEvents.find(item => item.id === id) || {});
+      const scope = document.getElementById('calendar-pop-cancel-scope').value || 'all';
+      const targets = evento.groupVirtual
+        ? (scope === 'all' ? (evento.memberEvents || []) : (evento.memberEvents || []).filter(item => item.id === scope))
+        : [evento];
+      if (!targets.length) return;
+      const cancelando = scope === 'all'
+        ? !targets.every(item => (item.canceladas || []).includes(dia))
+        : !(targets[0].canceladas || []).includes(dia);
       const botao = document.getElementById('calendar-pop-cancelar');
       botao.disabled = true;
       try {
-        await setDoc(doc(db, 'schools', escolaAtual, 'calendarEvents', id),
-          { canceladas, updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || '' }, { merge:true });
+        await Promise.all(targets.map(item => {
+          const atuais = Array.isArray(item.canceladas) ? item.canceladas : [];
+          const canceladas = cancelando ? [...new Set([...atuais, dia])] : atuais.filter(value => value !== dia);
+          return setDoc(doc(db, 'schools', escolaAtual, 'calendarEvents', item.id),
+            { canceladas, updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || '' }, { merge:true });
+        }));
         closeCalendarPop(); await loadCalendar();
+        const quem = targets.length > 1 ? (evento.groupName || 'dupla/turma') : (targets[0].studentName || 'aluno');
         calendarToast(cancelando
-          ? `Aula de ${dia.split('-').reverse().join('/')} cancelada. As outras semanas seguem normais.`
-          : `Aula de ${dia.split('-').reverse().join('/')} de volta.`);
+          ? `Aula de ${quem} em ${dia.split('-').reverse().join('/')} cancelada. As outras semanas seguem normais.`
+          : `Aula de ${quem} em ${dia.split('-').reverse().join('/')} de volta.`);
       } catch (error) { calendarToast(`Erro ao cancelar: ${error.message}`, true); }
       finally { botao.disabled = false; }
     };
@@ -3888,6 +3993,9 @@
         if (firstDate < effectiveDate) firstDate = calendarAddDays(firstDate, 7);
         return {
           type:'lesson', studentUid:student.uid, studentName:student.name || student.firstName || '',
+          groupId:student.groupId || '', groupName:student.groupName || '',
+          memberUids:Array.isArray(student.memberUids) ? student.memberUids : [],
+          memberNames:Array.isArray(student.memberNames) ? student.memberNames : [],
           title:`Aula · ${student.firstName || (student.name || '').split(' ')[0] || 'Aluno'}`,
           date:calendarDateKey(firstDate), startTime,
           endTime:finsPorDia[day] || finsPorDia[String(day)] || calendarTime(calendarMinutes(startTime) + duration),
@@ -8564,6 +8672,8 @@ Salvar assim mesmo?`)) return;
           if (agendaAlterada.length) {
             naAgenda = await syncStudentLessons(agendaAlterada.map(student => ({
               uid:student.uid, name:student.name, firstName:student.firstName, ...novaAgenda,
+              groupId, groupName:name, memberUids:selected,
+              memberNames:members.map(member => member.name || member.firstName || 'Aluno'),
               aulaDiasDesde:adminDateKey(new Date()),
             })));
           }
