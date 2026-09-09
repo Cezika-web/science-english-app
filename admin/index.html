@@ -1969,18 +1969,25 @@
       return days;
     }
 
-    function adminLessonChangePatch(student, nextDays) {
+    function adminLessonEffectiveStart(value) {
+      const today = adminDateKey(new Date());
+      const requested = adminDateKey(value);
+      return requested && requested > today ? requested : today;
+    }
+
+    function adminLessonChangePatch(student, nextDays, nextStart = '') {
       const previousDays = [...adminLessonDays(student || {})].sort((a,b) => a-b);
       const normalizedNext = [...new Set((nextDays || []).map(Number))].filter(day => day >= 0 && day <= 6).sort((a,b) => a-b);
       if (previousDays.join(',') === normalizedNext.join(',')) return {};
       const today = adminDateKey(new Date());
+      const effectiveStart = adminLessonEffectiveStart(nextStart || student?.inicioCurso);
       const yesterday = adminDateKey(adminAddDays(new Date(), -1));
       const history = Array.isArray(student?.aulaDiasHistorico) ? [...student.aulaDiasHistorico] : [];
       const previousFrom = String(student?.aulaDiasDesde || student?.inicioCurso || '');
       if (previousDays.length && /^\d{4}-\d{2}-\d{2}$/.test(previousFrom) && previousFrom <= yesterday) {
         history.push({ dias:previousDays, desde:previousFrom, ate:yesterday });
       }
-      return { aulaDiasDesde:today, aulaDiasHistorico:history };
+      return { aulaDiasDesde:effectiveStart, aulaDiasHistorico:history };
     }
 
     function adminLessonScheduleSignature(student) {
@@ -3983,7 +3990,11 @@
       const porDia = student.aulaHorarios && typeof student.aulaHorarios === 'object' ? student.aulaHorarios : {};
       const finsPorDia = student.aulaFins && typeof student.aulaFins === 'object' ? student.aulaFins : {};
       const duration = Number(student.aulaDuracao) > 0 ? Number(student.aulaDuracao) : 60;
-      const effectiveRaw = adminDate(student.aulaDiasDesde) || new Date();
+      // O início do curso é um limite real da série. `aulaDiasDesde` marca uma
+      // mudança posterior de grade, mas nunca pode puxar a aula para antes do
+      // começo informado no cadastro.
+      const effectiveRaw = [adminDate(student.aulaDiasDesde), adminDate(student.inicioCurso)]
+        .filter(Boolean).reduce((latest, date) => !latest || date > latest ? date : latest, null) || new Date();
       const effectiveDate = new Date(effectiveRaw.getFullYear(), effectiveRaw.getMonth(), effectiveRaw.getDate());
       const weekStart = calendarWeekStartDate(effectiveDate);
       return days.map(day => {
@@ -4039,12 +4050,20 @@
           // duplicatas antigas do mesmo aluno na próxima edição do cadastro.
           const antigas = await getDocs(query(collection(db,'schools',escolaAtual,'calendarEvents'),
             where('studentUid','==',student.uid)));
-          const effectiveKey = student.aulaDiasDesde && /^\d{4}-\d{2}-\d{2}$/.test(student.aulaDiasDesde)
-            ? student.aulaDiasDesde : '';
+          const effectiveKey = adminDateKey([adminDate(student.aulaDiasDesde), adminDate(student.inicioCurso)]
+            .filter(Boolean).reduce((latest, date) => !latest || date > latest ? date : latest, null));
+          const courseStartKey = adminDateKey(student.inicioCurso);
+          const todayKey = adminDateKey(new Date());
           const previousDay = effectiveKey ? calendarDateKey(calendarAddDays(new Date(`${effectiveKey}T00:00:00`), -1)) : '';
           await Promise.all(antigas.docs.filter(item => calendarEhAulaDoCadastro(item.data(), student.uid))
             .map(item => {
               const old = item.data();
+              // Corrige séries que nasceram antes de um curso futuro (caso do
+              // cadastro que ignorava `inicioCurso`). Não há histórico válido
+              // para preservar antes de o aluno realmente começar.
+              if (courseStartKey && courseStartKey > todayKey && old.date < courseStartKey) {
+                return deleteDoc(item.ref);
+              }
               // Mudança de grade: a série antiga continua visível no passado e
               // termina na véspera. Só séries criadas na própria vigência nova
               // são substituídas, evitando duplicação ao salvar novamente.
@@ -6564,16 +6583,18 @@
       if (!name) { showMsg('e-msg', 'O nome não pode ficar vazio.', 'err'); return; }
       const batendo = await conflitoDaAula(uid, studentLessonEvents({ uid, name, firstName:name.split(' ')[0],
         aulaDias:aula.aulaDias, aulaHora:aula.aulaHora, aulaHorarios:aula.aulaHorarios,
-        aulaFins:aula.aulaFins, aulaDuracao:aula.aulaDuracao }));
+        aulaFins:aula.aulaFins, aulaDuracao:aula.aulaDuracao, inicioCurso:inicio }));
       if (batendo && !confirmarAulaJunta(batendo)) return;
       const btn = document.getElementById('e-save');
       btn.disabled = true; btn.textContent = 'Salvando...';
       try {
         const cadastroAtual = allStudents.find(student => student.uid === uid);
-        const mudancaDeGrade = adminLessonChangePatch(cadastroAtual, aula.aulaDias);
+        const mudancaDeGrade = adminLessonChangePatch(cadastroAtual, aula.aulaDias, inicio);
         const novaAgenda = { aulaDias:aula.aulaDias, aulaHora:aula.aulaHora, aulaHorarios:aula.aulaHorarios,
           aulaFins:aula.aulaFins, aulaDuracao:aula.aulaDuracao };
         const agendaMudou = adminLessonScheduleSignature(cadastroAtual) !== adminLessonScheduleSignature(novaAgenda);
+        const inicioMudou = String(cadastroAtual?.inicioCurso || '') !== String(inicio || '');
+        const inicioFuturo = Boolean(inicio && inicio > adminDateKey(new Date()));
         await updateDoc(doc(db, 'students', uid), {
           name,
           firstName: name.split(' ')[0],
@@ -6593,9 +6614,9 @@
         });
         // Mudou dia ou hora aqui, a agenda tem que acompanhar. Antes isso só
         // acontecia no botão "Preencher com as aulas dos alunos", que saiu.
-        if (agendaMudou) {
+        if (agendaMudou || inicioMudou || inicioFuturo) {
           await syncStudentLessons([{ uid, name, firstName:name.split(' ')[0], ...novaAgenda,
-            aulaDiasDesde:adminDateKey(new Date()) }]);
+            inicioCurso:inicio, aulaDiasDesde:adminLessonEffectiveStart(inicio) }]);
         }
         btn.disabled = false; btn.textContent = 'Salvar alterações';
         document.getElementById('edit-modal').classList.remove('open');
@@ -8793,7 +8814,8 @@ Salvar assim mesmo?`)) return;
       // Pergunta ANTES de criar o usuário: criar é irreversível, e desistir do
       // horário depois de criado deixaria o aluno pela metade.
       const batendo = await conflitoDaAula('', studentLessonEvents({ uid:'', name, firstName:name.split(' ')[0],
-        aulaDias:aula.aulaDias, aulaHora:aula.aulaHora, aulaHorarios:aula.aulaHorarios, aulaFins:aula.aulaFins, aulaDuracao:duracao }));
+        aulaDias:aula.aulaDias, aulaHora:aula.aulaHora, aulaHorarios:aula.aulaHorarios, aulaFins:aula.aulaFins,
+        aulaDuracao:duracao, inicioCurso:inicio }));
       if (batendo && !confirmarAulaJunta(batendo)) return;
       try {
         const cred = await createUserWithEmailAndPassword(auth2, email, pass);
@@ -8816,7 +8838,9 @@ Salvar assim mesmo?`)) return;
         let naAgenda = 0;
         if (aula.aulaDias.length && aula.aulaHora) {
           try {
-            naAgenda = await syncStudentLessons([{ uid: cred.user.uid, name, firstName: name.split(' ')[0], aulaDias: aula.aulaDias, aulaHora: aula.aulaHora, aulaHorarios: aula.aulaHorarios, aulaFins: aula.aulaFins, aulaDuracao: duracao }], false);
+            naAgenda = await syncStudentLessons([{ uid: cred.user.uid, name, firstName: name.split(' ')[0],
+              aulaDias:aula.aulaDias, aulaHora:aula.aulaHora, aulaHorarios:aula.aulaHorarios,
+              aulaFins:aula.aulaFins, aulaDuracao:duracao, inicioCurso:inicio }], false);
           } catch (erroAgenda) { console.error('Agenda do aluno:', erroAgenda); }
         }
         // A mensalidade já nasce no Financeiro — dá pra ajustar depois em "Editar".
