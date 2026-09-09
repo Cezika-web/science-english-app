@@ -2450,6 +2450,14 @@
 
     function calendarOccursOn(event, date) {
       const key = calendarDateKey(date), repeat = event.repeat || 'none';
+      // A agenda também respeita o cadastro ao exibir séries que já estavam no
+      // Firestore. Assim um evento antigo gravado com data errada some das
+      // semanas anteriores sem exigir que o aluno seja salvo novamente.
+      if (event.type === 'lesson' && event.studentUid && (event.source === 'cadastro' || repeat === 'weekly')) {
+        const student = allStudents.find(item => item.uid === event.studentUid);
+        const courseStartKey = adminDateKey(student?.inicioCurso);
+        if (courseStartKey && key < courseStartKey) return false;
+      }
       if (repeat === 'none') return event.date === key;
       if (!event.date || key < event.date || (event.repeatUntil && key > event.repeatUntil)) return false;
       if (repeat === 'daily') return true;
