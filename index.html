@@ -1578,12 +1578,22 @@ function calculateAttendance(student, posaulas) {
   const orderedPosts = (posaulas || []).map(post => ({ post, reference:postReferenceDate(post) }))
     .sort((a,b) => (a.reference?.getTime() || 0) - (b.reference?.getTime() || 0));
   const unmatchedPosts = [];
+  // O pós-aula de uma reposição carrega o dia real da aula (ex.: quarta), que
+  // não é dia de aula do aluno. Sem essa checagem ele virava um candidateKey
+  // novo e contava a mesma aula duas vezes: uma na reposição (segunda) e outra
+  // no classDate exato (quarta). A data real já é creditada abaixo, via
+  // attendanceMakeups — aqui só evitamos que ela também vire aula extra.
+  const makeupActualDates = new Set(
+    Object.values(student?.attendanceMakeups || {})
+      .map(makeup => String(makeup?.makeupDate || ''))
+      .filter(key => /^\d{4}-\d{2}-\d{2}$/.test(key))
+  );
 
   // Reserva primeiro as datas exatas para um registro legado próximo não
   // ocupar a aula que já possui classDate confiável.
   orderedPosts.forEach(entry => {
     const explicitKey = dateKey(entry.post.classDate);
-    if (explicitKey && !presentKeys.has(explicitKey)) {
+    if (explicitKey && !presentKeys.has(explicitKey) && !makeupActualDates.has(explicitKey)) {
       candidateKeys.add(explicitKey);
       presentKeys.add(explicitKey);
       entry.exactMatch = true;
