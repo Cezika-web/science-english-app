@@ -40,6 +40,19 @@ combinação. Ajuste cada receita ao nível do aluno.
 - Cada Part usa no máximo DOIS formatos, e a Part 2 usa formatos diferentes da Part 1.
 - Use apenas as tags <p>, <ol>, <li>, <strong>, <em>, <br>. Sem classes, sem divs.
 
+## Produção oral (obrigatória)
+
+- No lote padrão de 3 atividades, exatamente 2 atividades precisam ter um
+  \`oralExercise\` em uma de suas Parts. A terceira fica sem gravação.
+- Cada \`oralExercise\` tem exatamente 3 prompts independentes, ligados ao
+  conteúdo real da aula, com até 30 segundos cada.
+- A Part com produção oral tem 12 questões respondíveis no HTML + 3 prompts de
+  gravação, mantendo 15 questões no total.
+- Cada prompt inclui uma dica curta em português, sem entregar uma frase pronta.
+- Use \`isQuestion: true\` somente quando o aluno precisar criar uma pergunta.
+- Não peça leitura em voz alta, shadowing, repetição ou transcrição. O aluno
+  precisa criar a própria resposta oral.
+
 Formatos disponíveis:
 
 - **Completar** — lacuna \`_______\` (com ou sem quadro de palavras).
@@ -120,6 +133,35 @@ export const SCHEMA_ATIVIDADES = {
                 title: { type: 'string' },
                 type: { type: 'string', description: 'Vocabulário / Gramática / Correção / Escrita / Tradução' },
                 content: { type: 'string', description: 'HTML do exercício' },
+                oralExercise: {
+                  type: 'object',
+                  description: 'Bloco opcional de produção oral. Em um lote de 3 atividades, exatamente 2 devem incluir este objeto.',
+                  properties: {
+                    id: { type: 'string' },
+                    instruction: { type: 'string' },
+                    referenceUrl: { type: 'string' },
+                    referenceLabel: { type: 'string' },
+                    prompts: {
+                      type: 'array',
+                      minItems: 3,
+                      maxItems: 3,
+                      items: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'string' },
+                          prompt: { type: 'string' },
+                          hint: { type: 'string' },
+                          isQuestion: { type: 'boolean' },
+                          maxSeconds: { type: 'integer', minimum: 1, maximum: 30 },
+                        },
+                        required: ['id', 'prompt', 'hint', 'isQuestion', 'maxSeconds'],
+                        additionalProperties: false,
+                      },
+                    },
+                  },
+                  required: ['id', 'instruction', 'referenceUrl', 'referenceLabel', 'prompts'],
+                  additionalProperties: false,
+                },
               },
               required: ['id', 'title', 'type', 'content'],
               additionalProperties: false,
@@ -134,6 +176,45 @@ export const SCHEMA_ATIVIDADES = {
   required: ['week', 'vocabulario', 'activities'],
   additionalProperties: false,
 };
+
+/**
+ * Protege a publicação contra lotes em que o modelo omitiu ou deformou a
+ * produção oral. A regra de distribuição vale para o lote regular padrão;
+ * uma atividade extra de revisão de 90 dias não altera essa contagem.
+ */
+export function problemasProducaoOral(activities) {
+  const lista = Array.isArray(activities) ? activities : [];
+  const problemas = [];
+  const regulares = lista.filter((activity) => activity?.review90 !== true);
+  let regularesComOral = 0;
+
+  regulares.forEach((activity, activityIndex) => {
+    let temOral = false;
+    (activity?.parts || []).forEach((part, partIndex) => {
+      if (part?.oralExercise == null) return;
+      temOral = true;
+      const prompts = part.oralExercise?.prompts;
+      if (!Array.isArray(prompts) || prompts.length !== 3) {
+        problemas.push(`Atividade ${activityIndex + 1}, parte ${partIndex + 1}: o bloco oral precisa ter exatamente 3 gravações.`);
+        return;
+      }
+      prompts.forEach((prompt, promptIndex) => {
+        const limite = Number(prompt?.maxSeconds);
+        if (!String(prompt?.prompt || '').trim() || !String(prompt?.hint || '').trim()
+          || typeof prompt?.isQuestion !== 'boolean'
+          || !Number.isInteger(limite) || limite < 1 || limite > 30) {
+          problemas.push(`Atividade ${activityIndex + 1}, parte ${partIndex + 1}, áudio ${promptIndex + 1}: campos obrigatórios inválidos.`);
+        }
+      });
+    });
+    if (temOral) regularesComOral++;
+  });
+
+  if (regulares.length === 3 && regularesComOral !== 2) {
+    problemas.unshift(`O lote padrão precisa ter produção oral em exatamente 2 das 3 atividades; encontrei ${regularesComOral}.`);
+  }
+  return problemas;
+}
 
 /** Tira as tags do HTML da pós-aula — o que importa é o conteúdo, não a marcação. */
 export function textoDaPosAula(html) {

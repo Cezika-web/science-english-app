@@ -6,7 +6,7 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 import Anthropic from '@anthropic-ai/sdk';
 import { montarTemplate, REGRAS_POS_AULA, garantirAudioPosAula } from './posaula.js';
-import { REGRAS_ATIVIDADES, SCHEMA_ATIVIDADES, textoDaPosAula } from './atividades.js';
+import { problemasProducaoOral, REGRAS_ATIVIDADES, SCHEMA_ATIVIDADES, textoDaPosAula } from './atividades.js';
 import { createChallengeFunctions } from './challenge.js';
 import { createCobrancaFunctions } from './cobranca.js';
 import { activityPublicationMetadata } from './activity-publication.js';
@@ -1713,6 +1713,10 @@ export const publicarAtividades = onCall(
     for (const { uid, week, activities, vocabulario = [], nome, posaulas = [] } of lista) {
       const { aluno } = await carregarAlunoEEscola(email, uid);
       const publication = activityPublicationMetadata(week, publicationTime);
+      const problemasOrais = problemasProducaoOral(activities);
+      if (problemasOrais.length) {
+        throw new HttpsError('invalid-argument', `As atividades de ${nome || aluno.name || 'um aluno'} não passaram na validação de áudio: ${problemasOrais.join(' ')}`);
+      }
 
       for (const act of activities) {
         // De qual pós-aula saiu esta atividade — é o que o botão "Consultar

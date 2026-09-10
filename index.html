@@ -3037,7 +3037,8 @@ function CorrecaoModal({ data, onClose }) {
 }
 
 // ── Gravador de áudio (Speaking) — grava no navegador e entrega o Blob ──
-function AudioRecorder({ existingUrl, readOnly, onBlob }) {
+function AudioRecorder({ existingUrl, readOnly, onBlob, maxSeconds = 30 }) {
+  const maxSecs = Math.max(1, Math.min(30, Number(maxSeconds) || 30));
   const [state, setState] = useState(existingUrl ? 'recorded' : 'idle'); // idle | recording | recorded
   const [url, setUrl]     = useState(existingUrl || null);
   const [secs, setSecs]   = useState(0);
@@ -3078,8 +3079,15 @@ function AudioRecorder({ existingUrl, readOnly, onBlob }) {
       chunksRef.current = [];
       mr.ondataavailable = e => { if (e.data && e.data.size) chunksRef.current.push(e.data); };
       mr.onstop = () => {
+        try { clearInterval(timerRef.current); } catch(e) {}
         const type = mr.mimeType || 'audio/webm';
         const blob = new Blob(chunksRef.current, { type });
+        if (!blob.size) {
+          setState('idle');
+          setErr('A gravação ficou vazia. Confira se o microfone está liberado e tente novamente.');
+          try { streamRef.current.getTracks().forEach(t => t.stop()); } catch(e) {}
+          return;
+        }
         const ext  = (type.includes('mp4') || type.includes('aac')) ? 'm4a' : 'webm';
         setObjUrl(URL.createObjectURL(blob));
         setState('recorded');
@@ -3088,9 +3096,25 @@ function AudioRecorder({ existingUrl, readOnly, onBlob }) {
       };
       mr.start(); mrRef.current = mr;
       setState('recording'); setSecs(0);
-      timerRef.current = setInterval(() => setSecs(s => s + 1), 1000);
+      timerRef.current = setInterval(() => setSecs(s => {
+        const next = s + 1;
+        if (next >= maxSecs) {
+          try { if (mrRef.current && mrRef.current.state !== 'inactive') mrRef.current.stop(); } catch(e) {}
+          return maxSecs;
+        }
+        return next;
+      }), 1000);
     } catch(e) {
-      setErr('Não foi possível acessar o microfone. Toque em "Permitir" quando o navegador pedir.');
+      const denied = e?.name === 'NotAllowedError' || e?.name === 'SecurityError';
+      const missing = e?.name === 'NotFoundError';
+      const busy = e?.name === 'NotReadableError' || e?.name === 'AbortError';
+      setErr(denied
+        ? 'O microfone está bloqueado. Abra as permissões deste app/site, permita o microfone e tente novamente.'
+        : missing
+          ? 'Nenhum microfone foi encontrado neste aparelho.'
+          : busy
+            ? 'O microfone está sendo usado por outro aplicativo. Feche-o e tente novamente.'
+            : 'Não foi possível iniciar a gravação. Reabra o app e confira a permissão do microfone.');
     }
   };
 
@@ -3121,7 +3145,8 @@ function AudioRecorder({ existingUrl, readOnly, onBlob }) {
 
   return (
     <div style={box}>
-      <div style={{ fontSize: 11, fontWeight: 800, color: '#9A3412', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>🎤 Grave sua resposta</div>
+      <div style={{ fontSize: 11, fontWeight: 800, color: '#9A3412', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>🎤 Grave sua resposta</div>
+      <div style={{ fontSize: 12, color: '#9A6438', marginBottom: 10 }}>Até {maxSecs} segundos. A gravação para automaticamente no limite.</div>
       {state === 'idle' && (
         <button onClick={start} style={btn('linear-gradient(180deg,#F97316,#EA580C)')}>🎤 Gravar</button>
       )}
@@ -3158,7 +3183,7 @@ function OralExercisePanel({ exercise, saved = {}, readOnly = false, lockComplet
           return <div key={id} style={{ padding:13, borderRadius:14, background:'#fff', border:'1px solid #FED7AA' }}>
             <div style={{ color:'#7C2D12', fontSize:13.5, fontWeight:800, lineHeight:1.45 }}>{index + 1}. {prompt.prompt || 'Grave sua resposta em inglês.'}</div>
             {prompt.hint && <div style={{ color:'#9A6438', fontSize:11.5, lineHeight:1.45, margin:'5px 0 10px' }}>{prompt.hint}</div>}
-            <AudioRecorder key={`${id}:${stored.url || ''}`} existingUrl={stored.url || ''} readOnly={readOnly || (lockCompleted && !!stored.url)}
+            <AudioRecorder key={`${id}:${stored.url || ''}`} existingUrl={stored.url || ''} readOnly={readOnly || (lockCompleted && !!stored.url)} maxSeconds={prompt.maxSeconds}
               onBlob={(blob, ext) => onChange && onChange(id, { blob, ext, cleared:!blob })} />
           </div>;
         })}

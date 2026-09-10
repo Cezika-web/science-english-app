@@ -7249,6 +7249,43 @@
       };
     }
 
+    function validateActivityOralExercises(activities) {
+      const list = Array.isArray(activities) ? activities : [];
+      const issues = [];
+      let activitiesWithOral = 0;
+
+      list.forEach((activity, activityIndex) => {
+        let activityHasOral = false;
+        (activity.parts || []).forEach((part, partIndex) => {
+          if (part.oralExercise == null) return;
+          activityHasOral = true;
+          const prompts = part.oralExercise?.prompts;
+          if (!Array.isArray(prompts) || prompts.length !== 3) {
+            issues.push(`Atividade ${activityIndex + 1}, Parte ${partIndex + 1}: o bloco oral precisa ter exatamente 3 gravações.`);
+            return;
+          }
+          prompts.forEach((prompt, promptIndex) => {
+            if (!String(prompt?.prompt || '').trim() || !String(prompt?.hint || '').trim()) {
+              issues.push(`Atividade ${activityIndex + 1}, Parte ${partIndex + 1}, áudio ${promptIndex + 1}: faltou enunciado ou dica.`);
+            }
+            if (typeof prompt?.isQuestion !== 'boolean') {
+              issues.push(`Atividade ${activityIndex + 1}, Parte ${partIndex + 1}, áudio ${promptIndex + 1}: isQuestion precisa ser true ou false.`);
+            }
+            const limit = Number(prompt?.maxSeconds);
+            if (!Number.isInteger(limit) || limit < 1 || limit > 30) {
+              issues.push(`Atividade ${activityIndex + 1}, Parte ${partIndex + 1}, áudio ${promptIndex + 1}: maxSeconds precisa estar entre 1 e 30.`);
+            }
+          });
+        });
+        if (activityHasOral) activitiesWithOral++;
+      });
+
+      if (list.length === 3 && activitiesWithOral !== 2) {
+        issues.unshift(`O lote padrão tem 3 atividades e precisa incluir produção oral em exatamente 2 delas; encontrei ${activitiesWithOral}.`);
+      }
+      return { issues, activitiesWithOral };
+    }
+
     // ── PUBLICAR ATIVIDADES ──────────────────────────────────────────────
     document.getElementById('btn-parse-json').onclick = () => {
       const raw = document.getElementById('pub-json').value.trim();
@@ -7264,6 +7301,11 @@
 
       if (!data.activities || !Array.isArray(data.activities) || data.activities.length === 0) {
         showMsg('pub-msg', 'JSON não contém atividades. Verifique o campo "activities".', 'err'); return;
+      }
+
+      const oralValidation = validateActivityOralExercises(data.activities);
+      if (oralValidation.issues.length) {
+        showMsg('pub-msg', `JSON de atividades bloqueado: ${oralValidation.issues.join(' ')}`, 'err'); return;
       }
 
       parsedActivityJson = data;
@@ -7291,7 +7333,7 @@
             <div class="prev-part">
               <div class="prev-part-head">Part ${i + 1} — ${esc(p.title || '')}${p.type ? ` (${esc(p.type)})` : ''}</div>
               <div class="prev-part-body">${sanitizeActivityHtml(p.content || '<em>Sem conteúdo</em>')}</div>
-              <div class="prev-count">${countQuestions(p.content)} exercício(s) que o aluno responde</div>
+              <div class="prev-count">${countQuestions(p.content)} exercício(s) de texto${Array.isArray(p.oralExercise?.prompts) ? ` + ${p.oralExercise.prompts.length} gravações de áudio` : ''}</div>
             </div>`).join('')}
         </div>`).join('');
 
