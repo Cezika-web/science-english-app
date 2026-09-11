@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Giovanna Azzi — CZK English</title>
+  <style>
+    :root{
+      --page-bg:#f4f7fa;--card-bg:#fff;--accent:#16A34A;--accent-dark:#15803D;
+      --green:#36b37e;--muted:#6b7280;--border:#DCF0E3;--card-width:720px;
+    }
+    html,body{height:100%;margin:0;padding:0;background:var(--page-bg);font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;}
+    .wrap{min-height:100%;display:flex;align-items:flex-start;justify-content:center;padding:48px 20px;}
+    .card{width:100%;max-width:var(--card-width);background:var(--card-bg);border-radius:18px;padding:28px;box-shadow:0 6px 22px rgba(33,47,60,.06);border:1px solid rgba(15,33,64,.03);}
+    header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px;}
+    .badge{background:linear-gradient(180deg,#fff,#F0FDF4);border:1px solid var(--border);padding:8px 12px;border-radius:999px;color:var(--accent);font-weight:700;font-size:.85rem;}
+    h1{margin:0;font-size:1.3rem;color:#0f1724;}
+    h2{color:#0f1724;}
+    .meta{color:var(--muted);font-size:.92rem;margin-top:6px;}
+    .actions{display:flex;gap:10px;}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;border:none;background:var(--accent);color:#fff;text-decoration:none;font-weight:600;cursor:pointer;box-shadow:0 6px 14px rgba(22,163,74,.12);}
+    main{margin-top:18px;}section{margin-top:18px;}
+    .panel{background:#F7FDF9;border-radius:12px;padding:16px;border:1px solid var(--border);}
+    .outline-card{border-radius:10px;border:1px solid var(--border);padding:16px;background:#fff;}
+    .vocab-grid{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;}
+    .vocab{flex:1;min-width:220px;border-radius:10px;padding:14px;border:2px solid #C9E9D5;background:#fff;}
+    .vocab.green{border-color:#c9f3dc;background:#f5fff6;}
+    .vocab.yellow{border-color:#fde68a;background:#fffdf0;}
+    .vocab h3{margin:0;font-size:1rem;color:#14532D;min-width:0;overflow-wrap:anywhere;}
+    .vocab p{margin:8px 0 0;color:var(--muted);font-size:.95rem;}
+    .vocab-head{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+    .vocab-say{flex:0 0 auto;width:40px;height:40px;padding:0;border-radius:50%;cursor:pointer;border:1px solid #C9E9D5;background:#F0FDF4;color:#15803D;font-size:1rem;line-height:1;display:inline-flex;align-items:center;justify-content:center;font-family:inherit;}
+    .vocab-say:hover{background:#DCFCE7;}
+    .vocab-say[data-czk-speaking="true"]{background:var(--accent);border-color:var(--accent-dark);color:#fff;animation:czk-pulse .9s ease-in-out infinite;}
+    @keyframes czk-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+    @media (prefers-reduced-motion:reduce){.vocab-say[data-czk-speaking="true"]{animation:none;}}
+    .media-row{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap;}
+    .media-btn{background:#fff;border:1px solid var(--border);padding:12px 16px;border-radius:10px;font-weight:700;color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:10px;min-width:200px;justify-content:center;}
+    .homework{background:#f3fff6;border:1px solid #d7f5df;border-radius:10px;padding:14px;margin-top:10px;}
+    .speaking{margin-top:18px;padding:16px;border-radius:12px;background:linear-gradient(180deg,#fff,#F7FDF9);border:1px solid var(--border);max-width:640px;}
+    .speaking h2{margin:0 0 10px;font-size:1.05rem;}
+    .talk-table{width:100%;border-collapse:collapse;overflow:hidden;background:#fff;border:1px solid #DCF0E3;font-size:.9rem;}
+    .talk-table th,.talk-table td{padding:8px 10px;text-align:left;}
+    .talk-table th{background:#E7F6EC;color:#14532D;font-weight:700;border-bottom:1px solid #C9E9D5;}
+    .row-teacher{background:#E7F6EC}.row-student{background:#F3F4F6}.talk-label,.talk-percent{font-weight:700}.talk-percent{color:#0f1724}.talk-time{color:var(--muted)}
+    footer{margin-top:20px;color:var(--muted);font-size:.9rem;text-align:center;}
+    @media (max-width:720px){.card{padding:18px;border-radius:14px}.vocab-grid,.media-row{flex-direction:column}header{flex-direction:column}.actions{width:100%}.actions .btn{width:100%;justify-content:center;box-sizing:border-box}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Invenções e inglês no restaurante</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Giovanna Azzi &nbsp;•&nbsp;
+            <strong>Data:</strong> 09/10/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+        <section class="panel">
+          <p style="margin:0;font-weight:600;color:#14532D;"><em>Hoje você revisou vocabulário anterior, conheceu algumas das invenções mais importantes da história e praticou como entender um cardápio e fazer pedidos educadamente em um restaurante.</em></p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 8px;">Começamos retomando <strong>alike</strong>, <strong>neither</strong>, <strong>both</strong> e os nomes de parentes com <strong>-in-law</strong>. Você percebeu que <em>neither</em> é singular e, no presente simples, pede a forma correta do verbo: <strong>Neither woman likes yellow.</strong></p>
+            <p style="margin:0 0 8px;">Depois, vimos um ranking de invenções importantes. Você reconheceu itens como <strong>the wheel</strong>, <strong>the printing press</strong>, <strong>the light bulb</strong>, <strong>the telephone</strong>, <strong>the computer</strong>, <strong>the Internet</strong>, <strong>penicillin</strong>, <strong>the airplane</strong>, <strong>vaccines</strong> e <strong>the compass</strong>. Também diferenciamos coisas que são inventadas daquelas que são descobertas.</p>
+            <p style="margin:0;">Na parte principal, exploramos um cardápio internacional: entradas, sopas, saladas, pratos principais, sobremesas e bebidas. Você praticou nacionalidades, falou sobre suas preferências e aprendeu diferenças importantes entre <strong>grilled</strong>, <strong>roasted</strong> e <strong>baked</strong>. Para terminar, ouviu um diálogo de restaurante e treinou expressões como <strong>Excuse me</strong>, <strong>Are you ready to order?</strong>, <strong>I'll have...</strong> e <strong>I'd like...</strong>.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2>
+          <div class="outline-card">
+            <ul style="margin:0;padding-left:20px;">
+              <li><strong>Neither woman likes yellow.</strong> → Nenhuma das duas mulheres gosta de amarelo.</li>
+              <li><strong>Do you like shrimp?</strong> → Você gosta de camarão?</li>
+              <li><strong>I like sour fruits.</strong> → Eu gosto de frutas azedas.</li>
+              <li><strong>Do you prefer still or sparkling water?</strong> → Você prefere água sem gás ou com gás?</li>
+              <li><strong>Excuse me.</strong> → Com licença. (Para chamar a atenção do garçom.)</li>
+              <li><strong>Are you ready to order?</strong> → Você está pronta para pedir?</li>
+              <li><strong>I'll have the Peruvian grilled fish.</strong> → Eu vou querer o peixe peruano grelhado.</li>
+              <li><strong>I'd like an ice cream, please.</strong> → Eu gostaria de um sorvete, por favor.</li>
+              <li><strong>Is the tip included?</strong> → A gorjeta está incluída?</li>
+              <li><strong>Would you prefer it rare, medium, or well-done?</strong> → Você prefere malpassado, ao ponto ou bem-passado?</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <div class="vocab-head">
+                <h3>appetizer</h3>
+                <button type="button" class="vocab-say" data-czk-say="appetizer" aria-label="Ouvir a pronúncia de appetizer" aria-pressed="false" title="Ouvir appetizer">&#128266;</button>
+              </div>
+              <p><em>(pt) entrada / aperitivo</em><br><small>Um prato pequeno servido antes do principal. Ex.: <strong>I'll have the shrimp as an appetizer.</strong></small></p>
+            </div>
+            <div class="vocab green">
+              <div class="vocab-head">
+                <h3>grilled</h3>
+                <button type="button" class="vocab-say" data-czk-say="grilled" aria-label="Ouvir a pronúncia de grilled" aria-pressed="false" title="Ouvir grilled">&#128266;</button>
+              </div>
+              <p><em>(pt) grelhado</em><br><small>Preparado sobre uma grelha ou churrasqueira. Ex.: <strong>She prefers grilled fish.</strong></small></p>
+            </div>
+            <div class="vocab yellow">
+              <div class="vocab-head">
+                <h3>I'll have</h3>
+                <button type="button" class="vocab-say" data-czk-say="I'll have" aria-label="Ouvir a pronúncia de I'll have" aria-pressed="false" title="Ouvir I'll have">&#128266;</button>
+              </div>
+              <p><em>(pt) eu vou querer</em><br><small>Forma natural e educada de fazer um pedido. Ex.: <strong>I'll have the Greek salad, please.</strong></small></p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2>
+          <div class="outline-card">
+            <h3 style="margin-top:0;">Invenções</h3>
+            <ul>
+              <li><strong>invention</strong> – invenção</li>
+              <li><strong>the wheel</strong> – a roda</li>
+              <li><strong>the printing press</strong> – a prensa tipográfica</li>
+              <li><strong>the light bulb</strong> – a lâmpada</li>
+              <li><strong>the compass</strong> – a bússola</li>
+              <li><strong>penicillin</strong> – penicilina</li>
+              <li><strong>the airplane</strong> – o avião</li>
+              <li><strong>vaccines</strong> – vacinas</li>
+            </ul>
+            <h3>Partes do cardápio</h3>
+            <ul>
+              <li><strong>appetizer</strong> – entrada / aperitivo</li>
+              <li><strong>soup</strong> – sopa</li>
+              <li><strong>salad</strong> – salada</li>
+              <li><strong>entrée / main course / main dish</strong> – prato principal</li>
+              <li><strong>dessert</strong> – sobremesa</li>
+              <li><strong>beverage</strong> – bebida</li>
+            </ul>
+            <h3>Comidas e bebidas</h3>
+            <ul>
+              <li><strong>shrimp</strong> – camarão</li>
+              <li><strong>cheese bread</strong> – pão de queijo</li>
+              <li><strong>split pea soup</strong> – sopa de ervilha partida</li>
+              <li><strong>roast beef</strong> – carne bovina assada</li>
+              <li><strong>grilled fish</strong> – peixe grelhado</li>
+              <li><strong>sautéed vegetables</strong> – legumes refogados</li>
+              <li><strong>apple pie</strong> – torta de maçã</li>
+              <li><strong>passion fruit</strong> – maracujá</li>
+              <li><strong>sour</strong> – azedo</li>
+              <li><strong>regular / decaf coffee</strong> – café normal / descafeinado</li>
+              <li><strong>soda</strong> – refrigerante</li>
+              <li><strong>fruit juice</strong> – suco de fruta</li>
+              <li><strong>still / sparkling water</strong> – água sem gás / com gás</li>
+            </ul>
+            <h3>Preparo e atendimento</h3>
+            <ul>
+              <li><strong>grilled</strong> – grelhado</li>
+              <li><strong>roasted</strong> – assado no forno (especialmente carne ou legumes)</li>
+              <li><strong>baked</strong> – assado no forno (especialmente pão, bolo e massas)</li>
+              <li><strong>rare / medium / well-done</strong> – malpassado / ao ponto / bem-passado</li>
+              <li><strong>server</strong> – garçom / atendente</li>
+              <li><strong>to order</strong> – pedir / fazer o pedido</li>
+              <li><strong>check</strong> – conta</li>
+              <li><strong>tip</strong> – gorjeta</li>
+              <li><strong>included</strong> – incluído</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">🚨 Correções importantes</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 10px;"><strong>1. Concordância com “neither”</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ “Neither woman like yellow.”</p>
+            <p style="margin:0 0 12px;color:#276749;">✅ <strong>“Neither woman likes yellow.”</strong> — <em>Neither</em> indica “nenhuma das duas” e funciona como singular; por isso, no presente simples, usamos <em>likes</em>.</p>
+            <p style="margin:0 0 10px;"><strong>2. Pronúncia de “grilled”</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ “gril-led” (duas sílabas)</p>
+            <p style="margin:0 0 12px;color:#276749;">✅ <strong>“grilled”</strong> (uma sílaba) — a terminação <em>-ed</em> não cria uma sílaba separada aqui.</p>
+            <p style="margin:0 0 10px;"><strong>3. “Grilled” x “roasted”</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ Usar a mesma palavra para todo alimento “assado”.</p>
+            <p style="margin:0 0 12px;color:#276749;">✅ <strong>“grilled”</strong> é feito na grelha; <strong>“roasted”</strong> é assado no forno, especialmente carnes e legumes; <strong>“baked”</strong> é comum para pães e bolos.</p>
+            <p style="margin:0 0 10px;"><strong>4. Forma natural de pedir</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ “I want an ice cream.”</p>
+            <p style="margin:0;color:#276749;">✅ <strong>“I'd like an ice cream, please.”</strong> ou <strong>“I'll have an ice cream, please.”</strong> — as duas opções soam mais educadas e naturais no restaurante.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2>
+          <div class="media-row">
+            <a class="media-btn" href="https://youtu.be/q4JhK8iQ2dI" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a>
+          </div>
+        </section>
+
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>🗣️ Tempo de Fala (Talk Time)</h2>
+          <table class="talk-table">
+            <thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead>
+            <tbody>
+              <tr class="row-teacher"><td><span class="talk-label">César (Professor)</span></td><td><span class="talk-percent">65%</span></td><td class="talk-time">~37 minutos</td></tr>
+              <tr class="row-student"><td><span class="talk-label">Giovanna Azzi</span></td><td><span class="talk-percent">35%</span></td><td class="talk-time">~20 minutos</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📝 Homework</h2>
+          <div class="homework">
+            <p style="margin:0 0 8px;">📌 <strong>Lição de casa:</strong></p>
+            <ul style="margin:0 0 6px 18px;padding:0;font-size:.94rem;color:var(--muted);">
+              <li>Finalize as atividades pendentes antes da próxima aula, para não acumular.</li>
+              <li>Pratique em voz alta um pedido completo: entrada, prato principal, bebida e sobremesa, usando <strong>I'll have...</strong> ou <strong>I'd like...</strong>.</li>
+              <li>Revise a diferença entre <strong>grilled</strong>, <strong>roasted</strong> e <strong>baked</strong>.</li>
+              <li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana.</li>
+              <li>Participe do desafio da semana.</li>
+            </ul>
+          </div>
+          <div style="margin-top:14px;"><a class="btn" href="https://wa.me" style="background:#25D366;border-radius:10px;box-shadow:none;">💬 Falar comigo no WhatsApp</a></div>
+        </section>
+      </main>
+
+      <footer><p style="margin:18px 0 0;color:var(--muted);font-size:.9rem;">© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer>
+    </article>
+  </div>
+
+  <script>
+  (function(){
+    var host=window.parent===window?null:window.parent;
+    var active=null,pendingId=0,acked=false,fallbackTimer=null,audioEl=null;
+    function mark(btn,on){if(!btn)return;btn.setAttribute('data-czk-speaking',on?'true':'false');btn.setAttribute('aria-pressed',on?'true':'false');}
+    function clearActive(){mark(active,false);active=null;}
+    function warn(msg){var box=document.getElementById('czk-audio-msg');if(!box){box=document.createElement('div');box.id='czk-audio-msg';box.setAttribute('role','status');box.style.cssText='position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;font:600 .85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';document.body.appendChild(box);}box.textContent=msg;box.style.display='block';clearTimeout(warn._t);warn._t=setTimeout(function(){box.style.display='none';},4000);}
+    function stopAll(){if(fallbackTimer){clearTimeout(fallbackTimer);fallbackTimer=null;}if(audioEl){try{audioEl.pause();}catch(e){}audioEl=null;}try{if(window.speechSynthesis)window.speechSynthesis.cancel();}catch(e){}if(host){try{host.postMessage({source:'czk-posaula',type:'stop'},'*');}catch(e){}}clearActive();}
+    function localSpeak(text,btn){var synth=window.speechSynthesis;if(!synth||typeof window.SpeechSynthesisUtterance!=='function'){warn('Este aparelho ainda não tem voz em inglês.');clearActive();return;}synth.cancel();var u=new SpeechSynthesisUtterance(text);var isPhrase=text.trim().split(/\s+/).length>1;u.lang='en-US';u.rate=isPhrase ? 0.95 : 0.88;u.pitch=1;function score(v){var n=/^en[-_]US/i.test(v.lang)?100:0;if(/natural|neural|premium|enhanced/i.test(v.name))n+=80;if(/samantha|ava/i.test(v.name))n+=65;if(/google.*(us|english)|aria/i.test(v.name))n+=55;if(/zira/i.test(v.name))n+=35;if(v.localService)n+=5;return n;}var en=synth.getVoices().filter(function(v){return /^en[-_]/i.test(v.lang);});var pick=en.sort(function(a,b){return score(b)-score(a);})[0];if(pick)u.voice=pick;u.onstart=function(){mark(btn,true);};u.onend=function(){if(active===btn)clearActive();};u.onerror=function(ev){if(ev.error!=='canceled'&&ev.error!=='interrupted')warn('Não consegui reproduzir o áudio agora.');if(active===btn)clearActive();};synth.speak(u);}
+    function requestSpeech(text,btn){if(!host){localSpeak(text,btn);return;}acked=false;var id=++pendingId;try{host.postMessage({source:'czk-posaula',type:'speak',id:id,text:text},'*');}catch(e){localSpeak(text,btn);return;}fallbackTimer=setTimeout(function(){if(!acked&&active===btn)localSpeak(text,btn);},700);}
+    function play(btn){var text=(btn.getAttribute('data-czk-say')||'').trim();if(!text)return;var wasActive=active===btn;stopAll();if(wasActive)return;active=btn;mark(btn,true);var url=btn.getAttribute('data-czk-audio');if(url&&/^https:\/\//i.test(url)){audioEl=new Audio(url);audioEl.onended=function(){if(active===btn)clearActive();};audioEl.onerror=function(){if(active===btn)requestSpeech(text,btn);};var p=audioEl.play();if(p&&p.catch)p.catch(function(){if(active===btn)requestSpeech(text,btn);});return;}requestSpeech(text,btn);}
+    window.addEventListener('message',function(ev){var d=ev.data;if(!d||d.source!=='czk-app'||d.id!==pendingId)return;if(d.type==='speak-ack'){acked=true;if(fallbackTimer){clearTimeout(fallbackTimer);fallbackTimer=null;}return;}if(d.type==='speak-start'){mark(active,true);return;}if(d.type==='speak-end'){clearActive();return;}if(d.type==='speak-error'){warn('Este aparelho ainda não tem voz em inglês.');clearActive();}});
+    document.addEventListener('click',function(ev){var t=ev.target;if(!t||!t.closest)return;var btn=t.closest('[data-czk-say]');if(btn){ev.preventDefault();play(btn);return;}var pr=t.closest('[data-czk-action="print"]');if(pr){ev.preventDefault();try{window.print();}catch(e){}}});
+  })();
+  </script>
+</body>
+</html>
