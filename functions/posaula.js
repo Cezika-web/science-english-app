@@ -187,6 +187,16 @@ section{ margin-top:18px; }
 .talk-time{ color:var(--muted); }
 footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
 @media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+@page{ margin:12mm; }
+@media print{
+  html,body{ background:#fff!important; }
+  body{ margin:0!important; }
+  .wrap{ max-width:none!important; padding:0!important; }
+  .card{ box-shadow:none!important; border:none!important; padding:0!important; }
+  .actions,[data-czk-action="print"],.vocab-say,#czk-audio-msg{ display:none!important; }
+  section,.panel,.outline-card,.vocab,.homework,.speaking,.talk-table,tr{ break-inside:avoid; page-break-inside:avoid; }
+  a{ color:inherit!important; text-decoration:none!important; }
+}
   </style>
 </head>
 <body>

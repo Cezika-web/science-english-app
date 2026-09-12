@@ -189,7 +189,7 @@ async function getFB() {
     { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential },
     { getFirestore, doc, getDoc, collection, query, where, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion, deleteField },
     { getMessaging, getToken, onMessage, isSupported },
-    { getStorage, ref: storageRef, uploadBytes, getDownloadURL, setMaxUploadRetryTime },
+    { getStorage, ref: storageRef, uploadBytes, getDownloadURL },
     { getFunctions, httpsCallable },
   ] = await Promise.all([
     import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
@@ -205,7 +205,7 @@ async function getFB() {
   const storage = getStorage(app);
   // Sem isso, uma falha de permissão/rede pode deixar o botão "Salvando..."
   // preso por vários minutos enquanto o SDK repete o upload em silêncio.
-  setMaxUploadRetryTime(storage, 30000);
+  storage.maxUploadRetryTime = 30000;
   const functions = getFunctions(app, 'southamerica-east1');
   let messaging = null;
   try { if (await isSupported()) messaging = getMessaging(app); } catch(e) {}
@@ -3814,6 +3814,29 @@ function ensureReaderVocabularyAudio(doc) {
   });
 }
 
+// A impressão acontece dentro do iframe isolado. Além de esconder os controles,
+// evita que cartões sejam partidos no meio entre duas páginas do PDF.
+function ensureReaderPrintStyles(doc) {
+  if (!doc?.head || doc.getElementById('czk-reader-print-style')) return;
+  const style = doc.createElement('style');
+  style.id = 'czk-reader-print-style';
+  style.textContent = `
+    @page{margin:12mm}
+    @media print{
+      html,body{background:#fff!important}
+      body{margin:0!important}
+      .wrap{max-width:none!important;padding:0!important}
+      .card{box-shadow:none!important;border:none!important;padding:0!important}
+      .actions,[data-czk-action="print"],.vocab-say,#czk-audio-msg{display:none!important}
+      section,.panel,.outline-card,.vocab,.homework,.speaking,.talk-table,tr{
+        break-inside:avoid;page-break-inside:avoid
+      }
+      a{color:inherit!important;text-decoration:none!important}
+    }
+  `;
+  doc.head.appendChild(style);
+}
+
 // Tira script, onclick e javascript: do HTML salvo e devolve o documento
 // completo (o <style> do cabeçalho continua valendo) já com a ponte de áudio.
 function sanitizeReaderHtml(html) {
@@ -3832,6 +3855,7 @@ function sanitizeReaderHtml(html) {
     });
   });
   ensureReaderVocabularyAudio(doc);
+  ensureReaderPrintStyles(doc);
   const bridge = doc.createElement('script');
   bridge.textContent = READER_AUDIO_BRIDGE;
   doc.body.appendChild(bridge);
@@ -4414,8 +4438,8 @@ function PosaulaPeek({ open, activity, posaulas, onClose }) {
 
         {sel ? (
           sel.html
-            ? <iframe className="reader-frame" srcDoc={sanitizeReaderHtml(sel.html)} sandbox="allow-scripts allow-popups allow-presentation" referrerPolicy="no-referrer" allowFullScreen />
-            : <iframe className="reader-frame" src={sel.url || 'about:blank'} sandbox="allow-scripts allow-popups allow-presentation" referrerPolicy="no-referrer" allowFullScreen />
+            ? <iframe className="reader-frame" srcDoc={sanitizeReaderHtml(sel.html)} sandbox="allow-scripts allow-modals allow-popups allow-presentation" referrerPolicy="no-referrer" allowFullScreen />
+            : <iframe className="reader-frame" src={sel.url || 'about:blank'} sandbox="allow-scripts allow-modals allow-popups allow-presentation" referrerPolicy="no-referrer" allowFullScreen />
         ) : (
           <div style={{ flex: 1, overflowY: 'auto', padding: 14 }}>
             {listaConsulta.length === 0 ? (
@@ -4667,8 +4691,8 @@ function ReaderView({ post, onBack }) {
       </div>
       {/* Pos-aulas antigas vem por URL; as geradas no admin vem no proprio doc. */}
       {post?.html
-        ? <iframe className="reader-frame" srcDoc={sanitizeReaderHtml(post.html)} sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-presentation" referrerPolicy="no-referrer" allowFullScreen />
-        : <iframe className="reader-frame" src={post?.url || 'about:blank'} sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-presentation" referrerPolicy="no-referrer" allowFullScreen />}
+        ? <iframe className="reader-frame" srcDoc={sanitizeReaderHtml(post.html)} sandbox="allow-scripts allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation" referrerPolicy="no-referrer" allowFullScreen />
+        : <iframe className="reader-frame" src={post?.url || 'about:blank'} sandbox="allow-scripts allow-modals allow-popups allow-popups-to-escape-sandbox allow-presentation" referrerPolicy="no-referrer" allowFullScreen />}
     </div>
   );
 }
