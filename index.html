@@ -189,7 +189,7 @@ async function getFB() {
     { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential },
     { getFirestore, doc, getDoc, collection, query, where, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion, deleteField },
     { getMessaging, getToken, onMessage, isSupported },
-    { getStorage, ref: storageRef, uploadBytes, getDownloadURL },
+    { getStorage, ref: storageRef, uploadBytes, getDownloadURL, setMaxUploadRetryTime },
     { getFunctions, httpsCallable },
   ] = await Promise.all([
     import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
@@ -203,6 +203,9 @@ async function getFB() {
   const auth = getAuth(app);
   const db   = getFirestore(app);
   const storage = getStorage(app);
+  // Sem isso, uma falha de permissão/rede pode deixar o botão "Salvando..."
+  // preso por vários minutos enquanto o SDK repete o upload em silêncio.
+  setMaxUploadRetryTime(storage, 30000);
   const functions = getFunctions(app, 'southamerica-east1');
   let messaging = null;
   try { if (await isSupported()) messaging = getMessaging(app); } catch(e) {}
@@ -4510,8 +4513,11 @@ function PartModal({ part, activity, posaulas, onBack, onClose, onFinish, onSave
       const id = prompt.id || `clip-${index + 1}`;
       return { id, ...(oralDraftsRef.current[id] || {}), existing:savedOral?.[id] || null };
     });
-    await onFinish(partId, { values: { ...valuesRef.current }, oral, respondidos: filled, total, pct });
-    setSaving(false);
+    try {
+      await onFinish(partId, { values: { ...valuesRef.current }, oral, respondidos: filled, total, pct });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
