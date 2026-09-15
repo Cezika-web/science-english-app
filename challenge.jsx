@@ -1,8 +1,7 @@
 // Desafio Science English — experiência semanal oficial.
 // As perguntas vêm do servidor sem gabarito; cada resposta é confirmada por
 // uma Cloud Function e os resultados só são devolvidos no domingo.
-const DEFAULT_CHALLENGE_TIME_SECONDS = 45;
-const CHALLENGE_TIME_BY_WEEK = { '2026-09-14':210 };
+const CHALLENGE_TIME_SECONDS = 210;
 const challengeBlue = 'linear-gradient(135deg,#071B3A 0%,#0D3F82 58%,#087CC1 100%)';
 const challengeRoundButton = { width:36, height:36, borderRadius:'50%', border:'1px solid rgba(255,255,255,.22)', background:'rgba(255,255,255,.1)', color:'#fff', fontSize:20, cursor:'pointer', fontFamily:'inherit' };
 
@@ -14,8 +13,8 @@ function challengeMonthKeyForWeek(weekKey) {
   return `${thursday.getFullYear()}-${String(thursday.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function challengeTimeSeconds(state = {}) {
-  return CHALLENGE_TIME_BY_WEEK[state.weekKey] || DEFAULT_CHALLENGE_TIME_SECONDS;
+function challengeTimeSeconds() {
+  return CHALLENGE_TIME_SECONDS;
 }
 
 function challengeTimeLabel(seconds) {
