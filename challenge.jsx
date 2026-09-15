@@ -1,7 +1,8 @@
 // Desafio Science English — experiência semanal oficial.
 // As perguntas vêm do servidor sem gabarito; cada resposta é confirmada por
 // uma Cloud Function e os resultados só são devolvidos no domingo.
-const CHALLENGE_TIME_SECONDS = 45;
+const DEFAULT_CHALLENGE_TIME_SECONDS = 45;
+const CHALLENGE_TIME_BY_WEEK = { '2026-09-14':210 };
 const challengeBlue = 'linear-gradient(135deg,#071B3A 0%,#0D3F82 58%,#087CC1 100%)';
 const challengeRoundButton = { width:36, height:36, borderRadius:'50%', border:'1px solid rgba(255,255,255,.22)', background:'rgba(255,255,255,.1)', color:'#fff', fontSize:20, cursor:'pointer', fontFamily:'inherit' };
 
@@ -13,10 +14,23 @@ function challengeMonthKeyForWeek(weekKey) {
   return `${thursday.getFullYear()}-${String(thursday.getMonth() + 1).padStart(2, '0')}`;
 }
 
+function challengeTimeSeconds(state = {}) {
+  return CHALLENGE_TIME_BY_WEEK[state.weekKey] || DEFAULT_CHALLENGE_TIME_SECONDS;
+}
+
+function challengeTimeLabel(seconds) {
+  if (seconds === 210) return '3 minutos e 30 segundos';
+  return `${seconds} segundos`;
+}
+
+function challengeClock(seconds) {
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2,'0')}`;
+}
+
 function challengeStatus(state = {}) {
   if (state.phase === 'open') {
     if (state.completed) return { badge:'CONCLUÍDA', title:`Parte ${state.part} concluída`, detail:state.part === 1 ? 'Suas respostas estão salvas. A nota desta parte sai na quinta.' : 'Suas respostas estão salvas. O resultado sai no domingo.', tone:'#DFF7E8', color:'#15713A' };
-    return { badge:'DISPONÍVEL', title:`Parte ${state.part} disponível agora`, detail:`${state.round?.questionCount || 5} perguntas · 45 segundos cada`, tone:'#5DE1FF', color:'#071B3A' };
+    return { badge:'DISPONÍVEL', title:`Parte ${state.part} disponível agora`, detail:`${state.round?.questionCount || 5} perguntas · ${challengeTimeLabel(challengeTimeSeconds(state))} cada`, tone:'#5DE1FF', color:'#071B3A' };
   }
   if (state.phase === 'results') return { badge:'RESULTADO', title:'Resultado semanal disponível', detail:'Confira sua pontuação, posição e correções.', tone:'#FFE8A3', color:'#684800' };
   if (state.phase === 'calculating') return { badge:'ENCERRADO', title:'Calculando o resultado', detail:'O ranking será liberado neste domingo.', tone:'rgba(255,255,255,.16)', color:'#fff' };
@@ -63,11 +77,12 @@ function ChallengeSubpageHeader({ title, subtitle, onClose }) {
   return <div style={{ position:'sticky', top:0, zIndex:3, display:'flex', alignItems:'center', gap:12, padding:'14px 16px', background:'rgba(243,247,252,.96)', borderBottom:'1px solid #DCE7F4' }}><button onClick={onClose} style={{ width:36, height:36, borderRadius:'50%', border:'1px solid #D7E3F1', background:'#fff', color:'#0D3F82', fontSize:20 }}>‹</button><div><strong style={{ display:'block', color:'#071B3A', fontSize:16 }}>{title}</strong><span style={{ color:'#64748B', fontSize:11.5 }}>{subtitle}</span></div></div>;
 }
 
-function ChallengeRules({ onClose }) {
+function ChallengeRules({ challengeState, onClose }) {
+  const timeLabel = challengeTimeLabel(challengeTimeSeconds(challengeState));
   return <div style={{ position:'absolute', inset:0, zIndex:4, background:'#F3F7FC', overflowY:'auto' }}>
     <ChallengeSubpageHeader title="Regras e pontuação" subtitle="Leia antes de começar" onClose={onClose} />
     <div style={{ padding:'18px 16px 32px' }}>
-      <div style={{ padding:17, borderRadius:18, color:'#fff', background:challengeBlue }}><strong style={{ display:'block', fontSize:15 }}>Como funciona</strong><div style={{ fontSize:12.5, lineHeight:1.65, marginTop:8, color:'rgba(255,255,255,.84)' }}>A semana tem 10 perguntas, divididas em duas partes de 5. Cada pergunta dura 45 segundos. Há uma única tentativa e não é possível voltar. Ao sair, bloquear a tela ou trocar de aba, a resposta atual é enviada.</div></div>
+      <div style={{ padding:17, borderRadius:18, color:'#fff', background:challengeBlue }}><strong style={{ display:'block', fontSize:15 }}>Como funciona</strong><div style={{ fontSize:12.5, lineHeight:1.65, marginTop:8, color:'rgba(255,255,255,.84)' }}>A semana tem 10 perguntas, divididas em duas partes de 5. Cada pergunta dura {timeLabel}. Há uma única tentativa e não é possível voltar. Ao sair, bloquear a tela ou trocar de aba, a resposta atual é enviada.</div></div>
       <div style={{ marginTop:10, padding:15, borderRadius:16, background:'#ECFEFF', border:'1px solid #A5F3FC', color:'#155E75', fontSize:11.5, lineHeight:1.55 }}><strong>Desafios entre alunos:</strong> são 10 perguntas seguidas e não entram no ranking geral. No duelo rápido, cada aluno responde quando puder. No duelo ao vivo, os dois entram na sala e marcam que estão prontos. Nos dois casos, o placar só aparece quando ambos terminarem.</div>
       <div style={{ marginTop:18, fontSize:11, fontWeight:900, letterSpacing:1, color:'#0D5AA7', textTransform:'uppercase' }}>Calendário</div>
       <div style={{ display:'grid', gap:8, marginTop:9 }}>{[
@@ -533,7 +548,7 @@ function ChallengeHub({ challengeState, selectedChallenge, onBack, onStart, onJo
         <button onClick={() => setPanel('season')} style={{ width:'100%', display:'flex', alignItems:'center', gap:12, marginTop:12, padding:'14px 15px', borderRadius:17, border:'1px solid #DCE7F4', background:'#fff', fontFamily:'inherit', textAlign:'left' }}><span style={{ width:40, height:40, borderRadius:13, display:'flex', alignItems:'center', justifyContent:'center', background:'#E7F3FF', fontSize:20 }}>📊</span><span style={{ flex:1 }}><strong style={{ display:'block', color:'#071B3A', fontSize:13.5 }}>Minha temporada</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:10.5, marginTop:2 }}>Gráfico, erros, porcentagem e histórico</span></span><span style={{ color:'#8EA0B5', fontSize:20 }}>›</span></button>
       </div>
     </div>
-    {panel === 'rules' && <ChallengeRules onClose={() => setPanel(null)} />}
+    {panel === 'rules' && <ChallengeRules challengeState={challengeState} onClose={() => setPanel(null)} />}
     {panel === 'duels' && <ChallengeDuels onClose={() => setPanel(null)} onLoad={onLoadDuels} onCreate={onCreateDuel} onRespond={onRespondDuel} onPlay={onPlayDuel} onLive={onLiveDuel} />}
   </div>;
 }
@@ -547,11 +562,13 @@ function ChallengeProgressPanel({ challengeState, onOpenChallenge }) {
 
 function ChallengeGame({ challengeState, onFinish, onExit, onStart, onSaveAnswer }) {
   const questions = challengeState?.round?.questions || [];
+  const timeLimit = challengeTimeSeconds(challengeState);
+  const timeLabel = challengeTimeLabel(timeLimit);
   const initialIndex = Math.min(Number(challengeState?.nextIndex || 0), Math.max(questions.length - 1, 0));
   const [phase, setPhase] = React.useState('intro');
   const [questionIndex, setQuestionIndex] = React.useState(initialIndex);
   const [answer, setAnswer] = React.useState('');
-  const [seconds, setSeconds] = React.useState(CHALLENGE_TIME_SECONDS);
+  const [seconds, setSeconds] = React.useState(timeLimit);
   const [error, setError] = React.useState('');
   const savingRef = React.useRef(false);
   const retryRef = React.useRef(null);
@@ -565,13 +582,13 @@ function ChallengeGame({ challengeState, onFinish, onExit, onStart, onSaveAnswer
     try {
       const result = await onSaveAnswer({ roundId:challengeState.round.roundId, questionId:question.id, value:answerRef.current });
       if (result?.completed || questionIndex >= questions.length - 1) { setPhase('done'); return; }
-      setQuestionIndex(index => index + 1); setAnswer(''); setSeconds(CHALLENGE_TIME_SECONDS); setPhase('transition');
+      setQuestionIndex(index => index + 1); setAnswer(''); setSeconds(timeLimit); setPhase('transition');
       setTimeout(() => setPhase('question'), 550);
     } catch (failure) {
       retryRef.current = sendCurrent;
       setError(failure?.message || 'Não foi possível salvar.'); setPhase('save-error');
     } finally { savingRef.current = false; }
-  }, [question, questionIndex, questions.length, challengeState?.round?.roundId, onSaveAnswer]);
+  }, [question, questionIndex, questions.length, challengeState?.round?.roundId, onSaveAnswer, timeLimit]);
 
   React.useEffect(() => {
     if (phase !== 'question') return;
@@ -595,15 +612,15 @@ function ChallengeGame({ challengeState, onFinish, onExit, onStart, onSaveAnswer
 
   const start = async () => {
     setPhase('saving');
-    try { const result = await onStart(challengeState.round.roundId); setQuestionIndex(Math.min(Number(result?.nextIndex || initialIndex), questions.length - 1)); setSeconds(CHALLENGE_TIME_SECONDS); setPhase('question'); }
+    try { const result = await onStart(challengeState.round.roundId); setQuestionIndex(Math.min(Number(result?.nextIndex || initialIndex), questions.length - 1)); setSeconds(timeLimit); setPhase('question'); }
     catch (failure) { retryRef.current = start; setError(failure?.message || 'Não foi possível iniciar.'); setPhase('save-error'); }
   };
   const close = async () => { if (phase === 'question') await sendCurrent(false); onExit(); };
   const timerTone = seconds <= 10 ? '#FF7B7B' : '#5DE1FF';
 
   return <div style={{ position:'fixed', inset:0, zIndex:10040, maxWidth:480, margin:'0 auto', color:'#fff', background:'linear-gradient(160deg,#06162F,#071F43 54%,#092B56)', overflow:'hidden' }}>
-    {phase === 'intro' && <div style={{ height:'100%', display:'flex', flexDirection:'column', padding:'calc(env(safe-area-inset-top,0px) + 20px) 22px calc(env(safe-area-inset-bottom,0px) + 22px)' }}><button onClick={onExit} aria-label="Fechar" style={{ ...challengeRoundButton, alignSelf:'flex-end' }}>×</button><div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center' }}><div style={{ width:76, height:76, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:24, background:'linear-gradient(145deg,#238BFF,#0A5BB4)', fontSize:37 }}>🏆</div><div style={{ color:'#7DE7FF', fontSize:10.5, fontWeight:900, letterSpacing:1.7, marginTop:24 }}>{challengeState?.peerDuel ? (challengeState?.live ? 'DUELO AO VIVO' : 'DUELO RÁPIDO') : `PARTE ${challengeState?.part}`}</div><h2 style={{ fontSize:27, margin:'8px 0 10px' }}>{challengeState?.started ? 'Continue de onde parou' : 'Você está pronto?'}</h2><p style={{ color:'rgba(255,255,255,.66)', fontSize:13, lineHeight:1.55 }}>{questions.length} perguntas. 45 segundos para cada uma. Uma única tentativa.</p></div><button onClick={start} style={{ width:'100%', border:0, borderRadius:16, padding:16, color:'#06162F', background:'linear-gradient(135deg,#5DE1FF,#E5FBFF)', fontFamily:'inherit', fontSize:13.5, fontWeight:900 }}>{challengeState?.started ? 'CONTINUAR' : 'COMEÇAR AGORA'} →</button></div>}
-    {phase === 'question' && question && <div style={{ height:'100%', display:'flex', flexDirection:'column', padding:'calc(env(safe-area-inset-top,0px) + 18px) 18px calc(env(safe-area-inset-bottom,0px) + 18px)' }}><div style={{ display:'flex', alignItems:'center', gap:12 }}><div style={{ flex:1, display:'flex', gap:5 }}>{questions.map((_,i) => <span key={i} style={{ flex:1, height:4, borderRadius:4, background:i <= questionIndex ? '#5DE1FF' : 'rgba(255,255,255,.16)' }} />)}</div><strong style={{ color:timerTone, minWidth:44, textAlign:'right', fontSize:18 }}>0:{String(seconds).padStart(2,'0')}</strong></div><button onClick={close} style={{ position:'absolute', top:50, right:18, border:0, background:'transparent', color:'rgba(255,255,255,.55)', fontSize:11 }}>SAIR</button><div style={{ color:'#8DEBFF', fontSize:10, fontWeight:900, letterSpacing:1.1, marginTop:25 }}>PERGUNTA {questionIndex + 1} DE {questions.length}</div><div style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'center', minHeight:0, overflowY:'auto' }}><h2 style={{ fontSize:19, lineHeight:1.38, margin:'0 0 14px' }}>{question.prompt}</h2>{question.context && <div style={{ padding:'15px 16px 17px', borderRadius:17, background:'rgba(255,255,255,.08)', border:'1px solid rgba(255,255,255,.13)', fontSize:15, lineHeight:1.45 }}><strong style={{ display:'block', color:'#8DEBFF', fontSize:9, letterSpacing:1, marginBottom:7 }}>{/\b(translate|traduza|tradução)\b/i.test(question.prompt || '') ? 'TEXTO PARA TRADUZIR' : 'TEXTO DA QUESTÃO'}</strong>{question.context}</div>}{question.type === 'multipleChoice' ? <div style={{ display:'grid', gap:9, marginTop:18 }}>{question.options.map(option => <button key={option.id} onClick={() => { setAnswer(option.id); setError(''); }} style={{ display:'flex', gap:10, alignItems:'center', padding:'13px 14px', borderRadius:14, border:`1.5px solid ${answer === option.id ? '#5DE1FF' : 'rgba(255,255,255,.18)'}`, background:answer === option.id ? 'rgba(93,225,255,.17)' : 'rgba(255,255,255,.07)', color:'#fff', textAlign:'left', fontFamily:'inherit', fontSize:13 }}><span style={{ width:25, height:25, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', background:answer === option.id ? '#5DE1FF' : 'rgba(255,255,255,.12)', color:answer === option.id ? '#06162F' : '#fff', fontWeight:900 }}>{option.id.toUpperCase()}</span>{option.text}</button>)}</div> : <textarea autoFocus inputMode="text" enterKeyHint="done" value={answer} onChange={event => { setAnswer(event.target.value); setError(''); }} onFocus={event => { const field=event.currentTarget; setTimeout(() => field.scrollIntoView({ block:'center', behavior:'smooth' }), 150); }} placeholder="Toque aqui e digite sua resposta…" style={{ width:'100%', minHeight:120, boxSizing:'border-box', marginTop:18, padding:15, borderRadius:17, border:'2px solid #5DE1FF', background:'#fff', color:'#071B3A', caretColor:'#071B3A', WebkitTextFillColor:'#071B3A', touchAction:'manipulation', fontFamily:'inherit', fontSize:16, lineHeight:1.45 }} />}{error && <div role="alert" style={{ marginTop:9, padding:'9px 11px', borderRadius:10, background:'rgba(255,183,77,.16)', color:'#FFD79A', fontSize:11.5, lineHeight:1.4 }}>{error}</div>}</div><div style={{ display:'flex', gap:8 }}>{seconds === 0 && !answer.trim() && <button onClick={() => sendCurrent(true)} style={{ flex:'0 0 auto', border:'1px solid rgba(255,255,255,.25)', borderRadius:15, padding:'15px 13px', color:'#fff', background:'transparent', fontFamily:'inherit', fontSize:12, fontWeight:900 }}>PULAR</button>}<button disabled={!answer.trim()} onClick={() => sendCurrent(false)} style={{ flex:1, border:0, borderRadius:15, padding:15, color:'#06162F', background:answer.trim() ? 'linear-gradient(135deg,#5DE1FF,#E5FBFF)' : '#8CA3B9', fontFamily:'inherit', fontSize:13, fontWeight:900 }}>ENVIAR RESPOSTA →</button></div></div>}
+    {phase === 'intro' && <div style={{ height:'100%', display:'flex', flexDirection:'column', padding:'calc(env(safe-area-inset-top,0px) + 20px) 22px calc(env(safe-area-inset-bottom,0px) + 22px)' }}><button onClick={onExit} aria-label="Fechar" style={{ ...challengeRoundButton, alignSelf:'flex-end' }}>×</button><div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center' }}><div style={{ width:76, height:76, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:24, background:'linear-gradient(145deg,#238BFF,#0A5BB4)', fontSize:37 }}>🏆</div><div style={{ color:'#7DE7FF', fontSize:10.5, fontWeight:900, letterSpacing:1.7, marginTop:24 }}>{challengeState?.peerDuel ? (challengeState?.live ? 'DUELO AO VIVO' : 'DUELO RÁPIDO') : `PARTE ${challengeState?.part}`}</div><h2 style={{ fontSize:27, margin:'8px 0 10px' }}>{challengeState?.started ? 'Continue de onde parou' : 'Você está pronto?'}</h2><p style={{ color:'rgba(255,255,255,.66)', fontSize:13, lineHeight:1.55 }}>{questions.length} perguntas. {timeLabel} para cada uma. Uma única tentativa.</p></div><button onClick={start} style={{ width:'100%', border:0, borderRadius:16, padding:16, color:'#06162F', background:'linear-gradient(135deg,#5DE1FF,#E5FBFF)', fontFamily:'inherit', fontSize:13.5, fontWeight:900 }}>{challengeState?.started ? 'CONTINUAR' : 'COMEÇAR AGORA'} →</button></div>}
+    {phase === 'question' && question && <div style={{ height:'100%', display:'flex', flexDirection:'column', padding:'calc(env(safe-area-inset-top,0px) + 18px) 18px calc(env(safe-area-inset-bottom,0px) + 18px)' }}><div style={{ display:'flex', alignItems:'center', gap:12 }}><div style={{ flex:1, display:'flex', gap:5 }}>{questions.map((_,i) => <span key={i} style={{ flex:1, height:4, borderRadius:4, background:i <= questionIndex ? '#5DE1FF' : 'rgba(255,255,255,.16)' }} />)}</div><strong style={{ color:timerTone, minWidth:44, textAlign:'right', fontSize:18 }}>{challengeClock(seconds)}</strong></div><button onClick={close} style={{ position:'absolute', top:50, right:18, border:0, background:'transparent', color:'rgba(255,255,255,.55)', fontSize:11 }}>SAIR</button><div style={{ color:'#8DEBFF', fontSize:10, fontWeight:900, letterSpacing:1.1, marginTop:25 }}>PERGUNTA {questionIndex + 1} DE {questions.length}</div><div style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'center', minHeight:0, overflowY:'auto' }}><h2 style={{ fontSize:19, lineHeight:1.38, margin:'0 0 14px' }}>{question.prompt}</h2>{question.context && <div style={{ padding:'15px 16px 17px', borderRadius:17, background:'rgba(255,255,255,.08)', border:'1px solid rgba(255,255,255,.13)', fontSize:15, lineHeight:1.45 }}><strong style={{ display:'block', color:'#8DEBFF', fontSize:9, letterSpacing:1, marginBottom:7 }}>{/\b(translate|traduza|tradução)\b/i.test(question.prompt || '') ? 'TEXTO PARA TRADUZIR' : 'TEXTO DA QUESTÃO'}</strong>{question.context}</div>}{question.type === 'multipleChoice' ? <div style={{ display:'grid', gap:9, marginTop:18 }}>{question.options.map(option => <button key={option.id} onClick={() => { setAnswer(option.id); setError(''); }} style={{ display:'flex', gap:10, alignItems:'center', padding:'13px 14px', borderRadius:14, border:`1.5px solid ${answer === option.id ? '#5DE1FF' : 'rgba(255,255,255,.18)'}`, background:answer === option.id ? 'rgba(93,225,255,.17)' : 'rgba(255,255,255,.07)', color:'#fff', textAlign:'left', fontFamily:'inherit', fontSize:13 }}><span style={{ width:25, height:25, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', background:answer === option.id ? '#5DE1FF' : 'rgba(255,255,255,.12)', color:answer === option.id ? '#06162F' : '#fff', fontWeight:900 }}>{option.id.toUpperCase()}</span>{option.text}</button>)}</div> : <textarea autoFocus inputMode="text" enterKeyHint="done" value={answer} onChange={event => { setAnswer(event.target.value); setError(''); }} onFocus={event => { const field=event.currentTarget; setTimeout(() => field.scrollIntoView({ block:'center', behavior:'smooth' }), 150); }} placeholder="Toque aqui e digite sua resposta…" style={{ width:'100%', minHeight:120, boxSizing:'border-box', marginTop:18, padding:15, borderRadius:17, border:'2px solid #5DE1FF', background:'#fff', color:'#071B3A', caretColor:'#071B3A', WebkitTextFillColor:'#071B3A', touchAction:'manipulation', fontFamily:'inherit', fontSize:16, lineHeight:1.45 }} />}{error && <div role="alert" style={{ marginTop:9, padding:'9px 11px', borderRadius:10, background:'rgba(255,183,77,.16)', color:'#FFD79A', fontSize:11.5, lineHeight:1.4 }}>{error}</div>}</div><div style={{ display:'flex', gap:8 }}>{seconds === 0 && !answer.trim() && <button onClick={() => sendCurrent(true)} style={{ flex:'0 0 auto', border:'1px solid rgba(255,255,255,.25)', borderRadius:15, padding:'15px 13px', color:'#fff', background:'transparent', fontFamily:'inherit', fontSize:12, fontWeight:900 }}>PULAR</button>}<button disabled={!answer.trim()} onClick={() => sendCurrent(false)} style={{ flex:1, border:0, borderRadius:15, padding:15, color:'#06162F', background:answer.trim() ? 'linear-gradient(135deg,#5DE1FF,#E5FBFF)' : '#8CA3B9', fontFamily:'inherit', fontSize:13, fontWeight:900 }}>ENVIAR RESPOSTA →</button></div></div>}
     {phase === 'transition' && <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}><div style={{ width:62, height:62, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background:'#168C72', fontSize:29 }}>✓</div><strong style={{ fontSize:18, marginTop:14 }}>Resposta confirmada</strong></div>}
     {phase === 'saving' && <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}><div style={{ fontSize:34 }}>↻</div><strong style={{ marginTop:14 }}>Salvando com segurança…</strong></div>}
     {phase === 'save-error' && <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center', padding:24 }}><div style={{ fontSize:38 }}>⚠️</div><strong style={{ fontSize:20, marginTop:14 }}>Não conseguimos salvar</strong><span style={{ color:'rgba(255,255,255,.65)', fontSize:12.5, marginTop:7 }}>{error}</span><button onClick={() => retryRef.current?.()} style={{ border:0, borderRadius:14, padding:'13px 18px', marginTop:20, color:'#06162F', background:'#5DE1FF', fontFamily:'inherit', fontWeight:900 }}>TENTAR NOVAMENTE</button></div>}
