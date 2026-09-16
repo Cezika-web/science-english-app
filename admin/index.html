@@ -1049,6 +1049,11 @@
             <div id="pend-feed-atividades"><div class="loading">Carregando...</div></div>
           </div>
         </div>
+
+        <details class="form-card" style="margin:16px 0 0;">
+          <summary style="cursor:pointer;font-weight:700;font-size:0.85rem;">🗂️ Dispensadas recentemente (motivo fica anotado só pra você)</summary>
+          <div id="pend-dispensadas-lista" style="margin-top:6px;"></div>
+        </details>
       </div>
 
       <!-- SALDO -->
@@ -6763,13 +6768,18 @@
       return null;
     }
 
-    function calcularPendencias(student, { ultimaPosData, semAtividades, ultimaAtividadeCriada, canceladas, workingDays, hoje }) {
+    // `dispensadas` é um Set de chaves "tipo_YYYY-MM-DD" — pendências que o
+    // César excluiu com motivo pra essa ocorrência específica. Uma nova
+    // ocorrência (outra data) não é afetada pela dispensa antiga.
+    function calcularPendencias(student, { ultimaPosData, semAtividades, ultimaAtividadeCriada, canceladas, workingDays, hoje, dispensadas }) {
       const aulaDias = Array.isArray(student.aulaDias) ? student.aulaDias.map(Number).filter(d => d >= 0 && d <= 6) : [];
+      const disp = dispensadas || new Set();
       if (!aulaDias.length) {
         // Regra antiga: sem agenda cadastrada (ex.: aluno só-atividades) —
         // pendente quando não há nenhuma atividade em andamento.
-        const atividadesPendente = semAtividades
-          ? { badge:'today', texto:'Enviar hoje', detalhe:'Sem agenda cadastrada — sem atividade em andamento.', extra:'' }
+        const refHoje = calendarDateKey(hoje);
+        const atividadesPendente = (semAtividades && !disp.has(`atividades_${refHoje}`))
+          ? { badge:'today', texto:'Enviar hoje', detalhe:'Sem agenda cadastrada — sem atividade em andamento.', extra:'', refData:refHoje }
           : null;
         return { posaulaPendente:null, atividadesPendente, diasSemAula:null };
       }
@@ -6781,13 +6791,15 @@
       const inicioPosaula = ultimaPosData ? calendarAddDays(ultimaPosData, 1) : calendarAddDays(hoje, -PEND_FALLBACK_DIAS);
       const semPosaula = pendOccurrences(aulaDias, canceladas, inicioPosaula, hoje);
       if (semPosaula.length) {
-        const candidatos = pendCandidatos(semPosaula, pendPosaulaDueDate, workingDays, hoje);
+        const candidatos = pendCandidatos(semPosaula, pendPosaulaDueDate, workingDays, hoje)
+          .filter(c => !disp.has(`posaula_${calendarDateKey(c.ref)}`));
         if (candidatos.length) {
           const primeira = candidatos[0];
           posaulaPendente = {
             badge: primeira.status.key, texto: primeira.status.text,
             detalhe: `Aula de ${PEND_DIAS_NOMES[primeira.ref.getDay()]} (${pendFmtData(primeira.ref)})`,
             extra: candidatos.length > 1 ? `+ ${candidatos.length - 1} pós-aula(s) mais atrasada(s)` : '',
+            refData: calendarDateKey(primeira.ref),
           };
         }
       }
@@ -6805,13 +6817,15 @@
         });
         const ciclosFechados = Object.values(semanas).filter(d => d <= hoje).sort((a,b) => a - b);
         if (ciclosFechados.length) {
-          const candidatos = pendCandidatos(ciclosFechados, pendAtividadesDueDate, workingDays, hoje);
+          const candidatos = pendCandidatos(ciclosFechados, pendAtividadesDueDate, workingDays, hoje)
+            .filter(c => !disp.has(`atividades_${calendarDateKey(c.ref)}`));
           if (candidatos.length) {
             const primeira = candidatos[0];
             atividadesPendente = {
               badge: primeira.status.key, texto: primeira.status.text,
               detalhe: `Última aula da semana: ${PEND_DIAS_NOMES[primeira.ref.getDay()]} (${pendFmtData(primeira.ref)})`,
               extra: candidatos.length > 1 ? `+ ${candidatos.length - 1} ciclo(s) mais atrasado(s)` : '',
+              refData: calendarDateKey(primeira.ref),
             };
           }
         }
@@ -6830,16 +6844,36 @@
       itensPosaula.sort((a, b) => ORDEM[a.badge] - ORDEM[b.badge]);
       itensAtividades.sort((a, b) => ORDEM[a.badge] - ORDEM[b.badge]);
 
-      const item = it => `
+      const itemId = it => `${it.student.uid}-${it.tipo}-${it.refData}`;
+      const motivosRapidos = it => it.tipo === 'posaula'
+        ? ['Vou gravar em outro dia', 'Aluno remarcou a aula', 'Aluno afastado/de férias']
+        : ['Não finalizou o ciclo anterior', 'Vou combinar direto com o aluno', 'Aluno afastado/de férias'];
+
+      const item = it => { const id = itemId(it); return `
         <div class="pend-item">
-          <span class="pend-badge ${it.badge}">${it.badge === 'late' ? 'ATRASADO' : it.badge === 'today' ? 'HOJE' : 'AMANHÃ'}</span>
-          <button class="pend-open pend-body" data-uid="${it.student.uid}" data-name="${esc(it.student.name || it.student.firstName || 'Aluno')}" type="button" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;font-family:inherit;width:100%;">
-            <strong>${esc(it.student.name || it.student.firstName || 'Aluno')}</strong>
-            <div class="pend-why">${esc(it.texto)} — ${esc(it.detalhe)}</div>
-            ${it.extra ? `<div class="pend-extra">${esc(it.extra)}</div>` : ''}
-          </button>
-          <button class="pend-action" data-uid="${it.student.uid}" data-destino="${it.tipo}" type="button" style="border:1px solid var(--brand);background:#fff;color:var(--brand);padding:7px 9px;border-radius:8px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">${it.tipo === 'posaula' ? 'Pós-aula' : 'Atividades'} →</button>
-        </div>`;
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <span class="pend-badge ${it.badge}">${it.badge === 'late' ? 'ATRASADO' : it.badge === 'today' ? 'HOJE' : 'AMANHÃ'}</span>
+            <button class="pend-open pend-body" data-uid="${it.student.uid}" data-name="${esc(it.student.name || it.student.firstName || 'Aluno')}" type="button" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;font-family:inherit;width:100%;">
+              <strong>${esc(it.student.name || it.student.firstName || 'Aluno')}</strong>
+              <div class="pend-why">${esc(it.texto)} — ${esc(it.detalhe)}</div>
+              ${it.extra ? `<div class="pend-extra">${esc(it.extra)}</div>` : ''}
+            </button>
+            <div style="display:flex;gap:6px;flex-shrink:0;">
+              <button class="pend-action" data-uid="${it.student.uid}" data-destino="${it.tipo}" type="button" style="border:1px solid var(--brand);background:#fff;color:var(--brand);padding:7px 9px;border-radius:8px;font-weight:700;cursor:pointer;white-space:nowrap;">${it.tipo === 'posaula' ? 'Pós-aula' : 'Atividades'} →</button>
+              <button class="pend-dismiss-toggle" data-toggle="${id}" type="button" title="Excluir com motivo" style="border:1px solid var(--border);background:#fff;color:var(--muted);padding:7px 9px;border-radius:8px;font-weight:700;cursor:pointer;">✕</button>
+            </div>
+          </div>
+          <div class="pend-dismiss-form" id="pend-dismiss-form-${id}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+              ${motivosRapidos(it).map(m => `<button type="button" class="pend-dismiss-chip" data-fill="${id}" data-text="${esc(m)}" style="border:1px solid var(--border);background:#f9fafb;color:var(--text);padding:5px 10px;border-radius:999px;font-size:0.74rem;cursor:pointer;">${esc(m)}</button>`).join('')}
+            </div>
+            <input type="text" id="pend-dismiss-reason-${id}" placeholder="Por que não vai enviar agora? (fica só anotado pra você)" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:0.82rem;margin-bottom:8px;font-family:inherit;">
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+              <button type="button" class="pend-dismiss-cancel" data-cancel="${id}" style="background:none;border:1px solid var(--border);color:var(--muted);padding:7px 12px;border-radius:8px;font-weight:600;font-size:0.78rem;cursor:pointer;">Cancelar</button>
+              <button type="button" class="pend-dismiss-confirm" data-confirm="${id}" data-uid="${it.student.uid}" data-tipo="${it.tipo}" data-ref="${it.refData}" data-nome="${esc(it.student.name || it.student.firstName || 'Aluno')}" style="background:var(--brand);border:none;color:#fff;padding:7px 12px;border-radius:8px;font-weight:700;font-size:0.78rem;cursor:pointer;">Excluir</button>
+            </div>
+          </div>
+        </div>`; };
 
       const feedPosaula = document.getElementById('pend-feed-posaula');
       feedPosaula.innerHTML = itensPosaula.length
@@ -6868,6 +6902,71 @@
       });
       document.querySelectorAll('#tab-pendencias .pend-action').forEach(btn => {
         btn.onclick = () => abrirGeradorParaAluno(btn.dataset.uid, btn.dataset.destino);
+      });
+      document.querySelectorAll('#tab-pendencias .pend-dismiss-toggle').forEach(btn => {
+        btn.onclick = () => document.getElementById(`pend-dismiss-form-${btn.dataset.toggle}`).style.display = 'block';
+      });
+      document.querySelectorAll('#tab-pendencias .pend-dismiss-cancel').forEach(btn => {
+        btn.onclick = () => document.getElementById(`pend-dismiss-form-${btn.dataset.cancel}`).style.display = 'none';
+      });
+      document.querySelectorAll('#tab-pendencias .pend-dismiss-chip').forEach(btn => {
+        btn.onclick = () => { document.getElementById(`pend-dismiss-reason-${btn.dataset.fill}`).value = btn.dataset.text; };
+      });
+      document.querySelectorAll('#tab-pendencias .pend-dismiss-confirm').forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.dataset.confirm;
+          const input = document.getElementById(`pend-dismiss-reason-${id}`);
+          const motivo = input.value.trim();
+          if (!motivo) { input.focus(); input.style.borderColor = '#dc2626'; return; }
+          dispensarPendencia(btn.dataset.uid, btn.dataset.tipo, btn.dataset.ref, btn.dataset.nome, motivo);
+        };
+      });
+
+      renderPendenciasDispensadasRecentes();
+    }
+
+    // ── EXCLUIR PENDÊNCIA COM MOTIVO ────────────────────────────────────
+    // Fica registrado em students/{uid}/pendenciasDispensadas, valendo só
+    // pra essa ocorrência (data específica): se acontecer de novo depois,
+    // a pendência volta a aparecer normalmente. O motivo é só pra César —
+    // o aluno nunca vê isso.
+    let pendenciasDispensadasRecentes = []; // [{uid, nome, tipo, refData, motivo}], mais recente primeiro
+
+    async function dispensarPendencia(uid, tipo, refData, nome, motivo) {
+      try {
+        await setDoc(doc(db, 'students', uid, 'pendenciasDispensadas', `${tipo}_${refData}`), {
+          motivo, tipo, refData, dispensadoEm: serverTimestamp(), dispensadoPor: auth.currentUser?.email || '',
+        });
+        pendenciasDispensadasRecentes.unshift({ uid, nome, tipo, refData, motivo });
+        await loadStudents();
+      } catch (e) {
+        alert(`Não consegui excluir: ${e.message}`);
+      }
+    }
+
+    async function desfazerDispensa(uid, tipo, refData) {
+      try {
+        await deleteDoc(doc(db, 'students', uid, 'pendenciasDispensadas', `${tipo}_${refData}`));
+        pendenciasDispensadasRecentes = pendenciasDispensadasRecentes.filter(d => !(d.uid === uid && d.tipo === tipo && d.refData === refData));
+        await loadStudents();
+      } catch (e) {
+        alert(`Não consegui desfazer: ${e.message}`);
+      }
+    }
+
+    function renderPendenciasDispensadasRecentes() {
+      const box = document.getElementById('pend-dispensadas-lista');
+      if (!box) return;
+      box.innerHTML = pendenciasDispensadasRecentes.length ? pendenciasDispensadasRecentes.map(d => `
+        <div style="display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--border);font-size:0.8rem;flex-wrap:wrap;align-items:center;">
+          <div>
+            <strong>${esc(d.nome)}</strong> — ${d.tipo === 'posaula' ? 'Pós-aula' : 'Atividades'}
+            <div style="color:var(--muted);">"${esc(d.motivo)}"</div>
+          </div>
+          <button type="button" class="pend-undo" data-uid="${d.uid}" data-tipo="${d.tipo}" data-ref="${d.refData}" style="background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;font-size:0.78rem;">↺ Desfazer</button>
+        </div>`).join('') : '<div style="color:var(--muted);font-size:0.82rem;padding-top:6px;">Nada dispensado nesta sessão ainda.</div>';
+      box.querySelectorAll('.pend-undo').forEach(btn => {
+        btn.onclick = () => desfazerDispensa(btn.dataset.uid, btn.dataset.tipo, btn.dataset.ref);
       });
     }
 
@@ -7010,10 +7109,11 @@
 
       let readCount = 0;
       const rows = await Promise.all(active.map(async s => {
-        const [posSnap, actSnap, reviewSnap] = await Promise.all([
+        const [posSnap, actSnap, reviewSnap, dispSnap] = await Promise.all([
           getDocs(query(collection(db, 'students', s.uid, 'posaulas'), orderBy('createdAt', 'desc'))),
           getDocs(query(collection(db, 'students', s.uid, 'activities'), orderBy('createdAt', 'desc'))).catch(() => ({ docs: [] })),
           getDocs(query(collection(db, 'students', s.uid, 'review90Reports'), orderBy('createdAt', 'desc'))).catch(() => ({ docs: [] })),
+          getDocs(collection(db, 'students', s.uid, 'pendenciasDispensadas')).catch(() => ({ docs: [] })),
         ]);
         const posts = await adminHydrateTalkTimes(posSnap.docs.map(d => ({ id:d.id, ...d.data() })));
         const activities = actSnap.docs.map(d => ({ id:d.id, ...d.data() }));
@@ -7023,9 +7123,10 @@
         // Atividades atuais (não corrigidas): quantas o aluno já finalizou (prontas p/ corrigir) e quantas ainda estão pendentes
         const activityCounts = adminActivityCounts(activities);
         const ultimaPosData = dateOfAdm(latest?.classDate || latest?.createdAt || latest?.publishedAt);
+        const dispensadas = new Set(dispSnap.docs.map(d => d.id));
         const { posaulaPendente, atividadesPendente, diasSemAula } = calcularPendencias(s, {
           ultimaPosData, semAtividades: activityCounts.semAtividades, ultimaAtividadeCriada: dateOfAdm(activities[0]?.createdAt),
-          canceladas: pendCanceladasPorAluno[s.uid] || [], workingDays: pendWorkingDays, hoje: pendHoje,
+          canceladas: pendCanceladasPorAluno[s.uid] || [], workingDays: pendWorkingDays, hoje: pendHoje, dispensadas,
         });
         const reviewReports = reviewSnap.docs.map(d => ({ id:d.id, ...d.data() }));
         const progress = adminProgressSummary(s, posts, activities);
