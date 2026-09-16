@@ -242,6 +242,22 @@
     .act-badge { font-size: 0.72rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; flex-shrink: 0; white-space: nowrap; }
     .act-badge.tocorrect { background: #d1fae5; color: #065f46; box-shadow: 0 0 0 3px rgba(6,95,70,0.10); }
     .act-badge.pending { background: #fff3cd; color: #92400e; }
+    .gap-badge { font-size: 0.72rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; flex-shrink: 0; white-space: nowrap; }
+    .gap-badge.warn { background: #fff3cd; color: #92400e; }
+    .gap-badge.alert { background: #fee2e2; color: #b91c1c; }
+
+    /* ── Feed de pendências (ligado à agenda) ─────────────────────────── */
+    .pend-item { display: flex; gap: 12px; align-items: flex-start; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+    .pend-item:last-child { border-bottom: none; }
+    .pend-item .pend-badge { flex-shrink: 0; font-size: 0.7rem; font-weight: 800; padding: 4px 8px; border-radius: 20px; white-space: nowrap; margin-top: 2px; }
+    .pend-badge.late { background: #fee2e2; color: #b91c1c; }
+    .pend-badge.today { background: #fef3c7; color: #92400e; }
+    .pend-badge.tomorrow { background: #dbeafe; color: #1d4ed8; }
+    .pend-item .pend-body { flex: 1; min-width: 0; }
+    .pend-item .pend-body strong { display: block; font-size: 0.95rem; }
+    .pend-item .pend-body .pend-why { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+    .pend-item .pend-body .pend-extra { font-size: 0.72rem; color: var(--muted); margin-top: 2px; opacity: .8; }
+    .pend-feed-empty { padding: 26px; text-align: center; color: #166534; background: #f0fdf4; font-weight: 600; }
     .btn-detail { background: #f0f7ff; border: none; color: var(--accent); padding: 7px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; flex-shrink: 0; }
 
     .kebab-wrap { position: relative; flex-shrink: 0; }
@@ -1014,21 +1030,17 @@
 
       <!-- ATALHOS DE PENDÊNCIAS -->
       <div class="tab-panel" id="tab-pendencias">
-        <div style="margin-bottom:16px;">
+        <div style="margin-bottom:14px;">
           <h2 style="margin:0 0 5px;">🧭 Pendências dos alunos</h2>
-          <p style="font-size:0.85rem;color:var(--muted);margin:0;">Uma visão separada para encontrar rapidamente quem precisa de material.</p>
+          <p style="font-size:0.85rem;color:var(--muted);margin:0;" id="pend-hoje-label">Só aparece quem precisa de pós-aula ou atividades até amanhã — ligado à agenda, então aula cancelada não conta.</p>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start;">
-          <div class="form-card" style="margin:0;">
-            <h2 style="display:flex;justify-content:space-between;gap:8px;align-items:center;">✏️ Sem atividades <span id="pend-sem-atividades-count" style="font-size:0.8rem;color:var(--muted);"></span></h2>
-            <p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;">Alunos sem nenhuma atividade pendente ou aguardando correção.</p>
-            <div id="pend-sem-atividades"><div class="loading">Carregando...</div></div>
-          </div>
-          <div class="form-card" style="margin:0;">
-            <h2 style="display:flex;justify-content:space-between;gap:8px;align-items:center;">📄 Pós-aula atrasada <span id="pend-sem-posaula-count" style="font-size:0.8rem;color:var(--muted);"></span></h2>
-            <p style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;">Última pós-aula publicada há mais de cinco dias ou nunca publicada.</p>
-            <div id="pend-sem-posaula"><div class="loading">Carregando...</div></div>
-          </div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;font-size:0.78rem;color:var(--muted);">
+          <span style="display:flex;align-items:center;gap:6px;"><i style="width:9px;height:9px;border-radius:50%;background:#b91c1c;display:inline-block;"></i> Atrasado</span>
+          <span style="display:flex;align-items:center;gap:6px;"><i style="width:9px;height:9px;border-radius:50%;background:#92400e;display:inline-block;"></i> Enviar hoje</span>
+          <span style="display:flex;align-items:center;gap:6px;"><i style="width:9px;height:9px;border-radius:50%;background:#1d4ed8;display:inline-block;"></i> Enviar amanhã</span>
+        </div>
+        <div class="form-card" style="margin:0;padding:0;overflow:hidden;">
+          <div id="pend-feed"><div class="loading">Carregando...</div></div>
         </div>
       </div>
 
@@ -5368,7 +5380,12 @@
       let actBadge = '';
       if (s.actToCorrect > 0)      actBadge = `<span class="act-badge tocorrect">✅ ${s.actToCorrect} p/ corrigir</span>`;
       else if (s.actPending > 0)   actBadge = `<span class="act-badge pending">📝 ${s.actPending} pendente${s.actPending !== 1 ? 's' : ''}</span>`;
-      const badge = `<div class="badge-stack">${posBadge}${actBadge}</div>`;
+      // Só aparece quando o gap é grande — quem teve aula recente não precisa desse aviso.
+      // (diasSemAula só existe pra aluno ativo, então isso já sai vazio pro ex-aluno.)
+      let gapBadge = '';
+      if (s.diasSemAula >= 14)      gapBadge = `<span class="gap-badge alert">🕐 ${s.diasSemAula} dias sem aula</span>`;
+      else if (s.diasSemAula >= 7)  gapBadge = `<span class="gap-badge warn">🕐 ${s.diasSemAula} dias sem aula</span>`;
+      const badge = `<div class="badge-stack">${posBadge}${actBadge}${gapBadge}</div>`;
       const menuItem = `<button class="kebab-item" data-action="mirror" data-uid="${s.uid}" data-name="${nm}">🪞 Espelho (ver área do aluno)</button>`
         + `<button class="kebab-item" data-action="challenge" data-uid="${s.uid}" data-name="${nm}">🏆 Desafios do aluno</button>`
         + `<button class="kebab-item" data-action="edit" data-uid="${s.uid}" data-name="${nm}">✏️ Editar dados</button>`
@@ -6682,34 +6699,146 @@
       destacarAba('pendencias', false);
     }
 
+    // ── PENDÊNCIAS — ligadas à agenda ──────────────────────────────────────
+    // Regra do César: pós-aula vence no próximo dia útil da aula; atividades
+    // vencem 2 dias corridos (rolando pro próximo dia útil) depois da última
+    // aula da semana do aluno — vale tanto pra 1x quanto pra 2x/semana. Aula
+    // cancelada na agenda não gera pendência nenhuma. Sem teto fixo de dias:
+    // cada aluno é escaneado desde a última pós-aula/atividade que ele
+    // realmente recebeu; se nunca recebeu, olha os últimos 90 dias.
+    const PEND_FALLBACK_DIAS = 90;
+    const PEND_DIAS_NOMES = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
+    const pendFmtData = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+
+    function pendRollToBizDay(date, workingDays) {
+      let d = new Date(date);
+      while (!workingDays.includes(d.getDay())) d = calendarAddDays(d, 1);
+      return d;
+    }
+    const pendPosaulaDueDate     = (classDate, wd) => pendRollToBizDay(calendarAddDays(classDate, 1), wd);
+    const pendAtividadesDueDate  = (lastClassDate, wd) => pendRollToBizDay(calendarAddDays(lastClassDate, 2), wd);
+
+    function pendOccurrences(aulaDias, canceladas, from, to) {
+      const list = [];
+      for (let d = new Date(from); d <= to; d = calendarAddDays(d, 1)) {
+        if (!aulaDias.includes(d.getDay())) continue;
+        if (canceladas.includes(calendarDateKey(d))) continue;
+        list.push(new Date(d));
+      }
+      return list;
+    }
+
+    function pendDiaLabel(due, hoje) {
+      const diff = Math.round((due - hoje) / 86400000);
+      if (diff === 0) return { key:'today', text:'Enviar hoje' };
+      if (diff === 1) return { key:'tomorrow', text:'Enviar amanhã' };
+      if (diff === -1) return { key:'late', text:'Atrasado — devia ter enviado ontem' };
+      if (diff < -1) return { key:'late', text:`Atrasado há ${-diff} dias — devia ter enviado ${PEND_DIAS_NOMES[due.getDay()]} (${pendFmtData(due)})` };
+      return null; // vence 1+ dia no futuro: ainda não é hora, não aparece
+    }
+
+    // Datas-referência (aula ou ciclo) ainda não resolvidas, em ordem
+    // crescente → só as que já estão "na janela" (atrasado, hoje ou amanhã).
+    function pendCandidatos(pendentes, dueFn, workingDays, hoje) {
+      return pendentes
+        .map(ref => ({ ref, due: dueFn(ref, workingDays), status: pendDiaLabel(dueFn(ref, workingDays), hoje) }))
+        .filter(c => c.status);
+    }
+
+    // Última aula de verdade (não cancelada) até hoje — vira o "dias sem
+    // aula" mostrado na lista principal, independente de pós-aula/atividade.
+    function pendUltimaAulaValida(aulaDias, canceladas, hoje, maxDias = 400) {
+      if (!aulaDias.length) return null;
+      for (let i = 0; i <= maxDias; i++) {
+        const d = calendarAddDays(hoje, -i);
+        if (aulaDias.includes(d.getDay()) && !canceladas.includes(calendarDateKey(d))) return d;
+      }
+      return null;
+    }
+
+    function calcularPendencias(student, { ultimaPosData, semAtividades, ultimaAtividadeCriada, canceladas, workingDays, hoje }) {
+      const aulaDias = Array.isArray(student.aulaDias) ? student.aulaDias.map(Number).filter(d => d >= 0 && d <= 6) : [];
+      if (!aulaDias.length) {
+        // Regra antiga: sem agenda cadastrada (ex.: aluno só-atividades) —
+        // pendente quando não há nenhuma atividade em andamento.
+        const atividadesPendente = semAtividades
+          ? { badge:'today', texto:'Enviar hoje', detalhe:'Sem agenda cadastrada — sem atividade em andamento.', extra:'' }
+          : null;
+        return { posaulaPendente:null, atividadesPendente, diasSemAula:null };
+      }
+
+      const ultimaAulaValida = pendUltimaAulaValida(aulaDias, canceladas, hoje);
+      const diasSemAula = ultimaAulaValida ? Math.round((hoje - ultimaAulaValida) / 86400000) : null;
+
+      let posaulaPendente = null;
+      const inicioPosaula = ultimaPosData ? calendarAddDays(ultimaPosData, 1) : calendarAddDays(hoje, -PEND_FALLBACK_DIAS);
+      const semPosaula = pendOccurrences(aulaDias, canceladas, inicioPosaula, hoje);
+      if (semPosaula.length) {
+        const candidatos = pendCandidatos(semPosaula, pendPosaulaDueDate, workingDays, hoje);
+        if (candidatos.length) {
+          const primeira = candidatos[0];
+          posaulaPendente = {
+            badge: primeira.status.key, texto: primeira.status.text,
+            detalhe: `Aula de ${PEND_DIAS_NOMES[primeira.ref.getDay()]} (${pendFmtData(primeira.ref)})`,
+            extra: candidatos.length > 1 ? `+ ${candidatos.length - 1} pós-aula(s) mais atrasada(s)` : '',
+          };
+        }
+      }
+
+      let atividadesPendente = null;
+      if (semAtividades) {
+        const inicioCiclos = ultimaAtividadeCriada ? calendarAddDays(ultimaAtividadeCriada, 1) : calendarAddDays(hoje, -PEND_FALLBACK_DIAS);
+        // Olha uma semana à frente pra enxergar o fim real da semana atual
+        // mesmo quando a última aula dela ainda vai acontecer amanhã.
+        const ocorrencias = pendOccurrences(aulaDias, canceladas, inicioCiclos, calendarAddDays(hoje, 7));
+        const semanas = {};
+        ocorrencias.forEach(d => {
+          const wk = calendarDateKey(calendarWeekStartDate(d));
+          if (!semanas[wk] || d > semanas[wk]) semanas[wk] = d;
+        });
+        const ciclosFechados = Object.values(semanas).filter(d => d <= hoje).sort((a,b) => a - b);
+        if (ciclosFechados.length) {
+          const candidatos = pendCandidatos(ciclosFechados, pendAtividadesDueDate, workingDays, hoje);
+          if (candidatos.length) {
+            const primeira = candidatos[0];
+            atividadesPendente = {
+              badge: primeira.status.key, texto: primeira.status.text,
+              detalhe: `Última aula da semana: ${PEND_DIAS_NOMES[primeira.ref.getDay()]} (${pendFmtData(primeira.ref)})`,
+              extra: candidatos.length > 1 ? `+ ${candidatos.length - 1} ciclo(s) mais atrasado(s)` : '',
+            };
+          }
+        }
+      }
+
+      return { posaulaPendente, atividadesPendente, diasSemAula };
+    }
+
     function renderPendencias(rows) {
-      const semAtividades = rows.filter(s => s.semAtividades);
-      const semPosaula = rows.filter(s => s.semPosaulaAtrasada)
-        .sort((a,b) => b.diasSemPosaula - a.diasSemPosaula);
-      const card = (s, destino, detalhe) => `
-        <div style="display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
-          <button class="pend-open" data-uid="${s.uid}" data-name="${esc(s.name || s.firstName || 'Aluno')}" type="button" style="flex:1;min-width:0;border:0;background:none;padding:0;text-align:left;cursor:pointer;font-family:inherit;">
-            <strong style="display:block;color:var(--text);">${esc(s.name || s.firstName || 'Aluno')}</strong>
-            <span style="font-size:0.76rem;color:var(--muted);">${esc(detalhe)}</span>
+      const ORDEM = { late:0, today:1, tomorrow:2 };
+      const itens = [];
+      rows.forEach(s => {
+        if (s.posaulaPendente) itens.push({ student:s, tipo:'posaula', ...s.posaulaPendente });
+        if (s.atividadesPendente) itens.push({ student:s, tipo:'atividades', ...s.atividadesPendente });
+      });
+      itens.sort((a, b) => ORDEM[a.badge] - ORDEM[b.badge]);
+
+      const item = it => `
+        <div class="pend-item">
+          <span class="pend-badge ${it.badge}">${it.badge === 'late' ? 'ATRASADO' : it.badge === 'today' ? 'HOJE' : 'AMANHÃ'}</span>
+          <button class="pend-open pend-body" data-uid="${it.student.uid}" data-name="${esc(it.student.name || it.student.firstName || 'Aluno')}" type="button" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;font-family:inherit;width:100%;">
+            <strong>${esc(it.student.name || it.student.firstName || 'Aluno')}</strong>
+            <div class="pend-why">${esc(it.texto)} · ${it.tipo === 'posaula' ? 'Pós-aula' : 'Atividades'} — ${esc(it.detalhe)}</div>
+            ${it.extra ? `<div class="pend-extra">${esc(it.extra)}</div>` : ''}
           </button>
-          <button class="pend-action" data-uid="${s.uid}" data-destino="${destino}" type="button" style="border:1px solid var(--brand);background:#fff;color:var(--brand);padding:7px 9px;border-radius:8px;font-weight:700;cursor:pointer;white-space:nowrap;">${destino === 'posaula' ? 'Pós-aula' : 'Atividades'} →</button>
+          <button class="pend-action" data-uid="${it.student.uid}" data-destino="${it.tipo}" type="button" style="border:1px solid var(--brand);background:#fff;color:var(--brand);padding:7px 9px;border-radius:8px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">${it.tipo === 'posaula' ? 'Pós-aula' : 'Atividades'} →</button>
         </div>`;
 
-      const atBox = document.getElementById('pend-sem-atividades');
-      const posBox = document.getElementById('pend-sem-posaula');
-      document.getElementById('pend-sem-atividades-count').textContent = `${semAtividades.length} aluno${semAtividades.length !== 1 ? 's' : ''}`;
-      document.getElementById('pend-sem-posaula-count').textContent = `${semPosaula.length} aluno${semPosaula.length !== 1 ? 's' : ''}`;
-      atBox.innerHTML = semAtividades.length
-        ? semAtividades.map(s => card(s, 'atividades', s.totalAtividades ? 'Todas as atividades já foram corrigidas' : 'Ainda não recebeu atividades')).join('')
-        : '<div style="padding:12px;border-radius:9px;background:#f0fdf4;color:#166534;">✓ Todos têm atividades em andamento.</div>';
-      posBox.innerHTML = semPosaula.length
-        ? semPosaula.map(s => card(s, 'posaula', s.nuncaTevePosaula ? 'Nunca recebeu pós-aula' : `${s.diasSemPosaula} dias sem pós-aula`)).join('')
-        : '<div style="padding:12px;border-radius:9px;background:#f0fdf4;color:#166534;">✓ Nenhuma pós-aula atrasada.</div>';
+      const feed = document.getElementById('pend-feed');
+      feed.innerHTML = itens.length
+        ? itens.map(item).join('')
+        : '<div class="pend-feed-empty">✓ Nada pendente para hoje ou amanhã.</div>';
 
-      pendenciasAtuais = [
-        ...semAtividades.map(s => `${s.uid}:atividades`),
-        ...semPosaula.map(s => `${s.uid}:posaula`),
-      ];
+      pendenciasAtuais = itens.map(it => `${it.student.uid}:${it.tipo}`);
       const vistas = lerPendenciasVistas();
       // Pendência resolvida sai da memória: se voltar a acontecer, avisa de novo.
       const aindaValem = new Set(pendenciasAtuais.filter(id => vistas.has(id)));
@@ -6842,6 +6971,28 @@
       const active   = allStudents.filter(s => !s.archived);
       const archived = allStudents.filter(s => s.archived);
 
+      // Agenda pra calcular pendências: dias úteis da escola + aulas canceladas
+      // por aluno. Busca direto (não depende de ter aberto a aba Agenda antes).
+      const pendHoje = new Date(); pendHoje.setHours(0,0,0,0);
+      let pendWorkingDays = [...CALENDAR_DEFAULTS.workingDays];
+      const pendCanceladasPorAluno = {};
+      try {
+        const [settingsSnap, eventsSnap] = await Promise.all([
+          getDoc(doc(db, 'schools', escolaAtual, 'calendarSettings', 'work')),
+          getDocs(query(collection(db, 'schools', escolaAtual, 'calendarEvents'), where('source', '==', 'cadastro'))),
+        ]);
+        if (settingsSnap.exists() && Array.isArray(settingsSnap.data().workingDays)) {
+          pendWorkingDays = settingsSnap.data().workingDays.map(Number);
+        }
+        eventsSnap.docs.forEach(item => {
+          const ev = item.data();
+          if (!ev.studentUid || !Array.isArray(ev.canceladas) || !ev.canceladas.length) return;
+          (pendCanceladasPorAluno[ev.studentUid] ||= []).push(...ev.canceladas);
+        });
+      } catch (e) {
+        console.warn('Não consegui carregar a agenda pra calcular pendências (seguindo sem cancelamentos):', e);
+      }
+
       let readCount = 0;
       const rows = await Promise.all(active.map(async s => {
         const [posSnap, actSnap, reviewSnap] = await Promise.all([
@@ -6857,23 +7008,16 @@
         // Atividades atuais (não corrigidas): quantas o aluno já finalizou (prontas p/ corrigir) e quantas ainda estão pendentes
         const activityCounts = adminActivityCounts(activities);
         const ultimaPosData = dateOfAdm(latest?.classDate || latest?.createdAt || latest?.publishedAt);
-        let referenciaSemPos = ultimaPosData;
-        if (!referenciaSemPos) {
-          referenciaSemPos = dateOfAdm(s.createdAt);
-          if (!referenciaSemPos && /^\d{4}-\d{2}-\d{2}$/.test(String(s.inicioCurso || ''))) {
-            referenciaSemPos = new Date(`${s.inicioCurso}T12:00:00`);
-          }
-        }
-        const diasSemPosaula = referenciaSemPos
-          ? Math.max(0, Math.floor((Date.now() - referenciaSemPos.getTime()) / 86400000))
-          : 9999;
+        const { posaulaPendente, atividadesPendente, diasSemAula } = calcularPendencias(s, {
+          ultimaPosData, semAtividades: activityCounts.semAtividades, ultimaAtividadeCriada: dateOfAdm(activities[0]?.createdAt),
+          canceladas: pendCanceladasPorAluno[s.uid] || [], workingDays: pendWorkingDays, hoje: pendHoje,
+        });
         const reviewReports = reviewSnap.docs.map(d => ({ id:d.id, ...d.data() }));
         const progress = adminProgressSummary(s, posts, activities);
         return {
           ...s, latestRead: isRead, latestTitle: latest?.title || null,
-          ...activityCounts, diasSemPosaula,
-          semPosaulaAtrasada: diasSemPosaula > 5,
-          nuncaTevePosaula: !latest,
+          ...activityCounts,
+          posaulaPendente, atividadesPendente, diasSemAula,
           reviewReports, progress,
         };
       }));
