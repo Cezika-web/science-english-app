@@ -2248,6 +2248,7 @@ export const marcarSelosDesafioVistos = challengeFunctions.marcarSelosDesafioVis
 const cobrancaFunctions = createCobrancaFunctions({ db, adminEmails:ADMIN_EMAILS });
 export const avisarAtrasoNoApp = cobrancaFunctions.avisarAtrasoNoApp;
 export const enviarCobrancaManual = cobrancaFunctions.enviarCobrancaManual;
+export const registrarCobrancaNoApp = cobrancaFunctions.registrarCobrancaNoApp;
 
 export const ajustarCreditos = onCall(
   { ...OPCOES_PADRAO, timeoutSeconds: 60, memory: '256MiB' },

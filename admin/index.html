@@ -4163,6 +4163,7 @@
     let financeProfiles = [];
     let financeTransactions = [];
     let financeCalendarEvents = [];
+    let financeCharges = [];
     let financeHoursScope = 'week'; // 'week' | 'month' — botão no card de horas
     const financeMoney = cents => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(cents || 0)/100);
     const financeTodayKey = () => calendarDateKey(new Date());
@@ -4190,6 +4191,11 @@
         financeProfiles=profilesSnap.docs.map(item=>({id:item.id,...item.data()}));
         financeTransactions=transactionsSnap.docs.map(item=>({id:item.id,...item.data()}));
         financeCalendarEvents=eventsSnap.docs.map(item=>({id:item.id,...item.data()}));
+        financeCharges=(await Promise.all(financeProfiles.filter(profile=>profile.studentUid).map(async profile=> {
+          const snap=await getDocs(collection(db,'students',profile.studentUid,'cobrancas'));
+          return snap.docs.map(item=>({id:item.id,uid:profile.studentUid,nome:profile.studentName||'Aluno',...item.data()}));
+        }))).flat();
+        if(escolaAtual!==requestedSchool) return;
         financeFillStudents(); renderFinance();
       } catch(error) {
         console.error('Financeiro:',error);
@@ -4350,9 +4356,11 @@
           const dias=financeLateDays(part);
           if(dias<0) return;
           const aluno=allStudents.find(item=>item.uid===profile.studentUid);
+          const historico=financeCharges.filter(aviso=>aviso.uid===profile.studentUid&&aviso.mes===month&&aviso.etapa===part.label)
+            .sort((a,b)=>(b.enviadoEm?.toMillis?.()||0)-(a.enviadoEm?.toMillis?.()||0))[0];
           linhas.push({uid:profile.studentUid,nome:profile.studentName||'Aluno',dias,mes:month,
             falta:part.amount-status.received,etapa:part.label,avisa:profile.avisarAtraso===true,
-            aviso:aluno?.avisoCobranca||null});
+            aviso:historico||aluno?.avisoCobranca||null});
         });
       });
       return linhas.sort((a,b)=>b.dias-a.dias);
@@ -4360,13 +4368,18 @@
 
     function renderFinanceLateAlert(month) {
       const box=document.getElementById('finance-late-alert'),atrasados=financeLateStudents(month);
-      if(!atrasados.length) { box.innerHTML=''; return; }
+      const enviados=financeCharges.filter(aviso=>aviso.mes===month)
+        .sort((a,b)=>(b.enviadoEm?.toMillis?.()||0)-(a.enviadoEm?.toMillis?.()||0));
+      if(!atrasados.length&&!enviados.length) { box.innerHTML=''; return; }
+      const avisoData=value=>value?.toDate?.()?.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})||'';
+      const avisoEstado=aviso=>aviso.confirmadoEm?`✓ Confirmou em ${avisoData(aviso.confirmadoEm)}`
+        :aviso.exibidoEm?`✓ Visualizou em ${avisoData(aviso.exibidoEm)}`:'Sem visualização registrada';
       const estadoAviso=item=> {
         const aviso=item.aviso;
         if(!aviso||aviso.mes!==item.mes||aviso.etapa!==item.etapa) return '';
         if(aviso.confirmadoEm) return 'confirmou no app';
         if(aviso.exibidoEm) return 'abriu o app';
-        if(aviso.enviadoEm||aviso.atualizadoEm) return 'aguardando abrir o app';
+        if(aviso.enviadoEm||aviso.atualizadoEm) return 'sem visualização registrada';
         return '';
       };
       const linha=item=>`<div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline;padding:6px 0;border-top:1px solid #FDE68A;">
@@ -4377,11 +4390,14 @@
           ${item.avisa?' <span title="aviso automático ativado para este aluno">🔔</span>':''}</span>
       </div>`;
       const aCobrar=atrasados.filter(item=>item.dias>=FINANCE_AVISO_DIAS).length;
-      box.innerHTML=`<div style="margin-bottom:14px;padding:12px 14px;border-radius:12px;background:#FFFBEB;border:1px solid #FDE68A;color:#78350F;font-size:.8rem;">
+      box.innerHTML=`${atrasados.length?`<div style="margin-bottom:14px;padding:12px 14px;border-radius:12px;background:#FFFBEB;border:1px solid #FDE68A;color:#78350F;font-size:.8rem;">
         <strong style="font-size:.86rem;">⏰ ${atrasados.length} pagamento(s) em atraso</strong>
         ${aCobrar?`<span style="margin-left:6px;color:#92400E;">— ${aCobrar} para cobrar</span>`:''}
         ${atrasados.map(linha).join('')}
-      </div>`;
+      </div>`:''}${enviados.length?`<div style="margin-bottom:14px;padding:12px 14px;border-radius:12px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A;font-size:.8rem;">
+        <strong style="font-size:.86rem;">📨 Cobranças enviadas em ${esc(month)}</strong>
+        ${enviados.map(aviso=>`<div style="padding:6px 0;border-top:1px solid #BFDBFE;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;"><span><strong>${esc(aviso.nome)}</strong> · ${esc(aviso.etapa||'Mensalidade')} · enviada em ${avisoData(aviso.enviadoEm)}</span><span>${avisoEstado(aviso)}</span></div>`).join('')}
+      </div>`:''}`;
       box.querySelectorAll('[data-finance-cobrar]').forEach(button=>button.onclick=async()=> {
         const uid=button.dataset.financeCobrar,nome=button.dataset.financeNome||'aluno';
         const original=button.textContent;
@@ -4389,12 +4405,7 @@
         try {
           const cobrar=httpsCallable(fns,'enviarCobrancaManual',{timeout:60000});
           await cobrar({uid,escolaId:escolaAtual});
-          const aluno=allStudents.find(item=>item.uid===uid);
-          const atraso=atrasados.find(item=>item.uid===uid);
-          if(aluno&&atraso) aluno.avisoCobranca={
-            ativo:true,mes:month,etapa:atraso.etapa,enviadoEm:new Date(),origem:'manual',entrega:'na-abertura-do-app'
-          };
-          renderFinanceLateAlert(month);
+          await loadFinance();
         } catch(error) {
           button.disabled=false; button.textContent=original;
           alert(`Não foi possível cobrar ${nome}: ${error.message}`);

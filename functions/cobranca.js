@@ -94,31 +94,31 @@ export function createCobrancaFunctions({ db, adminEmails = [] }) {
         if (!uid) continue;
         const alunoRef = db.doc(`students/${uid}`);
 
-        // Chave desligada, cobrança inativa ou ex-aluno: nada chega no app, e um
-        // aviso que tenha sobrado de antes é apagado.
-        if (perfil.active === false || perfil.avisarAtraso !== true) {
-          await alunoRef.set({ avisoCobranca:FieldValue.delete() }, { merge:true }).catch(() => {});
-          continue;
-        }
-
         const pendencia = pendenciaDoPerfil(perfil, uid, pagos, hoje);
         try {
-          if (!pendencia) {
+          // A chave de envio automático não cancela uma cobrança manual.
+          // Avisos sem parcela pendente, porém, precisam sair do app.
+          if (perfil.active === false || !pendencia) {
             await alunoRef.set({ avisoCobranca:FieldValue.delete() }, { merge:true });
             continue;
           }
           const alunoSnap = await alunoRef.get();
           const aluno = alunoSnap.exists ? alunoSnap.data() : {};
           const anterior = aluno.avisoCobranca || {};
+          if (perfil.avisarAtraso !== true) {
+            if (anterior.origem === 'manual' && anterior.chave === pendencia.chave) continue;
+            if (anterior.avisoId) await alunoRef.set({ avisoCobranca:FieldValue.delete() }, { merge:true });
+            continue;
+          }
           // O mesmo aviso não reaparece todo dia depois que o aluno confirmou.
           if (anterior.chave === pendencia.chave && (anterior.enviadoEm || anterior.atualizadoEm)) continue;
           const avisoId = alunoRef.collection('cobrancas').doc().id;
-          await alunoRef.set({
-            avisoCobranca:{
-              ativo:true, ...pendencia, avisoId, origem:'automatica', entrega:'na-abertura-do-app',
-              enviadoEm:FieldValue.serverTimestamp(), atualizadoEm:FieldValue.serverTimestamp(),
-            },
-          }, { merge:true });
+          const aviso = { ativo:true, ...pendencia, avisoId, origem:'automatica', entrega:'na-abertura-do-app',
+            enviadoEm:FieldValue.serverTimestamp(), atualizadoEm:FieldValue.serverTimestamp() };
+          const batch = db.batch();
+          batch.set(alunoRef, { avisoCobranca:aviso }, { merge:true });
+          batch.set(alunoRef.collection('cobrancas').doc(avisoId), { ...aviso, escolaId:escola.id, uid });
+          await batch.commit();
         } catch (error) {
           console.error(`Aviso de cobrança falhou para ${uid}:`, error.message);
         }
@@ -169,7 +169,38 @@ export function createCobrancaFunctions({ db, adminEmails = [] }) {
     }
   );
 
-  return { avisarAtrasoNoApp, enviarCobrancaManual };
+  // A confirmação passa pelo servidor: o aluno só pode marcar o aviso atual
+  // como exibido ou confirmado, sem alterar valor, vencimento ou destinatário.
+  const registrarCobrancaNoApp = onCall(
+    { region:REGION, timeoutSeconds:30, memory:'256MiB' },
+    async request => {
+      const uid = request.auth?.uid;
+      if (!uid) throw new HttpsError('unauthenticated', 'Entre no app para confirmar a cobrança.');
+      const avisoId = String(request.data?.avisoId || '').trim();
+      const acao = String(request.data?.acao || '').trim();
+      if (!avisoId || !['exibido','confirmado'].includes(acao)) {
+        throw new HttpsError('invalid-argument', 'Aviso ou confirmação inválidos.');
+      }
+      const alunoRef = db.doc(`students/${uid}`);
+      const alunoSnap = await alunoRef.get();
+      const aviso = alunoSnap.data()?.avisoCobranca;
+      if (!aviso || aviso.avisoId !== avisoId) throw new HttpsError('not-found', 'Aviso atual não encontrado.');
+      if (acao === 'exibido' && aviso.exibidoEm) return { ok:true };
+      if (acao === 'confirmado' && aviso.confirmadoEm) return { ok:true };
+      if (!aviso.ativo) throw new HttpsError('failed-precondition', 'Aviso já encerrado.');
+      const patch = acao === 'exibido'
+        ? { exibidoEm:FieldValue.serverTimestamp() }
+        : { ativo:false, confirmadoEm:FieldValue.serverTimestamp(),
+            ...(!aviso.exibidoEm ? { exibidoEm:FieldValue.serverTimestamp() } : {}) };
+      const batch = db.batch();
+      batch.update(alunoRef, Object.fromEntries(Object.entries(patch).map(([key,value]) => [`avisoCobranca.${key}`,value])));
+      batch.set(alunoRef.collection('cobrancas').doc(avisoId), patch, { merge:true });
+      await batch.commit();
+      return { ok:true };
+    }
+  );
+
+  return { avisarAtrasoNoApp, enviarCobrancaManual, registrarCobrancaNoApp };
 }
 
 export const cobrancaInternals = Object.freeze({ etapasDoMes, diasDeAtraso, diaDoMes, pendenciaDoPerfil });
