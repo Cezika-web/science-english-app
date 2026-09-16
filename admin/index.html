@@ -2066,9 +2066,12 @@
       const orderedPosts = (posts || []).map(post => ({ post, reference:adminPostReferenceDate(post) }))
         .sort((a,b) => (a.reference?.getTime() || 0) - (b.reference?.getTime() || 0));
       const unmatchedPosts = [];
+      const makeupActualDates = new Set(Object.values(student?.attendanceMakeups || {})
+        .map(makeup => String(makeup?.makeupDate || ''))
+        .filter(key => /^\d{4}-\d{2}-\d{2}$/.test(key)));
       orderedPosts.forEach(entry => {
         const explicit = adminDateKey(entry.post.classDate);
-        if (explicit && !presentKeys.has(explicit)) {
+        if (explicit && !presentKeys.has(explicit) && !makeupActualDates.has(explicit)) {
           candidateKeys.add(explicit);
           presentKeys.add(explicit);
           entry.exactMatch = true;
@@ -2094,11 +2097,6 @@
           const extra = explicit || adminDateKey(post.createdAt) || referenceKey;
           if (extra) extraKeys.add(extra);
         }
-      });
-
-      Object.values(student?.attendanceMakeups || {}).forEach(makeup => {
-        const scheduledKey = String(makeup?.scheduledDate || '');
-        if (/^\d{4}-\d{2}-\d{2}$/.test(scheduledKey) && candidateKeys.has(scheduledKey)) presentKeys.add(scheduledKey);
       });
 
       if (recordedHeld && (!start || !schedules.length || !presentKeys.size)) {
