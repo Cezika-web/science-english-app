@@ -1637,6 +1637,13 @@ function calculateAttendance(student, posaulas) {
     if (/^\d{4}-\d{2}-\d{2}$/.test(actualKey)) makeupByScheduledKey.set(scheduledKey, actualKey);
   });
 
+  // Presenças confirmadas pelo professor podem existir sem um pós-aula nessa
+  // data. O registro explícito prevalece sobre a inferência pelo arquivo.
+  (Array.isArray(student?.attendancePresentDates) ? student.attendancePresentDates : []).forEach(value => {
+    const key = String(value);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(key) && candidateKeys.has(key)) presentKeys.add(key);
+  });
+
   // Sem data de início/dias fixos (ou com cadastro incompatível com o legado),
   // ainda existe uma certeza: cada pós-aula representa uma aula realizada.
   // Sem calendário suficiente para provar uma ausência, não inventamos faltas.
