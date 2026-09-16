@@ -1039,8 +1039,15 @@
           <span style="display:flex;align-items:center;gap:6px;"><i style="width:9px;height:9px;border-radius:50%;background:#92400e;display:inline-block;"></i> Enviar hoje</span>
           <span style="display:flex;align-items:center;gap:6px;"><i style="width:9px;height:9px;border-radius:50%;background:#1d4ed8;display:inline-block;"></i> Enviar amanhã</span>
         </div>
-        <div class="form-card" style="margin:0;padding:0;overflow:hidden;">
-          <div id="pend-feed"><div class="loading">Carregando...</div></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start;">
+          <div class="form-card" style="margin:0;padding:0;overflow:hidden;">
+            <h2 style="margin:0;padding:16px 18px 0;">📄 Pós-aula</h2>
+            <div id="pend-feed-posaula"><div class="loading">Carregando...</div></div>
+          </div>
+          <div class="form-card" style="margin:0;padding:0;overflow:hidden;">
+            <h2 style="margin:0;padding:16px 18px 0;">🎨 Atividades</h2>
+            <div id="pend-feed-atividades"><div class="loading">Carregando...</div></div>
+          </div>
         </div>
       </div>
 
@@ -6815,29 +6822,35 @@
 
     function renderPendencias(rows) {
       const ORDEM = { late:0, today:1, tomorrow:2 };
-      const itens = [];
+      const itensPosaula = [], itensAtividades = [];
       rows.forEach(s => {
-        if (s.posaulaPendente) itens.push({ student:s, tipo:'posaula', ...s.posaulaPendente });
-        if (s.atividadesPendente) itens.push({ student:s, tipo:'atividades', ...s.atividadesPendente });
+        if (s.posaulaPendente) itensPosaula.push({ student:s, tipo:'posaula', ...s.posaulaPendente });
+        if (s.atividadesPendente) itensAtividades.push({ student:s, tipo:'atividades', ...s.atividadesPendente });
       });
-      itens.sort((a, b) => ORDEM[a.badge] - ORDEM[b.badge]);
+      itensPosaula.sort((a, b) => ORDEM[a.badge] - ORDEM[b.badge]);
+      itensAtividades.sort((a, b) => ORDEM[a.badge] - ORDEM[b.badge]);
 
       const item = it => `
         <div class="pend-item">
           <span class="pend-badge ${it.badge}">${it.badge === 'late' ? 'ATRASADO' : it.badge === 'today' ? 'HOJE' : 'AMANHÃ'}</span>
           <button class="pend-open pend-body" data-uid="${it.student.uid}" data-name="${esc(it.student.name || it.student.firstName || 'Aluno')}" type="button" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;font-family:inherit;width:100%;">
             <strong>${esc(it.student.name || it.student.firstName || 'Aluno')}</strong>
-            <div class="pend-why">${esc(it.texto)} · ${it.tipo === 'posaula' ? 'Pós-aula' : 'Atividades'} — ${esc(it.detalhe)}</div>
+            <div class="pend-why">${esc(it.texto)} — ${esc(it.detalhe)}</div>
             ${it.extra ? `<div class="pend-extra">${esc(it.extra)}</div>` : ''}
           </button>
           <button class="pend-action" data-uid="${it.student.uid}" data-destino="${it.tipo}" type="button" style="border:1px solid var(--brand);background:#fff;color:var(--brand);padding:7px 9px;border-radius:8px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">${it.tipo === 'posaula' ? 'Pós-aula' : 'Atividades'} →</button>
         </div>`;
 
-      const feed = document.getElementById('pend-feed');
-      feed.innerHTML = itens.length
-        ? itens.map(item).join('')
-        : '<div class="pend-feed-empty">✓ Nada pendente para hoje ou amanhã.</div>';
+      const feedPosaula = document.getElementById('pend-feed-posaula');
+      feedPosaula.innerHTML = itensPosaula.length
+        ? itensPosaula.map(item).join('')
+        : '<div class="pend-feed-empty">✓ Nenhuma pós-aula pendente.</div>';
+      const feedAtividades = document.getElementById('pend-feed-atividades');
+      feedAtividades.innerHTML = itensAtividades.length
+        ? itensAtividades.map(item).join('')
+        : '<div class="pend-feed-empty">✓ Nenhuma atividade pendente.</div>';
 
+      const itens = [...itensPosaula, ...itensAtividades];
       pendenciasAtuais = itens.map(it => `${it.student.uid}:${it.tipo}`);
       const vistas = lerPendenciasVistas();
       // Pendência resolvida sai da memória: se voltar a acontecer, avisa de novo.
@@ -6973,13 +6986,15 @@
 
       // Agenda pra calcular pendências: dias úteis da escola + aulas canceladas
       // por aluno. Busca direto (não depende de ter aberto a aba Agenda antes).
+      // Pega TODOS os eventos, não só os de source:'cadastro' — uma aula
+      // ajustada/cancelada direto na Agenda também precisa valer aqui.
       const pendHoje = new Date(); pendHoje.setHours(0,0,0,0);
       let pendWorkingDays = [...CALENDAR_DEFAULTS.workingDays];
       const pendCanceladasPorAluno = {};
       try {
         const [settingsSnap, eventsSnap] = await Promise.all([
           getDoc(doc(db, 'schools', escolaAtual, 'calendarSettings', 'work')),
-          getDocs(query(collection(db, 'schools', escolaAtual, 'calendarEvents'), where('source', '==', 'cadastro'))),
+          getDocs(collection(db, 'schools', escolaAtual, 'calendarEvents')),
         ]);
         if (settingsSnap.exists() && Array.isArray(settingsSnap.data().workingDays)) {
           pendWorkingDays = settingsSnap.data().workingDays.map(Number);
