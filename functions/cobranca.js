@@ -115,8 +115,9 @@ export function createCobrancaFunctions({ db, adminEmails = [] }) {
           const avisoId = alunoRef.collection('cobrancas').doc().id;
           const aviso = { ativo:true, ...pendencia, avisoId, origem:'automatica', entrega:'na-abertura-do-app',
             enviadoEm:FieldValue.serverTimestamp(), atualizadoEm:FieldValue.serverTimestamp() };
+          const { valorCentavos:valorInterno, ...avisoAluno } = aviso;
           const batch = db.batch();
-          batch.set(alunoRef, { avisoCobranca:aviso }, { merge:true });
+          batch.set(alunoRef, { avisoCobranca:avisoAluno }, { merge:true });
           batch.set(alunoRef.collection('cobrancas').doc(avisoId), { ...aviso, escolaId:escola.id, uid });
           await batch.commit();
         } catch (error) {
@@ -161,8 +162,9 @@ export function createCobrancaFunctions({ db, adminEmails = [] }) {
         ativo:true, ...pendencia, avisoId:avisoRef.id, origem:'manual', entrega:'na-abertura-do-app',
         enviadoPor:email, enviadoEm:FieldValue.serverTimestamp(), atualizadoEm:FieldValue.serverTimestamp(),
       };
+      const { valorCentavos:valorInterno, ...avisoAluno } = aviso;
       const batch = db.batch();
-      batch.set(alunoSnap.ref, { avisoCobranca:aviso }, { merge:true });
+      batch.set(alunoSnap.ref, { avisoCobranca:avisoAluno }, { merge:true });
       batch.set(avisoRef, { ...aviso, escolaId, uid });
       await batch.commit();
       return { ok:true, entrega:'na-abertura-do-app', avisoId:avisoRef.id };
