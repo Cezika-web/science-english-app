@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Giovanna Azzi — CZK English</title>
+  <style>
+    :root{
+      --page-bg:#f4f7fa;--card-bg:#fff;--accent:#16A34A;--accent-dark:#15803D;
+      --green:#36b37e;--muted:#6b7280;--border:#DCF0E3;--card-width:720px;
+    }
+    html,body{height:100%;margin:0;padding:0;background:var(--page-bg);font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;}
+    .wrap{min-height:100%;display:flex;align-items:flex-start;justify-content:center;padding:48px 20px;}
+    .card{width:100%;max-width:var(--card-width);background:var(--card-bg);border-radius:18px;padding:28px;box-shadow:0 6px 22px rgba(33,47,60,.06);border:1px solid rgba(15,33,64,.03);}
+    header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px;}
+    .badge{background:linear-gradient(180deg,#fff,#F0FDF4);border:1px solid var(--border);padding:8px 12px;border-radius:999px;color:var(--accent);font-weight:700;font-size:.85rem;}
+    h1{margin:0;font-size:1.3rem;color:#0f1724;}
+    h2{color:#0f1724;}
+    .meta{color:var(--muted);font-size:.92rem;margin-top:6px;}
+    .actions{display:flex;gap:10px;}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;border:none;background:var(--accent);color:#fff;text-decoration:none;font-weight:600;cursor:pointer;box-shadow:0 6px 14px rgba(22,163,74,.12);}
+    main{margin-top:18px;}section{margin-top:18px;}
+    .panel{background:#F7FDF9;border-radius:12px;padding:16px;border:1px solid var(--border);}
+    .outline-card{border-radius:10px;border:1px solid var(--border);padding:16px;background:#fff;}
+    .vocab-grid{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;}
+    .vocab{flex:1;min-width:220px;border-radius:10px;padding:14px;border:2px solid #C9E9D5;background:#fff;}
+    .vocab.green{border-color:#c9f3dc;background:#f5fff6;}
+    .vocab.yellow{border-color:#fde68a;background:#fffdf0;}
+    .vocab h3{margin:0;font-size:1rem;color:#14532D;min-width:0;overflow-wrap:anywhere;}
+    .vocab p{margin:8px 0 0;color:var(--muted);font-size:.95rem;}
+    .vocab-head{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+    .vocab-say{flex:0 0 auto;width:40px;height:40px;padding:0;border-radius:50%;cursor:pointer;border:1px solid #C9E9D5;background:#F0FDF4;color:#15803D;font-size:1rem;line-height:1;display:inline-flex;align-items:center;justify-content:center;font-family:inherit;}
+    .vocab-say:hover{background:#DCFCE7;}
+    .vocab-say[data-czk-speaking="true"]{background:var(--accent);border-color:var(--accent-dark);color:#fff;animation:czk-pulse .9s ease-in-out infinite;}
+    @keyframes czk-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+    @media (prefers-reduced-motion:reduce){.vocab-say[data-czk-speaking="true"]{animation:none;}}
+    .media-row{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap;}
+    .media-btn{background:#fff;border:1px solid var(--border);padding:12px 16px;border-radius:10px;font-weight:700;color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:10px;min-width:200px;justify-content:center;}
+    .homework{background:#f3fff6;border:1px solid #d7f5df;border-radius:10px;padding:14px;margin-top:10px;}
+    .speaking{margin-top:18px;padding:16px;border-radius:12px;background:linear-gradient(180deg,#fff,#F7FDF9);border:1px solid var(--border);max-width:640px;}
+    .speaking h2{margin:0 0 10px;font-size:1.05rem;}
+    .talk-table{width:100%;border-collapse:collapse;overflow:hidden;background:#fff;border:1px solid #DCF0E3;font-size:.9rem;}
+    .talk-table th,.talk-table td{padding:8px 10px;text-align:left;}
+    .talk-table th{background:#E7F6EC;color:#14532D;font-weight:700;border-bottom:1px solid #C9E9D5;}
+    .row-teacher{background:#E7F6EC}.row-student{background:#F3F4F6}.talk-label,.talk-percent{font-weight:700}.talk-percent{color:#0f1724}.talk-time{color:var(--muted)}
+    footer{margin-top:20px;color:var(--muted);font-size:.9rem;text-align:center;}
+    @media (max-width:720px){.card{padding:18px;border-radius:14px}.vocab-grid,.media-row{flex-direction:column}header{flex-direction:column}.actions{width:100%}.actions .btn{width:100%;justify-content:center;box-sizing:border-box}}
+  </style>
+</head>
+<body>
+  <div class="wrap"><article class="card" role="main">
+    <header>
+      <div>
+        <div style="display:flex;gap:10px;align-items:center;"><span class="badge">PÓS-AULA</span><h1>Comidas, alimentação saudável e compreensão oral</h1></div>
+        <div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Giovanna Azzi &nbsp;•&nbsp; <strong>Data:</strong> 09/15/2026</div>
+      </div>
+      <div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div>
+    </header>
+    <main>
+      <section class="panel"><p style="margin:0;font-weight:600;color:#14532D;"><em>Você ampliou o vocabulário de alimentos e treinou a compreensão de três conversas sobre café da manhã, almoço e jantar. O foco foi entender a ideia principal mesmo quando o sotaque e algumas palavras eram difíceis.</em></p></section>
+
+      <section><h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2><div class="outline-card">
+        <p style="margin:0 0 8px;">Começamos conversando sobre seu dia, sua saída mais cedo da escola e o fim de semana. Você contou que foi ao teatro e à casa da avó. Também retomamos palavras da aula sobre invenções, como <strong>light bulb</strong>, <strong>wheel</strong>, <strong>compass</strong> e <strong>airplane</strong>, e lembramos a expressão <strong>I'll have...</strong> para fazer um pedido no restaurante.</p>
+        <p style="margin:0 0 8px;">Depois, organizamos os alimentos por grupos: carnes, frutos do mar, laticínios, doces, frutas, vegetais e grãos. Você praticou <strong>beef</strong>, <strong>sausage</strong>, <strong>chicken</strong>, <strong>lamb</strong>, <strong>shrimp</strong>, <strong>clams</strong>, <strong>dairy products</strong>, <strong>sweets</strong>, <strong>grains</strong> e outros itens. A distinção entre <strong>dairy</strong> (laticínios) e <strong>daily</strong> (diariamente) mereceu atenção especial.</p>
+        <p style="margin:0;">Na atividade principal, você ouviu três diálogos e identificou as refeições: <strong>breakfast</strong>, <strong>lunch</strong> e <strong>dinner</strong>. Os personagens falaram sobre açúcar, calorias, alimentos fritos, opções saudáveis e pratos do cardápio. O segundo áudio exigiu mais por causa do sotaque; ao ouvi-lo novamente com apoio visual, você conseguiu acompanhar o contexto. Terminamos com uma atividade de associação de vocabulário, incluindo <strong>healthy / unhealthy</strong> e <strong>low-fat / high-fat</strong>.</p>
+      </div></section>
+
+      <section><h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2><div class="outline-card"><ul style="margin:0;padding-left:20px;">
+        <li><strong>How are you?</strong> → Como você está?</li>
+        <li><strong>I'll have...</strong> → Eu vou querer... (ao fazer um pedido).</li>
+        <li><strong>Do you like shrimp?</strong> → Você gosta de camarão?</li>
+        <li><strong>Do you like pizza?</strong> → Você gosta de pizza?</li>
+        <li><strong>What is this?</strong> → O que é isto?</li>
+        <li><strong>Cookies taste sweet.</strong> → Biscoitos têm sabor doce.</li>
+        <li><strong>I don't want to eat too many calories.</strong> → Não quero consumir calorias demais.</li>
+        <li><strong>Excuse me, we're ready to order.</strong> → Com licença, estamos prontos para pedir.</li>
+      </ul></div></section>
+
+      <section><h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2><div class="vocab-grid">
+        <div class="vocab"><div class="vocab-head"><h3>dairy</h3><button type="button" class="vocab-say" data-czk-say="dairy" aria-label="Ouvir a pronúncia de dairy" aria-pressed="false" title="Ouvir dairy">&#128266;</button></div><p><em>(pt) laticínios</em><br><small>Alimentos feitos de leite. Ex.: <strong>Yogurt is a dairy product.</strong></small></p></div>
+        <div class="vocab green"><div class="vocab-head"><h3>low-fat</h3><button type="button" class="vocab-say" data-czk-say="low-fat" aria-label="Ouvir a pronúncia de low-fat" aria-pressed="false" title="Ouvir low-fat">&#128266;</button></div><p><em>(pt) com pouca gordura</em><br><small>O oposto de <em>high-fat</em>. Ex.: <strong>This fish is a low-fat choice.</strong></small></p></div>
+        <div class="vocab yellow"><div class="vocab-head"><h3>healthy</h3><button type="button" class="vocab-say" data-czk-say="healthy" aria-label="Ouvir a pronúncia de healthy" aria-pressed="false" title="Ouvir healthy">&#128266;</button></div><p><em>(pt) saudável</em><br><small>O contrário de <em>unhealthy</em>. Ex.: <strong>Fruit is a healthy snack.</strong></small></p></div>
+      </div></section>
+
+      <section><h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2><div class="outline-card">
+        <h3 style="margin-top:0;">Refeições e pedidos</h3><ul><li><strong>breakfast</strong> – café da manhã</li><li><strong>lunch</strong> – almoço</li><li><strong>dinner</strong> – jantar</li><li><strong>menu</strong> – cardápio</li><li><strong>server</strong> – garçom / atendente</li><li><strong>I'll have...</strong> – eu vou querer...</li><li><strong>to order</strong> – pedir</li></ul>
+        <h3>Carnes e frutos do mar</h3><ul><li><strong>meat</strong> – carne em geral</li><li><strong>beef</strong> – carne bovina</li><li><strong>sausage</strong> – linguiça</li><li><strong>chicken</strong> – frango</li><li><strong>lamb</strong> – carne de cordeiro</li><li><strong>seafood</strong> – frutos do mar</li><li><strong>squid</strong> – lula</li><li><strong>shrimp</strong> – camarão</li><li><strong>fish</strong> – peixe</li><li><strong>clams</strong> – mariscos</li><li><strong>oysters</strong> – ostras</li></ul>
+        <h3>Outros alimentos</h3><ul><li><strong>dairy products</strong> – laticínios</li><li><strong>milk</strong> – leite</li><li><strong>butter</strong> – manteiga</li><li><strong>yogurt</strong> – iogurte</li><li><strong>eggs</strong> – ovos (não são laticínios)</li><li><strong>cookies</strong> – biscoitos</li><li><strong>sweets</strong> – doces</li><li><strong>candy</strong> – bala / doce</li><li><strong>fruit</strong> – fruta</li><li><strong>vegetables</strong> – vegetais / legumes</li><li><strong>avocado</strong> – abacate</li><li><strong>lettuce</strong> – alface</li><li><strong>grapes</strong> – uvas</li><li><strong>garlic</strong> – alho</li><li><strong>pasta</strong> – macarrão / massa</li><li><strong>grains</strong> – grãos</li><li><strong>rice</strong> – arroz</li><li><strong>bread</strong> – pão</li><li><strong>noodles</strong> – macarrão / noodles</li><li><strong>onion rings</strong> – anéis de cebola</li></ul>
+        <h3>Saúde e descrição</h3><ul><li><strong>healthy / unhealthy</strong> – saudável / não saudável</li><li><strong>high-fat / low-fat</strong> – com muita / pouca gordura</li><li><strong>fried food</strong> – comida frita</li><li><strong>calories</strong> – calorias</li><li><strong>sugar</strong> – açúcar</li><li><strong>sweet</strong> – doce (adjetivo)</li><li><strong>salt / salty</strong> – sal / salgado</li><li><strong>sauce</strong> – molho</li><li><strong>daily</strong> – diariamente</li></ul>
+      </div></section>
+
+      <section><h2 style="margin-bottom:8px;">🚨 Correções importantes</h2><div class="outline-card">
+        <p style="margin:0 0 8px;"><strong>1. Dairy × daily</strong></p><p style="margin:0 0 4px;color:#c53030;">❌ Entender <em>dairy</em> como “coisas do dia a dia”.</p><p style="margin:0 0 12px;color:#276749;">✅ <strong>Dairy = laticínios; daily = diariamente.</strong> Parecem próximas na escrita e no som, mas têm sentidos diferentes.</p>
+        <p style="margin:0 0 8px;"><strong>2. Fat e quantidade de gordura</strong></p><p style="margin:0 0 4px;color:#c53030;">❌ Trocar <em>high-fat</em> e <em>low-fat</em>.</p><p style="margin:0 0 12px;color:#276749;">✅ <strong>High-fat</strong> = com muita gordura; <strong>low-fat</strong> = com pouca gordura. <em>High</em> indica alto e <em>low</em>, baixo.</p>
+        <p style="margin:0 0 8px;"><strong>3. More × less no áudio</strong></p><p style="margin:0 0 4px;color:#c53030;">❌ Entender “mais gordura” na fala sobre a alimentação em casa.</p><p style="margin:0 0 12px;color:#276749;">✅ A ideia era <strong>menos gordura</strong>: frutas, vegetais e opções com pouca gordura, como frango e frutos do mar. Você identificou e ajustou a interpretação ao ouvir de novo.</p>
+        <p style="margin:0 0 8px;"><strong>4. Salt × sauce</strong></p><p style="margin:0 0 4px;color:#c53030;">❌ Interpretar <em>sauce</em> como “sal”.</p><p style="margin:0;color:#276749;">✅ <strong>Sauce = molho; salt = sal; salty = salgado.</strong> No diálogo, a pergunta era sobre o molho do prato de mariscos.</p>
+      </div></section>
+
+      <section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/o_7CLeRe2J0" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section>
+
+      <section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala (Talk Time)</h2><table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead><tbody><tr class="row-teacher"><td><span class="talk-label">César (Professor)</span></td><td><span class="talk-percent">65%</span></td><td class="talk-time">~14 minutos</td></tr><tr class="row-student"><td><span class="talk-label">Giovanna Azzi</span></td><td><span class="talk-percent">35%</span></td><td class="talk-time">~8 minutos</td></tr></tbody></table><p style="font-size:.82rem;color:var(--muted);margin:8px 0 0;">Estimativa da fala ao vivo, sem os áudios reproduzidos.</p></section>
+
+      <section><h2 style="margin-bottom:8px;">📝 Homework</h2><div class="homework"><p style="margin:0 0 8px;">📌 <strong>Combinado para a próxima aula:</strong></p><ul style="margin:0 0 6px 18px;padding:0;font-size:.94rem;color:var(--muted);"><li>Concluir as atividades de inglês pendentes até quinta-feira.</li><li>Participar do desafio da semana e responder às cinco perguntas.</li><li>Revisar <strong>dairy / daily</strong>, <strong>healthy / unhealthy</strong> e <strong>high-fat / low-fat</strong>.</li><li>Ouvir novamente os diálogos da aula e tentar identificar a refeição e a ideia principal de cada um.</li></ul></div></section>
+    </main>
+    <footer>© 2025 CZK English • czkenglish@gmail.com</footer>
+  </article></div>
+  <script>
+  (function(){
+    var host=window.parent===window?null:window.parent;
+    var active=null,pendingId=0,acked=false,fallbackTimer=null,audioEl=null;
+    function mark(btn,on){if(!btn)return;btn.setAttribute('data-czk-speaking',on?'true':'false');btn.setAttribute('aria-pressed',on?'true':'false');}
+    function clearActive(){mark(active,false);active=null;}
+    function warn(msg){var box=document.getElementById('czk-audio-msg');if(!box){box=document.createElement('div');box.id='czk-audio-msg';box.setAttribute('role','status');box.style.cssText='position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;font:600 .85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';document.body.appendChild(box);}box.textContent=msg;box.style.display='block';clearTimeout(warn._t);warn._t=setTimeout(function(){box.style.display='none';},4000);}
+    function stopAll(){if(fallbackTimer){clearTimeout(fallbackTimer);fallbackTimer=null;}if(audioEl){try{audioEl.pause();}catch(e){}audioEl=null;}try{if(window.speechSynthesis)window.speechSynthesis.cancel();}catch(e){}if(host){try{host.postMessage({source:'czk-posaula',type:'stop'},'*');}catch(e){}}clearActive();}
+    function localSpeak(text,btn){var synth=window.speechSynthesis;if(!synth||typeof window.SpeechSynthesisUtterance!=='function'){warn('Este aparelho ainda não tem voz em inglês.');clearActive();return;}synth.cancel();var u=new SpeechSynthesisUtterance(text);var isPhrase=text.trim().split(/\s+/).length>1;u.lang='en-US';u.rate=isPhrase ? 0.95 : 0.88;u.pitch=1;function score(v){var n=/^en[-_]US/i.test(v.lang)?100:0;if(/natural|neural|premium|enhanced/i.test(v.name))n+=80;if(/samantha|ava/i.test(v.name))n+=65;if(/google.*(us|english)|aria/i.test(v.name))n+=55;if(/zira/i.test(v.name))n+=35;if(v.localService)n+=5;return n;}var en=synth.getVoices().filter(function(v){return /^en[-_]/i.test(v.lang);});var pick=en.sort(function(a,b){return score(b)-score(a);})[0];if(pick)u.voice=pick;u.onstart=function(){mark(btn,true);};u.onend=function(){if(active===btn)clearActive();};u.onerror=function(ev){if(ev.error!=='canceled'&&ev.error!=='interrupted')warn('Não consegui reproduzir o áudio agora.');if(active===btn)clearActive();};synth.speak(u);}
+    function requestSpeech(text,btn){if(!host){localSpeak(text,btn);return;}acked=false;var id=++pendingId;try{host.postMessage({source:'czk-posaula',type:'speak',id:id,text:text},'*');}catch(e){localSpeak(text,btn);return;}fallbackTimer=setTimeout(function(){if(!acked&&active===btn)localSpeak(text,btn);},700);}
+    function play(btn){var text=(btn.getAttribute('data-czk-say')||'').trim();if(!text)return;var wasActive=active===btn;stopAll();if(wasActive)return;active=btn;mark(btn,true);var url=btn.getAttribute('data-czk-audio');if(url&&/^https:\/\//i.test(url)){audioEl=new Audio(url);audioEl.onended=function(){if(active===btn)clearActive();};audioEl.onerror=function(){if(active===btn)requestSpeech(text,btn);};var p=audioEl.play();if(p&&p.catch)p.catch(function(){if(active===btn)requestSpeech(text,btn);});return;}requestSpeech(text,btn);}
+    window.addEventListener('message',function(ev){var d=ev.data;if(!d||d.source!=='czk-app'||d.id!==pendingId)return;if(d.type==='speak-ack'){acked=true;if(fallbackTimer){clearTimeout(fallbackTimer);fallbackTimer=null;}return;}if(d.type==='speak-start'){mark(active,true);return;}if(d.type==='speak-end'){clearActive();return;}if(d.type==='speak-error'){warn('Este aparelho ainda não tem voz em inglês.');clearActive();}});
+    document.addEventListener('click',function(ev){var t=ev.target;if(!t||!t.closest)return;var btn=t.closest('[data-czk-say]');if(btn){ev.preventDefault();play(btn);return;}var pr=t.closest('[data-czk-action="print"]');if(pr){ev.preventDefault();try{window.print();}catch(e){}}});
+  })();
+  </script>
+</body>
+</html>
