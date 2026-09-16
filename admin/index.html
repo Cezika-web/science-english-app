@@ -6757,21 +6757,10 @@
         .filter(c => c.status);
     }
 
-    // Última aula de verdade (não cancelada) até hoje — vira o "dias sem
-    // aula" mostrado na lista principal, independente de pós-aula/atividade.
-    function pendUltimaAulaValida(aulaDias, canceladas, hoje, maxDias = 400) {
-      if (!aulaDias.length) return null;
-      for (let i = 0; i <= maxDias; i++) {
-        const d = calendarAddDays(hoje, -i);
-        if (aulaDias.includes(d.getDay()) && !canceladas.includes(calendarDateKey(d))) return d;
-      }
-      return null;
-    }
-
     // `dispensadas` é um Set de chaves "tipo_YYYY-MM-DD" — pendências que o
     // César excluiu com motivo pra essa ocorrência específica. Uma nova
     // ocorrência (outra data) não é afetada pela dispensa antiga.
-    function calcularPendencias(student, { ultimaPosData, semAtividades, ultimaAtividadeCriada, canceladas, workingDays, hoje, dispensadas }) {
+    function calcularPendencias(student, { ultimaPosData, ultimaAulaData, semAtividades, ultimaAtividadeCriada, canceladas, workingDays, hoje, dispensadas }) {
       const aulaDias = Array.isArray(student.aulaDias) ? student.aulaDias.map(Number).filter(d => d >= 0 && d <= 6) : [];
       const disp = dispensadas || new Set();
       if (!aulaDias.length) {
@@ -6784,8 +6773,10 @@
         return { posaulaPendente:null, atividadesPendente, diasSemAula:null };
       }
 
-      const ultimaAulaValida = pendUltimaAulaValida(aulaDias, canceladas, hoje);
-      const diasSemAula = ultimaAulaValida ? Math.round((hoje - ultimaAulaValida) / 86400000) : null;
+      // Dia previsto na grade não comprova aula realizada. Use a data do
+      // último pós-aula para o aviso de tempo sem aula.
+      const diasSemAula = ultimaAulaData && ultimaAulaData <= hoje
+        ? Math.round((hoje - ultimaAulaData) / 86400000) : null;
 
       let posaulaPendente = null;
       const inicioPosaula = ultimaPosData ? calendarAddDays(ultimaPosData, 1) : calendarAddDays(hoje, -PEND_FALLBACK_DIAS);
@@ -7122,10 +7113,12 @@
         if (isRead) readCount++;
         // Atividades atuais (não corrigidas): quantas o aluno já finalizou (prontas p/ corrigir) e quantas ainda estão pendentes
         const activityCounts = adminActivityCounts(activities);
+        const ultimaAulaData = posts.map(adminPostReferenceDate).filter(date => date && date <= pendHoje)
+          .sort((a,b) => b-a)[0] || null;
         const ultimaPosData = dateOfAdm(latest?.classDate || latest?.createdAt || latest?.publishedAt);
         const dispensadas = new Set(dispSnap.docs.map(d => d.id));
         const { posaulaPendente, atividadesPendente, diasSemAula } = calcularPendencias(s, {
-          ultimaPosData, semAtividades: activityCounts.semAtividades, ultimaAtividadeCriada: dateOfAdm(activities[0]?.createdAt),
+          ultimaPosData, ultimaAulaData, semAtividades: activityCounts.semAtividades, ultimaAtividadeCriada: dateOfAdm(activities[0]?.createdAt),
           canceladas: pendCanceladasPorAluno[s.uid] || [], workingDays: pendWorkingDays, hoje: pendHoje, dispensadas,
         });
         const reviewReports = reviewSnap.docs.map(d => ({ id:d.id, ...d.data() }));
