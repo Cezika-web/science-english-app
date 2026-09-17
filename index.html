@@ -3150,6 +3150,18 @@ function AudioRecorder({ existingUrl, readOnly, onBlob, maxSeconds = 30 }) {
 
   const fmt = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
+  // WebM gravado pelo MediaRecorder não guarda a duração real no cabeçalho —
+  // o Chrome estima errado (mostra 1min+ pra um áudio de 2s) até o player
+  // buscar o fim de verdade. Forçamos essa busca uma vez ao carregar.
+  const fixDuration = (e) => {
+    const audio = e.currentTarget;
+    if (!Number.isFinite(audio.duration) || audio.duration > maxSecs + 2) {
+      audio.currentTime = 1e101;
+      const reset = () => { audio.currentTime = 0; audio.removeEventListener('timeupdate', reset); };
+      audio.addEventListener('timeupdate', reset);
+    }
+  };
+
   const box = { background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 14, padding: 14 };
   const btn = (bg) => ({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: 13, border: 'none', borderRadius: 12, fontSize: 14.5, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer', color: '#fff', background: bg });
 
@@ -3157,7 +3169,7 @@ function AudioRecorder({ existingUrl, readOnly, onBlob, maxSeconds = 30 }) {
     return (
       <div style={box}>
         <div style={{ fontSize: 11, fontWeight: 800, color: '#9A3412', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>🎤 Resposta em áudio</div>
-        {url ? <audio controls src={url} style={{ width: '100%' }} />
+        {url ? <audio controls src={url} onLoadedMetadata={fixDuration} style={{ width: '100%' }} />
              : <div style={{ fontSize: 13, color: '#94A3B8' }}>O aluno ainda não gravou.</div>}
       </div>
     );
@@ -3178,7 +3190,7 @@ function AudioRecorder({ existingUrl, readOnly, onBlob, maxSeconds = 30 }) {
       )}
       {state === 'recorded' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <audio controls src={url} style={{ width: '100%' }} />
+          <audio controls src={url} onLoadedMetadata={fixDuration} style={{ width: '100%' }} />
           <button onClick={redo} style={{ ...btn('#fff'), color: '#9A3412', border: '1.5px solid #FDBA74', background: '#fff' }}>🗑 Regravar</button>
         </div>
       )}
