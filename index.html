@@ -3595,6 +3595,61 @@ const IRREGULAR_VERBS = [
   ['win','won','won','vencer'], ['write','wrote','written','escrever'],
 ];
 
+// Lista inicial de chunks (combinações fixas) mais usados no dia a dia.
+// Formato: [chunk, tradução, exemplo em inglês, tradução do exemplo]
+const ENGLISH_CHUNKS = [
+  ['all of a sudden','de repente','All of a sudden, it started to rain.','De repente, começou a chover.'],
+  ['as a matter of fact','na verdade / por sinal','As a matter of fact, I already knew that.','Na verdade, eu já sabia disso.'],
+  ['as far as I know','até onde eu sei','As far as I know, the store is open.','Até onde eu sei, a loja está aberta.'],
+  ['as soon as possible','assim que possível','I’ll call you as soon as possible.','Vou te ligar assim que possível.'],
+  ['as well as','assim como / bem como','She speaks French as well as English.','Ela fala francês assim como inglês.'],
+  ['at least','pelo menos','At least we tried.','Pelo menos nós tentamos.'],
+  ['at the end of the day','no final das contas','At the end of the day, it’s your decision.','No final das contas, a decisão é sua.'],
+  ['by the way','a propósito','By the way, did you finish the homework?','A propósito, você terminou o dever de casa?'],
+  ['catch up','colocar em dia / se atualizar','Let’s catch up soon.','Vamos nos atualizar em breve.'],
+  ['come up with','ter uma ideia / criar','She came up with a great idea.','Ela teve uma ótima ideia.'],
+  ['count on','contar com','You can always count on me.','Você sempre pode contar comigo.'],
+  ['deal with','lidar com','I don’t know how to deal with this problem.','Eu não sei como lidar com esse problema.'],
+  ['due to','devido a','The flight was delayed due to the weather.','O voo atrasou devido ao clima.'],
+  ['end up','acabar (fazendo algo)','We ended up staying home.','Acabamos ficando em casa.'],
+  ['even though','mesmo que / embora','Even though it was raining, we had fun.','Mesmo que estivesse chovendo, nos divertimos.'],
+  ['figure out','descobrir / entender','I can’t figure out how this works.','Eu não consigo entender como isso funciona.'],
+  ['first of all','antes de mais nada','First of all, let’s introduce ourselves.','Antes de mais nada, vamos nos apresentar.'],
+  ['for instance','por exemplo','Some fruits, for instance apples, are cheap here.','Algumas frutas, por exemplo maçãs, são baratas aqui.'],
+  ['get along with','se dar bem com','I get along with my coworkers.','Eu me dou bem com meus colegas de trabalho.'],
+  ['get in touch','entrar em contato','I’ll get in touch with you tomorrow.','Vou entrar em contato com você amanhã.'],
+  ['give up','desistir','Don’t give up on your dreams.','Não desista dos seus sonhos.'],
+  ['good at','bom em','He’s really good at math.','Ele é muito bom em matemática.'],
+  ['had better','é melhor','You had better call her now.','É melhor você ligar para ela agora.'],
+  ['hang out','sair / passar tempo com','We hung out at the mall yesterday.','Nós saímos no shopping ontem.'],
+  ['in a nutshell','em resumo / resumindo','In a nutshell, the plan failed.','Resumindo, o plano falhou.'],
+  ['in charge of','responsável por','She’s in charge of the project.','Ela é responsável pelo projeto.'],
+  ['in my opinion','na minha opinião','In my opinion, this movie is amazing.','Na minha opinião, esse filme é incrível.'],
+  ['in spite of','apesar de','In spite of the rain, we went out.','Apesar da chuva, nós saímos.'],
+  ['instead of','em vez de','Let’s walk instead of driving.','Vamos andar em vez de dirigir.'],
+  ['interested in','interessado(a) em','I’m interested in learning Spanish.','Estou interessado em aprender espanhol.'],
+  ['keep an eye on','ficar de olho em','Can you keep an eye on my bag?','Você pode ficar de olho na minha bolsa?'],
+  ['keep in mind','ter em mente','Keep in mind that the store closes at 6.','Tenha em mente que a loja fecha às 6.'],
+  ['last but not least','por último, mas não menos importante','Last but not least, thank you all for coming.','Por último, mas não menos importante, obrigado a todos por virem.'],
+  ['little by little','aos poucos','Your English is improving little by little.','Seu inglês está melhorando aos poucos.'],
+  ['make up your mind','se decidir','You need to make up your mind.','Você precisa se decidir.'],
+  ['more or less','mais ou menos','I understand more or less what you mean.','Eu entendo mais ou menos o que você quer dizer.'],
+  ['no matter what','não importa o quê','I’ll be there for you no matter what.','Estarei lá por você, não importa o quê.'],
+  ['on the other hand','por outro lado','I love the beach. On the other hand, I hate the sun.','Eu amo a praia. Por outro lado, eu odeio o sol.'],
+  ['once in a while','de vez em quando','We go to the movies once in a while.','Nós vamos ao cinema de vez em quando.'],
+  ['put up with','aguentar / tolerar','I can’t put up with this noise anymore.','Eu não aguento mais esse barulho.'],
+  ['right away','imediatamente / agora mesmo','Please call me right away.','Por favor, me ligue imediatamente.'],
+  ['run out of','ficar sem','We ran out of milk this morning.','Ficamos sem leite essa manhã.'],
+  ['so far','até agora','So far, everything is going well.','Até agora, tudo está indo bem.'],
+  ['take into account','levar em conta','You have to take into account how tired she is.','Você tem que levar em conta o quão cansada ela está.'],
+  ['take your time','sem pressa / fique à vontade','Take your time, there’s no rush.','Sem pressa, não tem pressa nenhuma.'],
+  ['the thing is','o problema é / a questão é','The thing is, I don’t have time today.','A questão é que eu não tenho tempo hoje.'],
+  ['to be honest','para ser sincero(a)','To be honest, I don’t like this song.','Para ser sincero, eu não gosto dessa música.'],
+  ['used to','costumava','I used to play soccer every weekend.','Eu costumava jogar futebol todo fim de semana.'],
+  ['worried about','preocupado(a) com','She’s worried about the exam.','Ela está preocupada com a prova.'],
+  ['would rather','preferir','I would rather stay home tonight.','Eu prefiro ficar em casa hoje à noite.'],
+];
+
 // ── VocabTab ─────────────────────────────────────────────────────
 // A interface chama somente esta função. Assim, a voz do aparelho pode ser
 // substituída futuramente por um arquivo gerado com a voz clonada do professor.
@@ -3895,6 +3950,7 @@ function VocabTab({ vocab }) {
   const [openMonths, setOpenMonths] = useState({});
   const [listView, setListView] = useState(null);
   const [verbSearch, setVerbSearch] = useState('');
+  const [chunkSearch, setChunkSearch] = useState('');
   const [speakingWord, setSpeakingWord] = useState('');
   const [speechMessage, setSpeechMessage] = useState('');
 
@@ -3927,20 +3983,27 @@ function VocabTab({ vocab }) {
     return IRREGULAR_VERBS.filter(row => semAcento(row.join(' ')).includes(search));
   }, [verbSearch]);
 
+  const filteredChunks = React.useMemo(() => {
+    const search = semAcento(chunkSearch.trim());
+    if (!search) return ENGLISH_CHUNKS;
+    return ENGLISH_CHUNKS.filter(row => semAcento(row.join(' ')).includes(search));
+  }, [chunkSearch]);
+
   if (!listView) return (
     <div className="scroll-area" style={{ padding:'16px', display:'flex', flexDirection:'column', gap:12, overflow:'hidden', width:'100%', maxWidth:'100%', minWidth:0, boxSizing:'border-box' }}>
       {[
-        ['vocab','ABC','Meu vocabulário',`${vocab.length} palavra${vocab.length !== 1 ? 's' : ''}`,'rgba(var(--brand-rgb),.1)','var(--brand)'],
-        ['verbs','↻','Verbos irregulares',`${IRREGULAR_VERBS.length} verbos`,'#FBF7F1','#8B5E34'],
-      ].map(([id,icon,title,count,background,border]) => <button key={id} onClick={() => setListView(id)} style={{
+        { id:'vocab', icon:'ABC', title:'Meu vocabulário', count:`${vocab.length} palavra${vocab.length !== 1 ? 's' : ''}`, background:'rgba(var(--brand-rgb),.1)', border:'var(--brand)', iconBg:'rgba(var(--brand-rgb),.12)', iconBorder:'rgba(var(--brand-rgb),.24)', text:'var(--brand-dark)', accent:'var(--brand)', iconSize:18 },
+        { id:'verbs', icon:'↻', title:'Verbos irregulares', count:`${IRREGULAR_VERBS.length} verbos`, background:'#FBF7F1', border:'#8B5E34', iconBg:'#F1E5D5', iconBorder:'#D9C1A3', text:'#7C4A21', accent:'#8B5E34', iconSize:38 },
+        { id:'chunks', icon:'🧩', title:'Chunks do inglês', count:`${ENGLISH_CHUNKS.length} chunks`, background:'#F3EEFC', border:'#6D5A9E', iconBg:'#E6DEF7', iconBorder:'#CBB8EC', text:'#4C3D7A', accent:'#6D5A9E', iconSize:30 },
+      ].map(({ id,icon,title,count,background,border,iconBg,iconBorder,text,accent,iconSize }) => <button key={id} onClick={() => setListView(id)} style={{
         flex:1, minHeight:0, width:'100%', border:`2px solid ${border}`, borderRadius:24, padding:'20px',
         background, cursor:'pointer', fontFamily:'inherit', display:'flex', flexDirection:'column',
         alignItems:'center', justifyContent:'center', textAlign:'center', boxShadow:'0 10px 28px rgba(15,23,42,.07)'
       }}>
-        <span style={{ width:62, height:62, borderRadius:18, marginBottom:14, display:'flex', alignItems:'center', justifyContent:'center', background:id === 'vocab'?'rgba(var(--brand-rgb),.12)':'#F1E5D5', border:`1px solid ${id === 'vocab'?'rgba(var(--brand-rgb),.24)':'#D9C1A3'}`, color:id === 'vocab'?'var(--brand-dark)':'#7C4A21', fontSize:id === 'vocab'?18:38, fontWeight:900 }}>{icon}</span>
-        <strong style={{ color:id === 'vocab'?'var(--brand-dark)':'#7C4A21', fontSize:19 }}>{title}</strong>
+        <span style={{ width:62, height:62, borderRadius:18, marginBottom:14, display:'flex', alignItems:'center', justifyContent:'center', background:iconBg, border:`1px solid ${iconBorder}`, color:text, fontSize:iconSize, fontWeight:900 }}>{icon}</span>
+        <strong style={{ color:text, fontSize:19 }}>{title}</strong>
         <span style={{ color:'#64748B', fontSize:13, marginTop:6 }}>{count}</span>
-        <span style={{ color:id === 'vocab'?'var(--brand)':'#8B5E34', fontSize:12, fontWeight:800, marginTop:14 }}>ABRIR LISTA ›</span>
+        <span style={{ color:accent, fontSize:12, fontWeight:800, marginTop:14 }}>ABRIR LISTA ›</span>
       </button>)}
     </div>
   );
@@ -3950,7 +4013,7 @@ function VocabTab({ vocab }) {
       <div style={{ position:'sticky', top:0, zIndex:3, background:'#F6F1EA', paddingBottom:10, marginBottom:4 }}>
         <button onClick={() => setListView(null)} style={{ width:'100%', border:'1px solid rgba(var(--brand-rgb),.16)', borderRadius:14, padding:'12px 14px', background:'rgba(255,255,255,.78)', cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:12, textAlign:'left' }}>
           <span style={{ width:32, height:32, borderRadius:'50%', background:'#F1F5F9', display:'flex', alignItems:'center', justifyContent:'center', color:'#475569', fontSize:18 }}>‹</span>
-          <span style={{ flex:1 }}><strong style={{ display:'block', color:'#0F172A', fontSize:14.5 }}>{listView === 'vocab' ? 'Meu vocabulário' : 'Verbos irregulares'}</strong><span style={{ color:'#64748B', fontSize:11.5 }}>{listView === 'vocab' ? `${vocab.length} palavra${vocab.length !== 1 ? 's' : ''}` : `${IRREGULAR_VERBS.length} verbos`}</span></span>
+          <span style={{ flex:1 }}><strong style={{ display:'block', color:'#0F172A', fontSize:14.5 }}>{listView === 'vocab' ? 'Meu vocabulário' : listView === 'verbs' ? 'Verbos irregulares' : 'Chunks do inglês'}</strong><span style={{ color:'#64748B', fontSize:11.5 }}>{listView === 'vocab' ? `${vocab.length} palavra${vocab.length !== 1 ? 's' : ''}` : listView === 'verbs' ? `${IRREGULAR_VERBS.length} verbos` : `${ENGLISH_CHUNKS.length} chunks`}</span></span>
           <span style={{ color:'#64748B', fontSize:11.5 }}>Trocar lista</span>
         </button>
       </div>
@@ -3974,6 +4037,39 @@ function VocabTab({ vocab }) {
               </div>
             </div>)}
             {!filteredVerbs.length && <div style={{ padding:22, textAlign:'center', color:'#94A3B8', fontSize:12.5 }}>Nenhum verbo encontrado.</div>}
+          </div>
+        </div>}
+
+      {listView === 'chunks' && <div style={{ marginBottom:12, padding:'12px 14px', borderRadius:14, background:'#F3EEFC', border:'1px solid rgba(109,90,158,.2)' }}>
+        <strong style={{ display:'block', color:'#4C3D7A', fontSize:12.5 }}>O que é um chunk?</strong>
+        <span style={{ display:'block', color:'#4C3D7A', fontSize:12, marginTop:4, lineHeight:1.5 }}>É um pedaço pronto de inglês — palavras que os nativos sempre usam juntas, na mesma ordem (tipo "by the way" ou "as soon as possible"). Decorar o bloco inteiro deixa sua fala mais natural do que traduzir palavra por palavra.</span>
+      </div>}
+
+      {listView === 'chunks' && <div style={{ marginBottom:14, border:'1px solid rgba(109,90,158,.22)', borderRadius:16, background:'rgba(255,255,255,.72)', overflow:'hidden' }}>
+          <div style={{ padding:10 }}>
+            <input value={chunkSearch} onChange={e => setChunkSearch(e.target.value)} placeholder="Buscar chunk ou tradução" style={{ width:'100%', boxSizing:'border-box', border:'1.5px solid #CBB8EC', borderRadius:12, padding:'11px 13px', background:'#FCFAFF', color:'#0F172A', fontFamily:'inherit', fontSize:13, outline:'none' }} />
+          </div>
+          <div style={{ padding:'9px 12px', background:'#EFE9F9', color:'#4C3D7A', fontSize:11, fontWeight:800, textTransform:'uppercase', letterSpacing:.5 }}>
+            Expressão · exemplo
+          </div>
+          <div style={{ padding:'8px', display:'grid', gap:7 }}>
+            {filteredChunks.map(([chunk,translation,exampleEn,examplePt]) => <div key={chunk} style={{ padding:'12px', border:'1px solid rgba(109,90,158,.16)', borderRadius:14, background:'#FFFEFC' }}>
+              <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:10 }}>
+                <strong style={{ color:'#4C3D7A', fontSize:15 }}>{chunk}</strong>
+                <button type="button" onClick={() => playWord(chunk)} aria-label={`Ouvir ${chunk}`} title={`Ouvir ${chunk}`} style={{
+                  width:30, height:30, borderRadius:'50%', flexShrink:0, border:'1px solid rgba(109,90,158,.3)',
+                  background:speakingWord === chunk ? '#6D5A9E' : 'rgba(109,90,158,.12)',
+                  color:speakingWord === chunk ? '#fff' : '#4C3D7A', cursor:'pointer', fontSize:13,
+                  display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'inherit'
+                }}>{speakingWord === chunk ? '■' : '🔊'}</button>
+              </div>
+              <span style={{ display:'block', color:'#6D5A9E', fontSize:12, fontWeight:700, marginTop:2 }}>{translation}</span>
+              <div style={{ marginTop:9, padding:'8px 9px', borderRadius:10, background:'#F3EEFC' }}>
+                <span style={{ display:'block', color:'#0F172A', fontSize:12.5 }}>{exampleEn}</span>
+                <span style={{ display:'block', color:'#6D5A9E', fontSize:11.5, marginTop:3 }}>{examplePt}</span>
+              </div>
+            </div>)}
+            {!filteredChunks.length && <div style={{ padding:22, textAlign:'center', color:'#94A3B8', fontSize:12.5 }}>Nenhum chunk encontrado.</div>}
           </div>
         </div>}
 
