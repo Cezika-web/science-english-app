@@ -1334,14 +1334,9 @@
         <div class="form-card" id="card-colar-json">
           <h2>📤 Publicar Atividades no App</h2>
           <p style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;">
-            Cole o JSON gerado pela skill <strong>alunos-app</strong>, escolha o aluno e clique em Publicar.
-            Para publicar a mesma atividade para vários alunos, é só trocar o aluno aqui e clicar de novo.
+            Cole o JSON gerado pela skill <strong>atividades-firestore</strong> e clique em Publicar.
+            O aluno é identificado automaticamente pelo <code>studentName</code>/<code>uid</code> do JSON.
           </p>
-
-          <div class="field">
-            <label>Publicar para o aluno</label>
-            <select id="pub-student"></select>
-          </div>
 
           <div class="field">
             <label>JSON das Atividades</label>
@@ -1397,12 +1392,9 @@
         <div class="form-card">
           <h2>📖 Publicar Vocabulário</h2>
           <p style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;">
-            Cole o JSON do vocabulário, escolha o aluno e publique. Dá pra reusar o mesmo JSON trocando o aluno.
+            Cole o JSON do vocabulário e publique. O aluno é identificado automaticamente pelo
+            <code>studentName</code>/<code>uid</code> do JSON.
           </p>
-          <div class="field">
-            <label>Publicar para o aluno</label>
-            <select id="voc-student"></select>
-          </div>
           <div class="field">
             <label>JSON do Vocabulário</label>
             <textarea id="voc-json" placeholder='{"source":"Artigos e Perguntas","vocabulary":[{"en":"treadmill","pt":"esteira"}]}'></textarea>
@@ -5576,13 +5568,7 @@
     }
 
     function populateStudentSelects(active, archived = []) {
-      const optionsFor = students => '<option value="">Selecione o aluno...</option>' +
-        students.map(s => `<option value="${s.uid}">${esc(s.name || s.firstName || 'Aluno')}${s.archived ? ' · ex-aluno' : ''}</option>`).join('');
       const activityStudents = [...active, ...archived];
-      const pubSelect = document.getElementById('pub-student');
-      if (pubSelect) { const prev = pubSelect.value; pubSelect.innerHTML = optionsFor(activityStudents); pubSelect.value = prev; }
-      const vocabSelect = document.getElementById('voc-student');
-      if (vocabSelect) { const prev = vocabSelect.value; vocabSelect.innerHTML = optionsFor(active); vocabSelect.value = prev; }
 
       // Pós-aula e atividades aceitam turma, então usam caixas de marcar.
       const listas = [
@@ -6694,9 +6680,8 @@
         }
         document.getElementById('ga-alunos')?.scrollIntoView({ behavior:'smooth', block:'center' });
       } else {
-        const select = document.getElementById('pub-student');
-        if (select) select.value = uid;
-        select?.scrollIntoView({ behavior:'smooth', block:'center' });
+        // Sem seletor de aluno: o JSON colado já traz o studentName/uid.
+        document.getElementById('card-colar-json')?.scrollIntoView({ behavior:'smooth', block:'center' });
       }
     }
 
@@ -7595,18 +7580,16 @@
 
       parsedActivityJson = data;
 
-      // Preview — aluno vem do seletor (prioridade) ou do studentName do JSON
-      const selUid = document.getElementById('pub-student').value;
-      const selStudent = allStudents.find(s => s.uid === selUid);
+      // Aluno vem sempre do JSON (uid tem prioridade; senão casa o studentName com o cadastro).
       const matchStudent = allStudents.find(s =>
         (s.name || s.firstName || '').toLowerCase().includes((data.studentName || '').toLowerCase())
       );
-      const resolvedUid = selUid || data.uid || (matchStudent ? matchStudent.uid : null);
-      const resolvedName = selStudent ? (selStudent.name || selStudent.firstName) : (data.studentName || '?');
+      const resolvedUid = data.uid || (matchStudent ? matchStudent.uid : null);
+      const resolvedName = matchStudent ? (matchStudent.name || matchStudent.firstName) : (data.studentName || '?');
       parsedActivityJson._resolvedUid = resolvedUid;
 
       document.getElementById('pub-preview-student').textContent =
-        `Aluno: ${resolvedName}${resolvedUid ? '' : ' ⚠️ Selecione o aluno acima'}`;
+        `Aluno: ${resolvedName}${resolvedUid ? '' : ' ⚠️ Aluno não encontrado — confira studentName/uid no JSON'}`;
 
       const publication = activityPublicationMetadata(data.week);
       document.getElementById('pub-preview-list').innerHTML = data.activities.map(a => `
@@ -7630,8 +7613,8 @@
 
     document.getElementById('btn-publish').onclick = async () => {
       if (!parsedActivityJson) return;
-      const uid = document.getElementById('pub-student').value || parsedActivityJson._resolvedUid;
-      if (!uid) { showMsg('pub-msg', 'Selecione o aluno no topo antes de publicar.', 'err'); return; }
+      const uid = parsedActivityJson._resolvedUid;
+      if (!uid) { showMsg('pub-msg', 'Aluno não encontrado. Confira o studentName/uid no JSON antes de publicar.', 'err'); return; }
 
       const btn = document.getElementById('btn-publish');
       btn.disabled = true; btn.textContent = 'Publicando...';
@@ -7820,17 +7803,16 @@
       }
       data.vocabulary = palavras;
 
-      const selUid = document.getElementById('voc-student').value;
-      const selStudent = allStudents.find(s => s.uid === selUid);
+      // Aluno vem sempre do JSON (uid tem prioridade; senão casa o studentName com o cadastro).
       const matchStudent = allStudents.find(s =>
         (s.name || s.firstName || '').toLowerCase().includes((data.studentName || '').toLowerCase())
       );
-      data._resolvedUid = selUid || data.uid || (matchStudent ? matchStudent.uid : null);
+      data._resolvedUid = data.uid || (matchStudent ? matchStudent.uid : null);
       parsedVocabJson = data;
 
-      const vName = selStudent ? (selStudent.name || selStudent.firstName) : (data.studentName || '?');
+      const vName = matchStudent ? (matchStudent.name || matchStudent.firstName) : (data.studentName || '?');
       document.getElementById('voc-preview-student').textContent =
-        `Aluno: ${vName} · Fonte: ${data.source || '—'}${data._resolvedUid ? '' : ' ⚠️ Selecione o aluno acima'}`;
+        `Aluno: ${vName} · Fonte: ${data.source || '—'}${data._resolvedUid ? '' : ' ⚠️ Aluno não encontrado — confira studentName/uid no JSON'}`;
       document.getElementById('voc-preview-list').innerHTML = data.vocabulary.map(v =>
         `<div class="preview-item"><span class="preview-emoji">🔤</span><div><div class="preview-title">${esc(v.en)}</div><div class="preview-meta">${esc(v.pt)}</div></div></div>`
       ).join('');
@@ -7844,8 +7826,8 @@
 
     document.getElementById('btn-publish-vocab').onclick = async () => {
       if (!parsedVocabJson) return;
-      const uid = document.getElementById('voc-student').value || parsedVocabJson._resolvedUid;
-      if (!uid) { showMsg('voc-msg', 'Selecione o aluno no topo antes de publicar.', 'err'); return; }
+      const uid = parsedVocabJson._resolvedUid;
+      if (!uid) { showMsg('voc-msg', 'Aluno não encontrado. Confira o studentName/uid no JSON antes de publicar.', 'err'); return; }
       const btn = document.getElementById('btn-publish-vocab');
       btn.disabled = true; btn.textContent = 'Publicando...';
       const count = parsedVocabJson.vocabulary.length;
