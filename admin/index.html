@@ -6813,8 +6813,13 @@
         }
       }
 
+      // Sempre calcula, tenha ou não atividade em andamento: subir mais é
+      // decisão do César a cada ciclo, não algo que o sistema decide sozinho
+      // só porque a leva anterior ainda está pendente. O lembrete tem que
+      // aparecer todo ciclo pra ele escolher — e usar o "Excluir" se decidir
+      // não subir mais essa semana.
       let atividadesPendente = null;
-      if (semAtividades) {
+      {
         const inicioCiclos = ultimaAtividadeCriada ? calendarAddDays(ultimaAtividadeCriada, 1) : calendarAddDays(hoje, -PEND_FALLBACK_DIAS);
         // Olha uma semana à frente pra enxergar o fim real da semana atual
         // mesmo quando a última aula dela ainda vai acontecer amanhã.
