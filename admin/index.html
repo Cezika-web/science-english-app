@@ -9238,6 +9238,7 @@ Salvar assim mesmo?`)) return;
       const el = document.getElementById(id);
       if (!text) { el.style.display = 'none'; return; }
       el.textContent = text; el.className = `form-msg ${type}`;
+      el.style.display = 'block';
     }
 
     function fmtDate(ts) {
