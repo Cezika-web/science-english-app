@@ -6737,6 +6737,17 @@
     const PEND_DIAS_NOMES = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
     const pendFmtData = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
 
+    // Timestamp do Firestore carrega hora real (quando foi salvo/corrigido),
+    // não meia-noite. Sem isso, calendarAddDays arrasta essa hora por toda a
+    // conta e o arredondamento de dias vira sorteio (ex.: atividade corrigida
+    // às 17h "empurra" o vencimento um dia pra frente por causa da fração).
+    function pendMidnight(date) {
+      if (!date) return null;
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+
     function pendRollToBizDay(date, workingDays) {
       let d = new Date(date);
       while (!workingDays.includes(d.getDay())) d = calendarAddDays(d, 1);
@@ -7134,12 +7145,12 @@
         if (isRead) readCount++;
         // Atividades atuais (não corrigidas): quantas o aluno já finalizou (prontas p/ corrigir) e quantas ainda estão pendentes
         const activityCounts = adminActivityCounts(activities);
-        const ultimaAulaData = posts.map(adminPostReferenceDate).filter(date => date && date <= pendHoje)
-          .sort((a,b) => b-a)[0] || null;
-        const ultimaPosData = dateOfAdm(latest?.classDate || latest?.createdAt || latest?.publishedAt);
+        const ultimaAulaData = pendMidnight(posts.map(adminPostReferenceDate).filter(date => date && date <= pendHoje)
+          .sort((a,b) => b-a)[0] || null);
+        const ultimaPosData = pendMidnight(dateOfAdm(latest?.classDate || latest?.createdAt || latest?.publishedAt));
         const dispensadas = new Set(dispSnap.docs.map(d => d.id));
         const { posaulaPendente, atividadesPendente, diasSemAula } = calcularPendencias(s, {
-          ultimaPosData, ultimaAulaData, semAtividades: activityCounts.semAtividades, ultimaAtividadeCriada: dateOfAdm(activities[0]?.createdAt),
+          ultimaPosData, ultimaAulaData, semAtividades: activityCounts.semAtividades, ultimaAtividadeCriada: pendMidnight(dateOfAdm(activities[0]?.createdAt)),
           eventos: pendEventosPorAluno[s.uid] || [], workingDays: pendWorkingDays, hoje: pendHoje, dispensadas,
         });
         const reviewReports = reviewSnap.docs.map(d => ({ id:d.id, ...d.data() }));
