@@ -3994,7 +3994,7 @@ function VocabTab({ vocab }) {
       {[
         { id:'vocab', icon:'ABC', title:'Meu vocabulário', count:`${vocab.length} palavra${vocab.length !== 1 ? 's' : ''}`, background:'rgba(var(--brand-rgb),.1)', border:'var(--brand)', iconBg:'rgba(var(--brand-rgb),.12)', iconBorder:'rgba(var(--brand-rgb),.24)', text:'var(--brand-dark)', accent:'var(--brand)', iconSize:18 },
         { id:'verbs', icon:'↻', title:'Verbos irregulares', count:`${IRREGULAR_VERBS.length} verbos`, background:'#FBF7F1', border:'#8B5E34', iconBg:'#F1E5D5', iconBorder:'#D9C1A3', text:'#7C4A21', accent:'#8B5E34', iconSize:38 },
-        { id:'chunks', icon:'🧩', title:'Chunks do inglês', count:`${ENGLISH_CHUNKS.length} chunks`, background:'#F3EEFC', border:'#6D5A9E', iconBg:'#E6DEF7', iconBorder:'#CBB8EC', text:'#4C3D7A', accent:'#6D5A9E', iconSize:30 },
+        { id:'chunks', icon:'🧩', title:'Chunks do inglês', count:`${ENGLISH_CHUNKS.length} chunks`, background:'#FBF3DC', border:'#B8860B', iconBg:'#F5E6BE', iconBorder:'#E0C978', text:'#7A5B0A', accent:'#B8860B', iconSize:30 },
       ].map(({ id,icon,title,count,background,border,iconBg,iconBorder,text,accent,iconSize }) => <button key={id} onClick={() => setListView(id)} style={{
         flex:1, minHeight:0, width:'100%', border:`2px solid ${border}`, borderRadius:24, padding:'20px',
         background, cursor:'pointer', fontFamily:'inherit', display:'flex', flexDirection:'column',
@@ -4040,33 +4040,33 @@ function VocabTab({ vocab }) {
           </div>
         </div>}
 
-      {listView === 'chunks' && <div style={{ marginBottom:12, padding:'12px 14px', borderRadius:14, background:'#F3EEFC', border:'1px solid rgba(109,90,158,.2)' }}>
-        <strong style={{ display:'block', color:'#4C3D7A', fontSize:12.5 }}>O que é um chunk?</strong>
-        <span style={{ display:'block', color:'#4C3D7A', fontSize:12, marginTop:4, lineHeight:1.5 }}>É um pedaço pronto de inglês — palavras que os nativos sempre usam juntas, na mesma ordem (tipo "by the way" ou "as soon as possible"). Decorar o bloco inteiro deixa sua fala mais natural do que traduzir palavra por palavra.</span>
+      {listView === 'chunks' && <div style={{ marginBottom:12, padding:'12px 14px', borderRadius:14, background:'#FBF3DC', border:'1px solid rgba(184,134,11,.2)' }}>
+        <strong style={{ display:'block', color:'#7A5B0A', fontSize:12.5 }}>O que é um chunk?</strong>
+        <span style={{ display:'block', color:'#7A5B0A', fontSize:12, marginTop:4, lineHeight:1.5 }}>É um pedaço pronto de inglês — palavras que os nativos sempre usam juntas, na mesma ordem (tipo "by the way" ou "as soon as possible"). Decorar o bloco inteiro deixa sua fala mais natural do que traduzir palavra por palavra.</span>
       </div>}
 
-      {listView === 'chunks' && <div style={{ marginBottom:14, border:'1px solid rgba(109,90,158,.22)', borderRadius:16, background:'rgba(255,255,255,.72)', overflow:'hidden' }}>
+      {listView === 'chunks' && <div style={{ marginBottom:14, border:'1px solid rgba(184,134,11,.22)', borderRadius:16, background:'rgba(255,255,255,.72)', overflow:'hidden' }}>
           <div style={{ padding:10 }}>
-            <input value={chunkSearch} onChange={e => setChunkSearch(e.target.value)} placeholder="Buscar chunk ou tradução" style={{ width:'100%', boxSizing:'border-box', border:'1.5px solid #CBB8EC', borderRadius:12, padding:'11px 13px', background:'#FCFAFF', color:'#0F172A', fontFamily:'inherit', fontSize:13, outline:'none' }} />
+            <input value={chunkSearch} onChange={e => setChunkSearch(e.target.value)} placeholder="Buscar chunk ou tradução" style={{ width:'100%', boxSizing:'border-box', border:'1.5px solid #E0C978', borderRadius:12, padding:'11px 13px', background:'#FFFBF0', color:'#0F172A', fontFamily:'inherit', fontSize:13, outline:'none' }} />
           </div>
-          <div style={{ padding:'9px 12px', background:'#EFE9F9', color:'#4C3D7A', fontSize:11, fontWeight:800, textTransform:'uppercase', letterSpacing:.5 }}>
+          <div style={{ padding:'9px 12px', background:'#F6EBD3', color:'#7A5B0A', fontSize:11, fontWeight:800, textTransform:'uppercase', letterSpacing:.5 }}>
             Expressão · exemplo
           </div>
           <div style={{ padding:'8px', display:'grid', gap:7 }}>
-            {filteredChunks.map(([chunk,translation,exampleEn,examplePt]) => <div key={chunk} style={{ padding:'12px', border:'1px solid rgba(109,90,158,.16)', borderRadius:14, background:'#FFFEFC' }}>
+            {filteredChunks.map(([chunk,translation,exampleEn,examplePt]) => <div key={chunk} style={{ padding:'12px', border:'1px solid rgba(184,134,11,.16)', borderRadius:14, background:'#FFFEFC' }}>
               <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:10 }}>
-                <strong style={{ color:'#4C3D7A', fontSize:15 }}>{chunk}</strong>
+                <strong style={{ color:'#7A5B0A', fontSize:15 }}>{chunk}</strong>
                 <button type="button" onClick={() => playWord(chunk)} aria-label={`Ouvir ${chunk}`} title={`Ouvir ${chunk}`} style={{
-                  width:30, height:30, borderRadius:'50%', flexShrink:0, border:'1px solid rgba(109,90,158,.3)',
-                  background:speakingWord === chunk ? '#6D5A9E' : 'rgba(109,90,158,.12)',
-                  color:speakingWord === chunk ? '#fff' : '#4C3D7A', cursor:'pointer', fontSize:13,
+                  width:30, height:30, borderRadius:'50%', flexShrink:0, border:'1px solid rgba(184,134,11,.3)',
+                  background:speakingWord === chunk ? '#B8860B' : 'rgba(184,134,11,.12)',
+                  color:speakingWord === chunk ? '#fff' : '#7A5B0A', cursor:'pointer', fontSize:13,
                   display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'inherit'
                 }}>{speakingWord === chunk ? '■' : '🔊'}</button>
               </div>
-              <span style={{ display:'block', color:'#6D5A9E', fontSize:12, fontWeight:700, marginTop:2 }}>{translation}</span>
-              <div style={{ marginTop:9, padding:'8px 9px', borderRadius:10, background:'#F3EEFC' }}>
+              <span style={{ display:'block', color:'#8C6B0E', fontSize:12, fontWeight:700, marginTop:2 }}>{translation}</span>
+              <div style={{ marginTop:9, padding:'8px 9px', borderRadius:10, background:'#FBF3DC' }}>
                 <span style={{ display:'block', color:'#0F172A', fontSize:12.5 }}>{exampleEn}</span>
-                <span style={{ display:'block', color:'#6D5A9E', fontSize:11.5, marginTop:3 }}>{examplePt}</span>
+                <span style={{ display:'block', color:'#8C6B0E', fontSize:11.5, marginTop:3 }}>{examplePt}</span>
               </div>
             </div>)}
             {!filteredChunks.length && <div style={{ padding:22, textAlign:'center', color:'#94A3B8', fontSize:12.5 }}>Nenhum chunk encontrado.</div>}
