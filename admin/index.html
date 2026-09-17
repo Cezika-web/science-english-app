@@ -6727,6 +6727,12 @@
     // cancelada na agenda não gera pendência nenhuma. Sem teto fixo de dias:
     // cada aluno é escaneado desde a última pós-aula/atividade que ele
     // realmente recebeu; se nunca recebeu, olha os últimos 90 dias.
+    //
+    // As ocorrências vêm dos eventos REAIS da Agenda (calendarOccursOn), não
+    // do campo `aulaDias` do cadastro: isso respeita início de curso futuro
+    // (aluno que ainda não teve a primeira aula), fim de série (repeatUntil,
+    // quando a aula do aluno parou) e ajustes feitos direto na Agenda sem
+    // passar pelo cadastro — inclusive reposições, que contam como aula extra.
     const PEND_FALLBACK_DIAS = 90;
     const PEND_DIAS_NOMES = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
     const pendFmtData = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
@@ -6739,12 +6745,17 @@
     const pendPosaulaDueDate     = (classDate, wd) => pendRollToBizDay(calendarAddDays(classDate, 1), wd);
     const pendAtividadesDueDate  = (lastClassDate, wd) => pendRollToBizDay(calendarAddDays(lastClassDate, 2), wd);
 
-    function pendOccurrences(aulaDias, canceladas, from, to) {
+    // `ignorarCanceladas` serve pro ciclo de atividades: o César quer que ele
+    // continue rodando toda semana mesmo se o aluno faltou (dupla com aula
+    // cancelada só pra ele) ou não teve aula nenhuma — as atividades saem
+    // baseadas nos pós-aulas anteriores, repetitivas se precisar. Pós-aula
+    // não usa isso: sem aula recebida, não tem conteúdo pra render pós-aula.
+    function pendOcorrenciasReais(eventos, from, to, ignorarCanceladas = false) {
       const list = [];
       for (let d = new Date(from); d <= to; d = calendarAddDays(d, 1)) {
-        if (!aulaDias.includes(d.getDay())) continue;
-        if (canceladas.includes(calendarDateKey(d))) continue;
-        list.push(new Date(d));
+        const key = calendarDateKey(d);
+        const ocorre = eventos.some(ev => calendarOccursOn(ev, d) && (ignorarCanceladas || !(ev.canceladas || []).includes(key)));
+        if (ocorre) list.push(new Date(d));
       }
       return list;
     }
@@ -6769,10 +6780,9 @@
     // `dispensadas` é um Set de chaves "tipo_YYYY-MM-DD" — pendências que o
     // César excluiu com motivo pra essa ocorrência específica. Uma nova
     // ocorrência (outra data) não é afetada pela dispensa antiga.
-    function calcularPendencias(student, { ultimaPosData, ultimaAulaData, semAtividades, ultimaAtividadeCriada, canceladas, workingDays, hoje, dispensadas }) {
-      const aulaDias = Array.isArray(student.aulaDias) ? student.aulaDias.map(Number).filter(d => d >= 0 && d <= 6) : [];
+    function calcularPendencias(student, { ultimaPosData, ultimaAulaData, semAtividades, ultimaAtividadeCriada, eventos, workingDays, hoje, dispensadas }) {
       const disp = dispensadas || new Set();
-      if (!aulaDias.length) {
+      if (!eventos.length) {
         // Regra antiga: sem agenda cadastrada (ex.: aluno só-atividades) —
         // pendente quando não há nenhuma atividade em andamento.
         const refHoje = calendarDateKey(hoje);
@@ -6789,7 +6799,7 @@
 
       let posaulaPendente = null;
       const inicioPosaula = ultimaPosData ? calendarAddDays(ultimaPosData, 1) : calendarAddDays(hoje, -PEND_FALLBACK_DIAS);
-      const semPosaula = pendOccurrences(aulaDias, canceladas, inicioPosaula, hoje);
+      const semPosaula = pendOcorrenciasReais(eventos, inicioPosaula, hoje);
       if (semPosaula.length) {
         const candidatos = pendCandidatos(semPosaula, pendPosaulaDueDate, workingDays, hoje)
           .filter(c => !disp.has(`posaula_${calendarDateKey(c.ref)}`));
@@ -6809,7 +6819,7 @@
         const inicioCiclos = ultimaAtividadeCriada ? calendarAddDays(ultimaAtividadeCriada, 1) : calendarAddDays(hoje, -PEND_FALLBACK_DIAS);
         // Olha uma semana à frente pra enxergar o fim real da semana atual
         // mesmo quando a última aula dela ainda vai acontecer amanhã.
-        const ocorrencias = pendOccurrences(aulaDias, canceladas, inicioCiclos, calendarAddDays(hoje, 7));
+        const ocorrencias = pendOcorrenciasReais(eventos, inicioCiclos, calendarAddDays(hoje, 7), true);
         const semanas = {};
         ocorrencias.forEach(d => {
           const wk = calendarDateKey(calendarWeekStartDate(d));
@@ -7083,13 +7093,15 @@
       const active   = allStudents.filter(s => !s.archived);
       const archived = allStudents.filter(s => s.archived);
 
-      // Agenda pra calcular pendências: dias úteis da escola + aulas canceladas
-      // por aluno. Busca direto (não depende de ter aberto a aba Agenda antes).
-      // Pega TODOS os eventos, não só os de source:'cadastro' — uma aula
-      // ajustada/cancelada direto na Agenda também precisa valer aqui.
+      // Agenda pra calcular pendências: dias úteis da escola + os eventos de
+      // aula (e reposição) de cada aluno. Busca direto (não depende de ter
+      // aberto a aba Agenda antes). Pega TODOS os eventos, não só os de
+      // source:'cadastro' — uma aula ajustada/cancelada/encerrada direto na
+      // Agenda também precisa valer aqui, sem depender do `aulaDias` do
+      // cadastro (que não acompanha edições feitas só na Agenda).
       const pendHoje = new Date(); pendHoje.setHours(0,0,0,0);
       let pendWorkingDays = [...CALENDAR_DEFAULTS.workingDays];
-      const pendCanceladasPorAluno = {};
+      const pendEventosPorAluno = {};
       try {
         const [settingsSnap, eventsSnap] = await Promise.all([
           getDoc(doc(db, 'schools', escolaAtual, 'calendarSettings', 'work')),
@@ -7100,11 +7112,11 @@
         }
         eventsSnap.docs.forEach(item => {
           const ev = item.data();
-          if (!ev.studentUid || !Array.isArray(ev.canceladas) || !ev.canceladas.length) return;
-          (pendCanceladasPorAluno[ev.studentUid] ||= []).push(...ev.canceladas);
+          if (!ev.studentUid || (ev.type !== 'lesson' && ev.type !== 'reposicao')) return;
+          (pendEventosPorAluno[ev.studentUid] ||= []).push(ev);
         });
       } catch (e) {
-        console.warn('Não consegui carregar a agenda pra calcular pendências (seguindo sem cancelamentos):', e);
+        console.warn('Não consegui carregar a agenda pra calcular pendências (seguindo sem agenda):', e);
       }
 
       let readCount = 0;
@@ -7128,7 +7140,7 @@
         const dispensadas = new Set(dispSnap.docs.map(d => d.id));
         const { posaulaPendente, atividadesPendente, diasSemAula } = calcularPendencias(s, {
           ultimaPosData, ultimaAulaData, semAtividades: activityCounts.semAtividades, ultimaAtividadeCriada: dateOfAdm(activities[0]?.createdAt),
-          canceladas: pendCanceladasPorAluno[s.uid] || [], workingDays: pendWorkingDays, hoje: pendHoje, dispensadas,
+          eventos: pendEventosPorAluno[s.uid] || [], workingDays: pendWorkingDays, hoje: pendHoje, dispensadas,
         });
         const reviewReports = reviewSnap.docs.map(d => ({ id:d.id, ...d.data() }));
         const progress = adminProgressSummary(s, posts, activities);
