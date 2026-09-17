@@ -7559,11 +7559,33 @@
       return { issues, activitiesWithOral };
     }
 
+    // Só aceita um aluno da escola atual. Nome sem UID precisa ser único.
+    function resolverAlunoDoJson(data) {
+      const uid = typeof data?.uid === 'string' ? data.uid.trim() : '';
+      const nome = typeof data?.studentName === 'string' ? data.studentName.trim() : '';
+      const normalizar = value => value.toLocaleLowerCase('pt-BR').normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+      const porUid = uid ? allStudents.find(student => student.uid === uid) : null;
+      if (uid && !porUid) return { error:'UID não encontrado entre os alunos da escola atual.' };
+      const porNome = nome ? allStudents.filter(student =>
+        normalizar(student.name || student.firstName || '') === normalizar(nome)) : [];
+      if (nome && porNome.length > 1) return { error:'Nome ambíguo. Inclua o UID do aluno no JSON.' };
+      if (uid && nome && porNome.length === 1 && porNome[0].uid !== uid) {
+        return { error:'O UID e o studentName apontam para alunos diferentes.' };
+      }
+      if (!uid && !nome) return { error:'Inclua uid ou studentName no JSON.' };
+      const student = porUid || porNome[0];
+      if (!student) return { error:'Aluno não encontrado na escola atual. Confira o UID ou o nome completo.' };
+      return { student };
+    }
+
     // ── PUBLICAR ATIVIDADES ──────────────────────────────────────────────
     document.getElementById('btn-parse-json').onclick = () => {
       const raw = document.getElementById('pub-json').value.trim();
       const msg = document.getElementById('pub-msg');
       msg.style.display = 'none';
+      parsedActivityJson = null;
+      document.getElementById('pub-preview').style.display = 'none';
 
       let data;
       try {
@@ -7581,18 +7603,13 @@
         showMsg('pub-msg', `JSON de atividades bloqueado: ${oralValidation.issues.join(' ')}`, 'err'); return;
       }
 
+      const resolved = resolverAlunoDoJson(data);
+      if (resolved.error) { showMsg('pub-msg', resolved.error, 'err'); return; }
       parsedActivityJson = data;
-
-      // Aluno vem sempre do JSON (uid tem prioridade; senão casa o studentName com o cadastro).
-      const matchStudent = allStudents.find(s =>
-        (s.name || s.firstName || '').toLowerCase().includes((data.studentName || '').toLowerCase())
-      );
-      const resolvedUid = data.uid || (matchStudent ? matchStudent.uid : null);
-      const resolvedName = matchStudent ? (matchStudent.name || matchStudent.firstName) : (data.studentName || '?');
-      parsedActivityJson._resolvedUid = resolvedUid;
+      parsedActivityJson._resolvedUid = resolved.student.uid;
 
       document.getElementById('pub-preview-student').textContent =
-        `Aluno: ${resolvedName}${resolvedUid ? '' : ' ⚠️ Aluno não encontrado — confira studentName/uid no JSON'}`;
+        `Aluno: ${resolved.student.name || resolved.student.firstName}`;
 
       const publication = activityPublicationMetadata(data.week);
       document.getElementById('pub-preview-list').innerHTML = data.activities.map(a => `
@@ -7609,9 +7626,6 @@
         </div>`).join('');
 
       document.getElementById('pub-preview').style.display = 'block';
-      if (!resolvedUid) {
-        showMsg('pub-msg', '⚠️ UID do aluno não encontrado. O campo "uid" no JSON deve estar preenchido com o UID do Firebase.', 'err');
-      }
     };
 
     document.getElementById('btn-publish').onclick = async () => {
@@ -7781,6 +7795,8 @@
 
     document.getElementById('btn-parse-vocab').onclick = () => {
       const raw = document.getElementById('voc-json').value.trim();
+      parsedVocabJson = null;
+      document.getElementById('voc-preview').style.display = 'none';
       let data;
       try { data = JSON.parse(raw); } catch(e) { showMsg('voc-msg', 'JSON inválido.', 'err'); return; }
 
@@ -7806,16 +7822,14 @@
       }
       data.vocabulary = palavras;
 
-      // Aluno vem sempre do JSON (uid tem prioridade; senão casa o studentName com o cadastro).
-      const matchStudent = allStudents.find(s =>
-        (s.name || s.firstName || '').toLowerCase().includes((data.studentName || '').toLowerCase())
-      );
-      data._resolvedUid = data.uid || (matchStudent ? matchStudent.uid : null);
+      const resolved = resolverAlunoDoJson(data);
+      if (resolved.error) { showMsg('voc-msg', resolved.error, 'err'); return; }
+      data._resolvedUid = resolved.student.uid;
       parsedVocabJson = data;
 
-      const vName = matchStudent ? (matchStudent.name || matchStudent.firstName) : (data.studentName || '?');
+      const vName = resolved.student.name || resolved.student.firstName;
       document.getElementById('voc-preview-student').textContent =
-        `Aluno: ${vName} · Fonte: ${data.source || '—'}${data._resolvedUid ? '' : ' ⚠️ Aluno não encontrado — confira studentName/uid no JSON'}`;
+        `Aluno: ${vName} · Fonte: ${data.source || '—'}`;
       document.getElementById('voc-preview-list').innerHTML = data.vocabulary.map(v =>
         `<div class="preview-item"><span class="preview-emoji">🔤</span><div><div class="preview-title">${esc(v.en)}</div><div class="preview-meta">${esc(v.pt)}</div></div></div>`
       ).join('');
