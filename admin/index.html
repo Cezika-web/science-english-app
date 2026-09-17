@@ -247,7 +247,10 @@
     .gap-badge.alert { background: #fee2e2; color: #b91c1c; }
 
     /* ── Feed de pendências (ligado à agenda) ─────────────────────────── */
-    .pend-item { display: flex; gap: 12px; align-items: flex-start; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+    /* Bloco, não flex: o item tem duas linhas empilhadas (a linha do aluno e,
+       quando aberto, o formulário de excluir) — flex botava as duas lado a
+       lado e o botão "Excluir" saía cortado pra fora da coluna. */
+    .pend-item { padding: 14px 18px; border-bottom: 1px solid var(--border); }
     .pend-item:last-child { border-bottom: none; }
     .pend-item .pend-badge { flex-shrink: 0; font-size: 0.7rem; font-weight: 800; padding: 4px 8px; border-radius: 20px; white-space: nowrap; margin-top: 2px; }
     .pend-badge.late { background: #fee2e2; color: #b91c1c; }
