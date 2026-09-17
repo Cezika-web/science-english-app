@@ -6857,7 +6857,7 @@
 
       const item = it => { const id = itemId(it); return `
         <div class="pend-item">
-          <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="display:flex;gap:10px;align-items:flex-start;width:100%;">
             <span class="pend-badge ${it.badge}">${it.badge === 'late' ? 'ATRASADO' : it.badge === 'today' ? 'HOJE' : 'AMANHÃ'}</span>
             <button class="pend-open pend-body" data-uid="${it.student.uid}" data-name="${esc(it.student.name || it.student.firstName || 'Aluno')}" type="button" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;font-family:inherit;width:100%;">
               <strong>${esc(it.student.name || it.student.firstName || 'Aluno')}</strong>
