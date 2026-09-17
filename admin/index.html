@@ -6939,14 +6939,22 @@
     // pra essa ocorrência (data específica): se acontecer de novo depois,
     // a pendência volta a aparecer normalmente. O motivo é só pra César —
     // o aluno nunca vê isso.
-    let pendenciasDispensadasRecentes = []; // [{uid, nome, tipo, refData, motivo}], mais recente primeiro
+    let pendenciasDispensadasRecentes = []; // [{uid, nome, tipo, refData, motivo, quando}], mais recente primeiro
+
+    function pendFmtQuando(d) {
+      const hoje = new Date(); hoje.setHours(0,0,0,0);
+      const dia = new Date(d); dia.setHours(0,0,0,0);
+      const hora = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      return dia.getTime() === hoje.getTime() ? `hoje às ${hora}` : `em ${pendFmtData(d)} às ${hora}`;
+    }
 
     async function dispensarPendencia(uid, tipo, refData, nome, motivo) {
       try {
+        const quando = new Date();
         await setDoc(doc(db, 'students', uid, 'pendenciasDispensadas', `${tipo}_${refData}`), {
           motivo, tipo, refData, dispensadoEm: serverTimestamp(), dispensadoPor: auth.currentUser?.email || '',
         });
-        pendenciasDispensadasRecentes.unshift({ uid, nome, tipo, refData, motivo });
+        pendenciasDispensadasRecentes.unshift({ uid, nome, tipo, refData, motivo, quando });
         await loadStudents();
       } catch (e) {
         alert(`Não consegui excluir: ${e.message}`);
@@ -6970,7 +6978,7 @@
         <div style="display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--border);font-size:0.8rem;flex-wrap:wrap;align-items:center;">
           <div>
             <strong>${esc(d.nome)}</strong> — ${d.tipo === 'posaula' ? 'Pós-aula' : 'Atividades'}
-            <div style="color:var(--muted);">"${esc(d.motivo)}"</div>
+            <div style="color:var(--muted);">"${esc(d.motivo)}" · dispensado ${pendFmtQuando(d.quando)}</div>
           </div>
           <button type="button" class="pend-undo" data-uid="${d.uid}" data-tipo="${d.tipo}" data-ref="${d.refData}" style="background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;font-size:0.78rem;">↺ Desfazer</button>
         </div>`).join('') : '<div style="color:var(--muted);font-size:0.82rem;padding-top:6px;">Nada dispensado nesta sessão ainda.</div>';
