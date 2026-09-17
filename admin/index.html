@@ -6868,7 +6868,7 @@
               ${it.extra ? `<div class="pend-extra">${esc(it.extra)}</div>` : ''}
             </button>
             <div style="display:flex;gap:6px;flex-shrink:0;">
-              <button class="pend-action" data-uid="${it.student.uid}" data-destino="${it.tipo}" type="button" style="border:1px solid var(--brand);background:#fff;color:var(--brand);padding:7px 9px;border-radius:8px;font-weight:700;cursor:pointer;white-space:nowrap;">${it.tipo === 'posaula' ? 'Pós-aula' : 'Atividades'} →</button>
+              <button class="pend-action" data-uid="${it.student.uid}" data-destino="${it.tipo}" type="button" style="border:1px solid var(--brand,#16A34A);background:#fff;color:var(--brand,#16A34A);padding:7px 9px;border-radius:8px;font-weight:700;cursor:pointer;white-space:nowrap;">${it.tipo === 'posaula' ? 'Pós-aula' : 'Atividades'} →</button>
               <button class="pend-dismiss-toggle" data-toggle="${id}" type="button" title="Excluir com motivo" style="border:1px solid var(--border);background:#fff;color:var(--muted);padding:7px 9px;border-radius:8px;font-weight:700;cursor:pointer;">✕</button>
             </div>
           </div>
@@ -6879,7 +6879,7 @@
             <input type="text" id="pend-dismiss-reason-${id}" placeholder="Por que não vai enviar agora? (fica só anotado pra você)" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:0.82rem;margin-bottom:8px;font-family:inherit;">
             <div style="display:flex;gap:8px;justify-content:flex-end;">
               <button type="button" class="pend-dismiss-cancel" data-cancel="${id}" style="background:none;border:1px solid var(--border);color:var(--muted);padding:7px 12px;border-radius:8px;font-weight:600;font-size:0.78rem;cursor:pointer;">Cancelar</button>
-              <button type="button" class="pend-dismiss-confirm" data-confirm="${id}" data-uid="${it.student.uid}" data-tipo="${it.tipo}" data-ref="${it.refData}" data-nome="${esc(it.student.name || it.student.firstName || 'Aluno')}" style="background:var(--brand);border:none;color:#fff;padding:7px 12px;border-radius:8px;font-weight:700;font-size:0.78rem;cursor:pointer;">Excluir</button>
+              <button type="button" class="pend-dismiss-confirm" data-confirm="${id}" data-uid="${it.student.uid}" data-tipo="${it.tipo}" data-ref="${it.refData}" data-nome="${esc(it.student.name || it.student.firstName || 'Aluno')}" style="background:var(--brand,#16A34A);border:none;color:#fff;padding:7px 12px;border-radius:8px;font-weight:700;font-size:0.78rem;cursor:pointer;">Excluir</button>
             </div>
           </div>
         </div>`; };
