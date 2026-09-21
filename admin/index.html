@@ -4423,11 +4423,15 @@
       return meses[0]||'';
     }
 
-    // Mês em que o aluno começou a ser cobrado: o mais antigo entre o primeiro
-    // lançamento de mensalidade e o mês em que o cadastro financeiro foi criado.
-    // Quem ainda não pagou nada (aluno novo) começa no mês do cadastro — não
-    // aparece como pendente nos meses anteriores.
+    // Mês em que o aluno começa a entrar no financeiro: o da "Data de início das
+    // aulas" do cadastro. Cadastrado em setembro com início em dezembro, ele só
+    // aparece na planilha a partir de dezembro. Sem essa data (alunos antigos),
+    // vale o mais antigo entre o primeiro pagamento e a criação do cadastro
+    // financeiro.
     function financeProfileStartMonth(profile) {
+      const aluno=allStudents.find(item=>item.uid===profile.studentUid);
+      const inicioCurso=aluno?.inicioCurso?String(adminDateKey(aluno.inicioCurso)||'').slice(0,7):'';
+      if(inicioCurso) return inicioCurso;
       const primeiro=financeFirstChargedMonth(profile.studentUid);
       const criado=profile.createdAt?.toDate?profile.createdAt.toDate():null;
       const mesCriado=criado?`${criado.getFullYear()}-${String(criado.getMonth()+1).padStart(2,'0')}`:'';
