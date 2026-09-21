@@ -4350,6 +4350,7 @@
           if(status.key!=='overdue') return;
           const dias=financeLateDays(part);
           if(dias<0) return;
+          if((profile.atrasoOcultos||[]).includes(`${month}|${part.label}`)) return;
           const aluno=allStudents.find(item=>item.uid===profile.studentUid);
           const historico=financeCharges.filter(aviso=>aviso.uid===profile.studentUid&&aviso.mes===month&&aviso.etapa===part.label)
             .sort((a,b)=>(b.enviadoEm?.toMillis?.()||0)-(a.enviadoEm?.toMillis?.()||0))[0];
@@ -4382,17 +4383,44 @@
         <span style="display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap;"><strong style="white-space:nowrap;">${financeMoney(item.falta)}</strong>
           ${estadoAviso(item)?`<span style="font-size:.66rem;color:#92400E;white-space:nowrap;">✓ ${estadoAviso(item)}</span>`:''}
           ${item.dias>=FINANCE_AVISO_DIAS?`<button type="button" data-finance-cobrar="${esc(item.uid)}" data-finance-nome="${esc(item.nome)}" style="border:0;border-radius:999px;background:#B45309;color:#fff;padding:3px 9px;font-family:inherit;font-size:.68rem;font-weight:900;cursor:pointer;">${estadoAviso(item)?'Cobrar novamente':'Cobrar'}</button>`:''}
-          ${item.avisa?' <span title="aviso automático ativado para este aluno">🔔</span>':''}</span>
+          ${item.avisa?' <span title="aviso automático ativado para este aluno">🔔</span>':''}
+          <button type="button" data-finance-ocultar="${esc(item.uid)}" data-finance-etapa="${esc(item.etapa)}" title="Tirar este aviso da lista" style="border:0;background:none;color:#9CA3AF;font-size:1rem;line-height:1;padding:0 3px;cursor:pointer;font-family:inherit;">×</button></span>
       </div>`;
       const aCobrar=atrasados.filter(item=>item.dias>=FINANCE_AVISO_DIAS).length;
       box.innerHTML=`${atrasados.length?`<div style="margin-bottom:14px;padding:12px 14px;border-radius:12px;background:#FFFBEB;border:1px solid #FDE68A;color:#78350F;font-size:.8rem;">
-        <strong style="font-size:.86rem;">⏰ ${atrasados.length} pagamento(s) em atraso</strong>
-        ${aCobrar?`<span style="margin-left:6px;color:#92400E;">— ${aCobrar} para cobrar</span>`:''}
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;"><span><strong style="font-size:.86rem;">⏰ ${atrasados.length} pagamento(s) em atraso</strong>
+        ${aCobrar?`<span style="margin-left:6px;color:#92400E;">— ${aCobrar} para cobrar</span>`:''}</span>
+        <button type="button" id="finance-ocultar-todos" title="Tirar todos os avisos de atraso da lista" style="border:0;background:none;color:#9CA3AF;font-size:1rem;line-height:1;padding:0 3px;cursor:pointer;font-family:inherit;">×</button></div>
         ${atrasados.map(linha).join('')}
       </div>`:''}${enviados.length?`<div style="margin-bottom:14px;padding:12px 14px;border-radius:12px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A;font-size:.8rem;">
-        <strong style="font-size:.86rem;">📨 Cobranças enviadas em ${esc(month)}</strong>
-        ${enviados.map(aviso=>`<div style="padding:6px 0;border-top:1px solid #BFDBFE;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;"><span><strong>${esc(aviso.nome)}</strong> · ${esc(aviso.etapa||'Mensalidade')} · enviada em ${avisoData(aviso.enviadoEm)}</span><span>${avisoEstado(aviso)}</span></div>`).join('')}
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;"><strong style="font-size:.86rem;">📨 Cobranças enviadas em ${esc(month)}</strong>
+        <button type="button" id="finance-excluir-todas" title="Excluir todas as cobranças enviadas deste mês" style="border:0;background:none;color:#9CA3AF;font-size:1rem;line-height:1;padding:0 3px;cursor:pointer;font-family:inherit;">×</button></div>
+        ${enviados.map(aviso=>`<div style="padding:6px 0;border-top:1px solid #BFDBFE;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;"><span><strong>${esc(aviso.nome)}</strong> · ${esc(aviso.etapa||'Mensalidade')} · enviada em ${avisoData(aviso.enviadoEm)}</span><span>${avisoEstado(aviso)} <button type="button" data-finance-excluir="${esc(aviso.uid)}" data-finance-aviso="${esc(aviso.id)}" title="Excluir esta cobrança" style="border:0;background:none;color:#9CA3AF;font-size:1rem;line-height:1;padding:0 3px;cursor:pointer;font-family:inherit;">×</button></span></div>`).join('')}
       </div>`:''}`;
+      // Tirar aviso de atraso: só esconde da lista (fica guardado no cadastro
+      // financeiro do aluno); a mensalidade continua pendente na planilha.
+      const ocultar=async itens=> {
+        try {
+          const porAluno=new Map();
+          itens.forEach(item=>{ const perfil=financeProfiles.find(p=>p.studentUid===item.uid); if(perfil) (porAluno.get(perfil.id)||porAluno.set(perfil.id,[]).get(perfil.id)).push(`${month}|${item.etapa}`); });
+          await Promise.all([...porAluno].map(([id,chaves])=>setDoc(doc(db,'schools',escolaAtual,'financeStudents',id),{atrasoOcultos:arrayUnion(...chaves)},{merge:true})));
+          await loadFinance();
+        } catch(error) { alert(`Não consegui tirar o aviso: ${error.message}`); }
+      };
+      box.querySelectorAll('[data-finance-ocultar]').forEach(button=>button.onclick=()=>
+        ocultar(atrasados.filter(item=>item.uid===button.dataset.financeOcultar&&item.etapa===button.dataset.financeEtapa)));
+      const todosAtraso=box.querySelector('#finance-ocultar-todos');
+      if(todosAtraso) todosAtraso.onclick=()=> { if(confirm('Tirar todos os avisos de atraso da lista?')) ocultar(atrasados); };
+      const excluir=async lista=> {
+        try {
+          await Promise.all(lista.map(aviso=>deleteDoc(doc(db,'students',aviso.uid,'cobrancas',aviso.id))));
+          await loadFinance();
+        } catch(error) { alert(`Não consegui excluir: ${error.message}`); }
+      };
+      box.querySelectorAll('[data-finance-excluir]').forEach(button=>button.onclick=()=>
+        excluir(enviados.filter(aviso=>aviso.uid===button.dataset.financeExcluir&&aviso.id===button.dataset.financeAviso)));
+      const todasEnviadas=box.querySelector('#finance-excluir-todas');
+      if(todasEnviadas) todasEnviadas.onclick=()=> { if(confirm(`Excluir as ${enviados.length} cobrança(s) enviadas em ${month}?`)) excluir(enviados); };
       box.querySelectorAll('[data-finance-cobrar]').forEach(button=>button.onclick=async()=> {
         const uid=button.dataset.financeCobrar,nome=button.dataset.financeNome||'aluno';
         const original=button.textContent;
