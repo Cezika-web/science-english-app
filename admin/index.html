@@ -6986,7 +6986,7 @@
             <div style="color:var(--muted);">"${esc(d.motivo)}" · dispensado ${pendFmtQuando(d.quando)}</div>
           </div>
           <button type="button" class="pend-undo" data-uid="${d.uid}" data-tipo="${d.tipo}" data-ref="${d.refData}" style="background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;font-size:0.78rem;">↺ Desfazer</button>
-        </div>`).join('') : '<div style="color:var(--muted);font-size:0.82rem;padding-top:6px;">Nada dispensado nesta sessão ainda.</div>';
+        </div>`).join('') : '<div style="color:var(--muted);font-size:0.82rem;padding-top:6px;">Nada dispensado nos últimos 7 dias.</div>';
       box.querySelectorAll('.pend-undo').forEach(btn => {
         btn.onclick = () => desfazerDispensa(btn.dataset.uid, btn.dataset.tipo, btn.dataset.ref);
       });
@@ -7132,6 +7132,7 @@
       }
 
       let readCount = 0;
+      const dispensadasRecentesCarregadas = [];
       const rows = await Promise.all(active.map(async s => {
         const [posSnap, actSnap, reviewSnap, dispSnap] = await Promise.all([
           getDocs(query(collection(db, 'students', s.uid, 'posaulas'), orderBy('createdAt', 'desc'))),
@@ -7150,6 +7151,14 @@
           .sort((a,b) => b-a)[0] || null);
         const ultimaPosData = pendMidnight(dateOfAdm(latest?.classDate || latest?.createdAt || latest?.publishedAt));
         const dispensadas = new Set(dispSnap.docs.map(d => d.id));
+        // Histórico persistente: dispensas dos últimos 7 dias voltam a aparecer
+        // em "Dispensadas recentemente" mesmo depois de recarregar a página.
+        dispSnap.docs.forEach(d => {
+          const x = d.data();
+          const quando = x.dispensadoEm?.toDate ? x.dispensadoEm.toDate() : new Date();
+          if (Date.now() - quando.getTime() > 7 * 86400000) return;
+          dispensadasRecentesCarregadas.push({ uid: s.uid, nome: s.name || s.firstName || 'Aluno', tipo: x.tipo, refData: x.refData, motivo: x.motivo || '', quando });
+        });
         const { posaulaPendente, atividadesPendente, diasSemAula } = calcularPendencias(s, {
           ultimaPosData, ultimaAulaData, semAtividades: activityCounts.semAtividades, ultimaAtividadeCriada: pendMidnight(dateOfAdm(activities[0]?.createdAt)),
           eventos: pendEventosPorAluno[s.uid] || [], workingDays: pendWorkingDays, hoje: pendHoje, dispensadas,
@@ -7163,6 +7172,8 @@
           reviewReports, progress,
         };
       }));
+
+      pendenciasDispensadasRecentes = dispensadasRecentesCarregadas.sort((a, b) => b.quando - a.quando);
 
       // Ex-alunos continuam com a mesma visão de atividades: pendentes,
       // finalizadas para corrigir e histórico. Carregamos só o necessário para
