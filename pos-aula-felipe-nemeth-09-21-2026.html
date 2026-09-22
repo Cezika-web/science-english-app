@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Felipe Nemeth — CZK English</title>
+  <style>
+    :root{
+      --page-bg:#f4f7fa;--card-bg:#fff;--accent:#16A34A;--accent-dark:#15803D;
+      --green:#36b37e;--muted:#6b7280;--border:#DCF0E3;--card-width:720px;
+    }
+    html,body{height:100%;margin:0;padding:0;background:var(--page-bg);font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;}
+    .wrap{min-height:100%;display:flex;align-items:flex-start;justify-content:center;padding:48px 20px;}
+    .card{width:100%;max-width:var(--card-width);background:var(--card-bg);border-radius:18px;padding:28px;box-shadow:0 6px 22px rgba(33,47,60,.06);border:1px solid rgba(15,33,64,.03);}
+    header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px;}
+    .badge{background:linear-gradient(180deg,#fff,#F0FDF4);border:1px solid var(--border);padding:8px 12px;border-radius:999px;color:var(--accent);font-weight:700;font-size:.85rem;}
+    h1{margin:0;font-size:1.3rem;color:#0f1724;}
+    h2{color:#0f1724;}
+    .meta{color:var(--muted);font-size:.92rem;margin-top:6px;}
+    .actions{display:flex;gap:10px;}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;border:none;background:var(--accent);color:#fff;text-decoration:none;font-weight:600;cursor:pointer;box-shadow:0 6px 14px rgba(22,163,74,.12);}
+    main{margin-top:18px;}section{margin-top:18px;}
+    .panel{background:#F7FDF9;border-radius:12px;padding:16px;border:1px solid var(--border);}
+    .outline-card{border-radius:10px;border:1px solid var(--border);padding:16px;background:#fff;}
+    .outline-card li{margin-bottom:7px;line-height:1.45;}
+    .vocab-grid{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;}
+    .vocab{flex:1;min-width:220px;border-radius:10px;padding:14px;border:2px solid #C9E9D5;background:#fff;}
+    .vocab.green{border-color:#c9f3dc;background:#f5fff6;}
+    .vocab.yellow{border-color:#fde68a;background:#fffdf0;}
+    .vocab h3{margin:0;font-size:1rem;color:#14532D;min-width:0;overflow-wrap:anywhere;}
+    .vocab p{margin:8px 0 0;color:var(--muted);font-size:.95rem;line-height:1.45;}
+    .vocab-head{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+    .vocab-say{flex:0 0 auto;width:40px;height:40px;padding:0;border-radius:50%;cursor:pointer;border:1px solid #C9E9D5;background:#F0FDF4;color:#15803D;font-size:1rem;line-height:1;display:inline-flex;align-items:center;justify-content:center;font-family:inherit;}
+    .vocab-say:hover{background:#DCFCE7;}
+    .vocab-say[data-czk-speaking="true"]{background:var(--accent);border-color:var(--accent-dark);color:#fff;animation:czk-pulse .9s ease-in-out infinite;}
+    @keyframes czk-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+    @media (prefers-reduced-motion:reduce){.vocab-say[data-czk-speaking="true"]{animation:none;}}
+    .media-row{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap;}
+    .media-btn{background:#fff;border:1px solid var(--border);padding:12px 16px;border-radius:10px;font-weight:700;color:var(--accent);text-decoration:none;display:inline-flex;align-items:center;gap:10px;min-width:200px;justify-content:center;}
+    .homework{background:#f3fff6;border:1px solid #d7f5df;border-radius:10px;padding:14px;margin-top:10px;}
+    .speaking{margin-top:18px;padding:16px;border-radius:12px;background:linear-gradient(180deg,#fff,#F7FDF9);border:1px solid var(--border);max-width:640px;}
+    .speaking h2{margin:0 0 10px;font-size:1.05rem;color:#0f1724;}
+    .talk-table{width:100%;border-collapse:collapse;overflow:hidden;background:#fff;border:1px solid #DCF0E3;font-size:.9rem;}
+    .talk-table th,.talk-table td{padding:8px 10px;text-align:left;}
+    .talk-table th{background:#E7F6EC;color:#14532D;font-weight:700;border-bottom:1px solid #C9E9D5;}
+    .row-teacher{background:#E7F6EC;}.row-student{background:#F3F4F6;}
+    .talk-label,.talk-percent{font-weight:700;}.talk-percent{color:#0f1724;}.talk-time{color:var(--muted);}
+    footer{margin-top:20px;color:var(--muted);font-size:.9rem;text-align:center;}
+    @media (max-width:720px){.card{padding:18px;border-radius:14px}.vocab-grid,.media-row{flex-direction:column}header{flex-direction:column}.actions{width:100%}.actions .btn{width:100%;justify-content:center;box-sizing:border-box}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Causative Structures in Service Advertising</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Felipe Nemeth &nbsp;•&nbsp;
+            <strong>Data:</strong> 09/21/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+        <section class="panel">
+          <p style="margin:0;font-weight:600;color:#14532D;"><em>Felipe revisou as estruturas causativas com <strong>have</strong> e <strong>get</strong>, diferenciando usos ativos e passivos em anúncios de serviços. A aula também treinou listening, tradução por contexto e a identificação das estruturas dentro de falas reais.</em></p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 8px;">A aula começou com uma conversa sobre o primeiro campeonato de jiu-jítsu do Heitor. Depois, houve uma revisão rápida da pronúncia com o <strong>magic e</strong>: a vogal final muda o som da vogal anterior, como em <em>mad → made</em> e <em>cap → cape</em>.</p>
+            <p style="margin:0 0 8px;">O foco principal foi o <strong>causative</strong>. No causativo ativo, a frase informa quem realiza a ação: com <strong>have</strong>, usamos pessoa + verbo na forma base (<em>have our experts prepare</em>); com <strong>get</strong>, usamos pessoa + <em>to</em> + verbo (<em>get someone else to do it</em>). No causativo passivo, o objeto que recebe a ação vem antes do particípio passado: <em>have my car washed</em>.</p>
+            <p style="margin:0;">Na etapa de listening, Felipe identificou causativos em anúncios de <strong>catering</strong>, <strong>dog grooming</strong>, tradução para empresas e organização profissional. Também revisou <em>used to</em> para hábitos passados, <em>whether...or</em> para alternativas com o mesmo resultado e <em>would rather</em> para expressar preferência.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2>
+          <div class="outline-card">
+            <ul style="margin:0;padding-left:20px;">
+              <li><strong>He won the first fight.</strong> → Ele venceu a primeira luta.</li>
+              <li><strong>I used to have a babysitter.</strong> → Eu costumava ter uma babá.</li>
+              <li><strong>Have our experts prepare an excellent meal.</strong> → Conte com nossos especialistas para preparar uma excelente refeição.</li>
+              <li><strong>Get someone else to do it.</strong> → Arrume outra pessoa para fazer isso.</li>
+              <li><strong>Whether you want to organize a marketing campaign or get a local business to work with you, we can help.</strong> → Seja para organizar uma campanha de marketing ou conseguir uma empresa local para trabalhar com você, podemos ajudar.</li>
+              <li><strong>You would rather eat out than cook for yourself.</strong> → Você preferiria comer fora a cozinhar para si mesmo.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <div class="vocab-head">
+                <h3>Causative structure</h3>
+                <button type="button" class="vocab-say" data-czk-say="Causative structure" aria-label="Ouvir a pronúncia de Causative structure" aria-pressed="false" title="Ouvir Causative structure">&#128266;</button>
+              </div>
+              <p><em>(pt) estrutura causativa</em><br><small>Mostra que alguém providencia ou pede para outra pessoa realizar uma ação. Ex.: <strong>We had the kitchen painted.</strong></small></p>
+            </div>
+            <div class="vocab green">
+              <div class="vocab-head">
+                <h3>Past participle</h3>
+                <button type="button" class="vocab-say" data-czk-say="Past participle" aria-label="Ouvir a pronúncia de Past participle" aria-pressed="false" title="Ouvir Past participle">&#128266;</button>
+              </div>
+              <p><em>(pt) particípio passado</em><br><small>Forma usada no causativo passivo: <strong>have/get + object + past participle</strong>. Ex.: <strong>I have my car washed.</strong></small></p>
+            </div>
+            <div class="vocab yellow">
+              <div class="vocab-head">
+                <h3>Someone else</h3>
+                <button type="button" class="vocab-say" data-czk-say="Someone else" aria-label="Ouvir a pronúncia de Someone else" aria-pressed="false" title="Ouvir Someone else">&#128266;</button>
+              </div>
+              <p><em>(pt) outra pessoa / alguém além de você</em><br><small><em>Else</em> acrescenta a ideia de “outro”. Ex.: <strong>Get someone else to wash the dog.</strong></small></p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2>
+          <div class="outline-card">
+            <h3 style="margin-top:0;">Gramática e estruturas</h3>
+            <ul>
+              <li><strong>have someone do something</strong> – pedir/mandar alguém fazer algo</li>
+              <li><strong>get someone to do something</strong> – conseguir/pedir que alguém faça algo</li>
+              <li><strong>have/get something done</strong> – mandar/providenciar que algo seja feito</li>
+              <li><strong>base form</strong> – forma base do verbo</li>
+              <li><strong>past participle</strong> – particípio passado; “terceira coluna” dos verbos irregulares</li>
+              <li><strong>used to</strong> – costumava; hábito ou situação do passado que não acontece mais</li>
+              <li><strong>be used to</strong> – estar acostumado a</li>
+              <li><strong>whether...or</strong> – seja...ou / quer...quer; apresenta alternativas</li>
+              <li><strong>would rather</strong> – preferiria</li>
+              <li><strong>else</strong> – outro(a), além disso; em programação, também pode indicar “caso contrário”</li>
+            </ul>
+            <h3>Serviços e anúncios</h3>
+            <ul>
+              <li><strong>catering</strong> – serviço de alimentação para eventos</li>
+              <li><strong>staff</strong> – equipe</li>
+              <li><strong>guest</strong> – convidado</li>
+              <li><strong>attentive</strong> – atencioso</li>
+              <li><strong>dog grooming</strong> – banho, tosa e cuidados estéticos para cães</li>
+              <li><strong>pooch / pal</strong> – cachorro / companheiro; formas informais e carinhosas</li>
+              <li><strong>local business</strong> – empresa ou negócio local</li>
+              <li><strong>professional organizer</strong> – profissional de organização de ambientes</li>
+              <li><strong>counter</strong> – balcão ou bancada</li>
+              <li><strong>closet</strong> – armário / guarda-roupa</li>
+            </ul>
+            <h3>Pronúncia</h3>
+            <ul>
+              <li><strong>magic e</strong> – “e” final silencioso que costuma mudar o som da vogal anterior</li>
+              <li><strong>mad → made</strong> – bravo/louco → fez/feito</li>
+              <li><strong>cap → cape</strong> – boné → capa</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">🚨 Correções importantes</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 10px;"><strong>1. Preposição para eventos</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ “I was no jiu-jitsu championship.”</p>
+            <p style="margin:0 0 14px;color:#276749;">✅ <strong>“I was at a jiu-jitsu championship.”</strong> — Para dizer que você estava em um evento, use <strong>at</strong>.</p>
+
+            <p style="margin:0 0 10px;"><strong>2. Hábito passado</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ “We can use the babysitters.”</p>
+            <p style="margin:0 0 14px;color:#276749;">✅ <strong>“We used to have a babysitter.”</strong> — <strong>Used to + verbo</strong> descreve algo habitual no passado que já não acontece.</p>
+
+            <p style="margin:0 0 10px;"><strong>3. Causativo ativo com get</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ “She got the driver pick up the package.”</p>
+            <p style="margin:0 0 14px;color:#276749;">✅ <strong>“She got the driver to pick up the package.”</strong> — Com <strong>get + pessoa</strong>, use <strong>to + verbo</strong>.</p>
+
+            <p style="margin:0 0 10px;"><strong>4. Causativo passivo</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ “I have my car wash every week.”</p>
+            <p style="margin:0 0 14px;color:#276749;">✅ <strong>“I have my car washed every week.”</strong> — O carro recebe a ação; por isso, usamos o particípio passado <strong>washed</strong>.</p>
+
+            <p style="margin:0 0 10px;"><strong>5. Have não leva to no causativo ativo</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ “I’ll have my assistant to confirm it.”</p>
+            <p style="margin:0;color:#276749;">✅ <strong>“I’ll have my assistant confirm it.”</strong> — Com <strong>have + pessoa</strong>, o segundo verbo fica na forma base, sem <strong>to</strong>.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Gravação da aula</h2>
+          <div class="media-row">
+            <a class="media-btn" href="https://youtu.be/kryBZgyNAtM" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a>
+          </div>
+        </section>
+
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>🗣️ Tempo de Fala (Talk Time)</h2>
+          <table class="talk-table">
+            <thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead>
+            <tbody>
+              <tr class="row-teacher"><td><span class="talk-label">César (Professor)</span></td><td><span class="talk-percent">65%</span></td><td class="talk-time">~30 minutos</td></tr>
+              <tr class="row-student"><td><span class="talk-label">Felipe Nemeth</span></td><td><span class="talk-percent">35%</span></td><td class="talk-time">~16 minutos</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📝 Homework</h2>
+          <div class="homework">
+            <p style="margin:0 0 8px;">📌 <strong>Lição de casa:</strong></p>
+            <ul style="margin:0 0 6px 18px;padding:0;font-size:.94rem;color:var(--muted);">
+              <li>Escreva <strong>6 frases causativas</strong>: 2 com <em>have + pessoa + verbo</em>, 2 com <em>get + pessoa + to + verbo</em> e 2 no causativo passivo.</li>
+              <li>Ouça novamente um dos anúncios da gravação e anote o serviço oferecido, a estrutura causativa e sua tradução natural.</li>
+              <li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana.</li>
+            </ul>
+          </div>
+          <div style="margin-top:14px;">
+            <a class="btn" href="https://wa.me" style="background:#25D366;border-radius:10px;box-shadow:none;">💬 Falar comigo no WhatsApp</a>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <p style="margin:18px 0 0;color:var(--muted);font-size:.9rem;">© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p>
+      </footer>
+    </article>
+  </div>
+
+  <script>
+  (function(){
+    var host=window.parent===window?null:window.parent;
+    var active=null,pendingId=0,acked=false,fallbackTimer=null,audioEl=null;
+    function mark(btn,on){if(!btn)return;btn.setAttribute('data-czk-speaking',on?'true':'false');btn.setAttribute('aria-pressed',on?'true':'false');}
+    function clearActive(){mark(active,false);active=null;}
+    function warn(msg){
+      var box=document.getElementById('czk-audio-msg');
+      if(!box){box=document.createElement('div');box.id='czk-audio-msg';box.setAttribute('role','status');box.style.cssText='position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';document.body.appendChild(box);}
+      box.textContent=msg;box.style.display='block';clearTimeout(warn._t);warn._t=setTimeout(function(){box.style.display='none';},4000);
+    }
+    function stopAll(){
+      if(fallbackTimer){clearTimeout(fallbackTimer);fallbackTimer=null;}
+      if(audioEl){try{audioEl.pause();}catch(e){}audioEl=null;}
+      try{if(window.speechSynthesis)window.speechSynthesis.cancel();}catch(e){}
+      if(host){try{host.postMessage({source:'czk-posaula',type:'stop'},'*');}catch(e){}}
+      clearActive();
+    }
+    function localSpeak(text,btn){
+      var synth=window.speechSynthesis;
+      if(!synth||typeof window.SpeechSynthesisUtterance!=='function'){warn('Este aparelho ainda não tem voz em inglês.');clearActive();return;}
+      synth.cancel();var u=new SpeechSynthesisUtterance(text);var isPhrase=text.trim().split(/\s+/).length>1;
+      u.lang='en-US';u.rate=isPhrase?.95:.88;u.pitch=1;
+      function score(v){var n=/^en[-_]US/i.test(v.lang)?100:0;if(/natural|neural|premium|enhanced/i.test(v.name))n+=80;if(/samantha|ava/i.test(v.name))n+=65;if(/google.*(us|english)|aria/i.test(v.name))n+=55;if(/zira/i.test(v.name))n+=35;if(v.localService)n+=5;return n;}
+      var en=synth.getVoices().filter(function(v){return /^en[-_]/i.test(v.lang);});var pick=en.sort(function(a,b){return score(b)-score(a);})[0];if(pick)u.voice=pick;
+      u.onstart=function(){mark(btn,true);};u.onend=function(){if(active===btn)clearActive();};u.onerror=function(ev){if(ev.error!=='canceled'&&ev.error!=='interrupted')warn('Não consegui reproduzir o áudio agora.');if(active===btn)clearActive();};synth.speak(u);
+    }
+    function requestSpeech(text,btn){
+      if(!host){localSpeak(text,btn);return;}acked=false;var id=++pendingId;
+      try{host.postMessage({source:'czk-posaula',type:'speak',id:id,text:text},'*');}catch(e){localSpeak(text,btn);return;}
+      fallbackTimer=setTimeout(function(){if(!acked&&active===btn)localSpeak(text,btn);},700);
+    }
+    function play(btn){
+      var text=(btn.getAttribute('data-czk-say')||'').trim();if(!text)return;var wasActive=active===btn;stopAll();if(wasActive)return;active=btn;mark(btn,true);
+      var url=btn.getAttribute('data-czk-audio');if(url&&/^https:\/\//i.test(url)){audioEl=new Audio(url);audioEl.onended=function(){if(active===btn)clearActive();};audioEl.onerror=function(){if(active===btn)requestSpeech(text,btn);};var p=audioEl.play();if(p&&p.catch)p.catch(function(){if(active===btn)requestSpeech(text,btn);});return;}requestSpeech(text,btn);
+    }
+    window.addEventListener('message',function(ev){var d=ev.data;if(!d||d.source!=='czk-app'||d.id!==pendingId)return;if(d.type==='speak-ack'){acked=true;if(fallbackTimer){clearTimeout(fallbackTimer);fallbackTimer=null;}return;}if(d.type==='speak-start'){mark(active,true);return;}if(d.type==='speak-end'){clearActive();return;}if(d.type==='speak-error'){warn('Este aparelho ainda não tem voz em inglês.');clearActive();}});
+    document.addEventListener('click',function(ev){var t=ev.target;if(!t||!t.closest)return;var btn=t.closest('[data-czk-say]');if(btn){ev.preventDefault();play(btn);return;}var pr=t.closest('[data-czk-action="print"]');if(pr){ev.preventDefault();try{window.print();}catch(e){}}});
+  })();
+  </script>
+</body>
+</html>
