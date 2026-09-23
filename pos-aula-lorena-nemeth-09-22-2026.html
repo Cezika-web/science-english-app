@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Lorena Nemeth — CZK English</title>
+  <style>
+:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;"><span class="badge">PÓS-AULA</span><h1>Tecnologia em viagens: aparelhos, tomadas e compreensão oral</h1></div>
+          <div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Lorena Nemeth &nbsp;•&nbsp; <strong>Data:</strong> 09/22/2026</div>
+        </div>
+        <div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div>
+      </header>
+      <main>
+        <section class="panel"><p style="margin:0;font-style:italic;color:#14532D;">Hoje você retomou o tema tecnologia, aprendeu como falar de aparelhos e tomadas em uma viagem e praticou a escuta de um podcast sobre problemas reais de viajantes. O principal desafio foi distinguir detalhes muito repetidos da informação que respondia à pergunta.</p></section>
+
+        <section><h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2><div class="outline-card">
+          <p style="margin:0 0 8px 0;">A aula começou com uma retomada da unidade de tecnologia. Vocês revisaram <em>screen time</em> (tempo de tela), <em>within</em> (dentro de um período) e <em>addicted</em> (viciado). Um vídeo curto de desafios serviu para você comentar possibilidades e limites, como ficar sem açúcar, beber água e evitar telas depois das 22h.</p>
+          <p style="margin:0 0 8px 0;">Depois, o foco passou para tecnologia em viagens. Você distinguiu <em>outlet</em> (tomada) de <em>plug</em> (plugue), aprendeu <em>power strip</em> (régua de tomadas), <em>charger</em> (carregador), <em>adapter</em> (adaptador) e <em>battery</em> (bateria ou pilha, conforme o aparelho). Também praticou ações: <em>turn on/off</em> (ligar/desligar), <em>plug in/unplug</em> (conectar/desconectar da tomada), <em>replace</em> (substituir) e <em>charge</em> (carregar). Na atividade de lacunas, você percebeu que <em>charge</em> é verbo na frase “I can charge my phone”.</p>
+          <p style="margin:0;">Na escuta longa, um podcast recebeu perguntas sobre aparelhos durante viagens. Caitlin queria usar vários dispositivos no Reino Unido e precisava considerar tomadas, adaptadores e voltagem; o <em>e-reader</em> apareceu bastante, mas não era o aparelho que a preocupava para carregar. Joaquim, brasileiro que participava dos Estados Unidos, falou de problemas no hotel, especialmente o Wi-Fi. Vocês retomaram trechos para identificar quem era a apresentadora, quem era o especialista e quem ligou, e para responder perguntas com alternativas e pegadinhas de compreensão.</p>
+        </div></section>
+
+        <section><h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2><div class="outline-card"><ul>
+          <li><strong>“I can charge my phone.”</strong> → “Posso carregar meu celular.”</li>
+          <li><strong>“There is only one outlet.”</strong> → “Há apenas uma tomada.”</li>
+          <li><strong>“Who is an author of travel books?”</strong> → “Quem é autor de livros de viagem?”</li>
+          <li><strong>“Joaquim is joining ... from the US.”</strong> → “Joaquim está participando ... dos Estados Unidos.”</li>
+          <li><strong>“They all need charging.”</strong> → “Todos eles precisam ser carregados.”</li>
+        </ul></div></section>
+
+        <section><h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2><div class="vocab-grid">
+<div class="vocab ">
+      <div class="vocab-head"><h3>outlet</h3><button type="button" class="vocab-say" data-czk-say="outlet" aria-label="Ouvir a pronúncia de outlet" aria-pressed="false" title="Ouvir outlet">&#128266;</button></div>
+      <p><em>(pt) tomada</em><br><small>Ponto na parede onde se conecta um aparelho. Ex.: <strong>There is only one outlet in the room.</strong></small></p>
+    </div>
+<div class="vocab green">
+      <div class="vocab-head"><h3>power strip</h3><button type="button" class="vocab-say" data-czk-say="power strip" aria-label="Ouvir a pronúncia de power strip" aria-pressed="false" title="Ouvir power strip">&#128266;</button></div>
+      <p><em>(pt) régua de tomadas</em><br><small>Peça com várias entradas para conectar aparelhos. Ex.: <strong>I can use a power strip to charge my devices.</strong></small></p>
+    </div>
+<div class="vocab yellow">
+      <div class="vocab-head"><h3>adapter</h3><button type="button" class="vocab-say" data-czk-say="adapter" aria-label="Ouvir a pronúncia de adapter" aria-pressed="false" title="Ouvir adapter">&#128266;</button></div>
+      <p><em>(pt) adaptador</em><br><small>Peça que permite encaixar um plugue em outro tipo de tomada. Ex.: <strong>I need an adapter for a UK outlet.</strong></small></p>
+    </div>
+        </div></section>
+
+        <section><h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2><div class="outline-card">
+          <h3 style="margin-top:0;">Aparelhos e acessórios</h3><ul>
+            <li><strong>device</strong> — aparelho, dispositivo</li><li><strong>phone / cell phone</strong> — telefone / celular</li><li><strong>tablet</strong> — tablet</li><li><strong>laptop</strong> — notebook</li><li><strong>e-reader</strong> — leitor digital</li><li><strong>charger</strong> — carregador</li><li><strong>battery</strong> — bateria ou pilha, dependendo do contexto</li>
+          </ul>
+          <h3>Energia e conexão</h3><ul>
+            <li><strong>outlet</strong> — tomada (na parede)</li><li><strong>plug</strong> — plugue (a peça que entra na tomada)</li><li><strong>power strip</strong> — régua de tomadas</li><li><strong>adapter</strong> — adaptador</li><li><strong>voltage</strong> — voltagem</li><li><strong>Wi-Fi</strong> — rede sem fio</li><li><strong>router</strong> — roteador</li>
+          </ul>
+          <h3>Ações e expressões</h3><ul>
+            <li><strong>turn on / turn off</strong> — ligar / desligar</li><li><strong>plug in / unplug</strong> — conectar / desconectar da tomada</li><li><strong>replace</strong> — substituir, trocar</li><li><strong>charge</strong> — carregar um aparelho</li><li><strong>need charging</strong> — precisar de carga</li><li><strong>in luck</strong> — com sorte</li><li><strong>weird</strong> — estranho, esquisito</li>
+          </ul>
+          <h3>Compreensão do podcast</h3><ul>
+            <li><strong>host</strong> — apresentador(a)</li><li><strong>guest</strong> — convidado(a)</li><li><strong>caller</strong> — pessoa que liga para o programa</li><li><strong>from Brazil</strong> — do Brasil (origem)</li><li><strong>in the US</strong> — nos Estados Unidos (localização)</li><li><strong>all of the above</strong> — todas as opções acima</li><li><strong>sink / bathtub</strong> — pia / banheira</li>
+          </ul>
+        </div></section>
+
+        <section><h2 style="margin-bottom:8px;">🚨 Correções importantes</h2><div class="outline-card">
+          <p><strong>1. Carregador × bateria</strong><br><span style="color:#c53030;">❌ <em>charger</em> = bateria do computador</span><br><span style="color:#276749;">✅ <strong><em>charger</em> = carregador; <em>battery</em> = bateria.</strong></span> O carregador fornece energia; a bateria a armazena.</p>
+          <p><strong>2. Tomada × plugue</strong><br><span style="color:#c53030;">❌ <em>plug</em> = tomada</span><br><span style="color:#276749;">✅ <strong><em>outlet</em> = tomada; <em>plug</em> = plugue.</strong></span> Você coloca o <em>plug</em> no <em>outlet</em>.</p>
+          <p><strong>3. Verbo × substantivo</strong><br><span style="color:#c53030;">❌ Em “I can charge my phone”, <em>charge</em> é substantivo.</span><br><span style="color:#276749;">✅ <strong>Nessa frase, <em>charge</em> é verbo: carregar.</strong></span> <em>Charger</em> é o substantivo “carregador”.</p>
+          <p><strong>4. Origem × lugar de onde a pessoa fala</strong><br><span style="color:#c53030;">❌ <em>Joaquim from Brazil</em> significa que ele está no Brasil durante a ligação.</span><br><span style="color:#276749;">✅ <strong>Ele é do Brasil, mas participa da ligação dos Estados Unidos.</strong></span> Preste atenção em <em>from</em> para origem e em <em>in/from the US</em> no contexto da chamada.</p>
+          <p style="margin-bottom:0;"><strong>5. Palavra repetida × resposta correta</strong><br><span style="color:#c53030;">❌ Caitlin fala muito do <em>e-reader</em>, então precisa carregá-lo.</span><br><span style="color:#276749;">✅ <strong>O e-reader é a exceção: os outros aparelhos precisam ser carregados.</strong></span> Na escuta, procure a informação que responde à pergunta, especialmente depois de palavras como <em>except</em>.</p>
+        </div></section>
+
+        <section><h2 style="margin-bottom:8px;">Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/D7c4NJyWmjY" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section>
+
+        <section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem estimada</th></tr></thead><tbody><tr class="row-teacher"><td><span class="talk-label">César (professor)</span></td><td><span class="talk-percent">~70%</span></td></tr><tr class="row-student"><td><span class="talk-label">Lorena</span></td><td><span class="talk-percent">~30%</span></td></tr></tbody></table><p style="font-size:0.84rem;color:var(--muted);margin-bottom:0;">Estimativa das falas na interação, sem contar o podcast reproduzido, as pausas e as interrupções de conexão.</p></section>
+
+        <section><h2 style="margin-bottom:8px;">📝 Homework</h2><div class="homework"><p style="margin:0 0 8px 0;">📌 <strong>Preparação para a próxima aula:</strong></p><ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);"><li>Revise <em>outlet, plug, power strip, adapter, charge</em> e <em>unplug</em>. Diga em voz alta uma frase curta com cada palavra.</li><li>Ao olhar imagens de aparelhos ou quartos de hotel, pratique: <em>What is the problem?</em> e responda com uma frase em inglês. Essa é a atividade que vocês iniciarão na próxima aula.</li><li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana.</li></ul></div></section>
+      </main>
+      <footer><p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer>
+    </article>
+  </div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body>
+</html>

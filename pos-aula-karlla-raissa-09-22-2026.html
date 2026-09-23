@@ -1,0 +1,184 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Karlla Raissa — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }</style></head><body><div class="wrap"><article class="card" role="main"><header><div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><span class="badge">PÓS-AULA</span><h1>Adjetivos, preposições e verbos com -ing</h1></div><div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Karlla Raissa &nbsp;•&nbsp; <strong>Data:</strong> 09/22/2026</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header><main><section class="panel"><p style="margin:0;font-weight:600;color:#14532D;"><em>Você revisou perguntas com <em>be</em> e <em>do/does</em>, praticou hobbies e aprendeu combinações como <em>afraid of</em> e <em>crazy about</em>. A explicação de perguntas abaixo fica disponível para consultar durante os exercícios.</em></p></section><section><h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2><div class="outline-card"><p>Na revisão inicial, você identificou que ainda quer praticar a escolha entre <em>be</em> e <em>do/does</em> nas perguntas. Começamos com a revisão das atividades e das perguntas no presente. A aula avançou para hobbies e para as duas formas possíveis depois de <strong>like</strong> e <strong>love</strong>: <em>watching / to watch</em> e <em>playing / to play</em>. Um vídeo curto trouxe vocabulário de interesses, como <em>baking</em>.</p><p>O foco principal foi aprender combinações prontas de adjetivo e preposição. A turma comparou <strong>angry, excited, sad, upset, happy, crazy + about</strong>, <strong>afraid + of</strong>, <strong>bored + with</strong> e <strong>sick and tired + of</strong>. A preposição faz parte da expressão: a tradução palavra por palavra do português nem sempre ajuda.</p><p>Depois, praticamos a regra <strong>preposição + verbo com -ing</strong>, como em <em>afraid of giving</em> e <em>apologize for being late</em>. Na leitura e nos exercícios finais, apareceram também verbos com preposições: <em>complain about</em>, <em>talk about</em>, <em>think about</em>, <em>worry about</em>, <em>apologize for</em>, <em>believe in</em> e <em>object to</em>. A próxima aula terá revisão e um desafio de lembrar essas combinações.</p></div></section><section><h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2><div class="outline-card"><p style="margin-top:0;color:var(--muted);">Frases discutidas na aula, com pontuação e grafia normalizadas a partir da transcrição automática.</p><ul><li><strong>Are they friends?</strong> → Eles são amigos?</li><li><strong>Does she work here?</strong> → Ela trabalha aqui?</li><li><strong>I like watching movies.</strong> → Eu gosto de assistir a filmes.</li><li><strong>I love to play chess.</strong> → Eu adoro jogar xadrez.</li><li><strong>She is angry about the noise.</strong> → Ela está irritada com o barulho.</li><li><strong>He is afraid of the spider.</strong> → Ele tem medo da aranha.</li><li><strong>I am crazy about cats.</strong> → Sou louca por gatos.</li><li><strong>They apologize for being late.</strong> → Eles se desculpam por chegar atrasados.</li></ul></div></section><section><h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab "><div class="vocab-head"><h3>crazy about</h3><button type="button" class="vocab-say" data-czk-say="crazy about" aria-label="Ouvir a pronúncia de crazy about" aria-pressed="false" title="Ouvir crazy about">&#128266;</button></div><p><em>(pt) louco por; gostar muito de</em><br><small>I am crazy about cats.</small></p></div><div class="vocab green"><div class="vocab-head"><h3>afraid of</h3><button type="button" class="vocab-say" data-czk-say="afraid of" aria-label="Ouvir a pronúncia de afraid of" aria-pressed="false" title="Ouvir afraid of">&#128266;</button></div><p><em>(pt) com medo de</em><br><small>He is afraid of the spider.</small></p></div><div class="vocab yellow"><div class="vocab-head"><h3>apologize for</h3><button type="button" class="vocab-say" data-czk-say="apologize for" aria-label="Ouvir a pronúncia de apologize for" aria-pressed="false" title="Ouvir apologize for">&#128266;</button></div><p><em>(pt) desculpar-se por</em><br><small>They apologize for being late.</small></p></div></div></section><section><h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2><div class="outline-card"><h3 style="margin-top:0;">Adjetivo + preposição</h3><ul><li><strong>angry / excited / happy / sad / upset / crazy about</strong> — irritado / animado / feliz / triste / chateado / louco por algo</li><li><strong>afraid of</strong> — com medo de</li><li><strong>bored with</strong> — entediado com</li><li><strong>sick and tired of</strong> — farto de; não aguentar mais</li></ul><h3>Verbo + preposição</h3><ul><li><strong>complain / talk / think / worry about</strong> — reclamar de / falar sobre / pensar em / preocupar-se com</li><li><strong>apologize for</strong> — desculpar-se por</li><li><strong>believe in</strong> — acreditar em</li><li><strong>object to</strong> — opor-se a</li><li><strong>get along with</strong> — dar-se bem com alguém</li></ul><h3>Hobbies e estruturas</h3><ul><li><strong>hobby / hobbies</strong> — passatempo / passatempos</li><li><strong>baking / bakery / grill</strong> — assar pães e bolos / padaria / grelhar</li><li><strong>like / love + -ing ou to + verbo</strong> — duas formas possíveis para falar do que se gosta</li><li><strong>preposição + -ing</strong> — quando um verbo vem depois de preposição: <em>afraid of giving</em>, <em>apologize for being</em></li></ul></div></section><section><h2 style="margin-bottom:8px;">🚨 Correções importantes</h2><div class="outline-card"><p style="margin-top:0;color:var(--muted);">A revisão retomou pontos das suas atividades. As frases marcadas como “modelo” foram discutidas em aula; não são falas atribuídas a você.</p>
+<p><strong>1. Pergunta com o verbo <em>be</em> — modelo discutido</strong><br><span style="color:#b91c1c;">❌ Do you introvert?</span><br><span style="color:#15803d;">✅ <strong>Are you an introvert?</strong> / <strong>Are you introverted?</strong></span><br>Para perguntar se alguém <em>é</em> introvertido, use <em>are</em>.</p>
+<p><strong>2. <em>Get along</em> com uma pessoa — atividade revisada</strong><br><span style="color:#b91c1c;">❌ I get along well my friend Giovanna.</span><br><span style="color:#15803d;">✅ <strong>I get along well with my friend Giovanna.</strong></span><br>Ao dizer com quem você se dá bem, acrescente <em>with</em>.</p>
+<p><strong>3. Verbo depois de preposição — ponto praticado</strong><br><span style="color:#b91c1c;">❌ They apologize for be late.</span><br><span style="color:#15803d;">✅ <strong>They apologize for being late.</strong></span><br>Depois de <em>for</em>, o verbo vai para <em>being</em>. Esta é uma comparação de formas, não um erro literal registrado.</p></div></section><section><h2 style="margin-bottom:8px;">❓ Perguntas: verbo be ou do/does?</h2><div class="outline-card"><p style="margin-top:0;"><strong>1. Ache o verbo da ideia.</strong> Se a pergunta é sobre <em>ser</em> ou <em>estar</em>, o verbo é <strong>be</strong>. No presente, ponha <strong>am / is / are</strong> antes da pessoa. Não acrescente <em>do</em> ou <em>does</em>.</p>
+<p><strong>Are you an introvert?</strong> → Você é uma pessoa introvertida?<br><strong>Are they friends?</strong> → Eles são amigos?<br><strong>Is he afraid of spiders?</strong> → Ele tem medo de aranhas?</p>
+<p><strong>2. Se o verbo principal é outro</strong>, no presente simples use <strong>do</strong> com <em>I/you/we/they</em> ou <strong>does</strong> com <em>he/she/it</em>. O verbo principal fica na forma básica depois do auxiliar.</p>
+<p><strong>Do you enjoy parties?</strong> → Você gosta de festas?<br><strong>Does she work here?</strong> → Ela trabalha aqui?<br><strong>Does your cousin like movies?</strong> → Seu primo ou sua prima gosta de filmes?</p>
+<p style="margin-bottom:0;"><strong>Teste rápido:</strong> “Ela <em>é</em> introvertida?” → <strong>Is she introverted?</strong> “Ela <em>gosta</em> de filmes?” → <strong>Does she like movies?</strong> No passado simples com outro verbo, use <strong>did + verbo básico</strong>: <em>Did you travel?</em> → Você viajou?</p></div></section><section><h2 style="margin-bottom:8px;">Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/qTpeGE0H3zc" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section><section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead><tbody><tr class="row-teacher"><td><span class="talk-label">César (Professor)</span></td><td><span class="talk-percent">68%</span></td><td class="talk-time">~46 min</td></tr><tr class="row-student"><td><span class="talk-label">Vitor Pereira</span></td><td><span class="talk-percent">16%</span></td><td class="talk-time">~11 min</td></tr><tr class="row-student"><td><span class="talk-label">Karlla Raissa</span></td><td><span class="talk-percent">16%</span></td><td class="talk-time">~11 min</td></tr></tbody></table><p style="margin:10px 0 0;color:var(--muted);font-size:0.86rem;">Estimativa das falas identificadas nas legendas: o canal compartilhado dos alunos foi dividido igualmente. Silêncios e áudio do vídeo reproduzido na aula não entram na conta.</p></section><section><h2 style="margin-bottom:8px;">📝 Homework</h2><div class="homework"><ul><li>Treine as perguntas: <em>Are you introverted?</em>, <em>Do you like movies?</em>, <em>Is she afraid of spiders?</em> e <em>Does she work here?</em>. Explique em voz alta por que cada uma usa <em>be</em> ou <em>do/does</em>.</li><li>Revise as combinações <em>angry about, afraid of, bored with, crazy about, apologize for, believe in</em> e <em>object to</em>. Faça uma frase com cada uma.</li><li>Crie três frases com um verbo depois de preposição, sempre com <strong>-ing</strong>. Ex.: <em>afraid of speaking</em>.</li><li>Prepare-se para o desafio de preposições anunciado para a próxima aula e releia este pós-aula de 2 a 3 vezes na semana.</li></ul></div></section></main><footer><p>© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer></article></div><script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script></body></html>

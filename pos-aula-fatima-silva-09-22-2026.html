@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>Resumo Pós-Aula — Fátima Silva — CZK English</title><style>
+:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+</style></head>
+<body><div class="wrap"><article class="card" role="main">
+<header><div><div style="display:flex;gap:10px;align-items:center;"><span class="badge">PÓS-AULA</span><h1>Simple Present: do/does, perguntas e forma base</h1></div><div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Fátima Silva &nbsp;•&nbsp; <strong>Data:</strong> 09/22/2026</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header>
+<main><section class="panel"><p style="margin:0;font-weight:600;color:#14532D;font-style:italic;">Hoje você consolidou perguntas no Simple Present: quando usar <em>do</em> ou <em>does</em>, por que o verbo principal fica na forma base e como distinguir <em>do/does</em> auxiliar de <em>do/does</em> com sentido de “fazer”. Também praticou a escuta de um diálogo sobre família e trabalho.</p></section><section><h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2><div class="outline-card">
+<p style="margin:0 0 10px;">Na Unidade 4, lição 1, retomamos o Simple Present. Você relembrou <strong>don’t</strong> com <em>I/you/we/they</em> e <strong>doesn’t</strong> com <em>he/she/it</em>. Na afirmativa, a terceira pessoa pede um verbo conjugado: <em>she works</em>, <em>she lives</em> e <em>she washes</em>. Quando o verbo termina em <em>-sh</em>, <em>-ch</em>, <em>-o</em> ou <em>-ss</em>, em geral acrescentamos <em>-es</em>: <em>wash → washes</em>, <em>watch → watches</em>, <em>go → goes</em> e <em>do → does</em>. O caso <em>have → has</em> foi visto separadamente.</p>
+<p style="margin:0 0 10px;">O centro da aula foi a construção de perguntas. A ordem é <strong>palavra interrogativa + do/does + sujeito + verbo na forma base</strong>: <em>What does he do?</em> Aqui, <em>does</em> é auxiliar; <em>do</em> é o verbo “fazer”. Como o auxiliar já marca a terceira pessoa, o verbo principal não recebe <em>-s</em>. Compare <em>She does homework</em> (afirmativa, “ela faz lição”) com <em>What does she do?</em> (pergunta, “o que ela faz?”). Nas negativas acontece o mesmo: <em>She doesn’t work</em>, sem <em>-s</em> em <em>work</em>.</p>
+<p style="margin:0;">Você aplicou essa lógica em exercícios sobre filha, primos, sobrinho, sogro, noiva, tios e sobrinhos. Depois leu um diálogo com <em>Tom is getting married</em> e <em>What does she do?</em> e ouviu outra conversa sobre familiares separados, filhos e trabalho. Você captou boa parte da história e identificou <em>Thanks for asking</em>. O professor sugeriu anotar palavras-chave durante a escuta para organizar a informação sem depender só da memória.</p>
+</div></section><section><h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2><div class="outline-card"><ul><li><strong>She washes her car every day.</strong> → Ela lava o carro dela todos os dias.</li><li><strong>I do homework every week.</strong> → Eu faço lição de casa toda semana.</li><li><strong>Does your daughter live in Miami?</strong> → Sua filha mora em Miami?</li><li><strong>Do your cousins work at the airport?</strong> → Seus primos trabalham no aeroporto?</li><li><strong>Does your nephew like hip-hop music?</strong> → Seu sobrinho gosta de hip-hop?</li><li><strong>Where do your aunts and uncles live?</strong> → Onde seus tios e tias moram?</li><li><strong>What does your father-in-law do?</strong> → O que seu sogro faz?</li><li><strong>Does your fiancée have any cousins?</strong> → Sua noiva tem primos?</li><li><strong>How many nieces and nephews do you have?</strong> → Quantas sobrinhas e quantos sobrinhos você tem?</li><li><strong>Tom is getting married.</strong> → Tom vai se casar.</li><li><strong>What does she do?</strong> → O que ela faz?</li><li><strong>Thanks for asking.</strong> → Obrigado(a) por perguntar.</li></ul></div></section><section><h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab ">
+      <div class="vocab-head"><h3>does</h3>
+        <button type="button" class="vocab-say" data-czk-say="does" aria-label="Ouvir a pronúncia de does" aria-pressed="false" title="Ouvir does">&#128266;</button>
+      </div><p><em>(pt) auxiliar de pergunta com he/she/it; também “faz” quando é verbo</em><br><small><strong>What does he do?</strong> = O que ele faz?</small></p>
+    </div><div class="vocab green">
+      <div class="vocab-head"><h3>base form</h3>
+        <button type="button" class="vocab-say" data-czk-say="base form" aria-label="Ouvir a pronúncia de base form" aria-pressed="false" title="Ouvir base form">&#128266;</button>
+      </div><p><em>(pt) forma base do verbo, sem -s depois de do/does</em><br><small><strong>Does she work?</strong> O verbo <em>work</em> fica na forma base.</small></p>
+    </div><div class="vocab yellow">
+      <div class="vocab-head"><h3>get married</h3>
+        <button type="button" class="vocab-say" data-czk-say="get married" aria-label="Ouvir a pronúncia de get married" aria-pressed="false" title="Ouvir get married">&#128266;</button>
+      </div><p><em>(pt) casar-se</em><br><small><strong>Tom is getting married.</strong> = Tom vai se casar.</small></p>
+    </div></div></section><section><h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2><div class="outline-card">
+<h3 style="margin-top:0;">Simple Present e verbos</h3><ul><li><strong>do / does</strong> – auxiliares em perguntas; como verbo, “fazer”</li><li><strong>don’t / doesn’t</strong> – auxiliares negativos no presente</li><li><strong>base form</strong> – forma base do verbo</li><li><strong>wash / washes</strong> – lavar / lava</li><li><strong>watch / watches</strong> – assistir / assiste</li><li><strong>go / goes</strong> – ir / vai</li><li><strong>work / works</strong> – trabalhar / trabalha</li><li><strong>live / lives</strong> – morar / mora</li><li><strong>have / has</strong> – ter / tem</li></ul><h3>Família e relacionamentos</h3><ul><li><strong>daughter</strong> – filha</li><li><strong>cousin</strong> – primo(a)</li><li><strong>nephew / niece</strong> – sobrinho / sobrinha</li><li><strong>aunt / uncle</strong> – tia / tio</li><li><strong>father-in-law</strong> – sogro</li><li><strong>fiancée</strong> – noiva</li><li><strong>get married</strong> – casar-se</li><li><strong>separated</strong> – separado(a)</li></ul><h3>Diálogo e compreensão oral</h3><ul><li><strong>What does she do?</strong> – O que ela faz? / Qual é a profissão dela?</li><li><strong>How old are they?</strong> – Quantos anos eles têm?</li><li><strong>Are the kids OK?</strong> – As crianças estão bem?</li><li><strong>Thanks for asking.</strong> – Obrigado(a) por perguntar.</li><li><strong>by the way</strong> – a propósito</li><li><strong>good news</strong> – boas notícias</li></ul></div></section><section><h2 style="margin-bottom:8px;">🚨 Correções importantes</h2><div class="outline-card"><p style="margin:0 0 5px;"><strong>1. Auxiliar com terceira pessoa</strong></p><p style="margin:0 0 4px;color:#c53030;">❌ Do your fiancée have any cousins?</p><p style="margin:0 0 13px;color:#276749;">✅ <strong>Does your fiancée have any cousins?</strong> — “Fiancée” é uma pessoa só: <em>she</em>. Na pergunta, use <em>does</em> e mantenha <em>have</em> na forma base.</p><p style="margin:0 0 5px;"><strong>2. Verbo principal depois do auxiliar</strong></p><p style="margin:0 0 4px;color:#c53030;">❌ What does he does?</p><p style="margin:0 0 13px;color:#276749;">✅ <strong>What does he do?</strong> — Em perguntas, <em>does</em> já carrega a marca de terceira pessoa. O verbo principal é <em>do</em>, sem outra conjugação.</p><p style="margin:0 0 5px;"><strong>3. Pergunta completa com “how many”</strong></p><p style="margin:0 0 4px;color:#c53030;">❌ How many nieces and nephews do you?</p><p style="margin:0 0 13px;color:#276749;">✅ <strong>How many nieces and nephews do you have?</strong> — Depois de <em>do you</em>, ainda é preciso o verbo principal <em>have</em>.</p><p style="margin:0;color:var(--muted);font-size:0.88rem;">As falas em inglês foram normalizadas a partir da transcrição automática para mostrar a regra com clareza.</p></div></section><section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/F3irWeRCMek" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section><section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead><tbody><tr class="row-teacher"><td><span class="talk-label">César (Professor)</span></td><td><span class="talk-percent">68%</span></td><td class="talk-time">~20 min 28 s</td></tr><tr class="row-student"><td><span class="talk-label">Fátima Silva</span></td><td><span class="talk-percent">32%</span></td><td class="talk-time">~9 min 45 s</td></tr></tbody></table><p style="font-size:0.82rem;color:var(--muted);">Estimativa pela duração das falas transcritas; o áudio do exercício e os intervalos de silêncio não entram no cálculo.</p></section><section><h2 style="margin-bottom:8px;">📝 Homework</h2><div class="homework"><p style="margin:0 0 8px;">📌 <strong>Lição de casa:</strong></p><ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);"><li>Conclua a atividade pendente no aplicativo, conforme combinado na aula.</li><li>Releia este pós-aula e revise a ordem <strong>WH word + do/does + sujeito + verbo base</strong>. Compare <em>What does he do?</em> com <em>He does homework.</em></li><li>Prepare-se para o exercício de 15 perguntas anunciado para a próxima aula.</li><li>Ao ouvir um diálogo, anote palavras-chave como nomes, idades, parentesco e verbos.</li><li>Leia este pós-aula <strong>2 a 3 vezes</strong> durante a semana.</li></ul></div></section></main>
+<footer><p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer>
+</article></div>
+<script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+</script>
+</body></html>
