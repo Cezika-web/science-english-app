@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Vlad — CZK English</title>
+  <style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }</style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Choques culturais, viagens e tempos do passado</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Vlad &nbsp;•&nbsp;
+            <strong>Data:</strong> 09/23/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+        <section class="panel">
+          <p style="margin:0;font-weight:600;color:#14532D;font-style:italic;">Vlad praticou compreensão oral e conversação com vídeos sobre saúde e diferenças culturais. A aula também retomou formas naturais de falar sobre morar fora, planos e a diferença entre simple past e present perfect.</p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 8px 0;">A aula começou com uma revisão do passado simples. Em frases afirmativas comuns, o verbo principal vai ao passado: <em>I worked</em>. Em perguntas e negativas, <em>did</em> ou <em>didn't</em> já marcam o passado, e o verbo principal volta à forma base: <em>Did you work?</em> e <em>I didn't know</em>. Vocês também comentaram os verbos irregulares.</p>
+            <p style="margin:0 0 8px 0;">Em seguida, Vlad ouviu um vídeo sobre fatores que podem acelerar o envelhecimento e reconheceu ideias como exposição ao sol, alimentação inadequada e falta de sono. Surgiram <em>sleep deprivation</em>, <em>chronic stress</em>, <em>dehydration</em>, <em>wrinkles</em> e <em>loneliness</em>. Ele explicou que às vezes não conhece uma palavra isolada, mas consegue entender o sentido pelo contexto.</p>
+            <p style="margin:0 0 8px 0;">O tema principal de conversação foi <em>living abroad</em>. Vlad contou experiências na Bélgica e na Itália e comparou festas, banhos, pontualidade e a facilidade de conversar com desconhecidos. Dois vídeos mostraram perspectivas de pessoas dos Estados Unidos e do Brasil sobre horários, refeições, cumprimentos, segurança, amizade e o chamado <em>American Dream</em>. Na conversa, vocês distinguiram <em>offer</em> de <em>propose</em> em uma situação de trabalho e exploraram <em>steady income</em>.</p>
+            <p style="margin:0;">No fim, a mudança de planos de Vlad levou à expressão <em>I changed my mind</em> e à comparação entre <em>I changed my mind</em> (passado simples) e <em>I have changed my mind</em> (present perfect). A diferença foi retomada com <em>I lost my keys</em> e <em>I have lost my keys</em>: a segunda forma destaca uma consequência que ainda importa agora.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2>
+          <div class="outline-card">
+            <ul style="margin:0;padding-left:20px;line-height:1.65;">
+              <li><strong>Being exposed to the sun.</strong> → Ficar exposto ao sol.</li>
+              <li><strong>I didn't know the word.</strong> → Eu não conhecia a palavra.</li>
+              <li><strong>Tomorrow, nothing, but Saturday, we are going to hang out in a bar.</strong> → Amanhã, nada; mas no sábado vamos sair para um bar.</li>
+              <li><strong>I wish to go there someday.</strong> → Quero ir lá algum dia. <em>(Vlad falava do Japão.)</em></li>
+              <li><strong>Be able to have a steady income and have a home.</strong> → Conseguir ter uma renda estável e uma casa.</li>
+              <li><strong>I changed my mind.</strong> → Mudei de ideia.</li>
+              <li><strong>I have lost my keys.</strong> → Perdi minhas chaves e ainda estou lidando com isso.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <div class="vocab-head">
+                <h3>culture shock</h3>
+                <button type="button" class="vocab-say" data-czk-say="culture shock" aria-label="Ouvir a pronúncia de culture shock" aria-pressed="false" title="Ouvir culture shock">&#128266;</button>
+              </div>
+              <p><em>(pt) choque cultural</em><br><small>Surpresa ou desconforto diante de hábitos diferentes. Ex.: <strong>Greeting everyone was a culture shock for her.</strong> = Cumprimentar todo mundo foi um choque cultural para ela.</small></p>
+            </div>
+            <div class="vocab green">
+              <div class="vocab-head">
+                <h3>living abroad</h3>
+                <button type="button" class="vocab-say" data-czk-say="living abroad" aria-label="Ouvir a pronúncia de living abroad" aria-pressed="false" title="Ouvir living abroad">&#128266;</button>
+              </div>
+              <p><em>(pt) morar no exterior</em><br><small><em>Abroad</em> indica estar em outro país. Ex.: <strong>I thought about living abroad.</strong> = Pensei em morar fora.</small></p>
+            </div>
+            <div class="vocab yellow">
+              <div class="vocab-head">
+                <h3>steady income</h3>
+                <button type="button" class="vocab-say" data-czk-say="steady income" aria-label="Ouvir a pronúncia de steady income" aria-pressed="false" title="Ouvir steady income">&#128266;</button>
+              </div>
+              <p><em>(pt) renda estável</em><br><small>Dinheiro que entra de forma regular e previsível. Ex.: <strong>She wants a steady income.</strong> = Ela quer uma renda estável.</small></p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2>
+          <div class="outline-card">
+            <h3 style="margin-top:0;">Saúde e envelhecimento</h3>
+            <ul>
+              <li><strong>age</strong> — envelhecer; <strong>age you the fastest</strong> — fazer você envelhecer mais rápido</li>
+              <li><strong>smoking</strong> — fumar / tabagismo; <strong>poor diet</strong> — alimentação inadequada</li>
+              <li><strong>chronic stress</strong> — estresse crônico; <strong>sleep deprivation</strong> — privação de sono</li>
+              <li><strong>dehydration</strong> — desidratação; <strong>sun exposure</strong> — exposição ao sol</li>
+              <li><strong>wrinkles</strong> — rugas; <strong>air pollution</strong> — poluição do ar; <strong>loneliness</strong> — solidão</li>
+            </ul>
+            <h3>Viagens e diferenças culturais</h3>
+            <ul>
+              <li><strong>abroad / overseas</strong> — no exterior; <strong>culture shock</strong> — choque cultural</li>
+              <li><strong>subway</strong> — metrô; <strong>pub</strong> — bar / pub; <strong>strangers</strong> — desconhecidos</li>
+              <li><strong>show up</strong> — aparecer / chegar; <strong>hang out</strong> — sair / passar tempo com alguém</li>
+              <li><strong>greetings</strong> — cumprimentos; <strong>hug</strong> — abraço; <strong>friendly</strong> — amigável</li>
+              <li><strong>emphasize</strong> — dar ênfase; <strong>breakfast / lunch / dinner</strong> — café da manhã / almoço / jantar</li>
+            </ul>
+            <h3>Planos, trabalho e gramática</h3>
+            <ul>
+              <li><strong>American Dream</strong> — sonho americano; <strong>steady income</strong> — renda estável</li>
+              <li><strong>offer</strong> — oferecer; <strong>job offer</strong> — oferta de emprego; <strong>propose</strong> — propor, também usado para pedido de casamento</li>
+              <li><strong>be able to</strong> — ser capaz de / conseguir; <strong>change my mind</strong> — mudar de ideia</li>
+              <li><strong>simple past</strong> — passado simples; <strong>present perfect</strong> — tempo com <em>have/has + past participle</em></li>
+              <li><strong>lose → lost → lost</strong> — perder → perdeu → perdido</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">🚨 Correções importantes</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 5px 0;"><strong>1. Passado simples em uma narrativa</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ “When I was working, I was come back to my home.”</p>
+            <p style="margin:0 0 12px 0;color:#276749;">✅ <strong>“When I finished work, I came back home.”</strong> — Para uma ação concluída, use <em>came back</em>. A construção <em>was come</em> não funciona aqui.</p>
+
+            <p style="margin:0 0 5px 0;"><strong>2. Hábito no passado</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ “At the Fridays, I usually go to the pub.”</p>
+            <p style="margin:0 0 12px 0;color:#276749;">✅ <strong>“On Fridays, I usually went to the pub.”</strong> — Para dias da semana, use <em>on</em>; ao contar um hábito da época em que morava na Itália, use <em>went</em>.</p>
+
+            <p style="margin:0 0 5px 0;"><strong>3. Interesse em viajar</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ “I don't want interest to travel to USA.”</p>
+            <p style="margin:0 0 12px 0;color:#276749;">✅ <strong>“I'm not interested in traveling to the US.”</strong> — A estrutura natural é <em>be interested in + verbo com -ing</em>.</p>
+
+            <p style="margin:0 0 5px 0;"><strong>4. Mudança de ideia</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ “I ended my plan.”</p>
+            <p style="margin:0 0 12px 0;color:#276749;">✅ <strong>“I changed my mind.”</strong> — É a expressão natural para “mudei de ideia”. Se o foco forem planos concretos, também cabe <em>I changed my plans</em>.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Gravação da aula</h2>
+          <div class="media-row">
+            <a class="media-btn" href="https://youtu.be/xwdKR2GRLos" target="_blank" rel="noopener noreferrer" role="button"
+               style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">
+              🎥 Assistir gravação
+            </a>
+          </div>
+        </section>
+
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>🗣️ Tempo de Fala (Talk Time)</h2>
+          <p style="margin:0 0 10px 0;color:var(--muted);font-size:0.86rem;">Estimativa pela transcrição das falas, sem contar o áudio dos vídeos compartilhados.</p>
+          <table class="talk-table">
+            <thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead>
+            <tbody>
+              <tr class="row-teacher"><td><span class="talk-label">César (Professor)</span></td><td><span class="talk-percent">73%</span></td><td class="talk-time">~37 minutos</td></tr>
+              <tr class="row-student"><td><span class="talk-label">Vlad</span></td><td><span class="talk-percent">27%</span></td><td class="talk-time">~13 minutos</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📝 Homework</h2>
+          <div class="homework">
+            <p style="margin:0 0 8px 0;">📌 <strong>Prática sugerida:</strong></p>
+            <ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+              <li>Escreva 5 frases sobre uma experiência no exterior usando o passado simples. Inclua uma pergunta com <em>Did you…?</em> e uma negativa com <em>didn't</em>.</li>
+              <li>Compare <em>I changed my mind</em> e <em>I have changed my mind</em> em duas situações próprias. Explique qual delas ainda afeta sua decisão atual.</li>
+              <li>Revise as três expressões do vocabulário-chave, ouça a pronúncia e leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana.</li>
+            </ul>
+          </div>
+        </section>
+      </main>
+
+      <footer><p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer>
+    </article>
+  </div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body>
+</html>
