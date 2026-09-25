@@ -5221,9 +5221,13 @@ function App() {
     try {
       const snaps = await fb.getDocs(fb.collection(fb.db, 'schools', dadosAluno.schoolId, 'avisos'));
       const lidos = dadosAluno.avisosLidos || [];
+      // Aluno cadastrado depois do aviso não viveu o que ele conta (ex.:
+      // instabilidade do app): não recebe. Sem createdAt (aluno antigo), recebe.
+      const cadastro = dadosAluno.createdAt?.seconds || 0;
       const pendentes = snaps.docs
         .map(d => ({ id: d.id, ...d.data() }))
         .filter(a => a.ativo !== false && !lidos.includes(a.id))
+        .filter(a => !(cadastro && a.criadoEm?.seconds && cadastro > a.criadoEm.seconds))
         .sort((a, b) => (a.criadoEm?.seconds || 0) - (b.criadoEm?.seconds || 0));
       setAvisos(pendentes);
     } catch (e) {

@@ -7179,8 +7179,12 @@
         }
         eventsSnap.docs.forEach(item => {
           const ev = item.data();
-          if (!ev.studentUid || (ev.type !== 'lesson' && ev.type !== 'reposicao')) return;
-          (pendEventosPorAluno[ev.studentUid] ||= []).push(ev);
+          if (ev.type !== 'lesson' && ev.type !== 'reposicao') return;
+          // Aula em dupla/turma: o evento guarda os alunos em memberUids (o
+          // studentUid, quando existe, é só o primeiro). Indexar só por
+          // studentUid deixava o outro aluno sem a aula nas pendências.
+          const uids = new Set([...(ev.memberUids || []), ev.studentUid].filter(Boolean));
+          uids.forEach(uid => (pendEventosPorAluno[uid] ||= []).push(ev));
         });
       } catch (e) {
         console.warn('Não consegui carregar a agenda pra calcular pendências (seguindo sem agenda):', e);
