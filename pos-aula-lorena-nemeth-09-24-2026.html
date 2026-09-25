@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Lorena Nemeth — CZK English</title>
+  <style>
+:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Problemas no hotel e perguntas no presente</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Lorena Nemeth &nbsp;•&nbsp;
+            <strong>Data:</strong> 09/24/2026
+          </div>
+        </div>
+        <div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div>
+      </header>
+
+      <main>
+        <section class="panel"><p style="margin:0;font-style:italic;color:#14532D;">Lorena, você contou como foi a estreia da série em que atuou e depois retomou o vocabulário de tecnologia em viagens. Praticou como descrever problemas em um quarto de hotel e revisou perguntas com <em>be</em>, <em>do/does</em> e o presente contínuo.</p></section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 8px 0;">A aula começou com uma conversa sobre a estreia da sua série. Você contou que assistiu aos primeiros episódios, falou dos segredos da história e explicou que cenas muito curtas podem exigir um dia inteiro de gravação. Também comentou a preparação do cenário do tribunal e como figurino e objetos ajudam a representar outra época.</p>
+            <p style="margin:0 0 8px 0;">Depois, vocês retomaram a aula anterior sobre aparelhos e viagens: <em>plug</em>, <em>outlet</em>, <em>power strip</em>, <em>charge</em>, <em>turn on/off</em> e <em>plug in/unplug</em>. Ao observar imagens de quartos de hotel, você descreveu um ar-condicionado e uma TV que não funcionavam, um vaso sanitário entupido, um secador incompatível com a voltagem da tomada e a falta de tomadas para vários aparelhos. César apresentou <em>enough</em> para expressar “suficiente”: <em>There aren't enough outlets.</em> Vocês também revisaram <em>housekeeping</em> e <em>front desk</em>.</p>
+            <p style="margin:0;">Na revisão gramatical, você distinguiu o presente contínuo para uma ação em andamento (<em>He is watching his favorite TV show</em>) e para um plano futuro (<em>Are you buying a new laptop?</em>). Aprendeu <em>as soon as</em> (“assim que”) e <em>takeout food</em> (“comida para viagem”). No fim, formulou perguntas: com <em>be</em>, inverta verbo e sujeito (<em>What is he doing right now?</em>); com outro verbo no presente simples, use <em>do</em> ou <em>does</em> (<em>Does she work out every day?</em>). Advérbios como <em>always</em> e <em>never</em> foram retomados como pistas de frequência.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2>
+          <div class="outline-card"><ul>
+            <li><strong>“The TV won't work.”</strong> → “A TV não funciona.”</li>
+            <li><strong>“The toilet is clogged.”</strong> → “O vaso sanitário está entupido.”</li>
+            <li><strong>“There aren't enough outlets.”</strong> → “Não há tomadas suficientes.”</li>
+            <li><strong>“What is your grandfather doing?”</strong> → “O que seu avô está fazendo?”</li>
+            <li><strong>“He is watching his favorite TV show.”</strong> → “Ele está assistindo ao programa de TV favorito dele.”</li>
+            <li><strong>“Are you buying a new laptop?”</strong> → “Você vai comprar um notebook novo?”</li>
+            <li><strong>“What is he doing right now?”</strong> → “O que ele está fazendo agora?”</li>
+            <li><strong>“Does she work out every day?”</strong> → “Ela malha todos os dias?”</li>
+          </ul></div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2>
+          <div class="vocab-grid"><div class="vocab ">
+      <div class="vocab-head"><h3>enough</h3><button type="button" class="vocab-say" data-czk-say="enough" aria-label="Ouvir a pronúncia de enough" aria-pressed="false" title="Ouvir enough">&#128266;</button></div>
+      <p><em>(pt) suficiente(s)</em><br><small>Indica a quantidade necessária; antes de um substantivo, use enough + substantivo. Ex.: <strong>There aren&#x27;t enough outlets for all the devices.</strong></small></p>
+    </div>
+<div class="vocab green">
+      <div class="vocab-head"><h3>won&#x27;t work</h3><button type="button" class="vocab-say" data-czk-say="won&#x27;t work" aria-label="Ouvir a pronúncia de won&#x27;t work" aria-pressed="false" title="Ouvir won&#x27;t work">&#128266;</button></div>
+      <p><em>(pt) não funciona / não vai funcionar</em><br><small>Forma usada na aula para dizer que um aparelho se recusa a funcionar. Ex.: <strong>The TV won&#x27;t work.</strong></small></p>
+    </div>
+<div class="vocab yellow">
+      <div class="vocab-head"><h3>as soon as</h3><button type="button" class="vocab-say" data-czk-say="as soon as" aria-label="Ouvir a pronúncia de as soon as" aria-pressed="false" title="Ouvir as soon as">&#128266;</button></div>
+      <p><em>(pt) assim que</em><br><small>Liga duas ações: uma acontece logo depois da outra. Ex.: <strong>I&#x27;ll leave as soon as he sends the email.</strong></small></p>
+    </div></div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2>
+          <div class="outline-card">
+            <h3 style="margin-top:0;">Tecnologia e aparelhos</h3>
+            <ul>
+              <li><strong>plug</strong> – plugue; <strong>outlet</strong> – tomada; <strong>power strip</strong> – régua de tomadas.</li>
+              <li><strong>plug in / unplug</strong> – conectar / desconectar da tomada; <strong>turn on / turn off</strong> – ligar / desligar; <strong>charge</strong> – carregar.</li>
+              <li><strong>laptop</strong> – notebook; <strong>microwave</strong> – micro-ondas; <strong>fridge</strong> – geladeira; <strong>hair dryer</strong> – secador de cabelo.</li>
+              <li><strong>voltage</strong> – voltagem; <strong>broken</strong> – quebrado; <strong>won't work</strong> – não funciona.</li>
+            </ul>
+            <h3>Problemas no hotel</h3>
+            <ul>
+              <li><strong>air conditioner</strong> – ar-condicionado; <strong>toilet</strong> – vaso sanitário; <strong>clogged</strong> – entupido.</li>
+              <li><strong>teddy bear</strong> – ursinho de pelúcia; <strong>housekeeping</strong> – equipe de limpeza e arrumação; <strong>front desk</strong> – recepção.</li>
+              <li><strong>enough</strong> – suficiente(s); <strong>in</strong> – dentro de; <strong>on</strong> – sobre ou em cima de.</li>
+            </ul>
+            <h3>Planos, rotina e alimentação</h3>
+            <ul>
+              <li><strong>cruise</strong> – cruzeiro; <strong>takeout food</strong> – comida para viagem; <strong>bring lunch</strong> – trazer o almoço.</li>
+              <li><strong>as soon as</strong> – assim que; <strong>as soon as possible</strong> – assim que possível.</li>
+              <li><strong>work out</strong> – malhar ou fazer exercícios; <strong>every day</strong> – todos os dias; <strong>hardly ever</strong> – quase nunca; <strong>never</strong> – nunca.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">🚨 Correções importantes</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 4px 0;"><strong>1. Aparelho que não funciona</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ “The air conditioner is one to work.”</p>
+            <p style="margin:0 0 12px 0;color:#276749;">✅ <strong>“The air conditioner won't work.”</strong> — <em>won't work</em> comunica que o aparelho não está funcionando. A transcrição registrou sua tentativa de pronúncia de forma imprecisa; aqui está a forma escrita trabalhada na aula.</p>
+            <p style="margin:0 0 4px 0;"><strong>2. Frase inteiramente em inglês</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ “The microwave não está working.”</p>
+            <p style="margin:0 0 12px 0;color:#276749;">✅ <strong>“The microwave isn't working.”</strong> — use <em>isn't + verbo com -ing</em> para dizer que ele não está funcionando agora.</p>
+            <p style="margin:0 0 4px 0;"><strong>3. Pergunta sobre hábito</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ “The she working out every day?”</p>
+            <p style="margin:0 0 12px 0;color:#276749;">✅ <strong>“Does she work out every day?”</strong> — para um hábito com <em>she</em>, use <em>does + sujeito + verbo na forma base</em>. Não use <em>is</em> nessa pergunta.</p>
+            <p style="margin:0 0 4px 0;"><strong>4. Um único determinante</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ “Are you using the computer for the your report?”</p>
+            <p style="margin:0 0 12px 0;color:#276749;">✅ <strong>“Are you using the computer for your report?”</strong> — <em>your</em> já indica de quem é o relatório, então retire <em>the</em>.</p>
+            <p style="margin:0 0 4px 0;"><strong>5. Dentro do vaso</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ “on the toilet”</p>
+            <p style="margin:0;color:#276749;">✅ <strong>“The teddy bear is in the toilet.”</strong> — na imagem o ursinho estava dentro do vaso. Use <em>in</em> para “dentro”; <em>on</em> seria “em cima”.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Gravação da aula</h2>
+          <div class="media-row">
+            <a class="media-btn" href="https://youtu.be/4Pxnpv9CD5U" target="_blank" rel="noopener noreferrer" role="button"
+               style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a>
+          </div>
+        </section>
+
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>🗣️ Tempo de Fala</h2>
+          <table class="talk-table">
+            <thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead>
+            <tbody>
+              <tr class="row-teacher"><td><span class="talk-label">César (Professor)</span></td><td><span class="talk-percent">71%</span></td><td class="talk-time">~24 minutos de fala</td></tr>
+              <tr class="row-student"><td><span class="talk-label">Lorena</span></td><td><span class="talk-percent">29%</span></td><td class="talk-time">~10 minutos de fala</td></tr>
+            </tbody>
+          </table>
+          <p style="margin:8px 0 0;color:var(--muted);font-size:0.82rem;">Estimativa baseada nos trechos com fala identificada na transcrição.</p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📝 Homework</h2>
+          <div class="homework">
+            <p style="margin:0 0 8px 0;">📌 <strong>Lição de casa:</strong></p>
+            <ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+              <li>Faça os exercícios no celular indicados por César para revisar perguntas com <em>be</em> e <em>do/does</em>.</li>
+              <li>Releia <em>enough</em>, <em>won't work</em> e <em>as soon as</em> e diga em voz alta uma frase com cada expressão.</li>
+              <li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana.</li>
+            </ul>
+          </div>
+        </section>
+      </main>
+
+      <footer><p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer>
+    </article>
+  </div>
+
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body>
+</html>
