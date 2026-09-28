@@ -1366,19 +1366,20 @@
         <div class="form-card">
           <h2>✅ Aplicar Correção</h2>
           <p style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;">
-            Cole o JSON gerado pela skill <strong>correcao-app</strong>, selecione a atividade e aplique.
+            Cole o JSON gerado pela skill <strong>correcao-app</strong> e clique em Corrigir.
+            A atividade é identificada automaticamente pelo <code>activityId</code> do JSON.
           </p>
 
           <div class="field">
             <label>JSON da Correção</label>
-            <textarea id="cor-json" placeholder='{"studentName":"Gustavo","uid":"...","week":"30 DE JUNHO 2026","feedback":{...}}'></textarea>
+            <textarea id="cor-json" placeholder='{"studentName":"Gustavo","uid":"...","activityId":"...","week":"30 DE JUNHO 2026","feedback":{...}}'></textarea>
           </div>
 
-          <button class="btn-add" id="btn-load-activities" type="button">Carregar atividades do aluno →</button>
+          <button class="btn-add" id="btn-load-activities" type="button">✅ Corrigir</button>
 
           <div id="cor-activities-section" style="display:none;margin-top:16px;">
             <div class="field">
-              <label>Selecione a atividade para corrigir:</label>
+              <label>Não identifiquei a atividade sozinho — selecione qual corrigir:</label>
               <div class="activities-list" id="cor-activities-list"></div>
             </div>
             <div style="margin-top:16px;">
@@ -7754,9 +7755,61 @@
     };
 
     // ── APLICAR CORREÇÃO ─────────────────────────────────────────────────
+    async function applySelectedCorrection(activityId, btn) {
+      const uid = parsedCorrectionJson._resolvedUid;
+      const originalLabel = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Aplicando...';
+
+      try {
+        const actRef = doc(db, 'students', uid, 'activities', activityId);
+        await updateDoc(actRef, {
+          status:   'corrected',
+          ...(parsedCorrectionJson.feedback && { feedback: parsedCorrectionJson.feedback }),
+          ...(parsedCorrectionJson.summary && { summary: parsedCorrectionJson.summary }),
+          ...(parsedCorrectionJson.report && { report: parsedCorrectionJson.report }),
+          ...(parsedCorrectionJson.correcao && { correcao: parsedCorrectionJson.correcao }),
+          ...(parsedCorrectionJson.patterns && { patterns: parsedCorrectionJson.patterns }),
+          ...(parsedCorrectionJson.pedagogico && { pedagogico: parsedCorrectionJson.pedagogico }),
+          oralReviewPending: false,
+          correctedAt: serverTimestamp(),
+        });
+
+        btn.disabled = false; btn.textContent = originalLabel;
+        document.getElementById('cor-activities-section').style.display = 'none';
+        document.getElementById('cor-json').value = '';
+        parsedCorrectionJson = null; selectedActivityId = null;
+        showMsg('cor-msg', '✅ Correção aplicada! O aluno já pode ver no app.', 'ok');
+      } catch(e) {
+        btn.disabled = false; btn.textContent = originalLabel;
+        showMsg('cor-msg', `Erro: ${e.message}`, 'err');
+      }
+    }
+
+    function renderCorrectionActivityList(acts) {
+      document.getElementById('cor-activities-list').innerHTML = acts.map(a => `
+        <label class="act-select-row">
+          <input type="radio" name="cor-act" value="${a.id}" />
+          <div class="act-select-info">
+            <div class="act-select-title">${a.emoji || '📚'} ${esc(a.title || 'Atividade')}</div>
+            <div class="act-select-meta">Semana: ${esc(a.week || '—')} · Status: ${a.oralReviewPending ? '🎤 Áudio aguardando correção' : a.finalizada ? '📝 Aguardando correção' : '⏳ Não finalizada'}</div>
+          </div>
+        </label>`).join('');
+
+      document.querySelectorAll('input[name="cor-act"]').forEach(r => {
+        r.onchange = () => {
+          document.querySelectorAll('.act-select-row').forEach(row => row.classList.remove('selected'));
+          r.closest('.act-select-row').classList.add('selected');
+          selectedActivityId = r.value;
+        };
+      });
+
+      document.getElementById('cor-activities-section').style.display = 'block';
+    }
+
     document.getElementById('btn-load-activities').onclick = async () => {
       const raw = document.getElementById('cor-json').value.trim();
       showMsg('cor-msg', '', 'info');
+      document.getElementById('cor-activities-section').style.display = 'none';
 
       let data;
       try {
@@ -7790,63 +7843,33 @@
         .filter(a => a.status !== 'corrected' || a.oralReviewPending === true);
       if (acts.length === 0) {
         document.getElementById('cor-activities-list').innerHTML = '';
-        document.getElementById('cor-activities-section').style.display = 'none';
         selectedActivityId = null;
         showMsg('cor-msg', '✅ Todas as atividades deste aluno já foram corrigidas. Nada para corrigir aqui.', 'info');
         return;
       }
-      document.getElementById('cor-activities-list').innerHTML = acts.map(a => `
-        <label class="act-select-row">
-          <input type="radio" name="cor-act" value="${a.id}" />
-          <div class="act-select-info">
-            <div class="act-select-title">${a.emoji || '📚'} ${esc(a.title || 'Atividade')}</div>
-            <div class="act-select-meta">Semana: ${esc(a.week || '—')} · Status: ${a.oralReviewPending ? '🎤 Áudio aguardando correção' : a.finalizada ? '📝 Aguardando correção' : '⏳ Não finalizada'}</div>
-          </div>
-        </label>`).join('');
 
-      document.querySelectorAll('input[name="cor-act"]').forEach(r => {
-        r.onchange = () => {
-          document.querySelectorAll('.act-select-row').forEach(row => row.classList.remove('selected'));
-          r.closest('.act-select-row').classList.add('selected');
-          selectedActivityId = r.value;
-        };
-      });
+      // O JSON da skill traz o activityId da atividade que ela corrigiu — casa
+      // direto e aplica sem exigir seleção manual. Sem esse campo (JSON antigo)
+      // ou sem bater com nenhuma pendente, cai na lista pra escolher na mão.
+      const match = data.activityId ? acts.find(a => a.id === data.activityId)
+        : (acts.length === 1 ? acts[0] : null);
+      if (match) {
+        selectedActivityId = match.id;
+        await applySelectedCorrection(match.id, document.getElementById('btn-load-activities'));
+        return;
+      }
 
-      document.getElementById('cor-activities-section').style.display = 'block';
-      showMsg('cor-msg', `${acts.length} atividade(s) a corrigir. Selecione qual corrigir.`, 'info');
+      renderCorrectionActivityList(acts);
+      showMsg('cor-msg', data.activityId
+        ? '⚠️ O activityId do JSON não bateu com nenhuma atividade pendente. Selecione qual corrigir.'
+        : `${acts.length} atividade(s) a corrigir. Selecione qual corrigir.`, 'info');
     };
 
     document.getElementById('btn-apply-correction').onclick = async () => {
       if (!parsedCorrectionJson || !selectedActivityId) {
         showMsg('cor-msg', 'Selecione uma atividade antes de aplicar.', 'err'); return;
       }
-      const uid = parsedCorrectionJson._resolvedUid;
-      const btn = document.getElementById('btn-apply-correction');
-      btn.disabled = true; btn.textContent = 'Aplicando...';
-
-      try {
-        const actRef = doc(db, 'students', uid, 'activities', selectedActivityId);
-        await updateDoc(actRef, {
-          status:   'corrected',
-          ...(parsedCorrectionJson.feedback && { feedback: parsedCorrectionJson.feedback }),
-          ...(parsedCorrectionJson.summary && { summary: parsedCorrectionJson.summary }),
-          ...(parsedCorrectionJson.report && { report: parsedCorrectionJson.report }),
-          ...(parsedCorrectionJson.correcao && { correcao: parsedCorrectionJson.correcao }),
-          ...(parsedCorrectionJson.patterns && { patterns: parsedCorrectionJson.patterns }),
-          ...(parsedCorrectionJson.pedagogico && { pedagogico: parsedCorrectionJson.pedagogico }),
-          oralReviewPending: false,
-          correctedAt: serverTimestamp(),
-        });
-
-        btn.disabled = false; btn.textContent = '✅ Aplicar Correção';
-        document.getElementById('cor-activities-section').style.display = 'none';
-        document.getElementById('cor-json').value = '';
-        parsedCorrectionJson = null; selectedActivityId = null;
-        showMsg('cor-msg', '✅ Correção aplicada! O aluno já pode ver no app.', 'ok');
-      } catch(e) {
-        btn.disabled = false; btn.textContent = '✅ Aplicar Correção';
-        showMsg('cor-msg', `Erro: ${e.message}`, 'err');
-      }
+      await applySelectedCorrection(selectedActivityId, document.getElementById('btn-apply-correction'));
     };
 
     // ── PUBLICAR VOCABULÁRIO ─────────────────────────────────────────────

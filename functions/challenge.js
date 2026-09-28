@@ -2182,10 +2182,14 @@ ${item.text}`).join('\n\n')}`
       });
       if (!reserved) continue;
       try {
-        const title = period === 'morning' ? 'Seu desafio termina hoje' : 'Última hora do desafio';
+        const title = period === 'morning' ? 'Seu desafio termina hoje'
+          : period === 'night' ? 'Poucas horas para o desafio fechar'
+          : 'Faça o desafio de hoje 🎯';
         const body = period === 'morning'
           ? `Você ainda não concluiu a parte ${stage.part}. Responda até 23h59 de hoje.`
-          : `A parte ${stage.part} termina à meia-noite. Ainda dá tempo de responder.`;
+          : period === 'night'
+          ? `A parte ${stage.part} fecha à meia-noite. Ainda dá tempo de responder.`
+          : `É rapidinho, só um treino de 3 minutinhos. Dessa vez você vai bem!`;
         const response = await getMessaging().sendEachForMulticast({
           tokens, notification:{ title, body }, data:{ type:'challenge-reminder', roundId, part:String(stage.part) },
           webpush:{ headers:{ Urgency:period === 'night' ? 'high' : 'normal' }, fcmOptions:{ link:APP_URL } },
@@ -2202,9 +2206,19 @@ ${item.text}`).join('\n\n')}`
     { region:REGION, schedule:'0 9 * * 3,6', timeZone:TIME_ZONE, timeoutSeconds:300, memory:'256MiB' },
     async () => sendReminders('morning')
   );
+  // Pedido do César (28/09): o lembrete de "está quase fechando" chegava às
+  // 23h, muito perto da meia-noite. Passa para as 18h do último dia de cada
+  // parte (quarta e sábado), dando mais tempo real de resposta.
   const lembrarDesafioNoite = onSchedule(
-    { region:REGION, schedule:'0 23 * * 3,6', timeZone:TIME_ZONE, timeoutSeconds:300, memory:'256MiB' },
+    { region:REGION, schedule:'0 18 * * 3,6', timeZone:TIME_ZONE, timeoutSeconds:300, memory:'256MiB' },
     async () => sendReminders('night')
+  );
+  // Incentivo diário pra quem ainda não fez: só nos dias que não têm o
+  // lembrete de manhã/noite (quarta e sábado já recebem dois avisos naqueles
+  // dias), pra não empilhar 3 notificações no mesmo dia.
+  const lembrarDesafioDiario = onSchedule(
+    { region:REGION, schedule:'0 12 * * 1,2,4,5', timeZone:TIME_ZONE, timeoutSeconds:300, memory:'256MiB' },
+    async () => sendReminders('daily')
   );
 
   // Temporada: a semana isolada esquece tudo na segunda-feira. Aqui a pontuação
@@ -2824,7 +2838,7 @@ ${item.text}`).join('\n\n')}`
     obterTemporadaDesafio, obterResultadoDesafioAdmin,
     recalcularPontuacaoDesafio,
     salvarRespostaDesafio, obterStatusDesafioAdmin, finalizarDesafioSemanal,
-    notificarAberturaDesafio, lembrarDesafioManha, lembrarDesafioNoite,
+    notificarAberturaDesafio, lembrarDesafioManha, lembrarDesafioNoite, lembrarDesafioDiario,
     gerarDesafiosAtrasados, gerarDesafioDaSemana, gerarDesafioDaTurma,
     aceitarRespostaDesafio, ajustarPontuacaoRespostaDesafio,
     obterDesafiosEntreAlunos, criarDesafioEntreAlunos, responderDesafioEntreAlunos,
