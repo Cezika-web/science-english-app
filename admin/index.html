@@ -88,6 +88,19 @@
     .tab.tem-coisa:hover .lb { color: var(--text); }
     .tab.active.tem-coisa .lb { color: #fff; }
 
+    /* Avaliações: item de duas linhas, com prévia da avaliação mais recente
+       logo abaixo do nome — pra ver sem precisar abrir a aba. */
+    .tab-review { flex-direction: column; align-items: stretch; justify-content:flex-start; text-align:left; padding: 7px 10px 8px; gap: 2px; }
+    .tab-review .row1 { display: flex; align-items: center; gap: 9px; }
+    .tab-review .preview {
+      display:none; padding-left: 27px; font-size: .72rem; color: #9aa5b4;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .tab-review .preview .stars { color: #f59e0b; margin-right: 4px; letter-spacing: -1px; }
+    .tab-review .preview .who { font-weight: 700; color: #6b7280; }
+    .tab-review.active .preview { color: rgba(255,255,255,.85); }
+    .tab-review.active .preview .who { color: #fff; }
+
     /* Fundo escuro atrás da gaveta (só no celular) */
     .menu-backdrop {
       display: none; position: fixed; inset: 0; background: rgba(15,23,36,.45);
@@ -779,7 +792,10 @@
           <div class="side-title">Engajamento</div>
           <button class="tab" data-tab="challenge"><span class="ic">🏆</span><span class="lb">Desafio</span></button>
           <button class="tab" data-tab="avisos"><span class="ic">📣</span><span class="lb">Avisos</span></button>
-          <button class="tab" data-tab="avaliacoes"><span class="ic">⭐</span><span class="lb">Avaliações</span></button>
+          <button class="tab tab-review" data-tab="avaliacoes">
+            <span class="row1"><span class="ic">⭐</span><span class="lb">Avaliações</span></span>
+            <span class="preview" id="avaliacoes-preview"></span>
+          </button>
         </div>
 
         <div class="side-group">
@@ -5059,8 +5075,8 @@
     // Quem administra a escola vê a interface dela — inclusive o César, ao
     // trocar de escola no seletor do topo.
     const ABAS_POR_MODO = {
-      manual:    ['students', 'groups', 'calendar', 'finance', 'challenge', 'creditos', 'posaula', 'processos', 'publish', 'correct', 'vocab', 'extras', 'avisos', 'add', 'exalunos', 'pendencias'],
-      assistido: ['students', 'groups', 'calendar', 'finance', 'challenge', 'creditos', 'posaula', 'processos', 'publish', 'extras', 'avisos', 'add', 'exalunos', 'pendencias'],
+      manual:    ['students', 'groups', 'calendar', 'finance', 'challenge', 'creditos', 'posaula', 'processos', 'publish', 'correct', 'vocab', 'extras', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
+      assistido: ['students', 'groups', 'calendar', 'finance', 'challenge', 'creditos', 'posaula', 'processos', 'publish', 'extras', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
     };
 
     function modoDaEscolaAtual() {
@@ -6308,6 +6324,26 @@
           const visiveis = reviews.filter(r => r.hidden !== true);
           const media = visiveis.length ? (visiveis.reduce((sum,r) => sum + Number(r.rating || 0), 0) / visiveis.length).toFixed(1) : '—';
           const ocultas = reviews.length - visiveis.length;
+
+          // Prévia da última avaliação, direto no menu lateral — pra ver sem
+          // precisar abrir a aba Avaliações.
+          const previewEl = document.getElementById('avaliacoes-preview');
+          const previewBtn = document.querySelector('.tab[data-tab="avaliacoes"]');
+          if (previewEl && previewBtn) {
+            const latest = visiveis[0];
+            if (latest) {
+              const stars = '★'.repeat(Number(latest.rating) || 0);
+              const who = esc(latest.authorName || 'Aluno');
+              const texto = latest.comment ? esc(latest.comment) : 'Sem comentário';
+              previewEl.innerHTML = `<span class="stars">${stars}</span><span class="who">${who}:</span> ${texto}`;
+              previewEl.style.display = '';
+              previewBtn.classList.add('tem-coisa');
+            } else {
+              previewEl.style.display = 'none';
+              previewBtn.classList.remove('tem-coisa');
+            }
+          }
+
           resumo.innerHTML = `<div style="display:flex;gap:10px;flex-wrap:wrap;">
             <div style="padding:12px 16px;border-radius:12px;background:#fffbeb;border:1px solid #fde68a;"><strong style="font-size:1.35rem;color:#92400e;">${media}</strong><span style="color:#f59e0b;margin-left:6px;">★</span><div style="font-size:.75rem;color:#92400e;">Média publicada</div></div>
             <div style="padding:12px 16px;border-radius:12px;background:#f8fafc;border:1px solid var(--border);"><strong style="font-size:1.35rem;">${visiveis.length}</strong><div style="font-size:.75rem;color:var(--muted);">Publicadas</div></div>
@@ -7115,6 +7151,7 @@
       registrarPushDoProfessor();
       recarregarJobsBatch();
       recarregarProcessosPosAula();
+      recarregarAvaliacoes(); // popula a prévia no menu lateral, não só quando abre a aba
 
       // O admin lê a coleção inteira; o professor só pode ler os alunos da
       // escola dele, então a consulta precisa vir filtrada.
