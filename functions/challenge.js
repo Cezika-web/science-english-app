@@ -2189,7 +2189,7 @@ ${item.text}`).join('\n\n')}`
           ? `Você ainda não concluiu a parte ${stage.part}. Responda até 23h59 de hoje.`
           : period === 'night'
           ? `A parte ${stage.part} fecha à meia-noite. Ainda dá tempo de responder.`
-          : `É rapidinho, só um treino de 3 minutinhos. Dessa vez você vai bem!`;
+          : `É rapidinho, só um treino de 3 minutinhos. Tenho certeza que você vai bem!`;
         const response = await getMessaging().sendEachForMulticast({
           tokens, notification:{ title, body }, data:{ type:'challenge-reminder', roundId, part:String(stage.part) },
           webpush:{ headers:{ Urgency:period === 'night' ? 'high' : 'normal' }, fcmOptions:{ link:APP_URL } },
