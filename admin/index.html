@@ -7792,6 +7792,22 @@
     };
 
     // ── APLICAR CORREÇÃO ─────────────────────────────────────────────────
+    // Nº de itens de uma parte: cada <li> (pergunta/lacuna) + cada prompt de
+    // áudio do oralExercise, na mesma contagem que a skill de correção usa
+    // pra montar o array `correcao`.
+    function activityPartItemCount(part) {
+      const content = String(part?.content || '');
+      const liCount = (content.match(/<li[\s>]/gi) || []).length;
+      const oralCount = Array.isArray(part?.oralExercise?.prompts) ? part.oralExercise.prompts.length : 0;
+      return liCount + oralCount;
+    }
+    function activityPartSignature(activity) {
+      const parts = Array.isArray(activity?.parts) ? activity.parts : [];
+      const byId = id => parts.find(p => p?.id === id);
+      const p1 = byId('part-1'), p2 = byId('part-2');
+      return [p1 ? activityPartItemCount(p1) : null, p2 ? activityPartItemCount(p2) : null];
+    }
+
     async function applySelectedCorrection(activityId, btn) {
       const uid = parsedCorrectionJson._resolvedUid;
       const originalLabel = btn.textContent;
@@ -7886,10 +7902,24 @@
       }
 
       // O JSON da skill traz o activityId da atividade que ela corrigiu — casa
-      // direto e aplica sem exigir seleção manual. Sem esse campo (JSON antigo)
-      // ou sem bater com nenhuma pendente, cai na lista pra escolher na mão.
-      const match = data.activityId ? acts.find(a => a.id === data.activityId)
-        : (acts.length === 1 ? acts[0] : null);
+      // direto e aplica sem exigir seleção manual. Sem esse campo (JSON antigo,
+      // ou o id não bateu — a IA pode errar um caractere ao copiar um id
+      // aleatório), tenta reconhecer pela "assinatura": nº de itens de cada
+      // parte no correcao bate com o nº de itens da atividade (contagem de
+      // <li> + prompts de áudio). Só aplica sozinho quando é o único match.
+      let match = data.activityId ? acts.find(a => a.id === data.activityId) : null;
+      if (!match && data.correcao) {
+        const wantP1 = Array.isArray(data.correcao['part-1']) ? data.correcao['part-1'].length : null;
+        const wantP2 = Array.isArray(data.correcao['part-2']) ? data.correcao['part-2'].length : null;
+        if (wantP1 != null && wantP2 != null) {
+          const candidatos = acts.filter(a => {
+            const [p1, p2] = activityPartSignature(a);
+            return p1 === wantP1 && p2 === wantP2;
+          });
+          if (candidatos.length === 1) match = candidatos[0];
+        }
+      }
+      if (!match && acts.length === 1) match = acts[0];
       if (match) {
         selectedActivityId = match.id;
         await applySelectedCorrection(match.id, document.getElementById('btn-load-activities'));
