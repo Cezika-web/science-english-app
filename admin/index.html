@@ -6326,7 +6326,9 @@
           const ocultas = reviews.length - visiveis.length;
 
           // Prévia da última avaliação, direto no menu lateral — pra ver sem
-          // precisar abrir a aba Avaliações.
+          // precisar abrir a aba Avaliações. O negrito só acende quando essa
+          // avaliação ainda não foi vista (guardado por escola no localStorage);
+          // abrir a aba marca como vista e apaga o negrito.
           const previewEl = document.getElementById('avaliacoes-preview');
           const previewBtn = document.querySelector('.tab[data-tab="avaliacoes"]');
           if (previewEl && previewBtn) {
@@ -6337,9 +6339,19 @@
               const texto = latest.comment ? esc(latest.comment) : 'Sem comentário';
               previewEl.innerHTML = `<span class="stars">${stars}</span><span class="who">${who}:</span> ${texto}`;
               previewEl.style.display = '';
-              previewBtn.classList.add('tem-coisa');
+              const marcador = `${latest.id}:${(latest.updatedAt || latest.createdAt)?.seconds || 0}`;
+              previewEl.dataset.marcador = marcador;
+              const vistoKey = `avaliacoesVisto_${escolaAtual}`;
+              const jaVista = localStorage.getItem(vistoKey) === marcador;
+              previewBtn.classList.toggle('tem-coisa', !jaVista);
+              const painelAberto = document.getElementById('tab-avaliacoes')?.classList.contains('active');
+              if (painelAberto) {
+                localStorage.setItem(vistoKey, marcador);
+                previewBtn.classList.remove('tem-coisa');
+              }
             } else {
               previewEl.style.display = 'none';
+              previewEl.removeAttribute('data-marcador');
               previewBtn.classList.remove('tem-coisa');
             }
           }
