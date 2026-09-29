@@ -1,0 +1,192 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Gabriel Mendes — 09/28/2026 — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+body{line-height:1.55;}.badge{white-space:nowrap;flex-shrink:0;}h2{font-size:1.15rem;color:#14532D;}h3{font-size:1rem;}.outline-card p:first-child{margin-top:0;}.outline-card p:last-child{margin-bottom:0;}li+li{margin-top:6px;}.vocab{box-sizing:border-box;}.correction+.correction{margin-top:18px;padding-top:14px;border-top:1px solid var(--border);}.small-note{font-size:.86rem;color:var(--muted);}
+@media(max-width:720px){header{flex-direction:column;}.wrap{padding:20px 12px;}.card{box-sizing:border-box;}.vocab{min-width:0;}.actions{margin-top:6px;}header>div:first-child>div:first-child{flex-wrap:wrap;}}
+@media print{html,body{height:auto;background:#fff;}.wrap{padding:0;display:block;min-height:0;}.card{max-width:none;width:auto;padding:0;border:0;box-shadow:none;}.actions,.vocab-say{display:none;}.vocab,.homework,.speaking,.correction{break-inside:avoid;}h2,h3{break-after:avoid;}.media-btn{background:#fff!important;color:#14532D!important;border:1px solid var(--border)!important;}}
+</style></head><body><div class="wrap"><article class="card" role="main"><header><div><div style="display:flex;gap:10px;align-items:center;"><span class="badge">PÓS-AULA</span><h1>Desastres e kit de emergência</h1></div><div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Gabriel Mendes &nbsp;•&nbsp; <strong>Data:</strong> 09/28/2026</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header><main><section class="panel"><p style="margin:0;font-weight:600;color:#14532D;"><em>Gabriel, nesta aula você explicou possíveis causas de desastres e praticou a leitura de itens de um kit de emergência. O foco da revisão é falar de seca, fome generalizada e água engarrafada com clareza, além de preparar as respostas para a simulação de entrevista.</em></p></section><section><h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2><div class="outline-card">
+<p><strong>Conversação inicial.</strong> A aula começou com novidades sobre família, trabalho, uma série de televisão e planos de viagem. Também conversamos sobre custos de moradia, despesas e salários. Foi uma oportunidade para formular perguntas, justificar opiniões e falar de planos em inglês.</p>
+<p><strong>Preparação para entrevista.</strong> Vocês trouxeram dúvidas sobre a entrevista de visto. Gabriel informou a data de <strong>5 de outubro</strong> e pediu uma simulação. O professor combinou trabalhar esse tema na <strong>próxima aula, quarta-feira</strong>. A orientação foi preparar o conteúdo das respostas antes: primeiro serão retomadas as perguntas do roteiro discutido; depois, se estiverem seguros, virão perguntas adicionais. Houve também uma conversa sobre manter a calma e confiar no inglês já aprendido.</p>
+<p><strong>Retomada da unidade anterior.</strong> Relembramos brevemente saúde, sintomas, wishes e <strong>Past Perfect</strong>. O professor reforçou a necessidade de ler o pós-aula entre as aulas para conseguir recuperar o conteúdo, além de apenas abrir o arquivo.</p>
+<p><strong>Desastres — página 49.</strong> O novo tema foi <strong>disasters</strong>. Analisamos as imagens do livro e discutimos quais situações são naturais, quais podem ser causadas por humanos e quais podem envolver ambos. Entraram <strong>shipwreck</strong> (naufrágio), <strong>forest fire</strong> (incêndio florestal), <strong>famine</strong> (fome generalizada), <strong>drought</strong> (seca) e <strong>volcanic eruption</strong> (erupção vulcânica).</p>
+<p><strong>Explicar causas e dar exemplos.</strong> Na conversa, um incêndio florestal foi apresentado como uma situação que pode envolver ação humana ou condições naturais. Também discutimos a relação entre seca e falta de alimentos e o exemplo do Titanic para pensar em fatores naturais e responsabilidade humana. A pergunta central foi <em>Which of these disasters are caused by humans?</em> A expressão <em>a combination of both</em> ajudou a falar de mais de uma causa.</p>
+<p><strong>Kit de emergência.</strong> Lemos itens como <em>antiseptic solution, flashlight, blankets, matches, surgical gloves, bottled water, batteries</em> e <em>cash</em>. O professor explicou <strong>blankets</strong>, retomou <strong>bandages</strong> e destacou que <strong>matches</strong>, no kit, significa “fósforos”; o verbo <strong>to match</strong> pode significar “combinar”. Lucas relacionou os materiais de primeiros socorros à profissão dos pais. Gabriel praticou a leitura de <strong>bottled water</strong>.</p>
+<p><strong>Opiniões e hipóteses.</strong> Vídeos de um criador de conteúdo que constrói bunkers serviram como ponto de partida para discutir preparação, armazenamento de alimentos e cenários hipotéticos. Vocês questionaram a ideia de um apocalipse e falaram sobre preços, clima e utilidade de um abrigo. Essas falas serviram para praticar opiniões e argumentação em inglês.</p>
+<p><strong>Seu foco, Gabriel:</strong> você explicou que um incêndio florestal pode ter diferentes causas e relacionou uma seca prolongada à falta de alimentos. Também pediu a simulação da entrevista e praticou <em>bottled water</em>. Seu próximo passo é organizar essas ideias em frases completas e revisar o pós-aula antes da próxima aula.</p></div></section><section><h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2><div class="outline-card"><p class="small-note" style="margin-top:0;">Frases e ideias trabalhadas na conversa, com a escrita padronizada. Algumas falas fragmentadas foram organizadas em frases completas para revisão.</p><ul><li><strong lang="en">Which of these disasters are caused by humans?</strong> — Quais destes desastres são causados por humanos?</li><li><strong lang="en">That&#x27;s a combination of both.</strong> — Isso é uma combinação dos dois.</li><li><strong lang="en">A shipwreck can be a combination of both.</strong> — Um naufrágio pode envolver uma combinação das duas causas.</li><li><strong lang="en">A long drought can cause famine.</strong> — Uma seca prolongada pode causar fome generalizada.</li><li><strong lang="en">Things are expensive.</strong> — As coisas estão caras.</li><li><strong lang="en">The cheese is smaller, and the price is the same.</strong> — O queijo está menor, e o preço é o mesmo.</li><li><strong lang="en">Do you think you need cash?</strong> — Você acha que precisa de dinheiro em espécie?</li><li><strong lang="en">Be prepared to answer this.</strong> — Estejam preparados para responder isso.</li><li><strong lang="en">Can I ask you a question?</strong> — Posso te fazer uma pergunta?</li><li><strong lang="en">A forest fire is not necessarily caused by humans.</strong> — Um incêndio florestal não é necessariamente causado por humanos.</li></ul></div></section><section><h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3 lang="en">drought</h3><button type="button" class="vocab-say" data-czk-say="drought" aria-label="Ouvir a pronúncia de drought" aria-pressed="false" title="Ouvir drought">&#128266;</button></div><p><em>seca; estiagem prolongada</em><br><small>Substantivo para um período longo com pouca ou nenhuma chuva. Compare com dry, o adjetivo “seco”.</small></p><p><strong lang="en">A long drought can cause famine.</strong><br><small>Uma seca prolongada pode causar fome generalizada.</small></p></div><div class="vocab green"><div class="vocab-head"><h3 lang="en">famine</h3><button type="button" class="vocab-say" data-czk-say="famine" aria-label="Ouvir a pronúncia de famine" aria-pressed="false" title="Ouvir famine">&#128266;</button></div><p><em>fome generalizada; escassez extrema de alimentos</em><br><small>Situação que afeta uma população; é diferente da fome individual expressa por hunger.</small></p><p><strong lang="en">A drought can cause famine.</strong><br><small>Uma seca pode causar fome generalizada.</small></p></div><div class="vocab yellow"><div class="vocab-head"><h3 lang="en">bottled water</h3><button type="button" class="vocab-say" data-czk-say="bottled water" aria-label="Ouvir a pronúncia de bottled water" aria-pressed="false" title="Ouvir bottled water">&#128266;</button></div><p><em>água engarrafada</em><br><small>Bottled descreve a água colocada em garrafas. Foi uma expressão lida e corrigida na aula.</small></p><p><strong lang="en">We need bottled water.</strong><br><small>Precisamos de água engarrafada.</small></p></div></div></section><section><h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2><div class="outline-card"><h3>Desastres e causas</h3><ul><li><strong lang="en">disaster / natural disaster</strong> — desastre / desastre natural</li><li><strong lang="en">human-made disaster</strong> — desastre causado pela ação humana</li><li><strong lang="en">caused by humans</strong> — causado por humanos</li><li><strong lang="en">a combination of both</strong> — uma combinação dos dois</li><li><strong lang="en">shipwreck</strong> — naufrágio</li><li><strong lang="en">forest fire</strong> — incêndio florestal</li><li><strong lang="en">famine</strong> — fome generalizada; escassez extrema de alimentos</li><li><strong lang="en">hunger</strong> — fome</li><li><strong lang="en">drought / dry</strong> — seca, estiagem / seco</li><li><strong lang="en">volcanic eruption</strong> — erupção vulcânica</li><li><strong lang="en">storm / tsunami</strong> — tempestade / tsunami</li><li><strong lang="en">global warming</strong> — aquecimento global</li><li><strong lang="en">global war</strong> — guerra global</li></ul><h3>Kit de emergência e primeiros socorros</h3><ul><li><strong lang="en">survival kit</strong> — kit de sobrevivência</li><li><strong lang="en">antiseptic solution</strong> — solução antisséptica</li><li><strong lang="en">candles</strong> — velas</li><li><strong lang="en">flashlight</strong> — lanterna</li><li><strong lang="en">bandages</strong> — ataduras, bandagens</li><li><strong lang="en">burn cream</strong> — pomada para queimaduras</li><li><strong lang="en">sterilized gauze</strong> — gaze esterilizada</li><li><strong lang="en">thermometer</strong> — termômetro</li><li><strong lang="en">blankets</strong> — cobertores</li><li><strong lang="en">a can opener</strong> — um abridor de latas</li><li><strong lang="en">matches / to match</strong> — fósforos / combinar</li><li><strong lang="en">an emergency radio</strong> — um rádio de emergência</li><li><strong lang="en">surgical gloves</strong> — luvas cirúrgicas</li><li><strong lang="en">bottled water</strong> — água engarrafada</li><li><strong lang="en">batteries</strong> — pilhas ou baterias</li><li><strong lang="en">cash</strong> — dinheiro em espécie</li></ul><h3>Preparação e argumentação</h3><ul><li><strong lang="en">bunker / shelter</strong> — bunker, abrigo fortificado / abrigo</li><li><strong lang="en">to survive</strong> — sobreviver</li><li><strong lang="en">to store food</strong> — armazenar alimentos</li><li><strong lang="en">to be prepared for</strong> — estar preparado para</li><li><strong lang="en">apocalypse</strong> — apocalipse</li><li><strong lang="en">to dig</strong> — cavar</li><li><strong lang="en">I think / I agree</strong> — eu acho / eu concordo</li><li><strong lang="en">it depends</strong> — depende</li><li><strong lang="en">expensive / more expensive</strong> — caro / mais caro</li><li><strong lang="en">smaller / the same price</strong> — menor / o mesmo preço</li></ul><h3>Conversação: família, trabalho e viagem</h3><ul><li><strong lang="en">visa interview</strong> — entrevista de visto</li><li><strong lang="en">work and travel</strong> — trabalho e viagem</li><li><strong lang="en">trust yourself</strong> — confie em si mesmo</li><li><strong lang="en">company</strong> — empresa</li><li><strong lang="en">salary / average salary</strong> — salário / salário médio</li><li><strong lang="en">rent / installment</strong> — aluguel / parcela</li><li><strong lang="en">credit card</strong> — cartão de crédito</li><li><strong lang="en">electricity / water / gas</strong> — eletricidade / água / gás</li><li><strong lang="en">own house</strong> — casa própria</li><li><strong lang="en">niece / cousin</strong> — sobrinha / primo ou prima</li><li><strong lang="en">nurse</strong> — enfermeiro ou enfermeira</li><li><strong lang="en">by myself / on my own</strong> — sozinho; por conta própria</li><li><strong lang="en">vaccines / shots</strong> — vacinas / injeções, no contexto da conversa</li></ul></div></section><section><h2 style="margin-bottom:8px;">🚨 Correções importantes</h2><div class="outline-card"><p class="small-note">Falas e pontos de revisão da aula, com grafia padronizada para destacar a estrutura.</p><div class="correction"><p><strong>1. Água engarrafada</strong></p><p style="color:#c53030;">❌ Bottle water.</p><p style="color:#276749;">✅ <strong>Bottled water.</strong></p><p><strong>Bottle</strong> é “garrafa”; <strong>bottled</strong> descreve algo engarrafado. O professor repetiu essa expressão durante a leitura. Ouça o botão de áudio e repita a expressão inteira.</p></div><div class="correction"><p><strong>2. Fazer uma pergunta a alguém</strong></p><p style="color:#c53030;">❌ Can I ask one thing for you?</p><p style="color:#276749;">✅ <strong>Can I ask you a question?</strong></p><p>Uma forma natural é <strong>ask + pessoa + a question</strong>. Aqui não precisamos de <em>for</em>.</p></div><div class="correction"><p><strong>3. Completar a explicação da causa</strong></p><p style="color:#c53030;">❌ Don’t be necessarily human.</p><p style="color:#276749;">✅ <strong>A forest fire is not necessarily caused by humans.</strong></p><p>Para expressar a ideia que você explicou, mantenha o sujeito e use <strong>is not necessarily caused by</strong> = “não é necessariamente causado por”. <em>Don’t be</em> sozinho soa como uma instrução, não como a descrição da causa.</p></div></div></section><section><h2 style="margin-bottom:8px;">Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/Li6w3wfWTV4" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section><section class="speaking" aria-label="Distribuição aproximada de fala"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Participante</th><th>Estimativa</th><th>Fala transcrita</th></tr></thead><tbody><tr class="row-teacher"><td class="talk-label">César (professor)</td><td class="talk-percent">66%</td><td class="talk-time">~28 min</td></tr><tr class="row-student"><td class="talk-label">Lucas Mendes</td><td class="talk-percent">23%</td><td class="talk-time">~10 min</td></tr><tr class="row-student"><td class="talk-label">Gabriel Mendes</td><td class="talk-percent">11%</td><td class="talk-time">~4 min</td></tr></tbody></table><p class="small-note">Estimativa da soma dos intervalos de fala da transcrição, excluindo o áudio compartilhado e as pausas. A gravação tem cerca de 53 minutos. Os rótulos automáticos e eventuais sobreposições limitam a precisão.</p></section><section><h2 style="margin-bottom:8px;">📝 Homework</h2><div class="homework"><p><strong>📌 Combinado e prática de revisão</strong></p><ul><li>Preparar o conteúdo das respostas em inglês para a simulação da próxima aula, pensando na entrevista que você informou para <strong>5 de outubro</strong>. O professor começará pelas perguntas do roteiro discutido/compartilhado.</li><li>Ouvir e repetir <strong>bottled water</strong>; depois explicar em voz alta a relação entre <strong>drought</strong>, <strong>famine</strong> e <strong>forest fire</strong>.</li><li>Ler este pós-aula de <strong>2 a 3 vezes</strong> durante a semana, incluindo uma revisão antes da próxima aula.</li><li>Como prática sugerida, escolher três itens do kit e explicar em inglês por que seriam úteis: <em>I would choose… because…</em></li></ul><p style="margin-bottom:0;">A próxima aula terá foco na simulação de entrevista. Primeiro prepare o que quer responder; em aula, trabalharemos a clareza e a forma de dizer.</p></div></section></main><footer><p>© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer></article></div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>
