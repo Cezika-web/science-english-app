@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Giovanna Azzi — CZK English</title>
+  <style>
+:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Present continuous: ações de agora e planos futuros</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Giovanna Azzi &nbsp;•&nbsp;
+            <strong>Data:</strong> 09/29/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+        <section class="panel">
+          <p style="margin:0;font-weight:600;color:#14532D;"><em>Hoje você praticou am/is/are + verbo com -ing para falar do que acontece agora e de planos já organizados. Também revisou perguntas, a presença do sujeito em inglês e vocabulário de eletrodomésticos.</em></p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 8px 0;">Começamos com o desafio semanal e a revisão de atividades anteriores. Você marcou <strong>380 pontos</strong> no desafio. Na correção, retomamos <strong>library</strong> (biblioteca) × <strong>bookstore</strong> (livraria), o comparativo irregular <strong>bad → worse</strong>, <strong>too many</strong> para coisas contáveis como <em>calories</em> e <strong>too much</strong> para substantivos incontáveis como <em>water</em>. Também diferenciamos <strong>broken</strong> (quebrado) de <strong>breaking</strong> (quebrando).</p>
+            <p style="margin:0 0 8px 0;">Em um vídeo sobre o tempo de decomposição de objetos, você praticou perguntas com <strong>How long...?</strong> e encontrou palavras como <em>banana peel</em>, <em>plastic bag</em>, <em>aluminum can</em> e <em>fishing line</em>. Depois voltamos ao tema principal: <strong>present continuous = sujeito + am/is/are + verbo com -ing</strong>. A mesma estrutura pode mostrar uma ação em progresso (<em>I'm reading three books</em>) ou um compromisso/plano futuro com uma indicação de tempo (<em>I'm going to school early tomorrow</em>).</p>
+            <p style="margin:0;">Nos exercícios, você identificou ações de agora e planos futuros, formou perguntas invertendo o <em>to be</em> e produziu frases sobre pintar a casa, cozinhar e seus planos para sábado. Fechamos com uma revisão de <strong>sujeito + verbo</strong>: em <em>I think it is very salty</em>, <em>I</em> é o sujeito de <em>think</em> e <em>it</em> é o sujeito de <em>is</em>. Na próxima aula, César pretende avançar para a lição 2 e comparar esse uso de <em>-ing</em> com outras formas de presente.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2>
+          <div class="outline-card">
+            <ul style="margin:0;padding-left:20px;line-height:1.7;">
+              <li><strong>I'm going to school early tomorrow.</strong> → Vou para a escola cedo amanhã.</li>
+              <li><strong>I'm reading three books.</strong> → Estou lendo três livros.</li>
+              <li><strong>I am cooking next Saturday.</strong> → Vou cozinhar no próximo sábado.</li>
+              <li><strong>What are you doing next Saturday?</strong> → O que você vai fazer no próximo sábado?</li>
+              <li><strong>I am painting my house.</strong> → Estou pintando minha casa.</li>
+              <li><strong>I think it is very salty.</strong> → Acho que está muito salgado.</li>
+              <li><strong>Do you like bananas?</strong> → Você gosta de bananas?</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <div class="vocab-head">
+                <h3>present continuous</h3>
+                <button type="button" class="vocab-say" data-czk-say="present continuous" aria-label="Ouvir a pronúncia de present continuous" aria-pressed="false" title="Ouvir present continuous">&#128266;</button>
+              </div>
+              <p><em>(pt) presente contínuo</em><br><small>Estrutura <strong>am/is/are + -ing</strong>. Ex.: <em>I'm reading three books.</em></small></p>
+            </div>
+            <div class="vocab green">
+              <div class="vocab-head">
+                <h3>future plan</h3>
+                <button type="button" class="vocab-say" data-czk-say="future plan" aria-label="Ouvir a pronúncia de future plan" aria-pressed="false" title="Ouvir future plan">&#128266;</button>
+              </div>
+              <p><em>(pt) plano futuro</em><br><small>Algo já planejado. Ex.: <em>I'm cooking next Saturday.</em></small></p>
+            </div>
+            <div class="vocab yellow">
+              <div class="vocab-head">
+                <h3>vacuuming</h3>
+                <button type="button" class="vocab-say" data-czk-say="vacuuming" aria-label="Ouvir a pronúncia de vacuuming" aria-pressed="false" title="Ouvir vacuuming">&#128266;</button>
+              </div>
+              <p><em>(pt) passando aspirador</em><br><small>De <em>to vacuum</em>. Ex.: <em>I'm vacuuming the house.</em> (Estou aspirando a casa.)</small></p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2>
+          <div class="outline-card">
+            <h3 style="margin-top:0;">Tempo, planos e gramática</h3>
+            <ul>
+              <li><strong>action in progress</strong> — ação em andamento</li>
+              <li><strong>future plan</strong> — plano futuro</li>
+              <li><strong>subject / verb</strong> — sujeito / verbo</li>
+              <li><strong>now / tomorrow / next Saturday / this summer</strong> — agora / amanhã / próximo sábado / neste verão</li>
+              <li><strong>How long...?</strong> — Quanto tempo...?</li>
+            </ul>
+            <h3>Eletrodomésticos e tarefas</h3>
+            <ul>
+              <li><strong>blender</strong> — liquidificador</li>
+              <li><strong>juicer</strong> — espremedor ou extrator de suco</li>
+              <li><strong>food processor</strong> — processador de alimentos</li>
+              <li><strong>dishwasher</strong> — máquina de lavar louça</li>
+              <li><strong>microwaving</strong> — aquecendo no micro-ondas</li>
+              <li><strong>vacuuming / painting / cooking</strong> — aspirando / pintando / cozinhando</li>
+            </ul>
+            <h3>Vídeo sobre decomposição</h3>
+            <ul>
+              <li><strong>banana peel</strong> — casca de banana</li>
+              <li><strong>plastic bag</strong> — sacola plástica</li>
+              <li><strong>aluminum can</strong> — lata de alumínio</li>
+              <li><strong>fishing line</strong> — linha de pesca</li>
+              <li><strong>disappear / lifetime</strong> — desaparecer / tempo de vida</li>
+            </ul>
+            <h3>Revisão do desafio</h3>
+            <ul>
+              <li><strong>library / bookstore</strong> — biblioteca / livraria</li>
+              <li><strong>bad / worse</strong> — ruim / pior</li>
+              <li><strong>too many calories / too much water</strong> — calorias demais / água demais</li>
+              <li><strong>broken / breaking</strong> — quebrado / quebrando</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">🚨 Correções importantes</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 6px 0;"><strong>1. Coisas contáveis pedem many</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ “too much calories”</p>
+            <p style="margin:0 0 13px 0;color:#276749;">✅ <strong>“too many calories”</strong> — dá para contar calorias. Para água, use <em>too much water</em>.</p>
+            <p style="margin:0 0 6px 0;"><strong>2. Cada verbo precisa do seu sujeito</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ “I think is very salty.”</p>
+            <p style="margin:0 0 13px 0;color:#276749;">✅ <strong>“I think it is very salty.”</strong> — <em>I</em> acompanha <em>think</em>; <em>it</em> acompanha <em>is</em>. Foi o ponto central da revisão de sujeito na aula.</p>
+            <p style="margin:0 0 6px 0;"><strong>3. Pergunta com to be: inverta a ordem</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ “What you are doing next Saturday?”</p>
+            <p style="margin:0 0 13px 0;color:#276749;">✅ <strong>“What are you doing next Saturday?”</strong> — em perguntas, <em>are</em> vem antes de <em>you</em>.</p>
+            <p style="margin:0 0 6px 0;"><strong>4. Depois de enjoy e want</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ “I enjoy to swim.” / “I want swimming.”</p>
+            <p style="margin:0 0 13px 0;color:#276749;">✅ <strong>“I enjoy swimming.” / “I want to swim.”</strong> — <em>enjoy + -ing</em>; <em>want + to + verbo</em>.</p>
+            <p style="margin:0 0 6px 0;"><strong>5. Cuidado com traduções e formas irregulares</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ “library” para livraria / “more bad” para pior</p>
+            <p style="margin:0;color:#276749;">✅ <strong>“bookstore” / “worse”</strong> — <em>library</em> é biblioteca; o comparativo de <em>bad</em> é irregular.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2>
+          <div class="media-row">
+            <a class="media-btn" href="https://youtu.be/5rBSY531sgo" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a>
+          </div>
+        </section>
+
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>🗣️ Tempo de Fala</h2>
+          <table class="talk-table">
+            <thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead>
+            <tbody>
+              <tr class="row-teacher"><td><span class="talk-label">César (Professor)</span></td><td><span class="talk-percent">75%</span></td><td class="talk-time">~25 minutos</td></tr>
+              <tr class="row-student"><td><span class="talk-label">Giovanna Azzi</span></td><td><span class="talk-percent">25%</span></td><td class="talk-time">~8 minutos</td></tr>
+            </tbody>
+          </table>
+          <p style="margin:8px 0 0;color:var(--muted);font-size:0.82rem;">Estimativa com base nos trechos de fala identificados na transcrição; não inclui pausas dos exercícios nem o áudio do vídeo compartilhado.</p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📝 Homework</h2>
+          <div class="homework">
+            <p style="margin:0 0 8px 0;">📌 <strong>Lição de casa:</strong></p>
+            <ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+              <li>Escreva <strong>2 frases sobre o que está fazendo agora</strong> e <strong>2 sobre planos já organizados</strong>, usando <em>am/is/are + -ing</em> e uma expressão de tempo nas frases futuras.</li>
+              <li>Transforme uma das frases em pergunta, colocando <em>am/is/are</em> antes do sujeito.</li>
+              <li>Complete as atividades da semana quando César as disponibilizar e revise as correções do desafio.</li>
+              <li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana e pratique em voz alta as frases da aula.</li>
+            </ul>
+          </div>
+          <div style="margin-top:14px;">
+            <a class="btn" href="https://wa.me" style="background:#25D366;border-radius:10px;box-shadow:none;">💬 Falar comigo no WhatsApp</a>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p>
+      </footer>
+    </article>
+  </div>
+
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body>
+</html>

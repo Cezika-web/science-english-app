@@ -1,0 +1,275 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>Resumo Pós-Aula — Davi Hideki — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }</style></head><body>
+<div class="wrap"><article class="card" role="main">
+<header><div><div style="display:flex;gap:10px;align-items:center;"><span class="badge">PÓS-AULA</span>
+<h1>Datas, horários e endereços em inglês</h1></div>
+<div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp;
+<strong>Aluno:</strong> Davi Hideki &nbsp;•&nbsp; <strong>Data:</strong> 09/29/2026</div></div>
+<div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header>
+<main><section class="panel"><p style="margin:0;font-weight:600;color:#14532D;font-style:italic;">
+Hoje você revisou números ordinais e datas, corrigiu atividades e leu avisos para encontrar dia, horário e endereço. O foco da semana é praticar os dias da semana e reconhecer o número da casa nos endereços em inglês.</p></section>
+<section><h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2><div class="outline-card">
+<p style="margin:0 0 8px 0;">Começamos pela correção das atividades. Você lembrou que datas em inglês usam <strong>números ordinais</strong>: <em>first</em> (1st), <em>second</em> (2nd), <em>third</em> (3rd) e, em muitos outros casos, a terminação <em>-th</em>. César explicou que as letras depois do número vêm do final da palavra: <strong>1st → first</strong>, <strong>2nd → second</strong>, <strong>3rd → third</strong>. Você também retomou formas que mudam na escrita, como <strong>fifth</strong>, <strong>ninth</strong> e <strong>twelfth</strong>.</p>
+<p style="margin:0 0 8px 0;">Depois, revisamos como falar <strong>datas e horários</strong>. Para um mês, usamos <em>in</em> (<em>in May</em>); para um dia ou data específica, <em>on</em> (<em>on May 13th</em>); para uma hora, <em>at</em> (<em>at 8 p.m.</em>). Você praticou a diferença entre <em>a.m.</em> e <em>p.m.</em> e observou que <em>April Fool’s Day</em> é o Dia da Mentira, enquanto <em>April first</em> simplesmente indica a data.</p>
+<p style="margin:0;">Na leitura, você interpretou uma <em>newsletter</em> e avisos de exposição, festa de aniversário, café, palestra e farmácia. Procuramos sempre quatro informações: <strong>o que</strong> vai acontecer, <strong>quando</strong>, <strong>onde</strong> e <strong>qual o horário</strong>. Em endereços como <em>20 Fifth Avenue</em> e <em>18 Third Street</em>, o primeiro número identifica o imóvel; <em>Fifth</em> e <em>Third</em> fazem parte do nome da via. Por fim, vimos que <em>24/7</em> significa “24 horas por dia, 7 dias por semana” e revisamos os dias da semana, sobretudo <em>Saturday</em> e <em>Sunday</em>.</p>
+</div></section>
+<section><h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2><div class="outline-card"><ul>
+<li><strong>October first.</strong> → Primeiro de outubro.</li>
+<li><strong>April first.</strong> → Primeiro de abril, como data.</li>
+<li><strong>April Fool’s Day.</strong> → Dia da Mentira.</li>
+<li><strong>Third Street.</strong> → Terceira Rua / Rua 3.</li>
+<li><strong>Fifth Avenue.</strong> → Quinta Avenida.</li>
+<li><strong>Saturday.</strong> → Sábado.</li>
+<li><strong>Friday.</strong> → Sexta-feira.</li>
+<li><strong>Weekends.</strong> → Finais de semana.</li>
+<li><strong>24/7.</strong> → Vinte e quatro horas por dia, sete dias por semana.</li>
+</ul><p style="margin:8px 0 0;color:var(--muted);font-size:0.9rem;">As expressões acima foram retomadas na aula; a grafia inglesa foi normalizada para estudo.</p></div></section>
+<section><h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2><div class="vocab-grid">
+<div class="vocab"><div class="vocab-head"><h3>fifth</h3><button type="button" class="vocab-say" data-czk-say="fifth" aria-label="Ouvir a pronúncia de fifth" aria-pressed="false" title="Ouvir fifth">&#128266;</button></div><p><em>(pt) quinto / quinta</em><br><small>Ordinal de five; o <em>ve</em> muda para <em>f</em>. Ex.: <strong>Fifth Avenue</strong> — Quinta Avenida.</small></p></div>
+<div class="vocab green"><div class="vocab-head"><h3>on</h3><button type="button" class="vocab-say" data-czk-say="on" aria-label="Ouvir a pronúncia de on" aria-pressed="false" title="Ouvir on">&#128266;</button></div><p><em>(pt) em / no / na</em><br><small>Preposição usada antes de dias e datas específicas. Ex.: <strong>on Saturday</strong> — no sábado.</small></p></div>
+<div class="vocab yellow"><div class="vocab-head"><h3>twenty-four seven</h3><button type="button" class="vocab-say" data-czk-say="twenty-four seven" aria-label="Ouvir a pronúncia de twenty-four seven" aria-pressed="false" title="Ouvir twenty-four seven">&#128266;</button></div><p><em>(pt) 24 horas por dia, 7 dias por semana</em><br><small>Forma falada de <strong>24/7</strong>. Ex.: <strong>The pharmacy is open 24/7.</strong> — A farmácia funciona o tempo todo.</small></p></div>
+</div></section>
+<section><h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2><div class="outline-card">
+<h3>Números ordinais e datas</h3><ul>
+<li><strong>first / 1st</strong> – primeiro</li>
+<li><strong>second / 2nd</strong> – segundo</li>
+<li><strong>third / 3rd</strong> – terceiro</li>
+<li><strong>fourth / 4th</strong> – quarto</li>
+<li><strong>fifth / 5th</strong> – quinto</li>
+<li><strong>ninth / 9th</strong> – nono</li>
+<li><strong>twelfth / 12th</strong> – décimo segundo</li>
+<li><strong>twenty-first / 21st</strong> – vigésimo primeiro</li>
+<li><strong>April Fool’s Day</strong> – Dia da Mentira</li>
+</ul>
+<h3>Tempo e dias da semana</h3><ul>
+<li><strong>in May</strong> – em maio</li>
+<li><strong>on Saturday</strong> – no sábado</li>
+<li><strong>at 8 p.m.</strong> – às oito da noite</li>
+<li><strong>a.m.</strong> – antes do meio-dia</li>
+<li><strong>p.m.</strong> – do meio-dia até antes da meia-noite</li>
+<li><strong>Monday</strong> – segunda-feira</li>
+<li><strong>Tuesday</strong> – terça-feira</li>
+<li><strong>Wednesday</strong> – quarta-feira</li>
+<li><strong>Thursday</strong> – quinta-feira</li>
+<li><strong>Friday</strong> – sexta-feira</li>
+<li><strong>Saturday</strong> – sábado</li>
+<li><strong>Sunday</strong> – domingo</li>
+<li><strong>weekends</strong> – finais de semana</li>
+</ul>
+<h3>Leitura de avisos e endereços</h3><ul>
+<li><strong>newsletter</strong> – boletim de notícias</li>
+<li><strong>neighborhood</strong> – bairro / vizinhança</li>
+<li><strong>photo exhibition</strong> – exposição de fotos</li>
+<li><strong>birthday party</strong> – festa de aniversário</li>
+<li><strong>avenue</strong> – avenida</li>
+<li><strong>street</strong> – rua</li>
+<li><strong>first floor</strong> – primeiro andar</li>
+<li><strong>second floor</strong> – segundo andar</li>
+<li><strong>address</strong> – endereço</li>
+<li><strong>24/7</strong> – 24 horas por dia, 7 dias por semana</li>
+</ul>
+</div></section>
+<section><h2 style="margin-bottom:8px;">🚨 Correções importantes</h2><div class="outline-card"><p style="margin-top:0;color:var(--muted);font-size:0.9rem;">As frases abaixo mostram a forma a revisar. Quando a transcrição não preservou a frase completa, o exemplo foi reconstruído a partir da correção explicada em aula.</p>
+<p style="margin:12px 0 4px;"><strong>1. Ordinais irregulares</strong></p><p style="margin:0 0 4px;color:#c53030;">❌ “five-th / nine-th”</p><p style="margin:0 0 8px;color:#276749;">✅ <strong>“fifth / ninth”</strong> — Fifth perde o <em>ve</em> de five; ninth perde o <em>e</em> de nine. Para 12th, escreva <em>twelfth</em>.</p>
+<p style="margin:12px 0 4px;"><strong>2. Data específica: on</strong></p><p style="margin:0 0 4px;color:#c53030;">❌ “in January 15th”</p><p style="margin:0 0 8px;color:#276749;">✅ <strong>“on January 15th”</strong> — Use <em>in</em> para o mês sozinho (<em>in January</em>) e <em>on</em> quando há dia ou data.</p>
+<p style="margin:12px 0 4px;"><strong>3. Horário: at</strong></p><p style="margin:0 0 4px;color:#c53030;">❌ “The event starts 8 p.m.”</p><p style="margin:0 0 8px;color:#276749;">✅ <strong>“The event starts at 8 p.m.”</strong> — Em uma frase que indica a hora de um evento, inclua <em>at</em> antes do horário.</p>
+<p style="margin:12px 0 4px;"><strong>4. Idade em inglês</strong></p><p style="margin:0 0 4px;color:#c53030;">❌ “My grandma has 72 years.”</p><p style="margin:0 0 8px;color:#276749;">✅ <strong>“My grandma is 72 years old.”</strong> — Para idade, o inglês usa o verbo <em>to be</em>, não <em>to have</em>.</p>
+<p style="margin:12px 0 4px;"><strong>5. Weekend não é holiday</strong></p><p style="margin:0 0 4px;color:#c53030;">❌ “weekend = feriado”</p><p style="margin:0 0 8px;color:#276749;">✅ <strong>“weekend = fim de semana”</strong> — Holiday significa feriado. Saturday é sábado; Sunday é domingo.</p>
+<p style="margin:12px 0 4px;"><strong>6. Número do imóvel</strong></p><p style="margin:0 0 4px;color:#c53030;">❌ “Third Street, number 18”</p><p style="margin:0 0 8px;color:#276749;">✅ <strong>“18 Third Street”</strong> — No formato de endereço praticado na aula, o número do imóvel vem antes do nome da rua.</p>
+</div></section>
+<section><h2 style="margin-bottom:8px;">Gravação da aula</h2><div class="media-row">
+<a class="media-btn" href="https://youtu.be/XMEb1R62Dco" target="_blank" rel="noopener noreferrer" role="button"
+style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a>
+</div></section>
+<section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2>
+<table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead>
+<tbody><tr class="row-teacher"><td><span class="talk-label">César (Professor)</span></td><td><span class="talk-percent">71%</span></td><td class="talk-time">~24 minutos</td></tr>
+<tr class="row-student"><td><span class="talk-label">Davi Hideki</span></td><td><span class="talk-percent">29%</span></td><td class="talk-time">~10 minutos</td></tr></tbody></table>
+<p style="margin:8px 0 0;color:var(--muted);font-size:0.85rem;">Estimativa baseada no tempo das falas da transcrição; pausas e leitura silenciosa não entram na conta.</p></section>
+<section><h2 style="margin-bottom:8px;">📝 Homework</h2><div class="homework">
+<p style="margin:0 0 8px;"><strong>Para esta semana:</strong></p><ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+<li>Faça as atividades no aplicativo sobre <strong>dias da semana e endereços</strong>, incluindo o áudio e as perguntas sobre os avisos vistos em aula.</li>
+<li>Revise os sete dias da semana em voz alta, em ordem, e pratique especialmente <strong>Saturday</strong> e <strong>Sunday</strong>.</li>
+<li>Leia endereços como <strong>20 Fifth Avenue</strong> e <strong>18 Third Street</strong>, identificando o número do imóvel e o nome da via.</li>
+<li>Faça a <strong>segunda parte do desafio semanal</strong> na quinta ou sexta-feira, conforme combinado na aula.</li>
+<li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana, de preferência um pouco por dia.</li>
+</ul></div></section></main>
+<footer><p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer>
+</article></div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>
