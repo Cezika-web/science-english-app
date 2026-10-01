@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Fátima Silva — 09/30/2026 — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+body{line-height:1.55;}h2{font-size:1.15rem;color:#14532D;}.outline-card p+p{margin-top:12px;}li+li{margin-top:7px;}.rule-table{width:100%;border-collapse:collapse;font-size:.94rem;margin:12px 0;}.rule-table th,.rule-table td{padding:10px 8px;border:1px solid var(--border);text-align:left;vertical-align:top;}.rule-table th{background:#E7F6EC;color:#14532D;}.small-note{font-size:.88rem;color:var(--muted);}.correction+.correction{margin-top:18px;padding-top:14px;border-top:1px solid var(--border);}
+@media(max-width:720px){header{flex-direction:column;}.actions{width:100%;}.actions .btn{justify-content:center;flex:1;}.wrap{padding:20px 10px;}.vocab{min-width:0;}header>div:first-child>div:first-child{flex-wrap:wrap;}.rule-table{font-size:.85rem;}.rule-table th,.rule-table td{padding:8px 5px;}}
+@media print{html,body{height:auto;background:#fff;}.wrap{display:block;padding:0;min-height:0;}.card{max-width:none;padding:0;border:0;box-shadow:none;}.actions,.vocab-say{display:none;}.vocab,.correction,tr,.homework{break-inside:avoid;}h2{break-after:avoid;}.media-btn{background:#fff!important;color:#14532D!important;border:1px solid #DCF0E3!important;}}
+</style></head>
+<body><div class="wrap"><article class="card" role="main">
+<header><div><div style="display:flex;gap:10px;align-items:center;"><span class="badge">PÓS-AULA</span><h1>Entrevista de viagem e expressões sobre tempestades</h1></div><div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Fátima Silva &nbsp;•&nbsp; <strong>Data:</strong> 09/30/2026</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header>
+<main>
+<section class="panel"><p style="margin:0;font-weight:600;color:#14532D;"><em>Fátima, hoje você praticou respostas curtas e claras para uma entrevista sobre seu programa de trabalho nos Estados Unidos. Depois, leu e interpretou um diálogo sobre uma tempestade, aprendendo expressões úteis para falar de chuva forte, riscos e planos de emergência.</em></p></section>
+
+<section><h2>📘 Resumo da Aula</h2><div class="outline-card">
+<p style="margin-top:0;"><strong>1. Aquecimento e revisão.</strong> Você contou sobre sua rotina, sono, academia e planos para a semana. Na revisão de desastres naturais, retomamos <em>eruption</em>, <em>famine</em> e <em>drought</em>. Em seguida, passamos a uma simulação de entrevista ligada ao seu programa de trabalho e viagem.</p>
+<p><strong>2. Entrevista de viagem.</strong> Você respondeu perguntas sobre o motivo da viagem, o trabalho em um hotel em Wisconsin, viagens anteriores, estudos, quem pagará a viagem e quanto tempo pretende ficar. Praticamos respostas como <em>Yes, I do</em> para perguntas com <em>do</em> e <em>Yes, I have</em> para perguntas com <em>have you ever</em>. Também apareceu <em>as a room attendant</em> para explicar sua função. César orientou a responder com sinceridade, objetividade e calma, deixando detalhes adicionais para quando forem pedidos.</p>
+<p><strong>3. Leitura sobre tempestades.</strong> Na página 51, o grupo ouviu e leu um diálogo sobre uma grande tempestade no Meio-Oeste dos EUA. Os personagens discutiam chuva intensa, alagamentos, lama, suprimentos de emergência e a possibilidade de sair rapidamente. Você participou da leitura e da interpretação, identificando, por exemplo, que <em>Is that what's in store for us?</em> pergunta sobre o que pode acontecer no futuro.</p>
+<p style="margin-bottom:0;"><strong>4. Expressões em contexto.</strong> Comparamos <em>raining cats and dogs</em> e <em>coming down in buckets</em>, ambas usadas para chuva muito forte. Vimos ainda <em>breaking news</em>, <em>huge</em>, <em>wet</em>, <em>mud</em>, <em>not to take it lightly</em>, <em>for the time being</em> e <em>on a moment's notice</em>. A conversa também serviu para diferenciar <em>pack up the car</em> de <em>pick up</em>.</p>
+</div></section>
+
+<section><h2>💬 Frases usadas em aula</h2><div class="outline-card"><p class="small-note" style="margin-top:0;">Frases da conversa e do exercício, com a grafia padronizada quando a transcrição automática ficou imprecisa.</p><ul>
+<li><strong lang="en">Do you feel safe in Brazil?</strong> → Você se sente segura no Brasil?</li>
+<li><strong lang="en">Yes, I do.</strong> → Sim, eu me sinto.</li>
+<li><strong lang="en">Have you ever been to the USA before?</strong> → Você já esteve nos Estados Unidos antes?</li>
+<li><strong lang="en">How long are you staying?</strong> → Quanto tempo você vai ficar?</li>
+<li><strong lang="en">I will work as a room attendant.</strong> → Vou trabalhar como arrumadeira de quartos.</li>
+<li><strong lang="en">It's already raining cats and dogs now.</strong> → Já está chovendo muito agora.</li>
+<li><strong lang="en">Everything's underwater.</strong> → Está tudo debaixo d'água.</li>
+<li><strong lang="en">Is that what's in store for us?</strong> → É isso que nos espera?</li>
+<li><strong lang="en">The Weather Service said not to take it lightly.</strong> → O serviço de meteorologia disse para não subestimar a situação.</li>
+<li><strong lang="en">We're okay for the time being.</strong> → Estamos bem por enquanto.</li>
+<li><strong lang="en">We can leave on a moment's notice.</strong> → Podemos sair imediatamente, se necessário.</li>
+</ul></div></section>
+
+<section><h2>⭐ Vocabulário-chave</h2><div class="vocab-grid">
+<div class="vocab"><div class="vocab-head"><h3>raining cats and dogs</h3><button type="button" class="vocab-say" data-czk-say="raining cats and dogs" aria-label="Ouvir a pronúncia de raining cats and dogs" aria-pressed="false" title="Ouvir raining cats and dogs">&#128266;</button></div><p><em>(pt) chovendo muito / chovendo a cântaros</em><br><small>Expressão informal para chuva forte. <em>It's raining cats and dogs outside.</em></small></p></div>
+<div class="vocab green"><div class="vocab-head"><h3>for the time being</h3><button type="button" class="vocab-say" data-czk-say="for the time being" aria-label="Ouvir a pronúncia de for the time being" aria-pressed="false" title="Ouvir for the time being">&#128266;</button></div><p><em>(pt) por enquanto</em><br><small>Uma condição temporária, que pode mudar. <em>We're safe for the time being.</em></small></p></div>
+<div class="vocab yellow"><div class="vocab-head"><h3>on a moment's notice</h3><button type="button" class="vocab-say" data-czk-say="on a moment's notice" aria-label="Ouvir a pronúncia de on a moment's notice" aria-pressed="false" title="Ouvir on a moment's notice">&#128266;</button></div><p><em>(pt) a qualquer momento / com aviso mínimo</em><br><small>Estar pronto para agir quase imediatamente. <em>We can leave on a moment's notice.</em></small></p></div>
+</div></section>
+
+<section><h2>📚 Vocabulário completo da aula</h2><div class="outline-card">
+<h3 style="margin-top:0;">Entrevista, viagem e trabalho</h3><ul>
+<li><strong>work and travel program</strong> — programa de trabalho e viagem</li>
+<li><strong>room attendant / housekeeper</strong> — arrumadeira de quartos / profissional de limpeza</li>
+<li><strong>as a room attendant</strong> — como arrumadeira de quartos</li>
+<li><strong>degree</strong> — diploma / graduação (conforme o contexto)</li>
+<li><strong>graduate</strong> — formar-se</li>
+<li><strong>mainly</strong> — principalmente</li>
+<li><strong>Have you ever been to...?</strong> — Você já esteve em...?</li>
+</ul><h3>Clima e desastres</h3><ul>
+<li><strong>eruption / famine / drought</strong> — erupção / fome generalizada / seca</li>
+<li><strong>storm / monster storm</strong> — tempestade / tempestade enorme</li>
+<li><strong>Midwest</strong> — Meio-Oeste dos Estados Unidos</li>
+<li><strong>breaking news</strong> — notícia urgente / notícia de última hora</li>
+<li><strong>raining cats and dogs / coming down in buckets</strong> — chovendo muito</li>
+<li><strong>wet / dry / mud / underwater</strong> — molhado / seco / lama / debaixo d'água</li>
+<li><strong>huge</strong> — enorme; adjetivo forte para <em>big</em></li>
+<li><strong>catastrophe</strong> — catástrofe</li>
+<li><strong>emergency supplies</strong> — suprimentos de emergência</li>
+</ul><h3>Decisões e expressões</h3><ul>
+<li><strong>what's in store for us</strong> — o que nos espera</li>
+<li><strong>not to take it lightly</strong> — não subestimar / levar a sério</li>
+<li><strong>for the time being</strong> — por enquanto</li>
+<li><strong>pack up the car</strong> — arrumar / carregar o carro para a viagem</li>
+<li><strong>on a moment's notice</strong> — a qualquer momento, com aviso mínimo</li>
+</ul></div></section>
+
+<section><h2>🚨 Correções importantes</h2><div class="outline-card">
+<div class="correction"><p style="margin:0 0 6px;"><strong>1. Função no trabalho: use <em>as a</em></strong></p><p style="margin:0 0 4px;color:#c53030;">❌ “I will work with housekeeper.”</p><p style="margin:0;color:#276749;">✅ <strong>“I will work as a room attendant.”</strong> — <em>As a</em> introduz a função ou o cargo.</p></div>
+<div class="correction"><p style="margin:0 0 6px;"><strong>2. Experiência de viagem: <em>been to</em></strong></p><p style="margin:0 0 4px;color:#c53030;">❌ “I have been Chile.”</p><p style="margin:0;color:#276749;">✅ <strong>“I have been to Chile.”</strong> — Para dizer que já visitou um país, use <em>have been to + lugar</em>.</p></div>
+<div class="correction"><p style="margin:0 0 6px;"><strong>3. Resposta curta com <em>do</em></strong></p><p style="margin:0 0 4px;color:#c53030;">❌ “Yes, I feel.”</p><p style="margin:0;color:#276749;">✅ <strong>“Yes, I do.”</strong> — Se a pergunta começa com <em>Do you...?</em>, a resposta curta repete o auxiliar <em>do</em>.</p></div>
+<div class="correction"><p style="margin:0 0 6px;"><strong>4. Preparar o carro para sair</strong></p><p style="margin:0 0 4px;color:#c53030;">❌ “What do you say we pick up the car now?”</p><p style="margin:0;color:#276749;">✅ <strong>“What do you say we pack up the car now?”</strong> — <em>Pack up</em> é arrumar o carro; <em>pick up</em> é buscar ou pegar algo/alguém.</p></div>
+<div class="correction"><p style="margin:0 0 6px;"><strong>5. Expressão fixa para “por enquanto”</strong></p><p style="margin:0 0 4px;color:#c53030;">❌ “For the time it begins.”</p><p style="margin:0;color:#276749;">✅ <strong>“For the time being.”</strong> — A expressão termina em <em>being</em> e descreve uma situação temporária.</p></div>
+</div></section>
+
+<section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/qMeZ2V3Z9Go" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section>
+
+<section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala (Talk Time)</h2><table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead><tbody><tr class="row-teacher"><td><span class="talk-label">César (Professor)</span></td><td><span class="talk-percent">69%</span></td><td class="talk-time">~19 minutos</td></tr><tr class="row-student"><td><span class="talk-label">Fátima</span></td><td><span class="talk-percent">31%</span></td><td class="talk-time">~9 minutos</td></tr></tbody></table><p class="small-note" style="margin-bottom:0;">Estimativa entre César e Fátima, sem o áudio compartilhado e as falas dos outros participantes.</p></section>
+
+<section><h2>📝 Homework</h2><div class="homework"><p style="margin:0 0 8px;">📌 <strong>Lição de casa:</strong></p><ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);"><li>Faça as atividades do aplicativo com calma até segunda-feira. Leia este pós-aula antes de começar.</li><li>Conclua o desafio da semana após a aula, conforme combinado.</li><li>Treine em voz alta respostas breves para cinco perguntas da entrevista, especialmente sobre seu trabalho, estudos e duração da viagem.</li><li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana.</li></ul></div></section>
+</main><footer><p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer>
+</article></div><script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script></body></html>

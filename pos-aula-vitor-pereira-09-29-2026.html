@@ -1,0 +1,280 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+      <title>Resumo Pós-Aula — Vitor Pereira — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+      .quiz-item{border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin:10px 0;background:#fff;}
+      .quiz-item summary{cursor:pointer;line-height:1.45;} .quiz-turn{font-size:.78rem;color:var(--muted);margin-left:8px;}
+      .quiz-options{list-style:none;padding-left:0;line-height:1.55;} .quiz-options li{margin:3px 0;}
+      .quiz-answer{background:#f0fdf4;padding:10px;border-radius:8px;color:#14532D;}
+      .rule-table{width:100%;border-collapse:collapse;margin:12px 0;} .rule-table th,.rule-table td{border:1px solid var(--border);padding:8px;text-align:left;vertical-align:top;}
+      .rule-table th{background:#E7F6EC;} .wrong{color:#b91c1c;} .right{color:#15803D;font-weight:700;}
+      .source-note{font-size:.86rem;color:var(--muted);} .outline-card p{line-height:1.55;} .outline-card li{margin-bottom:4px;}
+      @media(max-width:560px){header{flex-direction:column;}.rule-table{font-size:.85rem;}}
+      </style></head><body><div class="wrap"><article class="card" role="main">
+      <header><div><div style="display:flex;gap:10px;align-items:center;"><span class="badge">PÓS-AULA</span><h1>Revisão, presente simples e como animar um amigo</h1></div>
+      <div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Vitor Pereira &nbsp;•&nbsp; <strong>Data:</strong> 09/29/2026</div></div>
+      <div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header><main>
+      <section class="panel"><p style="margin:0;font-weight:600;color:#14532D;font-style:italic;">Na aula presencial, Vitor Pereira participou de um warm-up de 16 questões com Karlla, revisou o presente simples e trabalhou a parte verde da Lesson 2, “Cheer up a friend”. Suas atividades no aplicativo foram corrigidas no início do encontro.</p></section>
+      <section><h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2><div class="outline-card"><p style="margin:0 0 10px 0;">Começamos com a correção das atividades de Vitor no aplicativo. Depois, o jogo de revisão ocupou boa parte da aula. Karlla venceu. As questões retomaram <em>be</em> e <em>do/does</em>, preposições e o uso de <em>-ing</em> após preposições.</p><p style="margin:0 0 10px 0;">Na página do livro <em>Making New Friends · Lesson 2</em>, a parte laranja já havia sido feita na aula anterior. Nesta aula, trabalhamos a parte verde, <em>Now let's cheer up a friend</em>, com linguagem para perceber que um amigo está desanimado, perguntar se ele está bem, oferecer ajuda e fazer sugestões.</p><p style="margin:0 0 10px 0;">Também retomamos a conjugação de <em>he/she/it</em> no presente simples e a diferença de pronúncia e sentido entre <em>object</em> e <em>project</em> como substantivos e verbos. Como a aula foi presencial e não houve gravação, este resumo se baseia nos pontos relatados pelo professor, nas questões do jogo e na página do livro.</p><h3>Presente simples: he, she, it</h3>
+      <p>Nas <strong>afirmações</strong> com <em>he, she, it</em> ou um nome singular, o verbo principal muda. Com <em>I, you, we, they</em>, fica na forma básica.</p>
+      <table class="rule-table"><thead><tr><th>Regra</th><th>Exemplos</th></tr></thead><tbody>
+        <tr><td>Maioria dos verbos: <strong>+s</strong></td><td>like → likes; work → works</td></tr>
+        <tr><td>Termina em <strong>-ch, -sh, -x, -s, -o: +es</strong></td><td>watch → watches; wash → washes; fix → fixes; pass → passes; go → goes</td></tr>
+        <tr><td>Consoante + <strong>y: y → ies</strong></td><td>study → studies; worry → worries</td></tr>
+        <tr><td>Vogal + <strong>y: +s</strong></td><td>play → plays; enjoy → enjoys</td></tr>
+        <tr><td>Formas comuns especiais</td><td>have → has; do → does; be → is</td></tr>
+      </tbody></table>
+      <p><strong>Afirmativa:</strong> She <strong>likes</strong> baking. He <strong>worries</strong> about exams. Karlla <strong>watches</strong> movies.</p>
+      <p><strong>Pergunta:</strong> <strong>Does</strong> your sister <strong>like</strong> baking? <strong>Does</strong> he <strong>worry</strong> about exams? O <em>-s/-es/-ies</em> já está representado em <em>does</em>; o verbo principal volta à forma básica.</p>
+      <p><strong>Negativa:</strong> She <strong>doesn't like</strong> baking. Com <em>I/you/we/they</em>, use <strong>do/don't</strong>: <em>Do they like the game? They don't like it.</em> Para <em>be</em>, faça <em>Is she tired?</em> / <em>She isn't tired</em>, sem <em>does</em>.</p>
+      <h3>Quando usar -ing</h3>
+      <p>Depois de uma <strong>preposição</strong>, se vier um verbo, ele normalmente recebe <strong>-ing</strong>: <em>afraid of speaking</em>, <em>excited about learning</em>, <em>apologized for being late</em>, <em>believe in helping</em> e <em>object to staying</em>. Em <em>object to</em>, <em>to</em> é preposição.</p>
+      <p><strong>Não coloque -ing depois de todo verbo.</strong> Após <em>do/does</em>, use a forma básica: <em>Does she like baking?</em> Após <em>like/love</em>, é possível <em>like watching</em> <strong>ou</strong> <em>like to watch</em>; <em>to watching</em> está errado nessa estrutura. O presente contínuo exige <em>be + -ing</em>: <em>She is learning.</em></p>
+      <h3>OBJECT e PROJECT: a sílaba forte muda</h3>
+      <p><strong>OBject</strong> /ˈɑːb.dʒekt/ (substantivo): <em>objeto</em> ou <em>objetivo/finalidade</em>. <em>This object is heavy.</em> — Este objeto é pesado. A palavra para <em>objeção</em> como substantivo é <strong>objection</strong>.</p>
+      <p><strong>obJECT</strong> /əbˈdʒekt/ (verbo): <em>opor-se, fazer objeção</em>. <em>I object to waiting.</em> — Eu me oponho a esperar. A sílaba forte é a <strong>segunda</strong>.</p>
+      <p><strong>PROject</strong> /ˈprɑː.dʒekt/ (substantivo): <em>projeto</em>. <em>Our project is ready.</em> — Nosso projeto está pronto.</p>
+      <p><strong>proJECT</strong> /prəˈdʒekt/ (verbo): <em>projetar</em>, como uma imagem numa tela. <em>We project the image on the screen.</em> — Projetamos a imagem na tela.</p>
+      <p class="source-note">Pronúncia americana: <a href="https://dictionary.cambridge.org/pronunciation/english/object" target="_blank" rel="noopener noreferrer">object</a> e <a href="https://dictionary.cambridge.org/pronunciation/english/project" target="_blank" rel="noopener noreferrer">project</a> (Cambridge Dictionary).</p><h3 style="margin-top:20px;">As 16 questões do warm-up</h3><p>Abra cada questão para rever as alternativas e o gabarito. O turno indicado é o do jogo; o resultado real foi a vitória da Karlla.</p><details class="quiz-item"><summary><strong>01 · BE ou DO/DOES?</strong> <span class="quiz-turn">Karlla respondeu</span><br>___ you afraid of speaking English?</summary>
+          <ol class="quiz-options" type="A"><li><strong>A.</strong> Do</li><li><strong>B.</strong> Are</li><li><strong>C.</strong> Does</li><li><strong>D.</strong> Is</li></ol>
+          <p class="quiz-answer"><strong>Resposta: B — Are</strong><br>Afraid é adjetivo: Are you afraid of speaking English?</p></details><details class="quiz-item"><summary><strong>02 · Adjetivo + preposição</strong> <span class="quiz-turn">Vitor respondeu</span><br>I am crazy ___ cats.</summary>
+          <ol class="quiz-options" type="A"><li><strong>A.</strong> for</li><li><strong>B.</strong> with</li><li><strong>C.</strong> about</li><li><strong>D.</strong> of</li></ol>
+          <p class="quiz-answer"><strong>Resposta: C — about</strong><br>A combinação é crazy about: gostar muito de.</p></details><details class="quiz-item"><summary><strong>03 · BE ou DO/DOES?</strong> <span class="quiz-turn">Karlla respondeu</span><br>___ your sister like baking?</summary>
+          <ol class="quiz-options" type="A"><li><strong>A.</strong> Is</li><li><strong>B.</strong> Do</li><li><strong>C.</strong> Are</li><li><strong>D.</strong> Does</li></ol>
+          <p class="quiz-answer"><strong>Resposta: D — Does</strong><br>Sister equivale a she. Na pergunta, Does + verbo na forma básica: like.</p></details><details class="quiz-item"><summary><strong>04 · Preposição + -ing</strong> <span class="quiz-turn">Vitor respondeu</span><br>She is afraid of ___ in public.</summary>
+          <ol class="quiz-options" type="A"><li><strong>A.</strong> speak</li><li><strong>B.</strong> speaking</li><li><strong>C.</strong> to speak</li><li><strong>D.</strong> spoke</li></ol>
+          <p class="quiz-answer"><strong>Resposta: B — speaking</strong><br>Após a preposição of, usamos o verbo com -ing.</p></details><details class="quiz-item"><summary><strong>05 · Verbo + preposição</strong> <span class="quiz-turn">Karlla respondeu</span><br>They apologized ___ being late.</summary>
+          <ol class="quiz-options" type="A"><li><strong>A.</strong> about</li><li><strong>B.</strong> to</li><li><strong>C.</strong> for</li><li><strong>D.</strong> with</li></ol>
+          <p class="quiz-answer"><strong>Resposta: C — for</strong><br>A combinação é apologize for. Depois de for, vem being.</p></details><details class="quiz-item"><summary><strong>06 · Verbo + preposição</strong> <span class="quiz-turn">Vitor respondeu</span><br>We believe ___ helping each other.</summary>
+          <ol class="quiz-options" type="A"><li><strong>A.</strong> on</li><li><strong>B.</strong> in</li><li><strong>C.</strong> at</li><li><strong>D.</strong> of</li></ol>
+          <p class="quiz-answer"><strong>Resposta: B — in</strong><br>Believe in = acreditar em; depois de in, helping.</p></details><details class="quiz-item"><summary><strong>07 · BE ou DO/DOES?</strong> <span class="quiz-turn">Karlla respondeu</span><br>___ they friends?</summary>
+          <ol class="quiz-options" type="A"><li><strong>A.</strong> Do</li><li><strong>B.</strong> Does</li><li><strong>C.</strong> Is</li><li><strong>D.</strong> Are</li></ol>
+          <p class="quiz-answer"><strong>Resposta: D — Are</strong><br>A pergunta usa o verbo be: Are they friends?</p></details><details class="quiz-item"><summary><strong>08 · Adjetivo + preposição</strong> <span class="quiz-turn">Vitor respondeu</span><br>I am bored ___ this game.</summary>
+          <ol class="quiz-options" type="A"><li><strong>A.</strong> with</li><li><strong>B.</strong> about</li><li><strong>C.</strong> for</li><li><strong>D.</strong> in</li></ol>
+          <p class="quiz-answer"><strong>Resposta: A — with</strong><br>Bored with = entediado com algo.</p></details><details class="quiz-item"><summary><strong>09 · Preposição + -ing</strong> <span class="quiz-turn">Karlla respondeu</span><br>She objects to ___ late.</summary>
+          <ol class="quiz-options" type="A"><li><strong>A.</strong> stay</li><li><strong>B.</strong> to stay</li><li><strong>C.</strong> staying</li><li><strong>D.</strong> stayed</li></ol>
+          <p class="quiz-answer"><strong>Resposta: C — staying</strong><br>Em object to, to é preposição; por isso, staying.</p></details><details class="quiz-item"><summary><strong>10 · Verbo + preposição</strong> <span class="quiz-turn">Vitor respondeu</span><br>What do you think ___ this idea?</summary>
+          <ol class="quiz-options" type="A"><li><strong>A.</strong> at</li><li><strong>B.</strong> for</li><li><strong>C.</strong> with</li><li><strong>D.</strong> about</li></ol>
+          <p class="quiz-answer"><strong>Resposta: D — about</strong><br>Think about = pensar sobre uma ideia.</p></details><details class="quiz-item"><summary><strong>11 · BE ou DO/DOES?</strong> <span class="quiz-turn">Karlla respondeu</span><br>___ he worry about exams?</summary>
+          <ol class="quiz-options" type="A"><li><strong>A.</strong> Is</li><li><strong>B.</strong> Does</li><li><strong>C.</strong> Do</li><li><strong>D.</strong> Are</li></ol>
+          <p class="quiz-answer"><strong>Resposta: B — Does</strong><br>Com he, a pergunta usa Does + worry, sem -s nem -ies no verbo principal.</p></details><details class="quiz-item"><summary><strong>12 · Like/love + -ing ou to</strong> <span class="quiz-turn">Vitor respondeu</span><br>Quais duas formas estão corretas para “Gosto de assistir a filmes”?</summary>
+          <ol class="quiz-options" type="A"><li><strong>A.</strong> I like watch movies / I like to watching movies.</li><li><strong>B.</strong> I like watching movies / I like to watch movies.</li><li><strong>C.</strong> I like watches movies / I like watching to movies.</li><li><strong>D.</strong> I liking watching movies / I like watch movies.</li></ol>
+          <p class="quiz-answer"><strong>Resposta: B — I like watching movies / I like to watch movies.</strong><br>Depois de like, tanto watching quanto to watch são possíveis; não misture to + watching.</p></details><details class="quiz-item"><summary><strong>13 · Adjetivo + preposição</strong> <span class="quiz-turn">Karlla respondeu</span><br>He is sick and tired ___ waiting.</summary>
+          <ol class="quiz-options" type="A"><li><strong>A.</strong> for</li><li><strong>B.</strong> about</li><li><strong>C.</strong> with</li><li><strong>D.</strong> of</li></ol>
+          <p class="quiz-answer"><strong>Resposta: D — of</strong><br>Sick and tired of = farto de; após of, waiting.</p></details><details class="quiz-item"><summary><strong>14 · Verbo + preposição</strong> <span class="quiz-turn">Vitor respondeu</span><br>I get along well ___ my classmates.</summary>
+          <ol class="quiz-options" type="A"><li><strong>A.</strong> to</li><li><strong>B.</strong> with</li><li><strong>C.</strong> about</li><li><strong>D.</strong> for</li></ol>
+          <p class="quiz-answer"><strong>Resposta: B — with</strong><br>Get along with = dar-se bem com alguém.</p></details><details class="quiz-item"><summary><strong>15 · Revisão integrada</strong> <span class="quiz-turn">Karlla respondeu</span><br>Qual frase está totalmente correta?</summary>
+          <ol class="quiz-options" type="A"><li><strong>A.</strong> She is excited of learn English.</li><li><strong>B.</strong> She excited about learning English.</li><li><strong>C.</strong> She is excited about learning English.</li><li><strong>D.</strong> She is excited about to learn English.</li></ol>
+          <p class="quiz-answer"><strong>Resposta: C — She is excited about learning English.</strong><br>É preciso is; a combinação é excited about; depois de about, learning.</p></details><details class="quiz-item"><summary><strong>16 · Adjetivo + preposição</strong> <span class="quiz-turn">Vitor respondeu</span><br>The students are angry ___ the noise.</summary>
+          <ol class="quiz-options" type="A"><li><strong>A.</strong> on</li><li><strong>B.</strong> in</li><li><strong>C.</strong> about</li><li><strong>D.</strong> of</li></ol>
+          <p class="quiz-answer"><strong>Resposta: C — about</strong><br>Angry about descreve irritação com uma situação.</p></details></div></section>
+      <section><h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2><div class="outline-card"><ul><li><strong>Are you afraid of speaking English?</strong> — Você tem medo de falar inglês?</li><li><strong>Does your sister like baking?</strong> — Sua irmã gosta de fazer bolos/assar?</li><li><strong>She is excited about learning English.</strong> — Ela está empolgada em aprender inglês.</li><li><strong>I get along well with my classmates.</strong> — Eu me dou bem com meus colegas de turma.</li><li><strong>Are you sure?</strong> — Você tem certeza?</li><li><strong>Is there anything I can do?</strong> — Há algo que eu possa fazer?</li></ul><p class="source-note">As quatro primeiras frases são do jogo; as duas últimas aparecem na conversa da parte verde do livro.</p></div></section>
+      <section><h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab ">
+          <div class="vocab-head"><h3>object to</h3>
+            <button type="button" class="vocab-say" data-czk-say="object to" aria-label="Ouvir a pronúncia de object to" aria-pressed="false" title="Ouvir object to">&#128266;</button></div>
+          <p><em>fazer objeção a, opor-se a</em><br><small>She objects to staying late. — Ela se opõe a ficar até tarde.</small></p></div><div class="vocab green">
+          <div class="vocab-head"><h3>cheer up</h3>
+            <button type="button" class="vocab-say" data-czk-say="cheer up" aria-label="Ouvir a pronúncia de cheer up" aria-pressed="false" title="Ouvir cheer up">&#128266;</button></div>
+          <p><em>animar, melhorar o ânimo</em><br><small>Let&#x27;s cheer up a friend. — Vamos animar um amigo.</small></p></div><div class="vocab yellow">
+          <div class="vocab-head"><h3>excited about</h3>
+            <button type="button" class="vocab-say" data-czk-say="excited about" aria-label="Ouvir a pronúncia de excited about" aria-pressed="false" title="Ouvir excited about">&#128266;</button></div>
+          <p><em>empolgado com</em><br><small>She is excited about learning English. — Ela está empolgada em aprender inglês.</small></p></div></div></section>
+      <section><h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2><div class="outline-card"><h3 style="margin-top:0;">Adjetivo + preposição</h3><ul>
+      <li><strong>afraid of</strong> — com medo de</li><li><strong>crazy about</strong> — louco por, gostar muito de</li>
+      <li><strong>excited about</strong> — empolgado com</li><li><strong>bored with</strong> — entediado com</li>
+      <li><strong>angry about</strong> — irritado com uma situação</li><li><strong>sick and tired of</strong> — farto de</li></ul>
+      <h3>Verbo + preposição</h3><ul><li><strong>apologize for</strong> — pedir desculpas por</li>
+      <li><strong>believe in</strong> — acreditar em</li><li><strong>think about</strong> — pensar sobre</li>
+      <li><strong>get along with</strong> — dar-se bem com</li><li><strong>object to</strong> — opor-se a</li></ul>
+      <h3>Da conversa do livro</h3><ul><li><strong>cheer up</strong> — animar</li><li><strong>look down</strong> — parecer desanimado</li>
+      <li><strong>Are you sure?</strong> — Você tem certeza?</li><li><strong>What if...?</strong> — E se...?</li>
+      <li><strong>How about...?</strong> — Que tal...?</li></ul></div></section>
+      <section><h2 style="margin-bottom:8px;">🚨 Correções importantes</h2><div class="outline-card"><p><strong>1. Do × does nas perguntas</strong><br><span class="wrong">❌ Do your sister like baking?</span><br><span class="right">✅ Does your sister like baking?</span><br><em>Your sister</em> = <em>she</em>; por isso, <em>does</em>.</p>
+      <p><strong>2. Depois de does, verbo básico</strong><br><span class="wrong">❌ Does he worries about exams?</span><br><span class="right">✅ Does he worry about exams?</span><br>O auxiliar <em>does</em> já marca a terceira pessoa.</p>
+      <p><strong>3. Depois de preposição, verbo com -ing</strong><br><span class="wrong">❌ She is afraid of speak in public.</span><br><span class="right">✅ She is afraid of speaking in public.</span><br><em>Of</em> é preposição.</p>
+      <p><strong>4. To pode ser preposição</strong><br><span class="wrong">❌ She objects to stay late.</span><br><span class="right">✅ She objects to staying late.</span><br>Em <em>object to</em>, a forma seguinte é <em>-ing</em>.</p>
+      <p><strong>5. Like permite duas estruturas</strong><br><span class="wrong">❌ I like to watching movies.</span><br><span class="right">✅ I like watching movies. / I like to watch movies.</span></p>
+      <p class="source-note">Estes pares retomam as dificuldades e alternativas do jogo; não são transcrição literal das respostas individuais.</p></div></section>
+      <section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2><p style="margin:0;">Não estimado: a aula foi presencial e não há gravação ou transcrição para medir a participação de cada pessoa.</p></section>
+      <section><h2 style="margin-bottom:8px;">📝 Homework</h2><div class="homework"><p style="margin:0 0 8px 0;"><strong>Revisão sugerida:</strong></p><ul style="margin:0 0 6px 18px;padding:0;">
+      <li>Refaça as 16 questões do warm-up e explique por que escolheu cada resposta.</li>
+      <li>Escreva quatro frases afirmativas com <em>he/she/it</em>, duas perguntas com <em>does</em> e duas frases com preposição + <em>-ing</em>.</li>
+      <li>Leia a conversa da parte verde do livro e pratique em voz alta <em>Are you sure?</em>, <em>Is there anything I can do?</em> e <em>How about...?</em></li>
+      <li>Leia este pós-aula 2 a 3 vezes durante a semana.</li></ul></div>
+      <div style="margin-top:14px;"><a class="btn" href="https://jogo-vitor-karlla-revisao-ing.cmo-sep.chatgpt.site/" target="_blank" rel="noopener noreferrer" style="background:#15803D;box-shadow:none;">🎮 Reabrir o jogo de revisão</a></div></section>
+      </main><footer><p style="margin:18px 0 0 0;">© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer>
+      </article></div><script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script></body></html>
