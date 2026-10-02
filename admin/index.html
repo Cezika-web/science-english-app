@@ -887,7 +887,7 @@
           <div class="form-card" style="margin:0;">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;"><h2 style="margin:0;">Semana atual</h2><button class="btn-secondary" id="challenge-refresh" type="button">Atualizar</button></div>
             <div id="challenge-status" style="margin-top:14px;"><div class="loading">Carregando...</div></div>
-            <div style="margin-top:16px;padding:13px;border-radius:12px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A;font-size:.78rem;line-height:1.5;"><strong>Programação automática</strong><br>Parte 1: segunda 00h → quarta 23h59<br>Parte 2: quinta 00h → sábado 23h59<br>Resultado: domingo 00h</div>
+            <div style="margin-top:16px;padding:13px;border-radius:12px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A;font-size:.78rem;line-height:1.5;"><strong>Geração por participação</strong><br>As 5 perguntas são preparadas quando o aluno decide participar de cada parte.<br>Parte 1: segunda 00h → quarta 23h59<br>Parte 2: quinta 00h → sábado 23h59<br>Resultado: domingo 00h</div>
           </div>
 
           <div class="form-card" style="margin:0;">
@@ -908,7 +908,7 @@
             <button class="btn-primary" id="challenge-generate-personalized" type="button" style="width:100%;margin-bottom:10px;">Gerar desafios individuais dos últimos 90 dias</button>
             <label style="display:flex;align-items:flex-start;gap:9px;font-size:.82rem;margin-bottom:16px;padding:10px 12px;border-radius:10px;background:#FFFBEB;border:1px solid #FDE68A;color:#78350F;cursor:pointer;">
               <input id="challenge-manual-week" type="checkbox" style="margin-top:2px;">
-              <span><strong>Esta semana é manual</strong><br>A IA não roda nesta semana — nem a leva de domingo, nem as entradas tardias. Todo mundo usa o JSON que você publicar abaixo. Sem custo de API.</span>
+              <span><strong>Esta semana é manual</strong><br>Todo mundo usa o JSON que você publicar abaixo. A participação não gera perguntas por IA nesta semana. Sem custo de API.</span>
             </label>
             <label class="form-label" for="challenge-json">Pacote personalizado ou desafio geral (JSON)</label>
             <textarea id="challenge-json" style="width:100%;min-height:390px;box-sizing:border-box;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.76rem;line-height:1.45;resize:vertical;" placeholder="Cole aqui o JSON único gerado pela skill Desafio da Semana."></textarea>
@@ -8903,7 +8903,7 @@
         await setDoc(doc(db, 'challengeSettings', 'auto'), { manualWeeks, updatedAt:serverTimestamp() }, { merge:true });
         showMsg('challenge-msg', caixa.checked
           ? `✅ Semana de ${weekKey} marcada como manual. A IA não roda; publique o JSON abaixo.`
-          : `Semana de ${weekKey} volta a ser gerada por IA no domingo 1h.`, 'ok');
+          : `Semana de ${weekKey} gera perguntas apenas quando o aluno participa de cada parte.`, 'ok');
       } catch (error) {
         caixa.checked = !caixa.checked;
         showMsg('challenge-msg', `Erro ao salvar: ${error.message}`, 'err');

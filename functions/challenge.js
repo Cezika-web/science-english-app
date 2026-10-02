@@ -1,6 +1,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { FieldValue } from 'firebase-admin/firestore';
+import { createDemandChallengeService } from './challenge-demand.js';
 
 const REGION = 'southamerica-east1';
 const TIME_ZONE = 'America/Sao_Paulo';
@@ -46,6 +47,22 @@ const PERSONALIZED_CHALLENGE_SCHEMA = {
 // anterior escreve as cinco; quem ficou abaixo — ou não tem semana anterior —
 // ganha um verdadeiro/falso e uma múltipla escolha de apoio.
 const FORMAT_THRESHOLD = 500;
+const DEMAND_CHALLENGE_SCHEMA = {
+  ...PERSONALIZED_CHALLENGE_SCHEMA,
+  required:['analysis','questions'],
+  properties:{ analysis:PERSONALIZED_CHALLENGE_SCHEMA.properties.analysis,
+    questions:{ type:'array', description:'Exactly five questions.', items:{ $ref:'#/$defs/question' } } },
+};
+
+function prepareDemandQuestions(questions, part, format) {
+  if (!Array.isArray(questions) || questions.length !== 5) throw new Error('Parte incompleta.');
+  const normalized = questions.map((question, index) => ({ ...question,
+    id:`p${part}q${index + 1}`, type:question.format === 'text' ? 'text' : 'multipleChoice' }));
+  assertFocusMix(normalized, part);
+  assertFormatMix(normalized, part, format);
+  const checked = normalized.map(validateQuestion);
+  return { questions:checked.map(item => item.publicQuestion), keys:checked.map(item => item.answerKey) };
+}
 const FORMAT_MIX = {
   escrita:{ text:5, trueFalse:0, multipleChoice:0 },
   assistido:{ text:3, trueFalse:1, multipleChoice:1 },
@@ -790,7 +807,7 @@ export function createChallengeFunctions({
     return { weekKey, awarded };
   }
 
-  async function personalizationInput(studentDoc, now = new Date()) {
+  async function personalizationInput(studentDoc, now = new Date(), { fast = false } = {}) {
     const uid = studentDoc.id;
     const cutoff = new Date(now.getTime() - LOOKBACK_DAYS * 86400000);
     const [postSnaps, activitySnaps, challengeResultSnaps] = await Promise.all([
@@ -803,13 +820,13 @@ export function createChallengeFunctions({
       const date = dateFrom(data.classDate || data.createdAt);
       return date && date >= cutoff && date <= now;
     }).sort((a,b) => dateFrom(a.data().classDate || a.data().createdAt) - dateFrom(b.data().classDate || b.data().createdAt));
-    const loadedPosts = await Promise.all(recentPosts.slice(-12).map(async doc => {
+    const loadedPosts = await Promise.all(recentPosts.slice(fast ? -6 : -12).map(async doc => {
       const loaded = loadPostLesson ? await loadPostLesson(uid, doc.id) : null;
       const data = doc.data();
       const raw = loaded?.texto || data.html || data.content || '';
       return {
         id:doc.id, title:loaded?.titulo || data.title || `Pós-aula ${doc.id}`,
-        date:iso(data.classDate || data.createdAt), text:compact(raw, 9000),
+        date:iso(data.classDate || data.createdAt), text:compact(raw, fast ? 1800 : 9000),
       };
     }));
     const corrections = activitySnaps.docs.filter(doc => {
@@ -820,19 +837,19 @@ export function createChallengeFunctions({
       const left = dateFrom(a.data().correctedAt || a.data().updatedAt || a.data().createdAt);
       const right = dateFrom(b.data().correctedAt || b.data().updatedAt || b.data().createdAt);
       return left - right;
-    }).slice(-20).map(doc => {
+    }).slice(fast ? -6 : -20).map(doc => {
       const data = doc.data();
       return {
         title:data.title || '', score:data.score ?? data.nota ?? null,
-        summary:compact(data.summary || data.report || '', 2500),
-        patterns:compact(data.patterns || data.pedagogico || data.correcao || '', 3500),
+        summary:compact(data.summary || data.report || '', fast ? 500 : 2500),
+        patterns:compact(data.patterns || data.pedagogico || data.correcao || '', fast ? 800 : 3500),
       };
     });
     const activityMaterials = activitySnaps.docs.filter(doc => {
       const data = doc.data();
       const date = dateFrom(data.createdAt || data.publishedAt || data.updatedAt || data.correctedAt);
       return !date || (date >= cutoff && date <= now);
-    }).slice(-12).map(doc => {
+    }).slice(fast ? -6 : -12).map(doc => {
       const data = doc.data();
       return {
         id:doc.id, title:data.title || `Atividade ${doc.id}`,
@@ -841,7 +858,7 @@ export function createChallengeFunctions({
           instructions:data.instructions || data.instruction || '', parts:data.parts || [],
           respostas:data.respostas || {}, summary:data.summary || '', report:data.report || '',
           patterns:data.patterns || data.pedagogico || data.correcao || '',
-        }, 9000),
+        }, fast ? 1800 : 9000),
       };
     }).filter(activity => activity.text && activity.text !== '{}');
     const manualAssessments = challengeResultSnaps.docs.flatMap(doc => {
@@ -855,7 +872,7 @@ export function createChallengeFunctions({
         score:Number(item.teacherScore ?? item.score ?? 0),
         criterion:item.teacherScoreTag || '', teacherComment:compact(item.teacherScoreReason || '', 500),
       }));
-    }).sort((a, b) => a.date.localeCompare(b.date)).slice(-30);
+    }).sort((a, b) => a.date.localeCompare(b.date)).slice(fast ? -8 : -30);
     return { uid, posts:loadedPosts.filter(post => post.text), activityMaterials,
       corrections:[...corrections, ...manualAssessments] };
   }
@@ -1485,7 +1502,7 @@ ${item.text}`).join('\n\n')}`
 
   // Monta a semana inteira: cada aluno ativo ganha as duas partes, em blocos de
   // três para não estourar a concorrência da IA. É o mesmo caminho para o botão
-  // do painel e para o agendamento de domingo — quem já tem perguntas é pulado,
+  // do painel — quem já tem perguntas é pulado,
   // então repetir a chamada não gera nada de novo nem cobra de novo.
   async function runWeeklyGeneration({ weekKey, force = false, requestedBy = '', uids = null, schoolId = '' }) {
     const allStudents = await db.collection('students').get();
@@ -1729,6 +1746,13 @@ ${item.text}`).join('\n\n')}`
     }
   );
 
+  const demand = createDemandChallengeService({ db, FieldValue, HttpsError, Anthropic,
+    anthropicApiKey, model, schema:DEMAND_CHALLENGE_SCHEMA,
+    loadInput:studentDoc => personalizationInput(studentDoc, new Date(), { fast:true }),
+    previousPerformance:previousWeekPerformance, prepareQuestions:prepareDemandQuestions,
+    scheduleFor, weekKeyFor, stageFor, publicQuestions:publicChallengeQuestions,
+    answerKeyRef, registrarUso });
+
   const obterDesafioSemanal = onCall(
     { region:REGION, timeoutSeconds:60, memory:'256MiB' },
     async request => {
@@ -1772,6 +1796,7 @@ ${item.text}`).join('\n\n')}`
       const weekKey = weekKeyFor(now);
       const schedule = scheduleFor(weekKey);
       const stage = stageFor(now, schedule);
+      if (weekKey >= LAUNCH_WEEK && !(await semanaManual(weekKey))) await demand.ensureWeek(weekKey);
       const weekSnap = await db.doc(`challengeWeeks/${weekKey}`).get();
       const base = {
         enabled:true, weekKey, title:weekSnap.exists ? weekSnap.data().title : 'Desafio Science English',
@@ -1825,9 +1850,14 @@ ${item.text}`).join('\n\n')}`
         resolveRound(uid, roundSchedule.roundId),
         db.doc(`students/${uid}/challengeSubmissions/${roundSchedule.roundId}`).get(),
       ]);
-      // A semana está publicada, mas este aluno ainda não tem perguntas: entrou
-      // depois da geração. Ele entra na próxima parte, assim que tiver pós-aula.
-      if (!roundSnap.exists) return { ...base, phase:'waiting' };
+      // Abrir a tela não gera perguntas. O clique de participação prepara
+      // somente esta parte, reaproveitando qualquer rodada já publicada.
+      if (!roundSnap.exists) {
+        if (await semanaManual(weekKey)) return { ...base, phase:'waiting' };
+        return { ...base, canStart:!adminMirror, needsPreparation:true, started:false,
+          round:{ roundId:roundSchedule.roundId, part:stage.part, questionCount:5,
+            opensAt:iso(roundSchedule.opensAt), closesAt:iso(roundSchedule.closesAt), questions:[] } };
+      }
       const round = roundSnap.data();
       const submission = submissionSnap.exists ? submissionSnap.data() : null;
       return { ...base,
@@ -1841,11 +1871,16 @@ ${item.text}`).join('\n\n')}`
   );
 
   const iniciarDesafioSemanal = onCall(
-    { region:REGION, timeoutSeconds:60, memory:'256MiB' },
+    { region:REGION, secrets:anthropicApiKey ? [anthropicApiKey] : [], timeoutSeconds:120, memory:'512MiB' },
     async request => {
       const uid = requireAuth(request);
-      await assertStudent(uid);
+      const studentDoc = await assertStudent(uid);
       const roundId = String(request.data?.roundId || '');
+      const existing = await resolveRound(uid, roundId);
+      if (!existing.roundSnap.exists) {
+        const prepared = await demand.prepare(uid, roundId, studentDoc);
+        if (prepared.preparing) return prepared;
+      }
       const { round } = await assertOpenRound(uid, roundId);
       const ref = db.doc(`students/${uid}/challengeSubmissions/${roundId}`);
       const result = await db.runTransaction(async tx => {
@@ -1857,7 +1892,8 @@ ${item.text}`).join('\n\n')}`
         });
         return { started:true, nextIndex:Number(snap.data()?.answers?.length || 0) };
       });
-      return result;
+      return { ...result, round:{ roundId:round.roundId, part:round.part,
+        questionCount:round.questionCount, questions:publicChallengeQuestions(round.questions) } };
     }
   );
 
@@ -2053,7 +2089,7 @@ ${item.text}`).join('\n\n')}`
       const student = studentDoc.data();
       if (student.archived === true || student.challengeEnabled === false) continue;
       const { roundSnap } = await resolveRound(studentDoc.id, roundId);
-      if (!roundSnap.exists) continue;
+      if (!roundSnap.exists && await semanaManual(weekKey)) continue;
       await notifyRoundOpen(studentDoc, roundId, stage.part);
     }
   }
@@ -2063,94 +2099,27 @@ ${item.text}`).join('\n\n')}`
     sendOpeningNotifications
   );
 
-  // Aluno que entra no meio da semana (primeira aula na quarta, matrícula no
-  // meio do mês) não tinha pós-aula quando a leva da semana foi gerada. Este job
-  // roda toda manhã, procura quem ainda está sem perguntas para a parte que está
-  // aberta e gera só para essa parte — a parte que já fechou não é recriada.
-  // Sem candidato utilizável ele encerra sem chamar a IA, então não gasta nada.
+  // Agendamentos publicam somente o calendário. Nenhuma chamada de IA é
+  // feita para alunos ausentes; a parte nasce no clique de participação.
   async function generateLateEntries() {
-    if (!Anthropic || !anthropicApiKey) return;
-    const now = new Date();
-    const weekKey = weekKeyFor(now);
-    if (weekKey < LAUNCH_WEEK) return;
-    const stage = stageFor(now, scheduleFor(weekKey));
-    if (stage.phase !== 'open') return;
-    const roundId = stage.part === 1 ? `${weekKey}-part-1` : `${weekKey}-part-2`;
-
-    const settings = await db.doc('challengeSettings/auto').get();
-    if (settings.exists && settings.data().lateEntries === false) return;
-    if (await semanaManual(weekKey)) return;
-    // Com rodada geral publicada todo mundo já está coberto por ela — gerar
-    // personalizada por cima seria gastar exatamente o que o JSON economiza.
-    const geral = await db.doc(`challengeRounds/${roundId}`).get();
-    if (geral.exists) return;
-
-    const students = await db.collection('students').get();
-    const waiting = [];
-    for (const studentDoc of students.docs) {
-      const student = studentDoc.data();
-      if (student.archived === true || student.challengeEnabled === false) continue;
-      const snap = await studentDoc.ref.collection('challengeRounds').doc(roundId).get();
-      if (snap.exists && snap.data().questionCount === 5) continue;
-      waiting.push(studentDoc);
-    }
-    if (!waiting.length) return;
-
-    const client = new Anthropic({ apiKey:anthropicApiKey.value() });
-    const generated = [], stillWaiting = [];
-    for (const studentDoc of waiting) {
-      const name = studentDoc.data().name || studentDoc.data().firstName || 'Aluno';
-      try {
-        const result = await publishStudentRounds(client, studentDoc, weekKey, { now });
-        if (result.written.length) generated.push({ uid:studentDoc.id, name, parts:result.written, notified:result.notified });
-      } catch (error) {
-        console.error(`Entrada tardia no desafio falhou para ${studentDoc.id}:`, error.message);
-        stillWaiting.push({ uid:studentDoc.id, name, reason:error.message });
-      }
-    }
-    await db.doc(`_challengeLateEntries/${weekKey}`).set({
-      weekKey, part:stage.part, runAt:FieldValue.serverTimestamp(), generated, stillWaiting,
-    }, { merge:true });
+    const weekKey = weekKeyFor(new Date());
+    if (weekKey >= LAUNCH_WEEK && !(await semanaManual(weekKey))) await demand.ensureWeek(weekKey);
   }
-
   const gerarDesafiosAtrasados = onSchedule(
-    { region:REGION, schedule:'0 7 * * *', timeZone:TIME_ZONE,
-      secrets:anthropicApiKey ? [anthropicApiKey] : [], timeoutSeconds:1800, memory:'1GiB' },
+    { region:REGION, schedule:'0 7 * * *', timeZone:TIME_ZONE, timeoutSeconds:60, memory:'256MiB' },
     generateLateEntries
   );
 
-  // A semana nasce sozinha: domingo 1h da manhã, quando a rodada anterior já
-  // fechou e o ranking das 00h05 já saiu. Nessa hora o resultado da semana
-  // passada existe, então quem foi muito bem recebe perguntas mais duras — e o
-  // César ainda tem o domingo inteiro para revisar antes da Parte 1 abrir na
-  // segunda à meia-noite. Quem entrar depois cai no gerarDesafiosAtrasados.
-  // Para voltar ao manual, grave weekly:false em challengeSettings/auto.
-  // Semana marcada como manual: o César publica o JSON único da turma e a IA
-  // não roda, nem na leva de domingo nem no cron de entradas tardias.
   async function semanaManual(weekKey) {
     const settings = await db.doc('challengeSettings/auto').get();
-    const manuais = settings.exists ? settings.data().manualWeeks : null;
-    return Array.isArray(manuais) && manuais.includes(weekKey);
+    return Array.isArray(settings.data()?.manualWeeks) && settings.data().manualWeeks.includes(weekKey);
   }
-
   async function generateNextWeek() {
-    if (!Anthropic || !anthropicApiKey) return;
-    const settings = await db.doc('challengeSettings/auto').get();
-    if (settings.exists && settings.data().weekly === false) return;
     const weekKey = nextMonday();
-    if (await semanaManual(weekKey)) {
-      console.log(`Semana ${weekKey} marcada como manual — nada gerado por IA.`);
-      return;
-    }
-    const result = await runWeeklyGeneration({ weekKey, requestedBy:'agendamento de domingo' });
-    console.log(`Desafio ${weekKey}: ${result.generated.length} aluno(s) prontos, ${result.errors.length} sem material.`);
+    if (!(await semanaManual(weekKey))) await demand.ensureWeek(weekKey);
   }
-
-  // 1800s é o teto de uma função agendada. A turma inteira roda em blocos de
-  // três e leva bem menos que isso; quem sobrar entra no cron diário.
   const gerarDesafioDaSemana = onSchedule(
-    { region:REGION, schedule:'0 1 * * 0', timeZone:TIME_ZONE,
-      secrets:anthropicApiKey ? [anthropicApiKey] : [], timeoutSeconds:1800, memory:'1GiB' },
+    { region:REGION, schedule:'0 1 * * 0', timeZone:TIME_ZONE, timeoutSeconds:60, memory:'256MiB' },
     generateNextWeek
   );
 
@@ -2168,7 +2137,7 @@ ${item.text}`).join('\n\n')}`
       const student = studentDoc.data();
       if (student.archived === true || student.challengeEnabled === false) continue;
       const { roundSnap } = await resolveRound(studentDoc.id, roundId);
-      if (!roundSnap.exists) continue;
+      if (!roundSnap.exists && await semanaManual(weekKey)) continue;
       const tokens = [...new Set([student.fcmToken, ...(Array.isArray(student.fcmTokens) ? student.fcmTokens : [])].filter(Boolean))];
       if (!tokens.length) continue;
       const submission = await studentDoc.ref.collection('challengeSubmissions').doc(roundId).get();
@@ -2852,5 +2821,5 @@ export const challengeInternals = Object.freeze({
   localDateParts, addDays, monthKeyForWeek, weekKeyFor, nextMonday, scheduleFor, stageFor,
   normalizeAnswer, canonicalChallengeTopic, publicChallengeQuestions, acceptedAnswersWithBlankFragments, assertRequiredReferences, validateQuestion, scoreWrittenAnswer, scoreAnswers, withTeacherScore, dateFrom, assertFocusMix,
   assertFormatMix, formatOf, prepareManualStudentChallenge,
-  FORMAT_MIX, FORMAT_THRESHOLD, groupScheduleFor,
+  FORMAT_MIX, FORMAT_THRESHOLD, groupScheduleFor, prepareDemandQuestions, DEMAND_CHALLENGE_SCHEMA,
 });
