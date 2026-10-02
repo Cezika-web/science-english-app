@@ -5588,12 +5588,12 @@ function App() {
       />}
       {challengeView === 'game' && <ChallengeGame
         challengeState={challengeState}
-        onExit={() => setChallengeView('hub')}
+        onExit={() => { setChallengeView('hub'); refreshChallengeState(); }}
         onFinish={async () => { await refreshChallengeState(); setChallengeView('hub'); }}
         onStart={async (roundId) => {
           if (mirror) throw new Error('Aqui você só acompanha — quem responde é o aluno.');
           const fb = await getFB();
-          const iniciar = fb.httpsCallable(fb.functions, 'iniciarDesafioSemanal');
+          const iniciar = fb.httpsCallable(fb.functions, 'iniciarDesafioSemanal', { timeout:120000 });
           const response = await iniciar({ roundId });
           return response.data;
         }}
