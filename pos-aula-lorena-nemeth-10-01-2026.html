@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Resumo Pós-Aula — Lorena Nemeth — 10/01/2026 — CZK English</title>
+<style>
+:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+@media(max-width:720px){header{flex-wrap:wrap}.wrap{padding:24px 12px}.card{box-sizing:border-box}.vocab{min-width:0}} @media print{html,body{height:auto;background:#fff}.wrap{padding:0;display:block}.card{max-width:none;border:0;box-shadow:none;padding:0}.actions,.vocab-say{display:none}.vocab,.outline-card,.homework,.speaking{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <article class="card" role="main">
+    <header>
+      <div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <span class="badge">PÓS-AULA</span>
+          <h1>Tecnologia no dia a dia e atividades de férias</h1>
+        </div>
+        <div class="meta" style="margin-top:8px;">
+          <strong>Professor:</strong> César &nbsp;•&nbsp;
+          <strong>Aluno:</strong> Lorena Nemeth &nbsp;•&nbsp;
+          <strong>Data:</strong> 10/01/2026
+        </div>
+      </div>
+      <div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div>
+    </header>
+    <main>
+      <section class="panel">
+        <p style="margin:0;font-style:italic;color:#14532D;">Lorena, você revisou como falar de aparelhos que não funcionam, praticou a compreensão de vídeos em inglês e começou a conversar sobre férias. A aula conectou hábitos, ações em andamento e preferências com exemplos de tecnologia, meio ambiente e viagens.</p>
+      </section>
+      <section>
+        <h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2>
+        <div class="outline-card">
+          <p><strong>Revisão: “won’t open” × “doesn’t open”.</strong> Um vídeo com uma garrafa e uma janela ajudou a retomar a diferença. <em>This bottle won’t open</em> descreve uma garrafa que deveria abrir, mas não abre quando você tenta. Nesse uso, <em>won’t</em> expressa resistência ou uma falha de funcionamento, mesmo no presente. No exemplo do vídeo, <em>This window doesn’t open</em> descreve uma janela que não foi feita para abrir. A diferença depende do contexto: <em>doesn’t</em> não significa obrigatoriamente “nunca” ou “para sempre”.</p>
+          <p><strong>Hábitos × ações em andamento.</strong> Você revisou o <em>simple present</em> para rotina e frequência, como em <em>Does she work?</em>, e o <em>present continuous</em> para ações acontecendo agora e planos futuros já organizados. Para uma ação em andamento, a estrutura é <strong>am/is/are + verbo com -ing</strong>: <em>I’m uploading photos.</em> Para um hábito, usamos o verbo no presente e, nas perguntas com <em>he/she/it</em>, <strong>does + verbo na forma base</strong>.</p>
+          <p><strong>“How long…?” e compreensão de vídeo.</strong> No vídeo sobre lixo e decomposição, você leu <em>How long do these things take to disappear?</em>, entendeu a ideia de “quanto tempo levam para se decompor” e deu palpites em dias e anos. Entraram palavras como <em>banana peel</em>, <em>cigarette butt</em>, <em>plastic bag</em>, <em>aluminum can</em> e <em>glass bottle</em>. Você acertou os valores apresentados no vídeo para a bituca e a garrafa de vidro. O foco foi entender a pergunta, reconhecer números e responder em inglês; os prazos eram informações daquele vídeo.</p>
+          <p><strong>Tecnologia em uma reunião.</strong> Outro vídeo mostrou pessoas usando celular, laptop, tablet e uma assistente virtual enquanto tentavam discutir a troca de equipamentos. Você recontou a situação e revisou expressões como <em>take a picture</em>, <em>text me</em>, <em>check email</em> e <em>turn it off</em>. Um ponto importante foi distinguir <strong>upload</strong> (enviar um arquivo para a internet), <strong>download</strong> (baixar) e <strong>plug in</strong> (conectar à tomada).</p>
+          <p><strong>Começo do tema férias — página 74.</strong> Você falou da Disney como uma experiência <em>exciting</em> e comentou viagens e lugares históricos. Depois, avaliou atividades de férias com notas de 0 a 3: mergulhar com snorkel, surfar, sair com amigos, aprender sobre outras culturas, fazer um cruzeiro, fazer um passeio guiado, pescar e visitar um museu. Você demonstrou interesse por atividades mais animadas e deixou clara sua preferência por não pescar.</p>
+          <p style="margin-bottom:0;"><strong>Próximos passos.</strong> César explicou que a próxima unidade vai retomar adjetivos e introduzir o verbo <em>be</em> no passado, antes de avançar para outros verbos no <em>simple past</em>. Esses são os próximos conteúdos; nesta aula, o foco ficou na revisão do presente e na conversa inicial sobre férias.</p>
+        </div>
+      </section>
+      <section>
+        <h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2>
+        <div class="outline-card">
+          <p style="margin-top:0;color:var(--muted);font-size:0.9rem;">Frases praticadas na conversa ou ouvidas nos vídeos da aula.</p>
+          <ul>
+            <li><strong>“It won’t open.”</strong> → Não está abrindo. <em>(Vídeo sobre funcionamento.)</em></li>
+            <li><strong>“I can’t open it.”</strong> → Não consigo abrir. <em>(Vídeo.)</em></li>
+            <li><strong>“Does she work?”</strong> → Ela trabalha? <em>(Revisão com César.)</em></li>
+            <li><strong>“How long do these things take to disappear?”</strong> → Quanto tempo essas coisas levam para desaparecer? <em>(No contexto: decompor-se.)</em></li>
+            <li><strong>“I don’t know. Let me think.”</strong> → Não sei. Deixe-me pensar. <em>(Resposta que você praticou.)</em></li>
+            <li><strong>“You are all on your cell phones.”</strong> → Vocês estão todos no celular. <em>(Leitura do tema do vídeo.)</em></li>
+            <li><strong>“I’m uploading photos for our website.”</strong> → Estou enviando fotos para o nosso site. <em>(Vídeo da reunião.)</em></li>
+            <li><strong>“She’s taking notes for me.”</strong> → Ela está fazendo anotações para mim. <em>(Vídeo da assistente virtual.)</em></li>
+            <li><strong>“We hardly ever use the scanner.”</strong> → Quase nunca usamos o scanner. <em>(Rotina no vídeo.)</em></li>
+            <li><strong>“We use the video camera every day.”</strong> → Usamos a câmera de vídeo todos os dias. <em>(Rotina no vídeo.)</em></li>
+            <li><strong>“Hanging out with friends.”</strong> → Sair / passar tempo com amigos. <em>(Atividade de férias que você leu.)</em></li>
+            <li><strong>“Taking a cruise.”</strong> → Fazer um cruzeiro. <em>(Atividade de férias.)</em></li>
+          </ul>
+        </div>
+      </section>
+      <section>
+        <h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2>
+        <div class="vocab-grid">
+          <div class="vocab">
+            <div class="vocab-head">
+              <h3>won’t open</h3>
+              <button type="button" class="vocab-say" data-czk-say="won’t open" aria-label="Ouvir a pronúncia de won’t open" aria-pressed="false" title="Ouvir won’t open">&#128266;</button>
+            </div>
+            <p><em>Não está abrindo / não quer abrir.</em><br><small>Usado quando algo deveria abrir, mas não abre ao tentarmos.<br><strong>This bottle won’t open.</strong><br>Esta garrafa não está abrindo.</small></p>
+          </div>
+          <div class="vocab green">
+            <div class="vocab-head">
+              <h3>upload</h3>
+              <button type="button" class="vocab-say" data-czk-say="upload" aria-label="Ouvir a pronúncia de upload" aria-pressed="false" title="Ouvir upload">&#128266;</button>
+            </div>
+            <p><em>Enviar / subir um arquivo.</em><br><small>Transferir uma foto ou outro arquivo do aparelho para um site ou serviço online.<br><strong>I’m uploading photos for our website.</strong><br>Estou enviando fotos para o nosso site.</small></p>
+          </div>
+          <div class="vocab yellow">
+            <div class="vocab-head">
+              <h3>exciting</h3>
+              <button type="button" class="vocab-say" data-czk-say="exciting" aria-label="Ouvir a pronúncia de exciting" aria-pressed="false" title="Ouvir exciting">&#128266;</button>
+            </div>
+            <p><em>Empolgante / emocionante.</em><br><small>Descreve algo que causa entusiasmo, como as férias na Disney que você comentou.<br><strong>My vacation was exciting.</strong><br>Minhas férias foram empolgantes. <em>(Exemplo para revisão.)</em></small></p>
+          </div>
+        </div>
+      </section>
+      <section>
+        <h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2>
+        <div class="outline-card">
+          <h3 style="margin-top:0;">Aparelhos e conexões</h3>
+          <ul>
+            <li><strong>device / electronic device</strong> — aparelho / dispositivo eletrônico</li>
+            <li><strong>cell phone; laptop; tablet; desktop computer</strong> — celular; notebook; tablet; computador de mesa</li>
+            <li><strong>scanner; printer; video camera</strong> — scanner; impressora; câmera de vídeo</li>
+            <li><strong>fitness tracker; virtual assistant</strong> — dispositivo que monitora atividades físicas; assistente virtual</li>
+            <li><strong>outlet; plug; adapter; power strip</strong> — tomada; plugue; adaptador; régua de tomadas</li>
+            <li><strong>charge; plug in; unplug</strong> — carregar; conectar à tomada; desconectar da tomada</li>
+          </ul>
+          <h3>Ações e expressões de tecnologia</h3>
+          <ul>
+            <li><strong>take a picture; make a video</strong> — tirar uma foto; fazer um vídeo</li>
+            <li><strong>send a text / text me</strong> — mandar uma mensagem / mande-me uma mensagem</li>
+            <li><strong>check email; post; play</strong> — verificar o e-mail; postar; jogar / reproduzir</li>
+            <li><strong>get information; stream videos; listen to podcasts</strong> — obter informações; assistir a vídeos por streaming; ouvir podcasts</li>
+            <li><strong>photocopy; upload; download</strong> — fotocopiar; enviar um arquivo; baixar um arquivo</li>
+            <li><strong>take notes; pay attention; put it down; turn it off</strong> — fazer anotações; prestar atenção; largar / colocar no chão ou na mesa; desligar</li>
+            <li><strong>obsolete; a piece of junk; replace</strong> — obsoleto; uma porcaria / uma coisa imprestável; substituir</li>
+            <li><strong>drive someone crazy</strong> — deixar alguém maluco / irritar muito alguém</li>
+            <li><strong>enough; hardly ever; every day</strong> — suficiente; quase nunca; todos os dias</li>
+          </ul>
+          <h3>Meio ambiente e tempo</h3>
+          <ul>
+            <li><strong>How long…?; take; disappear</strong> — Quanto tempo…?; levar / demorar; desaparecer</li>
+            <li><strong>banana peel; cigarette butt</strong> — casca de banana; bituca de cigarro</li>
+            <li><strong>plastic bag; aluminum can; plastic bottle; glass bottle</strong> — sacola plástica; lata de alumínio; garrafa plástica; garrafa de vidro</li>
+            <li><strong>fishing line; biodegradable; pollution; pollute</strong> — linha de pesca; biodegradável; poluição; poluir</li>
+            <li><strong>soil / ground; earth; up to</strong> — solo / chão; terra; até <em>(um limite de tempo ou quantidade)</em></li>
+            <li><strong>day; week; year; a million years</strong> — dia; semana; ano; um milhão de anos</li>
+            <li><strong>guess; spot on; let me think</strong> — palpite; certíssimo / na mosca; deixe-me pensar</li>
+          </ul>
+          <h3>Férias e passeios</h3>
+          <ul>
+            <li><strong>go on vacation; rate</strong> — sair de férias; avaliar / dar uma nota</li>
+            <li><strong>doing nothing; going snorkeling; going surfing</strong> — não fazer nada; mergulhar com snorkel; surfar</li>
+            <li><strong>hanging out with friends; learning about other cultures</strong> — passar tempo com amigos; aprender sobre outras culturas</li>
+            <li><strong>taking a cruise; taking a tour; tour guide</strong> — fazer um cruzeiro; fazer um passeio guiado; guia de turismo</li>
+            <li><strong>going sport fishing; visiting a museum</strong> — praticar pesca esportiva; visitar um museu</li>
+            <li><strong>exciting; relaxing; interesting; touristy places</strong> — empolgante; relaxante; interessante; lugares turísticos</li>
+            <li><strong>historical places; underground; huge; tall</strong> — lugares históricos; subterrâneo / debaixo da terra; enorme; alto</li>
+            <li><strong>ocean; swimming pool; playground; five-star hotel</strong> — oceano; piscina; área de recreação; hotel cinco estrelas</li>
+            <li><strong>pain; back pain; headache</strong> — dor; dor nas costas; dor de cabeça</li>
+          </ul>
+        </div>
+      </section>
+      <section>
+        <h2 style="margin-bottom:8px;">🚨 Correções importantes</h2>
+        <div class="outline-card">
+          <h3 style="margin-top:0;">1. “Upload” não é “plug in”</h3>
+          <p style="color:#c53030;">❌ <strong>“plug in photos”</strong> — expressão usada ao recontar o vídeo.</p>
+          <p style="color:#276749;">✅ <strong>“upload photos”</strong> — enviar fotos para a internet.</p>
+          <p>A personagem disse <em>I’m uploading photos for our website.</em> Já <em>plug in</em> é conectar um aparelho: <em>Plug in the charger.</em> (“Conecte o carregador.”) Lembre do contraste: <strong>upload = enviar</strong>; <strong>download = baixar</strong>.</p>
+          <h3>2. Resposta curta com “like”</h3>
+          <p style="color:#c53030;">❌ <strong>“Yes, I like.”</strong> — ao responder se gostava de não fazer nada.</p>
+          <p style="color:#276749;">✅ <strong>“Yes, I do.”</strong> ou <strong>“Yes, I like it.”</strong></p>
+          <p>Na resposta curta a uma pergunta com <em>Do you…?</em>, retome o auxiliar <em>do</em>. Se usar <em>like</em>, complete o que você gosta: <em>I like it</em> ou <em>I like doing nothing</em>. Para uma resposta negativa: <em>No, I don’t.</em></p>
+          <h3>3. “Doesn’t” não quer dizer “definitivo”</h3>
+          <p style="color:#c53030;">❌ Associar <strong>doesn’t</strong> sempre a “não definitivo / para sempre”.</p>
+          <p style="color:#276749;">✅ <strong>Doesn’t</strong> forma a negativa do presente com <em>he/she/it</em>; o contexto indica se é uma característica ou uma situação.</p>
+          <p style="margin-bottom:0;">No vídeo, a janela que não foi feita para abrir foi descrita com <em>doesn’t open</em>. A janela que deveria abrir, mas está travada, foi descrita com <em>won’t open</em>. Você identificou bem a ideia de “não abre neste momento”; o ajuste é evitar tratar <em>doesn’t</em> como uma regra de permanência.</p>
+        </div>
+      </section>
+      <section>
+        <h2 style="margin-bottom:8px;">Gravação da aula</h2>
+        <div class="media-row">
+          <a class="media-btn" href="https://youtu.be/URHpwE83fLg" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a>
+        </div>
+      </section>
+      <section class="speaking">
+        <h2>🗣️ Tempo de Fala</h2>
+        <table class="talk-table">
+          <thead><tr><th>Participante</th><th>Participação</th><th>Tempo estimado</th></tr></thead>
+          <tbody>
+            <tr class="row-teacher"><td class="talk-label">César</td><td class="talk-percent">69%</td><td class="talk-time">22 min 46 s</td></tr>
+            <tr class="row-student"><td class="talk-label">Lorena</td><td class="talk-percent">31%</td><td class="talk-time">10 min 07 s</td></tr>
+          </tbody>
+        </table>
+        <p style="color:var(--muted);font-size:0.88rem;">Estimativa pelos intervalos de fala da transcrição, incluindo português e inglês. Vídeos reproduzidos e pausas foram excluídos; não é uma medição exata do áudio.</p>
+        <p style="margin-bottom:0;">Você participou dando palpites, recontando a reunião e falando das suas viagens. Para ampliar a prática em inglês, transforme as respostas de uma palavra em frases: <em>I prefer exciting vacations.</em> / <em>I don’t like fishing.</em> <span style="color:var(--muted);">(Modelos para praticar.)</span></p>
+      </section>
+      <section>
+        <h2 style="margin-bottom:8px;">📝 Homework</h2>
+        <div class="homework">
+          <p style="margin-top:0;"><strong>Combinado em aula:</strong> fazer as atividades no app. No final, você pediu exercícios de arrastar palavras, e César combinou duas atividades nesse formato.</p>
+          <ul>
+            <li>Conclua as atividades disponibilizadas no app, incluindo as que ainda estiverem pendentes.</li>
+            <li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana e use os botões de áudio das três palavras-chave.</li>
+          </ul>
+          <p style="margin-bottom:0;"><strong>Prática sugerida:</strong> diga em voz alta uma frase sobre sua rotina com tecnologia, uma sobre o que está fazendo agora e uma sobre uma atividade de férias que você gosta. Exemplos: <em>I check email every day.</em> / <em>I’m uploading photos.</em> / <em>I like hanging out with friends.</em></p>
+        </div>
+      </section>
+    </main>
+    <footer><p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">© 2025 CZK English • czkenglish@gmail.com</p></footer>
+  </article>
+</div>
+
+<script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Resumo Pós-Aula — Giovanna Azzi — CZK English</title>
+<style>
+:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+</style>
+</head>
+<body>
+
+  <div class="wrap">
+    <article class="card" role="main">
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Hábitos, ações em progresso e planos: Simple Present × Present Continuous</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Giovanna Azzi &nbsp;•&nbsp;
+            <strong>Data:</strong> 10/01/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+      <main>
+        <section class="panel">
+          <p style="margin:0;font-weight:600;color:#14532D;"><em>Giovanna, hoje você praticou escolhas e preferências, ampliou o vocabulário de alimentos e tecnologia e comparou hábitos com ações em andamento e planos futuros. O principal ponto de revisão é escolher a estrutura certa para cada pergunta.</em></p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 10px 0;">Começamos com o <strong>desafio semanal</strong>, no qual você fez mais de 700 pontos. Na revisão, retomamos <strong>on</strong> para dias da semana, como <em>on Friday</em>, e <strong>at</strong> para horários, como <em>at seven</em>. Também apareceu <strong>than</strong>, usado para comparar duas coisas ou pessoas.</p>
+            <p style="margin:0 0 10px 0;">No jogo de escolhas, conversamos sobre situações de <strong>sobrevivência</strong> e <strong>comida</strong>: caçar ou cultivar alimentos, morar em um abrigo subterrâneo, escolher comida crua ou queimada e saber onde fica o norte. Depois, você fez escolhas sobre comida quente, sabores fortes, formatos de alimentos e aparelhos mágicos. Praticamos <strong>I would rather…</strong> para expressar preferência e palavras como <em>cotton candy</em>, <em>raw</em>, <em>burnt</em>, <em>bland</em>, <em>flavor</em> e <em>spicy</em>.</p>
+            <p style="margin:0 0 10px 0;">Você relembrou os dois usos do <strong>Present Continuous</strong>: uma <strong>ação em progresso</strong> e um <strong>plano futuro já organizado</strong>. A estrutura é <strong>sujeito + am/is/are + verbo com -ing</strong>. <em>I'm uploading a photo right now</em> descreve o que acontece agora; uma frase com <em>tomorrow</em> ou <em>tonight</em> pode descrever um plano, conforme o contexto. Também revisamos <strong>library</strong> (biblioteca) e <strong>bookstore</strong> (livraria).</p>
+            <p style="margin:0 0 10px 0;">O <strong>Simple Present</strong> entrou para falar de <strong>hábitos, rotinas e frequência</strong>. Você reconheceu <em>always</em> (sempre), <em>never</em> (nunca), <em>almost always</em> (quase sempre) e <em>hardly ever</em> (quase nunca). Nos exemplos com verbos de ação, esses advérbios ficam antes do verbo principal: <em>He hardly ever buys devices online.</em> Na afirmativa, <strong>he/she/it</strong> normalmente pede <strong>-s/-es</strong>; nas perguntas com <strong>does</strong>, o verbo volta à forma base.</p>
+            <p style="margin:0 0 10px 0;">Usamos o tema <strong>tecnologia</strong> para comparar as estruturas: tirar fotos, enviar uma foto, gravar um vídeo, fazer uma fotocópia e comprar dispositivos. A comparação central foi <em>I'm uploading a photo right now</em> × <em>I upload my photos every day</em>: a primeira é uma ação atual; a segunda, uma rotina.</p>
+            <p style="margin:0;">Nos exercícios finais, o foco foi formular perguntas: <strong>Do/Does + sujeito + verbo base?</strong> no presente simples e <strong>Am/Is/Are + sujeito + verbo com -ing?</strong> no contínuo. Revisamos o uso de <em>want</em>, a presença do <em>is</em> e a terminação <em>-ing</em>. Você também percebeu uma inconsistência na correção e explicou sua escolha com base na frequência — um bom sinal de que está analisando a estrutura. O próximo passo é fazer essa escolha com mais segurança.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 8px 0;color:var(--muted);font-size:0.9rem;">Frases e expressões trabalhadas na aula, com a escrita normalizada para revisão.</p>
+            <ul>
+              <li><strong>On Friday, at seven.</strong> → Na sexta-feira, às sete.</li>
+              <li><strong>Take a picture.</strong> → Tirar uma foto.</li>
+              <li><strong>Upload a photo.</strong> → Enviar uma foto para a internet ou uma plataforma.</li>
+              <li><strong>Make a video.</strong> → Gravar / fazer um vídeo.</li>
+              <li><strong>Make a photocopy.</strong> → Fazer uma fotocópia.</li>
+              <li><strong>I'm uploading a photo right now.</strong> → Estou enviando uma foto agora mesmo.</li>
+              <li><strong>I upload my photos every day.</strong> → Eu envio minhas fotos todos os dias.</li>
+              <li><strong>He's buying a new scanner tomorrow.</strong> → Ele vai comprar um scanner novo amanhã. <em>Plano futuro.</em></li>
+              <li><strong>He hardly ever buys devices online.</strong> → Ele quase nunca compra dispositivos pela internet.</li>
+              <li><strong>I don't have a camera.</strong> → Eu não tenho uma câmera.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <div class="vocab-head">
+                <h3>hardly ever</h3>
+                <button type="button" class="vocab-say" data-czk-say="hardly ever" aria-label="Ouvir a pronúncia de hardly ever" aria-pressed="false" title="Ouvir hardly ever">&#128266;</button>
+              </div>
+              <p><em>(pt) quase nunca</em><br><small>Expressão de frequência para algo que raramente acontece.<br><strong>He hardly ever buys devices online.</strong><br>Ele quase nunca compra dispositivos pela internet.</small></p>
+            </div>
+            <div class="vocab green">
+              <div class="vocab-head">
+                <h3>upload</h3>
+                <button type="button" class="vocab-say" data-czk-say="upload" aria-label="Ouvir a pronúncia de upload" aria-pressed="false" title="Ouvir upload">&#128266;</button>
+              </div>
+              <p><em>(pt) enviar para uma plataforma / fazer upload</em><br><small>Enviar um arquivo do aparelho para um serviço online.<br><strong>I&#x27;m uploading a photo right now.</strong><br>Estou enviando uma foto agora mesmo.</small></p>
+            </div>
+            <div class="vocab yellow">
+              <div class="vocab-head">
+                <h3>printer</h3>
+                <button type="button" class="vocab-say" data-czk-say="printer" aria-label="Ouvir a pronúncia de printer" aria-pressed="false" title="Ouvir printer">&#128266;</button>
+              </div>
+              <p><em>(pt) impressora</em><br><small>Dispositivo que imprime textos ou imagens em papel.<br><strong>My printer isn&#x27;t printing.</strong><br>Minha impressora não está imprimindo.</small></p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2>
+          <div class="outline-card">
+            <h3 style="margin-top:0;">Tecnologia e ações</h3>
+            <ul>
+              <li><strong>device / devices</strong> — dispositivo / dispositivos.</li>
+              <li><strong>camera</strong> — câmera; <strong>scanner</strong> — aparelho para digitalizar documentos; <strong>printer</strong> — impressora.</li>
+              <li><strong>phone</strong> — telefone / celular; <strong>computer</strong> — computador; <strong>online</strong> — pela internet.</li>
+              <li><strong>take a picture / take photos</strong> — tirar uma foto / tirar fotos.</li>
+              <li><strong>upload a photo</strong> — enviar uma foto para um serviço online; <strong>download</strong> — baixar um arquivo.</li>
+              <li><strong>make a video</strong> — fazer / gravar um vídeo; <strong>make a photocopy</strong> — fazer uma fotocópia.</li>
+              <li><strong>print</strong> — imprimir; <strong>copy</strong> — cópia / copiar; <strong>office</strong> — escritório.</li>
+              <li><strong>buy</strong> — comprar; <strong>use</strong> — usar; <strong>want</strong> — querer; <strong>bring</strong> — trazer; <strong>break</strong> — quebrar.</li>
+            </ul>
+            <h3>Frequência e tempo</h3>
+            <ul>
+              <li><strong>always</strong> — sempre; <strong>never</strong> — nunca.</li>
+              <li><strong>almost always</strong> — quase sempre; <strong>hardly ever</strong> — quase nunca.</li>
+              <li><strong>every day</strong> — todos os dias; <strong>right now</strong> — agora mesmo.</li>
+              <li><strong>tomorrow</strong> — amanhã; <strong>tonight</strong> — hoje à noite; <strong>on Friday</strong> — na sexta-feira; <strong>at seven</strong> — às sete.</li>
+              <li><strong>habit</strong> — hábito; <strong>routine</strong> — rotina; <strong>future plans</strong> — planos futuros; <strong>action in progress</strong> — ação em andamento.</li>
+            </ul>
+            <h3>Alimentos, sabores e preferências</h3>
+            <ul>
+              <li><strong>I would rather…</strong> — Eu preferiria… <em>Seguido de verbo na forma base.</em></li>
+              <li><strong>food</strong> — comida; <strong>cotton candy</strong> — algodão-doce; <strong>sugar</strong> — açúcar.</li>
+              <li><strong>raw</strong> — cru; <strong>burnt</strong> — queimado; <strong>hot</strong> — quente; <strong>cold</strong> — frio.</li>
+              <li><strong>bland</strong> — sem graça / com pouco sabor; <strong>flavor / taste</strong> — sabor; <strong>spicy</strong> — apimentado; <strong>overpoweringly spicy</strong> — muito intensamente apimentado.</li>
+              <li><strong>circular / square</strong> — circular / quadrado; <strong>bread</strong> — pão; <strong>salami</strong> — salame; <strong>ham</strong> — presunto.</li>
+              <li><strong>appliance / household appliance</strong> — eletrodoméstico; <strong>fridge</strong> — geladeira; <strong>refill</strong> — reabastecer / encher novamente; <strong>cook</strong> — cozinhar.</li>
+            </ul>
+            <h3>Sobrevivência e revisão</h3>
+            <ul>
+              <li><strong>survival</strong> — sobrevivência; <strong>hunt</strong> — caçar; <strong>grow</strong> — cultivar / crescer.</li>
+              <li><strong>bunker</strong> — abrigo protegido, geralmente subterrâneo; <strong>underground</strong> — debaixo da terra; <strong>above ground</strong> — acima do solo; <strong>stronghold</strong> — fortaleza.</li>
+              <li><strong>bugs / insects</strong> — insetos; <strong>north</strong> — norte; <strong>compass</strong> — bússola; <strong>sound</strong> — som.</li>
+              <li><strong>library</strong> — biblioteca; <strong>bookstore</strong> — livraria; <strong>than</strong> — do que, em comparações.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">🚨 Correções importantes</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 12px 0;color:var(--muted);font-size:0.9rem;">Os pares abaixo são modelos de revisão dos pontos corrigidos na aula. Nos exercícios feitos na tela, a transcrição não registra todas as respostas digitadas.</p>
+            <p style="margin:0 0 4px 0;"><strong>1. Dias da semana e horários</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ At Friday, on seven.</p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong>On Friday, at seven.</strong> — Você contou que havia acertado a ordem e depois trocou. Use <em>on</em> para o dia e <em>at</em> para o horário.</p>
+            <p style="margin:0 0 4px 0;"><strong>2. Perguntas no contínuo precisam de -ing</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ Are they take water?</p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong>Are they taking water?</strong> — Eles estão levando água? A forma incompleta foi retomada na correção. Com <em>are</em> nessa estrutura, use <em>taking</em>. <em>Do they take water?</em> perguntaria sobre um hábito.</p>
+            <p style="margin:0 0 4px 0;"><strong>3. O -ing sozinho não forma o Present Continuous</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ What he doing now?</p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong>What is he doing now?</strong> — O que ele está fazendo agora? Na correção final, faltavam o <em>is</em> e a terminação <em>-ing</em>. Confira as duas peças: <strong>be + verbo com -ing</strong>.</p>
+            <p style="margin:0 0 4px 0;"><strong>4. Perguntas com want</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ Are you want a new one?</p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong>Do you want a new one?</strong> — Você quer um novo? Para perguntar sobre <em>want</em> no sentido trabalhado, use o Simple Present: <strong>do + you + want</strong>. Com <em>he/she/it</em>: <strong>Does she want a new one?</strong></p>
+            <p style="margin:0 0 4px 0;"><strong>5. Frequência e posição do advérbio</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ He buys hardly ever devices online.</p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong>He hardly ever buys devices online.</strong> — Ele quase nunca compra dispositivos online. Nos hábitos com verbos de ação, o advérbio vem <strong>antes do verbo principal</strong>. Com o verbo <em>be</em>, vem depois: <em>He is always busy.</em></p>
+            <p style="margin:0 0 4px 0;"><strong>6. Um plano combinado para hoje à noite</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ Does Stephanie use her phone tonight? <em>(para o plano específico do exercício)</em></p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong>Is Stephanie using her phone tonight?</strong> — A Stephanie vai usar o celular dela hoje à noite? No contexto do exercício, era um <strong>plano futuro</strong>, então o contínuo expressa melhor a ideia.</p>
+            <p style="margin:0 0 10px 0;">💡 <strong>Escrita do -ing:</strong> <em>take → taking</em> (retire o <em>e</em> final); <em>bring → bringing</em> (a terminação <em>-ng</em> da forma base não substitui o <em>-ing</em>).</p>
+            <p style="margin:0;">💡 <strong>Antes de escrever:</strong> é um hábito ou algo que acontece agora / já está combinado? Para hábito: <strong>Do/Does + sujeito + verbo base?</strong> Para ação em andamento ou plano organizado: <strong>Am/Is/Are + sujeito + verbo com -ing?</strong> Nos exemplos de frequência desta aula, usamos o presente simples; isso não significa que <em>always + contínuo</em> nunca exista em inglês.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2>
+          <div class="media-row">
+            <a class="media-btn" href="https://youtu.be/dW-BviMD5bU" target="_blank" rel="noopener noreferrer" role="button"
+               style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a>
+          </div>
+        </section>
+
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>🗣️ Tempo de Fala</h2>
+          <table class="talk-table">
+            <thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead>
+            <tbody>
+              <tr class="row-teacher"><td><span class="talk-label">César (Professor)</span></td><td><span class="talk-percent">68%</span></td><td class="talk-time">~20 min 45 s</td></tr>
+              <tr class="row-student"><td><span class="talk-label">Giovanna Azzi</span></td><td><span class="talk-percent">32%</span></td><td class="talk-time">~9 min 43 s</td></tr>
+            </tbody>
+          </table>
+          <p style="margin:10px 0 0;color:var(--muted);font-size:0.85rem;">Estimativa pela duração dos trechos de fala da transcrição, em português e inglês. Pausas e tempo de resolução dos exercícios ficam fora da conta.</p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📝 Homework</h2>
+          <div class="homework">
+            <p style="margin:0 0 8px 0;">📌 <strong>Lição de casa:</strong></p>
+            <ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+              <li>Faça as <strong>duas atividades</strong> que César avisou que disponibilizaria junto com o pós-aula.</li>
+              <li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana e use os botões para ouvir as três palavras-chave.</li>
+              <li>Como revisão, escreva <strong>2 frases sobre hábitos</strong>, <strong>2 sobre o que está acontecendo agora</strong> e <strong>1 sobre um plano já organizado</strong>. Use o vocabulário de tecnologia.</li>
+              <li>Transforme uma frase de hábito em pergunta com <strong>do/does</strong> e uma frase do contínuo em pergunta com <strong>am/is/are</strong>. Confira o verbo base ou o <strong>-ing</strong> antes de terminar.</li>
+              <li>Pratique uma preferência em voz alta: <strong>I would rather eat…</strong> e complete com uma das opções de comida da aula.</li>
+            </ul>
+          </div>
+        </section>
+      </main>
+      <footer><p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer>
+    </article>
+  </div>
+
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body>
+</html>
