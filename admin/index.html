@@ -3750,8 +3750,35 @@
     // semanal (a Sofia), e travar apagaria a série na primeira edição.
     const TIPOS_SEM_REPETICAO = ['reposicao', 'experimental'];
 
+    // Trocar o TIPO de um compromisso que já existe para reposição/experimental
+    // não pode regravar o compromisso: esses dois valem um dia só, e o original
+    // pode ser uma série semanal — ou o registro virtual de uma dupla
+    // ("__group-…"), que nem existe no banco. Foi assim que a experimental do
+    // Junior Soares, marcada sobre a aula cancelada da Karlla e do Vitor, foi
+    // gravada em 18/08 (a primeira aula da série) e sumiu da terça 06/10.
+    // Aqui o cartão vira um compromisso NOVO, só do dia em que ele clicou.
+    function calendarPopDestacar(novoTipo) {
+      const rascunho = calendarPopDraft;
+      if (!rascunho?.id) return;
+      const salvo = calendarEvents.find(item => item.id === rascunho.id);
+      const jaEhDeUmDia = Boolean(salvo && TIPOS_SEM_REPETICAO.includes(salvo.type));
+      const precisaDestacar = !jaEhDeUmDia && (TIPOS_SEM_REPETICAO.includes(novoTipo) || (rascunho.groupVirtual && novoTipo !== 'lesson'));
+      if (!precisaDestacar) return;
+      const dia = rascunho.ocorrencia || rascunho.date;
+      calendarPopDraft = { type:novoTipo, ocorrencia:dia, date:dia, repeat:'none', color:rascunho.color || '' };
+      // O título da aula original não vale para o compromisso novo; o que ele já digitou, sim.
+      const titulo = document.getElementById('calendar-pop-title');
+      if (titulo.value.trim() === String(rascunho.title || '').trim()) titulo.value = '';
+      document.getElementById('calendar-pop-student').value = '';
+      document.getElementById('calendar-pop-delete').style.display = 'none';
+      document.getElementById('calendar-pop-cancelar').style.display = 'none';
+      document.getElementById('calendar-pop-cancel-scope-row').style.display = 'none';
+      document.getElementById('calendar-pop-more').style.display = 'block';
+    }
+
     document.getElementById('calendar-pop-tipo').onchange = evento => {
       if (!calendarPopDraft) return;
+      calendarPopDestacar(evento.target.value);
       calendarPopDraft.type = evento.target.value;
       document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle(calendarPopDraft.type);
       if (!calendarPopDraft.id && calendarPopDraft.type !== 'lesson') document.getElementById('calendar-pop-repeat').value = 'none';
@@ -3815,6 +3842,7 @@
       document.getElementById('calendar-pop-colors').innerHTML = CALENDAR_TYPES.map(item =>
         `<button type="button" data-type="${item.type}" title="${item.label}" aria-label="${item.label}" class="${calendarPopDraft.type === item.type ? 'on' : ''}" style="background:${calendarPopColorOf(item.type)}"></button>`).join('');
       document.querySelectorAll('#calendar-pop-colors button').forEach(button => button.onclick = () => {
+        calendarPopDestacar(button.dataset.type);
         calendarPopDraft.type = button.dataset.type;
         document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle(calendarPopDraft.type);
         sincronizarReposicao();
@@ -3941,6 +3969,10 @@
         notes:calendarPopDraft.notes || '', timezone:'America/Sao_Paulo',
         updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || ''
       };
+      // Trava de segurança: id "__group-…" é só de exibição e nunca pode virar documento.
+      if (String(calendarPopDraft.id || '').startsWith('__') && !(calendarPopDraft.groupVirtual && type === 'lesson')) {
+        return calendarPopFail('Este horário é de uma dupla/turma. Marque a reposição ou a experimental como um compromisso novo.');
+      }
       const conflict = calendarEvents.find(item => item.id !== calendarPopDraft.id && calendarSeriesOverlap(payload, item));
       if (conflict && !confirmarAulaJunta(conflict)) return;
       const button = document.getElementById('calendar-pop-save'); button.disabled = true;
