@@ -520,6 +520,17 @@
        de alguém — mas riscada e sem cor, bem longe do laranja do disponível. */
     .calendar-event.cancelada, .calendar-event.cancelada.junta { background:repeating-linear-gradient(135deg,#f8fafc,#f8fafc 5px,#eef2f7 5px,#eef2f7 10px); border-color:#cbd5e1; color:#94a3b8; z-index:2; }
     .calendar-event.cancelada strong { text-decoration:line-through; }
+    /* Aula cancelada deixa de ocupar faixa no quadrado: vira um FUNDO hachurado no
+       horário todo, que não segura clique — tocar ou arrastar ali é marcar horário
+       livre, em qualquer tamanho (30, 45 min...). O nome de quem cancelou fica
+       numa faixa logo EMBAIXO, no fim do horário; quem entrou no lugar fica em cima. */
+    .calendar-cancel-band { position:absolute; left:2px; right:2px; z-index:1; border:1px dashed #cbd5e1; border-radius:7px; background:repeating-linear-gradient(135deg,#f8fafc,#f8fafc 5px,#eef2f7 5px,#eef2f7 10px); pointer-events:none; }
+    .calendar-cancel-faixa { position:absolute; left:2px; right:2px; z-index:6; display:flex; gap:2px; }
+    .calendar-cancel-faixa .calendar-event { position:static; flex:1 1 0; min-width:0; height:100%; padding:0 6px; border-radius:5px; display:flex; align-items:center; }
+    .calendar-cancel-faixa .calendar-event strong { font-size:.55rem; text-transform:none; letter-spacing:0; line-height:1; }
+    .calendar-cancel-faixa .calendar-event span { display:none; }
+    .calendar-cancel-faixa .calendar-event:hover { background:#e2e8f0; color:#475569; }
+    .calendar-pop-aviso { margin-top:8px; padding:8px 10px; border-radius:9px; background:#f1f5f9; color:#475569; font-size:.74rem; line-height:1.45; }
     /* Aula junta usa o MESMO verde das outras: o primeiro da hora fica igual a
        uma aula sozinha e os seguintes vão perdendo tom. Uma moldura verde-escura
        envolve o horário inteiro para mostrar, de relance, que é uma dupla. */
@@ -629,6 +640,9 @@
       .calendar-event strong { font-size:.5rem; letter-spacing:0; }
       .calendar-event span { display:none; }
       .calendar-event-mais { font-size:.5rem; padding:0 3px; right:1px; }
+      .calendar-cancel-band, .calendar-cancel-faixa { left:1px; right:1px; }
+      .calendar-cancel-faixa .calendar-event { padding:0 3px; }
+      .calendar-cancel-faixa .calendar-event strong { font-size:.48rem; }
     }
 
     /* Financeiro da escola */
@@ -1790,6 +1804,7 @@
     <button class="calendar-pop-close" id="calendar-pop-close" type="button" aria-label="Fechar">×</button>
     <div class="calendar-pop-body">
     <input id="calendar-pop-title" maxlength="100" placeholder="Nome do compromisso">
+    <div class="calendar-pop-aviso" id="calendar-pop-aviso" style="display:none;"></div>
     <button class="calendar-pop-reposicao" id="calendar-pop-reposicao" type="button">🔄 Marcar reposição</button>
     <div class="calendar-pop-row" id="calendar-pop-student-row" style="display:none;grid-template-columns:1fr;">
       <select id="calendar-pop-student" aria-label="Aluno"><option value="">Selecione o aluno</option></select>
@@ -2766,6 +2781,8 @@
             `<span class="calendar-holiday ${item.type}" title="${esc(item.name)}">${esc(item.name)}</span>`).join('')}</div>`).join('')
         : '';
       const labels = Array.from({ length:hours }, (_, index) => `<div class="calendar-hour-label">${calendarTime(startMinutes + index*60)}</div>`).join('');
+      const faixasCanceladas = {}; // dia → horários cancelados (em minutos), para o arrasto saber que ali está livre
+      const calendarNomeCancelado = item => calendarDisplayTitle(item).replace(/^aula\s*[·:—-]\s*/i, '');
       const columns = days.map(date => {
         const key = calendarDateKey(date), work = calendarSettings.workingDays.includes(date.getDay());
         const doDia = calendarMergeGroups(calendarEvents.filter(event => calendarOccursOn(event,date)), date);
@@ -2781,15 +2798,37 @@
             porHora.push({ ...item, startTime:calendarTime(minuto), endTime:calendarTime(Math.min(minuto + 60, fim)), fatiada:true });
           }
         });
-        // Aula cancelada REPARTE o quadrado com quem ficou no lugar dela, em
-        // vez de ficar atrás. Escondida embaixo do outro bloco, ela sumia da
-        // grade: ele não via de quem era o horário nem conseguia clicar para
-        // desfazer o cancelamento — foi o que aconteceu na quarta do Gu, com a
-        // reposição do Lucas e Gabriel por cima.
-        const events = calendarLanes(porHora, key).map(({ event, faixa, faixas, oculto, restantes, recolher, chave, ehDupla }) => {
-          const top = Math.max(0, (calendarMinutes(event.startTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
-          const bottom = Math.min(height, (calendarMinutes(event.endTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
+        // Aula cancelada NÃO entra na divisão por faixas: dividida pela altura, uma
+        // reposição de 30 ou 45 min não cabia e a segunda sumia atrás do "⋯ +N".
+        // Ela vira um fundo hachurado no horário todo e, no fim dele, uma faixa
+        // com o nome de quem cancelou — embaixo de quem entrou no lugar. As
+        // reposições ocupam o horário exato delas por cima do fundo. A faixa nunca
+        // fica escondida: é por ela que ele desfaz o cancelamento (na quarta do
+        // Gu a cancelada sumia sob a reposição e ele não conseguia clicar).
+        const gruposCancelados = [];
+        porHora.filter(item => calendarCancelada(item, key))
+          .sort((um, outro) => calendarMinutes(um.startTime) - calendarMinutes(outro.startTime)).forEach(item => {
+            const ultimo = gruposCancelados[gruposCancelados.length - 1];
+            const inicioItem = calendarMinutes(item.startTime), fimItem = calendarMinutes(item.endTime);
+            if (ultimo && inicioItem < ultimo.fim) { ultimo.membros.push(item); ultimo.fim = Math.max(ultimo.fim, fimItem); }
+            else gruposCancelados.push({ ini:inicioItem, fim:fimItem, membros:[item] });
+          });
+        gruposCancelados.forEach(grupo => {
+          grupo.topo = Math.max(0, (grupo.ini - startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
+          grupo.base = Math.min(height, (grupo.fim - startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
+          grupo.altura = Math.max(10, Math.min(estreito ? 12 : 14, Math.round((grupo.base - grupo.topo) * 0.4)));
+          grupo.faixaTopo = grupo.base - grupo.altura;
+        });
+        const visiveisCancelados = gruposCancelados.filter(grupo => grupo.base - grupo.topo >= 3);
+        faixasCanceladas[key] = visiveisCancelados;
+        const events = calendarLanes(porHora.filter(item => !calendarCancelada(item, key)), key).map(({ event, faixa, faixas, oculto, restantes, recolher, chave, ehDupla }) => {
+          let top = Math.max(0, (calendarMinutes(event.startTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
+          let bottom = Math.min(height, (calendarMinutes(event.endTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
           if (bottom <= 0 || top >= height || bottom-top < 3) return '';
+          // Quem entrou no lugar e termina junto com o horário cancelado sobe um
+          // pouco para a faixa do cancelado ficar logo embaixo, sem cobrir o fim dele.
+          const sobre = visiveisCancelados.find(grupo => top < grupo.base && bottom > grupo.faixaTopo && bottom <= grupo.base + 1);
+          if (sobre) { bottom = sobre.faixaTopo; if (bottom - top < 13) top = Math.max(0, bottom - 13); }
           const subtitle = `${event.startTime}–${event.endTime}${CALENDAR_REPEAT_LABELS[event.repeat] ? ` · ${CALENDAR_REPEAT_LABELS[event.repeat]}` : ''}`;
           const displayTitle = calendarDisplayTitle(event);
           const cancelada = calendarCancelada(event, key);
@@ -2807,7 +2846,12 @@
             ? `<div class="calendar-dupla-outline" style="top:${top}px;height:${Math.max(22,bottom-top)}px" aria-hidden="true"></div>` : '';
           return `${moldura}<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}${cancelada ? ' cancelada' : ''}" data-event-id="${esc(event.id)}"${event.fatiada ? ` data-hora-inicio="${esc(event.startTime)}" data-hora-fim="${esc(event.endTime)}"` : ''} style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event)}${junta ? `;--event-mix:${calendarMistura(faixa)}%;--event-mix-borda:${calendarMistura(faixa, CALENDAR_INTENSIDADE_BORDA)}%` : ''}" title="${esc(displayTitle || subtitle)}${cancelada ? ' · cancelada' : ''}"><strong>${esc(displayTitle)}</strong><span>${esc(subtitle)}</span></button>${mais}`;
         }).join('');
-        return `<div class="calendar-day-column${work ? '' : ' off-hours'}${key === todayKey ? ' today' : ''}${key === calendarSelectedDay ? ' picked' : ''}" data-date="${key}" style="height:${height}px">${events}</div>`;
+        const fundos = visiveisCancelados.map(grupo =>
+          `<div class="calendar-cancel-band" style="top:${grupo.topo}px;height:${grupo.base - grupo.topo}px" aria-hidden="true"></div>`).join('');
+        const faixasHtml = visiveisCancelados.map(grupo =>
+          `<div class="calendar-cancel-faixa" style="top:${grupo.faixaTopo}px;height:${grupo.altura}px">${grupo.membros.map(item =>
+            `<button type="button" class="calendar-event cancelada" data-event-id="${esc(item.id)}" style="--event-color:${calendarEventColor(item)}" title="${esc(calendarDisplayTitle(item))} · cancelada — toque para desfazer"><strong>🚫 ${esc(calendarNomeCancelado(item))}</strong></button>`).join('')}</div>`).join('');
+        return `<div class="calendar-day-column${work ? '' : ' off-hours'}${key === todayKey ? ' today' : ''}${key === calendarSelectedDay ? ' picked' : ''}" data-date="${key}" style="height:${height}px">${fundos}${events}${faixasHtml}</div>`;
       }).join('');
       document.getElementById('calendar-grid').innerHTML = `<div class="calendar-hours" style="height:${height}px">${labels}</div>${columns}`;
       const now = new Date();
@@ -2828,7 +2872,12 @@
           const start = startMinutes + fromSlot * slotMinutes;
           const end = Math.max(start + slotMinutes, Math.min(endMinutes, startMinutes + toSlot * slotMinutes));
           const box = column.getBoundingClientRect(), offset = (start - startMinutes) / 60 * CALENDAR_HOUR_HEIGHT;
-          openCalendarPop({ type:'lesson', date:column.dataset.date, startTime:calendarTime(start), endTime:calendarTime(end) },
+          // Começou dentro de uma aula cancelada: o horário está livre, então já
+          // abre como reposição — sem precisar desfazer o cancelamento.
+          const dia = column.dataset.date;
+          const livre = (faixasCanceladas[dia] || []).find(grupo => grupo.ini <= start && start < grupo.fim);
+          openCalendarPop({ type:livre ? 'reposicao' : 'lesson', date:dia, startTime:calendarTime(start), endTime:calendarTime(end),
+            avisoCancelada:livre ? `🚫 Horário da aula cancelada de ${livre.membros.map(calendarNomeCancelado).join(' e ')} (${dia.split('-').reverse().join('/')}). Está livre — não precisa desfazer o cancelamento.` : '' },
             { left:box.left, right:box.right, top:box.top + offset });
         };
         column.onmousemove = move => { // guarda onde o mouse está, para o Ctrl+V colar ali
@@ -3808,6 +3857,8 @@
       calendarPopDraft = { type:'lesson', ...event, ocorrencia:ocorrencia || event.date || '', janela };
       document.getElementById('calendar-pop-title').value = event.title || '';
       document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle(calendarPopDraft.type);
+      const avisoCancelada = document.getElementById('calendar-pop-aviso');
+      avisoCancelada.textContent = event.avisoCancelada || ''; avisoCancelada.style.display = event.avisoCancelada ? 'block' : 'none';
       document.getElementById('calendar-pop-start').value = event.startTime || '';
       document.getElementById('calendar-pop-end').value = event.endTime || '';
       const campoRepeticao = document.getElementById('calendar-pop-repeat');
