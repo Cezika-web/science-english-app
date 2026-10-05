@@ -524,6 +524,11 @@
        horário todo, que não segura clique — tocar ou arrastar ali é marcar horário
        livre, em qualquer tamanho (30, 45 min...). O nome de quem cancelou fica
        numa faixa logo EMBAIXO, no fim do horário; quem entrou no lugar fica em cima. */
+    /* Cancelada sem nada por cima: o mesmo bloco de sempre, mas só o NOME segura o
+       clique (é por ele que se desfaz). O resto do bloco deixa passar, então tocar
+       ou arrastar ali marca um horário dentro da aula cancelada. */
+    .calendar-event.cancelada.passa { pointer-events:none; }
+    .calendar-event.cancelada.passa strong { pointer-events:auto; display:inline-block; max-width:100%; vertical-align:top; cursor:pointer; }
     .calendar-cancel-band { position:absolute; left:2px; right:2px; z-index:1; border:1px dashed #cbd5e1; border-radius:7px; background:repeating-linear-gradient(135deg,#f8fafc,#f8fafc 5px,#eef2f7 5px,#eef2f7 10px); pointer-events:none; }
     .calendar-cancel-faixa { position:absolute; left:2px; right:2px; z-index:6; display:flex; gap:2px; }
     .calendar-cancel-faixa .calendar-event { position:static; flex:1 1 0; min-width:0; height:100%; padding:0 6px; border-radius:5px; display:flex; align-items:center; }
@@ -2798,13 +2803,15 @@
             porHora.push({ ...item, startTime:calendarTime(minuto), endTime:calendarTime(Math.min(minuto + 60, fim)), fatiada:true });
           }
         });
-        // Aula cancelada NÃO entra na divisão por faixas: dividida pela altura, uma
-        // reposição de 30 ou 45 min não cabia e a segunda sumia atrás do "⋯ +N".
-        // Ela vira um fundo hachurado no horário todo e, no fim dele, uma faixa
-        // com o nome de quem cancelou — embaixo de quem entrou no lugar. As
-        // reposições ocupam o horário exato delas por cima do fundo. A faixa nunca
-        // fica escondida: é por ela que ele desfaz o cancelamento (na quarta do
-        // Gu a cancelada sumia sob a reposição e ele não conseguia clicar).
+        // Aula cancelada com NADA marcado por cima fica como sempre foi: bloco
+        // hachurado com o nome riscado. A diferença é que o bloco não segura o
+        // clique — só o nome — então dá para tocar ou arrastar dentro do horário
+        // cancelado e marcar outra coisa (30, 45 min...), sem desfazer o cancelamento.
+        // Já com algo marcado por cima, ela sai da divisão por faixas (dividida pela
+        // altura, uma reposição de 30/45 min não cabia e a segunda sumia atrás do
+        // "⋯ +N"): vira fundo hachurado e, no fim dele, uma faixa com o nome de quem
+        // cancelou — embaixo de quem entrou no lugar, as reposições no horário exato.
+        // O nome/faixa nunca fica escondido: é por ele que se desfaz o cancelamento.
         const gruposCancelados = [];
         porHora.filter(item => calendarCancelada(item, key))
           .sort((um, outro) => calendarMinutes(um.startTime) - calendarMinutes(outro.startTime)).forEach(item => {
@@ -2821,13 +2828,20 @@
         });
         const visiveisCancelados = gruposCancelados.filter(grupo => grupo.base - grupo.topo >= 3);
         faixasCanceladas[key] = visiveisCancelados;
-        const events = calendarLanes(porHora.filter(item => !calendarCancelada(item, key)), key).map(({ event, faixa, faixas, oculto, restantes, recolher, chave, ehDupla }) => {
+        // "Horário disponível" não conta como ocupado: só o que foi marcado de verdade.
+        const marcados = porHora.filter(item => item.type !== 'available' && !calendarCancelada(item, key));
+        visiveisCancelados.forEach(grupo => {
+          grupo.coberto = marcados.some(item => calendarMinutes(item.startTime) < grupo.fim && calendarMinutes(item.endTime) > grupo.ini);
+        });
+        const cobertos = visiveisCancelados.filter(grupo => grupo.coberto);
+        const canceladasComoSempre = visiveisCancelados.filter(grupo => !grupo.coberto).flatMap(grupo => grupo.membros);
+        const events = calendarLanes(porHora.filter(item => !calendarCancelada(item, key) || canceladasComoSempre.includes(item)), key).map(({ event, faixa, faixas, oculto, restantes, recolher, chave, ehDupla }) => {
           let top = Math.max(0, (calendarMinutes(event.startTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
           let bottom = Math.min(height, (calendarMinutes(event.endTime)-startMinutes) / 60 * CALENDAR_HOUR_HEIGHT);
           if (bottom <= 0 || top >= height || bottom-top < 3) return '';
           // Quem entrou no lugar e termina junto com o horário cancelado sobe um
           // pouco para a faixa do cancelado ficar logo embaixo, sem cobrir o fim dele.
-          const sobre = visiveisCancelados.find(grupo => top < grupo.base && bottom > grupo.faixaTopo && bottom <= grupo.base + 1);
+          const sobre = cobertos.find(grupo => top < grupo.base && bottom > grupo.faixaTopo && bottom <= grupo.base + 1);
           if (sobre) { bottom = sobre.faixaTopo; if (bottom - top < 13) top = Math.max(0, bottom - 13); }
           const subtitle = `${event.startTime}–${event.endTime}${CALENDAR_REPEAT_LABELS[event.repeat] ? ` · ${CALENDAR_REPEAT_LABELS[event.repeat]}` : ''}`;
           const displayTitle = calendarDisplayTitle(event);
@@ -2844,11 +2858,11 @@
             : '';
           const moldura = ehDupla && faixa === 0
             ? `<div class="calendar-dupla-outline" style="top:${top}px;height:${Math.max(22,bottom-top)}px" aria-hidden="true"></div>` : '';
-          return `${moldura}<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}${cancelada ? ' cancelada' : ''}" data-event-id="${esc(event.id)}"${event.fatiada ? ` data-hora-inicio="${esc(event.startTime)}" data-hora-fim="${esc(event.endTime)}"` : ''} style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event)}${junta ? `;--event-mix:${calendarMistura(faixa)}%;--event-mix-borda:${calendarMistura(faixa, CALENDAR_INTENSIDADE_BORDA)}%` : ''}" title="${esc(displayTitle || subtitle)}${cancelada ? ' · cancelada' : ''}"><strong>${esc(displayTitle)}</strong><span>${esc(subtitle)}</span></button>${mais}`;
+          return `${moldura}<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}${cancelada ? ' cancelada passa' : ''}" data-event-id="${esc(event.id)}"${event.fatiada ? ` data-hora-inicio="${esc(event.startTime)}" data-hora-fim="${esc(event.endTime)}"` : ''} style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event)}${junta ? `;--event-mix:${calendarMistura(faixa)}%;--event-mix-borda:${calendarMistura(faixa, CALENDAR_INTENSIDADE_BORDA)}%` : ''}" title="${esc(displayTitle || subtitle)}${cancelada ? ' · cancelada' : ''}"><strong${cancelada ? ` title="${esc(displayTitle)} · cancelada — toque no nome para desfazer"` : ''}>${esc(displayTitle)}</strong><span>${esc(subtitle)}</span></button>${mais}`;
         }).join('');
-        const fundos = visiveisCancelados.map(grupo =>
+        const fundos = cobertos.map(grupo =>
           `<div class="calendar-cancel-band" style="top:${grupo.topo}px;height:${grupo.base - grupo.topo}px" aria-hidden="true"></div>`).join('');
-        const faixasHtml = visiveisCancelados.map(grupo =>
+        const faixasHtml = cobertos.map(grupo =>
           `<div class="calendar-cancel-faixa" style="top:${grupo.faixaTopo}px;height:${grupo.altura}px">${grupo.membros.map(item =>
             `<button type="button" class="calendar-event cancelada" data-event-id="${esc(item.id)}" style="--event-color:${calendarEventColor(item)}" title="${esc(calendarDisplayTitle(item))} · cancelada — toque para desfazer"><strong>🚫 ${esc(calendarNomeCancelado(item))}</strong></button>`).join('')}</div>`).join('');
         return `<div class="calendar-day-column${work ? '' : ' off-hours'}${key === todayKey ? ' today' : ''}${key === calendarSelectedDay ? ' picked' : ''}" data-date="${key}" style="height:${height}px">${fundos}${events}${faixasHtml}</div>`;
