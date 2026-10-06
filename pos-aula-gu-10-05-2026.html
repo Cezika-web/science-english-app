@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Resumo Pós-Aula — Gu — 10/05/2026 — CZK English</title>
+<style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+h2{font-size:1.1rem;color:#14532D;}
+h3{font-size:1rem;color:#14532D;}
+p,li{line-height:1.6;}
+.outline-card p{margin:0 0 12px;}
+.outline-card li{margin-bottom:6px;}
+.phrase-list{list-style:none;padding:0;margin:0;}
+.phrase-list li{padding:8px 0;border-bottom:1px solid var(--border);}
+.phrase-list li:last-child{border-bottom:0;}
+.phrase-list span{color:#4b5563;}
+.correction{padding-bottom:12px;margin-bottom:14px;border-bottom:1px solid var(--border);}
+.correction p{margin:0 0 5px;}
+.wrong{color:#c53030;}.right{color:#276749;}
+@media(max-width:720px){.wrap{padding:18px 12px;}.card{box-sizing:border-box;}header{flex-direction:column;}.vocab{min-width:0;}.btn{font-size:.88rem;}.talk-table{font-size:.82rem;}}
+@media print{html,body{height:auto;background:#fff;}.wrap{padding:0;display:block;}.card{max-width:none;padding:0;border:0;box-shadow:none;}.actions,.vocab-say{display:none;}.vocab,.correction,.talk-table,.homework{break-inside:avoid;}h2,h3{break-after:avoid;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<article class="card" role="main">
+<header>
+  <div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <span class="badge">PÓS-AULA</span>
+      <h1>Online betting: opiniões, regras e revisão de gramática</h1>
+    </div>
+    <div class="meta" style="margin-top:8px;">
+      <strong>Professor:</strong> César &nbsp;•&nbsp;
+      <strong>Aluno:</strong> Gu &nbsp;•&nbsp;
+      <strong>Data:</strong> 10/05/2026
+    </div>
+  </div>
+  <div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div>
+</header>
+<main>
+<section class="panel">
+  <p style="margin:0;font-weight:600;color:#14532D;"><em>Gu, nesta aula você defendeu opiniões sobre apostas online, publicidade e orçamento familiar. Também retomamos have/get, present perfect e a escolha entre does e did para deixar suas frases mais claras.</em></p>
+</section>
+
+<section>
+  <h2>📘 Resumo da Aula</h2>
+  <div class="outline-card">
+    <p><strong>Conversa inicial e causative.</strong> Você contou sobre a reunião de trabalho e seus planos para fazer uma tatuagem. Esse contexto ajudou a revisar uma estrutura da aula anterior: quando outra pessoa faz um serviço para você, use <strong>have/get</strong>. Com a pessoa mencionada, temos <em>get + pessoa + to + verbo</em> e <em>have + pessoa + verbo na forma base</em>. Sem mencionar quem realiza o serviço, usamos <em>have/get + objeto + particípio</em>: <strong>I will get a tattoo done tomorrow.</strong> O futuro fica em <em>will get / will have</em>; <em>done</em> é o particípio de <em>do</em>.</p>
+    <p><strong>Horários, localização e expectativas.</strong> A conversa sobre a loja de tatuagem trouxe perguntas com <em>What time…?</em>, horários e a expressão <em>next to</em>. Depois, ao comentar eleições e expectativas, apareceu uma diferença importante: <strong>hope</strong> expressa desejo; <strong>expect</strong> expressa expectativa. Para algo que surpreendeu você, César apresentou <strong>I didn't see this coming</strong> — “Eu não esperava por isso”. Os comentários políticos serviram como contexto para praticar opiniões e previsões.</p>
+    <p><strong>Revisão das atividades e dos tempos verbais.</strong> Retomamos <em>wrinkled</em>, <em>show off</em>, <em>get a handle on</em> e a construção <em>made of leather</em>. Você disse que o <strong>present perfect</strong> ainda é difícil. Reforçamos a estrutura <strong>have/has + past participle</strong>, como em <em>He has lost his passport</em>. Também contrastamos rotina e passado: <strong>She works every day</strong>, <strong>She doesn't work</strong> e <strong>He didn't work yesterday</strong>. O auxiliar carrega a informação de tempo e pessoa; depois de <em>doesn't</em> ou <em>didn't</em>, o verbo principal fica na forma base.</p>
+    <p><strong>Tema principal: apostas online.</strong> Antes do debate, revisamos palavras como <em>gambling harm</em>, <em>household budget</em>, <em>addiction</em>, <em>financial loss</em>, <em>advertising</em> e <em>trade-off</em>. A leitura trouxe exemplos de regras apresentados no material sobre Estados Unidos, Espanha, Itália, Colômbia, França, Indonésia e Catar. Comparamos licenças, verificação de idade, limites de gasto, bloqueio voluntário e restrições à publicidade. Esses exemplos foram usados como base de leitura e discussão em inglês.</p>
+    <p><strong>Seus argumentos.</strong> Você começou defendendo a liberdade de cada pessoa para decidir sobre a própria vida, mas argumentou que, no contexto brasileiro, dificuldades financeiras e de escolaridade tornam o tema mais complicado. Relacionou apostas a problemas de saúde, dívidas, contas não pagas e crédito mais caro. Também questionou a diferença entre apostas esportivas e cassinos online, usando o exemplo de alguém que acompanha jogos e verifica o celular constantemente por causa das apostas.</p>
+    <p><strong>Montando regras e justificando escolhas.</strong> Na atividade final, você escolheu quais propostas incluir ou deixar de fora: idade mínima, uso de cartão de crédito, licença, conferência da idade e limites semanais relacionados à renda. A discussão sobre publicidade trouxe a questão dos contratos já assinados; você destacou o impacto de mudanças nas regras para os clubes. Você também apoiou destinar uma porcentagem da arrecadação a tratamento e educação. Ao ler <em>Let people block themselves…</em>, revisamos <strong>themselves</strong>, <strong>yourself</strong> e <strong>myself</strong>: a ação volta para a própria pessoa.</p>
+    <p style="margin-bottom:0;"><strong>Foco para continuar:</strong> você conseguiu sustentar opiniões e discordar com exemplos concretos. Agora, vale automatizar <em>he has</em>, <em>this doesn't work</em>, <em>didn't + verbo base</em> e <em>can + verbo base</em>, para ter mais espaço para desenvolver o argumento sem parar tanto para montar a frase.</p>
+  </div>
+</section>
+
+<section>
+  <h2>💬 Frases usadas em aula</h2>
+  <div class="outline-card">
+    <ul class="phrase-list">
+      <li><strong>I will get a tattoo done tomorrow.</strong><br><span>Vou fazer uma tatuagem amanhã (com outra pessoa realizando o serviço).</span></li>
+      <li><strong>What time is your tattoo tomorrow?</strong><br><span>A que horas é sua sessão de tatuagem amanhã?</span></li>
+      <li><strong>I didn't see this coming.</strong><br><span>Eu não esperava por isso.</span></li>
+      <li><strong>We need to get a handle on this.</strong><br><span>Precisamos entender melhor / dominar essa situação.</span></li>
+      <li><strong>Don't bring anything made of leather into a temple.</strong><br><span>Não leve nada feito de couro para dentro de um templo.</span></li>
+      <li><strong>He has lost his passport.</strong><br><span>Ele perdeu o passaporte (e isso tem uma consequência agora).</span></li>
+      <li><strong>She works every day.</strong><br><span>Ela trabalha todos os dias.</span></li>
+      <li><strong>She doesn't work.</strong><br><span>Ela não trabalha.</span></li>
+      <li><strong>I think it depends on the family.</strong><br><span>Acho que depende da família.</span></li>
+      <li><strong>The credit is more expensive.</strong><br><span>O crédito está mais caro.</span></li>
+      <li><strong>Let people block themselves from all legal betting sites.</strong><br><span>Permita que as pessoas bloqueiem o próprio acesso a todos os sites legais de apostas.</span></li>
+      <li><strong>It's not a fixed number.</strong><br><span>Não é um número fixo.</span></li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>⭐ Vocabulário-chave</h2>
+  <div class="vocab-grid">
+    <div class="vocab">
+      <div class="vocab-head">
+        <h3>addiction</h3>
+        <button type="button" class="vocab-say" data-czk-say="addiction" aria-label="Ouvir a pronúncia de addiction" aria-pressed="false" title="Ouvir addiction">&#128266;</button>
+      </div>
+      <p><em>Vício / dependência.</em><br>Dificuldade de controlar ou interromper um comportamento.<br><small><strong>Exemplo de revisão:</strong> Gambling addiction can affect a family.<br>A dependência de jogos de azar pode afetar uma família.</small></p>
+    </div>
+    <div class="vocab green">
+      <div class="vocab-head">
+        <h3>household budget</h3>
+        <button type="button" class="vocab-say" data-czk-say="household budget" aria-label="Ouvir a pronúncia de household budget" aria-pressed="false" title="Ouvir household budget">&#128266;</button>
+      </div>
+      <p><em>Orçamento familiar.</em><br>Planejamento do dinheiro que entra e dos gastos de uma casa.<br><small><strong>Exemplo de revisão:</strong> Betting can affect the household budget.<br>As apostas podem afetar o orçamento familiar.</small></p>
+    </div>
+    <div class="vocab yellow">
+      <div class="vocab-head">
+        <h3>trade-off</h3>
+        <button type="button" class="vocab-say" data-czk-say="trade-off" aria-label="Ouvir a pronúncia de trade-off" aria-pressed="false" title="Ouvir trade-off">&#128266;</button>
+      </div>
+      <p><em>Escolha que envolve uma contrapartida.</em><br>Ganhar algo aceitando uma perda ou desvantagem em outro ponto.<br><small><strong>Exemplo de revisão:</strong> Every policy has a trade-off.<br>Toda política envolve uma contrapartida.</small></p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>📚 Vocabulário completo da aula</h2>
+  <div class="outline-card">
+    <h3>Trabalho, tatuagem e localização</h3>
+    <ul>
+      <li><strong>meeting</strong> — reunião; <strong>day off</strong> — dia de folga; <strong>second shift</strong> — segundo turno.</li>
+      <li><strong>tattoo</strong> — tatuagem; <strong>tattoo studio</strong> — estúdio de tatuagem; <strong>tattoo supply</strong> — materiais para tatuagem.</li>
+      <li><strong>drawing</strong> — desenho; <strong>shadow / shading</strong> — sombra / sombreamento; <strong>anesthetic</strong> — anestésico.</li>
+      <li><strong>next to</strong> — ao lado de; <strong>gas station</strong> — posto de combustível; <strong>open / closed</strong> — aberto / fechado.</li>
+      <li><strong>already</strong> — já; <strong>half past nine / nine thirty</strong> — nove e meia.</li>
+    </ul>
+    <h3>Expressões retomadas e política</h3>
+    <ul>
+      <li><strong>wrinkled</strong> — amassado, com rugas; <strong>show off</strong> — se exibir, ostentar.</li>
+      <li><strong>get a handle on</strong> — entender bem, ganhar domínio sobre; <strong>confidence</strong> — confiança.</li>
+      <li><strong>made of leather</strong> — feito de couro; <strong>temple</strong> — templo; <strong>passport</strong> — passaporte.</li>
+      <li><strong>election / re-elected</strong> — eleição / reeleito; <strong>vote / votes</strong> — votar, voto / votos.</li>
+      <li><strong>politician</strong> — político (pessoa); <strong>senator / governor</strong> — senador / governador.</li>
+      <li><strong>first round</strong> — primeiro turno; <strong>strategy</strong> — estratégia; <strong>opportunity</strong> — oportunidade.</li>
+      <li><strong>hope / expect</strong> — ter esperança / esperar como previsão; <strong>I didn't see this coming</strong> — eu não esperava por isso.</li>
+    </ul>
+    <h3>Apostas, regras e publicidade</h3>
+    <ul>
+      <li><strong>gambling</strong> — jogos de azar / prática de apostar; <strong>online betting</strong> — apostas online; <strong>sports betting</strong> — apostas esportivas.</li>
+      <li><strong>gambling harm</strong> — danos relacionados aos jogos de azar; <strong>addiction</strong> — dependência; <strong>financial loss</strong> — prejuízo financeiro.</li>
+      <li><strong>ban / allow / regulate</strong> — proibir / permitir / regulamentar; <strong>strict</strong> — rígido, rigoroso.</li>
+      <li><strong>against the law</strong> — contra a lei; <strong>government license</strong> — licença do governo; <strong>approved sites</strong> — sites aprovados.</li>
+      <li><strong>advertising / ads</strong> — publicidade / anúncios; <strong>sponsor / sponsorship</strong> — patrocinador, patrocinar / patrocínio.</li>
+      <li><strong>set a limit</strong> — estabelecer um limite; <strong>weekly limit</strong> — limite semanal; <strong>check someone's age</strong> — verificar a idade de alguém.</li>
+      <li><strong>include / leave out</strong> — incluir / deixar de fora; <strong>block themselves</strong> — bloquear o próprio acesso.</li>
+      <li><strong>contract</strong> — contrato; <strong>treatment / education</strong> — tratamento / educação; <strong>evidence / support</strong> — evidência / apoio, apoiar.</li>
+    </ul>
+    <h3>Dinheiro, consequências e estruturas úteis</h3>
+    <ul>
+      <li><strong>household budget</strong> — orçamento familiar; <strong>disposable income</strong> — renda disponível após impostos.</li>
+      <li><strong>salary / earn money</strong> — salário / ganhar dinheiro pelo trabalho; <strong>income tax</strong> — imposto de renda.</li>
+      <li><strong>debt / in debt</strong> — dívida / endividado; <strong>interest rates</strong> — taxas de juros; <strong>credit card</strong> — cartão de crédito.</li>
+      <li><strong>pay bills / withdraw money</strong> — pagar contas / sacar ou retirar dinheiro; <strong>bank account</strong> — conta bancária.</li>
+      <li><strong>increase / decrease</strong> — aumentar, aumento / diminuir, diminuição; <strong>percentage / fixed number</strong> — porcentagem / número fixo.</li>
+      <li><strong>trade-off</strong> — contrapartida de uma escolha; <strong>fault</strong> — culpa; <strong>health / healthy</strong> — saúde / saudável.</li>
+      <li><strong>may / might / could</strong> — podem expressar possibilidade; <strong>should</strong> — deveria; <strong>must</strong> — deve, indicando obrigação ou dedução conforme o contexto.</li>
+      <li><strong>myself / yourself / themselves</strong> — eu mesmo / você mesmo / eles mesmos; <strong>depends on</strong> — depende de.</li>
+    </ul>
+    <p style="margin-bottom:0;color:var(--muted);"><small>As formas de revisão acima estão padronizadas: para imposto de renda, use <em>income tax</em>; para dívida, <em>debt</em>; para desenho, <em>drawing</em>.</small></p>
+  </div>
+</section>
+
+<section>
+  <h2>🚨 Correções importantes</h2>
+  <div class="outline-card">
+    <div class="correction"><p><strong>1. Aplicativos: sem artigo e com on</strong></p><p class="wrong">❌ “I don't have a Zoom in my laptop.”</p><p class="right">✅ <strong>I don't have Zoom on my laptop.</strong></p><p>Use o nome do aplicativo sem <em>a</em>. Para um programa instalado no computador, usamos <em>on my laptop</em>.</p></div>
+    <div class="correction"><p><strong>2. “Esperar” de surpresa: expect</strong></p><p class="wrong">❌ “I don't hope this.”</p><p class="right">✅ <strong>I didn't expect this.</strong> / <strong>I didn't see this coming.</strong></p><p>Para dizer que um resultado surpreendeu você, use <em>expect</em> no passado. <em>Hope</em> serve para um desejo: <em>I hope things get better.</em></p></div>
+    <div class="correction"><p><strong>3. Passado negativo: didn't</strong></p><p class="wrong">❌ “He doesn't work yesterday.”</p><p class="right">✅ <strong>He didn't work yesterday.</strong></p><p><em>Yesterday</em> indica passado. Use <em>didn't + work</em>; o verbo principal não recebe <em>-ed</em> depois de <em>didn't</em>.</p></div>
+    <div class="correction"><p><strong>4. Rotina com she: works</strong></p><p class="wrong">❌ “She work.”</p><p class="right">✅ <strong>She works every day.</strong></p><p>Você completou e corrigiu essa frase em aula. Na afirmativa do presente, <em>he/she/it</em> pede <em>-s</em>. Na negativa: <em>She doesn't work</em>.</p></div>
+    <div class="correction"><p><strong>5. He has e o sentido de opportunity</strong></p><p class="wrong">❌ “He have a good choice.”</p><p class="right">✅ <strong>He has a good opportunity.</strong></p><p><em>He</em> combina com <em>has</em>. Para “uma boa oportunidade”, use <em>opportunity</em>; <em>choice</em> significa escolha. Você reformulou a ideia usando <em>He has a good opportunity</em>.</p></div>
+    <div class="correction"><p><strong>6. Modal + verbo base</strong></p><p class="wrong">❌ “Everyone can decided your life.”</p><p class="right">✅ <strong>Everyone can decide what to do with their own life.</strong></p><p>Depois de <em>can</em>, use <em>decide</em>, sem <em>-d</em> e sem <em>to</em>. <em>Their own life</em> retoma a vida de cada pessoa; <em>your life</em> aponta para a vida do interlocutor.</p></div>
+    <div class="correction"><p><strong>7. This doesn't work</strong></p><p class="wrong">❌ “This don't work.”</p><p class="right">✅ <strong>This doesn't work.</strong></p><p><em>This</em> funciona como terceira pessoa do singular. Use <em>doesn't</em> e mantenha <em>work</em> na forma base.</p></div>
+    <div class="correction"><p><strong>8. Regras no plural</strong></p><p class="wrong">❌ “The rules is like this in United States.”</p><p class="right">✅ <strong>The rules are like this in the United States.</strong></p><p><em>Rules</em> é plural, então o verbo é <em>are</em>. O nome do país leva o artigo: <em>the United States</em>.</p></div>
+    <div class="correction"><p><strong>9. Health × healthy</strong></p><p class="wrong">❌ “The healthy, the person.”</p><p class="right">✅ <strong>The person's health.</strong> / <strong>The health problem is the same.</strong></p><p>Na comparação entre apostas esportivas e cassinos, você queria falar de <strong>saúde</strong>, o substantivo <em>health</em>. <em>Healthy</em> é o adjetivo “saudável”: <em>a healthy person</em>.</p></div>
+    <div class="correction"><p><strong>10. Milhões depois de um número</strong></p><p class="wrong">❌ “Two millions.”</p><p class="right">✅ <strong>Two million.</strong></p><p>Depois de um número específico, <em>million</em> fica sem <em>-s</em>. Para uma quantidade imprecisa: <em>millions of reais</em>.</p></div>
+    <div class="correction"><p><strong>11. Presente com he: watch → watches</strong></p><p class="wrong">❌ “He watch Japan League.”</p><p class="right">✅ <strong>He watches the Japanese league.</strong></p><p>Você já se corrigiu para <em>watches</em> em aula. Com <em>he</em>, <em>watch</em> recebe <em>-es</em>; <em>Japanese</em> é o adjetivo referente ao Japão.</p></div>
+    <div class="correction"><p><strong>12. Need to e send a message to</strong></p><p class="wrong">❌ “I need send message of your brother.”</p><p class="right">✅ <strong>I need to send a message to your brother.</strong></p><p>Use <em>need to + verbo</em>, <em>a message</em> e <em>to</em> para indicar quem recebe a mensagem.</p></div>
+    <p style="margin-bottom:0;"><strong>💡 Dois lembretes da revisão:</strong> causative passivo = <em>get/have + objeto + particípio</em>; present perfect = <em>have/has + particípio</em>. Compare: <strong>I will get a tattoo done</strong> × <strong>I have had a tattoo done</strong>. A primeira fala do plano futuro; a segunda, de algo já realizado.</p>
+  </div>
+</section>
+
+<section>
+  <h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2>
+  <div class="media-row">
+    <a class="media-btn" href="https://youtu.be/c13XKFF7rPo" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a>
+  </div>
+</section>
+
+<section class="speaking">
+  <h2>🗣️ Tempo de Fala</h2>
+  <table class="talk-table">
+    <thead><tr><th>Participante</th><th>Percentual estimado</th><th>Tempo de fala</th></tr></thead>
+    <tbody>
+      <tr class="row-teacher"><td class="talk-label">César (professor)</td><td class="talk-percent">59%</td><td class="talk-time">≈ 28 min 38 s</td></tr>
+      <tr class="row-student"><td class="talk-label">Gu (aluno)</td><td class="talk-percent">41%</td><td class="talk-time">≈ 20 min 04 s</td></tr>
+    </tbody>
+  </table>
+  <p style="color:var(--muted);font-size:0.88rem;">Estimativa pela soma dos intervalos de fala identificados na transcrição, excluindo pausas. Os percentuais se referem ao tempo de fala registrado, não à duração total da aula (cerca de 59 minutos).</p>
+  <p style="margin-bottom:0;">Você participou com perguntas, justificativas e contrapontos. Para ganhar fluidez, tente organizar cada opinião em três partes: <strong>I think… + because… + for example…</strong></p>
+</section>
+
+<section>
+  <h2>📝 Homework</h2>
+  <div class="homework">
+    <p style="margin-top:0;"><strong>Revisão sugerida a partir da aula:</strong></p>
+    <ol>
+      <li><strong>Causative:</strong> escreva três frases sobre a tatuagem: uma com <em>get + pessoa + to + verbo</em>, outra com <em>have + pessoa + verbo base</em> e outra com <em>get + objeto + particípio</em>. Comece todas com <em>I will…</em>.</li>
+      <li><strong>Present perfect:</strong> escreva quatro frases sobre experiências ou resultados atuais usando <em>I have… / He has…</em>. Sugestões de verbos: <em>visit → visited</em>, <em>lose → lost</em>, <em>finish → finished</em>, <em>be → been</em>. Depois, escreva duas frases no simple past com <em>yesterday</em>. Compare as estruturas.</li>
+      <li><strong>Automatize a negativa:</strong> diga em voz alta <em>She works every day → She doesn't work every day</em> e <em>He worked yesterday → He didn't work yesterday</em>. Crie mais dois pares com <em>watch</em> e <em>need</em>.</li>
+      <li><strong>Retome o debate:</strong> grave um áudio de 60–90 segundos respondendo <em>Should online betting be banned or regulated?</em> Dê sua opinião, duas razões e um exemplo. Use as três palavras-chave: <em>addiction</em>, <em>household budget</em> e <em>trade-off</em>.</li>
+    </ol>
+    <p style="margin-bottom:0;"><strong>Para a próxima aula:</strong> leve suas dúvidas sobre <em>have/has + particípio</em>. Você pediu para reforçar o present perfect; esse será um bom ponto de partida.</p>
+  </div>
+</section>
+</main>
+<footer>© 2025 CZK English • czkenglish@gmail.com</footer>
+</article>
+</div>
+
+
+<script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body>
+</html>
