@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Resumo Pós-Aula — Lorena Nemeth — 10/06/2026 — CZK English</title>
+<style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+h2{font-size:1.15rem;color:#0f1724;}
+.outline-card{line-height:1.55;color:#374151;}
+.outline-card li{margin:6px 0;}
+.homework{line-height:1.5;}
+.homework li{margin:7px 0;}
+@media(max-width:720px){header{flex-direction:column;}.wrap{padding:20px 12px;}.card{box-sizing:border-box;}.vocab{min-width:0;}.actions .btn{font-size:0.88rem;}.talk-table th,.talk-table td{padding:7px 6px;}}
+@media print{html,body{height:auto;background:#fff;}.wrap{display:block;padding:0;}.card{max-width:none;border:0;box-shadow:none;padding:12px;}.actions,.vocab-say{display:none;}.vocab,.homework,.speaking{break-inside:avoid;}h2,h3{break-after:avoid;}}
+</style>
+</head>
+<body>
+<div class="wrap"><article class="card" role="main">
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Férias e viagens: was/were, negativas e intensificadores</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluna:</strong> Lorena Nemeth &nbsp;•&nbsp;
+            <strong>Data:</strong> 10/06/2026
+          </div>
+        </div>
+        <div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div>
+      </header>
+      <main>
+        <section class="panel">
+          <p style="margin:0;font-weight:600;color:#14532D;"><em>Lorena, começamos a usar o verbo to be no passado para falar de férias e descrever viagens. Também revisamos negativas com any/nothing e expressões de conversa, como “gotta run now”.</em></p>
+        </section>
+
+        <section>
+          <h2>📘 Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin-top:0;">A conversa inicial retomou seu fim de semana e a visita à casa da sua avó. Depois, revisamos o vocabulário da aula anterior: atividades nas férias, <strong>cruise</strong> (cruzeiro), <strong>fishing line</strong> (linha de pesca), <strong>cigarette butt</strong> (bituca de cigarro) e <strong>can</strong>, que pode ser o modal “poder/conseguir” ou o substantivo “lata”.</p>
+            <p>Na <strong>página 75</strong>, você acompanhou o áudio de uma conversa sobre férias. Trabalhamos <strong>late last night</strong>, <strong>go away</strong>, <strong>as a matter of fact</strong> e <strong>staycation</strong>, além dos passados <strong>slept</strong>, <strong>stole</strong> e <strong>had</strong>. Você fez o exercício de associar expressões aos seus significados e falou de atividades de praia, de família, na cidade e em casa.</p>
+            <p><strong>Respostas curtas:</strong> em “Did you have a good time?”, o auxiliar <strong>did</strong> reaparece em “We sure did!” — “Com certeza nos divertimos!”. Se a pergunta muda para o presente, “Do you have a good time?”, a resposta passa a ser “We sure do!”. A resposta acompanha o auxiliar da pergunta; com o verbo to be, usamos o próprio to be.</p>
+            <p><strong>O ponto principal foi o passado do verbo to be:</strong> <strong>was</strong> substitui <strong>am/is</strong>; <strong>were</strong> substitui <strong>are</strong>. Ambos podem expressar “ser” ou “estar” no passado, conforme a frase.</p>
+            <table class="talk-table" aria-label="Verbo to be no presente e no passado">
+              <thead><tr><th>Sujeito</th><th>Presente</th><th>Passado</th><th>Negativa</th></tr></thead>
+              <tbody>
+                <tr><td>I</td><td>am</td><td>was</td><td>wasn't</td></tr>
+                <tr><td>He / She / It</td><td>is</td><td>was</td><td>wasn't</td></tr>
+                <tr><td>You / We / They</td><td>are</td><td>were</td><td>weren't</td></tr>
+              </tbody>
+            </table>
+            <p>💡 <strong>You were</strong> vale tanto para “você estava” quanto para “vocês estavam”. Por isso, <strong>were não é apenas uma forma de plural</strong>. Já <strong>everyone</strong> pede verbo no singular: “Everyone <strong>was</strong> friendly and warm.”</p>
+            <p><strong>Dois sentidos de “fui”:</strong> “I <strong>went</strong> to school” = “Eu fui para a escola” (passado de <strong>go</strong>); “I <strong>was</strong> an actress” = “Eu fui/era uma atriz” (passado de <strong>be</strong>). Para dizer que estava em um lugar, também usamos <strong>was</strong>: “I was at school.” A escolha depende do verbo e do sentido.</p>
+            <p><strong>Negativas:</strong> “It <strong>didn't have any money</strong> in it” e “It <strong>had no money</strong> in it” expressam a mesma ideia. Com <strong>didn't</strong>, usamos o verbo na forma base: <strong>have</strong>. Sem esse auxiliar, o passado é <strong>had</strong>. A mesma lógica apareceu em <strong>don't do anything</strong> e <strong>do nothing</strong>: no inglês padrão estudado na aula, basta uma marca de negação.</p>
+            <p>Na <strong>página 76</strong>, começamos a descrever viagens com <strong>was + intensificador + adjetivo</strong>: “The flight was very bumpy” e “The drive was kind of boring”. Vimos <strong>so, very, really, pretty, quite</strong> e <strong>kind of</strong>. A intensidade depende também do contexto e da entonação; <strong>kind of</strong> ajuda a suavizar uma avaliação.</p>
+            <p style="margin-bottom:0;"><strong>Para a próxima aula:</strong> continuar was/were com áudio, exemplos, exercícios e vídeo. O foco agora é reconhecer essas formas com a mesma segurança que você já vem construindo no presente.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2>💬 Frases usadas em aula</h2>
+          <div class="outline-card">
+            <p style="margin-top:0;color:var(--muted);font-size:0.9rem;">Frases trabalhadas na aula, com a grafia em inglês ajustada para facilitar a revisão.</p>
+            <ul>
+              <li><strong>Did you have a good time? — We sure did!</strong> → Vocês se divertiram? — Com certeza!</li>
+              <li><strong>Everyone was friendly and warm.</strong> → Todo mundo foi amigável e acolhedor.</li>
+              <li><strong>You and Danny were on vacation.</strong> → Você e Danny estavam de férias.</li>
+              <li><strong>It didn't have any money in it.</strong> → Não havia dinheiro nenhum nela (na carteira).</li>
+              <li><strong>It had no money in it.</strong> → Não havia dinheiro nela.</li>
+              <li><strong>You don't do anything. / You do nothing.</strong> → Você não faz nada.</li>
+              <li><strong>Gotta run now.</strong> → Preciso ir agora. <em>(Conversa informal.)</em></li>
+              <li><strong>How awful!</strong> → Que horrível!</li>
+              <li><strong>It was great seeing you.</strong> → Foi ótimo ver você.</li>
+              <li><strong>The bus trip was so scary.</strong> → A viagem de ônibus foi tão assustadora!</li>
+              <li><strong>The flight was very bumpy.</strong> → O voo teve muita turbulência.</li>
+              <li><strong>The flight was really short.</strong> → O voo foi muito curto.</li>
+              <li><strong>The train trip was pretty scenic.</strong> → A viagem de trem teve paisagens bem bonitas.</li>
+              <li><strong>The drive was kind of boring.</strong> → A viagem de carro foi meio entediante.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2>⭐ Vocabulário-chave</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <div class="vocab-head"><h3>staycation</h3><button type="button" class="vocab-say" data-czk-say="staycation" aria-label="Ouvir a pronúncia de staycation" aria-pressed="false" title="Ouvir staycation">&#128266;</button></div>
+              <p><em>Férias em casa ou perto de casa.</em><br><small>Combina stay + vacation. Você pode descansar e fazer atividades locais; não precisa ficar sem fazer nada.<br><strong>Ex.:</strong> We had a staycation. — Passamos as férias em casa.</small></p>
+            </div>
+            <div class="vocab green">
+              <div class="vocab-head"><h3>bumpy</h3><button type="button" class="vocab-say" data-czk-say="bumpy" aria-label="Ouvir a pronúncia de bumpy" aria-pressed="false" title="Ouvir bumpy">&#128266;</button></div>
+              <p><em>Com solavancos; turbulento, no caso de um voo.</em><br><small>Descreve uma viagem em que você sente chacoalhões. Uma bumpy road é uma estrada irregular ou esburacada.<br><strong>Ex.:</strong> The flight was very bumpy. — O voo teve muita turbulência.</small></p>
+            </div>
+            <div class="vocab yellow">
+              <div class="vocab-head"><h3>gotta</h3><button type="button" class="vocab-say" data-czk-say="gotta" aria-label="Ouvir a pronúncia de gotta" aria-pressed="false" title="Ouvir gotta">&#128266;</button></div>
+              <p><em>Ter que / precisar, na fala informal.</em><br><small>Representa a pronúncia informal de got to, em construções como I've got to go.<br><strong>Ex.:</strong> I gotta run now. — Preciso ir agora.</small></p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2>📚 Vocabulário completo da aula</h2>
+          <div class="outline-card">
+            <h3 style="margin-top:0;">Férias e atividades</h3>
+            <ul>
+              <li><strong>vacation / on vacation</strong> — férias / de férias; <strong>cruise</strong> — cruzeiro; <strong>staycation</strong> — férias em casa ou nas proximidades.</li>
+              <li><strong>beach vacation / family vacation / city vacation</strong> — férias na praia / em família / na cidade.</li>
+              <li><strong>surfing</strong> — surfar; <strong>footvolley</strong> — futevôlei; <strong>sunbathe / sunbathing</strong> — tomar sol.</li>
+              <li><strong>play hide-and-seek</strong> — brincar de esconde-esconde; <strong>watch movies</strong> — assistir a filmes; <strong>swim in the pool</strong> — nadar na piscina.</li>
+              <li><strong>go shopping</strong> — ir às compras; <strong>go to the mall</strong> — ir ao shopping; <strong>read a book</strong> — ler um livro; <strong>study English</strong> — estudar inglês.</li>
+            </ul>
+            <h3>Conversa e acontecimentos</h3>
+            <ul>
+              <li><strong>go away</strong> — viajar/sair por um tempo, no contexto das férias; <strong>late last night</strong> — bem tarde ontem à noite.</li>
+              <li><strong>as a matter of fact</strong> — na verdade / para falar a verdade; <strong>sure</strong> — com certeza, em “We sure did!”.</li>
+              <li><strong>friendly</strong> — amigável; <strong>warm</strong> — caloroso/acolhedor, ao descrever uma pessoa; <strong>polite</strong> — educado.</li>
+              <li><strong>wallet</strong> — carteira; <strong>awful</strong> — horrível; <strong>luckily</strong> — por sorte/felizmente; <strong>until</strong> — até.</li>
+              <li><strong>gotta run now</strong> — preciso ir agora; <strong>have a good time</strong> — divertir-se/aproveitar.</li>
+            </ul>
+            <h3>Verbos no passado e negativas</h3>
+            <ul>
+              <li><strong>be → was/were</strong> — ser/estar → era/foi, estava/esteve; <strong>go → went</strong> — ir → foi.</li>
+              <li><strong>sleep → slept</strong> — dormir → dormiu; <strong>steal → stole</strong> — roubar → roubou; <strong>have → had</strong> — ter → tinha/teve; <strong>get → got</strong> — sentido conforme o contexto.</li>
+              <li><strong>wasn't / weren't</strong> — was not / were not; <strong>didn't have any money</strong> — não tinha dinheiro nenhum; <strong>had no money</strong> — não tinha dinheiro.</li>
+              <li><strong>don't do anything / do nothing</strong> — não fazer nada; <strong>anything</strong> — qualquer coisa ou, após uma negativa, “nada” na tradução; <strong>nothing</strong> — nada.</li>
+            </ul>
+            <h3>Viagens e adjetivos</h3>
+            <ul>
+              <li><strong>bus trip / train trip / flight / drive</strong> — viagem de ônibus / viagem de trem / voo / trajeto de carro.</li>
+              <li><strong>scary</strong> — assustador; <strong>bumpy</strong> — com solavancos/turbulento; <strong>short / long</strong> — curto / longo.</li>
+              <li><strong>scenic</strong> — com belas paisagens; <strong>comfortable</strong> — confortável; <strong>boring</strong> — entediante.</li>
+            </ul>
+            <h3>Intensificadores</h3>
+            <ul>
+              <li><strong>so</strong> — tão/muito; <strong>very</strong> — muito; <strong>really</strong> — muito/realmente, com força variável pela entonação.</li>
+              <li><strong>pretty</strong> — bem/bastante, antes de um adjetivo; também significa “bonito(a)” quando é o próprio adjetivo.</li>
+              <li><strong>quite</strong> — bem/bastante, conforme o contexto; <strong>kind of</strong> — meio/um pouco, suavizando a descrição.</li>
+            </ul>
+            <h3>Revisão da aula anterior</h3>
+            <ul style="margin-bottom:0;">
+              <li><strong>fishing line</strong> — linha de pesca; <strong>cigarette butt</strong> — bituca de cigarro; <strong>aluminum can</strong> — lata de alumínio; <strong>glass bottle</strong> — garrafa de vidro.</li>
+              <li><strong>can</strong> — poder/conseguir ou lata; <strong>should</strong> — deveria; <strong>doesn't open</strong> — não abre; <strong>won't open</strong> — não quer abrir/não abre naquela tentativa.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2>🚨 Correções importantes</h2>
+          <div class="outline-card">
+            <p style="margin-top:0;"><strong>1. Everyone was: ser/estar, não ter</strong></p>
+            <p style="color:#c53030;">❌ Traduzir “Everyone was friendly and warm” como “Todo mundo teve...”</p>
+            <p style="color:#276749;">✅ <strong>“Todo mundo foi amigável e acolhedor.”</strong> Was é o passado de ser/estar. Everyone usa o singular, mesmo que se refira a várias pessoas.</p>
+            <p><strong>2. Were também acompanha you no singular</strong></p>
+            <p style="color:#c53030;">❌ Pensar que <strong>were</strong> é sempre plural.</p>
+            <p style="color:#276749;">✅ <strong>I/he/she/it was; you/we/they were.</strong> Em “You and Danny were on vacation”, a tradução é “Você e Danny estavam de férias”. Com you sozinho, também usamos were.</p>
+            <p><strong>3. Have, has e had</strong></p>
+            <p style="color:#c53030;">❌ Usar <strong>has</strong> como passado de have.</p>
+            <p style="color:#276749;">✅ <strong>Have/has</strong> são formas do presente; <strong>had</strong> é o passado. Compare: “It has no money in it” (presente), “It had no money in it” (passado) e “It didn't have any money in it” (passado com didn't + have).</p>
+            <p>💡 <strong>Did have</strong> também pode aparecer em uma afirmação para dar ênfase: “I did have a good time!” = “Eu me diverti, sim!”. Para a frase neutra praticada aqui, use <strong>had</strong>.</p>
+            <p><strong>4. Uma negativa por vez</strong></p>
+            <p style="color:#c53030;">❌ “You don't do nothing.”</p>
+            <p style="color:#276749;">✅ <strong>“You don't do anything.”</strong> ou <strong>“You do nothing.”</strong> Essas são as formas do inglês padrão que estamos praticando. Nothing já contém a ideia negativa.</p>
+            <p><strong>5. Go away no contexto das férias</strong></p>
+            <p style="color:#c53030;">❌ Traduzir “Did you go away?” automaticamente como “Você foi muito longe?”.</p>
+            <p style="color:#276749;">✅ <strong>“Você viajou?”</strong> Aqui, go away significa sair/viajar durante as férias, sem indicar necessariamente uma distância grande.</p>
+            <p><strong>6. Compras e lugares</strong></p>
+            <p style="color:#c53030;">❌ “Go to shopping.”</p>
+            <p style="color:#276749;">✅ <strong>“Go shopping”</strong> = ir às compras; <strong>“go to the mall”</strong> = ir ao shopping. Para listar atividades de férias, mantenha formas semelhantes: <strong>surfing, playing footvolley and sunbathing</strong>.</p>
+            <p><strong>7. Bus trip e quite</strong></p>
+            <p style="color:#c53030;">❌ “O ônibus da viagem...” / traduzir <strong>quite comfortable</strong> como “quase confortável”.</p>
+            <p style="color:#276749;">✅ <strong>Bus trip</strong> é “viagem de ônibus”. <strong>Quite comfortable</strong> pode ser “bem confortável”; <strong>quite</strong> não é “quase”.</p>
+            <p><strong>8. A expressão prometida: gotta</strong></p>
+            <p><strong>I've got to run now → I gotta run now → Gotta run now.</strong> As duas últimas formas são informais; na última, o “I” fica implícito na conversa. O sentido é <strong>“Preciso ir agora”</strong>, não necessariamente sair correndo. Para escrever de forma mais neutra, prefira <strong>“I have to go now”</strong>.</p>
+            <p style="margin-bottom:0;">💡 Memorize <strong>gotta + verbo</strong>: “I gotta go”, “I gotta study”. A expressão de obrigação vem de <strong>got to</strong>; não confunda com <strong>I've got a wallet</strong>, que significa “Eu tenho uma carteira”.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2>
+          <div class="media-row">
+            <a class="media-btn" href="https://youtu.be/M8AiwGb0pJc" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a>
+          </div>
+        </section>
+
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>🗣️ Tempo de Fala</h2>
+          <table class="talk-table">
+            <thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead>
+            <tbody>
+              <tr class="row-teacher"><td class="talk-label">César (Professor)</td><td class="talk-percent">77%</td><td class="talk-time">~34 min 29 s</td></tr>
+              <tr class="row-student"><td class="talk-label">Lorena Nemeth</td><td class="talk-percent">23%</td><td class="talk-time">~10 min 36 s</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-bottom:0;font-size:0.88rem;color:var(--muted);">Estimativa pelos intervalos de fala da transcrição, considerando professor e aluna. Pausas e áudio do material não entram no cálculo. Você fez perguntas sobre o vocabulário, traduziu exemplos e construiu frases com apoio.</p>
+        </section>
+
+        <section>
+          <h2>📝 Homework</h2>
+          <div class="homework">
+            <p style="margin-top:0;">📌 <strong>Combinado no encerramento da aula:</strong></p>
+            <ul>
+              <li><strong>Terça, 6 de outubro:</strong> ler o pós-aula anterior e fazer a parte 1 do desafio da semana.</li>
+              <li><strong>Quarta, 7 de outubro:</strong> ler este pós-aula e fazer uma atividade disponível no aplicativo.</li>
+              <li><strong>Quinta, 8 de outubro, antes da aula:</strong> fazer a outra atividade. Na aula, faremos a parte 2 do desafio.</li>
+              <li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana, dando atenção à tabela de was/were e às negativas.</li>
+            </ul>
+            <p style="margin-bottom:0;">💪 Reserve cerca de <strong>10 minutos por dia</strong> e participe do desafio. O combinado é tentar e praticar com constância.</p>
+          </div>
+        </section>
+      </main>
+      <footer><p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer>
+
+</article></div>
+<script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body>
+</html>

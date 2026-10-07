@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Davi Hideki — 10/06/2026 — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+*{box-sizing:border-box}body{line-height:1.55}h2{font-size:1.15rem;color:#14532D}h3{font-size:1rem}p{margin:0 0 12px}li{margin-bottom:7px}.outline-card>:last-child{margin-bottom:0}header{flex-wrap:wrap}.vocab{min-width:200px}.meta{line-height:1.7} .actions .btn{font-family:inherit;font-size:.9rem}
+@media(max-width:480px){.wrap{padding:18px 10px}.vocab{min-width:0}header>div:first-child>div:first-child{flex-wrap:wrap}.talk-table th,.talk-table td{padding:7px 6px;font-size:.82rem}}
+@media print{.wrap{padding:0}.card{max-width:none;border:0;box-shadow:none}.actions,.vocab-say{display:none}.outline-card,.vocab,.homework,.speaking{break-inside:avoid}body{background:white}}</style></head><body>
+<div class="wrap"><article class="card" role="main"><header><div><div style="display:flex;gap:10px;align-items:center"><span class="badge">PÓS-AULA</span><h1>Horários, datas e compromissos: entendendo a agenda</h1></div><div class="meta" style="margin-top:8px"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Davi Hideki &nbsp;•&nbsp; <strong>Data:</strong> 10/06/2026</div></div><div class="actions"><button type="button" class="btn" data-czk-action="print">Imprimir / Salvar PDF</button></div></header><main>
+<section class="panel"><p style="margin:0;font-weight:600;color:#14532D"><em>Davi, nesta aula você revisou datas, horários e pontualidade e treinou a escuta com uma agenda cheia de compromissos. Você acertou toda a primeira parte do desafio e conseguiu dizer os dias da semana. Agora vamos reforçar os detalhes e estudar um pouquinho a cada dia!</em></p></section>
+<section><h2>📘 Resumo da Aula</h2><div class="outline-card">
+<p><strong>Revisão e conquistas.</strong> Você começou fazendo a primeira parte do desafio semanal e acertou todas as questões! Depois, revisamos as atividades anteriores. César apontou 71 acertos e 13 erros: os pontos para revisar eram principalmente escrita, datas completas, sujeito na frase e idade. Você também conseguiu falar os sete dias da semana, um avanço destacado durante a aula.</p>
+<p><strong>Datas e preposições.</strong> Relembramos <strong>in</strong> para o mês sozinho (<em>in April</em>), <strong>on</strong> para dias e datas completas (<em>on Saturday; on April first</em>) e <strong>at</strong> para horários (<em>at nine a.m.</em>). Quando há mês e dia, a preposição é <strong>on</strong>. Nas datas, o dia é lido como ordinal: <em>first, second, third, fourth, fifth, sixth</em>.</p>
+<p><strong>Uma atividade em inglês.</strong> No aquecimento, vimos um vídeo sobre quanto tempo diferentes materiais levam para desaparecer. Você fez estimativas usando números e <em>years</em>. Apareceram casca de banana, bituca de cigarro, sacola e garrafa de plástico, lata de alumínio, linha de pesca e garrafa de vidro. A proposta foi praticar inglês em uma atividade curta e aumentar esse tempo aos poucos.</p>
+<p><strong>Horários e compromissos.</strong> O vídeo da unidade mostrou personagens comparando agendas para encontrar um horário disponível para visitar uma exposição. Retomamos <em>early, late</em> e <em>on time</em>, horários com <em>past</em> e <em>to</em> e intervalos com <em>from… to…</em>. Com pausas e repetições, você identificou um jogo, um concerto com a irmã, um filme com um amigo, banco, farmácia e uma festa que deveria ser surpresa.</p>
+<p><strong>Como treinar a escuta.</strong> Você relatou dificuldade com a velocidade e com o volume de alguns trechos. Ao ouvir em partes menores, conseguiu reconhecer informações que antes não estavam claras. O objetivo é entender <strong>quem faz o quê, quando e onde</strong>; você não precisa memorizar todos os horários de uma vez. Ajuste o volume, repita um trecho curto e procure primeiro as palavras conhecidas.</p>
+</div></section>
+<section><h2>💬 Frases usadas em aula</h2><div class="outline-card"><p>Expressões trabalhadas na conversa, na correção das atividades e no vídeo. A escrita em inglês foi normalizada para facilitar a revisão.</p><ul><li><strong lang="en">I don’t know.</strong> → Eu não sei.</li><li><strong lang="en">It is on April first.</strong> → É no dia primeiro de abril.</li><li><strong lang="en">What time is it?</strong> → Que horas são?</li><li><strong lang="en">From six p.m. to nine p.m. on weekdays.</strong> → Das seis às nove da noite, nos dias de semana.</li><li><strong lang="en">From ten a.m. to nine p.m.</strong> → Das dez da manhã às nove da noite.</li><li><strong lang="en">A movie with my friend at twenty past six.</strong> → Um filme com meu amigo às seis e vinte.</li><li><strong lang="en">A quarter to seven.</strong> → Quinze para as sete: 6:45.</li><li><strong lang="en">Ten past ten.</strong> → Dez e dez: 10:10.</li><li><strong lang="en">A quarter to eleven.</strong> → Quinze para as onze: 10:45.</li><li><strong lang="en">Half past one.</strong> → Uma e meia: 1:30.</li><li><strong lang="en">Don’t be late.</strong> → Não se atrase.</li><li><strong lang="en">See you next week.</strong> → Até a semana que vem.</li></ul></div></section>
+<section><h2>⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab "><div class="vocab-head"><h3 lang="en">past</h3><button type="button" class="vocab-say" data-czk-say="past" aria-label="Ouvir a pronúncia de past" aria-pressed="false" title="Ouvir past">&#128266;</button></div><p><em>depois de / e (nas horas)</em><br>Os minutos já passaram daquela hora.<br><small lang="en">Ten past ten = 10:10.</small></p></div><div class="vocab green"><div class="vocab-head"><h3 lang="en">to</h3><button type="button" class="vocab-say" data-czk-say="to" aria-label="Ouvir a pronúncia de to" aria-pressed="false" title="Ouvir to">&#128266;</button></div><p><em>para (nas horas)</em><br>Os minutos faltam para a próxima hora.<br><small lang="en">A quarter to eleven = 10:45.</small></p></div><div class="vocab yellow"><div class="vocab-head"><h3 lang="en">on time</h3><button type="button" class="vocab-say" data-czk-say="on time" aria-label="Ouvir a pronúncia de on time" aria-pressed="false" title="Ouvir on time">&#128266;</button></div><p><em>pontualmente / na hora certa</em><br>No horário combinado.<br><small lang="en">I am on time. — Estou na hora certa.</small></p></div></div></section>
+<section><h2>📚 Vocabulário completo da aula</h2><div class="outline-card"><h3>🕒 Horas e pontualidade</h3><ul><li><strong lang="en">clock times</strong> — horários do relógio</li><li><strong lang="en">What time is it?</strong> — Que horas são?</li><li><strong lang="en">o’clock</strong> — em ponto</li><li><strong lang="en">past / after</strong> — depois de; nas horas, “e”</li><li><strong lang="en">to</strong> — para; minutos que faltam</li><li><strong lang="en">a quarter</strong> — um quarto de hora: 15 minutos</li><li><strong lang="en">half past</strong> — meia hora depois: “e meia”</li><li><strong lang="en">a.m.</strong> — da meia-noite até antes do meio-dia</li><li><strong lang="en">p.m.</strong> — do meio-dia até antes da meia-noite</li><li><strong lang="en">early</strong> — cedo / adiantado</li><li><strong lang="en">late</strong> — atrasado</li><li><strong lang="en">on time</strong> — pontualmente</li><li><strong lang="en">from… to…</strong> — de… até…</li><li><strong lang="en">twenty-four seven / 24/7</strong> — 24 horas por dia, 7 dias por semana</li></ul><h3>📅 Calendário, datas e idade</h3><ul><li><strong lang="en">Monday</strong> — segunda-feira</li><li><strong lang="en">Tuesday</strong> — terça-feira</li><li><strong lang="en">Wednesday</strong> — quarta-feira</li><li><strong lang="en">Thursday</strong> — quinta-feira</li><li><strong lang="en">Friday</strong> — sexta-feira</li><li><strong lang="en">Saturday</strong> — sábado</li><li><strong lang="en">Sunday</strong> — domingo</li><li><strong lang="en">weekdays</strong> — dias de semana: segunda a sexta</li><li><strong lang="en">weekend</strong> — fim de semana</li><li><strong lang="en">holiday</strong> — feriado</li><li><strong lang="en">April</strong> — abril</li><li><strong lang="en">month / date</strong> — mês / data</li><li><strong lang="en">first / second / third</strong> — primeiro / segundo / terceiro</li><li><strong lang="en">fourth / fifth / sixth</strong> — quarto / quinto / sexto</li><li><strong lang="en">calendar</strong> — calendário / agenda</li><li><strong lang="en">birthday</strong> — aniversário</li><li><strong lang="en">years old</strong> — anos de idade</li><li><strong lang="en">in April / on April first / at nine a.m.</strong> — em abril / no dia primeiro de abril / às nove da manhã</li></ul><h3>🎉 Eventos, lugares e rotina</h3><ul><li><strong lang="en">event</strong> — evento</li><li><strong lang="en">exhibit / exhibition</strong> — exposição</li><li><strong lang="en">gallery</strong> — galeria</li><li><strong lang="en">artist / interview</strong> — artista / entrevista</li><li><strong lang="en">game / soccer game</strong> — jogo / jogo de futebol</li><li><strong lang="en">concert</strong> — concerto / show</li><li><strong lang="en">movie</strong> — filme</li><li><strong lang="en">play</strong> — peça de teatro, como evento</li><li><strong lang="en">party / surprise party</strong> — festa / festa surpresa</li><li><strong lang="en">meeting</strong> — reunião</li><li><strong lang="en">friend / sister / brother</strong> — amigo(a) / irmã / irmão</li><li><strong lang="en">bank</strong> — banco</li><li><strong lang="en">pharmacy</strong> — farmácia</li><li><strong lang="en">supermarket</strong> — supermercado</li><li><strong lang="en">go to work / go home</strong> — ir trabalhar / ir para casa</li><li><strong lang="en">café</strong> — cafeteria / estabelecimento</li><li><strong lang="en">coffee</strong> — café: a bebida</li><li><strong lang="en">open</strong> — aberto(a)</li></ul><h3>🌱 Aquecimento: materiais e duração</h3><ul><li><strong lang="en">How long…?</strong> — Quanto tempo…?</li><li><strong lang="en">disappear</strong> — desaparecer</li><li><strong lang="en">banana peel</strong> — casca de banana</li><li><strong lang="en">peel</strong> — descascar, como verbo</li><li><strong lang="en">cigarette butt</strong> — bituca de cigarro</li><li><strong lang="en">plastic bag</strong> — sacola de plástico</li><li><strong lang="en">plastic bottle</strong> — garrafa de plástico</li><li><strong lang="en">aluminum can</strong> — lata de alumínio</li><li><strong lang="en">fishing line</strong> — linha de pesca</li><li><strong lang="en">glass bottle</strong> — garrafa de vidro</li><li><strong lang="en">biodegradable</strong> — biodegradável</li><li><strong lang="en">pollution</strong> — poluição</li><li><strong lang="en">week / year</strong> — semana / ano</li><li><strong lang="en">one hundred / two hundred / one million</strong> — cem / duzentos / um milhão</li><li><strong lang="en">I don’t know</strong> — Eu não sei</li></ul></div></section>
+<section><h2>🚨 Correções importantes</h2><div class="outline-card"><p>Os exemplos abaixo reconstroem os pontos corrigidos na aula; não são citações literais de todas as suas respostas.</p><div style="margin-bottom:18px"><p><strong>1. Data completa: on + ordinal</strong></p><p style="color:#c53030">❌ It is in April one.</p><p style="color:#276749">✅ <strong>It is on April first.</strong></p><p>Use <strong>in April</strong> quando falar só o mês. Com mês e dia, use <strong>on April first</strong>. <em>First</em> é “primeiro”; <em>one</em> é “um”. Esse ponto apareceu também na revisão do áudio.</p></div><div style="margin-bottom:18px"><p><strong>2. Idade: verbo to be</strong></p><p style="color:#c53030">❌ My grandma has 72 years.</p><p style="color:#276749">✅ <strong>My grandma is 72 years old.</strong></p><p>Em inglês, dizemos que a pessoa <strong>é</strong> de determinada idade: <em>is 72 years old</em>. Revise a escrita de <strong>is</strong>, que também teve erros de digitação nas atividades.</p></div><div style="margin-bottom:18px"><p><strong>3. Não esquecer o sujeito</strong></p><p style="color:#c53030">❌ Is open.</p><p style="color:#276749">✅ <strong>It is open.</strong></p><p>Na frase afirmativa completa que revisamos, <strong>it</strong> representa o lugar. Para esse exemplo, mantenha <strong>sujeito + verbo</strong>: <em>It is…</em>.</p></div><div style="margin-bottom:18px"><p><strong>4. Local, bebida e horário</strong></p><p style="color:#c53030">❌ The coffee opens in nine a.m.</p><p style="color:#276749">✅ <strong>The café opens at nine a.m.</strong></p><p><strong>Coffee</strong> é a bebida; <strong>café</strong> é o estabelecimento. Para a hora de abertura, use <strong>at</strong>.</p></div><div style="margin-bottom:18px"><p><strong>5. Fim de semana não é feriado</strong></p><p style="color:#c53030">❌ Saturday and Sunday are the holidays.</p><p style="color:#276749">✅ <strong>Saturday and Sunday are the weekend.</strong></p><p><strong>Weekend</strong> é fim de semana. <strong>Holiday</strong> é feriado. São palavras diferentes.</p></div><div style="margin-bottom:18px"><p><strong>6. Past não é “para”</strong></p><p style="color:#c53030">❌ Ten past ten = dez para as dez.</p><p style="color:#276749">✅ <strong>Ten past ten = dez e dez (10:10).</strong></p><p><strong>Past</strong> indica minutos depois da hora. “Dez para as dez” seria <strong>ten to ten</strong> (9:50).</p></div><div style="margin-bottom:18px"><p><strong>7. Quarter to: faltam 15 minutos</strong></p><p style="color:#c53030">❌ A quarter to eleven = quinze horas para as onze.</p><p style="color:#276749">✅ <strong>A quarter to eleven = quinze para as onze (10:45).</strong></p><p><strong>A quarter</strong>, nesse contexto, significa <strong>15 minutos</strong>. <strong>Eleven</strong> é a próxima hora: onze. Compare: <em>a quarter to seven</em> = 6:45.</p></div><div style="margin-bottom:18px"><p><strong>8. Half past: e meia</strong></p><p style="color:#c53030">❌ Half past one = trinta horas e um minuto.</p><p style="color:#276749">✅ <strong>Half past one = uma e meia (1:30).</strong></p><p><strong>Half</strong> é metade de uma hora: 30 minutos. Você também pode dizer <strong>one thirty</strong>.</p></div><p>💡 <strong>Revisão antes de enviar:</strong> confira <em>is</em>, o sujeito e a preposição. Em uma conversa cotidiana, as horas normalmente vão de 1 a 12 com <em>a.m.</em> ou <em>p.m.</em>: <strong>nine p.m.</strong> = 21h = nove da noite. <strong>Eleven o’clock</strong> = onze em ponto.</p></div></section>
+<section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/sa3VnLcxhBw" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section>
+<section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead><tbody><tr class="row-teacher"><td class="talk-label">César (Professor)</td><td class="talk-percent">73%</td><td class="talk-time">23 min 40 s</td></tr><tr class="row-student"><td class="talk-label">Davi Hideki</td><td class="talk-percent">27%</td><td class="talk-time">8 min 39 s</td></tr></tbody></table><p style="margin-top:12px;color:var(--muted);font-size:.88rem">Estimativa pelos intervalos das falas na transcrição, em português e inglês. Os percentuais consideram apenas César e Davi; excluem o áudio dos vídeos, pausas e o tempo de resolução das atividades.</p></section>
+<section><h2>📝 Homework</h2><div class="homework"><p>📌 <strong>Um pouco de inglês a cada dia:</strong></p><ul>
+<li><strong>Releia o pós-aula anterior e este pós-aula.</strong> Leia este resumo de 2 a 3 vezes durante a semana, em dias diferentes.</li>
+<li><strong>Continue as atividades no aplicativo</strong> e conclua as de áudio que ficaram pendentes. Leia o resumo antes de responder e confira a escrita antes de enviar.</li>
+<li><strong>Na quinta-feira, faça a segunda parte do desafio semanal.</strong> Você já acertou toda a primeira parte; agora complete a próxima!</li>
+<li><strong>Pratique a escuta em trechos curtos.</strong> Na gravação, retome o vídeo da agenda: ouça um trecho, pause, diga o evento e tente identificar o horário. Repita com o volume confortável, sem tentar lembrar tudo de uma vez.</li>
+<li><strong>Revisão rápida sugerida:</strong> fale em voz alta <em>ten past ten</em> (10:10), <em>a quarter to eleven</em> (10:45) e <em>half past one</em> (1:30). Depois, repita os dias da semana.</li>
+</ul><p>🌟 Você já viu que consegue entender mais quando divide o áudio em partes. Continue com passos pequenos!</p></div></section>
+</main><footer><p>© 2025 CZK English • czkenglish@gmail.com</p></footer></article></div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>
