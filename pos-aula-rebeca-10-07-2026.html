@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Resumo Pós-Aula — Rebeca — 10/07/2026 — CZK English</title>
+<style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+</style>
+</head>
+<body><div class="wrap"><article class="card" role="main">
+<header><div><div style="display:flex;gap:10px;align-items:center;"><span class="badge">PÓS-AULA</span><h1>Família e presente simples: quando usar -s e does</h1></div><div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Rebeca &nbsp;•&nbsp; <strong>Data:</strong> 10/07/2026</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header>
+<main>
+<section class="panel"><p style="margin:0;font-weight:600;color:#14532D;font-style:italic;">Rebeca, nesta aula você praticou o presente simples com familiares, aprendeu a escolher entre do e does e revisou possessivos. O grande passo foi explicar seu raciocínio: primeiro identificar o sujeito, depois decidir o que acontece com o verbo.</p></section>
+<section><h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2><div class="outline-card">
+<p>Começamos retomando suas dúvidas nas atividades: como perguntar se alguém tem filhos, como falar de sobrinhos e como negar uma frase sobre seu avô. Mesmo em um dia de cansaço, você conseguiu identificar vários pontos que precisavam de revisão. A orientação foi manter algum contato com o inglês e fazer o que fosse possível, em pequenas partes.</p>
+<p><strong>1. Descubra qual pronome substitui o sujeito.</strong> <em>My aunt</em> (minha tia) corresponde a <strong>she</strong>; <em>my grandfather</em> (meu avô), a <strong>he</strong>; <em>my leg</em> (minha perna), a <strong>it</strong>. Já <em>my in-laws</em> (meus sogros) e <em>my legs</em> (minhas pernas) correspondem a <strong>they</strong>. O possessivo <em>my</em> não transforma o sujeito em <em>I</em>: em “meu avô trabalha”, quem trabalha é o avô.</p>
+<p><strong>2. Na afirmativa, o verbo muda com he/she/it.</strong> Praticamos <em>live → lives</em>, <em>work → works</em>, <em>watch → watches</em> e <em>wash → washes</em>. Com consoante + <em>y</em>, trocamos <em>y</em> por <em>ies</em>: <em>study → studies</em>. Com vogal + <em>y</em>, mantemos o <em>y</em> e acrescentamos <em>s</em>: <em>play → plays</em>. Também vimos <em>have → has</em>, <em>go → goes</em> e <em>do → does</em>. Com <em>I/you/we/they</em>, usamos a forma base.</p>
+<p><strong>3. Na pergunta e na negativa, does assume a marca da terceira pessoa.</strong> Afirmativa: <em>She lives in Miami.</em> Pergunta: <em>Does she live in Miami?</em> Negativa: <em>She doesn't live in Miami.</em> Depois de <em>does/doesn't</em>, o verbo principal fica na forma base: <em>live</em>, e não <em>lives</em>; <em>have</em>, e não <em>has</em>. Com <em>they</em>, escolhemos <em>do/don't</em>. Nas respostas curtas, repetimos o auxiliar: <em>No, she doesn't.</em> Uma nova afirmativa volta a ter sua própria conjugação: <em>She lives in Atlanta.</em></p>
+<p><strong>4. Do pode ser verbo ou auxiliar.</strong> Em <em>My father does his homework at night</em>, <em>does</em> significa “faz”: é o verbo principal. Em <em>Does your sister-in-law live in Miami?</em>, ele ajuda a formar a pergunta. Já o verbo <strong>to be</strong> forma essas perguntas pela inversão: <em>Are they Irish?</em> Para negar, usamos <em>isn't/aren't</em>, sem <em>do/does</em>. Essa diferença vale para as estruturas praticadas hoje.</p>
+<p><strong>5. Revisamos quantidade, negação e posse.</strong> <em>How many</em> acompanha substantivos contáveis, como <em>nieces</em> e <em>nephews</em>; <em>how much</em>, incontáveis, como <em>water</em>. Contamos <em>bottles of water</em>, não a água em si. Na negação, comparamos <em>My aunt doesn't have children</em> e <em>My aunt has no children</em>: <em>no</em> vem antes do substantivo e não exige outro marcador de negação. Também apareceu <em>My aunt had no children</em>, no passado, como comparação, sem tirar o foco do presente.</p>
+<p style="margin-bottom:0;"><strong>6. Pronome pessoal e possessivo têm funções diferentes.</strong> <em>They</em> é “eles/elas”: <em>Are they Irish?</em> <em>Their</em> indica posse: <em>their house</em>. Da mesma forma, <em>she works</em> é “ela trabalha”, enquanto <em>her colleague works</em> é “a colega dela trabalha”. Retomamos o apóstrofo de posse em <em>Rebeca's car</em> e <em>my mom's homework</em>: primeiro vem quem possui, depois a coisa possuída. No final, você contou uma tentativa de conversar sobre chuva no trabalho; surgiu a expressão <em>made of sugar</em>, “feito(a) de açúcar”.</p>
+</div></section>
+<section><h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2><div class="outline-card"><p style="font-size:0.88rem;color:var(--muted);margin-top:0;">Frases trabalhadas na aula, com a grafia em inglês organizada para revisão.</p><ul>
+<li><strong>I am good.</strong> → Estou bem.</li>
+<li><strong>Do you have children?</strong> → Você tem filhos?</li>
+<li><strong>My grandfather works from Monday to Friday.</strong> → Meu avô trabalha de segunda a sexta.</li>
+<li><strong>My sister washes her car on Sundays.</strong> → Minha irmã lava o carro dela aos domingos.</li>
+<li><strong>I go to the gym.</strong> → Eu vou à academia.</li>
+<li><strong>My father does his homework at night.</strong> → Meu pai faz a lição de casa dele à noite.</li>
+<li><strong>My aunt doesn't have children.</strong> → Minha tia não tem filhos.</li>
+<li><strong>My aunt has no children.</strong> → Minha tia não tem filhos.</li>
+<li><strong>Does your sister-in-law live in Miami?</strong> → Sua cunhada mora em Miami?</li>
+<li><strong>No, she doesn't. She lives in Atlanta.</strong> → Não. Ela mora em Atlanta.</li>
+<li><strong>My leg hurts.</strong> → Minha perna dói.</li>
+<li><strong>Are they Irish?</strong> → Eles são irlandeses?</li>
+</ul></div></section>
+<section><h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2><div class="vocab-grid">
+<div class="vocab"><div class="vocab-head"><h3>does</h3><button type="button" class="vocab-say" data-czk-say="does" aria-label="Ouvir a pronúncia de does" aria-pressed="false" title="Ouvir does">&#128266;</button></div><p><em>(pt) faz; auxiliar com he/she/it</em><br><small>Como verbo, significa “faz”; como auxiliar, forma perguntas e negativas no presente. <em>Does she live in Miami?</em> — Ela mora em Miami?</small></p></div>
+<div class="vocab green"><div class="vocab-head"><h3>niece</h3><button type="button" class="vocab-say" data-czk-say="niece" aria-label="Ouvir a pronúncia de niece" aria-pressed="false" title="Ouvir niece">&#128266;</button></div><p><em>(pt) sobrinha</em><br><small>A filha do seu irmão ou da sua irmã. Plural: <em>nieces</em>. <em>My niece plays with her cousin.</em> — Minha sobrinha brinca com o primo ou a prima dela.</small></p></div>
+<div class="vocab yellow"><div class="vocab-head"><h3>every other day</h3><button type="button" class="vocab-say" data-czk-say="every other day" aria-label="Ouvir a pronúncia de every other day" aria-pressed="false" title="Ouvir every other day">&#128266;</button></div><p><em>(pt) dia sim, dia não</em><br><small>Indica dias alternados. <em>My brother goes to the gym every other day.</em> — Meu irmão vai à academia dia sim, dia não.</small></p></div>
+</div></section>
+<section><h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2><div class="outline-card">
+<h3 style="margin-top:0;">Família e pessoas</h3><ul><li><strong>aunt / uncle</strong> — tia / tio</li><li><strong>grandmother / grandfather</strong> — avó / avô</li><li><strong>grandchildren</strong> — netos</li><li><strong>niece / nieces</strong> — sobrinha / sobrinhas</li><li><strong>nephew / nephews</strong> — sobrinho / sobrinhos</li><li><strong>cousin / cousins</strong> — primo(a) / primos(as)</li><li><strong>children</strong> — filhos; crianças (plural de <em>child</em>)</li><li><strong>in-laws</strong> — parentes por casamento; “sogros” no exercício da aula</li><li><strong>sister-in-law</strong> — cunhada</li><li><strong>father / dad; mother / mom</strong> — pai / papai; mãe / mamãe</li><li><strong>fiancé / fiancée</strong> — noivo / noiva</li><li><strong>colleague</strong> — colega de trabalho</li></ul>
+<h3>Rotina e verbos</h3><ul><li><strong>live / lives</strong> — morar / mora</li><li><strong>work / works</strong> — trabalhar / trabalha</li><li><strong>watch / watches</strong> — assistir / assiste</li><li><strong>wash / washes</strong> — lavar / lava</li><li><strong>study / studies</strong> — estudar / estuda</li><li><strong>play / plays</strong> — brincar, jogar ou tocar / brinca, joga ou toca</li><li><strong>have / has / had</strong> — ter / tem (he/she/it) / tinha ou teve (passado)</li><li><strong>go / goes</strong> — ir / vai</li><li><strong>do / does</strong> — fazer / faz; também podem funcionar como auxiliares</li><li><strong>like</strong> — gostar de</li><li><strong>hurt / hurts</strong> — doer / dói</li><li><strong>gym</strong> — academia</li><li><strong>homework</strong> — lição de casa</li></ul>
+<h3>Tempo, quantidade e objetos</h3><ul><li><strong>from Monday to Friday</strong> — de segunda a sexta</li><li><strong>on Sundays</strong> — aos domingos</li><li><strong>at night</strong> — à noite</li><li><strong>every other day</strong> — dia sim, dia não</li><li><strong>how often</strong> — com que frequência</li><li><strong>how many</strong> — quantos(as), com substantivos contáveis</li><li><strong>how much</strong> — quanto(a), com substantivos incontáveis</li><li><strong>water / bottle of water</strong> — água / garrafa de água</li><li><strong>leg / legs</strong> — perna / pernas</li><li><strong>nail / nails</strong> — unha / unhas</li><li><strong>car / house / wardrobe</strong> — carro / casa / guarda-roupa</li><li><strong>Irish</strong> — irlandês(a)</li><li><strong>made of sugar</strong> — feito(a) de açúcar</li></ul>
+<h3>Pronomes e posse</h3><ul><li><strong>he / she / it / they</strong> — ele / ela / ele ou ela para uma coisa ou referente não humano / eles ou elas</li><li><strong>my / your / his / her / our / their</strong> — meu / seu / dele / dela / nosso / deles ou delas</li><li><strong>Rebeca's car</strong> — o carro da Rebeca</li><li><strong>my mom's homework</strong> — a lição de casa da minha mãe</li></ul>
+</div></section>
+<section><h2 style="margin-bottom:8px;">🚨 Correções importantes</h2><div class="outline-card">
+<p style="margin-top:0;color:var(--muted);font-size:0.88rem;">Retomada dos erros e das dúvidas discutidos na aula. As formas abaixo estão organizadas para estudo.</p>
+<p><strong>1. Pergunta com have precisa do auxiliar nesta estrutura</strong><br><span style="color:#c53030;">❌ “You have children?” como pergunta do exercício.</span><br><span style="color:#276749;">✅ <strong>“Do you have children?”</strong></span><br>Use <em>do + you + have</em>. Uma afirmação com entonação de pergunta pode aparecer em conversas, mas a estrutura treinada aqui é com <em>do</em>.</p>
+<p><strong>2. Ter não é o verbo to be</strong><br><span style="color:#c53030;">❌ “Is he have grandchildren?”</span><br><span style="color:#276749;">✅ <strong>“Does he have grandchildren?”</strong></span><br><em>Have</em> significa “ter”; <em>is</em> pertence a “ser/estar”. Para perguntar “ele tem?”, use <em>does he have</em>. Para “ele é?”, use <em>is he</em>.</p>
+<p><strong>3. How many para pessoas contáveis</strong><br><span style="color:#c53030;">❌ “How much nieces and nephews...?”</span><br><span style="color:#276749;">✅ <strong>“How many nieces and nephews do you have?”</strong></span><br>É possível contar uma sobrinha, duas sobrinhas. Com água, usamos <em>how much water</em>; com garrafas, <em>how many bottles of water</em>.</p>
+<p><strong>4. Meu avô é he, não you</strong><br><span style="color:#c53030;">❌ Tratar “my grandfather” como segunda pessoa ou deixar o verbo sem a marca do presente.</span><br><span style="color:#276749;">✅ <strong>“My grandfather works from Monday to Friday.”</strong></span><br><em>You</em> é a pessoa com quem você fala. Seu avô é a pessoa de quem você fala: <em>he</em>. No presente afirmativo, <em>work → works</em>.</p>
+<p><strong>5. O -s não aparece duas vezes</strong><br><span style="color:#c53030;">❌ Escolher “Does your sister-in-law lives in Miami?”</span><br><span style="color:#276749;">✅ <strong>“Does your sister-in-law live in Miami?”</strong></span><br>Você percebeu esta diferença durante o jogo: depois de <em>does</em>, use <em>live</em>. A mesma regra vale para <em>doesn't like</em> e <em>doesn't have</em>.</p>
+<p><strong>6. Not sozinho não forma esta negativa</strong><br><span style="color:#c53030;">❌ “My aunt not has children.”</span><br><span style="color:#276749;">✅ <strong>“My aunt doesn't have children.”</strong></span><br>Outra forma correta é <strong>“My aunt has no children.”</strong> Aqui, <em>no</em> fica antes de <em>children</em>, e o verbo mantém <em>has</em>. No passado: <em>My aunt had no children</em> ou <em>My aunt didn't have children</em>.</p>
+<p><strong>7. Resposta curta e nova afirmativa são duas estruturas</strong><br><span style="color:#c53030;">❌ “No, she doesn't. She live in Atlanta.”</span><br><span style="color:#276749;">✅ <strong>“No, she doesn't. She lives in Atlanta.”</strong></span><br><em>Doesn't</em> responde à pergunta anterior. Depois do ponto, começa uma nova afirmativa: <em>she lives</em>. Compare com uma negativa completa: <em>She doesn't live in Miami.</em></p>
+<p><strong>8. Uma perna é it; duas pernas são they</strong><br><span style="color:#c53030;">❌ “My leg hurt.” para “minha perna dói” no presente.</span><br><span style="color:#276749;">✅ <strong>“My leg hurts.”</strong></span><br>No plural: <strong>“My legs hurt.”</strong> O sujeito muda de <em>it</em> para <em>they</em>; por isso o verbo perde o <em>-s</em>. <em>Hurt</em> também pode ser passado, mas aqui estamos praticando o presente.</p>
+<p style="margin-bottom:0;"><strong>9. They é sujeito; their indica posse</strong><br><span style="color:#c53030;">❌ Usar “their” como sujeito em “Are their Irish?”</span><br><span style="color:#276749;">✅ <strong>“Are they Irish?”</strong></span><br>Use <em>their</em> com algo possuído: <em>their house</em>. Em <em>her colleague works in a bank</em>, <em>her</em> acompanha o substantivo <em>colleague</em>, e <em>works</em> é o verbo. O possessivo identifica quem possui; não precisa ser a mesma pessoa que executa a ação.</p>
+</div></section>
+<section aria-label="Como se diz na Irlanda"><div class="ie-badge"><span class="ie-flag" aria-hidden="true"><span style="background:#169b62;"></span><span style="background:#ffffff;"></span><span style="background:#ff883e;"></span></span><span class="ie-shamrock">☘️</span><span class="ie-title">Como se diz na Irlanda</span></div><div class="outline-card"><p style="margin:0 0 12px;color:var(--muted);font-size:0.9rem;">Duas formas que você pode ouvir nas conversas do dia a dia, a partir de frases desta aula.</p>
+<div style="border-radius:10px;border:2px solid #c9f3dc;background:#f5fff6;padding:14px;margin-bottom:12px;"><span class="expr-tag">not too bad</span><p style="margin:0 0 4px;color:var(--muted);font-size:0.85rem;">Na aula saiu assim:</p><p style="margin:0 0 10px;">“I am good.” — Estou bem.</p><p style="margin:0 0 4px;color:var(--muted);font-size:0.85rem;">Na Irlanda soa assim:</p><p style="margin:0 0 10px;font-weight:700;color:#14532D;">“I'm not too bad.” — Estou bem / estou levando.</p><p>💡 Resposta comum a cumprimentos na Irlanda, também usada em outras variedades do inglês. O tom é discreto: literalmente “não muito mal”, mas em uma saudação pode significar apenas “estou bem”. Cabe entre amigos e colegas. Não conclua automaticamente que a pessoa está mal: o contexto e o tom fazem diferença. <a href="https://www.rte.ie/brainstorm/2023/0224/1338677-ireland-language-talk-conversation-indirect-politeness/" target="_blank" rel="noopener noreferrer">Uso em contexto: RTÉ</a>.</p><p style="margin:0 0 3px;color:var(--muted);font-size:0.85rem;">Outro exemplo com “not too bad”:</p><p style="margin:0;">“Not too bad, thanks. How are you?” <span style="color:var(--muted);">— Estou bem, obrigada. Como você está?</span></p></div>
+<div style="border-radius:10px;border:2px solid #fde68a;background:#fffdf0;padding:14px;"><span class="expr-tag" style="background:#92400e;">ye</span><p style="margin:0 0 4px;color:var(--muted);font-size:0.85rem;">Na aula saiu assim:</p><p style="margin:0 0 10px;">“Do you have children?” — Você tem filhos?</p><p style="margin:0 0 4px;color:var(--muted);font-size:0.85rem;">Na Irlanda, ao perguntar a um casal, pode soar assim:</p><p style="margin:0 0 10px;font-weight:700;color:#14532D;">“Do ye have children?” — Vocês têm filhos?</p><p>💡 <em>Ye</em> é uma forma de “vocês” frequente na fala irlandesa, com variação regional. Aqui, adaptamos a pergunta da aula para duas pessoas: o <em>you</em> do inglês padrão pode ser singular ou plural. Use <em>do ye</em>, mantendo <em>have</em> na forma base. É útil reconhecer entre amigos e colegas; na escrita formal, prefira <em>you</em>. <a href="https://www.rte.ie/brainstorm/2022/1022/1330774-irish-english-language-characteristics-words-linguistics-accents/" target="_blank" rel="noopener noreferrer">Uso em contexto: RTÉ</a>.</p><p style="margin:0 0 3px;color:var(--muted);font-size:0.85rem;">Outro exemplo com “ye”:</p><p style="margin:0;">“Are ye ready?” <span style="color:var(--muted);">— Vocês estão prontos?</span></p></div>
+</div></section>
+<section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/jiewAtNzSJc" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section>
+<section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem estimada</th><th>Duração aproximada</th></tr></thead><tbody><tr class="row-teacher"><td><span class="talk-label">César (Professor)</span></td><td><span class="talk-percent">62%</span></td><td class="talk-time">26 minutos</td></tr><tr class="row-student"><td><span class="talk-label">Rebeca</span></td><td><span class="talk-percent">38%</span></td><td class="talk-time">16 minutos</td></tr></tbody></table><p style="font-size:0.82rem;color:var(--muted);margin-bottom:0;">Estimativa pelos intervalos de fala marcados na transcrição: cerca de 42 minutos de fala em uma gravação de 50 minutos. Pausas não entram nas porcentagens. Você participou explicando suas escolhas e formulando dúvidas.</p></section>
+<section><h2 style="margin-bottom:8px;">📝 Homework</h2><div class="homework"><p style="margin-top:0;"><strong>Combinado na aula:</strong> terminar as atividades pendentes no app, fazendo o que conseguir em pequenos blocos. Se o máximo do dia for duas questões, comece por essas duas.</p><ul><li>Antes de responder, substitua mentalmente o sujeito: <em>my aunt → she</em>; <em>my grandfather → he</em>; <em>my in-laws → they</em>.</li><li>Para reforçar: escreva uma afirmativa, uma negativa e uma pergunta sobre o mesmo familiar. Modelo: <em>My aunt lives in Miami. My aunt doesn't live in Miami. Does my aunt live in Miami?</em></li><li>Leia em voz alta <em>works, watches, washes, studies, plays, has, goes</em> e <em>does</em>. Depois, pratique as perguntas com os verbos na forma base.</li><li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana e anote as dúvidas para a próxima aula.</li></ul><p style="margin-bottom:0;color:var(--muted);font-size:0.9rem;">César também convidou você a participar do desafio que encerrava em 7 de outubro. Esse convite foi feito durante a aula; confira no app o desafio que estiver disponível agora.</p></div></section>
+</main><footer><p style="margin:18px 0 0;color:var(--muted);font-size:0.9rem;">© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer>
+</article></div>
+<script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>
