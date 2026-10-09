@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Lorena Nemeth — 10/08/2026 — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+*{box-sizing:border-box;}body{color:#374151;line-height:1.6;}h2{font-size:1.12rem;color:#0f1724;margin:0 0 8px;}h3{font-size:1rem;color:#14532D;}p{margin:0 0 12px;}.outline-card>p:last-child{margin-bottom:0;}.heading-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}header>div:first-child{min-width:0;flex:1;}.actions .btn{font-size:.84rem;white-space:nowrap;}.vocab-grid{align-items:stretch;}.vocab{min-width:190px;}.small-note{font-size:.86rem;color:var(--muted);}.phrase-list{padding-left:20px;}.phrase-list li{margin-bottom:12px;}.vocab-full ul{padding-left:20px;}.vocab-full h3{margin-bottom:6px;}.lesson-table{width:100%;border-collapse:collapse;margin:14px 0;}.lesson-table th,.lesson-table td{padding:9px;text-align:left;border:1px solid var(--border);}.lesson-table th{background:#E7F6EC;color:#14532D;}.table-scroll{overflow-x:auto;}.correction{padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--border);}.correction h3{margin-top:0;}.tip{padding:12px;border-radius:10px;background:#F7FDF9;border:1px solid var(--border);}footer a{color:var(--accent-dark);}@media(max-width:600px){.wrap{padding:18px 10px;}header{flex-direction:column;}.actions{width:100%;}.actions .btn{justify-content:center;white-space:normal;width:100%;}.vocab{min-width:0;}.talk-table th,.talk-table td{padding:7px 6px;font-size:.82rem;}}@media print{html,body{height:auto;background:#fff;}.wrap{padding:0;display:block;}.card{max-width:none;border:0;box-shadow:none;padding:0;}.actions,.vocab-say{display:none;}h2,h3{break-after:avoid;}.vocab,.correction,.talk-table,.homework{break-inside:avoid;}a{color:inherit;}.media-btn{box-shadow:none!important;}}</style></head><body><div class="wrap"><article class="card" role="main">
+<header>
+  <div>
+    <div class="heading-row"><span class="badge">PÓS-AULA</span><h1>Viagens no passado: was, were e perguntas</h1></div>
+    <div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluna:</strong> Lorena Nemeth &nbsp;•&nbsp; <strong>Data:</strong> 10/08/2026</div>
+  </div>
+  <div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div>
+</header>
+<main>
+<section class="panel"><p style="margin:0;color:#14532D;"><em>Lorena, nesta aula você usou <strong>was e were</strong> para falar sobre viagens e situações passadas. Revisamos adjetivos, praticamos compreensão de perguntas num jogo de estimativas e treinamos perguntas, negativas e respostas curtas com o verbo to be.</em></p></section>
+<section>
+<h2>📘 Resumo da Aula</h2>
+<div class="outline-card">
+<p>Começamos conversando sobre o seu dia, o almoço e o dia do cabelo maluco na escola. Na revisão, você recuperou <strong>bumpy</strong> e o sentido de <strong>staycation</strong>: passar as férias em casa ou perto de casa, sem fazer uma viagem para longe. César destacou o seu resultado nas atividades: <strong>apenas dois erros em sessenta questões</strong>. Também reforçou que ler o pós-aula antes de fazer os exercícios ajuda a lembrar as explicações.</p>
+<p>Retomamos o <strong>Simple Present</strong>. Com <strong>they</strong>, o verbo fica na forma-base; com <strong>he, she e it</strong>, recebe a terminação apropriada. Você lembrou as regras: acrescentar <strong>-es</strong> em casos como <strong>watch → watches</strong>, trocar <strong>consoante + y</strong> por <strong>-ies</strong> e apenas acrescentar <strong>-s</strong> quando há <strong>vogal + y</strong>. Esses dois últimos padrões são exemplificados por <strong>study → studies</strong> e <strong>play → plays</strong>.</p>
+<p>No <strong>jogo de estimativas</strong>, você leu perguntas em inglês, interpretou o que cada uma pedia e escolheu um palpite. Os temas foram nomes nos créditos de um filme, países com população menor que a de uma cidade e uma estimativa de quantas latas poderiam ser preenchidas com determinado volume. O foco do inglês foi reconhecer <strong>how many</strong>, entender qual objeto estava sendo contado e distinguir palavras como <strong>guess, end credits, countries, soda cans e fill</strong>. Primeiro entender a pergunta; depois escolher um número!</p>
+<p>Voltamos à <strong>página 76</strong> para descrever viagens com <strong>scary, bumpy, short, long, scenic, comfortable e boring</strong>. Também revisamos expressões que mudam a intensidade da descrição, como <strong>so, very, really, quite e kind of</strong>. Nos quatro áudios curtos, você identificou o tipo de viagem — <strong>flight, drive, bus trip ou train trip</strong> — e se a pessoa gostou dela. A palavra <strong>plane</strong> ajudou a reconhecer a conversa sobre um voo.</p>
+<p>O ponto principal foi o <strong>verbo to be no passado</strong>. Ele expressa o passado de <strong>ser ou estar</strong>, conforme o contexto. <strong>I was</strong> pode significar “eu era”, “eu fui” no sentido de ser, ou “eu estava”; não significa “eu fiz”. Para o “fui” de deslocamento, usamos o passado de <strong>go</strong>: <strong>I went to school</strong> = “Eu fui para a escola”. Compare com <strong>I was at school</strong> = “Eu estava na escola”.</p>
+<div class="table-scroll"><table class="lesson-table"><thead><tr><th>Sujeito</th><th>Afirmativa</th><th>Negativa</th></tr></thead><tbody><tr><td>I / he / she / it</td><td><strong>was</strong></td><td><strong>was not → wasn't</strong></td></tr><tr><td>you / we / they</td><td><strong>were</strong></td><td><strong>were not → weren't</strong></td></tr></tbody></table></div>
+<p>Para perguntar, colocamos <strong>was ou were antes do sujeito</strong>: <strong>Your flight was late → Was your flight late?</strong> A resposta curta acompanha o sujeito e o verbo: <strong>Yes, it was / No, it wasn't</strong>. Retomamos também a ideia de “havia/tinha”: <strong>there was</strong> para singular e <strong>there were</strong> para plural, com respostas como <strong>Yes, there were</strong>.</p>
+<p>Nas perguntas com <strong>who</strong>, precisamos descobrir o sujeito. Em <strong>Who was with you on the bus?</strong>, perguntamos quem estava com você; <strong>you</strong> vem depois de <strong>with</strong> e não determina o verbo. Já em <strong>Who were your friends with?</strong>, o sujeito é <strong>your friends (= they)</strong>, por isso usamos <strong>were</strong>. Não basta escolher o verbo pela palavra mais próxima!</p>
+<p>Na pronúncia, praticamos <strong>was, were, wasn't e weren't</strong>, diferenciando <strong>were</strong> de <strong>where</strong>. Também treinamos finais de palavras como <strong>food, cat e hat</strong>, sem acrescentar uma vogal depois da consoante. Na <strong>página 77</strong>, você completou e leu os quatro diálogos. A correção destacou a concordância de <strong>tour</strong>, que é singular, e a importância do contexto para escolher uma negativa: se as férias não foram longas o suficiente, usamos <strong>wasn't long enough</strong>.</p>
+</div>
+</section>
+<section>
+<h2>💬 Frases usadas em aula</h2>
+<div class="outline-card"><p class="small-note">Frases retomadas na conversa e nos exercícios, com a escrita normalizada para revisão.</p><ul class="phrase-list">
+<li><strong lang="en">Make your best guess.</strong><br>Dê o seu melhor palpite.</li>
+<li><strong lang="en">I will guess. I don't know.</strong><br>Vou dar um palpite. Eu não sei.</li>
+<li><strong lang="en">He checks email every morning.</strong><br>Ele verifica o e-mail todas as manhãs.</li>
+<li><strong lang="en">I went to school.</strong><br>Eu fui para a escola.</li>
+<li><strong lang="en">Your flight was late.</strong><br>Seu voo estava atrasado.</li>
+<li><strong lang="en">Was your flight late?</strong><br>Seu voo estava atrasado?</li>
+<li><strong lang="en">Where was your brother on Friday?</strong><br>Onde seu irmão estava na sexta-feira?</li>
+<li><strong lang="en">Who was with you on the bus?</strong><br>Quem estava com você no ônibus?</li>
+<li><strong lang="en">Who were your friends with?</strong><br>Com quem seus amigos estavam?</li>
+<li><strong lang="en">How was the food on the cruise?</strong><br>Como estava a comida no cruzeiro?</li>
+<li><strong lang="en">Where were you last week? — I was in Bogotá.</strong><br>Onde você estava na semana passada? — Eu estava em Bogotá.</li>
+<li><strong lang="en">We were there for five days.</strong><br>Ficamos lá por cinco dias.</li>
+<li><strong lang="en">How long were you away?</strong><br>Por quanto tempo você ficou fora?</li>
+</ul></div>
+</section>
+<section id="key-vocabulary">
+<h2>⭐ Vocabulário-chave</h2>
+<div class="vocab-grid">
+<div class="vocab"><div class="vocab-head"><h3>guess</h3><button type="button" class="vocab-say" data-czk-say="guess" aria-label="Ouvir a pronúncia de guess" aria-pressed="false" title="Ouvir guess">&#128266;</button></div><p><em>Palpite; dar um palpite.</em><br>Usamos quando estimamos uma resposta sem ter certeza.<br><strong lang="en">Make your best guess.</strong><br>Dê o seu melhor palpite.</p></div>
+<div class="vocab green"><div class="vocab-head"><h3>scenic</h3><button type="button" class="vocab-say" data-czk-say="scenic" aria-label="Ouvir a pronúncia de scenic" aria-pressed="false" title="Ouvir scenic">&#128266;</button></div><p><em>Com belas paisagens.</em><br>Descreve um lugar ou trajeto que oferece uma vista bonita.<br><strong lang="en">The train trip was scenic.</strong><br>A viagem de trem teve belas paisagens.</p></div>
+<div class="vocab yellow"><div class="vocab-head"><h3>enough</h3><button type="button" class="vocab-say" data-czk-say="enough" aria-label="Ouvir a pronúncia de enough" aria-pressed="false" title="Ouvir enough">&#128266;</button></div><p><em>Suficiente; o suficiente.</em><br>Depois de um adjetivo, indica que algo atinge o necessário: <strong>long enough</strong>.<br><strong lang="en">The vacation wasn't long enough.</strong><br>As férias não foram longas o suficiente.</p></div>
+</div>
+</section>
+<section>
+<h2>📚 Vocabulário completo da aula</h2>
+<div class="outline-card vocab-full">
+<h3>Viagens e transporte</h3><ul><li><strong>trip</strong> — viagem.</li><li><strong>flight</strong> — voo.</li><li><strong>plane / airplane</strong> — avião.</li><li><strong>airport</strong> — aeroporto.</li><li><strong>drive</strong> — trajeto ou viagem de carro; também “dirigir”, conforme o contexto.</li><li><strong>bus trip / train trip</strong> — viagem de ônibus / de trem.</li><li><strong>cruise</strong> — cruzeiro.</li><li><strong>tour</strong> — passeio ou excursão.</li><li><strong>vacation / on vacation</strong> — férias / de férias.</li><li><strong>staycation</strong> — férias em casa ou perto de casa.</li><li><strong>away</strong> — fora; ausente.</li><li><strong>late</strong> — atrasado; tarde, conforme o contexto.</li></ul>
+<h3>Como foi a viagem?</h3><ul><li><strong>scary</strong> — assustador(a).</li><li><strong>bumpy</strong> — com solavancos; turbulento(a), no contexto de um voo.</li><li><strong>short / long</strong> — curto(a) / longo(a).</li><li><strong>scenic</strong> — com belas paisagens.</li><li><strong>comfortable</strong> — confortável.</li><li><strong>boring</strong> — entediante.</li><li><strong>great</strong> — ótimo(a).</li><li><strong>nice</strong> — agradável; simpático(a), quando descreve pessoas.</li><li><strong>so / very / really</strong> — tão ou muito / muito / realmente ou muito.</li><li><strong>quite</strong> — bastante; a força depende do contexto.</li><li><strong>kind of</strong> — meio; um pouco.</li><li><strong>enough / long enough</strong> — suficiente / longo(a) o suficiente.</li></ul>
+<h3>O jogo de estimativas</h3><ul><li><strong>guess / best guess</strong> — palpite / melhor palpite.</li><li><strong>how many</strong> — quantos / quantas, com coisas contáveis no plural.</li><li><strong>different names</strong> — nomes diferentes.</li><li><strong>end credits</strong> — créditos finais de um filme.</li><li><strong>countries / population</strong> — países / população.</li><li><strong>United Nations</strong> — Nações Unidas (ONU).</li><li><strong>soda cans</strong> — latas de refrigerante.</li><li><strong>fill</strong> — encher; preencher.</li><li><strong>blood / adult human body</strong> — sangue / corpo humano adulto.</li><li><strong>liters / milliliters</strong> — litros / mililitros.</li><li><strong>oz</strong> — abreviação de onças; no volume das latas, refere-se a onças fluidas.</li><li><strong>close</strong> — perto; próximo da resposta, no jogo.</li></ul>
+<h3>Perguntas e tempo passado</h3><ul><li><strong>was / were</strong> — formas de ser/estar no passado.</li><li><strong>wasn't / weren't</strong> — formas negativas de was/were.</li><li><strong>went</strong> — passado de go; foi/fui no sentido de ir.</li><li><strong>there was / there were</strong> — havia; tinha.</li><li><strong>where / who / how</strong> — onde / quem / como.</li><li><strong>how long</strong> — quanto tempo; por quanto tempo.</li><li><strong>last week / on Friday / for five days</strong> — na semana passada / na sexta-feira / por cinco dias.</li><li><strong>with</strong> — com.</li><li><strong>in-laws</strong> — parentes por casamento; no diálogo, os sogros.</li><li><strong>girlfriend / friends / brother</strong> — namorada / amigos / irmão.</li><li><strong>That's too bad.</strong> — Que pena.</li></ul>
+<h3>Conversa inicial e revisão</h3><ul><li><strong>beef / rice / salad</strong> — carne bovina / arroz / salada.</li><li><strong>food</strong> — comida.</li><li><strong>crazy hair</strong> — cabelo maluco.</li><li><strong>nothing else</strong> — nada mais.</li><li><strong>check email / every morning</strong> — verificar e-mail / todas as manhãs.</li><li><strong>cell phones / every day</strong> — celulares / todos os dias.</li><li><strong>cat / hat</strong> — gato / chapéu; palavras usadas no treino de pronúncia.</li></ul>
+</div>
+</section>
+<section>
+<h2>🚨 Correções importantes</h2>
+<div class="outline-card">
+<p class="small-note">Pontos que surgiram nas suas respostas, na revisão das atividades e no treino de pronúncia.</p>
+<div class="correction"><h3>1. Presente simples: they × he</h3><p>❌ <span lang="en">They checks their cell phones every day.</span><br>✅ <strong lang="en">They check their cell phones every day.</strong></p><p>A terminação <strong>-s</strong> não acompanha <strong>they</strong>. Na revisão, a frase sobre e-mail pediu <strong lang="en">He checks email every morning</strong>: com <strong>he</strong>, usamos <strong>checks</strong>. Observe o sujeito antes de escolher a forma do verbo.</p></div>
+<div class="correction"><h3>2. Plane é avião</h3><p>❌ <strong>plane</strong> = aeroporto.<br>✅ <strong>plane / airplane</strong> = avião; <strong>airport</strong> = aeroporto.</p><p>No áudio, reconhecer <strong>plane</strong> ajudava a identificar o tipo de viagem: <strong>a flight</strong>, um voo.</p></div>
+<div class="correction"><h3>3. O significado de I was</h3><p>❌ <strong>I was</strong> = “eu fiz”.<br>✅ <strong>I was</strong> = “eu estava / eu era / eu fui”, conforme o contexto de ser ou estar.</p><p><strong>Was</strong> é o passado de <strong>am/is</strong>. Você recuperou “eu estava” durante a explicação. O “fui” de ir a algum lugar é <strong>went</strong>: <strong lang="en">I went to school.</strong></p></div>
+<div class="correction"><h3>4. Tour pede was</h3><p>❌ <span lang="en">How long were your tour...?</span><br>✅ <strong lang="en">How was your tour?</strong></p><p>No terceiro diálogo, a pergunta era sobre como foi o passeio: <strong>How was...?</strong> Para perguntar a duração, usaríamos <strong>How long was...?</strong> Também foi preciso rever a escolha do verbo. <strong>Your tour</strong> é um passeio, no singular: equivale a <strong>it</strong>, então usamos <strong>was</strong>. Em <strong lang="en">The people on the tour weren't very nice</strong>, <strong>people</strong> é plural e pede <strong>weren't</strong>.</p></div>
+<div class="correction"><h3>5. A negativa depende do contexto</h3><p>❌ <span lang="en">The vacation really was long enough.</span><br>✅ <strong lang="en">The vacation really wasn't long enough.</strong></p><p>No quarto diálogo, a pessoa lamenta a duração das férias. A ideia é que elas <strong>não foram longas o suficiente</strong>. Por isso, precisamos de <strong>wasn't</strong>. Leia também a resposta seguinte para entender a intenção da conversa.</p></div>
+<div class="correction"><h3>6. Pronúncia: were e finais de palavras</h3><p>❌ Pronunciar <strong>were</strong> como <strong>where</strong>, ou acrescentar uma vogal ao final de <strong>food, cat e hat</strong>.<br>✅ Diferenciar <strong>were</strong> de <strong>where</strong> e terminar cada palavra na sua consoante.</p><p>O treino foi feito por repetição, com atenção ao final curto das palavras. Repita devagar primeiro e depois dentro de uma frase: <strong lang="en">How was the food?</strong> Evite transformar a consoante final em uma sílaba extra.</p></div>
+<div class="tip"><strong>💡 Atenção ao sujeito:</strong> em <strong lang="en">Who was with you?</strong>, <strong>who</strong> é o sujeito; em <strong lang="en">Who were your friends with?</strong>, o sujeito é <strong>your friends</strong>. A palavra <strong>you</strong> na primeira pergunta vem depois de <strong>with</strong>.</div>
+</div>
+</section>
+<section>
+<h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2>
+<div class="media-row"><a class="media-btn" href="https://youtu.be/E3J6VXNBjN4" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div>
+</section>
+<section class="speaking" aria-label="Distribuição de fala">
+<h2>🗣️ Tempo de Fala</h2>
+<table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead><tbody><tr class="row-teacher"><td><span class="talk-label">César (Professor)</span></td><td><span class="talk-percent">74%</span></td><td class="talk-time">~29 minutos</td></tr><tr class="row-student"><td><span class="talk-label">Lorena</span></td><td><span class="talk-percent">26%</span></td><td class="talk-time">~10 minutos</td></tr></tbody></table>
+<p class="small-note" style="margin-bottom:0;">Estimativa pelos intervalos de fala identificados na transcrição, em português e inglês. As porcentagens consideram a fala registrada; pausas, áudios do livro e tempo para resolver exercícios ficam fora do cálculo. A gravação dura cerca de 57 minutos.</p>
+</section>
+<section>
+<h2>📝 Homework</h2>
+<div class="homework"><p style="margin-top:0;">📌 <strong>Combinado ao final da aula:</strong></p><ul><li><strong>Fazer o desafio da semana:</strong> César pediu que você respondesse às cinco perguntas ainda no dia da aula.</li><li><strong>Ler este pós-aula de 2 a 3 vezes</strong> durante a semana, incluindo uma leitura antes de fazer as atividades.</li><li><strong>Praticar was, were, wasn't e weren't</strong> nas atividades do app quando estiverem disponíveis. César anunciou três atividades, incluindo duas de arrastar, e combinou a prática para o sábado.</li></ul><p class="small-note" style="margin-bottom:0;">Os exercícios 1 a 4 da página 77 já foram feitos e corrigidos durante esta aula.</p></div>
+<div class="tip" style="margin-top:12px;"><strong>Revisão sugerida:</strong> ouça os três botões do vocabulário-chave e repita as palavras. Depois, leia em voz alta <strong lang="en">I was in Bogotá</strong>, <strong lang="en">Where were you last week?</strong> e <strong lang="en">The vacation wasn't long enough</strong>, prestando atenção no sujeito e na negativa.</div>
+</section>
+</main>
+<footer>© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: <a href="mailto:czkenglish@gmail.com">czkenglish@gmail.com</a></footer>
+</article></div>
+<script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>
+
