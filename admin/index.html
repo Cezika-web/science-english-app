@@ -2687,9 +2687,15 @@
 
     // Horário ocupado deixou de ser impedimento: aula em dupla ou em turma é
     // rotina, e recusar obrigava a remarcar na mão. Pergunta e segue.
-    function confirmarAulaJunta(conflito) {
+    // Diz EM QUE DIA bate: sem isso o aviso parecia valer para a semana toda e não
+    // dava para conferir se o choque era real. `novo` é o que está sendo marcado.
+    function confirmarAulaJunta(conflito, novo = null) {
       const quem = conflito.studentName || conflito.title || 'outro compromisso';
-      return confirm(`${quem} já tem ${conflito.startTime}–${conflito.endTime} nesse horário.\n\n`
+      const chave = conflito.conflitoEm || (novo ? calendarDiaDoConflito(novo, conflito) : '');
+      const quando = chave
+        ? `no dia ${chave.split('-').reverse().slice(0, 2).join('/')} (${DIAS_NOMES[new Date(`${chave}T00:00:00`).getDay()].toLowerCase()})`
+        : 'nesse horário';
+      return confirm(`${quem} já tem ${conflito.startTime}–${conflito.endTime} ${quando}.\n\n`
         + 'Eles vão ter aula juntos?\n\nOK mantém os dois na mesma hora, um embaixo do outro na agenda. '
         + 'Cancelar volta para você escolher outro horário.');
     }
@@ -3589,23 +3595,33 @@
 
     // Com repetição diária/semanal/mensal/personalizada não dá pra comparar por
     // fórmula: procura um dia em que as duas séries realmente caem juntas.
-    function calendarSeriesOverlap(first, second) {
-      if (first.type === 'available' || second.type === 'available') return false;
-      if (calendarMinutes(first.startTime) >= calendarMinutes(second.endTime) || calendarMinutes(first.endTime) <= calendarMinutes(second.startTime)) return false;
-      if (!first.date || !second.date) return false;
+    // `first` é o que está sendo marcado agora; devolve a data (AAAA-MM-DD) do
+    // primeiro choque, ou '' quando não há.
+    function calendarDiaDoConflito(first, second) {
+      if (first.type === 'available' || second.type === 'available') return '';
+      if (calendarMinutes(first.startTime) >= calendarMinutes(second.endTime) || calendarMinutes(first.endTime) <= calendarMinutes(second.startTime)) return '';
+      if (!first.date || !second.date) return '';
       const repeats = event => event.repeat && event.repeat !== 'none';
-      if (!repeats(first) && !repeats(second)) return first.date === second.date;
+      if (!repeats(first) && !repeats(second)) return first.date === second.date ? first.date : '';
       const from = new Date(`${(first.date > second.date ? first.date : second.date)}T00:00:00`);
+      // Horário novo que se repete só disputa o que ainda vai acontecer. Sem
+      // isto, o aluno com início de curso no passado era comparado com semanas
+      // que já foram: uma série antiga de sexta, já encerrada, ou uma reposição
+      // de sexta que já passou acusavam "já tem aula" num horário livre.
+      const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+      if (repeats(first) && from < hoje) from.setTime(hoje.getTime());
       const horizon = (repeats(first) && first.repeat === 'monthly') || (repeats(second) && second.repeat === 'monthly') ? 400 : 70;
       for (let index = 0; index < horizon; index += 1) {
         const date = calendarAddDays(from, index), chave = calendarDateKey(date);
         // Aula cancelada naquele dia não ocupa o horário: marcar a reposição no
         // lugar dela não pode disparar a pergunta de aula junta.
         if (calendarCancelada(first, chave) || calendarCancelada(second, chave)) continue;
-        if (calendarOccursOn(first, date) && calendarOccursOn(second, date)) return true;
+        if (calendarOccursOn(first, date) && calendarOccursOn(second, date)) return chave;
       }
-      return false;
+      return '';
     }
+
+    function calendarSeriesOverlap(first, second) { return Boolean(calendarDiaDoConflito(first, second)); }
 
     async function saveCalendarEvent() {
       const id = document.getElementById('calendar-event-id').value, type = document.getElementById('calendar-event-type').value;
@@ -3631,7 +3647,7 @@
       if (calendarMinutes(event.endTime) <= calendarMinutes(event.startTime)) return showMsg('calendar-event-msg','O horário final precisa ser depois do inicial.','err');
       if (event.repeatUntil && event.repeatUntil < event.date) return showMsg('calendar-event-msg','A repetição não pode terminar antes da primeira aula.','err');
       const conflict = calendarEvents.find(item => item.id !== id && calendarSeriesOverlap(event,item));
-      if (conflict && !confirmarAulaJunta(conflict)) return;
+      if (conflict && !confirmarAulaJunta(conflict, event)) return;
       const button = document.getElementById('calendar-event-save'); button.disabled = true;
       try {
         await calendarSaveWithAttendance(id, event);
@@ -4019,8 +4035,11 @@
       if (String(calendarPopDraft.id || '').startsWith('__') && !(calendarPopDraft.groupVirtual && type === 'lesson')) {
         return calendarPopFail('Este horário é de uma dupla/turma. Marque a reposição ou a experimental como um compromisso novo.');
       }
-      const conflict = calendarEvents.find(item => item.id !== calendarPopDraft.id && calendarSeriesOverlap(payload, item));
-      if (conflict && !confirmarAulaJunta(conflict)) return;
+      // O cartão de dupla/turma é virtual: o que se grava são as aulas de cada
+      // integrante, que não podem acusar conflito com elas mesmas.
+      const proprios = new Set([calendarPopDraft.id, ...(calendarPopDraft.memberEvents || []).map(item => item.id)]);
+      const conflict = calendarEvents.find(item => !proprios.has(item.id) && calendarSeriesOverlap(payload, item));
+      if (conflict && !confirmarAulaJunta(conflict, payload)) return;
       const button = document.getElementById('calendar-pop-save'); button.disabled = true;
       try {
         if (calendarPopDraft.groupVirtual && type === 'lesson') {
@@ -4204,8 +4223,10 @@
       const existentes = snap.docs.map(item => ({ id:item.id, ...item.data() }))
         .filter(item => item.type !== 'available' && !calendarEhAulaDoCadastro(item, uid));
       for (const evento of eventos) {
-        const bate = existentes.find(item => calendarSeriesOverlap(evento, item));
-        if (bate) return bate;
+        for (const item of existentes) {
+          const conflitoEm = calendarDiaDoConflito(evento, item);
+          if (conflitoEm) return { ...item, conflitoEm };
+        }
       }
       return null;
     }
@@ -4271,7 +4292,7 @@
         createdAt:serverTimestamp(), createdBy:auth.currentUser?.email || '', updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || '',
       };
       const conflito = calendarEvents.find(item => calendarSeriesOverlap(novo, item));
-      if (conflito && !confirmarAulaJunta(conflito)) return;
+      if (conflito && !confirmarAulaJunta(conflito, novo)) return;
       try {
         await addDoc(collection(db, 'schools', escolaAtual, 'calendarEvents'), novo);
         await loadCalendar();
