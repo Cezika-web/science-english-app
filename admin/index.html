@@ -2057,25 +2057,64 @@
       return days;
     }
 
-    function adminLessonEffectiveStart(value) {
+    // `keepToday`: a grade nova só vale a partir de amanhã. Acontece quando a troca
+    // é feita num dia de aula da grade ANTIGA que não é dia da nova (sábado → sexta,
+    // salvo no sábado): a aula de hoje ainda é do dia antigo e não pode sumir.
+    function adminLessonEffectiveStart(value, keepToday = false) {
       const today = adminDateKey(new Date());
       const requested = adminDateKey(value);
-      return requested && requested > today ? requested : today;
+      if (requested && requested > today) return requested;
+      return keepToday ? adminDateKey(adminAddDays(new Date(), 1)) : today;
     }
 
-    function adminLessonChangePatch(student, nextDays, nextStart = '') {
+    function adminLessonKeepsToday(previousDays, nextDays, nextStart = '') {
+      const requested = adminDateKey(nextStart);
+      if (requested && requested > adminDateKey(new Date())) return false;
+      const weekday = new Date().getDay();
+      return previousDays.includes(weekday) && !nextDays.includes(weekday);
+    }
+
+    // `fallbackFrom`: de quando vale a grade antiga quando o cadastro não diz (sem
+    // início do curso nem troca anterior). Sem ponto de partida ela nem entrava no
+    // histórico e as faltas do passado sumiam do app do aluno.
+    function adminLessonChangePatch(student, nextDays, nextStart = '', fallbackFrom = '') {
       const previousDays = [...adminLessonDays(student || {})].sort((a,b) => a-b);
       const normalizedNext = [...new Set((nextDays || []).map(Number))].filter(day => day >= 0 && day <= 6).sort((a,b) => a-b);
       if (previousDays.join(',') === normalizedNext.join(',')) return {};
-      const today = adminDateKey(new Date());
-      const effectiveStart = adminLessonEffectiveStart(nextStart || student?.inicioCurso);
-      const yesterday = adminDateKey(adminAddDays(new Date(), -1));
+      const keepToday = adminLessonKeepsToday(previousDays, normalizedNext, nextStart || student?.inicioCurso);
+      const effectiveStart = adminLessonEffectiveStart(nextStart || student?.inicioCurso, keepToday);
+      const lastOldDay = adminDateKey(adminAddDays(new Date(), keepToday ? 0 : -1));
       const history = Array.isArray(student?.aulaDiasHistorico) ? [...student.aulaDiasHistorico] : [];
-      const previousFrom = String(student?.aulaDiasDesde || student?.inicioCurso || '');
-      if (previousDays.length && /^\d{4}-\d{2}-\d{2}$/.test(previousFrom) && previousFrom <= yesterday) {
-        history.push({ dias:previousDays, desde:previousFrom, ate:yesterday });
+      const previousFrom = String(student?.aulaDiasDesde || student?.inicioCurso || fallbackFrom || '');
+      if (previousDays.length && /^\d{4}-\d{2}-\d{2}$/.test(previousFrom) && previousFrom <= lastOldDay) {
+        history.push({ dias:previousDays, desde:previousFrom, ate:lastOldDay });
       }
       return { aulaDiasDesde:effectiveStart, aulaDiasHistorico:history };
+    }
+
+    // Primeira data conhecida da grade antiga de um aluno sem início do curso: a
+    // pós-aula mais antiga (menos 3 dias, como o app do aluno faz) ou o começo da
+    // série dele na agenda. Vazio se o cadastro já informa de quando vale.
+    async function adminInicioDaGradeAntiga(uid, student, nextDays) {
+      if (student?.aulaDiasDesde || student?.inicioCurso) return '';
+      const ordenar = dias => [...new Set([...dias].map(Number))].filter(dia => dia >= 0 && dia <= 6).sort((a,b) => a-b).join(',');
+      if (ordenar(adminLessonDays(student || {})) === ordenar(nextDays || [])) return ''; // dia não mudou: nada a guardar
+      const datas = [];
+      try {
+        const posts = await getDocs(collection(db, 'students', uid, 'posaulas'));
+        posts.docs.forEach(item => {
+          const data = adminPostReferenceDate(item.data());
+          if (data) datas.push(adminDateKey(adminAddDays(data, -3)));
+        });
+      } catch (erro) { console.error('Pós-aulas do aluno:', erro); }
+      try {
+        const serie = await getDocs(query(collection(db, 'schools', escolaAtual, 'calendarEvents'), where('studentUid', '==', uid)));
+        serie.docs.forEach(item => {
+          const evento = item.data();
+          if (calendarEhAulaDoCadastro(evento, uid) && evento.date) datas.push(evento.date);
+        });
+      } catch (erro) { console.error('Agenda do aluno:', erro); }
+      return datas.filter(Boolean).sort()[0] || '';
     }
 
     function adminLessonScheduleSignature(student) {
@@ -6878,7 +6917,8 @@
       btn.disabled = true; btn.textContent = 'Salvando...';
       try {
         const cadastroAtual = allStudents.find(student => student.uid === uid);
-        const mudancaDeGrade = adminLessonChangePatch(cadastroAtual, aula.aulaDias, inicio);
+        const mudancaDeGrade = adminLessonChangePatch(cadastroAtual, aula.aulaDias, inicio,
+          await adminInicioDaGradeAntiga(uid, cadastroAtual, aula.aulaDias));
         const novaAgenda = { aulaDias:aula.aulaDias, aulaHora:aula.aulaHora, aulaHorarios:aula.aulaHorarios,
           aulaFins:aula.aulaFins, aulaDuracao:aula.aulaDuracao };
         const agendaMudou = adminLessonScheduleSignature(cadastroAtual) !== adminLessonScheduleSignature(novaAgenda);
@@ -6905,7 +6945,7 @@
         // acontecia no botão "Preencher com as aulas dos alunos", que saiu.
         if (agendaMudou || inicioMudou || inicioFuturo) {
           await syncStudentLessons([{ uid, name, firstName:name.split(' ')[0], ...novaAgenda,
-            inicioCurso:inicio, aulaDiasDesde:adminLessonEffectiveStart(inicio) }]);
+            inicioCurso:inicio, aulaDiasDesde:mudancaDeGrade.aulaDiasDesde || adminLessonEffectiveStart(inicio) }]);
         }
         btn.disabled = false; btn.textContent = 'Salvar alterações';
         document.getElementById('edit-modal').classList.remove('open');
@@ -9369,11 +9409,16 @@ Salvar assim mesmo?`)) return;
         // vira a mensalidade de cada um. Sem isso o grupo seria só um rótulo.
         let naAgenda = 0, noFinanceiro = 0;
         if (aula.aulaDias.length && aula.aulaHora) {
-          await Promise.all(members.map(student => {
+          // A troca de dia de cada integrante vale a partir de hoje ou de amanhã
+          // (ver adminLessonKeepsToday); a agenda precisa usar a mesma data.
+          const gradeDesde = new Map();
+          await Promise.all(members.map(async student => {
+            const mudancaDeGrade = adminLessonChangePatch(student, aula.aulaDias, '', await adminInicioDaGradeAntiga(student.uid, student, aula.aulaDias));
+            gradeDesde.set(student.uid, mudancaDeGrade.aulaDiasDesde || '');
             return updateDoc(doc(db, 'students', student.uid), {
               diasAulas:aula.texto, aulaDias:aula.aulaDias, aulaHora:aula.aulaHora,
               aulaHorarios:aula.aulaHorarios, aulaFins:aula.aulaFins, aulaDuracao:duracao,
-              ...adminLessonChangePatch(student, aula.aulaDias),
+              ...mudancaDeGrade,
             });
           }));
           const novaAgenda = { aulaDias:aula.aulaDias, aulaHora:aula.aulaHora, aulaHorarios:aula.aulaHorarios,
@@ -9385,7 +9430,7 @@ Salvar assim mesmo?`)) return;
               uid:student.uid, name:student.name, firstName:student.firstName, ...novaAgenda,
               groupId, groupName:name, memberUids:selected,
               memberNames:members.map(member => member.name || member.firstName || 'Aluno'),
-              aulaDiasDesde:adminDateKey(new Date()),
+              aulaDiasDesde:gradeDesde.get(student.uid) || adminDateKey(new Date()),
             })));
           }
         }
