@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Resumo Pós-Aula — Murilo Bueno — CZK English</title>
+<style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+*{box-sizing:border-box;}h2{font-size:1.15rem;color:#0f1724;}h3{font-size:1rem;color:#14532D;}p,li{line-height:1.65;}li+li{margin-top:7px;}.outline-card p:first-child{margin-top:0;}.outline-card p:last-child{margin-bottom:0;}.grammar-table{width:100%;border-collapse:collapse;font-size:.92rem;margin:12px 0;}.grammar-table th,.grammar-table td{border:1px solid var(--border);padding:9px;text-align:left;}.grammar-table th{background:#E7F6EC;color:#14532D;}.correction+.correction{margin-top:18px;padding-top:14px;border-top:1px solid var(--border);}.tip{background:#F7FDF9;border-left:4px solid var(--accent);padding:10px 14px;}.english{font-weight:650;color:#14532D;}.translation{color:var(--muted);}header .badge{white-space:nowrap;}.btn:focus-visible,.vocab-say:focus-visible,.media-btn:focus-visible{outline:3px solid #14532D;outline-offset:3px;}
+@media(max-width:720px){.wrap{padding:20px 12px;}header{flex-direction:column;}.actions{width:100%;}.actions .btn{justify-content:center;width:100%;}.vocab{min-width:0;}.grammar-table{font-size:.83rem;}.grammar-table th,.grammar-table td{padding:7px;}.talk-table th,.talk-table td{padding:7px;}header>div>div:first-child{flex-wrap:wrap;}}
+@media print{.wrap{display:block;padding:0;}.card{max-width:none;border:0;box-shadow:none;padding:0;}.actions,.vocab-say{display:none;}body{background:#fff;}.vocab,.correction,.homework,.talk-table{break-inside:avoid;}a{color:#14532D;}}
+</style>
+</head>
+<body>
+<div class="wrap"><article class="card" role="main">
+<header>
+<div><div style="display:flex;gap:10px;align-items:center;"><span class="badge">PÓS-AULA</span><h1>Revisão: a/an, verbo to be e respostas curtas</h1></div>
+<div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Murilo Bueno &nbsp;•&nbsp; <strong>Data:</strong> 10/09/2026</div></div>
+<div class="actions"><button type="button" class="btn" data-czk-action="print">Imprimir / Salvar PDF</button></div>
+</header>
+<main>
+<section class="panel"><p style="margin:0;font-weight:600;color:#14532D;"><em>Murilo, retomamos as estruturas básicas para falar de profissões: escolher a/an, afirmar, negar, perguntar e responder com o verbo to be. Depois da revisão, você acertou as cinco perguntas do desafio — agora o objetivo é manter esse conteúdo fresco com prática entre as aulas.</em></p></section>
+<section><h2>📘 Resumo da Aula</h2><div class="outline-card">
+<p><strong>1. Retomada e rotina de estudo.</strong> Começamos recuperando o conteúdo das aulas anteriores. Você lembrava que a escolha entre <strong>a</strong> e <strong>an</strong> depende do som, mas ainda precisou de apoio para explicar a regra e construir algumas frases. Por isso, a aula concentrou-se em consolidar o que já foi ensinado antes de avançar.</p>
+<p><strong>2. A/an: ouça o início da palavra.</strong> Os dois artigos significam <strong>um/uma</strong> e acompanham substantivos contáveis no singular. Use <strong>a</strong> antes de som de consoante e <strong>an</strong> antes de som de vogal. Em <strong>an hour</strong>, o H é mudo. Em <strong>a horse, a house</strong> e <strong>a home</strong>, o H é pronunciado com uma saída de ar. Já <strong>a uniform, a unicorn</strong> e <strong>a university</strong> começam com o som /j/, como o início de <strong>you</strong>, apesar da letra U. A decisão depende da pronúncia, não da letra escrita.</p>
+<p><strong>3. Sujeitos e verbo to be.</strong> Revisamos <strong>I, you, he, she, it, we, they</strong> e a combinação com <strong>am, is, are</strong>. Em frases sobre profissão, o verbo costuma significar <strong>ser</strong>: <em>You are a pilot</em> = Você é um piloto. O pronome <strong>you</strong> pode significar <strong>você</strong> ou <strong>vocês</strong>; o contexto e palavras como <strong>student/students</strong> ajudam a identificar singular e plural.</p>
+<table class="grammar-table"><thead><tr><th>Sujeito</th><th>Verbo</th><th>Exemplo</th></tr></thead><tbody><tr><td>I</td><td>am</td><td>I am a student.</td></tr><tr><td>He / She / It</td><td>is</td><td>She is an artist.</td></tr><tr><td>You / We / They</td><td>are</td><td>They are doctors.</td></tr></tbody></table>
+<p><strong>4. Três estruturas diferentes.</strong> Para afirmar, use <strong>sujeito + to be</strong>. Para negar, coloque <strong>not depois do verbo</strong>. Para perguntar, troque a ordem: <strong>to be + sujeito</strong>. A mesma ideia foi praticada como <strong>You are a pilot.</strong>, <strong>You are not a pilot.</strong> e <strong>Are you a pilot?</strong> Não coloque <strong>yes/no</strong> no início de toda frase: eles entram quando você está respondendo a uma pergunta de sim ou não.</p>
+<p><strong>5. Respostas curtas e profissão correta.</strong> Nas imagens e no exercício de leitura, treinamos perguntas com <strong>she, he</strong> e <strong>they</strong>. A resposta curta usa <strong>yes/no + pronome + to be</strong>. Se a informação for falsa, você pode responder primeiro e depois dizer a profissão correta: <strong>No, she isn't. She is a pilot.</strong> Quando a pergunta é sobre você, <strong>Are you...?</strong> recebe <strong>Yes, I am.</strong> ou <strong>No, I'm not.</strong> Quando é sobre Rachel, a resposta usa <strong>she</strong>.</p>
+<p><strong>6. Contrações e pronúncia.</strong> Revisamos <strong>I'm, he's, she's, we're, you're, they're</strong>, além de <strong>isn't</strong> e <strong>aren't</strong>. Na negativa, <strong>They are not</strong>, <strong>They're not</strong> e <strong>They aren't</strong> têm o mesmo sentido. Você achou mais fácil juntar o verbo com <strong>not</strong>; essa é uma boa forma de começar a ganhar fluência. Para <strong>I</strong>, use <strong>I'm not</strong>.</p>
+<p class="tip"><strong>Seu resultado:</strong> após a revisão, você acertou <strong>5 de 5 perguntas</strong> e fez <strong>500 de 500 pontos</strong> na parte do desafio realizada em aula. Também adicionamos o Science English à tela inicial do celular e ativamos as notificações para ajudar você a lembrar dos pós-aulas, atividades e desafios.</p>
+<p>O próximo passo combinado foi praticar essas estruturas e conferir as atividades na próxima aula. O alfabeto poderá entrar depois que esta base estiver mais firme.</p>
+</div></section>
+<section><h2>💬 Frases usadas em aula</h2><div class="outline-card"><ul>
+<li><span class="english">You are a pilot.</span> <span class="translation">— Você é um piloto.</span></li>
+<li><span class="english">You are not a pilot.</span> <span class="translation">— Você não é um piloto.</span></li>
+<li><span class="english">Are you a pilot?</span> <span class="translation">— Você é um piloto?</span></li>
+<li><span class="english">Yes, I am.</span> <span class="translation">— Sim, eu sou.</span></li>
+<li><span class="english">Is she a flight attendant?</span> <span class="translation">— Ela é comissária de bordo?</span></li>
+<li><span class="english">No, she is not. She is a pilot.</span> <span class="translation">— Não, ela não é. Ela é piloto.</span></li>
+<li><span class="english">Are they doctors?</span> <span class="translation">— Eles são médicos?</span></li>
+<li><span class="english">Yes, they are.</span> <span class="translation">— Sim, eles são.</span></li>
+<li><span class="english">Are they singers?</span> <span class="translation">— Eles são cantores?</span></li>
+<li><span class="english">No, they are not. They are athletes.</span> <span class="translation">— Não, eles não são. Eles são atletas.</span></li>
+<li><span class="english">Is she a musician?</span> <span class="translation">— Ela é musicista?</span></li>
+<li><span class="english">No, she isn't. She is an artist.</span> <span class="translation">— Não, ela não é. Ela é uma artista.</span></li>
+<li><span class="english">We are not students.</span> <span class="translation">— Nós não somos estudantes.</span></li>
+<li><span class="english">Is Rachel a flight attendant?</span> <span class="translation">— Rachel é comissária de bordo?</span></li>
+<li><span class="english">Yes, she is.</span> <span class="translation">— Sim, ela é.</span></li>
+</ul></div></section>
+<section><h2>⭐ Vocabulário-chave (Key Vocabulary)</h2><div class="vocab-grid">
+<div class="vocab"><div class="vocab-head"><h3>pilot</h3><button type="button" class="vocab-say" data-czk-say="pilot" aria-label="Ouvir a pronúncia de pilot" aria-pressed="false" title="Ouvir pilot">&#128266;</button></div><p><em>Piloto / pilota.</em><br>Pessoa que pilota uma aeronave.<br><strong>You are a pilot.</strong><br>Você é um piloto.</p></div>
+<div class="vocab green"><div class="vocab-head"><h3>flight attendant</h3><button type="button" class="vocab-say" data-czk-say="flight attendant" aria-label="Ouvir a pronúncia de flight attendant" aria-pressed="false" title="Ouvir flight attendant">&#128266;</button></div><p><em>Comissário / comissária de bordo.</em><br>Profissional que atende os passageiros durante o voo.<br><strong>Is she a flight attendant?</strong><br>Ela é comissária de bordo?</p></div>
+<div class="vocab yellow"><div class="vocab-head"><h3>artist</h3><button type="button" class="vocab-say" data-czk-say="artist" aria-label="Ouvir a pronúncia de artist" aria-pressed="false" title="Ouvir artist">&#128266;</button></div><p><em>Artista.</em><br>Pessoa que cria ou trabalha com arte.<br><strong>She is an artist.</strong><br>Ela é uma artista.<br>Use <strong>an</strong>: o som inicial é de vogal.</p></div>
+</div></section>
+<section><h2>📚 Vocabulário completo da aula</h2><div class="outline-card">
+<h3 style="margin-top:0;">Profissões e pessoas</h3><ul>
+<li><strong>pilot / pilots</strong> — piloto(a) / pilotos(as).</li><li><strong>flight attendant / flight attendants</strong> — comissário(a) de bordo / comissários(as) de bordo.</li><li><strong>doctor / doctors</strong> — médico(a) / médicos(as).</li><li><strong>actor / actors</strong> — ator / atores.</li><li><strong>singer / singers</strong> — cantor(a) / cantores(as).</li><li><strong>athlete / athletes</strong> — atleta / atletas.</li><li><strong>musician / musicians</strong> — músico(a), musicista / músicos(as).</li><li><strong>artist / artists</strong> — artista / artistas.</li><li><strong>chef / chefs</strong> — chef de cozinha / chefs de cozinha.</li><li><strong>teacher / teachers</strong> — professor(a) / professores(as).</li><li><strong>student / students</strong> — estudante / estudantes.</li></ul>
+<h3>Palavras usadas para revisar a/an</h3><ul><li><strong>an hour</strong> — uma hora; H mudo.</li><li><strong>a horse</strong> — um cavalo; H pronunciado.</li><li><strong>a house</strong> — uma casa; H pronunciado.</li><li><strong>a home</strong> — um lar; H pronunciado.</li><li><strong>a uniform</strong> — um uniforme; começa com o som de <em>you</em>.</li><li><strong>a unicorn</strong> — um unicórnio; começa com o som de <em>you</em>.</li><li><strong>a university</strong> — uma universidade; começa com o som de <em>you</em>.</li></ul>
+<h3>Pronomes</h3><p><strong>I</strong> — eu; <strong>you</strong> — você/vocês; <strong>he</strong> — ele; <strong>she</strong> — ela; <strong>it</strong> — ele/ela para coisas e animais, conforme o contexto; <strong>we</strong> — nós; <strong>they</strong> — eles/elas.</p>
+<h3>Estruturas e termos de estudo</h3><ul><li><strong>a / an</strong> — um/uma.</li><li><strong>am / is / are</strong> — formas do verbo <em>to be</em> (ser/estar).</li><li><strong>not</strong> — não, na construção negativa.</li><li><strong>yes / no</strong> — sim / não.</li><li><strong>short answer</strong> — resposta curta.</li><li><strong>I'm / he's / she's / we're / you're / they're</strong> — contrações de <em>I am / he is / she is / we are / you are / they are</em>.</li><li><strong>isn't / aren't</strong> — contrações de <em>is not / are not</em>.</li></ul>
+</div></section>
+<section><h2>🚨 Correções importantes</h2><div class="outline-card">
+<div class="correction"><p><strong>1. Afirmar é diferente de perguntar.</strong></p><p>❌ Usar a ordem de pergunta quando o pedido é afirmar que alguém é piloto.</p><p>✅ <strong>You are a pilot.</strong> Para perguntar, inverta: <strong>Are you a pilot?</strong></p><p>A aula começou com essa confusão de intenção e de ordem. Antes de falar, decida: vou afirmar, negar ou perguntar?</p></div>
+<div class="correction"><p><strong>2. O artigo também faz parte da frase.</strong></p><p>❌ Omitir <strong>a</strong> na pergunta sobre piloto ou musicista.</p><p>✅ <strong>Are you a pilot?</strong> / <strong>Is she a musician?</strong></p><p>Quando a profissão está no singular, mantenha <strong>a/an</strong>. No plural: <strong>Are they doctors?</strong>, sem <strong>a/an</strong>.</p></div>
+<div class="correction"><p><strong>3. Posição de not e uso de yes/no.</strong></p><p>❌ Começar uma negativa isolada com <strong>No</strong> e perder a ordem de sujeito, verbo e <strong>not</strong>.</p><p>✅ <strong>You are not a pilot.</strong></p><p><strong>Not</strong> vem depois de <strong>are</strong>. Ao responder à pergunta, você pode dizer <strong>No, I'm not.</strong> A palavra <strong>No</strong> não substitui o <strong>not</strong> da frase negativa.</p></div>
+<div class="correction"><p><strong>4. A resposta usa o pronome da pessoa mencionada.</strong></p><p>❌ Pensar em responder na primeira pessoa quando a pergunta é sobre Rachel; confundir <strong>he</strong> e <strong>she</strong> no exercício sobre Tom.</p><p>✅ <strong>Is Rachel a flight attendant? — Yes, she is.</strong><br>✅ Ao falar de Tom: <strong>No, he is not. He is a pilot.</strong></p><p>Se perguntam sobre <strong>ela</strong>, responda com <strong>she</strong>; sobre <strong>ele</strong>, use <strong>he</strong>. Se perguntam sobre <strong>você</strong>, sua resposta usa <strong>I</strong>.</p></div>
+<div class="correction"><p><strong>5. Artista pede an.</strong></p><p>❌ <strong>a artist</strong></p><p>✅ <strong>an artist</strong> → <strong>She is an artist.</strong></p><p>Você precisou treinar essa ligação várias vezes. Fale <strong>an artist</strong> como um grupo, sem separar demais as palavras. Para <strong>uniform</strong>, a escolha muda: <strong>a uniform</strong>, porque o primeiro som é de consoante.</p></div>
+<div class="correction"><p><strong>6. Preserve o sentido de to be na tradução.</strong></p><p>❌ Interpretar a frase negativa sobre estudantes como “Nós não estudamos”.</p><p>✅ <strong>We are not students.</strong> = <strong>Nós não somos estudantes.</strong></p><p><strong>Students</strong> é “estudantes”. A frase fala de quem nós somos; o <strong>are</strong> precisa aparecer no sentido da tradução.</p></div>
+<div class="correction"><p><strong>7. Contrações: treine a combinação inteira.</strong></p><p>❌ Hesitar ao abreviar <strong>they are not</strong> e ao pronunciar as formas com <strong>isn't/aren't</strong>.</p><p>✅ <strong>They aren't.</strong> = <strong>They are not.</strong><br>✅ <strong>She isn't.</strong> = <strong>She is not.</strong></p><p>Comece pelas formas que você achou mais fáceis: <strong>isn't</strong> para <strong>he/she/it</strong> e <strong>aren't</strong> para <strong>you/we/they</strong>. Na resposta curta afirmativa, mantenha o verbo completo: <strong>Yes, she is.</strong> / <strong>Yes, they are.</strong></p></div>
+</div></section>
+<section><h2 style="margin-bottom:8px;">Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/jKsfo8qugk0" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section>
+<section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala (Talk Time)</h2><table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead><tbody><tr class="row-teacher"><td><span class="talk-label">César (Professor)</span></td><td><span class="talk-percent">72%</span></td><td class="talk-time">~30min13s</td></tr><tr class="row-student"><td><span class="talk-label">Murilo Bueno</span></td><td><span class="talk-percent">28%</span></td><td class="talk-time">~11min37s</td></tr></tbody></table><p style="margin-bottom:0;color:var(--muted);font-size:.85rem;">Estimativa pelos intervalos de fala da transcrição. As porcentagens consideram o tempo falado; pausas e intervalos sem fala ficam fora da conta. A gravação tem aproximadamente 51 minutos.</p></section>
+<section><h2 style="margin-bottom:8px;">📝 Homework</h2><div class="homework"><p style="margin:0 0 8px;">📌 <strong>Para chegar à próxima aula com a base mais firme:</strong></p><ol>
+<li><strong>Termine as atividades pendentes de a/an</strong> que já estão no app.</li><li><strong>Faça a nova atividade de 20 exercícios quando ela estiver disponível.</strong> César combinou exercícios de afirmação, negação, pergunta e <em>short answers</em> com o conteúdo revisado nesta aula.</li><li><strong>Leia este pós-aula de 2 a 3 vezes</strong> durante a semana. Leia as frases em voz alta e ouça as três palavras-chave.</li><li><strong>Divida a prática em dois blocos de cerca de 15 minutos</strong> antes da próxima aula, conforme combinado. Tente responder primeiro e depois confira a regra.</li><li><strong>Acompanhe as próximas partes do desafio no app.</strong> Você concluiu a parte realizada nesta aula com pontuação máxima. Use as notificações já ativadas para lembrar dos próximos desafios e das tarefas.</li></ol><p style="margin-bottom:0;"><strong>Foco da revisão:</strong> diferenciar <em>You are...</em>, <em>You are not...</em> e <em>Are you...?</em>; escolher <em>a/an</em> pelo som; responder com o pronome certo. Vamos conferir as atividades antes de avançar para o alfabeto.</p></div></section>
+</main>
+<footer><p style="margin:18px 0 0;color:var(--muted);font-size:.9rem;">© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer>
+</article></div>
+<script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body>
+</html>
