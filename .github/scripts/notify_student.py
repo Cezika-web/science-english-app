@@ -5,6 +5,7 @@ Uso: python notify_student.py <filename>
 Ex:  python notify_student.py pos-aula-mateus-richter-20-06-2026.html
 """
 
+import html as html_lib
 import json
 import os
 import re
@@ -51,6 +52,25 @@ def parse_talk_time(filename):
         "teacherMinutes": number(teacher, "talk-time"),
     }
     return {key: value for key, value in values.items() if value is not None} or None
+
+
+def parse_topic(post_html):
+    """
+    Tópico da aula = o <h1> do HTML da pós-aula (ex.: "Betting and Gambling:
+    opiniões, riscos e regras"). Devolve "" se não houver.
+    """
+    found = re.search(r"<h1[^>]*>(.*?)</h1>", post_html, re.IGNORECASE | re.DOTALL)
+    if not found:
+        return ""
+    text = html_lib.unescape(re.sub(r"<[^>]+>", "", found.group(1)))
+    text = re.sub(r"\s+", " ", text).strip()
+    # Se o h1 já começa com "Pós-aula 07/10/2026 –", tira: o título monta isso sozinho.
+    return re.sub(
+        r"^p[oó]s-?aula\s*(?:\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\s*[-–—:·]?|[-–—:·])\s*",
+        "",
+        text,
+        flags=re.IGNORECASE,
+    )
 
 
 def parse_class_date(parts):
@@ -204,16 +224,23 @@ def main():
         print(f"Cannot read post HTML: {exc}")
         sys.exit(1)
 
+    # Título: "Pós-aula 07/10/2026 – tópico da aula". O app remonta isso na hora de
+    # exibir, mas o título gravado também fica completo (admin, listas, buscas).
+    topic = parse_topic(post_html)
+    title = f"Pós-aula {date_str} – {topic}" if topic else f"Pós-aula {date_str}"
+
     fields = {
         "filename": {"stringValue": filename},
         "url": {"stringValue": posaula_url},
         "appUrl": {"stringValue": app_url},
-        "title": {"stringValue": f"Pós-aula {date_str}"},
+        "title": {"stringValue": title},
         "html": {"stringValue": post_html},
         "createdAt": {"timestampValue": created_at},
         "publishedAt": {"timestampValue": now.strftime("%Y-%m-%dT%H:%M:%SZ")},
         "readAt": {"nullValue": None},
     }
+    if topic:
+        fields["topic"] = {"stringValue": topic}
     if class_date:
         fields["classDate"] = {"timestampValue": created_at}
     talk_time = parse_talk_time(filename)

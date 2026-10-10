@@ -1976,6 +1976,38 @@
       return null;
     };
     const adminPostReferenceDate = post => adminPostFilenameDate(post) || adminDate(post?.classDate || post?.createdAt);
+
+    // Título de exibição: "Pós-aula 07/10/2026 – tópico da aula". Mesma regra do
+    // app do aluno (index.html): data da aula + `topic`, <h1> do HTML ou o que
+    // sobrou do título antigo. Só exibição — nada é gravado no banco.
+    const ADMIN_POSAULA_PREFIXO = /^p[oó]s-?aula\s*(?:\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}\s*[-–—:·]?|[-–—:·])\s*/i;
+    const adminPostTopicCache = new WeakMap();
+    const adminPostTopic = post => {
+      if (!post || typeof post !== 'object') return '';
+      if (adminPostTopicCache.has(post)) return adminPostTopicCache.get(post);
+      let topic = String(post.topic || '');
+      if (!topic.trim()) {
+        const h1 = /<h1[^>]*>([\s\S]*?)<\/h1>/i.exec(String(post.html || ''));
+        if (h1) {
+          const el = document.createElement('textarea');
+          el.innerHTML = h1[1].replace(/<[^>]+>/g, '');
+          topic = el.value;
+        }
+      }
+      if (!topic.trim() && ADMIN_POSAULA_PREFIXO.test(String(post.title || ''))) topic = String(post.title).replace(ADMIN_POSAULA_PREFIXO, '');
+      topic = topic.replace(ADMIN_POSAULA_PREFIXO, '').replace(/\s+/g, ' ').trim();
+      adminPostTopicCache.set(post, topic);
+      return topic;
+    };
+    const adminPostTitleParts = post => {
+      const d = adminPostReferenceDate(post);
+      const data = d ? `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}` : '';
+      return { head: data ? `Pós-aula ${data}` : 'Pós-aula', topic: adminPostTopic(post) };
+    };
+    const adminPostTitle = post => {
+      const { head, topic } = adminPostTitleParts(post);
+      return topic ? `${head} – ${topic}` : head;
+    };
     const adminAddDays = (date, days) => new Date(date.getTime() + days * 86400000);
 
     const adminDateKey = value => {
@@ -3151,7 +3183,7 @@
       const alertaFala = fala && Number(fala.studentPct) < 45;
       return briefingBloco('Última aula', `<div style="padding:12px 14px;border-radius:12px;background:var(--card);border:1px solid var(--border);">
         <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-          <strong>${esc(posaula.title || 'Pós-aula')}</strong>
+          <strong>${esc(adminPostTitle(posaula))}</strong>
           <span style="color:var(--muted);font-size:.82rem;">${briefingDia(posaula.classDate || posaula.createdAt)}</span>
         </div>
         ${fala ? `<div style="margin-top:8px;font-size:.85rem;${alertaFala ? 'color:#B45309;font-weight:700;' : 'color:var(--muted);'}">
@@ -3319,7 +3351,7 @@
         // O pós-aula abre por cima da pauta, na própria agenda — nunca em aba nova.
         const abrir = document.getElementById('briefing-open-posaula');
         if (abrir) abrir.onclick = () => {
-          document.getElementById('posaula-view-title').textContent = posaula.title || 'Pós-aula';
+          document.getElementById('posaula-view-title').textContent = adminPostTitle(posaula);
           document.getElementById('posaula-view-frame').srcdoc = sanitizeReaderHtml(posaula.html);
           document.getElementById('posaula-view-modal').classList.add('open');
         };
@@ -6185,7 +6217,7 @@
             ? itens.map((p, i) => `
               <label style="display:flex;gap:10px;align-items:flex-start;padding:7px 0;cursor:pointer;border-bottom:1px solid var(--border);">
                 <input type="checkbox" value="${p.id}" ${i === 0 ? 'checked' : ''} style="margin-top:3px;">
-                <span style="font-size:0.88rem;">${esc(p.title || 'Pós-aula')}</span>
+                <span style="font-size:0.88rem;">${esc(adminPostTitle(p))}</span>
               </label>`).join('')
             : '<div style="font-size:0.85rem;color:var(--muted);">Este aluno ainda não tem pós-aula.</div>';
         } catch (e) {
@@ -7499,11 +7531,11 @@
         return `<div class="posaula-item">
           <div style="display:flex;align-items:flex-start;gap:10px;">
             <div style="flex:1;">
-              <div class="p-title">${esc(p.title || 'Pós-Aula')}</div>
+              <div class="p-title">${esc(adminPostTitle(p))}</div>
               <div class="p-meta">Data do pós-aula: ${fmtDate(adminPostReferenceDate(p) || p.createdAt)}</div>
               <div class="p-status ${isRead ? 'read' : 'unread'}">${isRead ? `✓ Lido em ${fmtDate(p.readAt)}` : '⏳ Ainda não lido'}</div>
             </div>
-            <button class="btn-del-item" data-type="posaulas" data-id="${p.id}" data-label="${esc(p.title || 'Pós-Aula')}">🗑️ Excluir</button>
+            <button class="btn-del-item" data-type="posaulas" data-id="${p.id}" data-label="${esc(adminPostTitle(p))}">🗑️ Excluir</button>
           </div>
         </div>`;
       };
