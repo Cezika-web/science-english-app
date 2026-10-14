@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Davi Hideki — 10/13/2026 — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+*{box-sizing:border-box}body{line-height:1.55}h2{font-size:1.15rem;color:#14532D}h3{font-size:1rem}p{margin:0 0 12px}li{margin-bottom:7px}.outline-card>:last-child{margin-bottom:0}header{flex-wrap:wrap}.vocab{min-width:200px}.meta{line-height:1.7}.actions .btn{font-family:inherit;font-size:.9rem}.note{color:var(--muted);font-size:.88rem}.correction{margin-bottom:20px}.correction p{margin-bottom:6px}.wrong{color:#c53030}.right{color:#276749}
+@media(max-width:480px){.wrap{padding:18px 10px}.vocab{min-width:0}.talk-table th,.talk-table td{padding:7px 6px;font-size:.82rem}}
+@media print{.wrap{padding:0}.card{max-width:none;border:0;box-shadow:none}.actions,.vocab-say{display:none}.vocab,.correction,.homework,.speaking{break-inside:avoid}body{background:white}}
+</style></head><body>
+
+<div class="wrap"><article class="card" role="main">
+<header><div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="badge">PÓS-AULA</span><h1>Roupas, cores e presente simples: like, want e need</h1></div>
+<div class="meta" style="margin-top:8px"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Davi Hideki &nbsp;•&nbsp; <strong>Data:</strong> 10/13/2026</div></div>
+<div class="actions"><button type="button" class="btn" data-czk-action="print">Imprimir / Salvar PDF</button></div></header>
+<main>
+<section class="panel"><p style="margin:0;font-weight:600;color:#14532D"><em>Davi, você revisou datas e horários, jogou para aprender palavras e começou a descrever roupas e cores. Nossa missão agora é memorizar os meses e entender quando usar likes, wants, needs e has. Leia um pouco por dia e pratique no app!</em></p></section>
+
+<section><h2>📘 Resumo da Aula</h2><div class="outline-card">
+<p><strong>Desafio e rotina de estudo.</strong> Você fez o desafio no aplicativo, e César confirmou <strong>430 pontos</strong>. Na revisão, relembramos que, em um endereço em inglês, o número do imóvel vem antes do nome da rua ou avenida. Também instalamos o aplicativo na tela inicial do celular e ativamos as notificações para ajudar você a lembrar dos pós-aulas, atividades e desafios. O combinado é estudar em sessões curtas de <strong>5 a 10 minutos por dia</strong>.</p>
+<p><strong>Fechamento da unidade de números, datas e horas.</strong> Revisamos os números ordinais, as preposições <strong>in, on e at</strong>, a expressão <strong>from…to…</strong> e a diferença entre <strong>past</strong> e <strong>to</strong> para falar as horas. Você mostrou progresso nos dias da semana e nas preposições. Os <strong>meses do ano</strong> ainda precisam de prática: você lembrou de alguns com ajuda, e eles serão o foco da semana.</p>
+<p><strong>Vocabulário com o jogo.</strong> No Ba Ba Dum, você acertou <strong>24 de 30 palavras</strong>. Apareceram objetos, animais, esportes e ações. Depois, César pediu que você lembrasse das palavras: reconhecer a imagem durante o jogo é um começo; reler e falar as palavras depois ajuda a guardar o vocabulário.</p>
+<p><strong>Cores e roupas.</strong> Trabalhamos nomes de cores e peças como <em>shirt, blouse, pants, dress, skirt, suit, sweater, jacket, tie</em> e <em>shoes</em>. Na atividade de escuta, você associou descrições de roupas às imagens. Em seguida, descreveu suas próprias roupas: camiseta branca e azul, meias cinzas e calça preta e branca. O treino foi responder com a frase completa: <strong>My T-shirt is white and blue.</strong></p>
+<p><strong>Uma peça pode ter nome no plural.</strong> <em>Pants</em> e <em>glasses</em> usam forma plural em inglês mesmo quando falamos de uma única calça ou de um único óculos. Por isso: <strong>My pants are…</strong> Já <em>shoe</em> pode ser um sapato, e <em>shoes</em>, mais de um. Para contar calças, usamos <strong>a pair of pants</strong> (uma calça / um par de calças).</p>
+<p><strong>Presente simples: a regra da aula.</strong> <em>Like</em> = gostar; <em>want</em> = querer; <em>need</em> = precisar; <em>have</em> = ter. Em uma <strong>frase afirmativa no presente simples</strong>, com <strong>he, she ou it</strong>, os três primeiros recebem <strong>-s</strong>. <em>Have</em> muda para <strong>has</strong>. Um nome também conta: <strong>Tina = she</strong> e <strong>Rob = he</strong>.</p>
+<table class="talk-table"><thead><tr><th>Verbo / sentido</th><th>I, you, we, they</th><th>He, she, it</th></tr></thead><tbody>
+<tr><td>gostar</td><td>like</td><td><strong>likes</strong></td></tr><tr><td>querer</td><td>want</td><td><strong>wants</strong></td></tr><tr><td>precisar</td><td>need</td><td><strong>needs</strong></td></tr><tr><td>ter</td><td>have</td><td><strong>has</strong></td></tr></tbody></table>
+<p style="margin-top:12px"><strong>Compare:</strong> <em>I need a book.</em> = Eu preciso de um livro. → <em>Rob needs a book.</em> = Rob precisa de um livro. O <strong>-s não indica passado</strong>. <em>Tina likes the shoes</em> significa que ela <strong>gosta</strong> dos sapatos.</p>
+<p>💡 <strong>Antes de mudar o verbo, confira três coisas:</strong> a frase está no presente simples? É afirmativa? O sujeito corresponde a he, she ou it? Se sim, use <em>likes, wants, needs</em> ou <em>has</em>. Não coloque -s em todos os verbos só porque a frase está no presente. Perguntas e negativas serão estudadas nas próximas aulas; esta regra é para as afirmativas que praticamos.</p>
+</div></section>
+
+<section><h2>💬 Frases usadas em aula</h2><div class="outline-card"><p class="note">Frases trabalhadas na conversa e nos exercícios, com a escrita em inglês normalizada.</p><ul>
+<li><strong lang="en">The party is in April.</strong> → A festa é em abril.</li>
+<li><strong lang="en">The party is on April first.</strong> → A festa é no dia primeiro de abril.</li>
+<li><strong lang="en">The bank is open from nine to five p.m.</strong> → O banco fica aberto das nove às cinco da tarde.</li>
+<li><strong lang="en">Twenty past two.</strong> → Duas e vinte (2:20).</li>
+<li><strong lang="en">The dress is black.</strong> → O vestido é preto.</li>
+<li><strong lang="en">The shoes are brown.</strong> → Os sapatos são marrons.</li>
+<li><strong lang="en">The sweater is red and black.</strong> → O suéter é vermelho e preto.</li>
+<li><strong lang="en">What color is your T-shirt?</strong> → Qual é a cor da sua camiseta?</li>
+<li><strong lang="en">My T-shirt is white and blue.</strong> → Minha camiseta é branca e azul.</li>
+<li><strong lang="en">What color are your pants?</strong> → Qual é a cor da sua calça?</li>
+<li><strong lang="en">Tina likes the shoes.</strong> → Tina gosta dos sapatos.</li>
+<li><strong lang="en">Rob needs a book.</strong> → Rob precisa de um livro.</li>
+<li><strong lang="en">You want black pants.</strong> → Você quer calças pretas.</li>
+<li><strong lang="en">She wants brown shoes.</strong> → Ela quer sapatos marrons.</li>
+</ul></div></section>
+
+<section><h2>⭐ Vocabulário-chave</h2><div class="vocab-grid">
+<div class="vocab"><div class="vocab-head"><h3>like</h3><button type="button" class="vocab-say" data-czk-say="like" aria-label="Ouvir a pronúncia de like" aria-pressed="false" title="Ouvir like">&#128266;</button></div><p><em>Gostar.</em><br>Expressa gosto ou preferência.<br><strong lang="en">Tina likes the shoes.</strong><br><small>Tina gosta dos sapatos.</small></p></div>
+<div class="vocab green"><div class="vocab-head"><h3>want</h3><button type="button" class="vocab-say" data-czk-say="want" aria-label="Ouvir a pronúncia de want" aria-pressed="false" title="Ouvir want">&#128266;</button></div><p><em>Querer.</em><br>Expressa algo que você deseja.<br><strong lang="en">You want black pants.</strong><br><small>Você quer calças pretas.</small></p></div>
+<div class="vocab yellow"><div class="vocab-head"><h3>need</h3><button type="button" class="vocab-say" data-czk-say="need" aria-label="Ouvir a pronúncia de need" aria-pressed="false" title="Ouvir need">&#128266;</button></div><p><em>Precisar.</em><br>Expressa uma necessidade.<br><strong lang="en">Rob needs a book.</strong><br><small>Rob precisa de um livro.</small></p></div>
+</div></section>
+
+<section><h2>📚 Vocabulário completo da aula</h2><div class="outline-card">
+<h3 style="margin-top:0">👕 Roupas e acessórios</h3>
+<ul><li><strong>clothes</strong> — roupas</li><li><strong>shirt / T-shirt</strong> — camisa / camiseta</li><li><strong>blouse</strong> — blusa</li><li><strong>pants</strong> — calça / calças; <strong>a pair of pants</strong> — uma calça</li><li><strong>dress / skirt</strong> — vestido / saia</li><li><strong>suit</strong> — terno / conjunto social</li><li><strong>sweater / jacket</strong> — suéter / jaqueta</li><li><strong>tie</strong> — gravata</li><li><strong>shoe / shoes</strong> — sapato / sapatos</li><li><strong>socks / glasses</strong> — meias / óculos</li></ul>
+<h3>🎨 Cores</h3><ul><li><strong>black / white</strong> — preto / branco</li><li><strong>blue / green</strong> — azul / verde</li><li><strong>yellow / purple</strong> — amarelo / roxo</li><li><strong>grey (gray) / brown</strong> — cinza / marrom</li><li><strong>orange / red</strong> — laranja / vermelho</li><li><strong>color / favorite color</strong> — cor / cor favorita</li></ul>
+<h3>📅 Meses do ano — nossa missão de revisão</h3><p>Esta lista completa os 12 meses para você praticar durante a semana. Comece pelos que já apareceram na conversa: January, March, April e October.</p>
+<table class="talk-table"><thead><tr><th>Inglês</th><th>Português</th></tr></thead><tbody>
+<tr><td>January</td><td>janeiro</td></tr><tr><td>February</td><td>fevereiro</td></tr><tr><td>March</td><td>março</td></tr><tr><td>April</td><td>abril</td></tr><tr><td>May</td><td>maio</td></tr><tr><td>June</td><td>junho</td></tr><tr><td>July</td><td>julho</td></tr><tr><td>August</td><td>agosto</td></tr><tr><td>September</td><td>setembro</td></tr><tr><td>October</td><td>outubro</td></tr><tr><td>November</td><td>novembro</td></tr><tr><td>December</td><td>dezembro</td></tr>
+</tbody></table><p style="margin-top:10px">Em inglês, meses e dias da semana começam com <strong>letra maiúscula</strong>: April, October, Monday.</p>
+<h3>🗓️ Dias, datas e horários</h3><ul>
+<li><strong>Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday</strong> — segunda, terça, quarta, quinta, sexta, sábado, domingo.</li>
+<li><strong>in</strong> — para meses, anos e períodos como <em>in April, in 2017, in the morning, in the afternoon, in the evening</em>.</li><li><strong>on</strong> — para dias e datas: <em>on Monday, on April first, on April twenty-fourth</em>.</li><li><strong>at</strong> — para horários e na expressão <em>at night</em>: <em>at seven a.m.</em></li>
+<li><strong>from…to…</strong> — de…até…; <em>from nine to five</em>.</li><li><strong>past / to</strong> — minutos depois da hora / minutos que faltam para a próxima hora.</li><li><strong>half</strong> — metade; nas horas, meia hora = 30 minutos.</li><li><strong>weekend / holiday</strong> — fim de semana / feriado. <em>Holiday</em> também pode significar férias, dependendo do contexto e da variedade de inglês.</li>
+</ul>
+<h3>🔢 Ordinais — apoio para revisar a tabela até 35</h3><p><strong>1st–10th:</strong> first, second, third, fourth, fifth, sixth, seventh, eighth, ninth, tenth.<br><strong>11th–20th:</strong> eleventh, twelfth, thirteenth, fourteenth, fifteenth, sixteenth, seventeenth, eighteenth, nineteenth, twentieth.<br><strong>21st–29th:</strong> twenty-first, twenty-second, twenty-third, twenty-fourth, twenty-fifth, twenty-sixth, twenty-seventh, twenty-eighth, twenty-ninth.<br><strong>30th–35th:</strong> thirtieth, thirty-first, thirty-second, thirty-third, thirty-fourth, thirty-fifth.</p><p>Nos números compostos, só a última parte é ordinal: <strong>twenty-first</strong> = vigésimo primeiro.</p>
+<h3>🎮 Vocabulário recuperado do Ba Ba Dum</h3><p class="note">Releia os termos identificáveis da rodada. Alguns áudios do jogo não ficaram claros na transcrição; você pode retomá-los na gravação.</p>
+<ul><li><strong>toy / carriage</strong> — brinquedo / carruagem</li><li><strong>peel / banana peel</strong> — casca ou descascar, conforme o uso / casca de banana</li><li><strong>carrot / honey / swede</strong> — cenoura / mel / rutabaga (um tipo de nabo)</li><li><strong>cupboard / tray</strong> — armário / bandeja</li><li><strong>truck / blanket / blackboard</strong> — caminhão / cobertor / quadro-negro</li><li><strong>black eye</strong> — olho roxo</li><li><strong>tie</strong> — gravata</li><li><strong>thread / to sew</strong> — linha de costura / costurar</li><li><strong>to pick up</strong> — pegar / apanhar</li><li><strong>to knock</strong> — bater, por exemplo, à porta</li><li><strong>smoking</strong> — fumar / o ato de fumar</li><li><strong>handball / ice hockey / boxing</strong> — handebol / hóquei no gelo / boxe</li><li><strong>horseshoe</strong> — ferradura</li><li><strong>raccoon / beaver</strong> — guaxinim / castor</li><li><strong>juggler / ice skater</strong> — malabarista / patinador(a) no gelo</li><li><strong>harp / intestine</strong> — harpa / intestino</li></ul>
+<h3>🧩 Verbos e sujeitos</h3><ul><li><strong>like / likes</strong> — gostar; <strong>want / wants</strong> — querer; <strong>need / needs</strong> — precisar; <strong>have / has</strong> — ter.</li><li><strong>I / you / we / they</strong> — eu / você(s) / nós / eles ou elas.</li><li><strong>he / she / it</strong> — ele / ela / sujeito para coisa, animal ou situação, conforme o contexto.</li><li><strong>book</strong> — livro; <strong>my / your</strong> — meu ou minha / seu ou sua.</li></ul>
+</div></section>
+
+<section><h2>🚨 Correções importantes</h2><div class="outline-card">
+<p class="note">Os exemplos organizam os pontos corrigidos na conversa e na revisão das atividades. As formas em inglês foram normalizadas; não são todas citações literais.</p>
+<div class="correction"><p><strong>1. Mês sozinho e data completa</strong></p><p class="wrong">❌ The party is on April.</p><p class="right">✅ <strong>The party is in April.</strong></p><p>Mês sozinho → <strong>in</strong>. Mês + dia → <strong>on</strong>: <em>The party is on April first.</em> Mesmo que April venha primeiro, a presença do dia muda a preposição.</p></div>
+<div class="correction"><p><strong>2. Horário e intervalo</strong></p><p class="wrong">❌ Usar in antes de uma hora ou omitir from no intervalo.</p><p class="right">✅ <strong>at seven a.m.</strong> / <strong>The bank is open from nine to five p.m.</strong></p><p>Hora específica → <strong>at</strong>. Começo e fim de um período → <strong>from…to…</strong>.</p></div>
+<div class="correction"><p><strong>3. Past, to e half</strong></p><p class="wrong">❌ Twenty past two = vinte para as duas.</p><p class="right">✅ <strong>Twenty past two = duas e vinte (2:20).</strong></p><p><strong>Twenty to four</strong> = vinte para as quatro (3:40). <strong>Half</strong> significa metade: nas horas, 30 minutos; metade de 100 é 50.</p></div>
+<div class="correction"><p><strong>4. Weekend não é holiday</strong></p><p class="wrong">❌ Holiday = fim de semana.</p><p class="right">✅ <strong>Weekend = fim de semana.</strong></p><p><strong>Holiday</strong> pode ser feriado ou férias. Para sábado e domingo juntos, use <strong>weekend</strong>.</p></div>
+<div class="correction"><p><strong>5. Terça e quinta são palavras diferentes</strong></p><p class="wrong">❌ Tuesday = quinta-feira.</p><p class="right">✅ <strong>Tuesday = terça-feira.</strong> / <strong>Thursday = quinta-feira.</strong></p><p>Você corrigiu essa troca durante a revisão. <strong>Saturday</strong> é sábado e <strong>Sunday</strong> é domingo. Não misture dia da semana com mês.</p></div>
+<div class="correction"><p><strong>6. Ordinal composto e I maiúsculo</strong></p><p class="wrong">❌ twentieth first / i</p><p class="right">✅ <strong>twenty-first</strong> / <strong>I</strong></p><p>21º = twenty-first: só <em>first</em> fica ordinal. O pronome “eu” se escreve sempre <strong>I</strong>, com letra maiúscula.</p></div>
+<div class="correction"><p><strong>7. T-shirt e a palavra shoes</strong></p><p class="wrong">❌ T-shirt = camisa sem manga.</p><p class="right">✅ <strong>T-shirt = camiseta.</strong></p><p>A camiseta normalmente tem mangas. Compare <strong>shirt</strong> (camisa, como a de botões) e <strong>T-shirt</strong> (camiseta). Na pronúncia, <strong>shoes</strong> termina com som de <strong>/z/</strong>: /ʃuːz/; evite ler como “shows”.</p></div>
+<div class="correction"><p><strong>8. Pants pede are</strong></p><p class="wrong">❌ My pants is black and white.</p><p class="right">✅ <strong>My pants are black and white.</strong></p><p><strong>Pants</strong> é plural em inglês. Compare: <strong>My T-shirt is…</strong> e <strong>My socks are…</strong>. Para contar, diga <strong>one pair of pants</strong>, <strong>two pairs of pants</strong>.</p></div>
+<div class="correction"><p><strong>9. Likes não significa “gostou”</strong></p><p class="wrong">❌ Tina likes the shoes = Tina gostou dos sapatos.</p><p class="right">✅ <strong>Tina likes the shoes = Tina gosta dos sapatos.</strong></p><p>A frase está no <strong>presente simples</strong>. Tina corresponde a <strong>she</strong>, por isso usamos <strong>likes</strong>. O -s não transforma o verbo em passado.</p></div>
+<div class="correction"><p><strong>10. O -s depende também do sujeito</strong></p><p class="wrong">❌ Colocar -s em qualquer frase no presente: I needs a book.</p><p class="right">✅ <strong>I need a book.</strong> / <strong>Rob needs a book.</strong></p><p>Não basta estar no presente. Nas afirmativas estudadas, o sujeito precisa corresponder a <strong>he, she ou it</strong>. Com <strong>I, you, we e they</strong>, usamos <em>like, want, need, have</em>. Com <strong>he, she e it</strong>, usamos <em>likes, wants, needs, has</em>.</p></div>
+<p>💡 <strong>Pronúncia de clothes:</strong> pratique a palavra inteira; o final não deve ganhar uma sílaba extra como “clô-thes”. Retome a repetição com César na gravação.</p>
+</div></section>
+
+<section><h2 style="margin-bottom:8px">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/ym718VXm6cc" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section>
+
+<section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead><tbody><tr class="row-teacher"><td class="talk-label">César (Professor)</td><td class="talk-percent">80%</td><td class="talk-time">29 min 20 s</td></tr><tr class="row-student"><td class="talk-label">Davi Hideki</td><td class="talk-percent">20%</td><td class="talk-time">7 min 22 s</td></tr></tbody></table><p class="note" style="margin-top:12px">Estimativa pelos intervalos das falas na transcrição, em português e inglês. Os percentuais consideram apenas César e Davi; excluem áudios compartilhados, pausas e tempo de resolução das atividades.</p></section>
+
+<section><h2>📝 Homework</h2><div class="homework"><p>📌 <strong>Missão da semana: meses + presente simples.</strong></p><ul>
+<li><strong>Leia este pós-aula de 2 a 3 vezes durante a semana.</strong> Retome também os pós-aulas de 09/29/2026 e 10/06/2026 que estavam pendentes.</li>
+<li><strong>Estude de 5 a 10 minutos por dia no app.</strong> Abra as notificações para lembrar da leitura, das atividades e dos desafios. Leia a explicação antes de responder.</li>
+<li><strong>Memorize os 12 meses:</strong> leia inglês + português em voz alta; depois cubra a tradução e tente lembrar. Divida em grupos pequenos e revise os anteriores no dia seguinte.</li>
+<li><strong>Pratique a conjugação:</strong> compare em voz alta <em>I like → she likes; I want → he wants; I need → Rob needs; I have → she has</em>. Confira presente, afirmativa e sujeito.</li>
+<li><strong>Retome o vocabulário do jogo.</strong> Escolha cinco palavras por dia, diga a tradução e tente reconhecê-las novamente na gravação. O objetivo é lembrar delas depois da rodada.</li>
+<li><strong>Revisão curta sugerida:</strong> descreva sua camiseta, calça e meias com <em>My T-shirt is… / My pants are… / My socks are…</em> e diga a cor.</li>
+<li><strong>Faça as atividades do app e acompanhe as duas partes do desafio semanal.</strong> Na próxima aula, vamos praticar com exercícios.</li>
+</ul><p style="margin-bottom:0">🌟 Você já avançou nos dias da semana e nas preposições. Vamos usar a mesma prática diária para guardar os meses e os verbos!</p></div></section>
+</main><footer><p>© 2025 CZK English • czkenglish@gmail.com</p></footer></article></div>
+
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>

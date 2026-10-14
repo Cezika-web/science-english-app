@@ -1,0 +1,249 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Karlla Raissa — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+*{box-sizing:border-box} .outline-card p,.outline-card li,.homework li{line-height:1.6}
+.outline-card h3{color:#14532D;margin-top:22px} .outline-card h3:first-child{margin-top:0}
+.rule-table{width:100%;border-collapse:collapse;margin:12px 0;font-size:.93rem}
+.rule-table th,.rule-table td{border:1px solid var(--border);padding:10px;text-align:left;vertical-align:top}
+.rule-table th{background:#E7F6EC;color:#14532D} .table-scroll{overflow-x:auto}
+.rule-note{background:#F0FDF4;border-left:4px solid var(--accent);padding:12px;margin:14px 0}
+.correction{margin-bottom:20px}.wrong{color:#b91c1c}.right{color:#15803D}
+@media(max-width:560px){header{flex-direction:column}.vocab{min-width:0}.wrap{padding:20px 12px}h1{font-size:1.15rem}.talk-table th,.talk-table td{padding:8px 6px;font-size:.83rem}}
+@media print{body{background:#fff}.wrap{padding:0}.card{max-width:none;border:0;box-shadow:none}.actions,.vocab-say{display:none}section{break-inside:auto}h2,h3{break-after:avoid}.vocab,.correction{break-inside:avoid}a{color:#14532D}}
+</style></head><body>
+<div class="wrap"><article class="card" role="main"><header><div><div style="display:flex;gap:10px;align-items:center"><span class="badge">PÓS-AULA</span><h1>Gerúndio após preposições: os dois papéis de to</h1></div><div class="meta" style="margin-top:8px"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Karlla Raissa &nbsp;•&nbsp; <strong>Data:</strong> 10/13/2026</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header><main>
+<section class="panel"><p style="margin:0;font-weight:600;color:#14532D"><em>Karlla, nesta aula você retomou as perguntas com be, do e does e ampliou a regra do -ing depois de preposições. O ponto central foi diferenciar want to wait de object to waiting, aprendendo as expressões em blocos.</em></p></section>
+<section><h2 style="margin-bottom:8px">📘 Resumo da Aula</h2><div class="outline-card"><div class="rule-note"><strong>Seu foco de revisão:</strong> César destacou que você fez seis atividades, participou do desafio e já reconheceu escolhas corretas com be, does e -ing após preposição. No jogo, você terminou com 5 pontos. Suas perguntas sobre object e os dois papéis de to ajudaram a esclarecer o tema; volte aos pares de exemplos e pratique cada bloco inteiro.</div>
+<h3>1. Revisão das atividades e prática no jogo</h3>
+<p>A aula começou com uma conversa sobre a praia, o tempo e o retorno no domingo. Depois, César revisou atividades e o desafio, retomando os pontos que ainda precisavam de atenção: perguntas com <strong>be, do e does</strong>, presente simples e a forma do segundo verbo. O jogo de 11 perguntas ajudou a aplicar essas escolhas e terminou em <strong>6 a 5 para Vitor</strong>.</p>
+<p>Para perguntar com <strong>be</strong>, troque a ordem: <em>You are afraid of dogs.</em> → <strong>Are you afraid of dogs?</strong> Com outro verbo no presente simples, use <strong>do/does + sujeito + verbo na forma base</strong>: <em>Does your sister like baking cakes?</em> O <em>does</em> já marca a terceira pessoa; por isso, o verbo é <em>like</em>, sem <em>-s</em>.</p>
+<p>Mesmo que em português digamos “ter medo” ou “ter X anos”, em inglês usamos <strong>be afraid</strong> e <strong>be X years old</strong>. Aprenda a construção em inglês inteira, em vez de traduzir cada palavra. Também apareceu a diferença entre <strong>good</strong> (adjetivo: bom) e <strong>well</strong> (advérbio: bem): <em>My mother cooks well.</em></p>
+<h3>2. O segundo verbo: want, enjoy e like</h3>
+<div class="table-scroll"><table class="rule-table"><thead><tr><th>Bloco</th><th>Exemplo</th><th>Ideia em português</th></tr></thead><tbody>
+<tr><td><strong>want + to + verbo base</strong></td><td>I want <strong>to learn</strong> English.</td><td>Quero aprender inglês.</td></tr>
+<tr><td><strong>enjoy + verbo-ing</strong></td><td>He enjoys <strong>making</strong> new friends.</td><td>Ele gosta de fazer novos amigos.</td></tr>
+<tr><td><strong>like + verbo-ing</strong></td><td>I like <strong>baking</strong> cakes.</td><td>Gosto de assar bolos.</td></tr>
+<tr><td><strong>like + to + verbo base</strong></td><td>I like <strong>to bake</strong> cakes.</td><td>Gosto de assar bolos.</td></tr>
+</tbody></table></div>
+<p>Nas frases com <strong>like</strong> trabalhadas na aula, as duas formas são possíveis. Escolha <em>like baking</em> ou <em>like to bake</em>. Não misture as duas em <em>like to baking</em>. Com <strong>want</strong>, use <em>to learn</em>; com <strong>enjoy</strong>, use <em>learning</em>.</p>
+<h3>3. Depois de uma preposição: substantivo ou verbo-ing</h3>
+<p>Vocês retomaram blocos como <strong>afraid of, excited about, crazy about, angry about</strong> e <strong>apologize for</strong>. Se o complemento da preposição for um substantivo, use esse substantivo. Se for uma ação expressa por um verbo, use a forma com <strong>-ing</strong>.</p>
+<ul><li><strong>I am afraid of snakes.</strong> — <em>Snakes</em> é um substantivo: cobras.</li>
+<li><strong>I am afraid of swimming in the sea.</strong> — <em>Swimming</em> é uma ação: nadar no mar.</li>
+<li><strong>I am crazy about cats.</strong> — Gatos são o complemento de <em>about</em>.</li>
+<li><strong>I am crazy about reading books.</strong> — A ação depois de <em>about</em> é <em>reading</em>.</li>
+<li><strong>She apologizes for being late.</strong> — Depois de <em>for</em>, <em>be</em> vira <em>being</em>.</li></ul>
+<p>O <strong>-ing não indica sozinho que algo está acontecendo agora</strong>. Em <em>I am swimming</em>, temos presente contínuo. Em <em>I am afraid of swimming</em>, o verbo principal é <em>am</em>; <em>swimming</em> nomeia a atividade que causa medo.</p>
+<h3>4. Por que “object to waiting” tem to e -ing juntos?</h3>
+<p>A palavra <strong>to</strong> tem dois papéis nos exemplos da aula. Em <strong>I want to wait</strong>, ela é o marcador do infinitivo: <em>to wait</em> = esperar. Em <strong>I object to waiting</strong>, ela é a <strong>preposição exigida por object</strong>, no sentido de se opor. Como o complemento dessa preposição é um verbo, usamos <em>waiting</em>.</p>
+<div class="table-scroll"><table class="rule-table"><thead><tr><th>Frase</th><th>Como separar</th><th>Função do to</th></tr></thead><tbody>
+<tr><td>I want to wait.</td><td>I want / <strong>to wait</strong></td><td>Marca o infinitivo; depois vem o verbo base.</td></tr>
+<tr><td>I object to waiting.</td><td>I <strong>object to</strong> / waiting</td><td>Preposição; a ação que vem depois recebe -ing.</td></tr>
+<tr><td>I object to the noise.</td><td>I <strong>object to</strong> / the noise</td><td>Preposição; o complemento é um substantivo.</td></tr>
+</tbody></table></div>
+<p>As duas primeiras frases não significam a mesma coisa: <em>I want to wait</em> = “Quero esperar”; <em>I object to waiting</em> = “Eu me oponho a esperar”. O fato de a tradução portuguesa usar “esperar” nas duas não determina a forma inglesa.</p>
+<div class="rule-note"><strong>Aprenda em blocos:</strong> memorize <em>object to + -ing</em>, <em>look forward to + -ing</em> e <em>be opposed to + -ing</em>. Você reconhece o papel do <em>to</em> pela construção que o exige, com prática e contexto; olhar apenas para a palavra <em>to</em> não resolve.</div>
+<ul><li><strong>I look forward to seeing you.</strong> — Estou ansioso para ver você / aguardo esse encontro com expectativa.</li>
+<li><strong>He is opposed to working on Sundays.</strong> — Ele é contrário a trabalhar aos domingos.</li>
+<li><strong>She objects to staying late.</strong> — Ela se opõe a ficar até mais tarde.</li></ul>
+<p>Na última frase, <strong>objects</strong> recebe <em>-s</em> porque o sujeito é <em>she</em> e a frase é afirmativa no presente simples. <strong>Staying</strong> recebe <em>-ing</em> por vir depois da preposição. São duas decisões diferentes. Na pergunta, temos <strong>Does she object to staying late?</strong>: <em>does</em> tira o <em>-s</em> de <em>object</em>, mas mantém <em>staying</em>.</p>
+<p>Também foi esclarecida a diferença entre <strong>object</strong>, substantivo (“objeto”), e <strong>object</strong>, verbo (“opor-se”). O contexto e a estrutura da frase ajudam a identificar o sentido. A pronúncia também muda: no substantivo, a primeira sílaba é forte; no verbo, a segunda.</p>
+<h3>5. Listening: dividir tarefas e demonstrar preocupação</h3>
+<p>No final, vocês assistiram a um diálogo curto, primeiro sem legenda e depois com legenda e pausas. A conversa tratava de cansaço com tarefas domésticas e da divisão dessas tarefas. Foram retomados <strong>believe in sharing the chores, object to cooking and cleaning</strong> e <strong>apologize for not doing much at home</strong>.</p>
+<p>Observe a posição de <strong>not</strong>: em <em>for not doing</em>, a ação negada continua com <em>-ing</em>. Já <em>He is always apologizing</em> tem <em>be + -ing</em> e descreve uma atitude que se repete, no contexto do diálogo.</p>
+<p>Vocês também revisaram <strong>What's up?</strong> (“E aí? / O que está acontecendo?”), a resposta <strong>Not much</strong> (“Nada demais”), <strong>You look blue</strong> (“Você parece triste”), <strong>Is there anything I can do?</strong> (“Há algo que eu possa fazer?”) e <strong>I appreciate your concern</strong> (“Agradeço sua preocupação”). Aqui, <em>concern</em> é o substantivo “preocupação”.</p>
+</div></section>
+<section><h2 style="margin-bottom:8px">💬 Frases usadas em aula</h2><div class="outline-card"><p>Frases trabalhadas na aula, com a grafia em inglês padronizada para a revisão:</p><ul><li><strong>Are you afraid of dogs?</strong> — Você tem medo de cachorros?</li><li><strong>Does your sister like baking cakes?</strong> — Sua irmã gosta de assar bolos?</li><li><strong>He enjoys making new friends.</strong> — Ele gosta de fazer novos amigos.</li><li><strong>She goes to school.</strong> — Ela vai à escola.</li><li><strong>My mother cooks well.</strong> — Minha mãe cozinha bem.</li><li><strong>I want to wait.</strong> — Eu quero esperar.</li><li><strong>I object to waiting.</strong> — Eu me oponho a esperar.</li><li><strong>I object to the noise.</strong> — Eu me oponho ao barulho.</li><li><strong>He is opposed to working on Sundays.</strong> — Ele é contrário a trabalhar aos domingos.</li><li><strong>I am crazy about reading books.</strong> — Eu adoro ler livros.</li><li><strong>She objects to staying late.</strong> — Ela se opõe a ficar até mais tarde.</li><li><strong>Thanks for asking.</strong> — Obrigado por perguntar.</li><li><strong>I believe in sharing the chores.</strong> — Eu acredito em dividir as tarefas domésticas.</li><li><strong>Is there anything I can do?</strong> — Há alguma coisa que eu possa fazer?</li><li><strong>I appreciate your concern.</strong> — Agradeço sua preocupação.</li></ul></div></section>
+<section><h2 style="margin-bottom:8px">⭐ Vocabulário-chave</h2><div class="outline-card"><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3>object to</h3><button type="button" class="vocab-say" data-czk-say="object to" aria-label="Ouvir a pronúncia de object to" aria-pressed="false" title="Ouvir object to">&#128266;</button></div><p><em>opor-se a</em><br>Expressar oposição a algo. Com uma ação, use <strong>object to + -ing</strong>.<br><strong>I object to waiting.</strong><br>Eu me oponho a esperar.</p></div><div class="vocab green"><div class="vocab-head"><h3>look forward to</h3><button type="button" class="vocab-say" data-czk-say="look forward to" aria-label="Ouvir a pronúncia de look forward to" aria-pressed="false" title="Ouvir look forward to">&#128266;</button></div><p><em>aguardar com expectativa</em><br>Esperar algo com entusiasmo. Com uma ação, use <strong>look forward to + -ing</strong>.<br><strong>I look forward to seeing you.</strong><br>Estou ansioso para ver você.</p></div><div class="vocab yellow"><div class="vocab-head"><h3>chores</h3><button type="button" class="vocab-say" data-czk-say="chores" aria-label="Ouvir a pronúncia de chores" aria-pressed="false" title="Ouvir chores">&#128266;</button></div><p><em>tarefas domésticas</em><br>Afazeres como cozinhar, limpar e lavar roupa.<br><strong>I believe in sharing the chores.</strong><br>Eu acredito em dividir as tarefas domésticas.</p></div></div></div></section>
+<section><h2 style="margin-bottom:8px">📚 Vocabulário completo da aula</h2><div class="outline-card"><h3>Conversa inicial e rotina</h3><ul><li><strong>rainy</strong> — chuvoso</li><li><strong>sunny</strong> — ensolarado</li><li><strong>hot</strong> — quente</li><li><strong>cold</strong> — frio</li><li><strong>come back</strong> — voltar</li><li><strong>Sunday</strong> — domingo</li><li><strong>go to school</strong> — ir à escola</li><li><strong>bake</strong> — assar</li><li><strong>cake</strong> — bolo</li><li><strong>bread</strong> — pão</li><li><strong>make new friends</strong> — fazer novos amigos</li></ul><h3>Preferências, sentimentos e preposições</h3><ul><li><strong>want to + verbo</strong> — querer fazer algo</li><li><strong>enjoy + -ing</strong> — gostar de fazer algo</li><li><strong>like + -ing / to + verbo</strong> — gostar de fazer algo</li><li><strong>be afraid of</strong> — ter medo de</li><li><strong>be scared of</strong> — ter medo de / estar assustado com</li><li><strong>be excited about</strong> — estar animado com</li><li><strong>be crazy about</strong> — adorar / ser louco por</li><li><strong>be angry about</strong> — estar bravo com algo</li><li><strong>be bored with</strong> — estar entediado com</li><li><strong>be sick and tired of</strong> — estar farto de</li><li><strong>apologize for</strong> — desculpar-se por</li><li><strong>believe in</strong> — acreditar em</li></ul><h3>Blocos e complementos</h3><ul><li><strong>object to</strong> — opor-se a</li><li><strong>object</strong> — objeto (substantivo); opor-se (verbo)</li><li><strong>look forward to</strong> — aguardar com expectativa</li><li><strong>be opposed to</strong> — ser contrário a</li><li><strong>noise</strong> — barulho</li><li><strong>wait / waiting</strong> — esperar / ação de esperar</li><li><strong>stay late</strong> — ficar até mais tarde</li><li><strong>work on Sundays</strong> — trabalhar aos domingos</li><li><strong>count on</strong> — contar com</li><li><strong>deal with</strong> — lidar com</li><li><strong>come up with</strong> — ter / elaborar uma ideia ou solução</li></ul><h3>Exemplos pessoais</h3><ul><li><strong>snakes</strong> — cobras</li><li><strong>cats</strong> — gatos</li><li><strong>dogs</strong> — cachorros</li><li><strong>read books</strong> — ler livros</li><li><strong>swim in the sea</strong> — nadar no mar</li><li><strong>ride a motorcycle</strong> — andar de moto</li><li><strong>hamburgers</strong> — hambúrgueres</li><li><strong>travel / traveling</strong> — viajar / ação de viajar</li><li><strong>good</strong> — bom / boa (adjetivo)</li><li><strong>well</strong> — bem (advérbio)</li></ul><h3>Diálogo e tarefas domésticas</h3><ul><li><strong>chores</strong> — tarefas domésticas</li><li><strong>share the chores</strong> — dividir as tarefas domésticas</li><li><strong>cook / cooking</strong> — cozinhar / ação de cozinhar</li><li><strong>clean / cleaning</strong> — limpar / ação de limpar</li><li><strong>do much at home</strong> — fazer muita coisa em casa</li><li><strong>What&#x27;s up?</strong> — E aí? / O que está acontecendo?</li><li><strong>Not much.</strong> — Nada demais.</li><li><strong>You look blue.</strong> — Você parece triste / para baixo.</li><li><strong>Nothing serious.</strong> — Nada sério.</li><li><strong>Thanks for asking.</strong> — Obrigado por perguntar.</li><li><strong>suggestion</strong> — sugestão</li><li><strong>concern</strong> — preocupação</li><li><strong>appreciate</strong> — apreciar / agradecer / reconhecer o valor de</li><li><strong>Is there anything I can do?</strong> — Há algo que eu possa fazer?</li></ul></div></section>
+<section><h2 style="margin-bottom:8px">🚨 Correções importantes</h2><div class="outline-card"><p>Correções das atividades, do jogo e da produção conjunta. Quando César identificou o aluno, a origem está indicada abaixo.</p><div class="correction"><h3>1. Enjoy não pede to + verbo</h3><p class="wrong">❌ He enjoys to make new friends.</p><p class="right">✅ <strong>He enjoys making new friends.</strong></p><p>Você havia marcado a frase como correta no desafio. Na aula, retomou making. Memorize enjoy + -ing.</p></div><div class="correction"><h3>2. Want pede to + verbo base</h3><p class="wrong">❌ I want to learning English.</p><p class="right">✅ <strong>I want to learn English.</strong></p><p>Essa forma apareceu na escolha durante a explicação. Com want, o segundo verbo fica no infinitivo com to: to learn. Não acrescente -ing nesse padrão.</p></div><div class="correction"><h3>3. Like: escolha uma estrutura</h3><p class="wrong">❌ Does your sister like to baking cakes?</p><p class="right">✅ <strong>Does your sister like baking cakes? / Does your sister like to bake cakes?</strong></p><p>Essa mistura apareceu nas atividades de Vitor e foi escolhida novamente por Karlla no jogo. Depois de like, use -ing ou to + verbo base. O does está correto; ele mantém like na forma base.</p></div><div class="correction"><h3>4. Well para dizer como alguém cozinha</h3><p class="wrong">❌ My mother cooks good.</p><p class="right">✅ <strong>My mother cooks well.</strong></p><p>Essa opção apareceu no jogo. Good descreve uma pessoa ou coisa: She is a good cook. Well descreve como ela cozinha: She cooks well.</p></div><div class="correction"><h3>5. Terceira pessoa: o -s vai no verbo principal</h3><p class="wrong">❌ She object to staying late.</p><p class="right">✅ <strong>She objects to staying late.</strong></p><p>Na produção da frase em aula faltou o -s. Com she, a afirmativa no presente simples usa objects; staying permanece com -ing depois de to, que é preposição.</p></div><div class="correction"><h3>6. Cheer up é animar</h3><p class="wrong">❌ Cheer up a friend = levantar um amigo.</p><p class="right">✅ <strong>Cheer up a friend = animar um amigo.</strong></p><p>Na revisão do phrasal verb, César retomou o sentido emocional: ajudar alguém a ficar mais feliz. Não é levantar fisicamente uma pessoa.</p></div><div class="correction"><h3>7. Is there não significa “essas são”</h3><p class="wrong">❌ Is there anything I can do? = Essas são...</p><p class="right">✅ <strong>Is there anything I can do? = Há alguma coisa que eu possa fazer?</strong></p><p>Esse trecho foi retomado no listening. There is indica existência; Is there...? é a pergunta. Não confunda there com these (estes/estas).</p></div><div class="rule-note"><strong>Regra para guardar:</strong> não é “o segundo verbo sempre recebe -ing”. Compare <em>want to learn</em>, <em>enjoy learning</em> e <em>object to learning</em>. Identifique o bloco anterior. Nas construções com preposição estudadas aqui, a ação que completa a preposição recebe -ing.</div></div></section>
+<section><h2 style="margin-bottom:8px">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/XzLmawkEpOg" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px">🎥 Assistir gravação</a></div></section><section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2>
+<table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th></tr></thead><tbody>
+<tr class="row-teacher"><td class="talk-label">César (Professor)</td><td class="talk-percent">60%</td></tr>
+<tr class="row-student"><td class="talk-label">Vitor Pereira</td><td class="talk-percent">20%</td></tr>
+<tr class="row-student"><td class="talk-label">Karlla Raissa</td><td class="talk-percent">20%</td></tr>
+</tbody></table><p style="font-size:.88rem;color:var(--muted)">Distribuição ajustada conforme orientação do professor: Vitor e Karlla usaram o mesmo login do Zoom. O percentual individual não foi calculado pelos rótulos da transcrição.</p></section><section><h2 style="margin-bottom:8px">📝 Homework</h2><div class="homework"><p>📌 <strong>Revisão e prática:</strong></p><ol>
+<li>Leia este pós-aula <strong>2 a 3 vezes durante a semana</strong>, dando atenção à seção dos dois papéis de <em>to</em>.</li>
+<li>Crie uma pergunta com be afraid of e outra com does. Depois, escreva uma frase com want to, uma com enjoy + -ing e duas com object to + -ing. Leia suas frases em voz alta e confira qual bloco vem antes da ação.</li>
+<li>Reassista ao diálogo final da gravação: uma vez sem legenda para identificar a ideia principal e outra com legenda para localizar <em>believe in</em>, <em>object to</em> e <em>apologize for</em>.</li>
+<li>Faça as atividades de revisão no app quando estiverem disponíveis, como combinado na aula.</li>
+</ol><p><strong>Para conferir seu raciocínio:</strong> complete <em>I want ___ English (learn)</em>, <em>I enjoy ___ English (learn)</em> e <em>I object to ___ late (work)</em>.</p>
+<details><summary>Conferir respostas</summary><p><strong>to learn · learning · working.</strong> Want pede to + verbo base; enjoy pede -ing; em object to, o to é preposição e a ação seguinte recebe -ing.</p></details></div></section>
+</main><footer><p>© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer></article></div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>

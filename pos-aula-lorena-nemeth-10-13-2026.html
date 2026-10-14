@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Lorena Nemeth — 10/13/2026 — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+@media(max-width:720px){header{flex-wrap:wrap;} .wrap{padding:20px 10px;} .vocab{min-width:0;}}
+@media print{.wrap{padding:0;}.card{max-width:none;padding:0;border:0;box-shadow:none;}.actions,.vocab-say{display:none;}.outline-card,.vocab,.homework,.speaking{break-inside:avoid;}}
+</style></head><body><div class="wrap"><article class="card" role="main"><header><div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><span class="badge">PÓS-AULA</span><h1>Casamento, viagens e o caminho para o passado</h1></div><div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Lorena Nemeth &nbsp;•&nbsp; <strong>Data:</strong> 10/13/2026</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header><main><section class="panel"><p style="margin:0;font-weight:600;font-style:italic;color:#14532D;">Lorena, nesta aula você revisou o desafio semanal, ampliou o vocabulário com um jogo e aprendeu a distinguir marriage, wedding, bride e groom. Depois, retomou was/were em uma conversa sobre viagens e começou a entender como did funciona no passado.</p></section><section><h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2><div class="outline-card">
+<p><strong>Desafio e revisão.</strong> Você fez <strong>415 de 500 pontos</strong> no desafio, o melhor resultado até aquele momento segundo o professor. A revisão retomou o present continuous para ações acontecendo agora e planos futuros, a grafia de <em>vacuum</em>, o <em>-s</em> de terceira pessoa no presente e a estrutura <strong>want + to + verbo</strong>. Também apareceu <strong>There aren't enough outlets</strong>: para dizer que não há tomadas suficientes, usamos <em>there are</em>, que indica existência, e <em>enough</em>, que significa “suficiente”.</p>
+<p><strong>Casamento: palavras diferentes para ideias diferentes.</strong> No jogo Ba Ba Dum, a confusão entre <em>clover</em> e <em>groom</em> abriu uma revisão importante. <strong>Marriage</strong> é o casamento como relação ou união; <strong>wedding</strong> é a cerimônia ou celebração. <strong>Fiancé</strong> e <strong>fiancée</strong> são noivo e noiva durante o noivado; <strong>groom</strong> e <strong>bride</strong> nomeiam o noivo e a noiva no contexto do casamento. <strong>Married</strong> significa “casado(a)” e <strong>engaged</strong>, “noivo(a)”. Ao final, você conseguiu explicar quando usar <em>bride</em> e <em>groom</em>. O professor registrou apenas um erro na rodada de vocabulário.</p>
+<p><strong>Objetos, animais e frutas.</strong> O jogo trouxe palavras como <em>pencil sharpener, sausage, acorn, beer mug, ladder, roof, wheel</em> e <em>starfish</em>. A palavra <strong>berry</strong> também ganhou atenção: ela aparece em nomes de frutas como <em>strawberry, blueberry, raspberry</em> e <em>blackberry</em>. Cada fruta tem sua própria tradução; não basta traduzir todas como “morango”.</p>
+<p><strong>Was/were: ser ou estar no passado.</strong> Você revisou que <em>was</em> pode corresponder a “era”, “foi” ou “estava”, dependendo da frase, e não é o passado de <em>go</em> (“ir”), que é <strong>went</strong>. Usamos <strong>was com I/he/she/it</strong> e <strong>were com you/we/they</strong>. O ponto central foi <em>you</em>: ele pode significar “você” ou “vocês”, e usa <em>were</em> nos dois casos. Assim, <em>You were a teacher</em> é singular, enquanto <em>You were teachers</em> é plural.</p>
+<p><strong>Viagens e compreensão oral.</strong> A revisão do livro incluiu aceitar ou recusar ajuda, adjetivos para descrever viagens e as respostas <em>That's good</em> e <em>That's too bad</em>. <strong>Bumpy</strong> pode indicar turbulência em um voo ou uma viagem por uma estrada irregular. No vídeo, você entendeu que uma passageira falava de um voo relaxante, com belas paisagens, comida ruim e ninguém sentado ao lado dela. Você compreendeu a pergunta sobre a quantidade de passageiros pelo contexto, mesmo antes de reconhecer toda a estrutura <strong>Were there...?</strong>.</p>
+<p><strong>Existência e negação.</strong> <em>There are</em> vira <strong>there were</strong> no passado; para perguntar, invertemos: <strong>Were there...?</strong>. Na resposta <em>There wasn't anyone next to me</em>, a negação já está em <em>wasn't</em>, por isso usamos <strong>anyone</strong>. Você identificou corretamente que acrescentar <em>no one</em> nessa mesma estrutura repetiria a negação no inglês padrão.</p>
+<p><strong>Prévia de did.</strong> No fim, a aula antecipou o próximo conteúdo do livro, sem iniciar a nova sequência de exercícios. <strong>Do/does</strong> podem ser verbos (“fazer”) ou auxiliares no presente. <strong>Did</strong> é o passado de <em>do</em> e também funciona como auxiliar em perguntas; <strong>didn't</strong> faz a negação. Como auxiliares, <em>did/didn't</em> são iguais para todos os sujeitos e o verbo principal fica na forma base: <em>Did she do the homework?</em> e <em>I didn't like</em>. Você ajustou sua pergunta até incluir o verbo <em>do</em>. Com <strong>was/were</strong>, as perguntas comuns se formam pela inversão, sem <em>did</em>: <em>Were you tired?</em></p>
+</div></section><section><h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2><div class="outline-card"><p style="color:var(--muted);font-size:0.9rem;">Frases trabalhadas na conversa, na leitura e no vídeo da aula, com a escrita em inglês normalizada.</p><ul><li><strong>They are married.</strong> → Eles são casados.</li><li><strong>My marriage is good.</strong> → Meu casamento é bom — a relação, não a festa.</li><li><strong>They are engaged.</strong> → Eles estão noivos.</li><li><strong>You are teachers.</strong> → Vocês são professores.</li><li><strong>You were teachers.</strong> → Vocês eram / foram professores.</li><li><strong>You were a teacher.</strong> → Você era / foi professor(a).</li><li><strong>It&#x27;s OK. I&#x27;m fine.</strong> → Tudo bem. Estou bem — para recusar ajuda de forma educada.</li><li><strong>No, thanks. I&#x27;m OK.</strong> → Não, obrigado(a). Estou bem.</li><li><strong>Thank you. That&#x27;s really nice of you.</strong> → Obrigado(a). Isso é muito gentil da sua parte.</li><li><strong>It was a relaxing trip.</strong> → Foi uma viagem relaxante.</li><li><strong>That&#x27;s good.</strong> → Que bom.</li><li><strong>That&#x27;s too bad.</strong> → Que pena.</li><li><strong>How was the food?</strong> → Como estava a comida?</li><li><strong>That was a problem.</strong> → Isso foi um problema.</li><li><strong>Were there many people on the plane?</strong> → Havia muitas pessoas no avião?</li><li><strong>There wasn&#x27;t anyone next to me.</strong> → Não havia ninguém ao meu lado.</li><li><strong>I don&#x27;t like.</strong> → Eu não gosto.</li><li><strong>He does exercises.</strong> → Ele faz exercícios.</li><li><strong>I did.</strong> → Eu fiz.</li><li><strong>Did she do the homework?</strong> → Ela fez a lição de casa?</li></ul></div></section><section><h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3>marriage</h3><button type="button" class="vocab-say" data-czk-say="marriage" aria-label="Ouvir a pronúncia de marriage" aria-pressed="false" title="Ouvir marriage">&#128266;</button></div><p><em>casamento como união ou relação</em><br><small>Nomeia a relação entre pessoas casadas.<br><strong>Exemplo:</strong> My marriage is good.<br>Meu casamento é bom.</small></p></div><div class="vocab green"><div class="vocab-head"><h3>wedding</h3><button type="button" class="vocab-say" data-czk-say="wedding" aria-label="Ouvir a pronúncia de wedding" aria-pressed="false" title="Ouvir wedding">&#128266;</button></div><p><em>casamento como cerimônia ou celebração</em><br><small>Nomeia o evento do casamento.<br><strong>Exemplo:</strong> The wedding was beautiful.<br>A cerimônia de casamento foi linda.</small></p></div><div class="vocab yellow"><div class="vocab-head"><h3>bride and groom</h3><button type="button" class="vocab-say" data-czk-say="bride and groom" aria-label="Ouvir a pronúncia de bride and groom" aria-pressed="false" title="Ouvir bride and groom">&#128266;</button></div><p><em>noiva e noivo no casamento</em><br><small>Bride é a noiva; groom é o noivo, no contexto da cerimônia.<br><strong>Exemplo:</strong> The bride and groom are here.<br>A noiva e o noivo estão aqui.</small></p></div></div></section><section><h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2><div class="outline-card"><h3>Casamento e família</h3><ul><li><strong>marriage</strong> — casamento; união conjugal</li><li><strong>wedding</strong> — cerimônia ou celebração de casamento</li><li><strong>married</strong> — casado(a)</li><li><strong>engaged</strong> — noivo(a); com casamento combinado</li><li><strong>fiancé</strong> — noivo, durante o noivado</li><li><strong>fiancée</strong> — noiva, durante o noivado</li><li><strong>groom</strong> — noivo no contexto do casamento</li><li><strong>bride</strong> — noiva no contexto do casamento</li><li><strong>husband</strong> — marido</li><li><strong>in-laws</strong> — parentes por casamento</li><li><strong>brother-in-law</strong> — cunhado</li><li><strong>sister-in-law</strong> — cunhada</li></ul><h3>Objetos e lugares do jogo</h3><ul><li><strong>baseball bat</strong> — taco de beisebol</li><li><strong>pencil sharpener</strong> — apontador de lápis</li><li><strong>accordion</strong> — acordeão</li><li><strong>bathtub</strong> — banheira</li><li><strong>beer mug</strong> — caneca de cerveja</li><li><strong>mug</strong> — caneca</li><li><strong>cup</strong> — xícara; copo, conforme o contexto</li><li><strong>doll</strong> — boneca</li><li><strong>ladder</strong> — escada de mão</li><li><strong>roof</strong> — telhado</li><li><strong>wheel</strong> — roda</li><li><strong>wig</strong> — peruca</li><li><strong>blouse</strong> — blusa</li></ul><h3>Animais, natureza e corpo</h3><ul><li><strong>cattle</strong> — gado</li><li><strong>acorn</strong> — bolota; fruto do carvalho</li><li><strong>clover</strong> — trevo — diferente de groom</li><li><strong>lungs</strong> — pulmões</li><li><strong>crab</strong> — caranguejo</li><li><strong>shrimp</strong> — camarão</li><li><strong>mosquito</strong> — mosquito</li><li><strong>fly</strong> — mosca</li><li><strong>starfish</strong> — estrela-do-mar</li></ul><h3>Alimentos e frutas</h3><ul><li><strong>peanut</strong> — amendoim</li><li><strong>sausage</strong> — salsicha ou linguiça, conforme o tipo</li><li><strong>Brazilian sausage</strong> — linguiça brasileira</li><li><strong>beer</strong> — cerveja</li><li><strong>pumpkin</strong> — abóbora</li><li><strong>berry / berries</strong> — tipo de fruta pequena / plural de berry</li><li><strong>strawberry</strong> — morango</li><li><strong>blueberry</strong> — mirtilo</li><li><strong>raspberry</strong> — framboesa</li><li><strong>blackberry</strong> — amora-preta</li><li><strong>gooseberry</strong> — groselha-espinhosa</li><li><strong>grape / grapes</strong> — uva / uvas</li></ul><h3>Viagens e adjetivos</h3><ul><li><strong>flight</strong> — voo</li><li><strong>plane / airplane</strong> — avião</li><li><strong>food</strong> — comida</li><li><strong>comfortable</strong> — confortável</li><li><strong>scenic</strong> — com belas paisagens; com vista bonita</li><li><strong>short</strong> — curto(a)</li><li><strong>relaxing</strong> — relaxante</li><li><strong>interesting</strong> — interessante</li><li><strong>exciting</strong> — empolgante</li><li><strong>boring</strong> — entediante</li><li><strong>bumpy</strong> — com solavancos; turbulento, em um voo</li><li><strong>long</strong> — longo(a)</li><li><strong>scary</strong> — assustador(a)</li><li><strong>terrific</strong> — excelente; ótimo(a)</li><li><strong>terrible</strong> — terrível; muito ruim</li><li><strong>next to me</strong> — ao meu lado</li><li><strong>behind</strong> — atrás</li></ul><h3>Expressões e revisão gramatical</h3><ul><li><strong>decline help</strong> — recusar ajuda</li><li><strong>That&#x27;s good</strong> — que bom</li><li><strong>That&#x27;s too bad</strong> — que pena</li><li><strong>vacuum</strong> — aspirar; aspirador, conforme o uso</li><li><strong>outlet</strong> — tomada</li><li><strong>enough</strong> — suficiente</li><li><strong>want to</strong> — querer + verbo</li><li><strong>was / were</strong> — formas de be no passado</li><li><strong>went</strong> — passado de go: foi / fui, no sentido de ir</li><li><strong>there was / there were</strong> — havia; existia / existiam</li><li><strong>were there...?</strong> — havia...?, em pergunta no plural</li><li><strong>anyone / anybody</strong> — alguém; ninguém em uma frase negativa</li><li><strong>no one / nobody</strong> — ninguém</li><li><strong>anything / nothing</strong> — algo / nada, conforme a estrutura</li><li><strong>do / does</strong> — fazer; também auxiliares no presente</li><li><strong>did / didn’t</strong> — fez / fiz; auxiliar no passado / forma negativa</li><li><strong>homework</strong> — lição de casa</li><li><strong>invention</strong> — invenção</li></ul></div></section><section><h2 style="margin-bottom:8px;">🚨 Correções importantes</h2><div class="outline-card"><p style="color:var(--muted);font-size:0.9rem;">Correções do desafio e da conversa. As tentativas estão descritas quando a transcrição não permite recuperar a escrita exata.</p><p><strong>1. Grafia de vacuum</strong></p><p style="color:#c53030;">❌ “vacuum” escrito com dois c e um u.</p><p style="color:#276749;">✅ <strong>vacuum</strong> — um <em>c</em> e dois <em>u</em>. O professor apontou essa troca na revisão do desafio.</p><p><strong>2. Want precisa de to antes de outro verbo</strong></p><p style="color:#c53030;">❌ Na frase do desafio, faltou to entre wants e watch.</p><p style="color:#276749;">✅ <strong>He wants to watch TV every day.</strong> — no presente afirmativo, <em>he</em> pede <em>wants</em>; depois, usamos <em>to watch</em>.</p><p><strong>3. Não há: existência, não posse</strong></p><p style="color:#c53030;">❌ “Don’t have” para traduzir “Não há tomadas suficientes”.</p><p style="color:#276749;">✅ <strong>There aren’t enough outlets.</strong> — <em>there aren’t</em> indica que não existem; <em>don’t have</em> indica que alguém não possui. <em>Outlets</em> está no plural.</p><p><strong>4. Marriage não é marido</strong></p><p style="color:#c53030;">❌ “Marriage” interpretado como “marido”.</p><p style="color:#276749;">✅ <strong>Marriage = casamento; husband = marido.</strong> — <em>My marriage is good</em> descreve a relação. <em>Wedding</em> nomeia a cerimônia ou festa.</p><p><strong>5. Groom no dia do casamento</strong></p><p style="color:#c53030;">❌ “Clover” escolhido para a imagem do noivo.</p><p style="color:#276749;">✅ <strong>Groom = noivo; bride = noiva</strong>, no contexto do casamento. <em>Clover</em> é “trevo”. Para o período de noivado, revise <em>fiancé/fiancée</em>.</p><p><strong>6. Were também aparece no singular com you</strong></p><p style="color:#c53030;">❌ “Were é plural.”</p><p style="color:#276749;">✅ <strong>You were a teacher.</strong> — <em>you</em> pode ser singular. Use <em>were</em> com <em>you, we, they</em>, e <em>was</em> com <em>I, he, she, it</em>.</p><p><strong>7. Are é presente; were é passado</strong></p><p style="color:#c53030;">❌ “You are teachers” traduzido inicialmente como “Vocês foram professores”.</p><p style="color:#276749;">✅ <strong>You are teachers = Vocês são professores.</strong><br><strong>You were teachers = Vocês eram / foram professores.</strong> — o verbo muda o tempo da frase.</p><p><strong>8. Do/does não indicam passado nesse exemplo</strong></p><p style="color:#c53030;">❌ “She doesn’t do” interpretado como “Ela não fez”.</p><p style="color:#276749;">✅ <strong>She doesn’t do = Ela não faz.</strong> — <em>doesn’t</em> é presente. Para “Ela não fez”, a estrutura é <strong>She didn’t do</strong>.</p><p><strong>9. Did não substitui o verbo principal</strong></p><p style="color:#c53030;">❌ Na primeira tentativa da pergunta sobre homework, faltou o verbo principal.</p><p style="color:#276749;">✅ <strong>Did she do the homework?</strong> — <em>did</em> é o auxiliar da pergunta e <em>do</em> significa “fazer”. Você chegou à frase correta durante a aula.</p><div class="panel"><p><strong>💡 Dois lembretes para a próxima aula</strong></p><p><strong>Uma negação no inglês padrão:</strong> <em>There wasn't anyone next to me</em> e <em>There was no one next to me</em> são duas formas corretas. Evite <em>wasn't + no one</em>. Você identificou essa regra corretamente na aula.</p><p><strong>I liked × I did like:</strong> para “Eu gostava / gostei”, a afirmativa neutra é <em>I liked</em>. <em>I did like</em> também é gramatical, mas acrescenta ênfase: “Eu gostei, sim”. Para negar, use <em>I didn't like</em>. Após <em>did/didn't</em> como auxiliares, o verbo fica na forma base.</p><p style="margin-bottom:0;"><strong>This × that:</strong> os dois podem se referir a uma situação. <em>That was a problem</em> retoma o problema já mencionado; <em>this</em> pode apresentar algo como mais próximo ou atual na conversa.</p></div></div></section><section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/3RHoZvQC9VM" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section><section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead><tbody><tr class="row-teacher"><td class="talk-label">César (Professor)</td><td class="talk-percent">77%</td><td class="talk-time">30 min 20 s</td></tr><tr class="row-student"><td class="talk-label">Lorena Nemeth</td><td class="talk-percent">23%</td><td class="talk-time">8 min 57 s</td></tr></tbody></table><p style="color:var(--muted);font-size:0.85rem;margin-bottom:0;">Estimativa pela duração das falas identificadas na transcrição, em português e inglês. Exclui pausas, áudio compartilhado e os trechos após o encerramento da aula, aos 55 minutos.</p></section><section><h2 style="margin-bottom:8px;">📝 Homework</h2><div class="homework"><p><strong>Orientações combinadas em aula</strong></p><ul><li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana, incluindo uma leitura antes da aula de <strong>quinta-feira, 15/10</strong>.</li><li>Conclua as atividades pendentes na área do aluno até <strong>sexta-feira, 16/10</strong>, como orientado pelo professor. Revise especialmente <em>was/were</em> e as combinações <em>anyone/no one</em> e <em>anything/nothing</em>.</li></ul><p><strong>Sugestão de revisão rápida</strong></p><ul><li>Explique com suas palavras a diferença entre <em>marriage</em> e <em>wedding</em> e quando usamos <em>fiancé/fiancée</em> ou <em>bride/groom</em>.</li><li>Ouça as três expressões do vocabulário-chave e repita em voz alta.</li><li>Releia <em>I do → I did</em>, <em>He does → He did</em> e <em>Did she do the homework?</em>. Identifique em cada frase quando <em>do/did</em> significa “fazer” e quando funciona como auxiliar.</li></ul></div></section></main><footer><p>© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer></article></div>
+<script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>
