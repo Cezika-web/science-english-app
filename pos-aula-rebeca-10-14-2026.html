@@ -1,0 +1,217 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Rebeca — 10/14/2026 — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+header{flex-wrap:wrap} h2{font-size:1.15rem;color:#0f1724} p,li{line-height:1.6}
+.outline-card p:first-child{margin-top:0}.outline-card p:last-child{margin-bottom:0}
+.grammar-table{width:100%;border-collapse:collapse;font-size:.93rem;margin:12px 0}
+.grammar-table th,.grammar-table td{padding:9px;text-align:left;border:1px solid var(--border)}
+.grammar-table th{background:#E7F6EC;color:#14532D}.table-wrap{overflow-x:auto}
+@media(max-width:480px){.wrap{padding:16px 10px}.card{box-sizing:border-box}.vocab{min-width:0}.actions{width:100%}.btn{justify-content:center}.meta{line-height:1.7}}
+@media print{.wrap{padding:0}.card{max-width:none;box-shadow:none;border:0}.actions,.vocab-say{display:none}body{background:white}.outline-card,.vocab,.homework{break-inside:avoid}a{color:#14532D}}
+</style></head><body><div class="wrap"><article class="card" role="main"><header><div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><span class="badge">PÓS-AULA</span><h1>Perguntas no presente: do/does ou to be?</h1></div><div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Rebeca &nbsp;•&nbsp; <strong>Data:</strong> 10/14/2026</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header><main><section class="panel"><p style="margin:0;font-weight:600;color:#14532D;font-style:italic;">Rebeca, nesta aula você praticou perguntas e negativas no presente simples, identificando quando usar <em>do/does</em> e quando usar <em>am/is/are</em>. Também revisamos <em>how many/how much</em> e formas do passado que apareceram na conversa sobre sua rotina.</p></section><section><h2>📘 Resumo da Aula</h2><div class="outline-card">
+<p>Começamos com uma conversa sobre seu dia de folga, limpeza da casa, séries turcas, pintura, academia e uma soneca que acabou durando mais do que o esperado. César destacou os verbos que você usou para contar acontecimentos: <strong>was, went, watched</strong> e as formas a reforçar, como <strong>cleaned, bought</strong> e <strong>woke up</strong>.</p>
+<p>A palavra <strong>dream</strong> ajudou a separar <strong>verbo</strong> de <strong>substantivo</strong>. Em <em>I had a dream</em> (eu tive um sonho), o verbo é <em>had</em> e <em>dream</em> é o sonho. Em <em>I dreamed</em> (eu sonhei), <em>dreamed</em> é o verbo no passado. Não precisamos colocar os dois no passado na primeira estrutura.</p>
+<p>O foco principal foi a revisão da <strong>Unidade 4, Lição 1</strong>, a partir das atividades sobre família. Antes de escolher o auxiliar, identifique <strong>de quem a frase fala</strong>: <em>my grandfather → he</em>, <em>your sister-in-law → she</em> e <em>your aunt and uncle → they</em>. O possessivo <em>my/your/her</em> não define o auxiliar; o sujeito completo é que define. <em>My grandfather</em> continua sendo “ele”, mesmo começando com <em>my</em>.</p>
+<div class="table-wrap"><table class="grammar-table"><thead><tr><th>Sujeito</th><th>Afirmação</th><th>Negativa</th><th>Pergunta</th></tr></thead><tbody>
+<tr><td>I / you / we / they</td><td>They live nearby.</td><td>They don't live nearby.</td><td>Do they live nearby?</td></tr>
+<tr><td>he / she / it</td><td>She has cousins.</td><td>She doesn't have cousins.</td><td>Does she have cousins?</td></tr>
+</tbody></table></div>
+<p>Com verbos como <strong>have, live</strong> e <strong>work</strong>, usamos <strong>do/does</strong> para perguntar e <strong>don't/doesn't</strong> para negar no presente simples. Depois desses auxiliares, o verbo principal volta à <strong>forma base</strong>: <em>have</em>, não <em>has</em>; <em>live</em>, não <em>lives</em>. A pergunta final da aula reuniu esse raciocínio: <strong>Does she have cousins?</strong></p>
+<p>O <strong>verbo to be</strong> segue outro caminho. Para perguntar, invertemos verbo e sujeito: <em>Your sister-in-law is Brazilian → Is your sister-in-law Brazilian?</em> Para negar, acrescentamos <em>not</em>: <em>She is not Brazilian.</em> Nessas estruturas, não colocamos <em>do/does</em>. Compare <strong>Are you Irish?</strong> (você é irlandesa?) com <strong>Do you have children?</strong> (você tem filhos?).</p>
+<p>Nas perguntas por informação, o bloco interrogativo vem primeiro: <strong>Where + do + your aunt and uncle + live?</strong> Com quantidade, o bloco inclui aquilo que contamos: <strong>How many bottles of water + do + you + have?</strong> O auxiliar vem depois do bloco inteiro, não entre <em>how many</em> e o substantivo.</p>
+<p><strong>How many</strong> acompanha substantivos contáveis no plural, como <em>houses, cousins</em> e <em>bottles</em>. <strong>How much</strong> acompanha incontáveis, como <em>water</em> e <em>money</em>, e também aparece para perguntar preço. A água é incontável nesse uso, mas podemos contar suas unidades: <em>bottles of water</em>. Também distinguimos <strong>very = muito</strong>, como em <em>very cold</em>, de <strong>more = mais</strong>.</p>
+<p>Por fim, combinamos uma estratégia de estudo: abrir <strong>“Consultar pós-aula”</strong> dentro da atividade, localizar a regra e entender o exemplo antes de tentar novamente. O objetivo é praticar o raciocínio, sem depender de copiar uma tradução pronta. Esta foi uma etapa mais desafiadora; repetir os mesmos padrões com calma ajuda a torná-los mais naturais.</p>
+</div></section><section><h2>💬 Frases usadas em aula</h2><div class="outline-card"><p style="color:var(--muted);font-size:.88rem;">Frases trabalhadas na aula, com a escrita em inglês normalizada.</p><ul><li><strong>Yesterday was my day off.</strong> → Ontem foi meu dia de folga.</li><li><strong>Take a nap.</strong> → Tirar uma soneca.</li><li><strong>I had a dream.</strong> → Eu tive um sonho.</li><li><strong>Do you have children?</strong> → Você tem filhos?</li><li><strong>Does he have grandchildren?</strong> → Ele tem netos?</li><li><strong>Is your sister-in-law Brazilian?</strong> → Sua cunhada é brasileira?</li><li><strong>Where do your aunt and uncle live?</strong> → Onde seus tios moram?</li><li><strong>How many bottles of water do you have?</strong> → Quantas garrafas de água você tem?</li><li><strong>What is your phone number?</strong> → Qual é o seu número de telefone?</li><li><strong>What are you doing?</strong> → O que você está fazendo?</li><li><strong>Does she have cousins?</strong> → Ela tem primos?</li><li><strong>See you Friday.</strong> → Até sexta-feira.</li></ul></div></section><section><h2>⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3>cousins</h3><button type="button" class="vocab-say" data-czk-say="cousins" aria-label="Ouvir a pronúncia de cousins" aria-pressed="false" title="Ouvir cousins">&#128266;</button></div><p><em>primos / primas</em><br>Filhos dos seus tios ou tias.<br><small><strong>Does she have cousins?</strong><br>Ela tem primos?</small></p></div><div class="vocab green"><div class="vocab-head"><h3>nearby</h3><button type="button" class="vocab-say" data-czk-say="nearby" aria-label="Ouvir a pronúncia de nearby" aria-pressed="false" title="Ouvir nearby">&#128266;</button></div><p><em>perto / nas proximidades</em><br>Indica que algo está a uma curta distância.<br><small><strong>They don&#x27;t live nearby.</strong><br>Eles não moram perto.</small></p></div><div class="vocab yellow"><div class="vocab-head"><h3>take a nap</h3><button type="button" class="vocab-say" data-czk-say="take a nap" aria-label="Ouvir a pronúncia de take a nap" aria-pressed="false" title="Ouvir take a nap">&#128266;</button></div><p><em>tirar uma soneca</em><br>Dormir por um período curto.<br><small><strong>I take a nap on my day off.</strong><br>Eu tiro uma soneca no meu dia de folga.</small></p></div></div></section><section><h2>📚 Vocabulário completo da aula</h2><div class="outline-card"><h3>Família e pessoas</h3><ul><li><strong>grandfather</strong> — avô</li><li><strong>aunt / uncle</strong> — tia / tio</li><li><strong>sister-in-law</strong> — cunhada</li><li><strong>in-laws</strong> — parentes por casamento</li><li><strong>children</strong> — filhos / crianças</li><li><strong>grandchildren</strong> — netos / netas</li><li><strong>cousins</strong> — primos / primas</li><li><strong>niece / nieces</strong> — sobrinha / sobrinhas</li><li><strong>husband</strong> — marido</li></ul><h3>Rotina, lazer e bem-estar</h3><ul><li><strong>day off</strong> — dia de folga</li><li><strong>clean up the house</strong> — limpar / arrumar a casa</li><li><strong>watch a series</strong> — assistir a uma série</li><li><strong>Turkish series</strong> — série turca</li><li><strong>paint / painting</strong> — pintar / pintura</li><li><strong>go to the gym</strong> — ir à academia</li><li><strong>wake up</strong> — acordar</li><li><strong>take a nap</strong> — tirar uma soneca</li><li><strong>stomach ache</strong> — dor de estômago</li><li><strong>nauseous</strong> — enjoado(a), com náusea</li><li><strong>dizzy</strong> — tonto(a)</li><li><strong>dream</strong> — sonho; sonhar</li></ul><h3>Perguntas e quantidade</h3><ul><li><strong>what</strong> — o que / qual</li><li><strong>where</strong> — onde</li><li><strong>when</strong> — quando</li><li><strong>who</strong> — quem</li><li><strong>how</strong> — como</li><li><strong>how many</strong> — quantos / quantas, com contáveis</li><li><strong>how much</strong> — quanto, com incontáveis; quanto custa</li><li><strong>bottle of water</strong> — garrafa de água</li><li><strong>money</strong> — dinheiro</li><li><strong>house / houses</strong> — casa / casas</li></ul><h3>Distância e intensidade</h3><ul><li><strong>nearby</strong> — perto / nas proximidades</li><li><strong>far</strong> — longe</li><li><strong>very</strong> — muito, para intensificar adjetivos e advérbios</li><li><strong>more</strong> — mais</li></ul><h3>Verbos do presente ao passado</h3><ul><li><strong>clean → cleaned</strong> — limpar → limpou</li><li><strong>watch → watched</strong> — assistir → assistiu</li><li><strong>buy → bought</strong> — comprar → comprou</li><li><strong>go → went</strong> — ir → foi</li><li><strong>wake up → woke up</strong> — acordar → acordou</li><li><strong>have → had</strong> — ter → teve</li><li><strong>dream → dreamed / dreamt</strong> — sonhar → sonhou; ambas as formas são corretas</li></ul></div></section><section><h2>🚨 Correções importantes</h2><div class="outline-card"><p style="color:var(--muted);font-size:.88rem;">Pontos retomados a partir das falas e das respostas revisadas. As formas abaixo normalizam a transcrição automática; quando o registro estava incompleto, o padrão foi reconstruído para facilitar o estudo.</p><p><strong>1. Passado ao contar o dia de folga</strong><br><span style="color:#c53030;">❌ Yesterday was my day off and I clean up my house.</span><br><span style="color:#276749;">✅ <strong>Yesterday was my day off and I cleaned up my house.</strong></span><br>Como a limpeza aconteceu ontem, use o passado de <em>clean</em>: <em>cleaned</em>.</p><p><strong>2. Ter filhos: have, com auxiliar do</strong><br><span style="color:#c53030;">❌ Are you have children?</span><br><span style="color:#276749;">✅ <strong>Do you have children?</strong></span><br>O verbo principal é <em>have</em>. Para perguntar com <em>you</em> no presente simples, use <em>do</em>. <em>Are you…?</em> aparece em perguntas com <em>to be</em>, como <em>Are you Brazilian?</em>.</p><p><strong>3. Terceira pessoa na pergunta</strong><br><span style="color:#c53030;">❌ Does she has cousins?</span><br><span style="color:#276749;">✅ <strong>Does she have cousins?</strong></span><br>Ao montar a pergunta final, surgiu a tentativa de manter <em>has</em>. O <em>does</em> já marca a terceira pessoa: o verbo principal fica <em>have</em>. Na afirmação, use <em>She has cousins.</em></p><p><strong>4. Negativa de rotina</strong><br><span style="color:#c53030;">❌ My grandfather not working on weekends.</span><br><span style="color:#276749;">✅ <strong>My grandfather doesn&#x27;t work on weekends.</strong></span><br>Na atividade, revisamos a mistura de <em>not</em> com <em>working</em>. Para uma rotina, o sujeito equivale a <em>he</em>: <em>doesn't + work</em>. <em>He isn't working</em> é outra estrutura e significa “ele não está trabalhando”.</p><p><strong>5. What e a contração what's</strong><br><span style="color:#c53030;">❌ What&#x27;s does your father…?</span><br><span style="color:#276749;">✅ <strong>What does your father…?</strong></span><br>A revisão mostrou um <em>s</em> extra depois de <em>what</em>. <em>What's</em> pode significar <em>what is</em> ou <em>what has</em>, conforme a estrutura. Aqui, a pergunta já usa <em>does</em>: fica apenas <em>what</em>.</p><p><strong>6. Very e more</strong><br><span style="color:#c53030;">❌ More = muitas.</span><br><span style="color:#276749;">✅ <strong>More = mais.</strong></span><br><em>Very</em> intensifica: <em>very cold</em> = muito frio. <em>More</em> indica “mais”: <em>more water</em> = mais água. Para “muitas” com substantivos contáveis, a palavra é <em>many</em>.</p><p><strong>7. Who e how</strong><br><span style="color:#c53030;">❌ Who are you? = Como você está?</span><br><span style="color:#276749;">✅ <strong>Who are you? = Quem é você?</strong></span><br>Durante a revisão, as duas palavras se misturaram. <em>Who</em> pergunta “quem”; <em>how</em> pergunta “como”. Para perguntar como alguém está: <em>How are you?</em>.</p></div></section><section><div class="ie-badge"><span class="ie-flag" aria-hidden="true"><span style="background:#169b62;"></span><span style="background:#ffffff;"></span><span style="background:#ff883e;"></span></span><span class="ie-shamrock">☘️</span><h2 class="ie-title" style="margin:0;">Como se diz na Irlanda</h2></div><div class="outline-card"><p>Dois jeitos de adaptar frases que apareceram na aula para conversas do dia a dia na Irlanda.</p><div style="border-radius:10px;border:2px solid #c9f3dc;background:#f5fff6;padding:14px;margin-bottom:12px;"><span class="expr-tag">fair play to you</span>
+<p style="margin:0 0 4px;color:var(--muted);font-size:.85rem;">Na aula saiu assim:</p><p>“Very good, very good.” — Muito bom, muito bom.</p>
+<p style="margin:0 0 4px;color:var(--muted);font-size:.85rem;">Na Irlanda pode soar assim:</p><p style="color:#14532D;font-weight:700;">“Fair play to you!” — Parabéns! / Mandou bem!</p>
+<p>💡 É uma forma comum de reconhecer o esforço ou uma conquista de alguém. Serve para elogiar entre amigos e colegas, inclusive em conversas informais no trabalho. Aqui, adapta o elogio de César ao desempenho na conversa. Não traduza literalmente como “jogo justo”. <a href="https://careerhub.hse.ie/int_irish-phrases/" target="_blank" rel="noopener noreferrer">HSE — expressões do cotidiano</a>.</p>
+<p style="margin:0 0 3px;color:var(--muted);font-size:.85rem;">Outro exemplo:</p><p style="margin:0;">“Fair play to you for studying after work.” — Parabéns por estudar depois do trabalho.</p></div><div style="border-radius:10px;border:2px solid #fde68a;background:#fffdf0;padding:14px;margin-bottom:12px;"><span class="expr-tag">What are you at?</span>
+<p style="margin:0 0 4px;color:var(--muted);font-size:.85rem;">Na aula saiu assim:</p><p>“What are you doing?” — O que você está fazendo?</p>
+<p style="margin:0 0 4px;color:var(--muted);font-size:.85rem;">Na Irlanda pode soar assim:</p><p style="color:#14532D;font-weight:700;">“What are you at?” — O que você está fazendo?</p>
+<p>💡 No inglês informal ouvido na Irlanda, <em>be at something</em> pode indicar estar ocupado com uma atividade. A pergunta pode ser amigável entre pessoas próximas ou colegas; com um tom irritado, também pode soar como uma repreensão. Aqui, <em>at</em> não pergunta a localização da pessoa. <a href="https://www.focloir.ie/en/dictionary/ei/at" target="_blank" rel="noopener noreferrer">Foclóir — uso de “be at”</a>.</p>
+<p style="margin:0 0 3px;color:var(--muted);font-size:.85rem;">Outro exemplo:</p><p style="margin:0;">“What are you at this evening?” — O que você vai fazer hoje à noite?</p></div></div></section><section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/8N1HrPmatb8" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section><section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem estimada</th><th>Tempo de fala aproximado</th></tr></thead><tbody><tr class="row-teacher"><td class="talk-label">César (Professor)</td><td class="talk-percent">63%</td><td class="talk-time">34 minutos</td></tr><tr class="row-student"><td class="talk-label">Rebeca</td><td class="talk-percent">37%</td><td class="talk-time">20 minutos</td></tr></tbody></table><p style="font-size:.84rem;color:var(--muted);">Estimativa pelas durações das falas na transcrição, em português e inglês. Pausas não entram no cálculo; a gravação completa tem cerca de 61 minutos.</p></section><section><h2>📝 Homework</h2><div class="homework"><p><strong>Combinado em aula:</strong></p><ul>
+<li>Finalizar as atividades que faltam <strong>até sexta-feira, 16 de outubro</strong>, usando o botão <strong>“Consultar pós-aula”</strong> quando surgir dúvida.</li>
+<li>Fazer o <strong>desafio da semana</strong>: ele também retoma perguntas no presente simples com <em>do/does</em>.</li>
+<li>Ao consultar o material, procurar a regra, ler o exemplo, identificar o sujeito e o verbo e só depois refazer a resposta com suas palavras.</li>
+</ul><p><strong>Para reforçar nesta semana:</strong></p><ul>
+<li>Leia este pós-aula de <strong>2 a 3 vezes</strong>, em sessões curtas.</li>
+<li>Treine em voz alta: <em>She has cousins → She doesn't have cousins → Does she have cousins?</em> Depois troque <em>she</em> por <em>they</em> e ajuste o auxiliar.</li>
+<li>Compare: <em>Is your sister-in-law Brazilian?</em> e <em>Does your sister-in-law live nearby?</em> Explique por que a primeira usa <em>is</em> e a segunda usa <em>does</em>.</li>
+</ul><p style="margin-bottom:0;color:#14532D;">💡 Antes de responder: <strong>quem é o sujeito? Qual é o verbo? É pergunta, negativa ou afirmação?</strong> Resolva uma etapa por vez.</p></div></section></main><footer><p>© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer></article></div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>

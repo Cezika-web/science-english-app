@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Felipe Nemeth — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+body{color:#263445;line-height:1.6} h2{font-size:1.15rem;color:#14532D;line-height:1.35}
+h3{font-size:1rem} p{margin:0 0 12px} p:last-child{margin-bottom:0} li+li{margin-top:7px}
+.title-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.actions{flex-shrink:0}.actions .btn{font-size:.8rem;text-align:center}
+.correction+.correction{margin-top:18px;padding-top:16px;border-top:1px solid var(--border)}
+.wrong{color:#b32626}.right{color:#21653e}.note{font-size:.88rem;color:var(--muted)}
+.formula{padding:12px;background:#F0FDF4;border-radius:8px}.vocab{min-width:180px}
+@media(max-width:720px){.wrap{padding:20px 12px}header{flex-direction:column}.card{min-width:0}.vocab{min-width:0}.actions{margin-top:6px}.talk-table th,.talk-table td{padding:7px 6px}}
+@media print{body{background:#fff}.wrap{padding:0}.card{border:0;box-shadow:none;padding:0}.actions,.vocab-say{display:none}.vocab,.correction,tr{break-inside:avoid}a{color:#14532D}}
+</style></head><body>
+<div class="wrap"><article class="card" role="main"><header><div><div class="title-row"><span class="badge">PÓS-AULA</span><h1>Estimativas, leitura e expressões com -ing</h1></div><div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Felipe Nemeth &nbsp;•&nbsp; <strong>Data:</strong> 10/14/2026</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header><main>
+<section class="panel"><p style="margin:0;font-weight:600;color:#14532D;"><em>Felipe, nesta aula você praticou a compreensão de perguntas em um jogo de estimativas e voltou à leitura da página 27. O foco foi entender expressões sobre livros e reconhecer padrões como <span lang="en">hooked on reading</span> e <span lang="en">better off asking</span>.</em></p></section>
+<section><h2>📘 Resumo da Aula</h2><div class="outline-card">
+<p><strong>1. Conversa sobre o feriado.</strong> Você contou que recebeu a família da sua esposa, falou sobre a chegada no sábado, a saída no domingo depois do almoço e o trabalho de preparar as refeições. A conversa serviu para praticar relatos no passado, dias da semana, horários e vocabulário de família e alimentação.</p>
+<p><strong>2. Compreensão com um jogo de estimativas.</strong> Antes de voltar ao livro, vocês trabalharam perguntas sobre produção de iPhones, vendas de Crocs, uma representação do sistema solar em escala e a comparação entre a torre do Big Ben e o Burj Khalifa. O objetivo foi entender o enunciado, levantar hipóteses, explicar palpites e comparar respostas. Apareceram <em>How many…?</em>, <em>How far…?</em>, números grandes e unidades de medida.</p>
+<p><strong>3. O sentido de cada parte da pergunta.</strong> O enunciado sobre o sistema solar exigiu atenção a <em>shrink</em> (reduzir de tamanho), <em>the entire solar system</em> (o sistema solar inteiro) e <em>until the sun is the size of this basketball</em> (até o Sol ficar do tamanho desta bola de basquete). A redução se aplica ao sistema todo; a bola representa o tamanho do Sol nessa escala. Também foi esclarecido que <em>a basketball</em> é uma bola de basquete. No outro desafio, <em>stacked end to end</em> e <em>reach the top</em> ajudaram a visualizar a comparação entre as torres.</p>
+<p><strong>4. Leitura e interpretação — página 27.</strong> Você leu o texto em silêncio e depois analisou as expressões do diálogo sobre livros e hábitos de leitura. <em>I can't put it down</em> descreve um livro tão envolvente que a pessoa não consegue parar de ler; <em>I'm not big on thrillers</em> indica pouco interesse por esse gênero; <em>be up on the latest bestsellers</em> significa estar por dentro dos livros mais vendidos do momento. Você também trabalhou <em>be hooked on</em>, <em>switch over to</em> e <em>nothing beats</em>.</p>
+<p><strong>5. Preposição + verbo com -ing.</strong> A frase <em>You'd be better off asking my sister</em> abriu a revisão das combinações com preposições. Quando um verbo vem logo após uma preposição, ele aparece com <strong>-ing</strong>: <em>afraid of speaking</em>, <em>crazy about reading</em> e <em>object to speaking</em>. Em <em>object to</em>, o <strong>to</strong> é preposição; em <em>like to go</em>, ele marca o infinitivo. Já <em>enjoy</em> pede outro verbo com -ing, e <em>like</em> admite as duas construções. Aprenda também o padrão <strong>be better off + -ing</strong> como uma expressão completa para aconselhar alguém.</p>
+<p><strong>6. Forma, sentido e pronúncia.</strong> Em <em>You'd be better off…</em>, <strong>you'd = you would</strong>, e o sujeito precisa estar presente. Em <em>I was hooked on reading</em>, o passado está em <strong>was</strong>; <strong>hooked</strong> descreve o estado de estar muito envolvido, e não muda para o presente quando trocamos <em>was</em> por <em>is</em>. A pronúncia de <em>hooked</em> foi praticada com atenção ao som inicial de <strong>h</strong>. Por fim, <em>I've never switched over…</em> retomou o present perfect, e um áudio de propaganda ilustrou <em>nothing beats</em> = “nada supera”.</p>
+</div></section>
+<section><h2>💬 Frases usadas em aula</h2><div class="outline-card"><p class="note">Frases ditas ou lidas durante a aula, com pontuação ajustada para facilitar a revisão.</p><ul><li><strong lang="en">They arrived on Saturday.</strong><br>Eles chegaram no sábado.</li><li><strong lang="en">Let me think.</strong><br>Deixe-me pensar.</li><li><strong lang="en">I don’t understand the question.</strong><br>Eu não entendo a pergunta.</li><li><strong lang="en">How far away would Earth be?</strong><br>A que distância a Terra ficaria?</li><li><strong lang="en">Sorry, I don’t understand this part.</strong><br>Desculpe, não entendo esta parte.</li><li><strong lang="en">I just can’t put it down.</strong><br>Eu simplesmente não consigo parar de ler esse livro.</li><li><strong lang="en">I’m not big on thrillers.</strong><br>Não sou muito fã de livros de suspense.</li><li><strong lang="en">I do my reading on my phone.</strong><br>Eu faço minhas leituras no celular.</li><li><strong lang="en">You’d be better off asking my sister.</strong><br>Seria melhor você perguntar à minha irmã.</li><li><strong lang="en">I am crazy about soccer.</strong><br>Eu adoro futebol.</li><li><strong lang="en">I was totally hooked on reading.</strong><br>Eu era completamente viciado em leitura.</li><li><strong lang="en">I will switch to reading on a screen.</strong><br>Vou passar a ler em uma tela.</li><li><strong lang="en">Everyone is different.</strong><br>Cada pessoa é diferente.</li></ul></div></section>
+<section><h2>⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3 lang="en">be better off</h3><button type="button" class="vocab-say" data-czk-say="be better off" aria-label="Ouvir a pronúncia de be better off" aria-pressed="false" title="Ouvir be better off">&#128266;</button></div><p><em>seria melhor / estar em uma situação melhor</em></p><p>Para dizer que uma alternativa é mais vantajosa. Ao sugerir uma ação, use <strong>be better off + verbo com -ing</strong>.</p><p><small lang="en">You’d be better off asking my sister.</small><br><small>Seria melhor você perguntar à minha irmã.</small></p></div><div class="vocab green"><div class="vocab-head"><h3 lang="en">hooked on</h3><button type="button" class="vocab-say" data-czk-say="hooked on" aria-label="Ouvir a pronúncia de hooked on" aria-pressed="false" title="Ouvir hooked on">&#128266;</button></div><p><em>muito envolvido com / viciado em</em></p><p>Use com <strong>be</strong> para falar de algo que prende muito sua atenção. Pode vir antes de um substantivo ou de um verbo com <strong>-ing</strong>.</p><p><small lang="en">I was totally hooked on reading.</small><br><small>Eu era completamente viciado em leitura.</small></p></div><div class="vocab yellow"><div class="vocab-head"><h3 lang="en">switch over to</h3><button type="button" class="vocab-say" data-czk-say="switch over to" aria-label="Ouvir a pronúncia de switch over to" aria-pressed="false" title="Ouvir switch over to">&#128266;</button></div><p><em>mudar para / passar a usar ou fazer</em></p><p>Indica trocar uma opção ou hábito por outro. Em <strong>switch over to reading</strong>, o <strong>to</strong> é preposição.</p><p><small lang="en">I’ve never switched over to reading on a screen.</small><br><small>Eu nunca passei a ler em uma tela.</small></p></div></div></section>
+<section><h2>📚 Vocabulário completo da aula</h2><div class="outline-card"><h3>Feriado, família e refeições</h3><ul><li><strong lang="en">holiday</strong> — feriado; férias, conforme o contexto</li><li><strong lang="en">my wife’s family</strong> — a família da minha esposa</li><li><strong lang="en">arrive</strong> — chegar</li><li><strong lang="en">breakfast</strong> — café da manhã</li><li><strong lang="en">lunch</strong> — almoço</li><li><strong lang="en">dinner</strong> — jantar</li><li><strong lang="en">tired</strong> — cansado</li><li><strong lang="en">after lunch</strong> — depois do almoço</li><li><strong lang="en">around eleven</strong> — por volta das onze</li></ul><h3>Perguntas, estimativas e números</h3><ul><li><strong lang="en">How many…?</strong> — Quantos / quantas…? — quantidade contável</li><li><strong lang="en">How far…?</strong> — A que distância…?</li><li><strong lang="en">guess</strong> — palpite; dar um palpite</li><li><strong lang="en">average</strong> — média</li><li><strong lang="en">pair / pairs</strong> — par / pares</li><li><strong lang="en">million / billion</strong> — milhão / bilhão</li><li><strong lang="en">percentage</strong> — porcentagem</li><li><strong lang="en">divide by</strong> — dividir por</li><li><strong lang="en">times</strong> — vezes — em uma multiplicação</li><li><strong lang="en">roughly / around</strong> — aproximadamente / por volta de</li><li><strong lang="en">It’s your call.</strong> — Você decide.</li></ul><h3>Tamanhos, distâncias e comparações</h3><ul><li><strong lang="en">shrink</strong> — encolher; reduzir de tamanho</li><li><strong lang="en">entire</strong> — inteiro; completo</li><li><strong lang="en">solar system</strong> — sistema solar</li><li><strong lang="en">Earth / the sun</strong> — Terra / o Sol</li><li><strong lang="en">the size of</strong> — do tamanho de</li><li><strong lang="en">basketball</strong> — bola de basquete</li><li><strong lang="en">inch / inches</strong> — polegada / polegadas</li><li><strong lang="en">foot / feet</strong> — pé / pés — unidade de medida</li><li><strong lang="en">meter / kilometer</strong> — metro / quilômetro</li><li><strong lang="en">circumference / volume</strong> — circunferência / volume</li><li><strong lang="en">stacked end to end</strong> — empilhados em sequência, uma extremidade junto à outra</li><li><strong lang="en">reach the top</strong> — alcançar o topo</li><li><strong lang="en">tower / building / floor</strong> — torre / edifício / andar</li><li><strong lang="en">tall / taller / tallest</strong> — alto / mais alto / o mais alto — usado para pessoas e construções</li></ul><h3>Livros, leitura e preferências</h3><ul><li><strong lang="en">thriller</strong> — livro ou filme de suspense</li><li><strong lang="en">mystery novel</strong> — romance de mistério</li><li><strong lang="en">fiction</strong> — ficção</li><li><strong lang="en">novel</strong> — romance — obra literária</li><li><strong lang="en">briefcase</strong> — pasta executiva; maleta</li><li><strong lang="en">recommendation</strong> — recomendação; indicação</li><li><strong lang="en">bestseller</strong> — livro que vende muito</li><li><strong lang="en">latest</strong> — mais recente / mais recentes</li><li><strong lang="en">screen</strong> — tela</li><li><strong lang="en">I can’t put it down.</strong> — Não consigo parar de ler esse livro.</li><li><strong lang="en">be big on</strong> — gostar muito de; ser fã de</li><li><strong lang="en">be better off + -ing</strong> — seria melhor fazer algo / estar em melhor situação fazendo algo</li><li><strong lang="en">be up on</strong> — estar por dentro de; estar atualizado sobre</li><li><strong lang="en">be hooked on</strong> — estar muito envolvido com; estar viciado em</li><li><strong lang="en">switch over to</strong> — mudar para; passar a usar ou fazer</li><li><strong lang="en">nothing beats</strong> — nada supera</li><li><strong lang="en">kind of concerned</strong> — um pouco preocupado</li></ul><h3>Combinações com preposições</h3><ul><li><strong lang="en">afraid of</strong> — com medo de</li><li><strong lang="en">crazy about</strong> — apaixonado por; gostar muito de</li><li><strong lang="en">tired of / sick of</strong> — cansado de / farto de</li><li><strong lang="en">object to</strong> — opor-se a — to funciona como preposição</li></ul></div></section>
+<section><h2>🚨 Correções importantes</h2><div class="outline-card"><p class="note">Ajustes a partir das suas falas e das dúvidas trabalhadas na aula. Trechos incompletos receberam modelos completos para revisão.</p><div class="correction"><p><strong>1. Local: at my house</strong></p><p class="wrong">❌ On my house.</p><p class="right">✅ <strong lang="en">At my house.</strong></p><p>Para dizer “na minha casa”, use <strong>at my house</strong>. <em>On</em> costuma indicar contato com uma superfície. Para receber visitas, uma opção natural é <em>We had my wife’s family over at our house.</em></p></div><div class="correction"><p><strong>2. Relato no passado: went ou left</strong></p><p class="wrong">❌ And they gone.</p><p class="right">✅ <strong lang="en">And they left on Sunday after lunch.</strong></p><p><strong>Gone</strong> é particípio e não funciona sozinho como passado simples. Para “eles foram embora”, use <strong>they left</strong>; com <em>go</em>, o passado simples é <strong>went</strong>.</p></div><div class="correction"><p><strong>3. Tempo que você não teve</strong></p><p class="wrong">❌ I don’t have time, but I promise you that I will do.</p><p class="right">✅ <strong lang="en">I didn’t have time, but I promise I’ll do the exercises.</strong></p><p>Para explicar por que os exercícios ainda não foram feitos, <strong>didn’t have time</strong> situa a falta de tempo no passado. Complete <em>do</em> com <strong>the exercises</strong> ou com um pronome adequado: <em>I’ll do them.</em></p></div><div class="correction"><p><strong>4. Números grandes depois de um número exato</strong></p><p class="wrong">❌ 8 billions.</p><p class="right">✅ <strong lang="en">8 billion people.</strong></p><p>Depois de um número exato, <strong>hundred, thousand, million</strong> e <strong>billion</strong> ficam sem <strong>-s</strong>: <em>eight billion people</em>, <em>ten million pairs</em>, <em>twenty-three thousand</em>. Para uma quantidade indefinida, use <em>billions of people</em>.</p></div><div class="correction"><p><strong>5. O verbo depois de stop</strong></p><p class="wrong">❌ I can’t stop the reading the book.</p><p class="right">✅ <strong lang="en">I can’t stop reading the book.</strong></p><p>Quando o sentido é “parar de fazer”, use <strong>stop + verbo com -ing</strong>, sem <em>the</em> antes do verbo. No contexto da leitura, a expressão trabalhada foi <strong>I can’t put it down</strong>.</p></div><div class="correction"><p><strong>6. Perguntar sobre a altura de uma construção</strong></p><p class="wrong">❌ I don’t know how meters has the…</p><p class="right">✅ <strong lang="en">I don’t know how tall the tower is.</strong></p><p>Para perguntar a altura, use <strong>How tall is the tower?</strong> Dentro de <em>I don’t know…</em>, a ordem passa a ser <strong>how tall + the tower + is</strong>. A frase original ficou incompleta; este modelo expressa a pergunta sobre a torre.</p></div><div class="correction"><p><strong>7. Hooked: som e significado</strong></p><p class="wrong">❌ hooked on reading = ser avesso à leitura</p><p class="right">✅ <strong lang="en">hooked on reading = ser muito ligado / viciado em leitura</strong></p><p>Na primeira interpretação, o sentido ficou invertido. <strong>Hooked on</strong> indica forte interesse. Na pronúncia, comece com o ar do <strong>h</strong>, como em <em>house</em> e <em>home</em>, sem transformá-lo no “r” forte do português. Em <em>hooked</em>, o final <strong>-ed</strong> soa como <strong>/t/</strong>, sem uma sílaba extra.</p></div><p class="formula"><strong>💡 Padrões para guardar</strong><br><span lang="en">object to <strong>speaking</strong> • hooked on <strong>reading</strong> • switch over to <strong>reading</strong> • be better off <strong>asking</strong></span><br>Aprenda as combinações completas e observe qual forma do verbo vem depois delas.</p></div></section>
+<section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/_fU79wIiU7c" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section>
+<section class="speaking"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th scope="col">Participante</th><th scope="col">Participação</th><th scope="col">Tempo aproximado</th></tr></thead><tbody><tr class="row-teacher"><td class="talk-label">César — professor</td><td class="talk-percent">63%</td><td class="talk-time">23 min 26 s</td></tr><tr class="row-student"><td class="talk-label">Felipe — aluno</td><td class="talk-percent">37%</td><td class="talk-time">13 min 54 s</td></tr></tbody></table><p class="note" style="margin-top:10px;">Estimativa pela soma dos intervalos de fala identificados na transcrição, considerando português e inglês. Pausas, leitura silenciosa e áudio compartilhado ficam fora do cálculo. A gravação tem cerca de 48 minutos e meio.</p><p>Você participou dando palpites, explicando seu raciocínio e pedindo esclarecimentos. Continue usando <em lang="en">I don’t understand this part</em> para localizar a dúvida e depois tente reformular o que entendeu em uma frase completa.</p></section>
+<section><h2>📝 Homework</h2><div class="homework"><p><strong>Combinado da aula:</strong> concluir as atividades pendentes sobre <strong>causativos</strong> até <strong>segunda-feira, 19 de outubro</strong>. César explicou que elas retomam o conteúdo das aulas anteriores e que esta aula não teria uma nova lista de atividades.</p><p><strong>Para revisar este pós-aula:</strong> releia as expressões sobre livros e use os três botões de áudio do vocabulário-chave. Volte à página 27 e confira principalmente <em lang="en">I can’t put it down</em>, <em lang="en">be better off + -ing</em> e <em lang="en">hooked on</em>.</p></div></section>
+</main><footer><p>© 2025 CZK English • czkenglish@gmail.com</p></footer></article></div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>
