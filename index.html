@@ -5298,7 +5298,8 @@ function App() {
     try {
       const f = fb || await getFB();
       const u = uid || user?.uid;
-      if (u) await f.updateDoc(f.doc(f.db, 'students', u, 'posaulas', post.id), { readAt: f.serverTimestamp() });
+      // "Lido em" guarda só a 1ª leitura: reabrir não sobrescreve a data.
+      if (u && !post.readAt) await f.updateDoc(f.doc(f.db, 'students', u, 'posaulas', post.id), { readAt: f.serverTimestamp() });
     } catch(e) {}
   }
 
