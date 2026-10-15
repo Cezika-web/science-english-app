@@ -7053,6 +7053,38 @@
       return list;
     }
 
+    // Agrupa os eventos de aula por aluno. Aula em dupla/turma pode vir de dois
+    // jeitos: um doc só com os alunos em memberUids (o studentUid, quando
+    // existe, é só o primeiro), ou uma cópia por aluno — cada uma com o
+    // studentUid dele e a dupla INTEIRA em memberUids. Na cópia por aluno,
+    // indexar pela lista toda dava ao Gabriel a cópia do Lucas, que não está
+    // cancelada: cancelar a aula "só para o Gabriel" não tirava a pendência
+    // dele. Então a cópia de um colega só vale pra quem não tem cópia própria
+    // daquele mesmo horário (a própria cópia, com o cancelamento dele, decide).
+    function pendChaveSerie(ev) {
+      const rep = ev.repeat || 'none';
+      const dia = ev.date ? new Date(`${ev.date}T00:00:00`) : null;
+      const quando = rep === 'none' ? ev.date
+        : rep === 'weekly' ? dia?.getDay()
+        : rep === 'monthly' ? dia?.getDate()
+        : rep === 'custom' ? (ev.repeatDays || []).map(Number).sort().join(',') : '';
+      return [ev.type, ev.startTime, ev.endTime, rep, quando].join('|');
+    }
+    function pendIndexarEventos(eventos) {
+      const aulas = eventos.filter(ev => ev.type === 'lesson' || ev.type === 'reposicao');
+      const proprias = {};
+      aulas.forEach(ev => { if (ev.studentUid) (proprias[ev.studentUid] ||= new Set()).add(pendChaveSerie(ev)); });
+      const porAluno = {};
+      aulas.forEach(ev => {
+        const uids = new Set([...(ev.memberUids || []), ev.studentUid].filter(Boolean));
+        uids.forEach(uid => {
+          if (uid !== ev.studentUid && proprias[uid]?.has(pendChaveSerie(ev))) return;
+          (porAluno[uid] ||= []).push(ev);
+        });
+      });
+      return porAluno;
+    }
+
     function pendDiaLabel(due, hoje) {
       const diff = Math.round((due - hoje) / 86400000);
       if (diff === 0) return { key:'today', text:'Enviar hoje' };
@@ -7417,15 +7449,7 @@
         if (settingsSnap.exists() && Array.isArray(settingsSnap.data().workingDays)) {
           pendWorkingDays = settingsSnap.data().workingDays.map(Number);
         }
-        eventsSnap.docs.forEach(item => {
-          const ev = item.data();
-          if (ev.type !== 'lesson' && ev.type !== 'reposicao') return;
-          // Aula em dupla/turma: o evento guarda os alunos em memberUids (o
-          // studentUid, quando existe, é só o primeiro). Indexar só por
-          // studentUid deixava o outro aluno sem a aula nas pendências.
-          const uids = new Set([...(ev.memberUids || []), ev.studentUid].filter(Boolean));
-          uids.forEach(uid => (pendEventosPorAluno[uid] ||= []).push(ev));
-        });
+        Object.assign(pendEventosPorAluno, pendIndexarEventos(eventsSnap.docs.map(item => item.data())));
       } catch (e) {
         console.warn('Não consegui carregar a agenda pra calcular pendências (seguindo sem agenda):', e);
       }
