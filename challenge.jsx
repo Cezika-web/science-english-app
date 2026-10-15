@@ -26,6 +26,25 @@ function challengeClock(seconds) {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2,'0')}`;
 }
 
+// Lacuna "___" no texto da pergunta: em resposta escrita o aluno digita direto nela
+// (sem caixa embaixo); em múltipla escolha a alternativa marcada preenche a lacuna.
+// Só vale com uma lacuna — com várias, volta para a caixa de resposta.
+function challengeBlankParts(context) {
+  const parts = String(context || '').split(/_{2,}/);
+  return parts.length === 2 ? parts : null;
+}
+
+// Verdadeiro/falso chega do servidor como True/False ("A frase está correta?").
+// O aluno vê Yes/No; o id (a/b) enviado e o texto guardado não mudam.
+function challengeOptionLabel(question, option) {
+  const text = String(option?.text ?? '').trim();
+  if ((question?.options || []).length === 2) {
+    if (/^(true|verdadeiro)\.?$/i.test(text)) return 'Yes, it is correct.';
+    if (/^(false|falso)\.?$/i.test(text)) return 'No, it is not correct.';
+  }
+  return text;
+}
+
 function challengeStatus(state = {}) {
   if (state.phase === 'open') {
     if (state.completed) return { badge:'CONCLUÍDA', title:`Parte ${state.part} concluída`, detail:state.part === 1 ? 'Suas respostas estão salvas. A nota desta parte sai na quinta.' : 'Suas respostas estão salvas. O resultado sai no domingo.', tone:'#DFF7E8', color:'#15713A' };
@@ -559,6 +578,96 @@ function ChallengeProgressPanel({ challengeState, onOpenChallenge }) {
   return <button onClick={onOpenChallenge} style={{ width:'100%', marginTop:11, padding:14, border:0, borderRadius:18, color:'#fff', background:challengeBlue, boxShadow:'0 9px 22px rgba(7,27,58,.16)', textAlign:'left', fontFamily:'inherit' }}><div style={{ display:'flex', justifyContent:'space-between', gap:10 }}><span><span style={{ color:'#A9EEFF', fontSize:8.5, fontWeight:900, letterSpacing:.8 }}>DESAFIO SCIENCE ENGLISH</span><strong style={{ display:'block', fontSize:16, marginTop:3 }}>{status.title}</strong><span style={{ display:'block', color:'rgba(255,255,255,.68)', fontSize:9.5, marginTop:3 }}>{challengeState.phase === 'results' ? `${score} pontos nesta semana` : status.detail}</span></span><span style={{ width:36, height:36, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(255,255,255,.12)', fontSize:18 }}>🏆</span></div><span style={{ display:'block', marginTop:10, paddingTop:9, borderTop:'1px solid rgba(255,255,255,.14)', color:'#BDEFFF', fontSize:9.5, fontWeight:900 }}>ABRIR DESAFIO →</span></button>;
 }
 
+// Lacuna digitável dentro da frase. O espelho invisível dá a largura (cresce com o
+// que o aluno escreve) e o input fica por cima, na mesma célula da grade.
+function ChallengeBlank({ value, onChange, onEnter, readOnly }) {
+  const [focused, setFocused] = React.useState(false);
+  const cell = { gridArea:'1 / 1', padding:'0 12px', minWidth:0 };
+  return <span style={{ display:'inline-grid', minWidth:130, margin:'0 2px', borderBottom:'5px solid #5DE1FF', borderRadius:'10px 10px 0 0', color:'#5DE1FF', lineHeight:1.2, verticalAlign:'baseline', background:focused ? 'rgba(93,225,255,.26)' : 'rgba(93,225,255,.14)', animation:!value && !focused ? 'czkBlank 1.3s ease-in-out infinite' : 'none' }}>
+    <span aria-hidden="true" style={{ ...cell, visibility:readOnly ? 'visible' : 'hidden', whiteSpace:'pre' }}>{value || ' '}</span>
+    {!readOnly && <input autoFocus type="text" inputMode="text" enterKeyHint="done" autoCapitalize="off" autoCorrect="off" autoComplete="off" spellCheck={false} aria-label="Complete a lacuna" value={value}
+      onChange={event => onChange(event.target.value)}
+      onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); onEnter(); } }}
+      onFocus={event => { setFocused(true); const field = event.currentTarget; setTimeout(() => field.scrollIntoView({ block:'center', behavior:'smooth' }), 150); }}
+      onBlur={() => setFocused(false)}
+      style={{ ...cell, width:0, minWidth:'100%', border:0, outline:0, background:'transparent', color:'#5DE1FF', WebkitTextFillColor:'#5DE1FF', caretColor:'#fff', font:'inherit', textAlign:'center', touchAction:'manipulation' }} />}
+  </span>;
+}
+
+// Tela da pergunta (modelo "C · foco total"): barra de tempo, texto gigante centralizado,
+// resposta escrita direto na lacuna e caixa só para traduzir/escrever. Com o teclado
+// aberto (área visível pequena) cai no modo compacto para tudo caber.
+function ChallengeQuestionScreen({ question, index, total, seconds, timeLimit, answer, error, onAnswer, onSend, onSkip, onClose }) {
+  const [compact, setCompact] = React.useState(false);
+  const [wide, setWide] = React.useState(() => window.innerWidth >= 700);
+  React.useEffect(() => {
+    const vv = window.visualViewport;
+    const update = () => { setCompact((vv ? vv.height : window.innerHeight) < 560); setWide(window.innerWidth >= 700); };
+    update();
+    window.addEventListener('resize', update);
+    if (vv) vv.addEventListener('resize', update);
+    return () => { window.removeEventListener('resize', update); if (vv) vv.removeEventListener('resize', update); };
+  }, []);
+
+  const tone = seconds <= 10 ? '#FF7B7B' : '#5DE1FF';
+  const isChoice = question.type === 'multipleChoice';
+  const options = question.options || [];
+  const labels = options.map(option => challengeOptionLabel(question, option));
+  const maxLen = Math.max(0, ...labels.map(text => text.length));
+  const parts = challengeBlankParts(question.context);
+  const inlineBlank = !isChoice && !!parts;
+  const picked = isChoice ? options.find(option => option.id === answer) : null;
+  const scale = compact ? 0.78 : 1;
+  const prompt = String(question.prompt || '');
+  const hasContext = !!question.context;
+  const contextLen = String(question.context || '').length;
+  const bigSize = Math.round((hasContext ? (contextLen > 90 ? 28 : contextLen > 60 ? 32 : contextLen > 40 ? 36 : 42) : (prompt.length > 80 ? 26 : 34)) * scale);
+  const shortPrompt = prompt.length <= 60;
+  const twoUp = options.length === 2 && maxLen <= 24;                       // sim/não lado a lado
+  const columns = twoUp ? 2 : options.length > 2 && maxLen <= 14 ? 2 : wide && maxLen <= 30 ? 2 : 1;
+  const longOptions = maxLen > 30;
+  const badge = twoUp ? 62 : longOptions ? 40 : 48;
+  const scrollTo = event => { const field = event.currentTarget; setTimeout(() => field.scrollIntoView({ block:'center', behavior:'smooth' }), 150); };
+  const canSend = !!answer.trim();
+
+  const big = parts
+    ? <>{parts[0]}<ChallengeBlank value={isChoice ? (picked ? challengeOptionLabel(question, picked) : '') : answer} readOnly={isChoice} onChange={onAnswer} onEnter={() => { if (canSend) onSend(); }} />{parts[1]}</>
+    : (hasContext ? question.context : prompt);
+
+  return <div style={{ height:'100%', display:'flex', flexDirection:'column', padding:'calc(env(safe-area-inset-top,0px) + 16px) 20px calc(env(safe-area-inset-bottom,0px) + 20px)' }}>
+    <style>{'@keyframes czkBlank{50%{background:rgba(93,225,255,.32)}}'}</style>
+    <div style={{ flex:'none', height:10, borderRadius:10, background:'rgba(255,255,255,.14)', overflow:'hidden' }}><i style={{ display:'block', height:'100%', width:`${Math.max(0, Math.min(100, seconds / timeLimit * 100))}%`, background:tone, borderRadius:10, transition:'width 1s linear, background .3s' }} /></div>
+    <div style={{ flex:'none', display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:12 }}>
+      <button onClick={onClose} aria-label="Sair" style={{ ...challengeRoundButton, width:46, height:46, fontSize:26, lineHeight:1 }}>×</button>
+      <div style={{ fontSize:18, fontWeight:800, color:'#8DEBFF' }}><b style={{ fontSize:34, fontWeight:900, color:'#fff' }}>{index + 1}</b> / {total}</div>
+      <strong style={{ fontSize:compact ? 34 : 42, fontWeight:900, color:tone, fontVariantNumeric:'tabular-nums' }}>{challengeClock(seconds)}</strong>
+    </div>
+    <div style={{ flex:1, minHeight:0, overflowY:'auto', display:'flex', flexDirection:'column' }}>
+      <div style={{ margin:compact ? 0 : 'auto 0', padding:'10px 0', display:'flex', flexDirection:'column', gap:compact ? 12 : 18, textAlign:'center' }}>
+        {hasContext && <div style={{ fontSize:shortPrompt ? 16 : 18, fontWeight:shortPrompt ? 900 : 800, letterSpacing:shortPrompt ? 1.5 : .3, textTransform:shortPrompt ? 'uppercase' : 'none', lineHeight:1.4, color:'#8DEBFF' }}>{prompt}</div>}
+        <div style={{ fontSize:bigSize, lineHeight:1.18, fontWeight:900, overflowWrap:'anywhere' }}>{big}</div>
+        {inlineBlank && !answer && !compact && <div style={{ fontSize:15, fontWeight:700, color:'rgba(255,255,255,.55)' }}>Toque na lacuna e digite a palavra</div>}
+        {isChoice
+          ? <div style={{ display:'grid', gridTemplateColumns:`repeat(${columns}, minmax(0, 1fr))`, gap:14, textAlign:'left' }}>{options.map((option, n) => {
+            const on = answer === option.id;
+            const yesNo = twoUp && /^(yes|no)\b/i.test(labels[n]);
+            const mark = yesNo ? (/^yes/i.test(labels[n]) ? '✓' : '✗') : String(option.id || '').toUpperCase();
+            return <button key={option.id} onClick={() => onAnswer(option.id)} style={{ display:'flex', flexDirection:twoUp ? 'column' : 'row', gap:twoUp ? 10 : 12, alignItems:'center', justifyContent:twoUp ? 'center' : 'flex-start', textAlign:twoUp ? 'center' : 'left', minHeight:twoUp ? 150 : longOptions ? 0 : 80, padding:longOptions ? '12px 16px' : '18px 20px', borderRadius:22, border:`1.5px solid ${on ? '#5DE1FF' : 'rgba(255,255,255,.18)'}`, background:on ? 'rgba(93,225,255,.17)' : 'rgba(255,255,255,.07)', color:'#fff', fontFamily:'inherit', fontSize:twoUp ? (maxLen > 12 ? 22 : 26) : longOptions ? 20 : 25, fontWeight:800, lineHeight:1.25, cursor:'pointer' }}>
+              <span style={{ flex:'none', width:badge, height:badge, borderRadius:twoUp ? '50%' : 14, display:'flex', alignItems:'center', justifyContent:'center', background:on ? '#5DE1FF' : 'rgba(255,255,255,.12)', color:on ? '#06162F' : '#fff', fontWeight:900, fontSize:twoUp ? 32 : 22 }}>{mark}</span>
+              <span style={{ minWidth:0, overflowWrap:'anywhere' }}>{labels[n]}</span>
+            </button>;
+          })}</div>
+          : !inlineBlank && <textarea autoFocus inputMode="text" enterKeyHint="done" value={answer} onChange={event => onAnswer(event.target.value)} onFocus={scrollTo} placeholder="Toque aqui e digite sua resposta…" style={{ display:'block', width:'100%', boxSizing:'border-box', minHeight:compact ? 78 : 112, padding:compact ? 14 : 20, borderRadius:24, border:'3px solid #5DE1FF', background:'#fff', color:'#071B3A', caretColor:'#071B3A', WebkitTextFillColor:'#071B3A', touchAction:'manipulation', fontFamily:'inherit', fontSize:compact ? 24 : 28, fontWeight:800, lineHeight:1.4, textAlign:'center', resize:'none' }} />}
+        {error && <div role="alert" style={{ padding:'9px 11px', borderRadius:10, background:'rgba(255,183,77,.16)', color:'#FFD79A', fontSize:13, lineHeight:1.4 }}>{error}</div>}
+      </div>
+    </div>
+    <div style={{ flex:'none', display:'flex', gap:8, marginTop:6 }}>
+      {seconds === 0 && !canSend && <button onClick={onSkip} style={{ flex:'0 0 auto', border:'1px solid rgba(255,255,255,.25)', borderRadius:999, padding:'0 24px', color:'#fff', background:'transparent', fontFamily:'inherit', fontSize:14, fontWeight:900 }}>PULAR</button>}
+      <button disabled={!canSend} onClick={onSend} style={{ flex:1, border:0, borderRadius:999, padding:compact ? 17 : 24, color:'#06162F', background:canSend ? 'linear-gradient(135deg,#5DE1FF,#E5FBFF)' : '#8CA3B9', boxShadow:canSend ? '0 10px 30px rgba(93,225,255,.3)' : 'none', fontFamily:'inherit', fontSize:compact ? 20 : 22, fontWeight:900, cursor:canSend ? 'pointer' : 'default' }}>ENVIAR →</button>
+    </div>
+  </div>;
+}
+
 function ChallengeGame({ challengeState, onFinish, onExit, onStart, onSaveAnswer }) {
   const [questions, setQuestions] = React.useState(challengeState?.round?.questions || []);
   const timeLimit = challengeTimeSeconds(challengeState);
@@ -656,11 +765,12 @@ function ChallengeGame({ challengeState, onFinish, onExit, onStart, onSaveAnswer
   };
   React.useEffect(() => { if (challengeState?.needsPreparation) start(); }, []);
   const close = async () => { if (phase === 'question') await sendCurrent(false); onExit(); };
-  const timerTone = seconds <= 10 ? '#FF7B7B' : '#5DE1FF';
+  // A tela da pergunta (e o "salvando/confirmada" entre perguntas) abre mais larga no computador.
+  const wideColumn = phase === 'question' || phase === 'saving' || phase === 'transition';
 
-  return <div style={{ position:'fixed', inset:0, zIndex:10040, maxWidth:480, margin:'0 auto', color:'#fff', background:'linear-gradient(160deg,#06162F,#071F43 54%,#092B56)', overflow:'hidden' }}>
+  return <div style={{ position:'fixed', inset:0, zIndex:10040, maxWidth:wideColumn ? 780 : 480, margin:'0 auto', color:'#fff', background:'linear-gradient(160deg,#06162F,#071F43 54%,#092B56)', overflow:'hidden' }}>
     {phase === 'intro' && <div style={{ height:'100%', display:'flex', flexDirection:'column', padding:'calc(env(safe-area-inset-top,0px) + 20px) 22px calc(env(safe-area-inset-bottom,0px) + 22px)' }}><button onClick={onExit} aria-label="Fechar" style={{ ...challengeRoundButton, alignSelf:'flex-end' }}>×</button><div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center' }}><div style={{ width:76, height:76, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:24, background:'linear-gradient(145deg,#238BFF,#0A5BB4)', fontSize:37 }}>🏆</div><div style={{ color:'#7DE7FF', fontSize:10.5, fontWeight:900, letterSpacing:1.7, marginTop:24 }}>{challengeState?.peerDuel ? (challengeState?.live ? 'DUELO AO VIVO' : 'DUELO RÁPIDO') : `PARTE ${challengeState?.part}`}</div><h2 style={{ fontSize:27, margin:'8px 0 10px' }}>{challengeState?.started ? 'Continue de onde parou' : 'Você está pronto?'}</h2><p style={{ color:'rgba(255,255,255,.66)', fontSize:13, lineHeight:1.55 }}>{questions.length || challengeState?.round?.questionCount || 5} perguntas. {timeLabel} no total. Uma única tentativa.</p></div><button onClick={start} style={{ width:'100%', border:0, borderRadius:16, padding:16, color:'#06162F', background:'linear-gradient(135deg,#5DE1FF,#E5FBFF)', fontFamily:'inherit', fontSize:13.5, fontWeight:900 }}>{challengeState?.started ? 'CONTINUAR' : 'PARTICIPAR E COMEÇAR'} →</button></div>}
-    {phase === 'question' && question && <div style={{ height:'100%', display:'flex', flexDirection:'column', padding:'calc(env(safe-area-inset-top,0px) + 18px) 18px calc(env(safe-area-inset-bottom,0px) + 18px)' }}><div style={{ display:'flex', alignItems:'center', gap:12 }}><div style={{ flex:1, display:'flex', gap:5 }}>{questions.map((_,i) => <span key={i} style={{ flex:1, height:4, borderRadius:4, background:i <= questionIndex ? '#5DE1FF' : 'rgba(255,255,255,.16)' }} />)}</div><strong style={{ color:timerTone, minWidth:44, textAlign:'right', fontSize:18 }}>{challengeClock(seconds)}</strong></div><button onClick={close} style={{ position:'absolute', top:50, right:18, border:0, background:'transparent', color:'rgba(255,255,255,.55)', fontSize:11 }}>SAIR</button><div style={{ color:'#8DEBFF', fontSize:10, fontWeight:900, letterSpacing:1.1, marginTop:25 }}>PERGUNTA {questionIndex + 1} DE {questions.length}</div><div style={{ flex:1, display:'flex', flexDirection:'column', justifyContent:'center', minHeight:0, overflowY:'auto' }}><h2 style={{ fontSize:19, lineHeight:1.38, margin:'0 0 14px' }}>{question.prompt}</h2>{question.context && <div style={{ padding:'15px 16px 17px', borderRadius:17, background:'rgba(255,255,255,.08)', border:'1px solid rgba(255,255,255,.13)', fontSize:15, lineHeight:1.45 }}><strong style={{ display:'block', color:'#8DEBFF', fontSize:9, letterSpacing:1, marginBottom:7 }}>{/\b(translate|traduza|tradução)\b/i.test(question.prompt || '') ? 'TEXTO PARA TRADUZIR' : 'TEXTO DA QUESTÃO'}</strong>{question.context}</div>}{question.type === 'multipleChoice' ? <div style={{ display:'grid', gap:9, marginTop:18 }}>{question.options.map(option => <button key={option.id} onClick={() => { setAnswer(option.id); setError(''); }} style={{ display:'flex', gap:10, alignItems:'center', padding:'13px 14px', borderRadius:14, border:`1.5px solid ${answer === option.id ? '#5DE1FF' : 'rgba(255,255,255,.18)'}`, background:answer === option.id ? 'rgba(93,225,255,.17)' : 'rgba(255,255,255,.07)', color:'#fff', textAlign:'left', fontFamily:'inherit', fontSize:13 }}><span style={{ width:25, height:25, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', background:answer === option.id ? '#5DE1FF' : 'rgba(255,255,255,.12)', color:answer === option.id ? '#06162F' : '#fff', fontWeight:900 }}>{option.id.toUpperCase()}</span>{option.text}</button>)}</div> : <textarea autoFocus inputMode="text" enterKeyHint="done" value={answer} onChange={event => { setAnswer(event.target.value); setError(''); }} onFocus={event => { const field=event.currentTarget; setTimeout(() => field.scrollIntoView({ block:'center', behavior:'smooth' }), 150); }} placeholder="Toque aqui e digite sua resposta…" style={{ width:'100%', minHeight:120, boxSizing:'border-box', marginTop:18, padding:15, borderRadius:17, border:'2px solid #5DE1FF', background:'#fff', color:'#071B3A', caretColor:'#071B3A', WebkitTextFillColor:'#071B3A', touchAction:'manipulation', fontFamily:'inherit', fontSize:16, lineHeight:1.45 }} />}{error && <div role="alert" style={{ marginTop:9, padding:'9px 11px', borderRadius:10, background:'rgba(255,183,77,.16)', color:'#FFD79A', fontSize:11.5, lineHeight:1.4 }}>{error}</div>}</div><div style={{ display:'flex', gap:8 }}>{seconds === 0 && !answer.trim() && <button onClick={() => sendCurrent(true)} style={{ flex:'0 0 auto', border:'1px solid rgba(255,255,255,.25)', borderRadius:15, padding:'15px 13px', color:'#fff', background:'transparent', fontFamily:'inherit', fontSize:12, fontWeight:900 }}>PULAR</button>}<button disabled={!answer.trim()} onClick={() => sendCurrent(false)} style={{ flex:1, border:0, borderRadius:15, padding:15, color:'#06162F', background:answer.trim() ? 'linear-gradient(135deg,#5DE1FF,#E5FBFF)' : '#8CA3B9', fontFamily:'inherit', fontSize:13, fontWeight:900 }}>ENVIAR RESPOSTA →</button></div></div>}
+    {phase === 'question' && question && <ChallengeQuestionScreen key={question.id || questionIndex} question={question} index={questionIndex} total={questions.length} seconds={seconds} timeLimit={timeLimit} answer={answer} error={error} onAnswer={value => { setAnswer(value); setError(''); }} onSend={() => sendCurrent(false)} onSkip={() => sendCurrent(true)} onClose={close} />}
     {phase === 'transition' && <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}><div style={{ width:62, height:62, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background:'#168C72', fontSize:29 }}>✓</div><strong style={{ fontSize:18, marginTop:14 }}>Resposta confirmada</strong></div>}
     {phase === 'preparing' && <div role="status" aria-live="polite" style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center', padding:24 }}>
       <div style={{ fontSize:42 }}>✨</div><strong style={{ fontSize:22, marginTop:18 }}>Preparando suas perguntas…</strong>
