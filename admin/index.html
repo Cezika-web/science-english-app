@@ -45,7 +45,6 @@
        formulários ocupam a tela inteira. Só a lista de alunos para antes: o
        card esticava demais e abria um vão enorme entre o slug e os números. */
     .content { min-width: 0; }
-    #tab-students, #tab-exalunos { max-width: 1250px; }
 
     .sidebar {
       position: sticky; top: calc(var(--header-h) + 20px);
@@ -133,7 +132,7 @@
 
     /* Com o menu lateral ocupando espaço, o card do aluno precisa quebrar antes:
        as estatísticas descem pra uma linha própria e o slug continua legível. */
-    @media (max-width: 1280px) {
+    @media (max-width: 1365px) {
       .student-row { flex-wrap: wrap; }
       .student-progress-mini { order: 3; width: 100%; padding-left: 54px; }
     }
@@ -258,6 +257,22 @@
     .gap-badge { font-size: 0.72rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; flex-shrink: 0; white-space: nowrap; }
     .gap-badge.warn { background: #fff3cd; color: #92400e; }
     .gap-badge.alert { background: #fee2e2; color: #b91c1c; }
+
+    /* Lista de alunos em COLUNAS: cada dado tem o seu lugar, igual em todas as linhas
+       (antes tudo era empurrado pela largura do bloco de status, que muda por aluno). */
+    @media (min-width: 701px) {
+      .badge-stack { width: 168px; align-items: flex-start; }
+    }
+    @media (min-width: 1366px) {
+      .student-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) 338px 168px 72px 30px; column-gap: 16px; }
+      .student-row.student-row-ex { grid-template-columns: 40px minmax(0, 1fr) 168px 72px 30px; }
+      .student-progress-mini { display: grid; grid-template-columns: repeat(4, 80px); gap: 6px; }
+      .progress-chip { min-width: 0; }
+      .student-info .email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .student-info .slug-line { display: block; width: fit-content; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .student-row .btn-detail { width: 100%; }
+      .student-row .kebab-wrap { justify-self: end; }
+    }
 
     /* ── Feed de pendências (ligado à agenda) ─────────────────────────── */
     /* Bloco, não flex: o item tem duas linhas empilhadas (a linha do aluno e,
@@ -6067,12 +6082,12 @@
         ? `<img class="avatar" src="${s.photo}" alt="" style="object-fit:cover;" />`
         : `<div class="avatar">${(s.firstName || s.name || '?')[0].toUpperCase()}</div>`;
       return `
-        <div class="student-row">
+        <div class="student-row${archived ? ' student-row-ex' : ''}">
           ${avatar}
           <div class="student-info">
             <div class="name">${nm}</div>
             <div class="email">${esc(s.email || '')} · ${esc(s.level || '')}</div>
-            ${s.slug ? `<div class="slug-line">slug: <strong>${esc(s.slug)}</strong> &nbsp;→&nbsp; pos-aula-<strong>${esc(s.slug)}</strong>-MM-DD-AAAA.html</div>` : ''}
+            ${s.slug ? `<div class="slug-line" title="slug: ${esc(s.slug)} → pos-aula-${esc(s.slug)}-MM-DD-AAAA.html">slug: <strong>${esc(s.slug)}</strong> &nbsp;→&nbsp; pos-aula-<strong>${esc(s.slug)}</strong>-MM-DD-AAAA.html</div>` : ''}
           </div>
           ${progressHtml}
           ${badge}
