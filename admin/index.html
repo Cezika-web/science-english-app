@@ -1033,7 +1033,7 @@
         <div id="finance-late-alert"></div>
         <div id="finance-velhas"></div>
         <div class="finance-summary">
-          <div class="finance-sum income"><small>↗ Ganhos do mês</small><strong id="finance-income">R$ 0,00</strong><span id="finance-income-note">0 entradas</span><span id="finance-income-cash" style="display:none;margin-top:3px;font-size:.66rem;font-weight:700;opacity:.85;"></span></div>
+          <div class="finance-sum income"><small>↗ Ganhos do mês</small><strong id="finance-income">R$ 0,00</strong><span id="finance-income-note">0 entradas</span></div>
           <div class="finance-sum expense"><small>↘ Despesas do mês</small><strong id="finance-expenses">R$ 0,00</strong><span id="finance-expenses-note">0 saídas</span></div>
           <div class="finance-sum result" id="finance-profit-card"><small>= Sobrou no mês</small><strong id="finance-profit">R$ 0,00</strong><span id="finance-profit-note">ganhos menos despesas</span></div>
         </div>
@@ -5075,14 +5075,6 @@
       document.getElementById('finance-income').textContent=financeMoney(totalGanhos);
       document.getElementById('finance-income-note').textContent=`${financeMoney(income)} recebido · ${financeMoney(aReceber)} a receber`;
       document.getElementById('finance-income-sub').textContent=`${financeMoney(income)} já entrou de ${financeMoney(totalGanhos)}`;
-      // "Recebido" conta cada pagamento no mês a que ele se refere; o dinheiro que
-      // CAIU na conta neste mês pode ser outro número (setembro pago em outubro).
-      const naConta=financeTransactions.filter(tx=>tx.type==='income'&&!financeIsPlanned(tx)&&String(tx.date||'').startsWith(month))
-        .reduce((sum,tx)=>sum+Number(tx.amountCents||0),0);
-      const caixaBox=document.getElementById('finance-income-cash'),nomeDoMes=new Date(Number(month.slice(0,4)),Number(month.slice(5,7))-1,1).toLocaleDateString('pt-BR',{month:'long'});
-      caixaBox.style.display=naConta!==income?'block':'none';
-      caixaBox.textContent=naConta!==income?`💰 Na conta em ${nomeDoMes}: ${financeMoney(naConta)}`:'';
-      caixaBox.title='Dinheiro que entrou nas datas deste mês, mesmo de mensalidades de outros meses.';
       const sobraPrevista=totalGanhos-expense,cardLucro=document.getElementById('finance-profit-card');
       document.getElementById('finance-profit').textContent=financeMoney(sobraPrevista);
       document.getElementById('finance-profit-note').textContent=`previsto · com o que já entrou dá ${financeMoney(income-expense)}`;
