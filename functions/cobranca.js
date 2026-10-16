@@ -27,6 +27,20 @@ function diaDoMes(mes, dia) {
   return `${mes}-${String(Math.min(ultimo, Math.max(1, Number(dia) || 1))).padStart(2, '0')}`;
 }
 
+// Dia do vencimento vigente num mês — a mesma regra do painel (`financeVencimentoDoMes`
+// em admin/index.html). `vencimentos` é a lista de datas do pagamento do aluno
+// ({desde:'AAAA-MM', dia, dia2?}): vale a última entrada cujo mês já chegou, e antes da
+// primeira o aluno ainda não é cobrado. Sem lista (cadastro antigo) vale dueDay/dueDay2.
+function vencimentoDoMes(perfil, mes) {
+  const lista = (Array.isArray(perfil.vencimentos) ? perfil.vencimentos : [])
+    .filter(item => item && item.desde && Number(item.dia) > 0)
+    .sort((a, b) => String(a.desde).localeCompare(String(b.desde)));
+  if (!lista.length) return { dia:Number(perfil.dueDay) || 0, dia2:Number(perfil.dueDay2) || 0, antes:false };
+  const vigente = [...lista].reverse().find(item => item.desde <= mes);
+  if (!vigente) return { dia:0, dia2:0, antes:true };
+  return { dia:Number(vigente.dia), dia2:Number(vigente.dia2) || Number(perfil.dueDay2) || 0, antes:false };
+}
+
 // As mesmas etapas que o painel calcula: mensal tem uma, quinzenal tem duas e
 // anual só cobra no mês escolhido.
 function etapasDoMes(perfil, mes) {
@@ -37,13 +51,15 @@ function etapasDoMes(perfil, mes) {
     return [{ part:0, etapa:'Anual', valor:cobra ? Number(perfil.annualCents || 0) : 0,
       venceEm:diaDoMes(mes, perfil.dueDay || 10) }];
   }
+  const venc = vencimentoDoMes(perfil, mes);
+  if (venc.antes) return [];   // antes da data do primeiro pagamento ainda não há cobrança
   if (perfil.cycle !== 'biweekly') {
-    return [{ part:0, etapa:'Mensalidade', valor:total, venceEm:diaDoMes(mes, perfil.dueDay || 1) }];
+    return [{ part:0, etapa:'Mensalidade', valor:total, venceEm:diaDoMes(mes, venc.dia || 1) }];
   }
   const metade = Math.round(total / 2);
   return [
-    { part:1, etapa:'1ª quinzena', valor:metade, venceEm:diaDoMes(mes, perfil.dueDay || 5) },
-    { part:2, etapa:'2ª quinzena', valor:total - metade, venceEm:diaDoMes(mes, perfil.dueDay2 || 20) },
+    { part:1, etapa:'1ª quinzena', valor:metade, venceEm:diaDoMes(mes, venc.dia || 5) },
+    { part:2, etapa:'2ª quinzena', valor:total - metade, venceEm:diaDoMes(mes, venc.dia2 || 20) },
   ];
 }
 
@@ -205,4 +221,4 @@ export function createCobrancaFunctions({ db, adminEmails = [] }) {
   return { avisarAtrasoNoApp, enviarCobrancaManual, registrarCobrancaNoApp };
 }
 
-export const cobrancaInternals = Object.freeze({ etapasDoMes, diasDeAtraso, diaDoMes, pendenciaDoPerfil });
+export const cobrancaInternals = Object.freeze({ etapasDoMes, vencimentoDoMes, diasDeAtraso, diaDoMes, pendenciaDoPerfil });
