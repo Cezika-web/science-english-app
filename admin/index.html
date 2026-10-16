@@ -1033,7 +1033,7 @@
         <div id="finance-late-alert"></div>
         <div id="finance-velhas"></div>
         <div class="finance-summary">
-          <div class="finance-sum income"><small>↗ Ganhos do mês</small><strong id="finance-income">R$ 0,00</strong><span id="finance-income-note">0 entradas</span></div>
+          <div class="finance-sum income"><small>↗ Ganhos do mês</small><strong id="finance-income">R$ 0,00</strong><span id="finance-income-note">0 entradas</span><span id="finance-income-cash" style="display:none;margin-top:3px;font-size:.66rem;font-weight:700;opacity:.85;"></span></div>
           <div class="finance-sum expense"><small>↘ Despesas do mês</small><strong id="finance-expenses">R$ 0,00</strong><span id="finance-expenses-note">0 saídas</span></div>
           <div class="finance-sum result" id="finance-profit-card"><small>= Sobrou no mês</small><strong id="finance-profit">R$ 0,00</strong><span id="finance-profit-note">ganhos menos despesas</span></div>
         </div>
@@ -1693,6 +1693,11 @@
             <div class="field" id="e-pagto-dia2-field" style="display:none;"><label for="e-pagto-dia2">2ª quinzena vence dia</label><input type="number" id="e-pagto-dia2" min="1" max="31" /></div>
           </div>
           <div id="e-pagto-dica" style="font-size:.74rem;line-height:1.45;color:#64748b;"></div>
+        </div>
+        <div id="e-saida-box" style="display:none;margin-bottom:18px;padding-top:14px;border-top:1px solid var(--border);">
+          <div style="font-size:.8rem;font-weight:900;color:#334155;margin-bottom:8px;">🚪 Saída da escola</div>
+          <div class="calendar-form-grid"><div class="field"><label for="e-saida-data">Data de saída (até quando cobrar)</label><input type="date" id="e-saida-data" /></div></div>
+          <div id="e-saida-dica" style="font-size:.74rem;line-height:1.45;color:#64748b;"></div>
         </div>
         <p id="e-pagto-sem" style="display:none;margin:0 0 18px;font-size:.78rem;color:#64748b;">💳 Este aluno ainda não tem mensalidade cadastrada — configure em Financeiro → Configurar.</p>
 
@@ -4532,6 +4537,7 @@
         financeProfiles=profilesSnap.docs.map(item=>({id:item.id,...item.data()}));
         financeTransactions=transactionsSnap.docs.map(item=>({id:item.id,...item.data()}));
         financeCalendarEvents=eventsSnap.docs.map(item=>({id:item.id,...item.data()}));
+        financeSaidaCache.clear();
         financeCharges=(await Promise.all(financeProfiles.filter(profile=>profile.studentUid).map(async profile=> {
           const snap=await getDocs(collection(db,'students',profile.studentUid,'cobrancas'));
           return snap.docs.map(item=>({id:item.id,uid:profile.studentUid,nome:profile.studentName||'Aluno',...item.data()}));
@@ -4647,9 +4653,35 @@
       const date=value?.toDate?value.toDate():null;
       return date?calendarDateKey(date):'';
     }
+    // Ex-aluno é cobrado até a ÚLTIMA AULA DADA, não até o dia em que o cadastro foi
+    // arquivado. A Thifany deu a última aula em 01/10, o cadastro dela foi arquivado
+    // em 10/10 e, nesse intervalo, abriu a 1ª quinzena de outubro (venceu 05/10) —
+    // uma etapa em que ela nunca teve aula e que apareceu como dívida. Última aula =
+    // última ocorrência NÃO cancelada da agenda até o arquivamento. Sem aula na
+    // agenda, vale o dia do arquivamento. `saidaCobranca` é a data que você mesmo
+    // fixa em Editar dados do ex-aluno e vale sobre qualquer cálculo.
+    function financeUltimaAulaDada(uid,ateKey,eventos) {
+      const proprios=pendIndexarEventos(eventos||[])[uid]||[];
+      if(!proprios.length||!ateKey) return '';
+      for(let dia=new Date(`${ateKey}T00:00:00`),passos=0;passos<400;passos+=1,dia=calendarAddDays(dia,-1)) {
+        const chave=calendarDateKey(dia);
+        if(proprios.some(evento=>calendarOccursOn(evento,dia)&&!(evento.canceladas||[]).includes(chave))) return chave;
+      }
+      return '';
+    }
+    function financeSaidaDeCobranca(profile,eventos) {
+      if(profile.saidaCobranca) return profile.saidaCobranca;
+      const arquivado=profile.archivedDate||financeDateKeyOf(profile.archivedAt);
+      if(!arquivado) return '';
+      const ultima=financeUltimaAulaDada(profile.studentUid,arquivado,eventos);
+      return ultima&&ultima<arquivado?ultima:arquivado;
+    }
+    const financeSaidaCache=new Map();   // refeito a cada loadFinance: a conta roda dezenas de vezes por tela
     function financeDesligadoEm(profile) {
       if(profile.active!==false) return '';
-      return profile.archivedDate||financeDateKeyOf(profile.archivedAt);
+      const chave=[profile.studentUid,profile.saidaCobranca||'',profile.archivedDate||'',financeDateKeyOf(profile.archivedAt)].join('|');
+      if(!financeSaidaCache.has(chave)) financeSaidaCache.set(chave,financeSaidaDeCobranca(profile,financeCalendarEvents));
+      return financeSaidaCache.get(chave);
     }
     function financePausas(profile) {
       const fechadas=Array.isArray(profile.pausas)?profile.pausas.filter(pausa=>pausa&&pausa.de&&pausa.ate):[];
@@ -4667,7 +4699,9 @@
     function financeProfileParts(profile,month) {
       const pausas=financePausas(profile),desconsiderados=profile.desconsiderados||[];
       return financeProfilePartsBase(profile,month)
-        .filter(part=>!pausas.some(pausa=>part.dueKey>pausa.de&&(!pausa.ate||month<pausa.ate)))
+        // O que vence depois da saída não existe — a não ser que já tenha entrado dinheiro:
+        // o que foi pago continua na planilha, com Desfazer, e nunca some da conta.
+        .filter(part=>!pausas.some(pausa=>part.dueKey>pausa.de&&(!pausa.ate||month<pausa.ate))||financeRecebidoDaEtapa(profile,month,part)>0)
         .map(part=> {
           const velha=part.amount>0&&pausas.some(pausa=>pausa.ate&&part.dueKey<=pausa.de);
           const preSaida=part.amount>0&&pausas.some(pausa=>!pausa.ate&&part.dueKey<=pausa.de);
@@ -4743,6 +4777,12 @@
       ];
     }
 
+    // Quanto já entrou numa etapa (a mensalidade vale o mês inteiro; a quinzena, só a sua).
+    function financeRecebidoDaEtapa(profile,month,part) {
+      return financeTransactions.filter(tx=>tx.type==='income'&&tx.category==='tuition'&&tx.studentUid===profile.studentUid&&tx.referenceMonth===month
+        &&(part.part===0||Number(tx.referencePart||0)===part.part)).reduce((sum,tx)=>sum+Number(tx.amountCents||0),0);
+    }
+
     function financePartStatus(profile,month,part) {
       if(profile.cycle==='annual'&&!part.cobraNesteMes) {
         // Fora do mês da cobrança: só interessa se o ano dele já está pago.
@@ -4751,8 +4791,7 @@
           ? {key:'paid',label:'Anual em dia',received:0}
           : {key:'unset',label:'Anual não pago',received:0};
       }
-      const received=financeTransactions.filter(tx=>tx.type==='income'&&tx.category==='tuition'&&tx.studentUid===profile.studentUid&&tx.referenceMonth===month
-        &&(part.part===0||Number(tx.referencePart||0)===part.part)).reduce((sum,tx)=>sum+Number(tx.amountCents||0),0);
+      const received=financeRecebidoDaEtapa(profile,month,part);
       const late=part.dueKey<financeTodayKey();
       if(part.dropped) return {key:'dropped',label:'Desconsiderada',received};
       if(part.amount>0&&received>=part.amount) return {key:'paid',label:'Pago',received};
@@ -4924,7 +4963,8 @@
     async function financeToggleDrop(uid,month,label,drop) {
       const profile=financeProfiles.find(item=>item.studentUid===uid); if(!profile) return;
       const chave=`${month}|${label}`;
-      if(drop&&!confirm(`Desconsiderar ${label} de ${month} de ${profile.studentName||'este aluno'}?\n\nO valor sai da conta e deixa de aparecer como pendente. Para voltar atrás, abra ${month} e use "Voltar a cobrar".`)) return;
+      const exAluno=profile.active===false;
+      if(drop&&!confirm(`Desconsiderar ${label} de ${month} de ${profile.studentName||'este aluno'}?\n\n${exAluno?'Esse valor já não entra na previsão (ele é ex-aluno); desconsiderar só o tira da lista.':'O valor sai da conta e deixa de aparecer como pendente.'} Para voltar atrás, abra ${month} e use "Voltar a cobrar".`)) return;
       try {
         await setDoc(doc(db,'schools',escolaAtual,'financeStudents',profile.id),{desconsiderados:drop?arrayUnion(chave):arrayRemove(chave),updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.email||''},{merge:true});
         await loadFinance();
@@ -5018,7 +5058,15 @@
       const configured=financeProfiles.filter(profile=>profile.active!==false&&(Number(profile.monthlyCents)>0||Number(profile.annualCents)>0));
       const expected=configured.reduce((sum,profile)=>sum+financeProfileParts(profile,month).reduce((etapa,part)=>etapa+Number(part.amount||0),0),0);
       const expectedReceived=configured.reduce((sum,profile)=>sum+financeProfileReceived(profile,month),0);
-      document.getElementById('finance-expected-note').textContent=`Previsto ${financeMoney(expected)} · recebido das mensalidades ${financeMoney(expectedReceived)}.`;
+      // Dívida em aberto de quem já saiu: está na planilha (dá para receber), mas não
+      // entra na previsão. Aparece aqui para a conta fechar à vista.
+      let exEmAberto=0;
+      financeProfiles.filter(profile=>profile.active===false&&profile.activeBeforeArchive!==false&&Number(profile.monthlyCents)>0).forEach(profile=>
+        financeProfileParts(profile,month).forEach(part=> {
+          if(!(part.amount>0)) return;
+          exEmAberto+=Math.max(0,part.amount-financePartStatus(profile,month,part).received);
+        }));
+      document.getElementById('finance-expected-note').textContent=`Previsto ${financeMoney(expected)} · recebido das mensalidades ${financeMoney(expectedReceived)}.${exEmAberto?` Em aberto de ex-alunos: ${financeMoney(exEmAberto)} (fora da previsão).`:''}`;
       const aReceber=Math.max(0,expected-expectedReceived);
       document.getElementById('finance-open').textContent=financeMoney(aReceber);
       // "Ganhos do mês" mostra o TOTAL do mês (recebido + o que ainda falta),
@@ -5027,6 +5075,14 @@
       document.getElementById('finance-income').textContent=financeMoney(totalGanhos);
       document.getElementById('finance-income-note').textContent=`${financeMoney(income)} recebido · ${financeMoney(aReceber)} a receber`;
       document.getElementById('finance-income-sub').textContent=`${financeMoney(income)} já entrou de ${financeMoney(totalGanhos)}`;
+      // "Recebido" conta cada pagamento no mês a que ele se refere; o dinheiro que
+      // CAIU na conta neste mês pode ser outro número (setembro pago em outubro).
+      const naConta=financeTransactions.filter(tx=>tx.type==='income'&&!financeIsPlanned(tx)&&String(tx.date||'').startsWith(month))
+        .reduce((sum,tx)=>sum+Number(tx.amountCents||0),0);
+      const caixaBox=document.getElementById('finance-income-cash'),nomeDoMes=new Date(Number(month.slice(0,4)),Number(month.slice(5,7))-1,1).toLocaleDateString('pt-BR',{month:'long'});
+      caixaBox.style.display=naConta!==income?'block':'none';
+      caixaBox.textContent=naConta!==income?`💰 Na conta em ${nomeDoMes}: ${financeMoney(naConta)}`:'';
+      caixaBox.title='Dinheiro que entrou nas datas deste mês, mesmo de mensalidades de outros meses.';
       const sobraPrevista=totalGanhos-expense,cardLucro=document.getElementById('finance-profit-card');
       document.getElementById('finance-profit').textContent=financeMoney(sobraPrevista);
       document.getElementById('finance-profit-note').textContent=`previsto · com o que já entrou dá ${financeMoney(income-expense)}`;
@@ -5063,8 +5119,15 @@
         // Sem etapa no mês: ou o aluno ainda não tinha entrado, ou estava fora da escola.
         const foraNoMes=!parts.length&&financeProfilePartsBase(profile,month).length>0;
         const naoComecou=!parts.length&&!anual&&!foraNoMes;
-        const statusCell=naoComecou?'<span class="finance-status unset">Ainda não começou</span>':foraNoMes?'<span class="finance-status unset">Fora neste mês</span>':etapas.map(({part,status})=>
-          `<span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">${biweekly?`<small style="color:#94a3b8;font-weight:800;">${part.short}</small>`:''}<span class="finance-status ${status.key}">${esc(status.label)}</span>${(part.velha||part.preSaida)&&['overdue','pending'].includes(status.key)?'<span class="finance-velha">· de antes da saída</span>':''}</span>`).join('<br>');
+        // Ex-aluno: o que ficou em aberto está na planilha para você dar baixa se ele
+        // pagar, mas NÃO entra na previsão nem no "a receber" — por isso não é "Atrasado".
+        const statusCell=naoComecou?'<span class="finance-status unset">Ainda não começou</span>':foraNoMes?'<span class="finance-status unset">Fora neste mês</span>':etapas.map(({part,status})=> {
+          const emAberto=ex&&['overdue','pending'].includes(status.key);
+          const classe=emAberto?'unset':status.key,rotulo=emAberto&&status.received<=0?'Em aberto':status.label;
+          const marca=(part.velha||part.preSaida)&&['overdue','pending'].includes(status.key)
+            ? `<span class="finance-velha">· de antes da saída${emAberto?' · fora da previsão':''}</span>`:'';
+          return `<span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">${biweekly?`<small style="color:#94a3b8;font-weight:800;">${part.short}</small>`:''}<span class="finance-status ${classe}">${esc(rotulo)}</span>${marca}</span>`;
+        }).join('<br>');
         const actionCell=etapas.map(({part,status})=>{
           // No anual, se ainda não está pago o botão aparece em qualquer mês —
           // o pagamento pode ter sido feito lá atrás (janeiro, por exemplo).
@@ -6152,7 +6215,9 @@
         // A saída vira uma pausa: o que venceu antes dela e ficou sem pagar
         // volta como pendência, e o que venceria enquanto esteve fora não existe.
         // A cobrança normal recomeça no mês em que voltou.
-        const saida = finance.archivedDate || financeDateKeyOf(finance.archivedAt);
+        const eventosAgora = (await getDocs(collection(db, 'schools', escolaAtual, 'calendarEvents')).catch(() => ({ docs:[] }))).docs.map(item => ({ id:item.id, ...item.data() }));
+        const saida = financeSaidaDeCobranca({ ...finance, studentUid:uid }, eventosAgora);
+        patch.saidaCobranca = deleteField();
         if (active && saida) patch.pausas = arrayUnion({ de:saida, ate:calendarDateKey(new Date()).slice(0, 7) });
         batch.set(financeRef, patch, { merge:true });
       }
@@ -7216,10 +7281,36 @@
         : quinzenal ? `A 1ª quinzena vence dia ${dia}. Se mudar a data, vale a partir do mês dela; o que já passou não muda.`
         : `Vence todo dia ${dia}. Se mudar a data, vale a partir do mês dela; o que já passou não muda.`;
     }
+    // Ex-aluno: em vez do pagamento, a data de saída. Vem da última aula dada (ver
+    // financeUltimaAulaDada); o que vence depois dela some da planilha.
+    let editSaidaPerfil = null, editSaidaOriginal = '';
+    async function editCarregarSaida(uid) {
+      editSaidaPerfil = null;
+      const caixa = document.getElementById('e-saida-box'); caixa.style.display = 'none';
+      try {
+        const snap = await getDoc(doc(db, 'schools', escolaAtual, 'financeStudents', uid));
+        if (document.getElementById('e-uid').value !== uid) return;
+        const perfil = snap.exists() ? snap.data() : null;
+        if (!perfil || perfil.active !== false || perfil.activeBeforeArchive === false || !(Number(perfil.monthlyCents) > 0)) return;
+        const eventos = (await getDocs(collection(db, 'schools', escolaAtual, 'calendarEvents'))).docs.map(item => ({ id:item.id, ...item.data() }));
+        editSaidaPerfil = { ...perfil, studentUid:uid };
+        const arquivado = perfil.archivedDate || financeDateKeyOf(perfil.archivedAt);
+        const ultima = financeUltimaAulaDada(uid, arquivado, eventos);
+        editSaidaOriginal = financeSaidaDeCobranca(editSaidaPerfil, eventos);
+        document.getElementById('e-saida-data').value = editSaidaOriginal;
+        const br = chave => String(chave).split('-').reverse().join('/');
+        document.getElementById('e-saida-dica').textContent = perfil.saidaCobranca ? `Você fixou ${br(perfil.saidaCobranca)}. O que vence depois dessa data não é cobrado.`
+          : ultima ? `Vem da última aula dada (${br(ultima)}); o cadastro foi arquivado em ${br(arquivado)}. O que vence depois dessa data não é cobrado — mude se ele saiu em outro dia.`
+          : `Sem aula na agenda: vale o dia em que o cadastro foi arquivado (${br(arquivado)}). O que vence depois dessa data não é cobrado.`;
+        caixa.style.display = 'block';
+      } catch (erro) { console.warn('Saída do aluno:', erro); }
+    }
     async function editCarregarPagamento(uid) {
       editPagtoPerfil = null;
       const caixa = document.getElementById('e-pagto-box'), sem = document.getElementById('e-pagto-sem');
       caixa.style.display = 'none'; sem.style.display = 'none';
+      if (allStudents.find(item => item.uid === uid)?.archived) { editCarregarSaida(uid); return; }
+      editSaidaPerfil = null; document.getElementById('e-saida-box').style.display = 'none';
       try {
         const snap = await getDoc(doc(db, 'schools', escolaAtual, 'financeStudents', uid));
         if (document.getElementById('e-uid').value !== uid) return;   // fechou e abriu outro aluno
@@ -7317,6 +7408,12 @@
           inicioCurso: inicio || '',
           photo: editPhoto || '',
         });
+        // Data de saída do ex-aluno mudou: fica no cadastro financeiro e manda na cobrança.
+        if (editSaidaPerfil) {
+          const nova = document.getElementById('e-saida-data').value;
+          if (nova && nova !== editSaidaOriginal) await setDoc(doc(db, 'schools', escolaAtual, 'financeStudents', uid),
+            { saidaCobranca:nova, updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || '' }, { merge:true });
+        }
         // Data do pagamento mudou: vai para o cadastro financeiro, valendo do mês dela em diante.
         if (editPagtoPerfil) {
           const patch = financePatchVencimento(editPagtoPerfil, document.getElementById('e-pagto-data').value,
