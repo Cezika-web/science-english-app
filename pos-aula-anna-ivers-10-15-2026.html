@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Anna Ivers — 10/15/2026 — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+body{color:#273444;line-height:1.6;}
+h2{font-size:1.15rem;color:#0f1724;line-height:1.35;}
+h3{font-size:1rem;color:#14532D;}
+li+li{margin-top:6px;}
+.outline-card p:first-child{margin-top:0;}
+.outline-card p:last-child{margin-bottom:0;}
+.compare{width:100%;border-collapse:collapse;font-size:.93rem;}
+.compare th,.compare td{padding:9px 7px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top;}
+.compare th{background:#E7F6EC;color:#14532D;}
+.compare tr:last-child td{border-bottom:0;}
+@media(max-width:720px){header{flex-wrap:wrap;} .wrap{padding:20px 12px;} .card{box-sizing:border-box;min-width:0;} .vocab{min-width:0;} .vocab-grid{align-items:stretch;} .compare{font-size:.85rem;} .talk-table{font-size:.8rem;} .talk-table th,.talk-table td{padding:7px 5px;}}
+@media print{.wrap{padding:0;display:block;} .card{max-width:none;box-shadow:none;border:0;padding:0;} .actions,.vocab-say{display:none;} h2,h3{break-after:avoid;} .vocab,.homework,.speaking{break-inside:avoid;} a{color:#14532D;}}
+</style></head>
+<body><div class="wrap"><article class="card" role="main">
+<header><div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><span class="badge">PÓS-AULA</span><h1>Vocabulário, países e nacionalidades</h1></div><div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluna:</strong> Anna Ivers &nbsp;•&nbsp; <strong>Data:</strong> 10/15/2026</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header>
+<main><section class="panel"><p style="margin:0;font-weight:600;color:#14532D;"><em>Anna, nesta aula você ampliou o vocabulário com imagens e áudio, leu pequenos perfis e praticou como falar de origem e nacionalidade. O foco foi escolher entre “from + país” e a nacionalidade, mantendo o verbo to be na frase.</em></p></section>
+<section><h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2><div class="outline-card">
+<p><strong>Revisão do desafio e dos possessivos.</strong> Começamos conferindo o desafio, com resultado acima de 900 pontos. Retomamos a resposta curta de <em>Are they musicians?</em>: <strong>Yes, they are.</strong> O pronome precisa combinar com o verbo. Também revisamos como <strong>her</strong> retoma uma mulher já mencionada: em <em>Maria has a new job. Her boss is very nice.</em>, her evita repetir Maria. Voltaram ainda os títulos <strong>Mrs., Miss e Ms.</strong></p>
+<p><strong>Vocabulário com imagens, áudio e repetição.</strong> No jogo de 30 perguntas, você relacionou palavras a imagens e ouviu a pronúncia antes de repetir. Resultado confirmado no final: <strong>21 acertos e 9 erros — 70%</strong>. Essa marca serve como referência para comparar novas rodadas; palavras diferentes podem mudar a dificuldade. Apareceram objetos do dia a dia, animais, alimentos, lugares e ações. Praticamos, por exemplo, <strong>toothpaste, ironing board, hammer, squirrel</strong> e <strong>fire extinguisher</strong>. Em <strong>knife</strong>, o k inicial é mudo.</p>
+<p><strong>Uma palavra, vários sentidos.</strong> <strong>Season</strong> pode ser estação do ano ou temporada de uma série. Como verbo, <strong>to season</strong> significa temperar comida. O contexto mostra qual sentido usar. Para falar do condimento ou tempero como produto, a palavra é <strong>seasoning</strong>. Estudar vocabulário também envolve revisar a aba “Meu vocabulário”, consultar a lista de verbos e tentar montar frases com as palavras.</p>
+<p><strong>Origem × nacionalidade.</strong> Retomamos a página 24 e avançamos para a leitura da página 26. <strong>Where</strong> significa onde; <strong>from</strong> indica a origem. Em <strong>I am from Brazil.</strong>, am corresponde a “sou” e from a “de/do”. Para o país, usamos <strong>to be + from + país</strong>; para a nacionalidade, <strong>to be + nacionalidade</strong>. Compare <strong>She is from Brazil.</strong> e <strong>She is Brazilian.</strong> A mesma ideia aparece em <strong>They are from South Korea.</strong> e <strong>They are South Korean.</strong></p>
+<p><strong>Leitura de perfis.</strong> Lemos pequenos textos sobre Aída Román, Roger Mooking, Perla Haney-Jardine e BTS. O objetivo foi encontrar origem, nacionalidade e profissão nos textos. Trabalhamos <strong>Olympic athlete, chef, actor, singer, musicians, nationality, occupation</strong> e <strong>originally</strong>. Também treinamos <strong>What’s his nationality?</strong>, <strong>What’s her occupation?</strong> e a frase <strong>But that’s not all.</strong> A leitura foi feita aos poucos, com atenção ao sentido e à pronúncia.</p>
+<p><strong>Perguntar e responder.</strong> <strong>Where are the BTS singers from?</strong> pede um lugar; a resposta praticada foi <strong>They are from South Korea.</strong> Uma pergunta sobre nacionalidade pede <strong>South Korean</strong>, sem from. Já <strong>Is Mr. Mooking from Canada?</strong> pede confirmação: <strong>Yes, he is.</strong> Os seis áudios da próxima atividade ficaram para a próxima aula.</p>
+<div class="panel"><p style="margin:0;"><strong>💡 Regra para guardar:</strong><br>País → <strong>from Brazil / from South Korea</strong>.<br>Nacionalidade → <strong>Brazilian / South Korean</strong>, sem from.</p></div>
+</div></section><section><h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2><div class="outline-card"><p style="color:var(--muted);font-size:.88rem;">Frases trabalhadas em aula, com grafia e pontuação normalizadas.</p><ul><li><strong>Are they musicians?</strong> → Eles são músicos?</li><li><strong>Yes, they are.</strong> → Sim, são.</li><li><strong>Maria has a new job. Her boss is very nice.</strong> → Maria tem um emprego novo. O chefe dela é muito legal.</li><li><strong>What is your phone number?</strong> → Qual é o seu número de telefone?</li><li><strong>I am from Brazil.</strong> → Eu sou do Brasil.</li><li><strong>She is Brazilian.</strong> → Ela é brasileira.</li><li><strong>He is Canadian.</strong> → Ele é canadense.</li><li><strong>They are from Japan. They are Japanese.</strong> → Eles são do Japão. Eles são japoneses.</li><li><strong>Where are they from?</strong> → De onde eles são?</li><li><strong>What’s his nationality?</strong> → Qual é a nacionalidade dele?</li><li><strong>What’s her occupation?</strong> → Qual é a profissão dela?</li><li><strong>She’s originally from Brazil.</strong> → Ela é originalmente do Brasil.</li><li><strong>But that’s not all.</strong> → Mas isso não é tudo.</li><li><strong>Not at all.</strong> → De nada. — Uma das respostas praticadas para “Thank you”.</li><li><strong>Where are the BTS singers from?</strong> → De onde são os cantores do BTS?</li><li><strong>They are South Korean.</strong> → Eles são sul-coreanos.</li><li><strong>They are from South Korea.</strong> → Eles são da Coreia do Sul.</li><li><strong>Is Mr. Mooking from Canada? Yes, he is.</strong> → O senhor Mooking é do Canadá? Sim, é.</li></ul></div></section><section><h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3>season</h3><button type="button" class="vocab-say" data-czk-say="season" aria-label="Ouvir a pronúncia de season" aria-pressed="false" title="Ouvir season">&#128266;</button></div><p><em>(pt) estação do ano; temporada; temperar</em><br><small>Como substantivo, nomeia uma estação ou temporada. Como verbo, significa temperar.<br><strong>Season the food.</strong> → Tempere a comida.</small></p></div><div class="vocab green"><div class="vocab-head"><h3>nationality</h3><button type="button" class="vocab-say" data-czk-say="nationality" aria-label="Ouvir a pronúncia de nationality" aria-pressed="false" title="Ouvir nationality">&#128266;</button></div><p><em>(pt) nacionalidade</em><br><small>Indica a nacionalidade de uma pessoa. A resposta usa Brazilian, Canadian, Mexican etc.<br><strong>What’s his nationality?</strong> → Qual é a nacionalidade dele?</small></p></div><div class="vocab yellow"><div class="vocab-head"><h3>originally</h3><button type="button" class="vocab-say" data-czk-say="originally" aria-label="Ouvir a pronúncia de originally" aria-pressed="false" title="Ouvir originally">&#128266;</button></div><p><em>(pt) originalmente; de origem</em><br><small>Ajuda a apresentar de onde alguém é originalmente.<br><strong>She’s originally from Brazil.</strong> → Ela é originalmente do Brasil.</small></p></div></div></section><section><h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2><div class="outline-card"><p style="color:var(--muted);font-size:.88rem;">Palavras e expressões identificadas no jogo, nas alternativas comentadas, no desafio e na leitura.</p><h3>Objetos e itens do dia a dia</h3><ul><li><strong>wallet / pants</strong> — carteira / calça (no inglês americano).</li><li><strong>ironing board / toothpaste</strong> — tábua de passar roupa / pasta de dente.</li><li><strong>fork / knife / hammer</strong> — garfo / faca / martelo.</li><li><strong>roof / rooftop / lock</strong> — telhado / parte superior ou área do telhado / fechadura ou cadeado.</li><li><strong>trumpet / fire extinguisher</strong> — trompete / extintor de incêndio.</li><li><strong>whip / cube / cup</strong> — chicote / cubo / xícara ou copo.</li><li><strong>sunglasses / ladder</strong> — óculos de sol / escada de mão.</li><li><strong>toilet / toilet paper / mittens</strong> — vaso sanitário; também banheiro em alguns contextos / papel higiênico / luvas com os dedos juntos e o polegar separado.</li></ul><h3>Natureza, alimentos, pessoas e outras palavras do jogo</h3><ul><li><strong>bear / squirrel</strong> — urso / esquilo.</li><li><strong>beach / Iceland / comet</strong> — praia / Islândia / cometa.</li><li><strong>chestnut / onion / fruit / soy</strong> — castanha, do castanheiro / cebola / fruta / soja.</li><li><strong>pink / people / doctor</strong> — rosa / pessoas / médico(a).</li><li><strong>witch / Santa Claus / paraglider</strong> — bruxa / Papai Noel / parapente ou pessoa que pratica parapente, conforme o contexto.</li><li><strong>behind / to clap</strong> — atrás / bater palmas.</li></ul><h3>Season e estudo de vocabulário</h3><ul><li><strong>season / seasons</strong> — estação ou temporada / estações ou temporadas.</li><li><strong>first season / second season / third season</strong> — primeira temporada / segunda temporada / terceira temporada.</li><li><strong>episode / episodes</strong> — episódio / episódios.</li><li><strong>to season / seasoning</strong> — temperar / tempero ou condimento — distinção para revisar os sentidos discutidos.</li><li><strong>to build / vocabulary</strong> — construir / vocabulário.</li></ul><h3>Leitura, profissões e informações pessoais</h3><ul><li><strong>nationality / occupation / originally</strong> — nacionalidade / profissão ou ocupação / originalmente.</li><li><strong>Olympic athlete / chef / actor</strong> — atleta olímpico(a) / chef de cozinha / ator ou atriz.</li><li><strong>singer / musicians / pop band</strong> — cantor(a) / músicos / banda de música pop.</li><li><strong>famous / K-pop</strong> — famoso(a) / música pop coreana.</li><li><strong>meet / city</strong> — conheça, na apresentação de alguém / cidade.</li><li><strong>but / that’s not all</strong> — mas / isso não é tudo.</li><li><strong>Thank you. / You’re welcome. / Not at all.</strong> — Obrigado(a). / De nada. / De nada..</li></ul><h3>Revisão do desafio e estruturas</h3><ul><li><strong>where / from</strong> — onde / de, indicando origem.</li><li><strong>I / he / she / they</strong> — eu / ele / ela / eles ou elas.</li><li><strong>am / is / are</strong> — formas de to be: ser ou estar, conforme o sujeito.</li><li><strong>her / her boss / her friend</strong> — dela, antes de um substantivo / o chefe dela / o amigo ou a amiga dela.</li><li><strong>job / friends / colleagues</strong> — emprego / amigos / colegas de trabalho.</li><li><strong>phone number / short answer</strong> — número de telefone / resposta curta.</li><li><strong>Mr. / Mrs. / Miss / Ms.</strong> — senhor / senhora, tradicionalmente para mulher casada / senhorita / título para mulher sem indicar estado civil.</li></ul><h3>Países e nacionalidades</h3><table class="compare"><thead><tr><th scope="col">País — com from</th><th scope="col">Nacionalidade — sem from</th></tr></thead><tbody><tr><td><strong>Brazil</strong><br>Brasil</td><td><strong>Brazilian</strong><br>brasileiro(a)</td></tr><tr><td><strong>Canada</strong><br>Canadá</td><td><strong>Canadian</strong><br>canadense</td></tr><tr><td><strong>China</strong><br>China</td><td><strong>Chinese</strong><br>chinês / chinesa</td></tr><tr><td><strong>Japan</strong><br>Japão</td><td><strong>Japanese</strong><br>japonês / japonesa</td></tr><tr><td><strong>Mexico</strong><br>México</td><td><strong>Mexican</strong><br>mexicano(a)</td></tr><tr><td><strong>the UK</strong><br>Reino Unido</td><td><strong>British</strong><br>britânico(a)</td></tr><tr><td><strong>the US / the USA</strong><br>Estados Unidos</td><td><strong>American</strong><br>americano(a), no contexto da aula</td></tr><tr><td><strong>South Korea</strong><br>Coreia do Sul</td><td><strong>South Korean</strong><br>sul-coreano(a)</td></tr></tbody></table><p><strong>Outros lugares da leitura:</strong> Mexico City — Cidade do México; Niterói; Seoul — Seul.</p><p><strong>Atenção:</strong> países e nacionalidades começam com letra maiúscula em inglês. Os adjetivos de nacionalidade ficam iguais com she e they: <em>She is Japanese. / They are Japanese.</em></p></div></section><section><h2 style="margin-bottom:8px;">🚨 Correções importantes</h2><div class="outline-card"><p style="color:var(--muted);font-size:.88rem;">Pontos retomados durante as suas respostas, a leitura e a correção do desafio. As tentativas abaixo estão normalizadas para facilitar a revisão.</p><div style="margin-top:16px;"><p style="margin:0 0 5px;"><strong>1. País não é nacionalidade</strong></p><p style="margin:0 0 4px;color:#b42318;">❌ They are from South Korean.</p><p style="margin:0 0 6px;color:#15803D;">✅ <strong>They are from South Korea.</strong></p><p style="margin:0;">Depois de from, use o lugar: South Korea. Para dar a nacionalidade, diga They are South Korean., sem from. Essa diferença foi retomada várias vezes no final.</p></div><div style="margin-top:16px;"><p style="margin:0 0 5px;"><strong>2. Não deixar from de fora</strong></p><p style="margin:0 0 4px;color:#b42318;">❌ They are South Korea.</p><p style="margin:0 0 6px;color:#15803D;">✅ <strong>They are from South Korea.</strong></p><p style="margin:0;">South Korea é um país. A frase precisa de from para dizer “são da Coreia do Sul”.</p></div><div style="margin-top:16px;"><p style="margin:0 0 5px;"><strong>3. Traduzir South Korean pelo sentido</strong></p><p style="margin:0 0 4px;color:#b42318;">❌ “South Korean” = “soldados coreanos” / “no sul da Coreia”.</p><p style="margin:0 0 6px;color:#15803D;">✅ <strong>“South Korean” = “sul-coreano(a)”.</strong></p><p style="margin:0;">Em They are South Korean., falamos da nacionalidade: “Eles são sul-coreanos”. South Korea é o nome do país.</p></div><div style="margin-top:16px;"><p style="margin:0 0 5px;"><strong>4. Dar a resposta curta completa</strong></p><p style="margin:0 0 4px;color:#b42318;">❌ Yes, … [resposta incompleta no desafio]</p><p style="margin:0 0 6px;color:#15803D;">✅ <strong>Yes, they are.</strong></p><p style="margin:0;">Em Are they musicians?, a resposta retoma they + are. Se Yes já estiver preenchido, complete apenas they are. Para he, use Yes, he is.</p></div><div style="margin-top:16px;"><p style="margin:0 0 5px;"><strong>5. Não pronunciar o k de knife</strong></p><p style="margin:0 0 4px;color:#b42318;">❌ Pronunciar o k inicial em knife.</p><p style="margin:0 0 6px;color:#15803D;">✅ <strong>knife — /naɪf/</strong></p><p style="margin:0;">A letra k é muda nessa palavra. Esse ponto foi explicado no jogo; knife também apareceu entre as opções.</p></div><div style="margin-top:16px;"><p style="margin:0 0 5px;"><strong>6. Manter as palavras da pergunta</strong></p><p style="margin:0 0 4px;color:#b42318;">❌ What her occupation?</p><p style="margin:0 0 6px;color:#15803D;">✅ <strong>What’s her occupation?</strong></p><p style="margin:0;">Na leitura, treinamos a forma completa: What’s = What is. O mesmo vale para What’s his nationality? Não deixe o verbo is desaparecer.</p></div><div style="margin-top:16px;"><p style="margin:0 0 5px;"><strong>7. All sem acrescentar h</strong></p><p style="margin:0 0 4px;color:#b42318;">❌ Ler all acrescentando um som inicial de h.</p><p style="margin:0 0 6px;color:#15803D;">✅ <strong>But that’s not all.</strong></p><p style="margin:0;">All começa pelo som da vogal. Leia por partes e depois una: But / that’s / not / all. Também praticamos Not at all. como resposta a Thank you.</p></div><div class="panel" style="margin-top:16px;"><p style="margin:0;"><strong>Pronúncia para continuar praticando:</strong> nationality, originally, Canadian, squirrel e fire extinguisher. Em fruit, mantenha o som de “u” longo /uː/; ouça e repita a palavra inteira.</p></div></div></section><section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/aVNyzyfUPZg" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section><section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th scope="col">Quem falou</th><th scope="col">Porcentagem</th><th scope="col">Duração aproximada</th></tr></thead><tbody><tr class="row-teacher"><td class="talk-label">César (Professor)</td><td class="talk-percent">62%</td><td class="talk-time">~24 minutos</td></tr><tr class="row-student"><td class="talk-label">Anna Ivers</td><td class="talk-percent">38%</td><td class="talk-time">~14 minutos</td></tr></tbody></table><p style="margin-bottom:0;font-size:.85rem;color:var(--muted);">Estimativa pela duração dos trechos de fala registrados na transcrição, incluindo português e inglês. Pausas e áudio do jogo ficam fora da divisão; a gravação tem cerca de 50 minutos.</p></section><section><h2 style="margin-bottom:8px;">📝 Homework</h2><div class="homework"><p style="margin-top:0;"><strong>📌 Para estudar até a próxima aula:</strong></p><ul>
+<li><strong>Refaça a atividade de corrigir frases de 10/10</strong> que apareceu com respostas misturadas no app, conforme combinado.</li>
+<li><strong>Revise o vocabulário do jogo.</strong> Tente lembrar o significado antes de consultar a lista. Ouça e repita as três palavras-chave.</li>
+<li><strong>Abra “Meu vocabulário” e a lista de verbos.</strong> Escolha dois verbos e tente formar uma frase com cada um, como César orientou.</li>
+<li><strong>Pratique os dois modelos:</strong> <em>She is from Brazil. / She is Brazilian.</em> Depois faça o mesmo com Canada, Japan, Mexico e South Korea.</li>
+<li><strong>Releia os perfis da página 26 em voz alta.</strong> Procure a origem, a nacionalidade e a profissão de cada pessoa. Volte à gravação nos trechos de pronúncia mais difíceis.</li>
+<li>Nas atividades da aula, o foco combinado é <strong>associar palavras e traduções</strong> e revisar <strong>where, from e nacionalidades</strong>.</li>
+<li>Leia este pós-aula de <strong>2 a 3 vezes durante a semana</strong>, distribuindo a revisão em dias diferentes.</li>
+</ul></div></section>
+</main><footer><p>© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer>
+</article></div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>
