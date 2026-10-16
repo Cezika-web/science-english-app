@@ -529,6 +529,24 @@
        ou arrastar ali marca um horário dentro da aula cancelada. */
     .calendar-event.cancelada.passa { pointer-events:none; }
     .calendar-event.cancelada.passa strong { pointer-events:auto; display:inline-block; max-width:100%; vertical-align:top; cursor:pointer; }
+    /* Aula em dupla/turma em que só ALGUNS não participaram: o bloco segue verde (a
+       aula aconteceu para os outros) e uma faixa hachurada diz quem faltou. Em bloco
+       baixo vira um selo no canto, que não disputa espaço com o título. */
+    .calendar-event .nao-veio { display:block; margin-top:3px; padding:1px 5px; border:1px solid #cbd5e1; border-radius:4px;
+      background:repeating-linear-gradient(135deg,#f8fafc,#f8fafc 4px,#eef2f7 4px,#eef2f7 8px); color:#64748b;
+      font-style:normal; font-size:.55rem; font-weight:700; text-transform:none; letter-spacing:0; line-height:1.35;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .calendar-event .nao-veio-selo { position:absolute; top:3px; right:4px; padding:0 4px; border-radius:999px; background:#64748b; color:#fff;
+      font-style:normal; font-size:.5rem; font-weight:800; line-height:1.5; letter-spacing:0; }
+    /* Cartão da aula em grupo: cada nome é um botão que cancela/desfaz na hora. */
+    .ausentes-label { margin-top:10px; font-size:.74rem; font-weight:800; color:#334155; }
+    .ausentes-lista { display:flex; flex-wrap:wrap; gap:6px; margin-top:7px; }
+    .ausentes-lista button { border:1.5px solid #d6dfec; background:#fff; color:#334155; border-radius:999px; padding:6px 11px; font:inherit; font-size:.78rem; font-weight:700; cursor:pointer; }
+    .ausentes-lista button:hover { border-color:#94a3b8; }
+    .ausentes-lista button:disabled { opacity:.6; cursor:wait; }
+    .ausentes-lista button.on { border-color:#64748b; color:#475569; text-decoration:line-through;
+      background:repeating-linear-gradient(135deg,#f8fafc,#f8fafc 5px,#eef2f7 5px,#eef2f7 10px); }
+    .ausentes-dica { margin-top:7px; font-size:.7rem; line-height:1.45; color:#64748b; }
     .calendar-cancel-band { position:absolute; left:2px; right:2px; z-index:1; border:1px dashed #cbd5e1; border-radius:7px; background:repeating-linear-gradient(135deg,#f8fafc,#f8fafc 5px,#eef2f7 5px,#eef2f7 10px); pointer-events:none; }
     .calendar-cancel-faixa { position:absolute; left:2px; right:2px; z-index:6; display:flex; gap:2px; }
     .calendar-cancel-faixa .calendar-event { position:static; flex:1 1 0; min-width:0; height:100%; padding:0 6px; border-radius:5px; display:flex; align-items:center; }
@@ -648,6 +666,7 @@
       .calendar-cancel-band, .calendar-cancel-faixa { left:1px; right:1px; }
       .calendar-cancel-faixa .calendar-event { padding:0 3px; }
       .calendar-cancel-faixa .calendar-event strong { font-size:.48rem; }
+      .calendar-event .nao-veio { margin-top:2px; padding:0 3px; font-size:.48rem; }
     }
 
     /* Financeiro da escola */
@@ -717,6 +736,13 @@
     .finance-status.pending { background:#fef3c7; color:#92400e; }
     .finance-status.overdue { background:#fee2e2; color:#991b1b; }
     .finance-status.unset { background:#f1f5f9; color:#64748b; }
+    .finance-status.dropped { background:#f1f5f9; color:#64748b; text-decoration:line-through; }
+    .finance-row-btn.finance-drop { border-color:#e2e8f0; color:#64748b; }
+    .finance-row-btn.finance-drop:hover { background:#f8fafc; }
+    .finance-velha { margin-left:2px; color:#92400e; font-size:.62rem; font-weight:800; }
+    .finance-table tr.finance-sep td { padding:6px 8px; background:#f8fafc; color:#64748b; font-size:.62rem; font-weight:900; letter-spacing:.06em; text-transform:uppercase; }
+    .finance-tag { display:inline-block; margin-left:5px; padding:1px 6px; border-radius:999px; background:#f1f5f9; color:#64748b; font-size:.58rem; font-weight:900; vertical-align:middle; }
+    .finance-note { display:block; margin-top:3px; color:#64748b; font-size:.68rem; font-weight:700; }
     .finance-row-btn { border:1px solid var(--border); border-radius:7px; padding:5px 7px; background:#fff; color:#334155; font:inherit; font-size:.645rem; font-weight:800; cursor:pointer; white-space:nowrap; }
     .finance-row-btn.finance-undo { border-color:#fecaca; color:#b91c1c; }
     .finance-row-btn.finance-undo:hover { background:#fff5f5; }
@@ -1005,6 +1031,7 @@
           <button class="btn-add" id="finance-new-expense" type="button" style="background:#fff;color:#b91c1c;border:1px solid #fecaca;padding:9px 12px;">− Despesa</button>
         </div>
         <div id="finance-late-alert"></div>
+        <div id="finance-velhas"></div>
         <div class="finance-summary">
           <div class="finance-sum income"><small>↗ Ganhos do mês</small><strong id="finance-income">R$ 0,00</strong><span id="finance-income-note">0 entradas</span></div>
           <div class="finance-sum expense"><small>↘ Despesas do mês</small><strong id="finance-expenses">R$ 0,00</strong><span id="finance-expenses-note">0 saídas</span></div>
@@ -1847,8 +1874,10 @@
     <div class="calendar-pop-colors calendar-pop-palette" id="calendar-pop-palette"></div>
     <button class="btn-secondary" id="calendar-pop-briefing" type="button" style="display:none;width:100%;margin-top:12px;padding:9px;font-size:.83rem;">📋 Pauta desta aula</button>
     <div id="calendar-pop-briefing-notice" role="status" style="display:none;margin-top:12px;padding:10px;border-radius:8px;background:#fff7ed;color:#9a3412;font-size:.83rem;">Esta aula ainda não está vinculada a um aluno. Selecione o aluno e salve para acessar a pauta.</div>
-    <div class="calendar-pop-row" id="calendar-pop-cancel-scope-row" style="display:none;grid-template-columns:1fr;margin-top:8px;">
-      <select id="calendar-pop-cancel-scope" aria-label="Quem terá esta aula cancelada"></select>
+    <div id="calendar-pop-cancel-scope-row" style="display:none;">
+      <div class="ausentes-label" id="calendar-pop-ausentes-label"></div>
+      <div class="ausentes-lista" id="calendar-pop-ausentes-lista"></div>
+      <div class="ausentes-dica">Toque no nome: a aula dele neste dia é cancelada na hora e ele sai da pendência de <b>pós-aula</b> (a de atividades não muda). Toque de novo para desfazer.</div>
     </div>
     <button class="btn-secondary" id="calendar-pop-cancelar" type="button" style="display:none;width:100%;margin-top:8px;padding:9px;font-size:.83rem;">🚫 Cancelar só esta aula</button>
     <div class="calendar-pop-msg" id="calendar-pop-msg"></div>
@@ -1921,7 +1950,7 @@
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
     import { getMessaging, getToken, isSupported }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
-    import { arrayUnion }
+    import { arrayUnion, arrayRemove }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
     const firebaseConfig = {
@@ -2530,6 +2559,25 @@
       ? (event.memberEvents || []).every(item => (item.canceladas || []).includes(chaveDia))
       : (event.canceladas || []).includes(chaveDia);
 
+    // Aula em dupla/turma em que só ALGUNS não participaram (a cópia da aula deles
+    // tem o dia em `canceladas`): a aula aconteceu para os outros, então o bloco
+    // segue normal e o aviso diz quem faltou — com dois ou com vinte alunos.
+    const calendarPrimeiroNome = item => String(item.studentName || 'Aluno').trim().split(/\s+/)[0];
+    function calendarAusentesDoGrupo(event, chaveDia) {
+      if (!event.groupVirtual) return [];
+      return (event.memberEvents || []).filter(item => (item.canceladas || []).includes(chaveDia)).map(calendarPrimeiroNome);
+    }
+    function calendarTextoAusentes(nomes, estreito = false) {
+      if (!nomes.length) return '';
+      // No celular a coluna é estreita: só o nome de quem faltou.
+      if (estreito) return `🚫 ${nomes.join(', ')}`;
+      if (nomes.length === 1) return `🚫 ${nomes[0]} não participou`;
+      if (nomes.length === 2) return `🚫 ${nomes[0]} e ${nomes[1]} não participaram`;
+      return `🚫 ${nomes.length} não participaram: ${nomes.join(', ')}`;
+    }
+    const calendarFraseAusentes = nomes => nomes.length === 1 ? `${nomes[0]} não participou`
+      : nomes.length === 2 ? `${nomes[0]} e ${nomes[1]} não participaram` : `${nomes.join(', ')} não participaram`;
+
     const calendarGroupValue = id => `group:${id}`;
     function calendarEntity(value) {
       if (String(value || '').startsWith('group:')) {
@@ -2656,6 +2704,7 @@
         classGroups = groupsSnap.docs.map(item => ({ id:item.id, ...item.data() }))
           .sort((a,b) => (a.name || '').localeCompare(b.name || '', 'pt-BR'));
         calendarApplyTheme(); calendarFillStudents(); renderCalendar();
+        try { pendRecalcularComAgenda(); } catch (erro) { console.warn('Pendências não refeitas após a agenda:', erro); }
       } catch (error) {
         console.error('Agenda:', error);
         grid.innerHTML = `<div class="calendar-empty" style="color:#b91c1c;">Não foi possível carregar a agenda: ${esc(error.message)}</div>`;
@@ -2933,9 +2982,17 @@
           const mais = (restantes || recolher)
             ? `<button type="button" class="calendar-event-mais" data-expandir="${esc(chave)}" style="top:${meuTopo + minhaAltura - 14}px" title="${recolher ? 'Mostrar menos' : `Ver os ${restantes} que faltam nesta hora`}">${recolher ? '⋯ menos' : `⋯ +${restantes}`}</button>`
             : '';
+          // Aula em grupo com ausência parcial: quem não participou aparece no próprio
+          // bloco — em faixa hachurada, ou num selo quando o bloco é baixo demais.
+          const ausentes = cancelada ? [] : calendarAusentesDoGrupo(event, key);
+          const frase = ausentes.length ? calendarFraseAusentes(ausentes) : '';
+          const avisoAusentes = !ausentes.length ? ''
+            : minhaAltura >= (estreito ? 30 : 42)
+              ? `<em class="nao-veio" title="${esc(frase)}">${esc(calendarTextoAusentes(ausentes, estreito))}</em>`
+              : `<em class="nao-veio-selo" title="${esc(frase)}">🚫 ${ausentes.length}</em>`;
           const moldura = ehDupla && faixa === 0
             ? `<div class="calendar-dupla-outline" style="top:${top}px;height:${Math.max(22,bottom-top)}px" aria-hidden="true"></div>` : '';
-          return `${moldura}<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}${cancelada ? ' cancelada passa' : ''}" data-event-id="${esc(event.id)}"${event.fatiada ? ` data-hora-inicio="${esc(event.startTime)}" data-hora-fim="${esc(event.endTime)}"` : ''} style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event)}${junta ? `;--event-mix:${calendarMistura(faixa)}%;--event-mix-borda:${calendarMistura(faixa, CALENDAR_INTENSIDADE_BORDA)}%` : ''}" title="${esc(displayTitle || subtitle)}${cancelada ? ' · cancelada' : ''}"><strong${cancelada ? ` title="${esc(displayTitle)} · cancelada — toque no nome para desfazer"` : ''}>${esc(displayTitle)}</strong><span>${esc(subtitle)}</span></button>${mais}`;
+          return `${moldura}<button type="button" class="calendar-event${event.type === 'available' ? ' available' : ''}${junta ? ' junta' : ''}${cancelada ? ' cancelada passa' : ''}" data-event-id="${esc(event.id)}"${event.fatiada ? ` data-hora-inicio="${esc(event.startTime)}" data-hora-fim="${esc(event.endTime)}"` : ''} style="top:${meuTopo}px;height:${minhaAltura}px;--event-color:${calendarEventColor(event)}${junta ? `;--event-mix:${calendarMistura(faixa)}%;--event-mix-borda:${calendarMistura(faixa, CALENDAR_INTENSIDADE_BORDA)}%` : ''}" title="${esc(displayTitle || subtitle)}${cancelada ? ' · cancelada' : ''}${frase ? ` · ${esc(frase)}` : ''}"><strong${cancelada ? ` title="${esc(displayTitle)} · cancelada — toque no nome para desfazer"` : ''}>${esc(displayTitle)}</strong><span>${esc(subtitle)}</span>${avisoAusentes}</button>${mais}`;
         }).join('');
         const fundos = cobertos.map(grupo =>
           `<div class="calendar-cancel-band" style="top:${grupo.topo}px;height:${grupo.base - grupo.topo}px" aria-hidden="true"></div>`).join('');
@@ -3877,10 +3934,42 @@
       document.getElementById('calendar-pop-more').style.display = 'block';
     }
 
+    // Reposição vale um dia só e não "reserva" o horário como a aula de um aluno
+    // (cancelada, a aula continua ocupando a faixa). Por isso desfazer ou cancelar
+    // uma reposição JÁ SALVA apaga o compromisso: o horário volta a ser vaga — a
+    // automática do expediente, ou o "Horário disponível" que estava por baixo.
+    // Antes, "desfazer" regravava a reposição como uma aula comum (verde) com o
+    // título "Reposição · Fulano", e cancelar deixava a faixa hachurada reservada.
+    const calendarReposicaoSalva = rascunho => {
+      const salvo = rascunho?.id ? calendarEvents.find(item => item.id === rascunho.id) : null;
+      return salvo?.type === 'reposicao' ? salvo : null;
+    };
+    async function calendarLiberarReposicao() {
+      const salva = calendarReposicaoSalva(calendarPopDraft);
+      if (!salva) return;
+      const dia = String(salva.date || '').split('-').reverse().join('/');
+      if (!confirm(`Desfazer esta reposição de ${salva.studentName || 'aluno'} (${dia}, ${salva.startTime}–${salva.endTime})? O horário volta a ficar disponível.`)) return;
+      try {
+        await calendarDeleteWithAttendance(salva.id);
+        closeCalendarPop(); await loadCalendar();
+        calendarToast('Reposição desfeita. O horário voltou a ficar disponível.');
+      } catch (error) { calendarPopFail(`Erro ao desfazer: ${error.message}`); }
+    }
+    // O título "Reposição · Isabelle" foi montado pelo sistema para o tipo reposição:
+    // ao trocar o tipo ele não pode ir junto para uma aula ou um "Horário
+    // disponível" (foi o que sobrou nos blocos de 02/10 e 09/10).
+    function calendarPopLimparTituloDeReposicao() {
+      const campo = document.getElementById('calendar-pop-title'), valor = campo.value.trim();
+      const padrao = calendarDefaultTitle('reposicao');
+      if (valor === padrao || valor.startsWith(`${padrao} · `)) campo.value = '';
+    }
+
     document.getElementById('calendar-pop-tipo').onchange = evento => {
       if (!calendarPopDraft) return;
+      const eraReposicao = calendarPopDraft.type === 'reposicao';
       calendarPopDestacar(evento.target.value);
       calendarPopDraft.type = evento.target.value;
+      if (eraReposicao && calendarPopDraft.type !== 'reposicao') calendarPopLimparTituloDeReposicao();
       document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle(calendarPopDraft.type);
       if (!calendarPopDraft.id && calendarPopDraft.type !== 'lesson') document.getElementById('calendar-pop-repeat').value = 'none';
       sincronizarReposicao();
@@ -3895,7 +3984,9 @@
       const comAluno = ehAula || ehReposicao;
       const botao = document.getElementById('calendar-pop-reposicao');
       botao.classList.toggle('on', ehReposicao);
-      botao.textContent = ehReposicao ? '🔄 Reposição — toque para desfazer' : '🔄 Marcar esta aula como reposição';
+      botao.textContent = ehReposicao
+        ? (calendarReposicaoSalva(calendarPopDraft) ? '↩️ Desfazer reposição — o horário volta a ficar disponível' : '🔄 Reposição — toque para desfazer')
+        : '🔄 Marcar esta aula como reposição';
       // Reposição se marca em horário livre. Em cima da aula de um aluno não
       // dá — para liberar aquele horário ele cancela a aula primeiro, e aí o
       // botão aparece na própria aula cancelada.
@@ -3913,6 +4004,8 @@
 
     document.getElementById('calendar-pop-reposicao').onclick = () => {
       if (!calendarPopDraft) return;
+      // Reposição já salva: "desfazer" tira ela do horário (ver calendarLiberarReposicao).
+      if (calendarPopDraft.type === 'reposicao' && calendarReposicaoSalva(calendarPopDraft)) return calendarLiberarReposicao();
       // Marcando reposição em cima de um bloco existente (horário disponível,
       // por exemplo), ela nasce como compromisso NOVO só daquele dia: o bloco
       // original continua inteiro e na semana seguinte o horário volta a ficar
@@ -3932,6 +4025,7 @@
         return;
       }
       calendarPopDraft.type = calendarPopDraft.type === 'reposicao' ? 'lesson' : 'reposicao';
+      if (calendarPopDraft.type !== 'reposicao') calendarPopLimparTituloDeReposicao();
       document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle(calendarPopDraft.type);
       sincronizarReposicao();
       calendarFillMakeupDates('calendar-pop-makeup-for', document.getElementById('calendar-pop-student').value, calendarPopDraft.date, calendarPopDraft.makeupForDate || '');
@@ -3943,8 +4037,10 @@
       document.getElementById('calendar-pop-colors').innerHTML = CALENDAR_TYPES.map(item =>
         `<button type="button" data-type="${item.type}" title="${item.label}" aria-label="${item.label}" class="${calendarPopDraft.type === item.type ? 'on' : ''}" style="background:${calendarPopColorOf(item.type)}"></button>`).join('');
       document.querySelectorAll('#calendar-pop-colors button').forEach(button => button.onclick = () => {
+        const eraReposicao = calendarPopDraft.type === 'reposicao';
         calendarPopDestacar(button.dataset.type);
         calendarPopDraft.type = button.dataset.type;
+        if (eraReposicao && calendarPopDraft.type !== 'reposicao') calendarPopLimparTituloDeReposicao();
         document.getElementById('calendar-pop-title').placeholder = calendarDefaultTitle(calendarPopDraft.type);
         sincronizarReposicao();
         calendarFillMakeupDates('calendar-pop-makeup-for', document.getElementById('calendar-pop-student').value, calendarPopDraft.date, calendarPopDraft.makeupForDate || '');
@@ -4002,26 +4098,8 @@
       document.getElementById('calendar-pop-more').style.display = event.groupVirtual ? 'none' : 'block';
       // Pauta só em aula de aluno já salva — num bloco novo ainda não há o que resumir.
       calendarSyncPopBriefing();
-      const botaoCancelar = document.getElementById('calendar-pop-cancelar');
-      const scopeRow = document.getElementById('calendar-pop-cancel-scope-row');
-      const scope = document.getElementById('calendar-pop-cancel-scope');
-      const dia = calendarPopDraft.ocorrencia;
-      const jaCancelada = Boolean(event.id && dia && calendarCancelada(event, dia));
-      botaoCancelar.style.display = event.id && dia ? 'block' : 'none';
-      if (event.groupVirtual) {
-        const todos = event.memberEvents || [];
-        scope.innerHTML = `<option value="all">${jaCancelada ? 'Desfazer para toda a dupla/turma' : 'Cancelar para toda a dupla/turma'}</option>`
-          + todos.map(item => {
-            const cancelado = (item.canceladas || []).includes(dia);
-            return `<option value="${esc(item.id)}">${cancelado ? 'Desfazer para' : 'Cancelar só para'} ${esc(item.studentName || 'Aluno')}</option>`;
-          }).join('');
-        scopeRow.style.display = 'grid';
-      } else {
-        scope.innerHTML = ''; scopeRow.style.display = 'none';
-      }
-      botaoCancelar.textContent = jaCancelada
-        ? `↩️ Desfazer o cancelamento de ${dia.split('-').reverse().join('/')}`
-        : `🚫 Cancelar a aula de ${dia ? dia.split('-').reverse().join('/') : 'hoje'}`;
+      document.getElementById('calendar-pop-cancelar').style.display = event.id && calendarPopDraft.ocorrencia ? 'block' : 'none';
+      calendarPopRenderCancelar();
       document.getElementById('calendar-pop-msg').style.display = 'none';
       renderCalendarPopColors(); renderCalendarPopPalette(); renderCalendarPopDays();
       document.getElementById('calendar-pop').classList.add('open');
@@ -4156,11 +4234,19 @@
     // Cancelar UMA aula: entra a data daquele dia numa lista de exceções do
     // próprio compromisso. A série continua inteira — semana que vem a aula
     // acontece normalmente. É o oposto de "Excluir", que derruba tudo.
-    document.getElementById('calendar-pop-cancelar').onclick = async () => {
+    //
+    // Aula em dupla/turma: cada NOME do cartão cancela só a aula daquele aluno, na
+    // hora (antes era uma lista suspensa + o botão cinza, e o Salvar verde parecia o
+    // botão certo — gravava a aula de novo e nada era cancelado). O botão cinza
+    // cancela para todos. `scope` é 'all' ou o id da cópia da aula de um aluno.
+    async function calendarCancelarOcorrencia(scope = 'all') {
       const id = calendarPopDraft?.id, dia = calendarPopDraft?.ocorrencia;
       if (!id || !dia || !escolaAtual) return;
+      // Reposição é de um dia só e não reserva o horário: cancelar libera a vaga.
+      // (Uma reposição que já estava cancelada antes continua com o desfazer de sempre.)
+      const reposicao = calendarReposicaoSalva(calendarPopDraft);
+      if (reposicao && !(reposicao.canceladas || []).includes(dia)) return calendarLiberarReposicao();
       const evento = calendarPopDraft.groupVirtual ? calendarPopDraft : (calendarEvents.find(item => item.id === id) || {});
-      const scope = document.getElementById('calendar-pop-cancel-scope').value || 'all';
       const targets = evento.groupVirtual
         ? (scope === 'all' ? (evento.memberEvents || []) : (evento.memberEvents || []).filter(item => item.id === scope))
         : [evento];
@@ -4168,8 +4254,8 @@
       const cancelando = scope === 'all'
         ? !targets.every(item => (item.canceladas || []).includes(dia))
         : !(targets[0].canceladas || []).includes(dia);
-      const botao = document.getElementById('calendar-pop-cancelar');
-      botao.disabled = true;
+      const botoes = [document.getElementById('calendar-pop-cancelar'), ...document.querySelectorAll('#calendar-pop-ausentes-lista button')];
+      botoes.forEach(botao => { botao.disabled = true; });
       try {
         await Promise.all(targets.map(item => {
           const atuais = Array.isArray(item.canceladas) ? item.canceladas : [];
@@ -4177,14 +4263,56 @@
           return setDoc(doc(db, 'schools', escolaAtual, 'calendarEvents', item.id),
             { canceladas, updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || '' }, { merge:true });
         }));
-        closeCalendarPop(); await loadCalendar();
-        const quem = targets.length > 1 ? (evento.groupName || 'dupla/turma') : (targets[0].studentName || 'aluno');
-        calendarToast(cancelando
-          ? `Aula de ${quem} em ${dia.split('-').reverse().join('/')} cancelada. As outras semanas seguem normais.`
-          : `Aula de ${quem} em ${dia.split('-').reverse().join('/')} de volta.`);
-      } catch (error) { calendarToast(`Erro ao cancelar: ${error.message}`, true); }
-      finally { botao.disabled = false; }
-    };
+        const dataBr = dia.split('-').reverse().join('/');
+        if (evento.groupVirtual && scope !== 'all') {
+          // O cartão fica aberto: numa turma dá para marcar vários nomes em sequência.
+          const nome = calendarPrimeiroNome(targets[0]);
+          await loadCalendar();
+          const atual = calendarDisplayEvents.get(id);
+          if (!atual || calendarPopDraft?.id !== id) { closeCalendarPop(); } else {
+            calendarPopDraft.memberEvents = atual.memberEvents;
+            calendarPopRenderCancelar();
+          }
+          calendarToast(cancelando
+            ? `${nome} não participou: a aula dele de ${dataBr} foi cancelada e ele sai da pendência de pós-aula.`
+            : `${nome} participou: a aula dele de ${dataBr} voltou.`);
+        } else {
+          closeCalendarPop(); await loadCalendar();
+          const quem = targets.length > 1 ? (evento.groupName || 'dupla/turma') : (targets[0].studentName || 'aluno');
+          calendarToast(cancelando
+            ? `Aula de ${quem} em ${dataBr} cancelada. As outras semanas seguem normais.`
+            : `Aula de ${quem} em ${dataBr} de volta.`);
+        }
+      } catch (error) { calendarToast(`Erro ao cancelar: ${error.message}`, true); botoes.forEach(botao => { botao.disabled = false; }); }
+      finally { document.getElementById('calendar-pop-cancelar').disabled = false; }
+    }
+    document.getElementById('calendar-pop-cancelar').onclick = () => calendarCancelarOcorrencia('all');
+
+    // Monta o que o cartão mostra sobre cancelamento: a lista de nomes (aula em
+    // grupo) e o texto do botão "para todos". Roda ao abrir e depois de cada toque.
+    function calendarPopRenderCancelar() {
+      const rascunho = calendarPopDraft, dia = rascunho?.ocorrencia;
+      if (!rascunho || !dia) return;
+      const dataBr = dia.split('-').reverse().join('/');
+      const jaCancelada = Boolean(rascunho.id && calendarCancelada(rascunho, dia));
+      const linha = document.getElementById('calendar-pop-cancel-scope-row');
+      const lista = document.getElementById('calendar-pop-ausentes-lista');
+      if (rascunho.groupVirtual) {
+        const semana = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'][new Date(`${dia}T00:00:00`).getDay()];
+        document.getElementById('calendar-pop-ausentes-label').textContent = `Quem não participou desta aula (${semana}, ${dataBr.slice(0, 5)})?`;
+        lista.innerHTML = (rascunho.memberEvents || []).map(item => {
+          const faltou = (item.canceladas || []).includes(dia);
+          return `<button type="button" data-id="${esc(item.id)}" class="${faltou ? 'on' : ''}" title="${faltou ? 'Toque para desfazer' : 'Toque para marcar que não participou'}">${faltou ? '🚫 ' : ''}${esc(calendarPrimeiroNome(item))}</button>`;
+        }).join('');
+        lista.querySelectorAll('button').forEach(botao => { botao.onclick = () => calendarCancelarOcorrencia(botao.dataset.id); });
+        linha.style.display = 'block';
+      } else { lista.innerHTML = ''; linha.style.display = 'none'; }
+      document.getElementById('calendar-pop-cancelar').textContent = rascunho.groupVirtual
+        ? (jaCancelada ? `↩️ Desfazer o cancelamento de ${dataBr} para todos` : `🚫 Cancelar a aula de ${dataBr} para todos`)
+        : jaCancelada ? `↩️ Desfazer o cancelamento de ${dataBr}`
+        : calendarReposicaoSalva(rascunho) ? '↩️ Cancelar a reposição — o horário volta a ficar disponível'
+        : `🚫 Cancelar a aula de ${dataBr}`;
+    }
     document.getElementById('calendar-pop-title').onkeydown = key => { if (key.key === 'Enter') saveCalendarPop(); };
     document.getElementById('calendar-pop-more').onclick = () => {
       const draft = {
@@ -4370,9 +4498,13 @@
 
     function financeFillStudents() {
       const options = allStudents.filter(student => !student.archived).map(student => `<option value="${esc(student.uid)}">${esc(student.name || student.firstName || 'Aluno')}</option>`).join('');
+      // Dar baixa em dívida de ex-aluno precisa achar o nome dele na lista; sem
+      // isso o recebimento seria gravado como "ganho sem aluno".
+      const exOptions = allStudents.filter(student => student.archived && financeProfiles.some(profile => profile.studentUid === student.uid))
+        .map(student => `<option value="${esc(student.uid)}">${esc(student.name || student.firstName || 'Aluno')} (ex-aluno)</option>`).join('');
       ['finance-profile-student','finance-transaction-student'].forEach(id => {
         const select=document.getElementById(id), current=select.value, first=id==='finance-transaction-student'?'<option value="">Ganho sem aluno</option>':'<option value="">Selecione</option>';
-        select.innerHTML=first+options; if([...select.options].some(option=>option.value===current)) select.value=current;
+        select.innerHTML=first+options+(id==='finance-transaction-student'?exOptions:''); if([...select.options].some(option=>option.value===current)) select.value=current;
       });
     }
 
@@ -4494,9 +4626,49 @@
       return { total:Math.round(totalDoMes+fatiaAnual), fatiaAnual:Math.round(fatiaAnual) };
     }
 
+    // ── SAÍDA E VOLTA DO ALUNO ─────────────────────────────────────────────
+    // Ao virar ex-aluno a cobrança congela: o que já tinha vencido e não foi pago
+    // fica guardado, e nada que vença depois da saída é cobrado. Ao reativar, a
+    // saída vira uma "pausa" {de, ate} no cadastro financeiro: de = dia em que
+    // saiu, ate = mês em que voltou (a cobrança normal recomeça nesse mês). O
+    // que ficou em aberto antes da saída volta como pendência do mês de origem
+    // ("velha"), que pode ser recebida ou desconsiderada.
+    function financeDateKeyOf(value) {
+      const date=value?.toDate?value.toDate():null;
+      return date?calendarDateKey(date):'';
+    }
+    function financeDesligadoEm(profile) {
+      if(profile.active!==false) return '';
+      return profile.archivedDate||financeDateKeyOf(profile.archivedAt);
+    }
+    function financePausas(profile) {
+      const fechadas=Array.isArray(profile.pausas)?profile.pausas.filter(pausa=>pausa&&pausa.de&&pausa.ate):[];
+      const aberta=financeDesligadoEm(profile);
+      return aberta?[...fechadas,{de:aberta,ate:''}]:fechadas;
+    }
+
+    // Etapas do mês já descontando o período em que o aluno esteve fora e
+    // marcando as que são de antes de uma saída ou foram desconsideradas.
+    // velha    = antes de uma saída de quem já voltou (aparece no cartão "Pendências
+    //            de antes da saída").
+    // preSaida = antes da saída de quem continua fora: a etapa fica na planilha do
+    //            mês dela, para dar baixa ou desconsiderar. Só o que vence DEPOIS da
+    //            saída sai da conta.
+    function financeProfileParts(profile,month) {
+      const pausas=financePausas(profile),desconsiderados=profile.desconsiderados||[];
+      return financeProfilePartsBase(profile,month)
+        .filter(part=>!pausas.some(pausa=>part.dueKey>pausa.de&&(!pausa.ate||month<pausa.ate)))
+        .map(part=> {
+          const velha=part.amount>0&&pausas.some(pausa=>pausa.ate&&part.dueKey<=pausa.de);
+          const preSaida=part.amount>0&&pausas.some(pausa=>!pausa.ate&&part.dueKey<=pausa.de);
+          if(!(velha||preSaida)||!desconsiderados.includes(`${month}|${part.label}`)) return {...part,velha,preSaida};
+          return {...part,velha,preSaida,dropped:true,amountOriginal:part.amount,amount:0};
+        });
+    }
+
     // Quem paga quinzenal tem duas etapas dentro do mês (part 1 e 2). Quem paga
     // mensal tem uma só (part 0), que aceita qualquer mensalidade daquele mês.
-    function financeProfileParts(profile,month) {
+    function financeProfilePartsBase(profile,month) {
       // Antes do mês em que o aluno entrou não existe cobrança nenhuma.
       if(profile.cycle!=='annual'&&financeBeforeStart(profile,month)) return [];
       const total=Number(profile.monthlyCents||0);
@@ -4529,6 +4701,7 @@
       const received=financeTransactions.filter(tx=>tx.type==='income'&&tx.category==='tuition'&&tx.studentUid===profile.studentUid&&tx.referenceMonth===month
         &&(part.part===0||Number(tx.referencePart||0)===part.part)).reduce((sum,tx)=>sum+Number(tx.amountCents||0),0);
       const late=part.dueKey<financeTodayKey();
+      if(part.dropped) return {key:'dropped',label:'Desconsiderada',received};
       if(part.amount>0&&received>=part.amount) return {key:'paid',label:'Pago',received};
       if(received>0) return {key:late?'overdue':'pending',label:`Parcial · ${financeMoney(received)}`,received};
       return {key:late?'overdue':'pending',label:late?'Atrasado':'Pendente',received};
@@ -4640,6 +4813,69 @@
           alert(`Não foi possível cobrar ${nome}: ${error.message}`);
         }
       });
+    }
+
+    // Pendências que o aluno deixou ao sair e que voltaram com ele. Aparecem em
+    // qualquer mês que você abrir, não importa há quantos meses ele voltou — e o
+    // recebimento é lançado no mês de origem, não no de hoje.
+    function financeVelhasPendencias() {
+      const itens=[];
+      financeProfiles.forEach(profile=> {
+        if(profile.active===false) return;
+        const pausas=financePausas(profile);
+        if(!pausas.some(pausa=>pausa.ate)) return;
+        const saidas=pausas.map(pausa=>pausa.de.slice(0,7)).sort();
+        const inicio=financeProfileStartMonth(profile)||saidas[0];
+        for(let indice=financeMonthIndex(inicio);indice<=financeMonthIndex(saidas[saidas.length-1]);indice+=1) {
+          const mes=`${Math.floor(indice/12)}-${String(indice%12+1).padStart(2,'0')}`;
+          financeProfileParts(profile,mes).forEach(part=> {
+            if(!part.velha) return;
+            const status=financePartStatus(profile,mes,part);
+            const falta=(part.dropped?part.amountOriginal:part.amount)-status.received;
+            if(status.key==='paid'||!(falta>0)) return;
+            itens.push({uid:profile.studentUid,nome:profile.studentName||'Aluno',mes,etapa:part.label,part:part.part,venceEm:part.dueKey,falta,dropped:Boolean(part.dropped)});
+          });
+        }
+      });
+      return itens;
+    }
+
+    function renderFinanceVelhas() {
+      const box=document.getElementById('finance-velhas');
+      const abertas=financeVelhasPendencias().filter(item=>!item.dropped);
+      if(!abertas.length) { box.innerHTML=''; return; }
+      const mesNome=mes=> { const [ano,numero]=mes.split('-').map(Number),texto=new Date(ano,numero-1,1).toLocaleDateString('pt-BR',{month:'short'}).replace('.',''); return `${texto.charAt(0).toUpperCase()}${texto.slice(1)}/${ano}`; };
+      const diaBr=chave=>String(chave).split('-').reverse().join('/');
+      const alunos=[...new Set(abertas.map(item=>item.uid))];
+      box.innerHTML=alunos.map(uid=> {
+        const itens=abertas.filter(item=>item.uid===uid),perfil=financeProfiles.find(item=>item.studentUid===uid);
+        const fora=financePausas(perfil).filter(pausa=>pausa.ate)
+          .map(pausa=>`${esc(itens[0].nome)} ficou fora de ${diaBr(pausa.de)} até ${esc(mesNome(pausa.ate))} — esse período não é cobrado.`).join(' ');
+        return `<div style="margin-bottom:14px;padding:12px 14px;border-radius:12px;background:#FFFBEB;border:1px solid #FDE68A;color:#78350F;font-size:.8rem;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;"><strong style="font-size:.86rem;">↩ Pendências de antes da saída</strong>
+          <span><strong>${esc(itens[0].nome)}</strong> voltou · ${financeMoney(itens.reduce((soma,item)=>soma+item.falta,0))} em aberto</span></div>
+          ${itens.map(item=>`<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;padding:7px 0;border-top:1px solid #FDE68A;">
+            <span style="flex:1;min-width:180px;"><strong>${mesNome(item.mes)}</strong> · ${esc(item.etapa)} <span style="color:#92400E;">· venceu ${diaBr(item.venceEm).slice(0,5)}</span></span>
+            <span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><strong>${financeMoney(item.falta)}</strong>
+              <button type="button" class="finance-row-btn finance-velha-receber" data-uid="${esc(item.uid)}" data-month="${item.mes}" data-part="${item.part}">Receber</button>
+              <button type="button" class="finance-row-btn finance-drop" data-uid="${esc(item.uid)}" data-month="${item.mes}" data-label="${esc(item.etapa)}" title="Tirar este valor da conta">Desconsiderar</button></span></div>`).join('')}
+          <div style="margin-top:6px;color:#92400E;font-size:.7rem;">${fora}</div>
+        </div>`;
+      }).join('');
+      box.querySelectorAll('.finance-velha-receber').forEach(button=>button.onclick=()=>openFinanceTransaction('income',button.dataset.uid,Number(button.dataset.part||0),button.dataset.month));
+      box.querySelectorAll('.finance-drop').forEach(button=>button.onclick=()=>financeToggleDrop(button.dataset.uid,button.dataset.month,button.dataset.label,true));
+    }
+
+    // Desconsiderar tira o valor da conta (previsto, a receber, atraso) sem apagar
+    // nada; "Voltar a cobrar" desfaz. A chave é mês|etapa, a mesma dos avisos de atraso.
+    async function financeToggleDrop(uid,month,label,drop) {
+      const profile=financeProfiles.find(item=>item.studentUid===uid); if(!profile) return;
+      const chave=`${month}|${label}`;
+      if(drop&&!confirm(`Desconsiderar ${label} de ${month} de ${profile.studentName||'este aluno'}?\n\nO valor sai da conta e deixa de aparecer como pendente. Para voltar atrás, abra ${month} e use "Voltar a cobrar".`)) return;
+      try {
+        await setDoc(doc(db,'schools',escolaAtual,'financeStudents',profile.id),{desconsiderados:drop?arrayUnion(chave):arrayRemove(chave),updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.email||''},{merge:true});
+        await loadFinance();
+      } catch(error) { alert(`Não consegui atualizar: ${error.message}`); }
     }
 
     function financeProfileReceived(profile,month) {
@@ -4755,9 +4991,11 @@
       const taxaFixa=horasMensaisMedias?Math.round(receitaMensalContratada/horasMensaisMedias):0;
       document.getElementById('finance-hour-rate').textContent=financeMoney(taxaFixa);
       document.getElementById('finance-hour-rate-note').textContent='mensalidades contratadas ÷ carga média mensal';
-      document.getElementById('finance-students-body').innerHTML=activeStudents.map(student=> {
-        const profile=profileMap.get(student.uid);
-        if(!profile||profile.active===false||!Number(profile.monthlyCents)) return `<tr><td><strong>${esc(student.name||student.firstName||'Aluno')}</strong></td><td>—</td><td>—</td><td><span class="finance-status unset">Não configurado</span></td><td><button class="finance-row-btn finance-configure" data-uid="${esc(student.uid)}">Configurar</button></td></tr>`;
+      // Uma linha de aluno com as etapas do mês. Serve para quem está ativo e para o
+      // ex-aluno que deixou etapas vencidas antes de sair: elas ficam no mês delas,
+      // com Receber/Desfazer, até serem pagas ou desconsideradas. O que venceria
+      // depois da saída já nem chega aqui (financeProfileParts tira).
+      const linhaAluno=(student,profile,ex)=> {
         const method={pix:'PIX',card:'Cartão',cash:'Dinheiro',transfer:'Transferência',other:'Outro'}[profile.paymentMethod]||'';
         const parts=financeProfileParts(profile,month),biweekly=profile.cycle==='biweekly',anual=profile.cycle==='annual';
         const valueCell=anual
@@ -4767,11 +5005,13 @@
             : `<strong>${financeMoney(profile.monthlyCents)}</strong>`;
         const dueCell=anual
           ? `${(profile.annualMonth?new Date(`${profile.annualMonth}-01T00:00:00`).toLocaleDateString('pt-BR',{month:'long'}):'—')}<br><small style="color:#94a3b8">dia ${Number(profile.dueDay||10)}</small>`
-          : parts.map(part=>`Dia ${Number(part.dueKey.slice(-2))}`).join('<br>');
+          : parts.map(part=>`Dia ${Number(part.dueKey.slice(-2))}`).join('<br>')||'—';
         const etapas=parts.map(part=>({part,status:financePartStatus(profile,month,part)}));
-        const naoComecou=!parts.length&&!anual;
-        const statusCell=naoComecou?'<span class="finance-status unset">Ainda não começou</span>':etapas.map(({part,status})=>
-          `<span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">${biweekly?`<small style="color:#94a3b8;font-weight:800;">${part.short}</small>`:''}<span class="finance-status ${status.key}">${esc(status.label)}</span></span>`).join('<br>');
+        // Sem etapa no mês: ou o aluno ainda não tinha entrado, ou estava fora da escola.
+        const foraNoMes=!parts.length&&financeProfilePartsBase(profile,month).length>0;
+        const naoComecou=!parts.length&&!anual&&!foraNoMes;
+        const statusCell=naoComecou?'<span class="finance-status unset">Ainda não começou</span>':foraNoMes?'<span class="finance-status unset">Fora neste mês</span>':etapas.map(({part,status})=>
+          `<span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;">${biweekly?`<small style="color:#94a3b8;font-weight:800;">${part.short}</small>`:''}<span class="finance-status ${status.key}">${esc(status.label)}</span>${(part.velha||part.preSaida)&&['overdue','pending'].includes(status.key)?'<span class="finance-velha">· de antes da saída</span>':''}</span>`).join('<br>');
         const actionCell=etapas.map(({part,status})=>{
           // No anual, se ainda não está pago o botão aparece em qualquer mês —
           // o pagamento pode ter sido feito lá atrás (janeiro, por exemplo).
@@ -4781,13 +5021,45 @@
           const sufixo=biweekly?` ${part.short}`:'';
           const receber=`<button class="finance-row-btn finance-pay" data-uid="${esc(student.uid)}" data-part="${part.part}">Receber${sufixo}</button>`;
           const desfazer=`<button class="finance-row-btn finance-undo" data-uid="${esc(student.uid)}" data-part="${part.part}" title="Cancelar o recebimento — volta para pendente">↩${biweekly?sufixo:' Desfazer'}</button>`;
-          if(status.received<=0) return receber;                      // nada recebido
-          if(status.received<part.amount) return `${receber} ${desfazer}`; // parcial: dá pra completar ou cancelar
+          // Pendência de antes da saída: além de receber, dá pra tirar da conta.
+          const dados=`data-uid="${esc(student.uid)}" data-month="${month}" data-label="${esc(part.label)}"`;
+          const desconsiderar=part.velha||part.preSaida?`<button class="finance-row-btn finance-drop" ${dados} title="Tirar este valor da conta">Desconsiderar${sufixo}</button>`:'';
+          if(status.key==='dropped') return `<button class="finance-row-btn finance-undrop" ${dados} title="Volta a cobrar este valor">↩ Voltar a cobrar${sufixo}</button>`;
+          if(status.received<=0) return receber+desconsiderar;                      // nada recebido
+          if(status.received<part.amount) return `${receber} ${desfazer}${desconsiderar}`; // parcial: dá pra completar ou cancelar
           return desfazer;                                            // quitado
-        }).join('')+`<button class="finance-row-btn finance-configure" data-uid="${esc(student.uid)}">Editar</button>`;
-        return `<tr><td><strong>${esc(student.name||student.firstName||'Aluno')}</strong><br><small style="color:#94a3b8">${method}${biweekly?' · quinzenal':''}</small></td><td>${valueCell}</td><td>${dueCell}</td><td>${statusCell}</td><td><div class="finance-actions">${actionCell}</div></td></tr>`;
-      }).join('')||'<tr><td colspan="5">Nenhum aluno ativo.</td></tr>';
+        }).join('')+(ex?'':`<button class="finance-row-btn finance-configure" data-uid="${esc(student.uid)}">Editar</button>`);
+        return `<tr><td><strong>${esc(student.name||student.firstName||'Aluno')}</strong>${ex?'<span class="finance-tag">Ex-aluno</span>':''}<br><small style="color:#94a3b8">${method}${biweekly?' · quinzenal':''}</small></td><td>${valueCell}</td><td>${dueCell}</td><td>${statusCell}</td><td><div class="finance-actions">${actionCell}</div></td></tr>`;
+      };
+      const linhasAtivos=activeStudents.map(student=> {
+        const profile=profileMap.get(student.uid);
+        if(!profile||profile.active===false||!Number(profile.monthlyCents)) return `<tr><td><strong>${esc(student.name||student.firstName||'Aluno')}</strong></td><td>—</td><td>—</td><td><span class="finance-status unset">Não configurado</span></td><td><button class="finance-row-btn finance-configure" data-uid="${esc(student.uid)}">Configurar</button></td></tr>`;
+        return linhaAluno(student,profile,false);
+      });
+      // Ex-aluno continua na lista do mês quando tem o que mostrar: etapa que
+      // venceu antes da saída (paga ou em aberto — dá pra dar baixa) ou dinheiro
+      // que entrou. Etapa que vence depois da saída não existe mais.
+      const linhasEx=allStudents.filter(student=>student.archived).map(student=> {
+        const profile=profileMap.get(student.uid);
+        const cobravaAoSair=Boolean(profile)&&profile.active===false&&profile.activeBeforeArchive!==false&&Number(profile.monthlyCents)>0;
+        if(cobravaAoSair&&financeProfileParts(profile,month).some(part=>part.amount>0||part.dropped)) return linhaAluno(student,profile,true);
+        const recebido=financeTransactions.filter(tx=>tx.type==='income'&&tx.category==='tuition'&&tx.studentUid===student.uid
+          &&!financeIsPlanned(tx)&&financeCountsInMonth(tx,month)).reduce((sum,tx)=>sum+Number(tx.amountCents||0),0);
+        if(recebido<=0) return '';
+        const anual=profile?.cycle==='annual',quinzenal=profile?.cycle==='biweekly';
+        const esperado=profile?Number(anual?profile.annualCents||0:profile.monthlyCents||0):0;
+        const nota=esperado>0&&recebido<esperado
+          ? (Math.abs(recebido*2-esperado)<=1?(anual?'só pagou metade do ano':'só pagou meia mensalidade'):`pagou parcial · ${financeMoney(recebido)} de ${financeMoney(esperado)}`)
+          : '';
+        const metodo=profile?{pix:'PIX',card:'Cartão',cash:'Dinheiro',transfer:'Transferência',other:'Outro'}[profile.paymentMethod]||'':'';
+        const valor=!profile||!esperado?'—':`<strong>${financeMoney(esperado)}</strong>${anual?'<small style="color:#94a3b8"> /ano</small>':quinzenal?`<br><small style="color:#94a3b8">2× ${financeMoney(Math.round(esperado/2))}</small>`:''}`;
+        return `<tr><td><strong>${esc(student.name||student.firstName||'Aluno')}</strong><span class="finance-tag">Ex-aluno</span><br><small style="color:#94a3b8">${metodo}${quinzenal?' · quinzenal':''}</small></td><td>${valor}</td><td>—</td><td><span class="finance-status paid">Pago ${financeMoney(recebido)}</span>${nota?`<span class="finance-note">${esc(nota)}</span>`:''}</td><td></td></tr>`;
+      }).filter(Boolean);
+      document.getElementById('finance-students-body').innerHTML=(linhasAtivos.join('')||(linhasEx.length?'':'<tr><td colspan="5">Nenhum aluno ativo.</td></tr>'))
+        +(linhasEx.length?`<tr class="finance-sep"><td colspan="5">Ex-alunos neste mês</td></tr>${linhasEx.join('')}`:'');
       document.querySelectorAll('.finance-configure').forEach(button=>button.onclick=()=>openFinanceProfile(button.dataset.uid));
+      document.querySelectorAll('.finance-drop').forEach(button=>button.onclick=()=>financeToggleDrop(button.dataset.uid,button.dataset.month,button.dataset.label,true));
+      document.querySelectorAll('.finance-undrop').forEach(button=>button.onclick=()=>financeToggleDrop(button.dataset.uid,button.dataset.month,button.dataset.label,false));
       document.querySelectorAll('.finance-pay').forEach(button=>button.onclick=()=>openFinanceTransaction('income',button.dataset.uid,Number(button.dataset.part||0)));
       document.querySelectorAll('.finance-undo').forEach(button=>button.onclick=()=>undoFinancePayment(button.dataset.uid,Number(button.dataset.part||0)));
       // Todo mês já lista a mensalidade de quem tem cobrança ativa, como
@@ -4809,6 +5081,7 @@
         });
       });
       renderFinanceLateAlert(month);
+      renderFinanceVelhas();
       renderFinanceBars(month);
       renderFinanceSplit([...monthTransactions.filter(tx=>tx.type==='income'),...previstos],monthTransactions.filter(tx=>tx.type==='expense'));
     }
@@ -4964,8 +5237,10 @@
       } catch(error) { showMsg('finance-profile-msg',`Erro ao salvar: ${error.message}`,'err'); } finally { button.disabled=false; }
     }
 
-    function openFinanceTransaction(type='income',uid='',part=0) {
-      financeFillStudents(); const income=type==='income',profile=financeProfiles.find(item=>item.studentUid===uid),student=allStudents.find(item=>item.uid===uid),month=financeMonthKey();
+    // mesAlvo: lançar a baixa num mês que não é o que está na tela (pendência de
+    // antes da saída: parcela de setembro recebida em janeiro conta em setembro).
+    function openFinanceTransaction(type='income',uid='',part=0,mesAlvo='') {
+      financeFillStudents(); const income=type==='income',profile=financeProfiles.find(item=>item.studentUid===uid),student=allStudents.find(item=>item.uid===uid),month=mesAlvo||financeMonthKey();
       const parts=profile?financeProfileParts(profile,month):[],chosen=parts.find(item=>item.part===part)||parts[0]||null;
       document.getElementById('finance-transaction-part').value=String(chosen?chosen.part:0);
       const anual=profile?.cycle==='annual';
@@ -5758,6 +6033,7 @@
           active:false,
           activeBeforeArchive:finance.active !== false,
           archivedAt:serverTimestamp(),
+          archivedDate:today,
           updatedAt:serverTimestamp(),
           updatedBy:auth.currentUser?.email || '',
         }, { merge:true });
@@ -5807,10 +6083,16 @@
         const finance = financeSnap.data();
         const active = Object.prototype.hasOwnProperty.call(finance, 'activeBeforeArchive')
           ? finance.activeBeforeArchive !== false : finance.active !== false;
-        batch.set(financeRef, {
-          active, activeBeforeArchive:deleteField(), archivedAt:deleteField(),
+        const patch = {
+          active, activeBeforeArchive:deleteField(), archivedAt:deleteField(), archivedDate:deleteField(),
           updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || '',
-        }, { merge:true });
+        };
+        // A saída vira uma pausa: o que venceu antes dela e ficou sem pagar
+        // volta como pendência, e o que venceria enquanto esteve fora não existe.
+        // A cobrança normal recomeça no mês em que voltou.
+        const saida = finance.archivedDate || financeDateKeyOf(finance.archivedAt);
+        if (active && saida) patch.pausas = arrayUnion({ de:saida, ate:calendarDateKey(new Date()).slice(0, 7) });
+        batch.set(financeRef, patch, { merge:true });
       }
       await batch.commit();
       if (student) await syncStudentLessons([{ ...student, aulaDiasDesde:calendarDateKey(new Date()) }]);
@@ -6996,6 +7278,25 @@
       try { localStorage.setItem(pendenciasVistasKey(), JSON.stringify([...ids])); } catch (e) {}
     };
     let pendenciasAtuais = [];
+    // As pendências só eram calculadas ao abrir o painel. Cancelar uma aula na
+    // Agenda mudava o banco mas a lista seguia igual até recarregar a página —
+    // por isso "cancelei e a pendência continua lá". Guardamos as entradas de
+    // cada aluno para refazer a conta com a agenda nova, sem buscar tudo de novo.
+    let pendLinhasAtuais = [];
+    function pendRecalcularComAgenda() {
+      if (!pendLinhasAtuais.length) return;
+      const hoje = new Date(); hoje.setHours(0,0,0,0);
+      const porAluno = pendIndexarEventos(calendarEvents);
+      const workingDays = Array.isArray(calendarSettings.workingDays) ? calendarSettings.workingDays.map(Number) : [...CALENDAR_DEFAULTS.workingDays];
+      pendLinhasAtuais.forEach(linha => {
+        if (!linha.pendEntradas) return;
+        const novo = calcularPendencias(linha, { ...linha.pendEntradas, eventos: porAluno[linha.uid] || [], workingDays, hoje });
+        linha.posaulaPendente = novo.posaulaPendente;
+        linha.atividadesPendente = novo.atividadesPendente;
+        linha.diasSemAula = novo.diasSemAula;
+      });
+      renderPendencias(pendLinhasAtuais);
+    }
 
     function marcarPendenciasVistas() {
       salvarPendenciasVistas(new Set(pendenciasAtuais));
@@ -7493,8 +7794,11 @@
           ...activityCounts,
           posaulaPendente, atividadesPendente, diasSemAula,
           reviewReports, progress,
+          pendEntradas: { ultimaPosData, ultimaAulaData, semAtividades: activityCounts.semAtividades,
+            ultimaAtividadeCriada: pendMidnight(dateOfAdm(activities[0]?.createdAt)), dispensadas },
         };
       }));
+      pendLinhasAtuais = rows;
 
       pendenciasDispensadasRecentes = dispensadasRecentesCarregadas.sort((a, b) => b.quando - a.quando);
 
