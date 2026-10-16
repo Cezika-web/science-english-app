@@ -1592,7 +1592,7 @@
           <div class="field" id="f-hora-por-dia" style="display:none;"><label>Horário de cada dia</label><div class="hora-dias" id="f-hora-dias"></div></div>
           <div class="calendar-form-grid">
             <div class="field"><label for="f-mensalidade" id="f-mensalidade-label">Mensalidade (R$)</label><input type="number" id="f-mensalidade" min="0" step="0.01" placeholder="250,00" /></div>
-            <div class="field"><label for="f-vencimento">Dia do vencimento</label><input type="number" id="f-vencimento" min="1" max="31" value="10" /></div>
+            <div class="field"><label for="f-vencimento">Data do pagamento</label><input type="date" id="f-vencimento" /><small id="f-vencimento-dica" style="display:block;margin-top:4px;color:#64748b;font-size:.7rem;line-height:1.4;">Vem com a data de início das aulas; troque se o primeiro pagamento for outro dia.</small></div>
           </div>
           <div class="field" style="margin-top:14px;"><label for="f-ciclo">Como esse aluno paga</label><select id="f-ciclo"><option value="monthly">Uma vez por mês</option><option value="biweekly">Quinzenal — duas vezes por mês</option><option value="annual">Anual — paga o ano inteiro de uma vez</option></select></div>
           <div class="field" id="f-anual-field" style="display:none;"><label for="f-anual-mes">Mês em que o anual foi (ou será) pago</label><input type="month" id="f-anual-mes" /></div>
@@ -1685,6 +1685,16 @@
         </div>
         <div class="field" id="e-hora-por-dia" style="display:none;"><label>Horário de cada dia</label><div class="hora-dias" id="e-hora-dias"></div></div>
         <div class="field"><label>Data de início das aulas</label><input type="date" id="e-inicio" /></div>
+
+        <div id="e-pagto-box" style="display:none;margin-bottom:18px;padding-top:14px;border-top:1px solid var(--border);">
+          <div style="font-size:.8rem;font-weight:900;color:#334155;margin-bottom:8px;">💳 Pagamento</div>
+          <div class="calendar-form-grid">
+            <div class="field"><label for="e-pagto-data" id="e-pagto-data-label">Data do pagamento</label><input type="date" id="e-pagto-data" /></div>
+            <div class="field" id="e-pagto-dia2-field" style="display:none;"><label for="e-pagto-dia2">2ª quinzena vence dia</label><input type="number" id="e-pagto-dia2" min="1" max="31" /></div>
+          </div>
+          <div id="e-pagto-dica" style="font-size:.74rem;line-height:1.45;color:#64748b;"></div>
+        </div>
+        <p id="e-pagto-sem" style="display:none;margin:0 0 18px;font-size:.78rem;color:#64748b;">💳 Este aluno ainda não tem mensalidade cadastrada — configure em Financeiro → Configurar.</p>
 
         <div class="field">
           <label>Slug (usado no nome do arquivo de pós-aula)</label>
@@ -1897,7 +1907,7 @@
         <div class="field"><label for="finance-profile-cycle">Como esse aluno paga</label><select id="finance-profile-cycle"><option value="monthly">Uma vez por mês</option><option value="biweekly">Quinzenal — duas vezes por mês</option><option value="annual">Anual — paga o ano inteiro de uma vez</option></select></div>
         <div class="calendar-form-grid">
           <div class="field"><label for="finance-profile-amount" id="finance-profile-amount-label">Valor mensal (R$)</label><input id="finance-profile-amount" type="number" min="0" step="0.01" placeholder="350,00"></div>
-          <div class="field"><label for="finance-profile-due" id="finance-profile-due-label">Dia do vencimento</label><input id="finance-profile-due" type="number" min="1" max="31" placeholder="10"></div>
+          <div class="field"><label for="finance-profile-due" id="finance-profile-due-label">Data do pagamento</label><input id="finance-profile-due" type="date"><small id="finance-profile-due-dica" style="display:block;margin-top:4px;color:#64748b;font-size:.7rem;line-height:1.4;"></small></div>
         </div>
         <div class="field" id="finance-profile-due2-field" style="display:none;margin-top:14px;"><label for="finance-profile-due2">Vencimento da 2ª quinzena</label><input id="finance-profile-due2" type="number" min="1" max="31" placeholder="20"></div>
         <div class="field" id="finance-profile-annual-field" style="display:none;margin-top:14px;"><label for="finance-profile-annual-month">Mês em que o anual foi (ou será) pago</label><input id="finance-profile-annual-month" type="month"></div>
@@ -4666,11 +4676,54 @@
         });
     }
 
+    // ── DATA DO PAGAMENTO ──────────────────────────────────────────────────
+    // O dia em que o aluno paga pode mudar com o tempo, e o que já passou não pode
+    // mudar junto. Por isso cada troca de data fica numa lista no cadastro
+    // financeiro: `vencimentos:[{desde:'AAAA-MM', dia, dia2?}]`. Vale a última
+    // entrada cujo mês já chegou. A primeira entrada de quem foi cadastrado com
+    // data também marca onde a cobrança começa: antes daquele mês não há cobrança
+    // (é o caso do aluno cuja 1ª aula é experimental e o 1º pagamento vem depois).
+    // Sem lista (cadastros antigos) vale dueDay/dueDay2 em todos os meses.
+    function financeVencimentoDoMes(profile,month) {
+      const lista=(Array.isArray(profile.vencimentos)?profile.vencimentos:[]).filter(item=>item&&item.desde&&Number(item.dia)>0)
+        .sort((a,b)=>String(a.desde).localeCompare(String(b.desde)));
+      if(!lista.length) return {dia:Number(profile.dueDay)||0,dia2:Number(profile.dueDay2)||0,antes:false};
+      const vigente=[...lista].reverse().find(item=>item.desde<=month);
+      if(!vigente) return {dia:0,dia2:0,antes:true};
+      return {dia:Number(vigente.dia),dia2:Number(vigente.dia2)||Number(profile.dueDay2)||0,antes:false};
+    }
+
+    // Nova data do pagamento (AAAA-MM-DD). Devolve o que gravar no cadastro
+    // financeiro, ou null se nada muda. A data nova vale a partir do mês dela.
+    function financePatchVencimento(profile,dataISO,dia2,cycle) {
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(dataISO||'')) return null;
+      const dia=Number(dataISO.slice(8,10)),mes=dataISO.slice(0,7),quinzenal=cycle==='biweekly',segundo=quinzenal?(Number(dia2)||0):0;
+      if(profile) {
+        const atual=financeVencimentoDoMes(profile,mes);
+        if(!atual.antes&&atual.dia===dia&&(!quinzenal||atual.dia2===segundo)) return null;
+      }
+      let lista=(Array.isArray(profile?.vencimentos)?profile.vencimentos:[]).filter(item=>item&&item.desde&&Number(item.dia)>0).map(item=>({...item}));
+      if(!lista.length&&Number(profile?.dueDay)>0) lista=[{desde:'0000-00',dia:Number(profile.dueDay),...(Number(profile.dueDay2)>0?{dia2:Number(profile.dueDay2)}:{})}];
+      lista=lista.filter(item=>String(item.desde)<mes);
+      lista.push({desde:mes,dia,...(segundo>0?{dia2:segundo}:{})});
+      return {dueDay:dia,dueDay2:quinzenal?(segundo||null):null,vencimentos:lista};
+    }
+
+    // A data que o cadastro mostra: o vencimento do mês pedido, no dia vigente.
+    function financeDataDoPagamento(profile,month) {
+      const venc=financeVencimentoDoMes(profile,month);
+      const dia=(!venc.antes&&venc.dia)||Number(profile.dueDay)||10;
+      const {year,monthNumber}=financeMonthBounds(month),ultimo=new Date(year,monthNumber,0).getDate();
+      return `${month}-${String(Math.min(ultimo,Math.max(1,dia))).padStart(2,'0')}`;
+    }
+
     // Quem paga quinzenal tem duas etapas dentro do mês (part 1 e 2). Quem paga
     // mensal tem uma só (part 0), que aceita qualquer mensalidade daquele mês.
     function financeProfilePartsBase(profile,month) {
       // Antes do mês em que o aluno entrou não existe cobrança nenhuma.
       if(profile.cycle!=='annual'&&financeBeforeStart(profile,month)) return [];
+      const venc=financeVencimentoDoMes(profile,month);
+      if(profile.cycle!=='annual'&&venc.antes) return [];
       const total=Number(profile.monthlyCents||0);
       const {year,monthNumber}=financeMonthBounds(month),lastDay=new Date(year,monthNumber,0).getDate();
       const dayKey=day=>`${month}-${String(Math.min(lastDay,Math.max(1,Number(day)||1))).padStart(2,'0')}`;
@@ -4682,11 +4735,11 @@
         const cobra=Boolean(mesDaCobranca)&&Number(month.slice(5,7))===mesDaCobranca&&month>=inicio.slice(0,7);
         return [{part:0,label:'Anual',short:'Ano',amount:cobra?anual:0,dueKey:dayKey(profile.dueDay||10),anual,cobraNesteMes:cobra}];
       }
-      if(profile.cycle!=='biweekly') return [{part:0,label:'Mensalidade',short:'Mês',amount:total,dueKey:dayKey(profile.dueDay||1)}];
+      if(profile.cycle!=='biweekly') return [{part:0,label:'Mensalidade',short:'Mês',amount:total,dueKey:dayKey(venc.dia||1)}];
       const half=Math.round(total/2);
       return [
-        {part:1,label:'1ª quinzena',short:'1ª',amount:half,dueKey:dayKey(profile.dueDay||5)},
-        {part:2,label:'2ª quinzena',short:'2ª',amount:total-half,dueKey:dayKey(profile.dueDay2||20)},
+        {part:1,label:'1ª quinzena',short:'1ª',amount:half,dueKey:dayKey(venc.dia||5)},
+        {part:2,label:'2ª quinzena',short:'2ª',amount:total-half,dueKey:dayKey(venc.dia2||20)},
       ];
     }
 
@@ -5182,7 +5235,9 @@
       document.getElementById('finance-profile-cycle').value=['biweekly','annual'].includes(profile?.cycle)?profile.cycle:'monthly';
       document.getElementById('finance-profile-annual-month').value=profile?.annualMonth||financeMonthKey();
       if(profile?.cycle==='annual') document.getElementById('finance-profile-amount').value=Number(profile.annualCents||0)/100;
-      document.getElementById('finance-profile-due').value=profile?.dueDay||10; document.getElementById('finance-profile-due2').value=profile?.dueDay2||20;
+      const mesDaData=profile?.cycle==='annual'&&profile.annualMonth?profile.annualMonth:financeTodayKey().slice(0,7);
+      document.getElementById('finance-profile-due').value=profile?financeDataDoPagamento(profile,mesDaData):`${mesDaData}-10`;
+      document.getElementById('finance-profile-due2').value=profile?.dueDay2||20;
       document.getElementById('finance-profile-method').value=profile?.paymentMethod||'pix'; document.getElementById('finance-profile-active').checked=profile?.active!==false;
       document.getElementById('finance-profile-notify').checked=profile?.avisarAtraso===true;
       syncFinanceProfileCycle();
@@ -5192,7 +5247,11 @@
     function syncFinanceProfileCycle() {
       const ciclo=document.getElementById('finance-profile-cycle').value,biweekly=ciclo==='biweekly',annual=ciclo==='annual';
       document.getElementById('finance-profile-amount-label').textContent=annual?'Valor do ano (R$)':'Valor mensal (R$)';
-      document.getElementById('finance-profile-due-label').textContent=biweekly?'Vencimento da 1ª quinzena':'Dia do vencimento';
+      document.getElementById('finance-profile-due-label').textContent=biweekly?'Data da 1ª quinzena':annual?'Dia do pagamento do anual':'Data do pagamento';
+      const dataPag=document.getElementById('finance-profile-due').value,diaPag=Number(String(dataPag).slice(8,10));
+      document.getElementById('finance-profile-due-dica').textContent=!diaPag?'':annual?`O anual vence no dia ${diaPag} do mês escolhido.`
+        :biweekly?`A 1ª quinzena vence dia ${diaPag}. Se mudar a data, vale a partir do mês dela; o que já passou não muda.`
+        :`Vence todo dia ${diaPag}. Se mudar a data, vale a partir do mês dela; o que já passou não muda.`;
       document.getElementById('finance-profile-due2-field').style.display=biweekly?'block':'none';
       document.getElementById('finance-profile-annual-field').style.display=annual?'block':'none';
       const hint=document.getElementById('finance-profile-hint'),valor=Number(document.getElementById('finance-profile-amount').value)||0;
@@ -5206,11 +5265,11 @@
     }
 
     async function saveFinanceProfile() {
-      const uid=document.getElementById('finance-profile-student').value,student=allStudents.find(item=>item.uid===uid),amount=Math.round(Number(document.getElementById('finance-profile-amount').value)*100),dueDay=Number(document.getElementById('finance-profile-due').value);
+      const uid=document.getElementById('finance-profile-student').value,student=allStudents.find(item=>item.uid===uid),amount=Math.round(Number(document.getElementById('finance-profile-amount').value)*100),dataPag=document.getElementById('finance-profile-due').value,dueDay=Number(String(dataPag).slice(8,10));
       const cycle=document.getElementById('finance-profile-cycle').value,dueDay2=Number(document.getElementById('finance-profile-due2').value);
       if(!uid||!student) return showMsg('finance-profile-msg','Escolha um aluno.','err');
       if(!Number.isFinite(amount)||amount<0) return showMsg('finance-profile-msg','Informe um valor mensal válido.','err');
-      if(!Number.isInteger(dueDay)||dueDay<1||dueDay>31) return showMsg('finance-profile-msg','O vencimento deve ficar entre os dias 1 e 31.','err');
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(dataPag||'')||!(dueDay>=1&&dueDay<=31)) return showMsg('finance-profile-msg','Informe a data do pagamento.','err');
       if(cycle==='biweekly'&&(!Number.isInteger(dueDay2)||dueDay2<1||dueDay2>31)) return showMsg('finance-profile-msg','O vencimento da 2ª quinzena deve ficar entre os dias 1 e 31.','err');
       const annualMonth=document.getElementById('finance-profile-annual-month').value;
       if(cycle==='annual'&&!annualMonth) return showMsg('finance-profile-msg','Escolha o mês em que o pagamento anual cai.','err');
@@ -5229,9 +5288,12 @@
           &&Number(tx.amountCents||0)!==annualCents);
         if(divergentes.length&&confirm(`O recebimento de ${annualMonth} está lançado como ${financeMoney(divergentes[0].amountCents)}, mas o novo valor do ano é ${financeMoney(annualCents)}.\n\nAtualizar o lançamento também?\n\nOK — corrige o que já entrou e o faturado do mês sobe.\nCancelar — muda só a previsão daqui pra frente.`)) ajusteAnual=divergentes;
       }
+      // Data do pagamento mudou: entra na lista de vencimentos (vale dali em diante).
+      const perfilAtual=financeProfiles.find(item=>item.studentUid===uid);
+      const vencPatch=cycle==='annual'||!perfilAtual?null:financePatchVencimento(perfilAtual,dataPag,dueDay2,cycle);
       const button=document.getElementById('finance-profile-save'); button.disabled=true;
       try {
-        await setDoc(doc(db,'schools',escolaAtual,'financeStudents',uid),{studentUid:uid,studentName:student.name||student.firstName||'',monthlyCents,annualCents,annualMonth:cycle==='annual'?annualMonth:null,dueDay,cycle,dueDay2:cycle==='biweekly'?dueDay2:null,paymentMethod:document.getElementById('finance-profile-method').value,active:document.getElementById('finance-profile-active').checked,avisarAtraso:document.getElementById('finance-profile-notify').checked,updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.email||''},{merge:true});
+        await setDoc(doc(db,'schools',escolaAtual,'financeStudents',uid),{studentUid:uid,studentName:student.name||student.firstName||'',monthlyCents,annualCents,annualMonth:cycle==='annual'?annualMonth:null,...(vencPatch||{dueDay,dueDay2:cycle==='biweekly'?dueDay2:null}),cycle,paymentMethod:document.getElementById('finance-profile-method').value,active:document.getElementById('finance-profile-active').checked,avisarAtraso:document.getElementById('finance-profile-notify').checked,updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.email||''},{merge:true});
         if(ajusteAnual) await Promise.all(ajusteAnual.map(tx=>setDoc(doc(db,'schools',escolaAtual,'financeTransactions',tx.id),{amountCents:annualCents,updatedAt:serverTimestamp()},{merge:true})));
         document.getElementById('finance-profile-modal').classList.remove('open'); await loadFinance();
       } catch(error) { showMsg('finance-profile-msg',`Erro ao salvar: ${error.message}`,'err'); } finally { button.disabled=false; }
@@ -5372,7 +5434,7 @@
     document.getElementById('finance-month').value=financeTodayKey().slice(0,7);
     document.getElementById('finance-month').onchange=renderFinance;
     document.querySelectorAll('#finance-hours-toggle button').forEach(button=>button.onclick=()=>{ financeHoursScope=button.dataset.scope; renderFinance(); });
-    document.getElementById('finance-profile-cycle').onchange=syncFinanceProfileCycle; document.getElementById('finance-profile-amount').oninput=syncFinanceProfileCycle;
+    document.getElementById('finance-profile-cycle').onchange=syncFinanceProfileCycle; document.getElementById('finance-profile-amount').oninput=syncFinanceProfileCycle; document.getElementById('finance-profile-due').oninput=syncFinanceProfileCycle;
     document.getElementById('finance-profile-new').onclick=()=>openFinanceProfile(); document.getElementById('finance-profile-save').onclick=saveFinanceProfile; document.getElementById('finance-profile-close').onclick=()=>document.getElementById('finance-profile-modal').classList.remove('open');
     document.getElementById('finance-new-income').onclick=()=>openFinanceTransaction('income'); document.getElementById('finance-new-expense').onclick=()=>openFinanceTransaction('expense'); document.getElementById('finance-transaction-save').onclick=saveFinanceTransaction; document.getElementById('finance-transaction-close').onclick=()=>document.getElementById('finance-transaction-modal').classList.remove('open');
     document.getElementById('finance-transaction-category').onchange=syncFinanceRepeatOption;
@@ -7141,6 +7203,37 @@
       });
     }
 
+    // Seção "Pagamento" do Editar dados: lê o cadastro financeiro do aluno e mostra a
+    // data do pagamento de ESTE mês. Mudar a data vale a partir do mês dela.
+    let editPagtoPerfil = null;
+    function editDicaPagamento() {
+      const perfil = editPagtoPerfil; if (!perfil) return;
+      const data = document.getElementById('e-pagto-data').value, dia = Number(String(data).slice(8, 10));
+      const quinzenal = perfil.cycle === 'biweekly';
+      document.getElementById('e-pagto-dia2-field').style.display = quinzenal ? 'block' : 'none';
+      document.getElementById('e-pagto-data-label').textContent = quinzenal ? 'Data da 1ª quinzena' : 'Data do pagamento';
+      document.getElementById('e-pagto-dica').textContent = !dia ? ''
+        : quinzenal ? `A 1ª quinzena vence dia ${dia}. Se mudar a data, vale a partir do mês dela; o que já passou não muda.`
+        : `Vence todo dia ${dia}. Se mudar a data, vale a partir do mês dela; o que já passou não muda.`;
+    }
+    async function editCarregarPagamento(uid) {
+      editPagtoPerfil = null;
+      const caixa = document.getElementById('e-pagto-box'), sem = document.getElementById('e-pagto-sem');
+      caixa.style.display = 'none'; sem.style.display = 'none';
+      try {
+        const snap = await getDoc(doc(db, 'schools', escolaAtual, 'financeStudents', uid));
+        if (document.getElementById('e-uid').value !== uid) return;   // fechou e abriu outro aluno
+        if (!snap.exists() || !(Number(snap.data().monthlyCents) > 0)) { sem.style.display = 'block'; return; }
+        const perfil = snap.data();
+        if (perfil.cycle === 'annual') return;   // anual: o dia está no Financeiro → Editar
+        editPagtoPerfil = perfil;
+        document.getElementById('e-pagto-data').value = financeDataDoPagamento(perfil, calendarDateKey(new Date()).slice(0, 7));
+        document.getElementById('e-pagto-dia2').value = financeVencimentoDoMes(perfil, calendarDateKey(new Date()).slice(0, 7)).dia2 || '';
+        caixa.style.display = 'block'; editDicaPagamento();
+      } catch (erro) { console.warn('Pagamento do aluno:', erro); }
+    }
+    document.getElementById('e-pagto-data').addEventListener('input', editDicaPagamento);
+
     function openEditStudent(uid) {
       const s = allStudents.find(x => x.uid === uid);
       if (!s) return;
@@ -7153,6 +7246,7 @@
       document.getElementById('e-meta').value  = s.metaAnual || '';
       fillAula('e-dias-week', 'e-hora', [...adminLessonDays(s)], s.aulaHora, s.aulaHorarios, s.aulaFins, s.aulaDuracao);
       document.getElementById('e-inicio').value = s.inicioCurso || '';
+      editCarregarPagamento(uid);
       document.getElementById('e-slug').value  = s.slug || toSlug(s.name || s.firstName || '');
       document.getElementById('e-photo-preview').src = editPhoto || '';
       document.getElementById('e-photo-file').value = '';
@@ -7223,6 +7317,13 @@
           inicioCurso: inicio || '',
           photo: editPhoto || '',
         });
+        // Data do pagamento mudou: vai para o cadastro financeiro, valendo do mês dela em diante.
+        if (editPagtoPerfil) {
+          const patch = financePatchVencimento(editPagtoPerfil, document.getElementById('e-pagto-data').value,
+            Number(document.getElementById('e-pagto-dia2').value) || 0, editPagtoPerfil.cycle);
+          if (patch) await setDoc(doc(db, 'schools', escolaAtual, 'financeStudents', uid),
+            { ...patch, updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || '' }, { merge:true });
+        }
         // Mudou dia ou hora aqui, a agenda tem que acompanhar. Antes isso só
         // acontecia no botão "Preencher com as aulas dos alunos", que saiu.
         if (agendaMudou || inicioMudou || inicioFuturo) {
@@ -9835,6 +9936,22 @@ Salvar assim mesmo?`)) return;
     }
     document.getElementById('f-ciclo').addEventListener('change', sincronizarCicloDoCadastro);
 
+    // Data do pagamento: nasce igual à de início das aulas até você mexer nela.
+    // O dia dela é o dia do vencimento de todo mês; antes dela o aluno não é cobrado.
+    function dicaDataDoPagamento() {
+      const data = document.getElementById('f-vencimento').value, dica = document.getElementById('f-vencimento-dica');
+      dica.textContent = data
+        ? `Vence todo dia ${Number(data.slice(8, 10))}. Antes de ${data.split('-').reverse().join('/')} o aluno não é cobrado nem aparece como atrasado.`
+        : 'Vem com a data de início das aulas; troque se o primeiro pagamento for outro dia.';
+    }
+    document.getElementById('f-inicio').addEventListener('change', evento => {
+      const campo = document.getElementById('f-vencimento');
+      if (!campo.dataset.mexeu) { campo.value = evento.target.value; dicaDataDoPagamento(); }
+    });
+    document.getElementById('f-vencimento').addEventListener('input', () => {
+      document.getElementById('f-vencimento').dataset.mexeu = '1'; dicaDataDoPagamento();
+    });
+
     document.querySelectorAll('#f-dias-week input').forEach(box => box.addEventListener('change', sugerirMensalidade));
     ['f-hora','f-fim'].forEach(id => document.getElementById(id).addEventListener('change', sugerirMensalidade));
     document.getElementById('f-mensalidade').addEventListener('input', () => { mensalidadeEditadaNaMao = true; });
@@ -9848,11 +9965,14 @@ Salvar assim mesmo?`)) return;
       const aula   = readAula('f-dias-week', 'f-hora');
       const duracao = aula.aulaDuracao;
       const mensalidade = Math.round(Number(document.getElementById('f-mensalidade').value) * 100);
-      const vencimento = Number(document.getElementById('f-vencimento').value) || 10;
+      const dataPagCampo = document.getElementById('f-vencimento').value;
       const ciclo = document.getElementById('f-ciclo').value;
       const anualMes = document.getElementById('f-anual-mes').value;
       const ehAnual = ciclo === 'annual';
       const inicio = document.getElementById('f-inicio').value;
+      // Sem data própria, o aluno paga a partir do início das aulas (como antes, só que no dia certo).
+      const dataPag = dataPagCampo || inicio;
+      const vencimento = dataPag ? Number(dataPag.slice(8, 10)) : 10;
       if (!name || !email || !pass) { showMsg('create-msg', 'Preencha nome, e-mail e senha.', 'err'); return; }
       if (ehAnual && !anualMes) { showMsg('create-msg', 'Escolha o mês em que o pagamento anual cai.', 'err'); return; }
       if (pass.length < 6)          { showMsg('create-msg', 'Senha mínima de 6 caracteres.', 'err'); return; }
@@ -9900,6 +10020,9 @@ Salvar assim mesmo?`)) return;
               annualCents: ehAnual ? mensalidade : null,
               annualMonth: ehAnual ? anualMes : null, dueDay: vencimento,
               cycle: ciclo, dueDay2: ciclo === 'biweekly' ? Math.min(31, vencimento + 15) : null,
+              // A lista guarda desde quando vale esse dia: a cobrança só começa no mês da data.
+              ...(dataPag && !ehAnual && { vencimentos: [{ desde: dataPag.slice(0, 7), dia: vencimento,
+                ...(ciclo === 'biweekly' && { dia2: Math.min(31, vencimento + 15) }) }] }),
               paymentMethod: 'pix', active: true, createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(), updatedBy: auth.currentUser?.email || ''
             }, { merge: true });
@@ -9936,7 +10059,8 @@ Salvar assim mesmo?`)) return;
         const extras = [naAgenda ? `${naAgenda} aula(s) na agenda` : '',
           noFinanceiro ? `${ehAnual ? `anual de ${financeMoney(mensalidade)} em ${anualMes.split('-').reverse().join('/')}` : `mensalidade de ${financeMoney(mensalidade)}`} no financeiro${jaPago ? ' (já dada como paga)' : ' (pendente)'}` : ''].filter(Boolean);
         showMsg('create-msg', `✅ Aluno ${name} criado!${extras.length ? ` Já entrou com ${extras.join(' e ')}.` : ''}`, 'ok');
-        ['f-name','f-email','f-pass','f-meta','f-hora','f-inicio'].forEach(id => document.getElementById(id).value = '');
+        ['f-name','f-email','f-pass','f-meta','f-hora','f-inicio','f-vencimento'].forEach(id => document.getElementById(id).value = '');
+        delete document.getElementById('f-vencimento').dataset.mexeu; dicaDataDoPagamento();
         document.querySelectorAll('#f-dias-week input').forEach(c => c.checked = false);
         document.getElementById('f-hora-mesma').checked = true; sincronizarModoHora('f');
         document.getElementById('f-level').value = ''; document.getElementById('f-fim').value = '';
