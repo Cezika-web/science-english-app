@@ -6070,13 +6070,15 @@
 
     // ── LOAD STUDENTS ───────────────────────────────────────────────────
     // Selo de atividades: "% feitas · 🟡 pendentes · 🟢 prontas p/ corrigir".
-    // Só conta as atividades que ainda não foram corrigidas (actPending + actToCorrect),
-    // então 4 atividades com 2 finalizadas = 50%. Sem nenhuma atividade atual, não mostra nada.
+    // O % é de EXERCÍCIOS respondidos (não de atividades finalizadas) nas atividades ainda não
+    // corrigidas; as bolinhas contam atividades. Sem nenhuma atividade atual, não mostra nada.
     function adminActivityMeterHtml(s) {
       const pend = s.actPending || 0, pronto = s.actToCorrect || 0, total = pend + pronto;
       if (!total) return '';
-      const pct = Math.round(pronto / total * 100);
-      const dica = `${pronto} de ${total} atividade${total !== 1 ? 's' : ''} feita${pronto !== 1 ? 's' : ''} (${pct}%) · ${pend} pendente${pend !== 1 ? 's' : ''} · ${pronto} pronta${pronto !== 1 ? 's' : ''} p/ corrigir`;
+      const exT = s.exTotal || 0, exF = Math.min(s.exFeitos || 0, exT);
+      // Não arredonda pra 100% nem pra 0% enquanto faltar / já houver exercício feito.
+      const pct = exF >= exT ? 100 : Math.min(99, Math.max(exF > 0 ? 1 : 0, Math.round(exF / exT * 100)));
+      const dica = `${exF} de ${exT} exercício${exT !== 1 ? 's' : ''} feito${exF !== 1 ? 's' : ''} (${pct}%) · ${pend} atividade${pend !== 1 ? 's' : ''} pendente${pend !== 1 ? 's' : ''} · ${pronto} pronta${pronto !== 1 ? 's' : ''} p/ corrigir`;
       return `<span class="act-meter${pct === 100 ? ' done' : ''}" title="${esc(dica)}" aria-label="${esc(dica)}">`
         + `<span class="am-pct">${pct}%</span>`
         + `<span class="am-n pend${pend ? '' : ' zero'}"><i class="am-dot"></i>${pend}</span>`
@@ -7900,6 +7902,81 @@
     }
     document.getElementById('student-search').oninput = aplicarBuscaAluno;
 
+    // ── Exercícios feitos (base do % do selo de atividades) ─────────────────
+    // Conta os exercícios do jeito que o app do aluno conta (countExercises/processExercises
+    // do index.html): lista de arrastar = 1 por par; múltipla escolha a)/b)/c) = 1; cada
+    // lacuna ___ = 1; parágrafo só de lacunas (escrita) = 1; cada pergunta oral = 1.
+    // Se mudar a regra lá, mudar aqui também.
+    const adminExCache = new Map();
+    function adminIsChoice(text) {
+      const re = /([a-eA-E])\)\s*/g; let m, marcas = 0, seq = 0;
+      while ((m = re.exec(text)) !== null) {
+        marcas++;
+        if (m[1].toLowerCase() === String.fromCharCode(97 + seq)) seq++;
+      }
+      return marcas >= 2 && seq >= 2;
+    }
+    function adminCountExercises(html) {
+      if (!html) return 0;
+      if (adminExCache.has(html)) return adminExCache.get(html);
+      let n = 0;
+      try {
+        const root = new DOMParser().parseFromString('<div>' + html + '</div>', 'text/html').body.firstChild;
+        root.querySelectorAll('ol[data-match], ul[data-match]').forEach(list => {
+          let pares = 0;
+          list.querySelectorAll('li').forEach(li => { if ((li.textContent || '').split('|').length >= 2) pares++; });
+          if (!pares) return;
+          n += pares;
+          list.removeAttribute('data-match');
+          list.setAttribute('data-match-done', '1');
+        });
+        root.querySelectorAll('li').forEach(li => {
+          if (li.closest('[data-match-done]')) return;
+          if (adminIsChoice(li.textContent || '')) { n += 1; return; }
+          n += (li.innerHTML.match(/_{3,}/g) || []).length;
+        });
+        root.querySelectorAll('p').forEach(p => {
+          if (p.closest('li')) return;
+          const lacunas = (p.innerHTML.match(/_{3,}/g) || []).length;
+          if (!lacunas) return;
+          n += (p.textContent || '').replace(/[_\s ]/g, '') === '' ? 1 : lacunas;
+        });
+      } catch (e) { n = 0; }
+      adminExCache.set(html, n);
+      return n;
+    }
+    // Soma, nas atividades ainda não corrigidas, quantos exercícios existem e quantos o aluno
+    // já respondeu. Parte finalizada vale inteira; parte em andamento vale o que já está
+    // gravado no rascunho (respostas), então o % anda mesmo antes de finalizar a atividade.
+    function adminExerciseProgress(activities) {
+      let exTotal = 0, exFeitos = 0;
+      activities.filter(activity => activity.status !== 'corrected').forEach(activity => {
+        let total = 0, feitos = 0;
+        (Array.isArray(activity.parts) ? activity.parts : []).forEach(part => {
+          const partId = part.id || part.title;
+          const oral = Array.isArray(part?.oralExercise?.prompts) ? part.oralExercise.prompts.length : 0;
+          const t = adminCountExercises(part.content) + oral;
+          let f;
+          if (activity.finalizada || activity.partsDone?.[partId]) f = t;
+          else {
+            const salvo = activity.respostas?.[partId] || {};
+            const escritas = Object.keys(salvo).filter(k => {
+              if (k === '_oral') return false;
+              const v = salvo[k];
+              return typeof v === 'string' ? v.trim() !== '' : !!v;
+            }).length;
+            const orais = Object.values(salvo._oral || {}).filter(clip => clip && clip.url).length;
+            f = Math.min(t, escritas + orais);
+          }
+          total += t; feitos += f;
+        });
+        // Atividade sem nenhum exercício contável: conta como 1, feita só se finalizada.
+        if (!total) { total = 1; feitos = activity.finalizada ? 1 : 0; }
+        exTotal += total; exFeitos += feitos;
+      });
+      return { exTotal, exFeitos };
+    }
+
     function adminActivityCounts(activities) {
       const current = activities.filter(activity => activity.status !== 'corrected');
       return {
@@ -7907,6 +7984,7 @@
         actPending:current.filter(activity => !activity.finalizada).length,
         semAtividades:current.length === 0,
         totalAtividades:activities.length,
+        ...adminExerciseProgress(activities),
       };
     }
 
