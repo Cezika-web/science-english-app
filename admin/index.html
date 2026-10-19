@@ -254,6 +254,22 @@
     .act-badge { font-size: 0.72rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; flex-shrink: 0; white-space: nowrap; }
     .act-badge.tocorrect { background: #d1fae5; color: #065f46; box-shadow: 0 0 0 3px rgba(6,95,70,0.10); }
     .act-badge.pending { background: #fff3cd; color: #92400e; }
+    /* Selo de atividades da lista de alunos: % feitas, 🟡 pendentes, 🟢 prontas p/ corrigir */
+    .act-meter { display:inline-flex; align-items:center; gap:9px; font-size:0.72rem; font-weight:700; padding:3px 10px; border-radius:999px; background:#f8fafc; border:1px solid #e2e8f0; white-space:nowrap; flex-shrink:0; color:#334155; }
+    .act-meter .am-pct { font-weight:800; min-width:2.4em; }
+    .act-meter.done .am-pct { color:#15803d; }
+    .act-meter .am-n { display:inline-flex; align-items:center; gap:4px; }
+    .act-meter .am-dot { width:9px; height:9px; border-radius:50%; display:inline-block; flex-shrink:0; }
+    .act-meter .am-n.pend .am-dot { background:#f59e0b; }
+    .act-meter .am-n.ready .am-dot { background:#16a34a; }
+    .act-meter .am-n.zero { opacity:.38; }
+    .act-meter .am-n.ready:not(.zero) { color:#065f46; }
+    .act-meter .am-n.pend:not(.zero) { color:#92400e; }
+    /* Botão Atualizar (Alunos e Pendências) + hora da última atualização */
+    .refresh-line { display:flex; align-items:center; gap:10px; }
+    .refresh-note { font-size:.72rem; color:var(--muted); font-weight:600; white-space:nowrap; }
+    .btn-secondary.loading-now .spin { display:inline-block; animation: czk-giro .8s linear infinite; }
+    @keyframes czk-giro { to { transform: rotate(360deg); } }
     .gap-badge { font-size: 0.72rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; flex-shrink: 0; white-space: nowrap; }
     .gap-badge.warn { background: #fff3cd; color: #92400e; }
     .gap-badge.alert { background: #fee2e2; color: #b91c1c; }
@@ -895,6 +911,10 @@
             <input type="search" id="student-search" placeholder="Buscar aluno por nome, e-mail, slug ou nível..." />
           </div>
           <span class="search-count" id="search-count"></span>
+          <div class="refresh-line">
+            <span class="refresh-note" data-refresh-note></span>
+            <button class="btn-secondary" type="button" data-refresh-painel title="Recarrega alunos, atividades e pendências"><span class="spin">↻</span> <span class="lbl">Atualizar</span></button>
+          </div>
         </div>
         <div class="students-grid" id="students-grid">
           <div class="loading">Carregando alunos...</div>
@@ -1110,9 +1130,15 @@
 
       <!-- ATALHOS DE PENDÊNCIAS -->
       <div class="tab-panel" id="tab-pendencias">
-        <div style="margin-bottom:14px;">
-          <h2 style="margin:0 0 5px;">🧭 Pendências dos alunos</h2>
-          <p style="font-size:0.85rem;color:var(--muted);margin:0;" id="pend-hoje-label">Só aparece quem precisa de pós-aula ou atividades até amanhã — ligado à agenda, então aula cancelada não conta.</p>
+        <div style="margin-bottom:14px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div>
+            <h2 style="margin:0 0 5px;">🧭 Pendências dos alunos</h2>
+            <p style="font-size:0.85rem;color:var(--muted);margin:0;" id="pend-hoje-label">Só aparece quem precisa de pós-aula ou atividades até amanhã — ligado à agenda, então aula cancelada não conta.</p>
+          </div>
+          <div class="refresh-line">
+            <span class="refresh-note" data-refresh-note></span>
+            <button class="btn-secondary" type="button" data-refresh-painel title="Recarrega alunos, atividades e pendências"><span class="spin">↻</span> <span class="lbl">Atualizar</span></button>
+          </div>
         </div>
         <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;font-size:0.78rem;color:var(--muted);">
           <span style="display:flex;align-items:center;gap:6px;"><i style="width:9px;height:9px;border-radius:50%;background:#b91c1c;display:inline-block;"></i> Atrasado</span>
@@ -6043,6 +6069,21 @@
     })();
 
     // ── LOAD STUDENTS ───────────────────────────────────────────────────
+    // Selo de atividades: "% feitas · 🟡 pendentes · 🟢 prontas p/ corrigir".
+    // Só conta as atividades que ainda não foram corrigidas (actPending + actToCorrect),
+    // então 4 atividades com 2 finalizadas = 50%. Sem nenhuma atividade atual, não mostra nada.
+    function adminActivityMeterHtml(s) {
+      const pend = s.actPending || 0, pronto = s.actToCorrect || 0, total = pend + pronto;
+      if (!total) return '';
+      const pct = Math.round(pronto / total * 100);
+      const dica = `${pronto} de ${total} atividade${total !== 1 ? 's' : ''} feita${pronto !== 1 ? 's' : ''} (${pct}%) · ${pend} pendente${pend !== 1 ? 's' : ''} · ${pronto} pronta${pronto !== 1 ? 's' : ''} p/ corrigir`;
+      return `<span class="act-meter${pct === 100 ? ' done' : ''}" title="${esc(dica)}" aria-label="${esc(dica)}">`
+        + `<span class="am-pct">${pct}%</span>`
+        + `<span class="am-n pend${pend ? '' : ' zero'}"><i class="am-dot"></i>${pend}</span>`
+        + `<span class="am-n ready${pronto ? '' : ' zero'}"><i class="am-dot"></i>${pronto}</span>`
+        + `</span>`;
+    }
+
     function studentRowHtml(s, archived) {
       const nm = esc(s.name || s.firstName || 'Aluno');
       const progress = s.progress || {};
@@ -6060,10 +6101,7 @@
         : (s.latestTitle
             ? `<span class="read-badge ${s.latestRead ? 'read' : 'unread'}">${s.latestRead ? '✓ Lido' : '⏳ Não lido'}</span>`
             : `<span class="read-badge" style="background:#f3f4f6;color:var(--muted)">Sem pós-aula</span>`);
-      // Badge de atividade: prioriza "prontas p/ corrigir" (verde). Se não houver, mostra pendentes (amarelo).
-      let actBadge = '';
-      if (s.actToCorrect > 0)      actBadge = `<span class="act-badge tocorrect">✅ ${s.actToCorrect} p/ corrigir</span>`;
-      else if (s.actPending > 0)   actBadge = `<span class="act-badge pending">📝 ${s.actPending} pendente${s.actPending !== 1 ? 's' : ''}</span>`;
+      const actBadge = adminActivityMeterHtml(s);
       // Só aparece quando o gap é grande — quem teve aula recente não precisa desse aviso.
       // (diasSemAula só existe pra aluno ativo, então isso já sai vazio pro ex-aluno.)
       let gapBadge = '';
@@ -8033,7 +8071,34 @@
       renderPendencias(rows);
       const pendingReports = rows.flatMap(student => (student.reviewReports || []).map(report => ({ uid:student.uid, studentName:student.name || student.firstName || 'Aluno', report })));
       if (!showPendingReview90Reports(pendingReports)) showReview90Suggestion();
+      marcarAtualizacaoPainel();
     }
+
+    // Botão "Atualizar" (lista de Alunos e página de Pendências): recarrega alunos,
+    // atividades e pendências de uma vez e mostra a hora da última atualização.
+    // A hora é gravada no fim do loadStudents, então vale também pros recarregamentos
+    // que o painel faz sozinho (depois de salvar, trocar de escola etc.).
+    function marcarAtualizacaoPainel() {
+      const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      document.querySelectorAll('[data-refresh-note]').forEach(el => { el.textContent = `atualizado às ${hora}`; });
+    }
+    let atualizandoPainel = false;
+    async function atualizarPainelAlunos() {
+      if (atualizandoPainel) return;
+      atualizandoPainel = true;
+      const botoes = [...document.querySelectorAll('[data-refresh-painel]')];
+      botoes.forEach(b => { b.disabled = true; b.classList.add('loading-now'); b.querySelector('.lbl').textContent = 'Atualizando…'; });
+      try {
+        await loadStudents();
+      } catch (e) {
+        console.error('Não consegui atualizar o painel:', e);
+        document.querySelectorAll('[data-refresh-note]').forEach(el => { el.textContent = 'não consegui atualizar — tente de novo'; });
+      } finally {
+        botoes.forEach(b => { b.disabled = false; b.classList.remove('loading-now'); b.querySelector('.lbl').textContent = 'Atualizar'; });
+        atualizandoPainel = false;
+      }
+    }
+    document.querySelectorAll('[data-refresh-painel]').forEach(b => { b.onclick = atualizarPainelAlunos; });
 
     // Close kebab menus when clicking elsewhere
     document.addEventListener('click', () => {
