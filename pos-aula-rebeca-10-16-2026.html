@@ -1,0 +1,179 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pós-aula — Rebeca — 10/16/2026</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+.title-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap} h2{font-size:1.15rem;color:#14532D} p,li{line-height:1.65;color:#374151} li{margin:7px 0} .note{font-size:.85rem;color:var(--muted)} .correction+.correction{border-top:1px solid var(--border);margin-top:16px} .irish{border:2px solid #c9f3dc;background:#f5fff6;border-radius:10px;padding:14px;margin-top:14px} @media(max-width:720px){header{flex-direction:column}.wrap{padding:20px 10px}.vocab{min-width:0}} @media print{.actions,.vocab-say{display:none}.wrap{padding:0}.card{box-shadow:none;border:0}.irish,.vocab{break-inside:avoid}}</style></head><body><div class="wrap"><article class="card"><header><div><div class="title-row"><span class="badge">PÓS-AULA</span><h1>Presente simples na prática: rotina, família e trabalho</h1></div><div class="meta"><strong>Professor:</strong> César • <strong>Aluna:</strong> Rebeca • <strong>Data:</strong> 10/16/2026</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header><main><section class="panel"><p style="margin:0;color:#14532D;"><em>Rebeca, nesta aula usamos suas histórias da rotina e do hotel para revisar o presente simples. O foco foi reconhecer o sujeito, escolher do ou does e explicar por que o verbo muda — com uma revisão de futuro, idade e palavras que confundem na escuta.</em></p></section><section><h2>📘 Resumo da Aula</h2><div class="outline-card"><p>Começamos com sua chegada em casa, o jantar e a ideia de preparar uma Caesar salad. Você falou sobre dieta, o frango na pia e as aulas de boxe do seu marido. Essa conversa trouxe <strong>sink</strong> (pia), <strong>put</strong> (colocar), <strong>leave / left</strong> (deixar / deixou) e a estrutura <strong>I will cook</strong> para falar do futuro.</p><p>Na conversa sobre trabalho, você explicou como recebe por hora, falou das folgas e usou uma viagem à Itália como exemplo. Revisamos <strong>day off, hours, holiday, receive</strong> e <strong>instead</strong>. O relato era sobre sua experiência de trabalho; usamos esse contexto para praticar inglês. Também apareceram os meses do ano, trânsito e o hobby de pintar tapetes.</p><p>Ao retomar suas atividades, comparamos <strong>people work</strong> com <strong>a person works</strong>. <em>People</em> equivale a <em>they</em>; <em>my in-laws</em> também representa mais de uma pessoa. Já <em>Jessica</em> equivale a <em>she</em>. Na afirmativa com <strong>he/she/it</strong>, usamos <strong>works, lives, likes, studies</strong> e <strong>has</strong>. Com <strong>does</strong> ou <strong>doesn’t</strong>, o verbo volta à forma base: <strong>Does she have…? / She doesn’t have…</strong>.</p><p>Seu relato de uma interação com uma hóspede levou à diferença entre <strong>live</strong> (morar) e <strong>leave</strong> (sair/deixar). Praticamos a vogal curta de <em>live /lɪv/</em> e a vogal longa de <em>leave /liːv/</em>. Uma palavra isolada pode soar brusca; para entender a intenção, precisamos da frase e do contexto.</p><p>Vimos que idade pede <strong>to be</strong>: <em>I am thirty years old</em> e <em>When I was fifteen</em>. Revisamos também <strong>I forgot her name</strong>: o possessivo vem antes do substantivo. <strong>Her name</strong> inclui o nome da coisa; <strong>hers</strong> substitui essa coisa: <em>My house is big. Hers is small.</em> Comparamos ainda sujeito e objeto: <em>he / him, she / her, we / us, they / them</em>. Essas diferenças foram uma introdução, sem substituir o foco principal da aula.</p><p>No texto sobre Jessica Hernandez, você escolheu verbos pelo sujeito e pelo sentido: moradia, trabalho em uma loja de roupas, gostos musicais e família. Depois praticamos <strong>Do you have any cousins?</strong>, <strong>Yes, I do</strong> e <strong>Do they live close to you?</strong>. Seu avanço apareceu na capacidade de perceber uma escolha e explicar a correção. César reforçou que entender o motivo vale mais do que simplesmente não errar.</p><h3>Mapa para revisar</h3><ul><li><strong>She works. → Does she work? → She doesn’t work.</strong></li><li><strong>They live. → Do they live? → They don’t live.</strong></li><li><strong>She has children. → Does she have children? → She doesn’t have children.</strong></li><li><strong>Consoante + y:</strong> study → studies. <strong>Vogal + y:</strong> play → plays.</li><li><strong>Resposta curta:</strong> Do you…? → Yes, I do. / No, I don’t. Com <em>be</em>: Are you…? → Yes, I am.</li></ul></div></section><section><h2>💬 Frases usadas em aula</h2><div class="outline-card"><p class="note">Frases retomadas na aula, com a escrita normalizada e as correções incorporadas.</p><ul><li><strong>I am on a diet.</strong> → Estou de dieta.</li><li><strong>I will cook.</strong> → Vou cozinhar.</li><li><strong>Does he like boxing?</strong> → Ele gosta de praticar boxe?</li><li><strong>My husband put the chicken on the sink.</strong> → Meu marido colocou o frango na pia.</li><li><strong>When I was young.</strong> → Quando eu era jovem.</li><li><strong>I forgot her name.</strong> → Esqueci o nome dela.</li><li><strong>My house is big. Hers is small.</strong> → Minha casa é grande. A dela é pequena.</li><li><strong>I don’t like him. / I don’t like her.</strong> → Não gosto dele. / Não gosto dela.</li><li><strong>She works in a clothing store.</strong> → Ela trabalha em uma loja de roupas.</li><li><strong>Do you have any cousins? — Yes, I do.</strong> → Você tem primos? — Sim, tenho.</li><li><strong>Do they live close to you?</strong> → Eles moram perto de você?</li><li><strong>Sadly, they don’t.</strong> → Infelizmente, não.</li></ul></div></section><section><h2>⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab "><div class="vocab-head"><h3>sink</h3><button type="button" class="vocab-say" data-czk-say="sink" aria-label="Ouvir a pronúncia de sink" aria-pressed="false" title="Ouvir sink">&#128266;</button></div><p><em>pia</em><br>A pia da cozinha ou do banheiro.<br><strong>The chicken is on the sink.</strong><br>O frango está na pia.</p></div><div class="vocab green"><div class="vocab-head"><h3>leave</h3><button type="button" class="vocab-say" data-czk-say="leave" aria-label="Ouvir a pronúncia de leave" aria-pressed="false" title="Ouvir leave">&#128266;</button></div><p><em>sair; deixar</em><br>Verbo cujo passado é left.<br><strong>I will leave after class.</strong><br>Vou sair depois da aula.</p></div><div class="vocab yellow"><div class="vocab-head"><h3>forgot</h3><button type="button" class="vocab-say" data-czk-say="forgot" aria-label="Ouvir a pronúncia de forgot" aria-pressed="false" title="Ouvir forgot">&#128266;</button></div><p><em>esqueci; esqueceu</em><br>Passado de forget (esquecer).<br><strong>I forgot her name.</strong><br>Esqueci o nome dela.</p></div></div></section><section><h2>📚 Vocabulário completo da aula</h2><div class="outline-card"><h3>Rotina, comida e casa</h3><ul><li><strong>arrive / house / home</strong> — chegar / casa / lar; <em>arrive home</em> = chegar em casa.</li><li><strong>shower / dinner / cook</strong> — banho / jantar / cozinhar.</li><li><strong>on a diet / Caesar salad / chicken / biscuits</strong> — de dieta / salada Caesar / frango / biscoitos.</li><li><strong>sink / microwave</strong> — pia / micro-ondas.</li></ul><h3>Trabalho e tempo livre</h3><ul><li><strong>work / worker / hardworking</strong> — trabalhar / trabalhador(a), como profissão ou pessoa / trabalhador(a), como qualidade.</li><li><strong>receive / pay / salary / benefits</strong> — receber / pagar; pagamento / salário / benefícios.</li><li><strong>hour / hours / day off / days off / holiday</strong> — hora / horas / dia de folga / dias de folga / férias; feriado, conforme o contexto.</li><li><strong>instead / instead of</strong> — em vez disso / em vez de.</li><li><strong>painting / paint / carpet / hobby / boxing</strong> — pintura / pintar / tapete / passatempo / boxe.</li></ul><h3>Viagem e calendário</h3><ul><li><strong>travel / trip / country / traffic</strong> — viajar / viagem / país / trânsito.</li><li><strong>Italy / Brazil / Ireland</strong> — Itália / Brasil / Irlanda.</li><li><strong>January, February, March, April, May, June, July, August, September, October, November, December</strong> — janeiro a dezembro; os meses em inglês começam com letra maiúscula.</li></ul><h3>Verbos e palavras parecidas</h3><ul><li><strong>live / leave / left</strong> — morar / sair; deixar / saiu; deixou; também “esquerda”.</li><li><strong>put → put; buy → bought; forget → forgot; hold → held</strong> — colocar → colocou; comprar → comprou; esquecer → esqueceu; segurar → segurou.</li><li><strong>remember / young / years old</strong> — lembrar / jovem / anos de idade.</li><li><strong>close to / close family / close the door</strong> — perto de / família unida / fechar a porta.</li><li><strong>clothes / clothing store / store</strong> — roupas / loja de roupas / loja.</li><li><strong>single / singer</strong> — solteiro(a) / cantor(a).</li></ul><h3>Família, música e pronomes</h3><ul><li><strong>husband / wife / brother / sister / children</strong> — marido / esposa / irmão / irmã / filhos; crianças.</li><li><strong>in-laws / niece / nephew / cousin</strong> — parentes por casamento (sogros no exercício) / sobrinha / sobrinho / primo(a).</li><li><strong>listen to / like / known for / rarely / sadly</strong> — ouvir / gostar de / conhecido(a) por / raramente / infelizmente.</li><li><strong>her name / hers / his</strong> — o nome dela / o(a) dela / dele; <em>his</em> também pode aparecer sem substantivo.</li><li><strong>he → him; she → her; we → us; they → them</strong> — formas de sujeito → formas de objeto.</li></ul></div></section><section><h2>🚨 Correções importantes</h2><div class="outline-card"><p class="note">Os trechos abaixo organizam as dúvidas e tentativas da aula; a transcrição automática foi normalizada.</p><div class="correction"><h3>1. People é plural</h3><p style="color:#c53030;">❌ People works.</p><p style="color:#276749;">✅ <strong>People work.</strong></p><p>People = they. Para “trabalhadores”, use workers; para a qualidade “trabalhador”, hardworking.</p></div><div class="correction"><h3>2. Futuro</h3><p style="color:#c53030;">❌ I go cook.</p><p style="color:#276749;">✅ <strong>I will cook.</strong></p><p>Will + verbo na forma base. Para um plano, também é possível I’m going to cook. Go sozinho não marca futuro. Para preparar uma salada, make a salad é natural.</p></div><div class="correction"><h3>3. Idade</h3><p style="color:#c53030;">❌ I have thirty years old.</p><p style="color:#276749;">✅ <strong>I am thirty years old.</strong></p><p>No passado: When I was fifteen years old. Os números são exemplos de treino, não informações sobre sua idade.</p></div><div class="correction"><h3>4. Posse antes do nome</h3><p style="color:#c53030;">❌ I forgot the name her.</p><p style="color:#276749;">✅ <strong>I forgot her name.</strong></p><p>A ordem “name her” apareceu na conversa. Her acompanha o substantivo; hers substitui um substantivo já entendido.</p></div><div class="correction"><h3>5. Negativa com she</h3><p style="color:#c53030;">❌ She don’t like it.</p><p style="color:#276749;">✅ <strong>She doesn’t like it.</strong></p><p>Doesn’t já indica a terceira pessoa: like fica na forma base. Para “ela não tem filhos”: She doesn’t have any children.</p></div><div class="correction"><h3>6. Resposta curta</h3><p style="color:#c53030;">❌ Do you have any cousins? — I have.</p><p style="color:#276749;">✅ <strong>Do you have any cousins? — Yes, I do.</strong></p><p>I have five cousins é uma resposta completa possível. Na resposta curta, retome o auxiliar do.</p></div><div class="correction"><h3>7. Ler o contexto</h3><p style="color:#c53030;">❌ Do they like close to you?</p><p style="color:#276749;">✅ <strong>Do they live close to you?</strong></p><p>A ideia é morar perto. Close to significa “perto de”; aqui não é o verbo fechar.</p></div><div class="correction"><h3>8. Distinguir na escuta</h3><p style="color:#c53030;">❌ live = leave</p><p style="color:#276749;">✅ <strong>live /lɪv/ ≠ leave /liːv/</strong></p><p>Live tem vogal curta; leave, longa. Leave → left; live → lived. Não dependa só da escrita.</p></div><p><strong>Pronúncia:</strong> receive começa com /r/ em inglês; evite trocar esse som pelo /h/. Em hour, o h não é pronunciado.</p></div></section><section><div class="ie-badge"><span class="ie-flag" aria-hidden="true"><span style="background:#169b62;"></span><span style="background:#fff;"></span><span style="background:#ff883e;"></span></span><span class="ie-shamrock">☘️</span><h2 class="ie-title">Como se diz na Irlanda</h2></div><div class="outline-card"><p>Rebeca, duas adaptações de falas desta aula para reconhecer no inglês informal da Irlanda.</p><div class="irish"><span class="expr-tag">class</span><p><small>Na aula (04:29):</small><br>“It is very good.” — É muito bom.</p><p><small>Na Irlanda pode soar assim:</small><br><strong>“It’s class.” — É muito bom / é excelente.</strong></p><p>💡 Como elogio informal, class significa “excelente”, sem relação com aula ou turma nesse uso. Cabe com amigos e em conversas descontraídas com colegas. <a href="https://blog.educationinireland.com/7-common-irish-slang-words-you-will-hear-while-studying-abroad/" target="_blank" rel="noopener noreferrer">Referência: Education in Ireland</a>.</p><p><small>Outro exemplo:</small><br>“That painting is class.” — Essa pintura é excelente.</p></div><div class="irish"><span class="expr-tag">fair play to you</span><p><small>Na aula, César elogiou seu desempenho (50:53):</small><br>“Você teve o desempenho muito bom aqui.”<br>Versão neutra em inglês: “You did very well here.”</p><p><small>Na Irlanda, o elogio pode soar assim:</small><br><strong>“Fair play to you — you did very well here.” — Parabéns pelo esforço — você foi muito bem aqui.</strong></p><p>💡 Fair play to you reconhece mérito ou esforço, como “mandou bem”. É comum em conversas informais, inclusive com colegas. Não precisa ter relação com esporte ou jogo limpo. <a href="https://careerhub.hse.ie/int_irish-phrases/" target="_blank" rel="noopener noreferrer">Referência: HSE</a>.</p><p><small>Outro exemplo:</small><br>“Fair play to you for finishing your homework.” — Parabéns por terminar sua lição de casa.</p></div></div></section><section><h2>🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/zzRgvIt78kU" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section><section class="speaking"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Tempo aproximado</th></tr></thead><tbody><tr class="row-teacher"><td>César</td><td>57%</td><td>28 min</td></tr><tr class="row-student"><td>Rebeca</td><td>43%</td><td>21 min</td></tr></tbody></table><p class="note">Estimativa pelos intervalos de fala da transcrição, incluindo português e inglês. Pausas não entram; não é uma medição de fluência.</p></section><section><h2>📝 Homework</h2><div class="homework"><p><strong>Combinado na aula:</strong> concluir as atividades pendentes do app e retomar o estudo a partir de segunda-feira, em blocos que caibam na rotina. César também pediu o desafio até o sábado seguinte à aula (17/10); como esse prazo já passou, confira o que estiver disponível no app.</p><ul><li><strong>Prioridade:</strong> presente simples e terceira pessoa. Antes de responder, identifique o sujeito; depois decida entre do/does, don’t/doesn’t e a forma do verbo.</li><li><strong>Revisão sugerida:</strong> escreva uma afirmativa, uma negativa e uma pergunta com <em>she + work</em>, depois repita com <em>they + live</em>.</li><li>Leia em voz alta <em>sink, live, leave, left, forget, forgot</em>. Faça uma frase curta com cada uma.</li><li>Pratique <em>I am… years old</em>, <em>When I was…</em> e <em>I will cook</em>. Para completar as lacunas de idade, use os números que quiser.</li><li>Revise <em>her name × hers</em> e <em>I don’t like him/her</em> como complemento; o foco principal continua sendo o presente simples.</li><li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana e leve suas dúvidas para a próxima aula.</li></ul></div></section></main><footer>© 2025 CZK English • Conteúdo educacional • czkenglish@gmail.com</footer></article></div>  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script></body></html>
