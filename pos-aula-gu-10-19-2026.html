@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Gu — 10/19/2026 — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+body{color:#243345;line-height:1.6;} h2{font-size:1.15rem;color:#14532D;} h3{font-size:1rem;} p{margin:0 0 12px;} li{margin-bottom:5px;}
+@media(max-width:720px){header{flex-wrap:wrap;}header>div{min-width:0;}header>div>div:first-child{flex-wrap:wrap;}.wrap{padding:20px 12px;}.card{box-sizing:border-box;}.vocab{min-width:0;} .talk-table{font-size:0.8rem;}.talk-table th,.talk-table td{padding:8px 5px;}}
+@media print{html,body{height:auto;background:#fff;}.wrap{display:block;padding:0;}.card{max-width:none;padding:0;border:none;box-shadow:none;}.actions,.vocab-say{display:none;}.outline-card,.vocab,.homework{box-shadow:none;}h2,h3{break-after:avoid;}.vocab,.speaking{break-inside:avoid;}a{color:inherit;}}
+</style></head><body><div class="wrap"><article class="card" role="main"><header><div><div style="display:flex;gap:10px;align-items:center;"><span class="badge">PÓS-AULA</span><h1>Simple Past ou Present Perfect? Auxiliares e causativo na prática</h1></div><div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Gu &nbsp;•&nbsp; <strong>Data:</strong> 10/19/2026</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header><main><section class="panel"><p style="margin:0;font-weight:600;color:#14532D;"><em>Gu, nesta aula revisamos seus desafios e atividades para entender a lógica dos tempos verbais. O foco foi escolher entre Simple Past e Present Perfect, organizar os auxiliares e retomar causativo, tag questions e frases sobre apostas online.</em></p></section><section><h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2><div class="outline-card">
+<p><strong>1. O contexto decide o tempo verbal.</strong> Comparamos <em>He loses his passport</em> (hábito), <em>He lost his passport yesterday</em> (acontecimento em um passado definido) e <em>He has lost his passport</em> (resultado relevante agora, por exemplo, o passaporte continua desaparecido). <strong>Yesterday</strong> e <strong>last year</strong> situam o fato em um período encerrado e, nos exemplos estudados, pedem Simple Past. Já <em>I have been to Japan</em> apresenta uma experiência de vida sem dizer quando ela aconteceu. A experiência pode estar concluída: Present Perfect não significa apenas “ação ainda acontecendo”.</p>
+<p><strong>2. Auxiliares e formas do verbo.</strong> Retomamos <strong>do/does + verbo na forma base</strong> no presente e <strong>did + forma base</strong> no passado. No Present Perfect, a estrutura muda para <strong>have/has + particípio passado</strong>, a terceira coluna dos irregulares. Você reconheceu melhor a diferença ao comparar as alternativas do desafio. O verbo <em>be</em> faz perguntas e negativas sem <em>do/does/did</em> nos tempos simples; no Present Perfect, ele aparece como <strong>have/has been</strong>.</p>
+<p><strong>3. Causativo e tag questions.</strong> Revisamos <strong>get + pessoa + to + verbo</strong>, como em <em>I got my brother to make furniture for my office</em>, e o causativo passivo <strong>have + objeto + particípio</strong>, como em <em>I'll have my laptop repaired tomorrow</em>. Também retomamos a confirmação com polaridade oposta: <em>She works every day, doesn't she?</em> e <em>You don't like coffee, do you?</em> Lembrete de concordância: o possessivo não define o verbo; observe o núcleo do sujeito, como <em>my flight</em> (it) e <em>my flights</em> (they).</p>
+<p><strong>4. Modais, sujeito e apostas online.</strong> Diferenciamos <em>should</em> (conselho ou recomendação), <em>must</em> (obrigação forte), <em>will</em> e <em>would</em>. Depois desses modais, o verbo vem na forma base. Nas frases sobre apostas, identificamos o sujeito antes de montar o restante: <em>Online betting should be regulated</em>. Vimos também <strong>betting/swimming</strong> como nomes de atividades na posição de sujeito, sem traduzir o <em>-ing</em> automaticamente por “-ando/-endo”.</p>
+<p><strong>5. Leitura e rotina de estudo.</strong> No jogo de estimativas, praticamos números, <em>million/billion</em>, <em>how many</em>, <em>sesame seeds</em> e a leitura de uma frase sobre astronautas com <em>have lived ... since</em>. Nesse exemplo, <strong>since</strong> marca o início de uma situação que chega até o presente. Para as atividades do app, combinamos dedicar mais tempo a cada resposta, consultar o pós-aula e compreender as correções. Dez minutos bem usados em duas atividades podem render mais aprendizagem do que sete respostas apressadas.</p></div></section><section><h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2><div class="outline-card"><p style="color:var(--muted);font-size:0.9rem;">Frases trabalhadas na conversa e na correção dos exercícios, com a escrita em inglês revisada.</p><ul><li style="margin-bottom:12px;"><strong lang="en">He has lost his passport.</strong><br>Ele perdeu o passaporte.<br><small style="color:var(--muted);">Resultado relevante agora: ele pode estar sem o documento.</small></li><li style="margin-bottom:12px;"><strong lang="en">Has he lost his passport?</strong><br>Ele perdeu o passaporte?<br><small style="color:var(--muted);">Pergunta com has antes do sujeito.</small></li><li style="margin-bottom:12px;"><strong lang="en">Does he have his passport?</strong><br>Ele está com o passaporte dele?<br><small style="color:var(--muted);">Have é o verbo principal; does faz a pergunta.</small></li><li style="margin-bottom:12px;"><strong lang="en">He lost his passport yesterday.</strong><br>Ele perdeu o passaporte ontem.<br><small style="color:var(--muted);">Yesterday situa o acontecimento no passado.</small></li><li style="margin-bottom:12px;"><strong lang="en">He has gone to the dentist.</strong><br>Ele foi ao dentista.<br><small style="color:var(--muted);">Neste contexto, ele saiu e ainda não voltou.</small></li><li style="margin-bottom:12px;"><strong lang="en">I have been to Japan.</strong><br>Eu já fui ao Japão.<br><small style="color:var(--muted);">Experiência de vida, sem informar quando.</small></li><li style="margin-bottom:12px;"><strong lang="en">I got my brother to make furniture for my office.</strong><br>Consegui que meu irmão fizesse os móveis para o meu escritório.<br><small style="color:var(--muted);">Causativo com get + pessoa + to + verbo.</small></li><li style="margin-bottom:12px;"><strong lang="en">I&#x27;ll have my laptop repaired tomorrow.</strong><br>Vou mandar consertar meu laptop amanhã.<br><small style="color:var(--muted);">Foco no objeto que receberá o serviço.</small></li><li style="margin-bottom:12px;"><strong lang="en">You should talk with your friends.</strong><br>Você deveria conversar com seus amigos.<br><small style="color:var(--muted);">Should transforma a fala em conselho.</small></li><li style="margin-bottom:12px;"><strong lang="en">You don&#x27;t like coffee, do you?</strong><br>Você não gosta de café, né?<br><small style="color:var(--muted);">O trecho negativo pede uma tag afirmativa.</small></li><li style="margin-bottom:12px;"><strong lang="en">I think online betting should be regulated.</strong><br>Acho que as apostas online deveriam ser regulamentadas.<br><small style="color:var(--muted);">Online betting é o sujeito de should be regulated.</small></li><li style="margin-bottom:12px;"><strong lang="en">Gambling addiction can affect the whole family.</strong><br>O vício em jogos de azar pode afetar a família inteira.<br><small style="color:var(--muted);">Whole destaca o conjunto completo.</small></li></ul></div></section><section><h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3>furniture</h3><button type="button" class="vocab-say" data-czk-say="furniture" aria-label="Ouvir a pronúncia de furniture" aria-pressed="false" title="Ouvir furniture">&#128266;</button></div><p><em>móveis / mobília</em><br><small>Substantivo incontável: não recebe -s de plural nem a/an diretamente.</small></p><p><span lang="en">I got my brother to make furniture for my office.</span><br><small>Consegui que meu irmão fizesse os móveis para meu escritório.</small></p></div><div class="vocab green"><div class="vocab-head"><h3>regret</h3><button type="button" class="vocab-say" data-czk-say="regret" aria-label="Ouvir a pronúncia de regret" aria-pressed="false" title="Ouvir regret">&#128266;</button></div><p><em>arrepender-se / arrependimento</em><br><small>Como verbo regular: regret → regretted → regretted. Na aula, apareceu em uma pergunta sobre decisões.</small></p><p><span lang="en">Have you ever regretted a big decision?</span><br><small>Você já se arrependeu de uma grande decisão?</small></p></div><div class="vocab yellow"><div class="vocab-head"><h3>whole</h3><button type="button" class="vocab-say" data-czk-say="whole" aria-label="Ouvir a pronúncia de whole" aria-pressed="false" title="Ouvir whole">&#128266;</button></div><p><em>inteiro(a) / todo(a)</em><br><small>Destaca uma coisa ou um grupo como um conjunto completo: the whole family.</small></p><p><span lang="en">Gambling addiction can affect the whole family.</span><br><small>O vício em jogos de azar pode afetar a família inteira.</small></p></div></div></section><section><h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2><div class="outline-card"><h3>Viagens e experiências</h3><ul><li><strong lang="en">passport</strong> — passaporte</li><li><strong lang="en">flight / flights</strong> — voo / voos</li><li><strong lang="en">lose → lost → lost</strong> — perder → passado → particípio</li><li><strong lang="en">go → went → gone</strong> — ir → passado → particípio</li><li><strong lang="en">be → was/were → been</strong> — ser/estar → passado → particípio</li><li><strong lang="en">visit → visited → visited</strong> — visitar → passado → particípio</li><li><strong lang="en">dentist</strong> — dentista</li><li><strong lang="en">regret → regretted → regretted</strong> — arrepender-se → passado → particípio</li></ul><h3>Causativo e trabalho</h3><ul><li><strong lang="en">get → got</strong> — conseguir / fazer com que → passado</li><li><strong lang="en">make furniture</strong> — fazer móveis</li><li><strong lang="en">furniture</strong> — móveis; incontável</li><li><strong lang="en">information</strong> — informação / informações; incontável</li><li><strong lang="en">office</strong> — escritório</li><li><strong lang="en">laptop</strong> — laptop / notebook</li><li><strong lang="en">repair → repaired</strong> — consertar → passado e particípio</li><li><strong lang="en">have something repaired</strong> — mandar consertar alguma coisa</li></ul><h3>Modais, tempo e estrutura</h3><ul><li><strong lang="en">should</strong> — deveria; conselho ou recomendação</li><li><strong lang="en">must</strong> — deve / tem que; obrigação forte neste contexto</li><li><strong lang="en">will</strong> — auxiliar usado para falar do futuro</li><li><strong lang="en">would</strong> — modal usado em hipóteses, como “iria” ou “faria”</li><li><strong lang="en">yesterday</strong> — ontem</li><li><strong lang="en">last year</strong> — ano passado</li><li><strong lang="en">tomorrow</strong> — amanhã</li><li><strong lang="en">since</strong> — desde; ponto inicial no exemplo da aula</li><li><strong lang="en">ever</strong> — alguma vez / já, em perguntas de experiência</li><li><strong lang="en">every day</strong> — todos os dias</li><li><strong lang="en">subject</strong> — sujeito</li><li><strong lang="en">past participle</strong> — particípio passado</li></ul><h3>Apostas e impacto social</h3><ul><li><strong lang="en">online betting</strong> — apostas online</li><li><strong lang="en">gambling</strong> — jogos de azar / prática de apostar</li><li><strong lang="en">addiction</strong> — vício / dependência</li><li><strong lang="en">affect</strong> — afetar</li><li><strong lang="en">whole</strong> — inteiro(a) / todo(a)</li><li><strong lang="en">be regulated</strong> — ser regulamentado(a)</li><li><strong lang="en">advertising</strong> — publicidade / propaganda</li><li><strong lang="en">betting sites</strong> — sites de apostas</li><li><strong lang="en">block themselves</strong> — bloquear a si mesmos</li><li><strong lang="en">deposit</strong> — depósito</li></ul><h3>Jogo de estimativas e leitura</h3><ul><li><strong lang="en">how many</strong> — quantos(as); para itens contáveis</li><li><strong lang="en">million / billion</strong> — milhão / bilhão</li><li><strong lang="en">size</strong> — tamanho</li><li><strong lang="en">sesame seeds</strong> — sementes de gergelim</li><li><strong lang="en">bun</strong> — pão de hambúrguer</li><li><strong lang="en">astronauts</strong> — astronautas</li><li><strong lang="en">space station</strong> — estação espacial</li><li><strong lang="en">non-stop</strong> — sem parar / continuamente</li><li><strong lang="en">on board</strong> — a bordo</li><li><strong lang="en">person-days</strong> — dias-pessoa: número de pessoas multiplicado pelos dias de permanência</li></ul></div></section><section><h2 style="margin-bottom:8px;">🚨 Correções importantes</h2><div class="outline-card"><p style="color:var(--muted);font-size:0.9rem;">Pontos revistos nas respostas e na conversa. Os trechos abaixo reconstituem as estruturas discutidas na aula.</p><div style="margin-bottom:20px;"><p><strong>1. O tempo verbal precisa combinar com a mensagem</strong></p><p style="color:#c53030;">❌ He loses his passport. [para dizer que ele perdeu e continua sem o documento]</p><p style="color:#276749;">✅ <strong lang="en">He has lost his passport.</strong></p><p>Loses descreve hábito ou repetição. Para destacar o resultado atual da perda, use has + lost. Se a frase especifica yesterday, use He lost his passport yesterday. Atenção: o Simple Past, sozinho, não informa se ele encontrou o passaporte depois.</p></div><div style="margin-bottom:20px;"><p><strong>2. Não misture does com o auxiliar do Present Perfect</strong></p><p style="color:#c53030;">❌ Does he has lost his passport?</p><p style="color:#276749;">✅ <strong lang="en">Has he lost his passport?</strong></p><p>No Present Perfect, has já é o auxiliar e vai antes do sujeito na pergunta. Compare com Does he have his passport?, em que have é o verbo principal e fica na forma base depois de does.</p></div><div style="margin-bottom:20px;"><p><strong>3. Lose é irregular e não recebe -ed</strong></p><p style="color:#c53030;">❌ losted / He has lost his passport yesterday.</p><p style="color:#276749;">✅ <strong lang="en">lost / He lost his passport yesterday.</strong></p><p>As três formas são lose → lost → lost. O particípio é igual ao passado, mas a estrutura é diferente: has lost é Present Perfect; lost sem has, nesse exemplo com yesterday, é Simple Past.</p></div><div style="margin-bottom:20px;"><p><strong>4. Causativo: escolha a estrutura e o tempo</strong></p><p style="color:#c53030;">❌ I have my brother to make furnitures for my office. [para “consegui que meu irmão fizesse...”]</p><p style="color:#276749;">✅ <strong lang="en">I got my brother to make furniture for my office.</strong></p><p>Para esse sentido, use got + pessoa + to + verbo. Com have, a alternativa é I had my brother make furniture for my office, sem to. Furniture é incontável: não use furnitures ou a furniture. Para contar, use a piece of furniture.</p></div><div style="margin-bottom:20px;"><p><strong>5. Tag question com polaridade oposta</strong></p><p style="color:#c53030;">❌ You don&#x27;t like coffee, don&#x27;t you?</p><p style="color:#276749;">✅ <strong lang="en">You don&#x27;t like coffee, do you?</strong></p><p>Na confirmação neutra praticada, frase negativa → tag afirmativa; frase afirmativa → tag negativa. Outro exemplo revisto: She works every day, doesn't she?</p></div><div style="margin-bottom:20px;"><p><strong>6. Identifique o sujeito antes de posicionar should</strong></p><p style="color:#c53030;">❌ Should have advertising for betting... [frase sem sujeito no exercício]</p><p style="color:#276749;">✅ <strong lang="en">Online betting should be regulated.</strong></p><p>Na afirmativa, a ordem é sujeito + should + verbo na forma base. Em online betting should be regulated, o sujeito é online betting; be fica na forma base e regulated é o particípio da passiva. Para dizer “deveria haver”, use there should be.</p></div><div style="margin-bottom:20px;"><p><strong>7. A atividade pode ocupar a posição de sujeito</strong></p><p style="color:#c53030;">❌ Bet can affect the whole family. [com o sentido de “apostar pode afetar...”]</p><p style="color:#276749;">✅ <strong lang="en">Betting can affect the whole family.</strong></p><p>Para apresentar a atividade como sujeito neste exemplo, usamos betting. Compare com Swimming is good: swimming é o sujeito e is é o verbo da oração. O -ing aqui nomeia a atividade; não significa necessariamente uma ação em andamento.</p></div><div style="margin-bottom:20px;"><p><strong>8. Números: million e billion depois de quantidade</strong></p><p style="color:#c53030;">❌ two billions</p><p style="color:#276749;">✅ <strong lang="en">two billion</strong></p><p>Depois de um número definido, hundred, thousand, million e billion ficam sem -s: two billion, one million. O plural aparece em expressões como millions of people.</p></div></div></section><section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/k3M5RdpjhVU" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section><section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead><tbody><tr class="row-teacher"><td class="talk-label">César (Professor)</td><td class="talk-percent">74%</td><td class="talk-time">~31 min 33 s</td></tr><tr class="row-student"><td class="talk-label">Gu</td><td class="talk-percent">26%</td><td class="talk-time">~10 min 51 s</td></tr></tbody></table><p style="color:var(--muted);font-size:0.85rem;">Estimativa pela duração dos trechos identificados na transcrição, em português e inglês, até a despedida. Silêncios, mídia compartilhada e trechos posteriores à aula foram excluídos; pode haver sobreposição de falas.</p></section><section><h2 style="margin-bottom:8px;">📝 Homework</h2><div class="homework"><p>📌 <strong>Combinado ao final da aula:</strong></p><ul><li>Retomar as atividades que o César vai reabrir no app e <strong>tentar concluí-las até quarta-feira</strong>, conforme combinado na conversa.</li><li>Fazer cada atividade com atenção: identificar o sujeito, o tempo verbal, o auxiliar e a forma correta do verbo antes de responder.</li><li>Consultar o pós-aula e as correções do desafio. Se tiver dez minutos, priorizar compreender duas atividades em vez de responder várias com pressa.</li><li>Manter a prática dos desafios e voltar às respostas corrigidas para entender o motivo de cada ajuste.</li><li>Ler este pós-aula de <strong>2 a 3 vezes</strong> durante a semana e usar os botões de áudio para revisar as três palavras-chave.</li></ul></div></section></main><footer><p style="margin:18px 0 0;color:var(--muted);font-size:0.9rem;">© 2025 CZK English • czkenglish@gmail.com</p></footer></article></div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Resumo Pós-Aula — Vlad — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+body{color:#27333f;line-height:1.6;}
+h2{font-size:1.15rem;line-height:1.35;color:#0f1724;}
+h3{font-size:1rem;line-height:1.4;color:#14532D;}
+.outline-card p:first-child{margin-top:0;}
+.outline-card p:last-child,.outline-card ul:last-child{margin-bottom:0;}
+.outline-card li{margin-bottom:7px;}
+.meta{line-height:1.7;}
+.badge,.btn{line-height:1.3;}
+.actions{flex-shrink:0;}
+.btn{font-family:inherit;font-size:0.85rem;text-align:center;}
+.lesson-table{width:100%;border-collapse:collapse;font-size:.9rem;}
+.lesson-table th,.lesson-table td{border:1px solid var(--border);padding:9px;text-align:left;vertical-align:top;overflow-wrap:anywhere;}
+.lesson-table th{background:#E7F6EC;color:#14532D;}
+.table-scroll{overflow-x:auto;}
+@media(max-width:720px){
+ .wrap{padding:20px 12px;}
+ .card{min-width:0;box-sizing:border-box;}
+ header{flex-wrap:wrap;}
+ .actions{width:100%;}
+ .actions .btn{width:100%;box-sizing:border-box;}
+ .vocab{min-width:0;}
+ .talk-table th,.talk-table td{padding:7px 6px;font-size:.8rem;}
+}
+@media print{
+ html,body{height:auto;background:#fff;}
+ .wrap{display:block;padding:0;min-height:0;}
+ .card{max-width:none;border:0;box-shadow:none;padding:0;}
+ .actions,.vocab-say{display:none;}
+ .vocab,.homework,.speaking{break-inside:avoid;}
+ h2,h3{break-after:avoid;}
+}
+</style></head><body>
+
+<div class="wrap"><article class="card" role="main">
+<header><div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+    <span class="badge">PÓS-AULA</span><h1>Estimativas em inglês: perguntas, auxiliares e números</h1>
+  </div>
+  <div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Vlad &nbsp;•&nbsp; <strong>Data:</strong> 10/19/2026</div>
+</div><div class="actions"><button class="btn" type="button" data-czk-action="print">Imprimir / Salvar PDF</button></div></header>
+<main>
+<section class="panel"><p style="margin:0;font-weight:600;color:#14532D;font-style:italic;">Vlad, nesta aula você usou um jogo de estimativas para ler perguntas, explicar seu raciocínio e praticar números em inglês. O foco foi reconhecer e usar os auxiliares, além de revisar combinações de verbos e a pronúncia de Wednesday.</p></section>
+
+<section><h2>📘 Resumo da Aula</h2><div class="outline-card">
+<p>A conversa começou com <strong>futebol</strong>: rivalidade, resultados e risco de rebaixamento. Você procurou uma maneira de dizer “confronto direto” e praticou <em>head-to-head</em>. Depois, vocês passaram a um jogo de perguntas numéricas: o objetivo era chegar perto da resposta e explicar como haviam calculado cada palpite.</p>
+<p>A pergunta sobre quantos sanduíches o Subway servia por dia abriu a revisão de <strong>did + sujeito + verbo na forma base</strong>. Você identificou que o passado já estava marcado em <em>did</em>, por isso o verbo permanecia <em>serve</em>. Sua dúvida principal foi quando usar esse auxiliar e quando usar outra estrutura. Vocês compararam <em>Does he like pizza?</em> com <em>Is he an engineer?</em>: no presente e no passado simples, <strong>be</strong> forma perguntas por inversão, sem acrescentar <em>do/does/did</em>.</p>
+<p>Também houve uma comparação entre <strong>passado simples e present perfect</strong>: <em>Was he late?</em> pergunta sobre uma ocasião passada, enquanto <em>Has he been late?</em> relaciona a experiência ou o período ao presente. Mais adiante, a leitura sobre a estação espacial retomou <em>have lived</em>, <em>since</em> e a diferença entre um período que continua e um intervalo encerrado com <em>from… to…</em>.</p>
+<p>Na estimativa que comparava barras de chocolate com o peso do veículo Curiosity, apareceram <em>grams</em>, <em>kilos</em>, <em>tonne</em>, <em>times</em> e <em>divided by</em>. A expressão <strong>had to be</strong> levou à revisão das combinações <strong>want to + verbo</strong>, <strong>enjoy + verbo com -ing</strong> e <strong>like + to / -ing</strong>. Você perguntou sobre <em>wanna</em>, e vocês discutiram o uso informal de <em>want to</em> e a escolha de linguagem conforme a situação, chamada <em>register</em>.</p>
+<p>A pergunta sobre o peso de um milhão de euros em cédulas serviu para reforçar <strong>How much does… weigh?</strong>. Vocês calcularam a quantidade de notas, converteram gramas em quilos e acertaram a resposta apresentada pelo jogo. Em outra rodada, trabalharam <em>how long</em> numa pergunta sobre vendas da Amazon e <em>person-days</em> numa estimativa sobre astronautas: três pessoas durante dez dias correspondem a trinta pessoas-dia.</p>
+<p>No final, vocês analisaram <strong>were</strong> numa pergunta sobre instrutores de direção, distinguiram <em>driving instructors</em> de <em>driver’s license</em> e discutiram estimativas sobre atletas olímpicos, incluindo Jogos de Verão e de Inverno. A rodada trouxe um resultado próximo do valor mostrado pelo jogo. Para encerrar, você praticou <strong>Wednesday</strong>, com duas sílabas e sem pronunciar o primeiro <em>d</em>.</p>
+<div class="panel" style="margin-top:14px;"><strong>Mapa rápido das estruturas praticadas</strong>
+<div class="table-scroll" style="margin-top:10px;"><table class="lesson-table"><thead><tr><th>Estrutura</th><th>Exemplo</th><th>Lembrete</th></tr></thead><tbody>
+<tr><td>Passado simples com outro verbo</td><td>How many sandwiches <strong>did</strong> Subway <strong>serve</strong>?</td><td>Did já marca o passado; serve fica na forma base.</td></tr>
+<tr><td>Presente simples com outro verbo</td><td>How much <strong>does</strong> each bill <strong>weigh</strong>?</td><td>Depois de does, use weigh, sem -s.</td></tr>
+<tr><td>Be no passado</td><td><strong>Was he</strong> late?</td><td>Inverta be e sujeito; não acrescente did.</td></tr>
+<tr><td>Present perfect</td><td><strong>Has he been</strong> late?</td><td>Has + sujeito + particípio; não acrescente did.</td></tr>
+<tr><td>Dois verbos</td><td>I <strong>want to swim</strong>. / I <strong>enjoy swimming</strong>.</td><td>Aprenda cada verbo com a combinação que ele aceita.</td></tr>
+</tbody></table></div>
+<p style="margin-bottom:0;"><strong>Atenção:</strong> o padrão com <em>do/does/did</em> vale para perguntas como as do jogo, com verbos principais no presente ou passado simples. Se já houver <em>be</em>, <em>have/has</em> auxiliar ou um modal, a estrutura usa esse verbo. Perguntas em que a palavra interrogativa é o próprio sujeito também têm outro padrão: <em>Who won?</em></p></div>
+</div></section>
+
+<section><h2>💬 Frases usadas em aula</h2><div class="outline-card"><ul>
+<li><strong>“In 2017, how many sandwiches did Subway serve worldwide each day?”</strong> → Em 2017, quantos sanduíches o Subway servia por dia no mundo todo?</li>
+<li><strong>“Was he late?”</strong> → Ele se atrasou?</li>
+<li><strong>“Has he been late?”</strong> → Ele tem se atrasado? / Ele se atrasou nesse período? <em>(O contexto define a leitura.)</em></li>
+<li><strong>“I wanna go to the mall.”</strong> → Quero ir ao shopping. <em>(Forma informal de I want to go.)</em></li>
+<li><strong>“I want to drive. I want to swim.”</strong> → Quero dirigir. Quero nadar.</li>
+<li><strong>“I enjoy swimming.”</strong> → Gosto de nadar.</li>
+<li><strong>“I like to swim.” / “I like swimming.”</strong> → Gosto de nadar. <em>(As duas construções são possíveis.)</em></li>
+<li><strong>“It had to be light enough to fly to Mars.”</strong> → Ele precisava ser leve o suficiente para voar até Marte.</li>
+<li><strong>“How many are aboard?”</strong> → Quantos estão a bordo?</li>
+<li><strong>“I can’t hear you.”</strong> → Não consigo ouvir você.</li>
+<li><strong>“We can try this.”</strong> → Podemos tentar isso.</li>
+<li><strong>“See you on Wednesday.”</strong> → Até quarta-feira.</li>
+</ul></div></section>
+
+<section><h2>⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3>head-to-head</h3>
+    <button type="button" class="vocab-say" data-czk-say="head-to-head" aria-label="Ouvir a pronúncia de head-to-head" aria-pressed="false" title="Ouvir head-to-head">&#128266;</button></div>
+    <p><em>(pt) confronto direto</em><br><small>Usado para falar de dois adversários que se enfrentam diretamente.<br>Ex.: <strong>It’s a head-to-head game.</strong><br>É um jogo de confronto direto.</small></p></div>
+<div class="vocab green"><div class="vocab-head"><h3>weigh</h3>
+    <button type="button" class="vocab-say" data-czk-say="weigh" aria-label="Ouvir a pronúncia de weigh" aria-pressed="false" title="Ouvir weigh">&#128266;</button></div>
+    <p><em>(pt) pesar</em><br><small>Verbo para perguntar ou informar o peso; weight é o substantivo “peso”.<br>Ex.: <strong>How much does each bill weigh?</strong><br>Quanto pesa cada cédula?</small></p></div>
+<div class="vocab yellow"><div class="vocab-head"><h3>aboard</h3>
+    <button type="button" class="vocab-say" data-czk-say="aboard" aria-label="Ouvir a pronúncia de aboard" aria-pressed="false" title="Ouvir aboard">&#128266;</button></div>
+    <p><em>(pt) a bordo</em><br><small>Indica que alguém está dentro de um veículo, navio ou estação espacial.<br>Ex.: <strong>How many are aboard?</strong><br>Quantos estão a bordo?</small></p></div></div></section>
+
+<section><h2>📚 Vocabulário completo da aula</h2><div class="outline-card">
+<h3>Futebol e competição</h3><ul>
+<li><strong>head-to-head</strong> — confronto direto; frente a frente.</li>
+<li><strong>rival / match / relegation</strong> — rival / partida / rebaixamento.</li>
+<li><strong>score / the best so far</strong> — pontuação ou placar / o melhor até agora.</li>
+</ul>
+<h3>Perguntas, palpites e comparações</h3><ul>
+<li><strong>guess / answer / right answer</strong> — palpite ou adivinhar / resposta / resposta certa.</li>
+<li><strong>lock it in</strong> — confirmar a resposta; “fechar” o palpite.</li>
+<li><strong>close / far / too low</strong> — perto / longe / baixo demais.</li>
+<li><strong>spot on</strong> — exatamente certo; na mosca.</li>
+<li><strong>on average / each day / worldwide</strong> — em média / a cada dia / no mundo todo.</li>
+<li><strong>weird / strange</strong> — esquisito / estranho; podem se sobrepor, e <em>weird</em> costuma sugerir algo especialmente incomum.</li>
+<li><strong>how many / how much / how long</strong> — quantos ou quantas / quanto / quanto tempo, no contexto da aula.</li>
+</ul>
+<h3>Pesos, números e operações</h3><ul>
+<li><strong>weigh / weight</strong> — pesar (verbo) / peso (substantivo).</li>
+<li><strong>heavy / light / light enough</strong> — pesado / leve / leve o suficiente.</li>
+<li><strong>gram / kilogram (kilo) / tonne / ounce (oz)</strong> — grama / quilograma (quilo) / tonelada métrica / onça, unidade de peso.</li>
+<li><strong>times / divided by / double / one-third</strong> — vezes / dividido por / o dobro / um terço.</li>
+<li><strong>point</strong> — ponto decimal: <em>0.001 = zero point zero zero one</em>.</li>
+<li><strong>thousand / million</strong> — mil / milhão. Depois de um número, sem -s: <em>ten thousand; two million</em>.</li>
+<li><strong>bill / 100-euro bill</strong> — cédula / cédula de 100 euros. <em>Bill</em> foi usado na aula; <em>banknote</em> também significa cédula.</li>
+</ul>
+<h3>Comida e comércio</h3><ul>
+<li><strong>serve / sandwich / chocolate bar</strong> — servir / sanduíche / barra de chocolate.</li>
+<li><strong>napkin</strong> — guardanapo.</li>
+<li><strong>chain / franchise / shop</strong> — rede de lojas / franquia / loja.</li>
+<li><strong>lunch rush / dinner rush</strong> — horário de pico do almoço / do jantar.</li>
+<li><strong>worth of stuff</strong> — em mercadorias, no valor indicado: <em>one million worth of stuff</em>.</li>
+</ul>
+<h3>Espaço, direção e esportes</h3><ul>
+<li><strong>astronaut / International Space Station / aboard</strong> — astronauta / Estação Espacial Internacional / a bordo.</li>
+<li><strong>non-stop / since / stay</strong> — sem parar / desde / estadia ou permanecer.</li>
+<li><strong>person-days / adding up every stay</strong> — pessoas-dia / somando todas as estadias.</li>
+<li><strong>driving instructor / fully qualified / registered</strong> — instrutor de direção / plenamente qualificado / registrado.</li>
+<li><strong>driver’s license</strong> — carteira de motorista. É diferente de <em>driving instructor</em>.</li>
+<li><strong>Great Britain / England / Scotland / Wales</strong> — Grã-Bretanha / Inglaterra / Escócia / País de Gales. Esses três países formam a Grã-Bretanha; o Reino Unido inclui também a Irlanda do Norte.</li>
+<li><strong>athlete / compete / Olympic Games / Winter Games</strong> — atleta / competir / Jogos Olímpicos / Jogos de Inverno.</li>
+</ul>
+<h3>Combinações de verbos e registro</h3><ul>
+<li><strong>want to / wanna</strong> — querer + verbo / redução informal de <em>want to</em>.</li>
+<li><strong>enjoy + -ing / like + to ou -ing</strong> — gostar de uma atividade; observe a forma do segundo verbo.</li>
+<li><strong>had to be</strong> — tinha que ser; precisava ser. Aqui, <em>had to</em> expressa necessidade no passado.</li>
+<li><strong>register / auxiliary / gerund / infinitive</strong> — registro de linguagem / auxiliar / gerúndio / infinitivo.</li>
+<li><strong>Wednesday</strong> — quarta-feira; pronúncia /ˈwenz.deɪ/, aproximadamente “uénz-dei”.</li>
+</ul></div></section>
+
+<section><h2>🚨 Correções importantes</h2><div class="outline-card">
+<p><strong>1. Um período que chega até o presente</strong></p>
+<p style="color:#c53030;">❌ “It’s something that we don’t see for a long time.”</p>
+<p style="color:#276749;">✅ <strong>“It’s something that we haven’t seen for a long time.”</strong></p>
+<p>Para dizer que vocês não veem algo há muito tempo, conectando o período ao presente, use <em>haven’t seen</em>. <em>For a long time</em> indica duração; com uma data de início, use <em>since</em>.</p>
+
+<p><strong>2. How many pede um substantivo contável no plural</strong></p>
+<p style="color:#c53030;">❌ “How many sandwich…?”</p>
+<p style="color:#276749;">✅ <strong>“How many sandwiches…?”</strong></p>
+<p>Você leu a pergunta completa corretamente e depois oscilou no plural ao reconstruí-la. Fixe o bloco <em>how many sandwiches</em>, assim como <em>how many astronauts</em> e <em>how many athletes</em>.</p>
+
+<p><strong>3. Does continua necessário depois de How much</strong></p>
+<p style="color:#c53030;">❌ “How much one million euros weighs…?”</p>
+<p style="color:#276749;">✅ <strong>“How much does one million euros weigh?”</strong></p>
+<p>Na pergunta direta discutida na aula, a expressão <em>how much</em> não substitui o auxiliar. A quantia é tratada como um total: <em>does + one million euros + weigh</em>. O verbo é <em>weigh</em>; o substantivo “peso” é <em>weight</em>.</p>
+
+<p><strong>4. Very com adjetivos; too much com quantidade</strong></p>
+<p style="color:#c53030;">❌ “It’s not too much big.”</p>
+<p style="color:#276749;">✅ <strong>“It’s not very big.”</strong> → Não é muito grande.</p>
+<p>Se a ideia for “não é grande demais”, use <em>It’s not too big</em>. <em>Too much</em> combina com quantidade de algo incontável, como <em>too much money</em>.</p>
+
+<p><strong>5. Think so para retomar uma ideia</strong></p>
+<p style="color:#c53030;">❌ “Do you think it?”</p>
+<p style="color:#276749;">✅ <strong>“Do you think so?”</strong> → Você acha?</p>
+<p>Quando você pergunta se a outra pessoa concorda com a ideia que acabou de ser mencionada, use <em>so</em>. Para perguntar uma opinião sobre algo específico: <em>What do you think about it?</em></p>
+
+<p><strong>6. A pergunta de confirmação acompanha There is</strong></p>
+<p style="color:#c53030;">❌ “There is one more, can’t it?”</p>
+<p style="color:#276749;">✅ <strong>“There is one more, isn’t there?”</strong></p>
+<p>Retome <em>is</em> e <em>there</em> na confirmação. A afirmação positiva fica com uma pergunta curta negativa.</p>
+
+<div class="panel" style="margin-top:14px;"><strong>💡 Dúvidas que você esclareceu</strong><ul>
+<li><strong>Be não leva did no passado simples:</strong> <em>Was he late?</em> Já com <em>arrive</em>, dizemos <em>Did he arrive late?</em></li>
+<li><strong>Want e enjoy:</strong> <em>I want to swim</em> / <em>I enjoy swimming</em>. Com <em>like</em>, as duas formas praticadas funcionam: <em>I like to swim / I like swimming</em>.</li>
+<li><strong>Wanna:</strong> corresponde a <em>want to</em> antes de um verbo: <em>I wanna go</em>. Para pedir uma pizza, escreva <em>I want a pizza</em>; nesse caso, não há <em>to + verbo</em> para reduzir. Em escrita profissional, prefira <em>want to</em>.</li>
+<li><strong>Since e o tempo verbal:</strong> para uma situação iniciada no passado e que continua agora, use <em>have/has + particípio</em>: <em>have lived… since…</em>. Um intervalo encerrado pode usar passado simples e <em>from… to…</em>. A escolha depende do contexto.</li>
+<li><strong>Were registered:</strong> numa estrutura passiva, <em>were</em> já faz parte de <em>were registered</em>. <em>Driving</em> em <em>driving instructors</em> descreve o tipo de instrutor; não é o verbo principal da pergunta.</li>
+<li><strong>Wednesday:</strong> duas sílabas, /ˈwenz.deɪ/. O primeiro <em>d</em> da escrita não é pronunciado.</li>
+</ul></div>
+</div></section>
+
+<section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row">
+<a class="media-btn" href="https://youtu.be/OBa9KM9F0UE" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a>
+</div></section>
+
+<section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2>
+<table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead><tbody>
+<tr class="row-teacher"><td class="talk-label">César (Professor)</td><td class="talk-percent">67%</td><td class="talk-time">~33 minutos</td></tr>
+<tr class="row-student"><td class="talk-label">Vlad</td><td class="talk-percent">33%</td><td class="talk-time">~17 minutos</td></tr>
+</tbody></table>
+<p style="font-size:.85rem;color:var(--muted);margin-bottom:0;">Estimativa a partir da duração dos trechos de fala identificados na transcrição, excluindo pausas sem fala. A aula teve cerca de 62 minutos. As explicações de gramática ampliaram o tempo do professor; você participou com leituras, dúvidas e justificativas dos palpites.</p>
+</section>
+
+<section><h2>📝 Homework</h2><div class="homework">
+<p style="margin-top:0;"><strong>Combinado na aula:</strong> não esquecer as atividades.</p>
+<p><strong>Sugestão de revisão para consolidar o conteúdo:</strong></p><ol>
+<li>Escreva quatro perguntas: uma com <em>did</em>, uma com <em>does</em>, uma com <em>was/were</em> e uma com <em>have/has + particípio</em>. Sublinhe o auxiliar e explique por que o escolheu.</li>
+<li>Complete com ideias suas: <em>I want to…</em>, <em>I enjoy…</em> e <em>I like…</em>. Use a forma correta do segundo verbo e leia as três frases em voz alta.</li>
+<li>Explique em inglês um palpite do jogo. Tente usar <em>I think… because…</em>, <em>on average</em> e <em>times</em> ou <em>divided by</em>.</li>
+<li>Ouça as três palavras-chave e repita seus exemplos. Pratique também: <em>See you on Wednesday.</em></li>
+<li>Leia este pós-aula de <strong>2 a 3 vezes durante a semana</strong>, dando atenção especial às perguntas e às correções.</li>
+</ol></div></section>
+</main>
+<footer><p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer>
+</article></div>
+
+<script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>
