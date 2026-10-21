@@ -53,12 +53,32 @@ service cloud.firestore {
 
     function studentProfileUpdateIsSafe() {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
-      return changed.hasOnly([
-          'photo', 'avisosLidos', 'fcmToken', 'fcmTokens',
-          'progressMilestones', 'reviewNextPromptAt', 'senha'
-        ])
-        // A senha legada pode ser apagada, nunca criada nem alterada.
-        && (!changed.hasAny(['senha']) || !request.resource.data.keys().hasAny(['senha']));
+      let profileFieldsAreSafe = changed.hasOnly([
+        'photo', 'avisosLidos', 'fcmToken', 'fcmTokens',
+        'progressMilestones', 'reviewNextPromptAt', 'senha'
+      ])
+      // A senha legada pode ser apagada, nunca criada nem alterada.
+      && (!changed.hasAny(['senha']) || !request.resource.data.keys().hasAny(['senha']));
+
+      // O aluno só pode devolver o recibo da cobrança. Valor, mês,
+      // vencimento, texto e demais dados continuam imutáveis para ele.
+      let cobrancaFieldsAreSafe = changed.hasOnly(['avisoCobranca'])
+        && resource.data.avisoCobranca is map
+        && request.resource.data.avisoCobranca is map
+        && request.resource.data.avisoCobranca.diff(resource.data.avisoCobranca)
+          .affectedKeys().hasOnly(['ativo', 'exibidoEm', 'confirmadoEm'])
+        && (!request.resource.data.avisoCobranca.diff(resource.data.avisoCobranca)
+          .affectedKeys().hasAny(['ativo'])
+          || (resource.data.avisoCobranca.ativo == true
+            && request.resource.data.avisoCobranca.ativo == false))
+        && (!request.resource.data.avisoCobranca.diff(resource.data.avisoCobranca)
+          .affectedKeys().hasAny(['exibidoEm'])
+          || request.resource.data.avisoCobranca.exibidoEm == request.time)
+        && (!request.resource.data.avisoCobranca.diff(resource.data.avisoCobranca)
+          .affectedKeys().hasAny(['confirmadoEm'])
+          || request.resource.data.avisoCobranca.confirmadoEm == request.time);
+
+      return profileFieldsAreSafe || cobrancaFieldsAreSafe;
     }
 
     function activityUpdateIsSafe() {
