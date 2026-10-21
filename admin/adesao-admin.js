@@ -278,8 +278,8 @@ export function initAdesaoAdmin(ctx) {
     render();
     try {
       const c = S.cfg;
-      await updateDoc(schoolRef(), { 'adesao.cfg': { minPos: c.minPos, secEx: c.secEx, metaDias: c.metaDias, minDia: c.minDia, w: c.w } });
-      S.adesao.cfg = { minPos: c.minPos, secEx: c.secEx, metaDias: c.metaDias, minDia: c.minDia, w: c.w };
+      await updateDoc(schoolRef(), { 'adesao.cfg': { minPos: c.minPos, secEx: c.secEx, metaDias: c.metaDias, minDia: c.minDia, limiteSeg: c.limiteSeg, w: c.w } });
+      S.adesao.cfg = { minPos: c.minPos, secEx: c.secEx, metaDias: c.metaDias, minDia: c.minDia, limiteSeg: c.limiteSeg, w: c.w };
       S.dirty = false;
       writeStats();
     } catch (e) { alert('Não consegui salvar as metas: ' + (e.message || e)); }
@@ -378,6 +378,7 @@ export function initAdesaoAdmin(ctx) {
       + '<li><b>Pós-aula:</b> soma o tempo de todas as aberturas. Meta: ' + cfg.minPos + ' min por pós-aula. Abrir e fechar não conta.</li>'
       + '<li><b>Atividades:</b> % de exercícios feitos × fator de tempo (tempo real ÷ ' + cfg.secEx + ' s por exercício feito, no máximo 1). Responder rápido demais vale menos.</li>'
       + '<li><b>Constância:</b> dias com pelo menos ' + cfg.minDia + ' min ativos ÷ meta de ' + cfg.metaDias + ' dias.</li>'
+      + '<li><b>Como o tempo é medido:</b> o intervalo entre dois movimentos do aluno (toque, clique, rolagem, digitar ou apagar) só conta se tiver até ' + cfg.limiteSeg + ' s. Se ele voltar a mexer dentro desse tempo, o intervalo inteiro entra; se não voltar, o intervalo todo é descartado, então app esquecido aberto não conta. Gravar a fala e ouvir áudio contam o tempo todo. Aba oculta nunca conta.</li>'
       + '<li>O número do aluno é a média das últimas 3 semanas fechadas, com mais peso para a mais recente (1·2·3). Faixas: Alta ≥ 85 · Média 65–84 · Baixa &lt; 65.</li>'
       + '<li>Semanas anteriores à coleta (' + (S.coleta ? 'desde ' + brDate(S.coleta) : 'ainda não começou') + ') não têm tempo nem dias medidos: nelas só entram aulas, atividades e desafio.</li>'
       + '<li>O aluno vê estes mesmos critérios na tela dele (aba “Aluno” → “O que o aluno vê”).</li></ul></details>';
@@ -546,6 +547,7 @@ export function initAdesaoAdmin(ctx) {
       + ctl('secEx', 'Tempo esperado por exercício', 5, 60, ' s', 'Abaixo disso, a atividade conta menos.')
       + ctl('metaDias', 'Meta de dias ativos por semana', 1, 7, ' dias', '')
       + ctl('minDia', 'Minutos para o dia contar como ativo', 1, 15, ' min', 'Abrir o app 10 segundos não conta.')
+      + ctl('limiteSeg', 'Maior pausa que ainda conta como estudo', 20, 180, ' s', 'Entre dois movimentos do aluno (toque, rolagem, digitar). Se ele voltar a mexer dentro deste tempo, a pausa inteira conta; se passar, é descartada. Vale para a coleta daqui para frente.')
       + '<h5>Pesos dos pilares</h5>'
       + KEYS.map(k => '<div class="czad-ctl"><div class="t"><label for="czad-w-' + k + '">' + PIL[k].ic + ' ' + PIL[k].name + '</label><span id="czad-vw-' + k + '">' + cfg.w[k] + '</span></div><small>' + PIL[k].desc + '</small><input type="range" id="czad-w-' + k + '" data-w="' + k + '" min="0" max="50" value="' + cfg.w[k] + '"></div>').join('')
       + '<p class="czad-small czad-muted">Só importa a proporção entre os pesos. A tela recalcula na hora. <b>Salvar</b> grava para a escola toda, e o aluno passa a ver o cálculo com estas metas.</p></div>'
@@ -617,7 +619,7 @@ export function initAdesaoAdmin(ctx) {
       if (t.dataset.cfg) {
         S.cfg = A.cfgOf({ ...S.cfg, [t.dataset.cfg]: +t.value, coletaDesde: S.coleta || null });
         S.dirty = true; recompute();
-        const u = { minPos: ' min', secEx: ' s', metaDias: ' dias', minDia: ' min' }[t.dataset.cfg];
+        const u = { minPos: ' min', secEx: ' s', metaDias: ' dias', minDia: ' min', limiteSeg: ' s' }[t.dataset.cfg];
         const lab = document.getElementById('czad-v-' + t.dataset.cfg); if (lab) lab.textContent = S.cfg[t.dataset.cfg] + u;
         renderBehindDrawer(); return;
       }

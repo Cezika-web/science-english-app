@@ -220,88 +220,136 @@ async function getFB() {
 }
 
 // ── ADESÃO: coleta de dias ativos e tempo de uso ────────────────────────────
-// Conta segundos só com o app visível e com sinal de atividade recente (toque,
-// rolagem, tecla). O pós-aula roda num iframe isolado, então ele avisa a atividade
-// por postMessage (ponte do leitor). Grava no máximo 1x por minuto em
+// Regra do tempo (precisa, feita para não contar app aberto sem ninguém):
+//   o intervalo entre dois movimentos do aluno (toque, clique, rolagem, tecla,
+//   digitar/apagar) só conta se tiver no máximo `limiteSeg` (60 s por padrão).
+//   Entre um movimento e o seguinte o tempo fica "pendente": se o aluno voltar a
+//   mexer dentro do limite, o intervalo TODO entra; se passar do limite, o
+//   intervalo inteiro é descartado. Nada conta sem um movimento que o confirme,
+//   então o tempo depois do último toque (app esquecido aberto) nunca entra.
+// Exceções, que são estudo sem encostar na tela e contam o tempo todo:
+//   gravando a própria fala, ouvindo um áudio/vídeo e lendo um pós-aula aberto
+//   por URL (iframe que não avisa movimento; vale por até 10 min por abertura).
+// Aba oculta nunca conta. O pós-aula normal roda num iframe isolado e avisa o
+// movimento por postMessage (ponte do leitor). Grava no máximo 1x por minuto em
 // students/{uid}/usage/AAAA-MM-DD, com contadores que só crescem. O modo espelho
 // (professor vendo a tela do aluno) nunca chama start(), então nunca conta.
 // Falha de gravação (regra ainda não publicada, sem rede) nunca aparece para o aluno.
 const CzkUsage = (() => {
-  const TICK = 5000, FLUSH = 60000, NEW_VISIT = 30 * 60000, BLIND_CAP = 10 * 60000, MAX_FAILS = 5;
-  // Tempo parado que ainda conta, por área: ler e pensar numa questão demoram mais
-  // do que olhar a tela inicial.
-  const IDLE = { posaula: 120000, atividade: 120000, desafio: 45000, outros: 45000 };
-  const IDLE_BLIND = 300000;
+  const TICK = 1000, MIN_STEP = 200, FLUSH = 60000, NEW_VISIT = 30 * 60000;
+  const BLIND_CAP = 10 * 60000, HOLD_CAP = 15 * 60000, MAX_FAILS = 5;
   const EVENTS = ['pointerdown', 'keydown', 'scroll', 'touchstart', 'touchmove', 'wheel', 'input', 'click'];
+  const MEDIA_ON = ['play', 'playing'], MEDIA_OFF = ['pause', 'ended', 'emptied'];
+  let limitMs = 60000;
   let uid = null, running = false, tickTimer = null, flushTimer = null, fails = 0, hiddenAt = 0;
-  let bucket = { area: 'outros', item: '', blind: false }, bucketSince = 0, lastActivity = 0;
-  let pending = {};
+  let bucket = { area: 'outros', item: '', blind: false }, bucketSince = 0;
+  let lastMove = 0;                       // último movimento confirmado (0 = nada a creditar)
+  const holds = new Map();                // gravando etc.: chave -> início
+  const playing = new Set();              // <audio>/<video> tocando
+  let pending = {};                       // AAAA-MM-DD -> { ms:{...}, items:{}, itemOpens:{}, opens }
   const itemKey = (kind, id) => kind + '_' + String(id).replace(/[^A-Za-z0-9_-]/g, '_');
   const dayOf = (d = new Date()) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-  const slot = day => pending[day] || (pending[day] = { secs: { total: 0, posaula: 0, atividade: 0, desafio: 0, outros: 0 }, items: {}, itemOpens: {}, opens: 0 });
-  const hasData = p => p.opens > 0 || p.secs.total > 0 || Object.keys(p.itemOpens).length > 0;
+  const slot = day => pending[day] || (pending[day] = { ms: { total: 0, posaula: 0, atividade: 0, desafio: 0, outros: 0 }, items: {}, itemOpens: {}, opens: 0 });
+  const visible = () => document.visibilityState === 'visible';
 
-  function ping() { lastActivity = Date.now(); }
+  function credit(ms, b) {
+    if (!(ms > 0)) return;
+    const s = slot(dayOf());
+    s.ms.total += ms;
+    s.ms[b.area] = (s.ms[b.area] || 0) + ms;
+    if (b.item) s.items[b.item] = (s.items[b.item] || 0) + ms;
+  }
+  // Movimento do aluno: fecha o intervalo desde o movimento anterior. Entra inteiro
+  // se couber no limite; senão é descartado. Movimentos colados (< MIN_STEP) são
+  // ignorados sem perder tempo: o intervalo segue contando do movimento anterior.
+  function ping() {
+    if (!running) return;
+    const now = Date.now();
+    if (lastMove && now - lastMove < MIN_STEP) return;
+    const gap = lastMove ? now - lastMove : 0;
+    if (gap > 0 && gap <= limitMs && visible()) credit(gap, bucket);
+    lastMove = now;
+  }
   function onVisibility() {
-    if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); flush(); return; }
+    if (!visible()) { hiddenAt = Date.now(); lastMove = 0; flush(); return; }   // saiu do app: o que estava pendente se perde
     if (hiddenAt && Date.now() - hiddenAt > NEW_VISIT) slot(dayOf()).opens += 1;
     hiddenAt = 0;
   }
+  const onMediaOn = e => { const el = e.target; if (el && el.tagName && /^(AUDIO|VIDEO)$/.test(el.tagName)) { playing.add(el); ping(); } };
+  const onMediaOff = e => { if (playing.delete(e.target)) ping(); };
+  const onDrag = e => { if (e.buttons) ping(); };     // arrastar (exercício de ligar) é movimento
   function tick() {
-    if (!running || document.visibilityState !== 'visible') return;
+    if (!running || !visible()) return;
     const now = Date.now();
-    const idle = bucket.blind ? IDLE_BLIND : (IDLE[bucket.area] || IDLE.outros);
-    if (now - lastActivity > idle) return;
-    if (bucket.blind && now - bucketSince > BLIND_CAP) return;   // iframe que não avisa: não deixa contar para sempre
-    const s = slot(dayOf());
-    const secs = TICK / 1000;
-    s.secs.total += secs;
-    s.secs[bucket.area] = (s.secs[bucket.area] || 0) + secs;
-    if (bucket.item) s.items[bucket.item] = (s.items[bucket.item] || 0) + secs;
+    playing.forEach(el => { if (!el.isConnected || el.paused || el.ended) playing.delete(el); });
+    holds.forEach((since, k) => { if (now - since > HOLD_CAP) holds.delete(k); });
+    // Sem movimento possível de ver: gravando, ouvindo áudio, ou lendo num iframe que não avisa.
+    if (holds.size || playing.size || (bucket.blind && now - bucketSince <= BLIND_CAP)) ping();
   }
   function setBucket(next) {
     const item = next.item || '';
+    ping();                                           // o intervalo até aqui pertence à tela anterior
     // Abrir um pós-aula/atividade (item novo) conta como "uma abertura" dele.
     if (running && item && item !== bucket.item) { const s = slot(dayOf()); s.itemOpens[item] = (s.itemOpens[item] || 0) + 1; }
     bucket = { area: next.area || 'outros', item, blind: !!next.blind };
     bucketSince = Date.now();
-    ping();
   }
+  function hold(key) { holds.set(key, Date.now()); ping(); }
+  function release(key) { if (holds.delete(key)) ping(); }
+  function configure(opts) {
+    const s = Number(opts && opts.limitSec);
+    if (isFinite(s) && s > 0) limitMs = Math.max(20, Math.min(180, s)) * 1000;
+  }
+
   async function flush() {
     if (!uid || fails >= MAX_FAILS) return;
-    const days = Object.keys(pending).filter(d => hasData(pending[d]));
-    if (!days.length) return;
-    let fb;
-    try { fb = await getFB(); } catch (e) { return; }
-    for (const day of days) {
+    const jobs = [];
+    Object.keys(pending).forEach(day => {
       const p = pending[day];
-      delete pending[day];
+      const take = { secs: {}, items: {}, itemOpens: p.itemOpens, opens: p.opens };
+      let any = p.opens > 0 || Object.keys(p.itemOpens).length > 0;
+      // Só grava segundos inteiros; a sobra em milissegundos fica para a próxima gravação.
+      Object.keys(p.ms).forEach(k => { const s = Math.floor(p.ms[k] / 1000); if (s > 0) { take.secs[k] = s; p.ms[k] -= s * 1000; any = true; } });
+      Object.keys(p.items).forEach(k => { const s = Math.floor(p.items[k] / 1000); if (s > 0) { take.items[k] = s; p.items[k] -= s * 1000; any = true; } });
+      p.itemOpens = {}; p.opens = 0;
+      if (any) jobs.push({ day, take });
+    });
+    if (!jobs.length) return;
+    let fb;
+    try { fb = await getFB(); } catch (e) { jobs.forEach(j => giveBack(j)); return; }
+    for (const { day, take } of jobs) {
       const data = { date: day, secs: {}, items: {}, itemOpens: {}, updatedAt: fb.serverTimestamp() };
-      Object.keys(p.secs).forEach(k => { data.secs[k] = fb.increment(p.secs[k]); });
-      Object.keys(p.items).forEach(k => { data.items[k] = fb.increment(p.items[k]); });
-      Object.keys(p.itemOpens).forEach(k => { data.itemOpens[k] = fb.increment(p.itemOpens[k]); });
-      if (p.opens) data.opens = fb.increment(p.opens);
+      ['total', 'posaula', 'atividade', 'desafio', 'outros'].forEach(k => { data.secs[k] = fb.increment(take.secs[k] || 0); });
+      Object.keys(take.items).forEach(k => { data.items[k] = fb.increment(take.items[k]); });
+      Object.keys(take.itemOpens).forEach(k => { data.itemOpens[k] = fb.increment(take.itemOpens[k]); });
+      if (take.opens) data.opens = fb.increment(take.opens);
       try {
         await fb.setDoc(fb.doc(fb.db, 'students', uid, 'usage', day), data, { merge: true });
         fails = 0;
       } catch (e) {
         fails += 1;                       // devolve o que não gravou e tenta de novo no próximo minuto
-        const back = slot(day);
-        Object.keys(p.secs).forEach(k => { back.secs[k] = (back.secs[k] || 0) + p.secs[k]; });
-        Object.keys(p.items).forEach(k => { back.items[k] = (back.items[k] || 0) + p.items[k]; });
-        Object.keys(p.itemOpens).forEach(k => { back.itemOpens[k] = (back.itemOpens[k] || 0) + p.itemOpens[k]; });
-        back.opens += p.opens;
+        giveBack({ day, take });
         if (fails >= MAX_FAILS) console.warn('Coleta de uso pausada:', e && e.message);
       }
     }
+  }
+  function giveBack({ day, take }) {
+    const back = slot(day);
+    Object.keys(take.secs).forEach(k => { back.ms[k] = (back.ms[k] || 0) + take.secs[k] * 1000; });
+    Object.keys(take.items).forEach(k => { back.items[k] = (back.items[k] || 0) + take.items[k] * 1000; });
+    Object.keys(take.itemOpens).forEach(k => { back.itemOpens[k] = (back.itemOpens[k] || 0) + take.itemOpens[k]; });
+    back.opens += take.opens;
   }
   function start(userUid) {
     if (running && uid === userUid) return;
     stop();
     uid = userUid; running = true; fails = 0; pending = {};
-    lastActivity = Date.now(); bucketSince = lastActivity;
+    lastMove = Date.now(); bucketSince = lastMove;
     slot(dayOf()).opens += 1;
     EVENTS.forEach(n => window.addEventListener(n, ping, { capture: true, passive: true }));
+    window.addEventListener('pointermove', onDrag, { capture: true, passive: true });
+    MEDIA_ON.forEach(n => document.addEventListener(n, onMediaOn, true));
+    MEDIA_OFF.forEach(n => document.addEventListener(n, onMediaOff, true));
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('pagehide', flush);
     tickTimer = setInterval(tick, TICK);
@@ -313,10 +361,14 @@ const CzkUsage = (() => {
     running = false;
     clearInterval(tickTimer); clearInterval(flushTimer);
     EVENTS.forEach(n => window.removeEventListener(n, ping, { capture: true }));
+    window.removeEventListener('pointermove', onDrag, { capture: true });
+    MEDIA_ON.forEach(n => document.removeEventListener(n, onMediaOn, true));
+    MEDIA_OFF.forEach(n => document.removeEventListener(n, onMediaOff, true));
     document.removeEventListener('visibilitychange', onVisibility);
     window.removeEventListener('pagehide', flush);
+    holds.clear(); playing.clear();
   }
-  return { start, stop, ping, setBucket, flush, itemKey };
+  return { start, stop, ping, setBucket, hold, release, configure, flush, itemKey };
 })();
 
 function showToast(msg, ms = 3500) {
@@ -3347,6 +3399,7 @@ function AudioRecorder({ existingUrl, readOnly, onBlob, maxSeconds = 30 }) {
   useEffect(() => () => {
     try { clearInterval(timerRef.current); } catch(e) {}
     try { streamRef.current && streamRef.current.getTracks().forEach(t => t.stop()); } catch(e) {}
+    CzkUsage.release('gravando');
     if (urlRef.current && urlRef.current.startsWith('blob:')) { try { URL.revokeObjectURL(urlRef.current); } catch(e) {} }
   }, []);
 
@@ -3374,6 +3427,7 @@ function AudioRecorder({ existingUrl, readOnly, onBlob, maxSeconds = 30 }) {
       chunksRef.current = [];
       mr.ondataavailable = e => { if (e.data && e.data.size) chunksRef.current.push(e.data); };
       mr.onstop = () => {
+        CzkUsage.release('gravando');
         try { clearInterval(timerRef.current); } catch(e) {}
         const type = mr.mimeType || 'audio/webm';
         const blob = new Blob(chunksRef.current, { type });
@@ -3390,6 +3444,7 @@ function AudioRecorder({ existingUrl, readOnly, onBlob, maxSeconds = 30 }) {
         try { streamRef.current.getTracks().forEach(t => t.stop()); } catch(e) {}
       };
       mr.start(); mrRef.current = mr;
+      CzkUsage.hold('gravando');   // falar sem encostar na tela é estudo: conta o tempo todo (adesão)
       setState('recording'); setSecs(0);
       timerRef.current = setInterval(() => setSecs(s => {
         const next = s + 1;
@@ -3414,6 +3469,7 @@ function AudioRecorder({ existingUrl, readOnly, onBlob, maxSeconds = 30 }) {
   };
 
   const stop = () => {
+    CzkUsage.release('gravando');
     try { clearInterval(timerRef.current); } catch(e) {}
     try { if (mrRef.current && mrRef.current.state !== 'inactive') mrRef.current.stop(); } catch(e) {}
   };
@@ -5492,6 +5548,8 @@ function App() {
     const { senha: _senhaLegada, ...dadosSeguros } = dadosAluno;
     setStudent({ ...dadosSeguros, uid });
     const dadosEscola = await aplicarTemaDaEscola(dadosSeguros.schoolId, fb);
+    // Limite de "sem mexer" que o professor definiu para a adesão (padrão: 60 s).
+    if (dadosEscola?.adesao?.cfg?.limiteSeg) CzkUsage.configure({ limitSec: dadosEscola.adesao.cfg.limiteSeg });
     if (dadosEscola) {
       setStudent(current => ({
         ...current,

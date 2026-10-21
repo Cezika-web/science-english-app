@@ -28,7 +28,7 @@
   var WD1 = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
   var WDF = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado', 'domingo'];
   var DEFAULTS = {
-    minPos: 5, secEx: 15, metaDias: 5, minDia: 3,
+    minPos: 5, secEx: 15, metaDias: 5, minDia: 3, limiteSeg: 60,
     w: { C: 25, At: 25, Pos: 20, Aula: 20, Des: 10 }
   };
 
@@ -100,6 +100,9 @@
       secEx: n(c.secEx, DEFAULTS.secEx, 3, 180),
       metaDias: Math.round(n(c.metaDias, DEFAULTS.metaDias, 1, 7)),
       minDia: n(c.minDia, DEFAULTS.minDia, 1, 60),
+      // Maior intervalo entre dois movimentos que ainda conta como estudo. Vale para a
+      // coleta daqui para frente (o app do aluno lê este valor); não refaz o que já foi gravado.
+      limiteSeg: Math.round(n(c.limiteSeg, DEFAULTS.limiteSeg, 20, 180)),
       w: {
         C: n(w.C, DEFAULTS.w.C, 0, 100), At: n(w.At, DEFAULTS.w.At, 0, 100), Pos: n(w.Pos, DEFAULTS.w.Pos, 0, 100),
         Aula: n(w.Aula, DEFAULTS.w.Aula, 0, 100), Des: n(w.Des, DEFAULTS.w.Des, 0, 100)
@@ -462,7 +465,7 @@
     }
     var stAt = c.entrega == null ? 'Sem atividades enviadas' : c.entrega < .7 ? 'Você fez ' + pct(c.entrega) + '% dos exercícios enviados'
       : (c.fator != null && c.fator < .8) ? 'Feitas bem rápido: ' + fm(c.timeAll) + ' para ≥ ' + fm(c.expAll) + ' esperados' : 'Você fez ' + pct(c.entrega) + '%, com tempo adequado';
-    return row('C', 'Você estuda em média ' + (c.avgDays != null ? num1(c.avgDays) : '—') + ' dias por semana', 'pelo menos ' + cfg.minDia + ' min em ' + cfg.metaDias + ' dias da semana')
+    return row('C', 'Você estuda em média ' + (c.avgDays != null ? num1(c.avgDays) : '—') + ' dias por semana', 'pelo menos ' + cfg.minDia + ' min em ' + cfg.metaDias + ' dias da semana. O tempo só conta enquanto você está usando o app')
       + row('At', stAt, 'fazer os exercícios enviados, sem pressa (cerca de ' + cfg.secEx + ' s cada)')
       + row('Pos', 'Sua média: ' + (c.avgPos != null ? fm(c.avgPos) : '—') + ' por pós-aula', 'ler cada pós-aula por ' + cfg.minPos + ' min ou mais (pode ser em vários momentos)')
       + row('Aula', 'Você foi a ' + c.aulasPres + ' de ' + c.aulasPrev + ' aulas', 'vir às aulas')
