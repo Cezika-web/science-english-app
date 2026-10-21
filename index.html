@@ -169,6 +169,7 @@
 <div id="root"></div>
 <div class="toast-el" id="global-toast"></div>
 
+<script src="adesao.js"></script>
 <script type="text/babel" data-presets="react" src="challenge.jsx"></script>
 <script type="text/babel" data-presets="react">
 const FB_CONFIG = {
@@ -187,7 +188,7 @@ async function getFB() {
   const [
     { initializeApp },
     { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential },
-    { getFirestore, doc, getDoc, collection, query, where, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion, deleteField },
+    { getFirestore, doc, getDoc, collection, query, where, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion, deleteField, increment },
     { getMessaging, getToken, onMessage, isSupported },
     { getStorage, ref: storageRef, uploadBytes, getDownloadURL },
     { getFunctions, httpsCallable },
@@ -212,11 +213,111 @@ async function getFB() {
   _fb = { app, auth, db, storage, functions, messaging,
     signInWithEmailAndPassword, signOut, onAuthStateChanged,
     updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential,
-    doc, getDoc, collection, query, where, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion, deleteField,
+    doc, getDoc, collection, query, where, orderBy, getDocs, setDoc, updateDoc, serverTimestamp, arrayUnion, deleteField, increment,
     storageRef, uploadBytes, getDownloadURL,
     getToken, onMessage, httpsCallable };
   return _fb;
 }
+
+// ── ADESÃO: coleta de dias ativos e tempo de uso ────────────────────────────
+// Conta segundos só com o app visível e com sinal de atividade recente (toque,
+// rolagem, tecla). O pós-aula roda num iframe isolado, então ele avisa a atividade
+// por postMessage (ponte do leitor). Grava no máximo 1x por minuto em
+// students/{uid}/usage/AAAA-MM-DD, com contadores que só crescem. O modo espelho
+// (professor vendo a tela do aluno) nunca chama start(), então nunca conta.
+// Falha de gravação (regra ainda não publicada, sem rede) nunca aparece para o aluno.
+const CzkUsage = (() => {
+  const TICK = 5000, FLUSH = 60000, NEW_VISIT = 30 * 60000, BLIND_CAP = 10 * 60000, MAX_FAILS = 5;
+  // Tempo parado que ainda conta, por área: ler e pensar numa questão demoram mais
+  // do que olhar a tela inicial.
+  const IDLE = { posaula: 120000, atividade: 120000, desafio: 45000, outros: 45000 };
+  const IDLE_BLIND = 300000;
+  const EVENTS = ['pointerdown', 'keydown', 'scroll', 'touchstart', 'touchmove', 'wheel', 'input', 'click'];
+  let uid = null, running = false, tickTimer = null, flushTimer = null, fails = 0, hiddenAt = 0;
+  let bucket = { area: 'outros', item: '', blind: false }, bucketSince = 0, lastActivity = 0;
+  let pending = {};
+  const itemKey = (kind, id) => kind + '_' + String(id).replace(/[^A-Za-z0-9_-]/g, '_');
+  const dayOf = (d = new Date()) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const slot = day => pending[day] || (pending[day] = { secs: { total: 0, posaula: 0, atividade: 0, desafio: 0, outros: 0 }, items: {}, itemOpens: {}, opens: 0 });
+  const hasData = p => p.opens > 0 || p.secs.total > 0 || Object.keys(p.itemOpens).length > 0;
+
+  function ping() { lastActivity = Date.now(); }
+  function onVisibility() {
+    if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); flush(); return; }
+    if (hiddenAt && Date.now() - hiddenAt > NEW_VISIT) slot(dayOf()).opens += 1;
+    hiddenAt = 0;
+  }
+  function tick() {
+    if (!running || document.visibilityState !== 'visible') return;
+    const now = Date.now();
+    const idle = bucket.blind ? IDLE_BLIND : (IDLE[bucket.area] || IDLE.outros);
+    if (now - lastActivity > idle) return;
+    if (bucket.blind && now - bucketSince > BLIND_CAP) return;   // iframe que não avisa: não deixa contar para sempre
+    const s = slot(dayOf());
+    const secs = TICK / 1000;
+    s.secs.total += secs;
+    s.secs[bucket.area] = (s.secs[bucket.area] || 0) + secs;
+    if (bucket.item) s.items[bucket.item] = (s.items[bucket.item] || 0) + secs;
+  }
+  function setBucket(next) {
+    const item = next.item || '';
+    // Abrir um pós-aula/atividade (item novo) conta como "uma abertura" dele.
+    if (running && item && item !== bucket.item) { const s = slot(dayOf()); s.itemOpens[item] = (s.itemOpens[item] || 0) + 1; }
+    bucket = { area: next.area || 'outros', item, blind: !!next.blind };
+    bucketSince = Date.now();
+    ping();
+  }
+  async function flush() {
+    if (!uid || fails >= MAX_FAILS) return;
+    const days = Object.keys(pending).filter(d => hasData(pending[d]));
+    if (!days.length) return;
+    let fb;
+    try { fb = await getFB(); } catch (e) { return; }
+    for (const day of days) {
+      const p = pending[day];
+      delete pending[day];
+      const data = { date: day, secs: {}, items: {}, itemOpens: {}, updatedAt: fb.serverTimestamp() };
+      Object.keys(p.secs).forEach(k => { data.secs[k] = fb.increment(p.secs[k]); });
+      Object.keys(p.items).forEach(k => { data.items[k] = fb.increment(p.items[k]); });
+      Object.keys(p.itemOpens).forEach(k => { data.itemOpens[k] = fb.increment(p.itemOpens[k]); });
+      if (p.opens) data.opens = fb.increment(p.opens);
+      try {
+        await fb.setDoc(fb.doc(fb.db, 'students', uid, 'usage', day), data, { merge: true });
+        fails = 0;
+      } catch (e) {
+        fails += 1;                       // devolve o que não gravou e tenta de novo no próximo minuto
+        const back = slot(day);
+        Object.keys(p.secs).forEach(k => { back.secs[k] = (back.secs[k] || 0) + p.secs[k]; });
+        Object.keys(p.items).forEach(k => { back.items[k] = (back.items[k] || 0) + p.items[k]; });
+        Object.keys(p.itemOpens).forEach(k => { back.itemOpens[k] = (back.itemOpens[k] || 0) + p.itemOpens[k]; });
+        back.opens += p.opens;
+        if (fails >= MAX_FAILS) console.warn('Coleta de uso pausada:', e && e.message);
+      }
+    }
+  }
+  function start(userUid) {
+    if (running && uid === userUid) return;
+    stop();
+    uid = userUid; running = true; fails = 0; pending = {};
+    lastActivity = Date.now(); bucketSince = lastActivity;
+    slot(dayOf()).opens += 1;
+    EVENTS.forEach(n => window.addEventListener(n, ping, { capture: true, passive: true }));
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', flush);
+    tickTimer = setInterval(tick, TICK);
+    flushTimer = setInterval(flush, FLUSH);
+  }
+  function stop() {
+    if (!running) return;
+    flush();
+    running = false;
+    clearInterval(tickTimer); clearInterval(flushTimer);
+    EVENTS.forEach(n => window.removeEventListener(n, ping, { capture: true }));
+    document.removeEventListener('visibilitychange', onVisibility);
+    window.removeEventListener('pagehide', flush);
+  }
+  return { start, stop, ping, setBucket, flush, itemKey };
+})();
 
 function showToast(msg, ms = 3500) {
   const el = document.getElementById('global-toast');
@@ -2012,6 +2113,133 @@ function ReviewReportModal({ report, onClose }) {
   );
 }
 
+// ── ADESÃO: "Minha adesão" na aba Meu progresso ────────────────────────────
+// Só aparece depois da data de liberação que o professor definiu (o modo espelho
+// mostra antes, com a faixa de prévia). O cálculo e os textos vêm de adesao.js,
+// os mesmos do painel do professor.
+// Exercícios de UMA atividade (total e feitos). Mesma regra do painel (adminActivityEx).
+function activityExercises(activity) {
+  let total = 0, feitos = 0;
+  (Array.isArray(activity.parts) ? activity.parts : []).forEach(part => {
+    const partId = part.id || part.title;
+    const oral = Array.isArray(part?.oralExercise?.prompts) ? part.oralExercise.prompts.length : 0;
+    const t = countExercises(part.content) + oral;
+    let f;
+    if (activity.finalizada || activity.partsDone?.[partId]) f = t;
+    else {
+      const salvo = activity.respostas?.[partId] || {};
+      const escritas = Object.keys(salvo).filter(k => {
+        if (k === '_oral') return false;
+        const v = salvo[k];
+        return typeof v === 'string' ? v.trim() !== '' : !!v;
+      }).length;
+      const orais = Object.values(salvo._oral || {}).filter(clip => clip && clip.url).length;
+      f = Math.min(t, escritas + orais);
+    }
+    total += t; feitos += f;
+  });
+  if (!total) { total = 1; feitos = activity.finalizada ? 1 : 0; }
+  return { total, feitos };
+}
+
+const _adesaoCache = {};
+function AdesaoSection({ student, posaulas, activities }) {
+  const AD = window.CzkAdesao;
+  const mirror = !!new URLSearchParams(window.location.search).get('mirror');
+  const meta = student?.escolaAdesao || null;
+  const lib = meta?.liberadaEm || '';
+  const hoje = AD ? AD.util.dayKey(new Date()) : '';
+  const liberado = !!lib && lib <= hoje;
+  const visivel = !!AD && !!student?.uid && (liberado || mirror);
+  const [extra, setExtra] = useState(null);
+
+  // Lê o uso diário, o desafio e o resumo da turma só quando a seção vai aparecer.
+  useEffect(() => {
+    if (!visivel) return undefined;
+    const cached = _adesaoCache[student.uid];
+    if (cached && Date.now() - cached.at < 60000) { setExtra(cached.data); return undefined; }
+    let cancelado = false;
+    (async () => {
+      let data = { usage: [], completed: [], weekKeys: [], stats: null };
+      try {
+        const fb = await getFB();
+        const uid = student.uid;
+        const since = meta?.coletaDesde || '2000-01-01';
+        const [usageSnap, subsSnap, weeksSnap, statsSnap] = await Promise.all([
+          fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'usage'), fb.where('date', '>=', since))).catch(() => ({ docs: [] })),
+          fb.getDocs(fb.collection(fb.db, 'students', uid, 'challengeSubmissions')).catch(() => ({ docs: [] })),
+          fb.getDocs(fb.collection(fb.db, 'challengeWeeks')).catch(() => ({ docs: [] })),
+          student.schoolId ? fb.getDoc(fb.doc(fb.db, 'schools', student.schoolId, 'adesaoStats', 'atual')).catch(() => null) : Promise.resolve(null),
+        ]);
+        data = {
+          usage: usageSnap.docs.map(d => ({ date: d.id, ...d.data() })),
+          completed: subsSnap.docs.filter(d => d.data().completed === true).map(d => d.id),
+          weekKeys: weeksSnap.docs.map(d => d.id),
+          stats: statsSnap && statsSnap.exists && statsSnap.exists() ? (statsSnap.data().faixas || null) : null,
+        };
+      } catch (e) { console.warn('Adesão:', e); }
+      _adesaoCache[student.uid] = { at: Date.now(), data };
+      if (!cancelado) setExtra(data);
+    })();
+    return () => { cancelado = true; };
+  }, [visivel, student?.uid]);
+
+  const result = React.useMemo(() => {
+    if (!visivel || !extra) return null;
+    try {
+      const attendance = calculateAttendance(student, posaulas).points.map(p => ({ key: p.key, present: !!p.present, excused: !!p.excused }));
+      return AD.compute({
+        now: new Date(), student,
+        usage: extra.usage,
+        posts: posaulas.map(p => ({ id: p.id, title: postTitle(p), createdAt: p.createdAt, classDate: p.classDate, filename: p.filename, url: p.url })),
+        activities: activities.filter(a => { const d = dateFrom(a.createdAt); return d && d.getTime() >= Date.now() - 40 * 86400000; }).map(a => {
+          const ex = activityExercises(a);
+          const errs = a.summary?.errors || {};
+          return {
+            id: a.id, name: a.title || a.week || 'Atividade', createdAt: a.createdAt, finalizada: !!a.finalizada,
+            exTotal: ex.total, exFeitos: ex.feitos,
+            correct: a.summary ? Number(a.summary.correct || 0) : null,
+            wrong: a.summary ? Number(errs.bobo || 0) + Number(errs.mediano || 0) + Number(errs.grave || 0) : null,
+            correctedAt: a.correctedAt || null,
+          };
+        }),
+        attendance,
+        challenge: { enabled: student.challengeEnabled !== false, weeks: extra.weekKeys, completed: extra.completed },
+      }, { ...(meta?.cfg || {}), coletaDesde: meta?.coletaDesde || null });
+    } catch (e) { console.error('Cálculo da adesão:', e); return null; }
+  }, [visivel, extra, student, posaulas, activities, meta]);
+
+  if (!visivel) return null;
+  if (!result) return <div style={{ marginTop:16, fontSize:12.5, color:'#64748B', fontWeight:700 }}>Carregando sua adesão…</div>;
+  const ribbon = liberado ? '' : `Prévia: o aluno só verá a partir de ${lib ? lib.slice(8, 10) + '/' + lib.slice(5, 7) : 'a data de liberação'}`;
+  const html = AD.studentHtml(result, {
+    firstName: student.firstName || String(student.name || '').split(' ')[0],
+    recado: student.adesaoRecado?.texto || '',
+    ribbon, stats: extra.stats,
+  });
+  const onClick = e => {
+    const toggle = e.target.closest && e.target.closest('[data-cza-toggle]');
+    if (toggle) { AD.toggleDetails(e.currentTarget, toggle); return; }
+    const cell = e.target.closest && e.target.closest('.cza-cell');
+    if (!cell || cell.disabled) return;
+    const host = e.currentTarget;
+    host.querySelectorAll('.cza-cell.sel').forEach(x => x.classList.remove('sel'));
+    cell.classList.add('sel');
+    const box = host.querySelector('#cza-dayinfo');
+    if (box) box.innerHTML = AD.sDayText(result, +cell.dataset.czaW, +cell.dataset.czaD);
+  };
+  return (
+    <div style={{ marginTop:16, width:'100%', maxWidth:'100%', minWidth:0 }}>
+      <style>{AD.studentCss() + '.cza-host .cza-title{font-size:16px}'}</style>
+      <div className="cza-host" onClick={onClick} dangerouslySetInnerHTML={{ __html: html }}
+        onKeyDown={e => {
+          const t = e.target.closest && e.target.closest('[data-cza-toggle]');
+          if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); AD.toggleDetails(e.currentTarget, t); }
+        }} />
+    </div>
+  );
+}
+
 function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpenReview, challengeSimulation, challengeState, challengeEnabled, onOpenChallenge }) {
   const [chartType, setChartType] = useState(() => localStorage.getItem('progressChartType') || 'line');
   const [periodMonths, setPeriodMonths] = useState(() => Number(localStorage.getItem('progressPeriodMonths')) || 3);
@@ -2055,6 +2283,7 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
   return (
     <div className="scroll-area" style={{ padding:'18px 14px 28px', width:'100%', maxWidth:'100%', minWidth:0, boxSizing:'border-box', overflowX:'hidden' }}>
       <div style={{ fontSize:22, fontWeight:800, color:'#0F172A' }}>Meu progresso</div>
+      <AdesaoSection student={student} posaulas={posaulas} activities={activities} />
       {challengeEnabled && <ChallengeProgressPanel challengeState={challengeState} onOpenChallenge={onOpenChallenge} />}
       <ProgressSection title="Presença">
         <div style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:8, width:'100%' }}>
@@ -3866,6 +4095,23 @@ const READER_AUDIO_BRIDGE = `
     requestSpeech(text, btn);
   }
 
+  // Avisa o app de que o aluno está lendo (rolagem, toque, tecla): o iframe é
+  // isolado, então só assim o tempo de leitura da pós-aula pode ser contado.
+  (function(){
+    if(!host) return;
+    var lastPing = 0;
+    function ping(){
+      var now = Date.now();
+      if(now - lastPing < 2000) return;
+      lastPing = now;
+      try{ host.postMessage({ source:'czk-posaula', type:'activity' }, '*'); }catch(e){}
+    }
+    ['scroll','touchstart','touchmove','pointerdown','keydown','wheel','click'].forEach(function(n){
+      document.addEventListener(n, ping, { capture:true, passive:true });
+    });
+    ping();
+  })();
+
   window.addEventListener('message', function(ev){
     var d = ev.data;
     if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
@@ -3988,6 +4234,7 @@ window.addEventListener('message', event => {
   if (!data || data.source !== 'czk-posaula') return;
   const frames = [...document.querySelectorAll('iframe.reader-frame')];
   if (!frames.some(frame => frame.contentWindow === event.source)) return;
+  if (data.type === 'activity') { CzkUsage.ping(); return; }   // leitura em andamento (adesão)
   if (data.type === 'stop') { window.speechSynthesis?.cancel(); return; }
   if (data.type !== 'speak') return;
   const text = String(data.text || '').trim().slice(0, 120);
@@ -4931,6 +5178,25 @@ function App() {
   const pendingChallenge = useRef(new URLSearchParams(window.location.search).get('challenge') === '1');
   const mirrorUid = useRef(new URLSearchParams(window.location.search).get('mirror') || '');
   const mirror = !!mirrorUid.current;
+
+  // ── Adesão: em que parte do app o aluno está agora (cronômetro de uso) ──
+  // Pós-aula sem HTML salvo abre por URL num iframe que não avisa atividade:
+  // fica "cego" e conta só por tempo limitado.
+  const usageArea = readerPost ? 'posaula'
+    : (openPart || openActivity || openExtra) ? 'atividade'
+    : (challengeView || peerGameState || peerLiveDuel) ? 'desafio' : 'outros';
+  const usageItem = readerPost ? CzkUsage.itemKey('pos', readerPost.id)
+    : openActivity ? CzkUsage.itemKey('act', openActivity.id)
+    : openExtra ? CzkUsage.itemKey('extra', openExtra.id) : '';
+  const usageBlind = !!readerPost && !readerPost.html;
+  useEffect(() => {
+    if (mirror || !user?.uid) return undefined;
+    CzkUsage.start(user.uid);
+    return () => CzkUsage.stop();
+  }, [mirror, user?.uid]);
+  useEffect(() => {
+    CzkUsage.setBucket({ area: usageArea, item: usageItem, blind: usageBlind });
+  }, [usageArea, usageItem, usageBlind]);
   const challengePreviewAccess = Boolean(student) && student?.challengeEnabled !== false;
   const combinedChallengeSimulation = {
     ...(challengeSimulation || {}),
@@ -5231,6 +5497,7 @@ function App() {
         ...current,
         zoomLink: dadosEscola.zoomLink || '',
         pixKey: dadosEscola.pixKey || '',
+        escolaAdesao: dadosEscola.adesao || null,   // metas, coleta e data de liberação da Adesão
       }));
     }
     await loadCourseReviews(dadosSeguros, fb, uid, dadosEscola);

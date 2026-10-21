@@ -867,6 +867,7 @@
         <div class="side-group">
           <div class="side-title">Engajamento</div>
           <button class="tab" data-tab="challenge"><span class="ic">🏆</span><span class="lb">Desafio</span></button>
+          <button class="tab" data-tab="adesao"><span class="ic">📈</span><span class="lb">Adesão</span></button>
           <button class="tab" data-tab="avisos"><span class="ic">📣</span><span class="lb">Avisos</span></button>
           <button class="tab tab-review" data-tab="avaliacoes">
             <span class="row1"><span class="ic">⭐</span><span class="lb">Avaliações</span></span>
@@ -959,6 +960,11 @@
           <div class="form-msg" id="group-msg" style="display:none;"></div>
         </div>
         <div id="groups-list"><div class="loading">Carregando turmas...</div></div>
+      </div>
+
+      <!-- ADESÃO: quanto cada aluno está envolvido no curso (admin/adesao-admin.js) -->
+      <div class="tab-panel" id="tab-adesao">
+        <div id="adesao-root"><div class="loading">Abra esta aba para carregar a adesão dos alunos.</div></div>
       </div>
 
       <!-- DESAFIO SEMANAL -->
@@ -1995,6 +2001,7 @@
     </div>
   </div>
 
+  <script src="../adesao.js"></script>
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword }
@@ -2336,6 +2343,7 @@
         misses,
         currentStreak,
         rate: scheduledCount ? Math.round(attended / scheduledCount * 100) : null,
+        points: countedSchedule.map(item => ({ key:item.key, present:item.present })),   // por aula (usado na aba Adesão)
         untracked,
         trackingStartKey,
         inferredOnly:false,
@@ -5682,6 +5690,7 @@
         if (tab.dataset.tab === 'pendencias') marcarPendenciasVistas();
         if (tab.dataset.tab === 'groups') loadClassGroups();
         if (tab.dataset.tab === 'challenge') loadChallengeAdmin();
+        if (tab.dataset.tab === 'adesao') loadAdesaoAdmin();
         if (tab.dataset.tab === 'calendar') loadCalendar();
         if (tab.dataset.tab === 'finance') loadFinance();
       };
@@ -5697,8 +5706,8 @@
     // Quem administra a escola vê a interface dela — inclusive o César, ao
     // trocar de escola no seletor do topo.
     const ABAS_POR_MODO = {
-      manual:    ['students', 'groups', 'calendar', 'finance', 'challenge', 'creditos', 'posaula', 'processos', 'publish', 'correct', 'vocab', 'extras', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
-      assistido: ['students', 'groups', 'calendar', 'finance', 'challenge', 'creditos', 'posaula', 'processos', 'publish', 'extras', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
+      manual:    ['students', 'groups', 'calendar', 'finance', 'challenge', 'adesao', 'creditos', 'posaula', 'processos', 'publish', 'correct', 'vocab', 'extras', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
+      assistido: ['students', 'groups', 'calendar', 'finance', 'challenge', 'adesao', 'creditos', 'posaula', 'processos', 'publish', 'extras', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
     };
 
     function modoDaEscolaAtual() {
@@ -7528,6 +7537,26 @@
     // por isso "cancelei e a pendência continua lá". Guardamos as entradas de
     // cada aluno para refazer a conta com a agenda nova, sem buscar tudo de novo.
     let pendLinhasAtuais = [];
+
+    // Aba Adesão (admin/adesao-admin.js): usa as linhas que o loadStudents já montou.
+    // Carregada por import() para que qualquer falha dela fique só na aba Adesão.
+    let adesaoAdmin = null;
+    import('./adesao-admin.js').then(modulo => {
+      adesaoAdmin = modulo.initAdesaoAdmin({
+        db, collection, getDocs, getDoc, doc, setDoc, updateDoc, query, where, serverTimestamp, deleteField,
+        getEscola: () => escolaAtual,
+        getRows: () => pendLinhasAtuais,
+        recarregarAlunos: () => loadStudents(),
+        abrirEspelho: uid => window.open('../?mirror=' + encodeURIComponent(uid), '_blank'),
+      });
+    }).catch(e => console.error('Aba Adesão indisponível:', e));
+    function loadAdesaoAdmin() {
+      if (!adesaoAdmin) {
+        document.getElementById('adesao-root').innerHTML = '<div class="loading">A aba Adesão não carregou. Recarregue a página (Ctrl+F5).</div>';
+        return Promise.resolve();
+      }
+      return adesaoAdmin.load().catch(e => console.error('Aba Adesão:', e));
+    }
     function pendRecalcularComAgenda() {
       if (!pendLinhasAtuais.length) return;
       const hoje = new Date(); hoje.setHours(0,0,0,0);
@@ -7977,6 +8006,53 @@
       return { exTotal, exFeitos };
     }
 
+    // Exercícios de UMA atividade (total e feitos), pela mesma regra de adminExerciseProgress
+    // acima: parte finalizada vale inteira; em andamento vale o rascunho gravado.
+    function adminActivityEx(activity) {
+      let total = 0, feitos = 0;
+      (Array.isArray(activity.parts) ? activity.parts : []).forEach(part => {
+        const partId = part.id || part.title;
+        const oral = Array.isArray(part?.oralExercise?.prompts) ? part.oralExercise.prompts.length : 0;
+        const t = adminCountExercises(part.content) + oral;
+        let f;
+        if (activity.finalizada || activity.partsDone?.[partId]) f = t;
+        else {
+          const salvo = activity.respostas?.[partId] || {};
+          const escritas = Object.keys(salvo).filter(k => {
+            if (k === '_oral') return false;
+            const v = salvo[k];
+            return typeof v === 'string' ? v.trim() !== '' : !!v;
+          }).length;
+          const orais = Object.values(salvo._oral || {}).filter(clip => clip && clip.url).length;
+          f = Math.min(t, escritas + orais);
+        }
+        total += t; feitos += f;
+      });
+      if (!total) { total = 1; feitos = activity.finalizada ? 1 : 0; }
+      return { total, feitos };
+    }
+
+    // Dados enxutos de um aluno para a aba Adesão (sem o HTML pesado de pós-aulas e
+    // atividades). Sai do que o loadStudents já leu, sem nenhuma leitura extra.
+    function adminAdesaoInput(student, posts, activities, progress) {
+      const corte = adminAddDays(new Date(), -40);   // a aba só olha as últimas semanas: não conta exercícios de atividade antiga
+      return {
+        posts: posts.map(p => ({ id:p.id, title:adminPostTitle(p), createdAt:p.createdAt, classDate:p.classDate, filename:p.filename, url:p.url })),
+        activities: activities.filter(a => { const d = adminDate(a.createdAt); return d && d >= corte; }).map(a => {
+          const ex = adminActivityEx(a);
+          const errs = a.summary?.errors || {};
+          return {
+            id:a.id, name:a.title || a.week || 'Atividade', createdAt:a.createdAt, finalizada:!!a.finalizada,
+            exTotal:ex.total, exFeitos:ex.feitos,
+            correct:a.summary ? Number(a.summary.correct || 0) : null,
+            wrong:a.summary ? Number(errs.bobo || 0) + Number(errs.mediano || 0) + Number(errs.grave || 0) : null,
+            correctedAt:a.correctedAt || null,
+          };
+        }),
+        attendance: progress?.attendance?.points || [],
+      };
+    }
+
     function adminActivityCounts(activities) {
       const current = activities.filter(activity => activity.status !== 'corrected');
       return {
@@ -8110,11 +8186,12 @@
         });
         const reviewReports = reviewSnap.docs.map(d => ({ id:d.id, ...d.data() }));
         const progress = adminProgressSummary(s, posts, activities);
+        const adesaoIn = adminAdesaoInput(s, posts, activities, progress);
         return {
           ...s, latestRead: isRead, latestTitle: latest?.title || null,
           ...activityCounts,
           posaulaPendente, atividadesPendente, diasSemAula,
-          reviewReports, progress,
+          reviewReports, progress, adesaoIn,
           pendEntradas: { ultimaPosData, ultimaAulaData, semAtividades: activityCounts.semAtividades,
             ultimaAtividadeCriada: pendMidnight(dateOfAdm(activities[0]?.createdAt)), dispensadas },
         };

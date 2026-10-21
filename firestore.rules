@@ -74,6 +74,27 @@ service cloud.firestore {
       ]);
     }
 
+    // Coleta de uso (adesão): um documento por dia, gravado só pelo próprio aluno
+    // com contadores que apenas crescem. Os limites barram lixo e valores absurdos;
+    // o dado é apoio para o professor, não prova de nada.
+    function usageDayIsSafe(day) {
+      let d = request.resource.data;
+      return day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        && d.keys().hasOnly(['date', 'secs', 'items', 'itemOpens', 'opens', 'updatedAt'])
+        && d.date == day
+        && d.secs is map
+        && d.secs.keys().hasOnly(['total', 'posaula', 'atividade', 'desafio', 'outros'])
+        && d.secs.get('total', 0) <= 86400
+        && d.secs.get('posaula', 0) <= 86400
+        && d.secs.get('atividade', 0) <= 86400
+        && d.secs.get('desafio', 0) <= 86400
+        && d.secs.get('outros', 0) <= 86400
+        && d.get('opens', 0) <= 500
+        && d.get('items', {}).size() <= 60
+        && d.get('itemOpens', {}).size() <= 60
+        && d.get('updatedAt', request.time) == request.time;
+    }
+
     // Diretório interno de níveis. Deixou de ser público: contém nome e nível
     // de alunos e só é necessário ao próprio aluno ou à equipe da escola.
     match /niveis/{uid} {
@@ -128,10 +149,17 @@ service cloud.firestore {
       allow create, delete: if isAdmin();
       allow update: if isAdmin() || (
         resource.data.ownerEmail == email()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmTokens'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmTokens', 'adesao'])
       );
 
       match /avisos/{avisoId} {
+        allow read: if isAdmin() || ownsSchool(schoolId) || belongsToSchool(schoolId);
+        allow write: if isAdmin() || ownsSchool(schoolId);
+      }
+
+      // Resumo da turma por faixa de adesão (sem nomes): o professor grava e o
+      // aluno da escola lê, para ver "quem se dedica mais costuma acertar mais".
+      match /adesaoStats/{statId} {
         allow read: if isAdmin() || ownsSchool(schoolId) || belongsToSchool(schoolId);
         allow write: if isAdmin() || ownsSchool(schoolId);
       }
@@ -281,6 +309,16 @@ service cloud.firestore {
         // As respostas entram exclusivamente pelas Cloud Functions. Assim o
         // servidor garante a ordem, a janela de tempo e uma única tentativa.
         allow create, update, delete: if managesStudent(uid);
+      }
+
+      // Uso diário do app (dias ativos e tempo). O aluno só cria/soma no próprio
+      // dia; a equipe lê e pode apagar. Os contadores nunca diminuem.
+      match /usage/{day} {
+        allow read: if isOwnStudent(uid) || managesStudent(uid);
+        allow create: if isOwnStudent(uid) && usageDayIsSafe(day);
+        allow update: if isOwnStudent(uid) && usageDayIsSafe(day)
+          && request.resource.data.secs.get('total', 0) >= resource.data.secs.get('total', 0);
+        allow delete: if managesStudent(uid);
       }
 
       // Toda subcoleção nova nasce fechada para o aluno até ganhar uma regra
