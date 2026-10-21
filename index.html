@@ -249,7 +249,10 @@ const CzkUsage = (() => {
   let pending = {};                       // AAAA-MM-DD -> { ms:{...}, items:{}, itemOpens:{}, opens }
   const itemKey = (kind, id) => kind + '_' + String(id).replace(/[^A-Za-z0-9_-]/g, '_');
   const dayOf = (d = new Date()) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-  const slot = day => pending[day] || (pending[day] = { ms: { total: 0, posaula: 0, atividade: 0, desafio: 0, outros: 0 }, items: {}, itemOpens: {}, opens: 0 });
+  // Áreas que contam como ESTUDO: posaula, atividade (inclui extras e correção), desafio e
+  // vocab (palavras, verbos irregulares e chunks). "outros" (início, progresso, perfil,
+  // avisos) é uso do app, mas não é estudo.
+  const slot = day => pending[day] || (pending[day] = { ms: { total: 0, posaula: 0, atividade: 0, desafio: 0, vocab: 0, outros: 0 }, items: {}, itemOpens: {}, opens: 0 });
   const visible = () => document.visibilityState === 'visible';
 
   function credit(ms, b) {
@@ -319,13 +322,15 @@ const CzkUsage = (() => {
     try { fb = await getFB(); } catch (e) { jobs.forEach(j => giveBack(j)); return; }
     for (const { day, take } of jobs) {
       const data = { date: day, secs: {}, items: {}, itemOpens: {}, updatedAt: fb.serverTimestamp() };
-      ['total', 'posaula', 'atividade', 'desafio', 'outros'].forEach(k => { data.secs[k] = fb.increment(take.secs[k] || 0); });
+      ['total', 'posaula', 'atividade', 'desafio', 'vocab', 'outros'].forEach(k => { data.secs[k] = fb.increment(take.secs[k] || 0); });
       Object.keys(take.items).forEach(k => { data.items[k] = fb.increment(take.items[k]); });
       Object.keys(take.itemOpens).forEach(k => { data.itemOpens[k] = fb.increment(take.itemOpens[k]); });
       if (take.opens) data.opens = fb.increment(take.opens);
       try {
         await fb.setDoc(fb.doc(fb.db, 'students', uid, 'usage', day), data, { merge: true });
         fails = 0;
+        // Avisa a tela da meta para reler o dia: o banco acabou de ganhar estes segundos.
+        try { if (typeof CustomEvent === 'function') window.dispatchEvent(new CustomEvent('czk-usage-flushed', { detail: { day } })); } catch (e2) {}
       } catch (e) {
         fails += 1;                       // devolve o que não gravou e tenta de novo no próximo minuto
         giveBack({ day, take });
@@ -368,7 +373,15 @@ const CzkUsage = (() => {
     window.removeEventListener('pagehide', flush);
     holds.clear(); playing.clear();
   }
-  return { start, stop, ping, setBucket, hold, release, configure, flush, itemKey };
+  // Segundos de hoje ainda não gravados. A tela da meta soma isto ao que já está no banco,
+  // para o minuto corrente aparecer sem esperar a próxima gravação.
+  function pendingToday() {
+    const out = { total: 0, posaula: 0, atividade: 0, desafio: 0, vocab: 0, outros: 0 };
+    const p = pending[dayOf()];
+    if (p) Object.keys(out).forEach(k => { out[k] = (p.ms[k] || 0) / 1000; });
+    return out;
+  }
+  return { start, stop, ping, setBucket, hold, release, configure, flush, itemKey, pendingToday };
 })();
 
 function showToast(msg, ms = 3500) {
@@ -2195,7 +2208,20 @@ function activityExercises(activity) {
 }
 
 const _adesaoCache = {};
-function AdesaoSection({ student, posaulas, activities }) {
+// Injeta uma vez só o CSS das telas de adesão e de meta de estudo.
+function ensureAdesaoCss() {
+  const AD = window.CzkAdesao;
+  if (!AD || document.getElementById('cza-css')) return;
+  const st = document.createElement('style');
+  st.id = 'cza-css';
+  st.textContent = AD.studentCss() + '.cza-host .cza-title{font-size:16px}';
+  document.head.appendChild(st);
+}
+
+// Dados da adesão e da meta de estudo, calculados uma vez no App e usados no Início e no
+// Progresso. O minuto corrente (ainda não gravado) vem do cronômetro, e o dia de hoje é
+// relido do banco toda vez que o cronômetro grava.
+function useAdesaoData(student, posaulas, activities, tab) {
   const AD = window.CzkAdesao;
   const mirror = !!new URLSearchParams(window.location.search).get('mirror');
   const meta = student?.escolaAdesao || null;
@@ -2204,8 +2230,9 @@ function AdesaoSection({ student, posaulas, activities }) {
   const liberado = !!lib && lib <= hoje;
   const visivel = !!AD && !!student?.uid && (liberado || mirror);
   const [extra, setExtra] = useState(null);
+  const [tick, setTick] = useState(0);
 
-  // Lê o uso diário, o desafio e o resumo da turma só quando a seção vai aparecer.
+  // Lê o uso diário, o desafio e o resumo da turma só quando as telas vão aparecer.
   useEffect(() => {
     if (!visivel) return undefined;
     const cached = _adesaoCache[student.uid];
@@ -2236,13 +2263,46 @@ function AdesaoSection({ student, posaulas, activities }) {
     return () => { cancelado = true; };
   }, [visivel, student?.uid]);
 
+  // O cronômetro gravou: relê o documento de hoje para a meta não "voltar" alguns segundos.
+  useEffect(() => {
+    if (!visivel || mirror) return undefined;
+    const reler = async () => {
+      try {
+        const fb = await getFB();
+        const day = AD.util.dayKey(new Date());
+        const snap = await fb.getDoc(fb.doc(fb.db, 'students', student.uid, 'usage', day));
+        setExtra(prev => {
+          if (!prev) return prev;
+          const resto = prev.usage.filter(u => u.date !== day);
+          const next = { ...prev, usage: snap.exists() ? [...resto, { date: day, ...snap.data() }] : resto };
+          _adesaoCache[student.uid] = { at: Date.now(), data: next };
+          return next;
+        });
+        setTick(t => t + 1);
+      } catch (e) { /* sem rede: segue com o que já tem */ }
+    };
+    window.addEventListener('czk-usage-flushed', reler);
+    return () => window.removeEventListener('czk-usage-flushed', reler);
+  }, [visivel, mirror, student?.uid]);
+  useEffect(() => { setTick(t => t + 1); }, [tab]);   // voltou para uma tela: refaz a conta com o minuto corrente
+
   const result = React.useMemo(() => {
     if (!visivel || !extra) return null;
     try {
       const attendance = calculateAttendance(student, posaulas).points.map(p => ({ key: p.key, present: !!p.present, excused: !!p.excused }));
+      // Soma o que o cronômetro ainda não gravou no dia de hoje.
+      const pend = CzkUsage.pendingToday();
+      const day = AD.util.dayKey(new Date());
+      let usage = extra.usage;
+      if (pend.total > 0) {
+        const base = usage.find(u => u.date === day);
+        const secs = { ...(base?.secs || {}) };
+        Object.keys(pend).forEach(k => { secs[k] = (Number(secs[k]) || 0) + pend[k]; });
+        usage = [...usage.filter(u => u.date !== day), { ...(base || {}), date: day, secs }];
+      }
       return AD.compute({
         now: new Date(), student,
-        usage: extra.usage,
+        usage,
         posts: posaulas.map(p => ({ id: p.id, title: postTitle(p), createdAt: p.createdAt, classDate: p.classDate, filename: p.filename, url: p.url })),
         activities: activities.filter(a => { const d = dateFrom(a.createdAt); return d && d.getTime() >= Date.now() - 40 * 86400000; }).map(a => {
           const ex = activityExercises(a);
@@ -2259,15 +2319,66 @@ function AdesaoSection({ student, posaulas, activities }) {
         challenge: { enabled: student.challengeEnabled !== false, weeks: extra.weekKeys, completed: extra.completed },
       }, { ...(meta?.cfg || {}), coletaDesde: meta?.coletaDesde || null });
     } catch (e) { console.error('Cálculo da adesão:', e); return null; }
-  }, [visivel, extra, student, posaulas, activities, meta]);
+  }, [visivel, extra, student, posaulas, activities, meta, tick]);
 
+  return { AD, visivel, liberado, lib, mirror, meta, extra, result };
+}
+
+const previaAdesao = (lib) => `Prévia: o aluno só verá a partir de ${lib ? lib.slice(8, 10) + '/' + lib.slice(5, 7) : 'a data de liberação'}`;
+const primeiroNome = (student) => student?.firstName || String(student?.name || '').split(' ')[0];
+
+// Início: "Meta de estudo de hoje" (10 min por dia) e a semana em bolinhas.
+function StudyGoalHome({ adesao, student, onGo }) {
+  const { AD, visivel, liberado, lib, result } = adesao;
+  if (!visivel || !result) return null;
+  ensureAdesaoCss();
+  const html = AD.goalTodayHtml(result, { firstName: primeiroNome(student), ribbon: liberado ? '' : previaAdesao(lib) });
+  const ir = e => {
+    const t = e.target.closest && e.target.closest('[data-cza-go]');
+    if (t) onGo(t.dataset.czaGo);
+  };
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div className="cza-host" onClick={ir} dangerouslySetInnerHTML={{ __html: html }}
+        onKeyDown={e => {
+          const t = e.target.closest && e.target.closest('[data-cza-go]');
+          if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onGo(t.dataset.czaGo); }
+        }} />
+    </div>
+  );
+}
+
+// Progresso: "Meu estudo" da semana (minutos por tipo, dias com meta, o que conta).
+function StudyWeekSection({ adesao }) {
+  const { AD, visivel, result } = adesao;
+  if (!visivel || !result) return null;
+  ensureAdesaoCss();
+  const onClick = e => {
+    const tg = e.target.closest && e.target.closest('[data-cza-gtoggle]');
+    if (tg) { AD.toggleGoalInfo(tg); return; }
+    const g = e.target.closest && e.target.closest('[data-cza-gday]');
+    if (g) {
+      const box = e.currentTarget.querySelector('#cza-gdayinfo');
+      if (box) box.innerHTML = AD.sDayText(result, 3, +g.dataset.czaGday);
+    }
+  };
+  return (
+    <div style={{ marginTop: 16, width: '100%', maxWidth: '100%', minWidth: 0 }}>
+      <div className="cza-host" onClick={onClick} dangerouslySetInnerHTML={{ __html: AD.goalWeekHtml(result) }} />
+    </div>
+  );
+}
+
+// Progresso: "Minha adesão" — só o cartão da nota; tocar nele abre o resto.
+function AdesaoSection({ adesao, student }) {
+  const { AD, visivel, liberado, lib, result, extra } = adesao;
   if (!visivel) return null;
   if (!result) return <div style={{ marginTop:16, fontSize:12.5, color:'#64748B', fontWeight:700 }}>Carregando sua adesão…</div>;
-  const ribbon = liberado ? '' : `Prévia: o aluno só verá a partir de ${lib ? lib.slice(8, 10) + '/' + lib.slice(5, 7) : 'a data de liberação'}`;
+  ensureAdesaoCss();
   const html = AD.studentHtml(result, {
-    firstName: student.firstName || String(student.name || '').split(' ')[0],
+    firstName: primeiroNome(student),
     recado: student.adesaoRecado?.texto || '',
-    ribbon, stats: extra.stats,
+    ribbon: liberado ? '' : previaAdesao(lib), stats: extra?.stats,
   });
   const onClick = e => {
     const toggle = e.target.closest && e.target.closest('[data-cza-toggle]');
@@ -2282,7 +2393,6 @@ function AdesaoSection({ student, posaulas, activities }) {
   };
   return (
     <div style={{ marginTop:16, width:'100%', maxWidth:'100%', minWidth:0 }}>
-      <style>{AD.studentCss() + '.cza-host .cza-title{font-size:16px}'}</style>
       <div className="cza-host" onClick={onClick} dangerouslySetInnerHTML={{ __html: html }}
         onKeyDown={e => {
           const t = e.target.closest && e.target.closest('[data-cza-toggle]');
@@ -2292,7 +2402,7 @@ function AdesaoSection({ student, posaulas, activities }) {
   );
 }
 
-function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpenReview, challengeSimulation, challengeState, challengeEnabled, onOpenChallenge }) {
+function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpenReview, challengeSimulation, challengeState, challengeEnabled, onOpenChallenge, adesao }) {
   const [chartType, setChartType] = useState(() => localStorage.getItem('progressChartType') || 'line');
   const [periodMonths, setPeriodMonths] = useState(() => Number(localStorage.getItem('progressPeriodMonths')) || 3);
   const [errorFilter, setErrorFilter] = useState('all');
@@ -2335,7 +2445,8 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
   return (
     <div className="scroll-area" style={{ padding:'18px 14px 28px', width:'100%', maxWidth:'100%', minWidth:0, boxSizing:'border-box', overflowX:'hidden' }}>
       <div style={{ fontSize:22, fontWeight:800, color:'#0F172A' }}>Meu progresso</div>
-      <AdesaoSection student={student} posaulas={posaulas} activities={activities} />
+      <StudyWeekSection adesao={adesao} />
+      <AdesaoSection adesao={adesao} student={student} />
       {challengeEnabled && <ChallengeProgressPanel challengeState={challengeState} onOpenChallenge={onOpenChallenge} />}
       <ProgressSection title="Presença">
         <div style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:8, width:'100%' }}>
@@ -2480,7 +2591,7 @@ function Celebration({ show, onDone }) {
   return <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9998, overflow: 'hidden' }}>{pieces}</div>;
 }
 
-function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) {
+function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities, adesao, onGoVocab }) {
   const latest = posaulas[0] || null;
   const [openGroups, setOpenGroups] = useState({});
   const [btnPressed, setBtnPressed] = useState(false);
@@ -2565,6 +2676,10 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities }) 
   return (
     <div className="scroll-area" style={{ padding: '16px 16px 8px', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', overflowX: 'hidden' }}>
       <InstallBanner />
+
+      {/* Meta de estudo de hoje (aparece depois da liberação da Adesão) */}
+      <StudyGoalHome adesao={adesao} student={student}
+        onGo={kind => kind === 'vocab' ? onGoVocab() : kind === 'aulas' ? onGoActivities() : (latest ? onOpenPost(latest) : onGoActivities())} />
 
       {/* Anéis de progresso: aulas no ano + atividades da semana */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
@@ -4307,9 +4422,11 @@ window.addEventListener('message', event => {
   if (!ok) reply('speak-error');
 });
 
-function VocabTab({ vocab }) {
+function VocabTab({ vocab, onViewChange }) {
   const [openMonths, setOpenMonths] = useState({});
   const [listView, setListView] = useState(null);
+  // Avisa o App qual seção está aberta, para o tempo de verbos/chunks/palavras ser contado por item.
+  useEffect(() => { onViewChange && onViewChange(listView); return () => { onViewChange && onViewChange(null); }; }, [listView]);
   const [verbSearch, setVerbSearch] = useState('');
   const [chunkSearch, setChunkSearch] = useState('');
   const [speakingWord, setSpeakingWord] = useState('');
@@ -5208,6 +5325,7 @@ function App() {
   const [avisos, setAvisos]             = useState([]);
   const [bootError, setBootError]       = useState(null);
   const [tab, setTab]                   = useState('home');
+  const [vocabView, setVocabView]       = useState(null);   // seção aberta em Vocabulário (palavras, verbos, chunks) — só para o tempo de estudo
   const [challengeView, setChallengeView] = useState(null);
   const [challengeSimulation, setChallengeSimulation] = useState(null);
   const [challengeState, setChallengeState] = useState({ enabled:true, phase:'upcoming', weekKey:'2026-08-17' });
@@ -5239,11 +5357,14 @@ function App() {
   // Pós-aula sem HTML salvo abre por URL num iframe que não avisa atividade:
   // fica "cego" e conta só por tempo limitado.
   const usageArea = readerPost ? 'posaula'
-    : (openPart || openActivity || openExtra) ? 'atividade'
-    : (challengeView || peerGameState || peerLiveDuel) ? 'desafio' : 'outros';
+    : (openPart || openActivity || openExtra || openCorrecao) ? 'atividade'
+    : (challengeView || peerGameState || peerLiveDuel) ? 'desafio'
+    : tab === 'vocab' ? 'vocab' : 'outros';
   const usageItem = readerPost ? CzkUsage.itemKey('pos', readerPost.id)
     : openActivity ? CzkUsage.itemKey('act', openActivity.id)
-    : openExtra ? CzkUsage.itemKey('extra', openExtra.id) : '';
+    : openExtra ? CzkUsage.itemKey('extra', openExtra.id)
+    : openCorrecao ? CzkUsage.itemKey('corr', openCorrecao.wk || 'rel')
+    : (tab === 'vocab' && !challengeView && !peerGameState && !peerLiveDuel) ? CzkUsage.itemKey('vocab', vocabView || 'menu') : '';
   const usageBlind = !!readerPost && !readerPost.html;
   useEffect(() => {
     if (mirror || !user?.uid) return undefined;
@@ -5253,6 +5374,7 @@ function App() {
   useEffect(() => {
     CzkUsage.setBucket({ area: usageArea, item: usageItem, blind: usageBlind });
   }, [usageArea, usageItem, usageBlind]);
+  const adesao = useAdesaoData(student, posaulas, activities, tab);   // meta de estudo e adesão (Início e Progresso)
   const challengePreviewAccess = Boolean(student) && student?.challengeEnabled !== false;
   const combinedChallengeSimulation = {
     ...(challengeSimulation || {}),
@@ -5919,10 +6041,10 @@ function App() {
       <AppHeader student={student} onNotif={requestPush} showNotifBtn={showNotifBtn} onLogout={handleLogout} onPatchStudent={patchStudent} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-        {tab === 'home'   && <HomeTab   student={student} posaulas={posaulas} activities={activities} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} />}
+        {tab === 'home'   && <HomeTab   student={student} posaulas={posaulas} activities={activities} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} adesao={adesao} onGoVocab={() => setTab('vocab')} />}
         {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={(challenge) => { setSelectedChallenge(challenge || null); setChallengeView('hub'); }} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} />}
-        {tab === 'progresso' && <ProgressTab student={student} posaulas={posaulas} activities={activities} reviewReports={reviewReports} onOpenReview={openReviewResult} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} onOpenChallenge={() => { setSelectedChallenge(null); setChallengeView('hub'); }} />}
-        {tab === 'vocab'  && <VocabTab vocab={vocab} />}
+        {tab === 'progresso' && <ProgressTab adesao={adesao} student={student} posaulas={posaulas} activities={activities} reviewReports={reviewReports} onOpenReview={openReviewResult} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} onOpenChallenge={() => { setSelectedChallenge(null); setChallengeView('hub'); }} />}
+        {tab === 'vocab'  && <VocabTab vocab={vocab} onViewChange={setVocabView} />}
         {tab === 'perfil' && <PerfilTab student={student} onLogout={handleLogout} onPatchStudent={patchStudent} reviews={courseReviews} ownReview={ownCourseReview} onSaveReview={saveCourseReview} openReviewForm={reviewFormRequest} />}
       </div>
 

@@ -31,7 +31,11 @@ function ambiente() {
     addEventListener(t, f) { env.doc[t] = f; },
     removeEventListener(t) { delete env.doc[t]; },
   };
-  const window = { addEventListener(t, f) { env.win[t] = f; }, removeEventListener(t) { delete env.win[t]; } };
+  env.events = [];
+  const window = {
+    addEventListener(t, f) { env.win[t] = f; }, removeEventListener(t) { delete env.win[t]; },
+    dispatchEvent(ev) { env.events.push(ev.type); },
+  };
   const getFB = async () => ({
     db: 'db', serverTimestamp: () => 'TS', increment: v => ({ inc: v }),
     doc: (...p) => p.slice(1).join('/'),
@@ -43,6 +47,7 @@ function ambiente() {
   });
   const contexto = vm.createContext({
     window, document, getFB, Date: FakeDate, console, String, Object, Math, Number, isFinite,
+    CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init && init.detail; } },
     setInterval: fn => { env.timers.push(fn); return env.timers.length; }, clearInterval: () => {},
   });
   env.U = vm.runInContext(`${bloco[0]}; CzkUsage;`, contexto);
@@ -77,7 +82,7 @@ ok('parou 45 s e voltou a mexer: o intervalo inteiro conta (10 + 45 = 55 s)');
 
 // o documento só tem os campos que a regra do Firestore aceita
 assert.deepEqual(Object.keys(w.data).sort(), ['date', 'itemOpens', 'items', 'opens', 'secs', 'updatedAt']);
-assert.deepEqual(Object.keys(w.data.secs).sort(), ['atividade', 'desafio', 'outros', 'posaula', 'total']);
+assert.deepEqual(Object.keys(w.data.secs).sort(), ['atividade', 'desafio', 'outros', 'posaula', 'total', 'vocab']);
 ok('o documento gravado só tem os campos permitidos pela regra');
 
 // 2) Passou do limite: o intervalo inteiro é descartado (nem os primeiros 30 s contam)
@@ -172,6 +177,36 @@ assert.equal(e.soma('items', 'act_b'), 10);
 assert.equal(e.soma('itemOpens', 'pos_a'), 1);
 assert.equal(e.soma('itemOpens', 'act_b'), 1);
 ok('o intervalo vai para a tela em que o aluno estava; abrir de novo soma uma abertura');
+
+// 8b) Vocabulário, verbos e chunks são estudo e ficam separados de "outros"
+e = ambiente(); e.U.start('u1');
+e.U.setBucket({ area: 'vocab', item: 'vocab_verbs', blind: false });
+e.avanca(25 * S); e.U.ping();
+e.U.setBucket({ area: 'vocab', item: 'vocab_chunks', blind: false });
+e.avanca(15 * S); e.U.ping();
+e.U.setBucket({ area: 'outros', item: '', blind: false });
+e.avanca(8 * S); e.U.ping();
+await e.flush();
+assert.equal(e.area('vocab'), 40);
+assert.equal(e.area('outros'), 8);
+assert.equal(e.soma('items', 'vocab_verbs'), 25);
+assert.equal(e.soma('items', 'vocab_chunks'), 15);
+ok('verbos e chunks contam como vocab (estudo), separados de outros');
+
+// 8c) A tela da meta soma o que ainda não foi gravado e é avisada quando uma gravação termina
+e = ambiente(); e.U.start('u1');
+e.U.setBucket({ area: 'posaula', item: 'pos_a', blind: false });
+e.avanca(12 * S); e.U.ping();
+e.U.setBucket({ area: 'vocab', item: 'vocab_chunks', blind: false });
+e.avanca(5500); e.U.ping();
+let p = e.U.pendingToday();
+assert.equal(p.posaula, 12); assert.equal(p.vocab, 5.5); assert.equal(p.total, 17.5); assert.equal(p.outros, 0);
+assert.equal(e.events.length, 0);
+await e.flush();
+assert.deepEqual(e.events, ['czk-usage-flushed']);
+p = e.U.pendingToday();
+assert.equal(p.total, 0.5);                  // sobra de 0,5 s que não fechou um segundo inteiro
+ok('minutos ainda não gravados aparecem em pendingToday e a gravação avisa a tela');
 
 // 9) Limite configurável pela escola
 e = ambiente(); e.U.start('u1');

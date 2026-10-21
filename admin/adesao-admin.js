@@ -58,7 +58,12 @@ export function initAdesaoAdmin(ctx) {
   #adesao-root .czad-chip.warn{color:#9a5b05;background:var(--warn-bg);border-color:#f7d9a0}
   #adesao-root .czad-chip.bad{color:var(--bad);background:var(--bad-bg);border-color:#f6c1c1}
   #adesao-root .czad-chip.neutral{color:#475569;background:#f1f5f9;border-color:#e2e8f0}
-  #adesao-root .czad-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  #adesao-root .czad-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  #adesao-root .czad-mrow{display:grid;grid-template-columns:170px 1fr 1fr auto auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid #eef2f7;font-size:.88rem}
+  #adesao-root .czad-mrow:first-of-type{border-top:0}
+  #adesao-root .czad-mrow .lab{font-weight:700;color:#334155}
+  #adesao-root .czad-mrow em{font-style:normal;font-weight:600;color:var(--muted);font-size:.8rem}
+  #adesao-root .czad-ptag{margin:14px 0 -2px;font:700 10px/1 Inter,sans-serif;letter-spacing:.5px;text-transform:uppercase;color:#8b7355;background:#efe6d8;border-radius:6px;padding:5px 8px;display:inline-block}
   #adesao-root .czad-stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
   #adesao-root .czad-stat small{display:block;color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
   #adesao-root .czad-stat b{font-size:22px;font-weight:800;letter-spacing:-.4px}
@@ -172,6 +177,7 @@ export function initAdesaoAdmin(ctx) {
   #adesao-root .czad-msg{padding:24px;text-align:center;color:var(--muted)}
   @media(max-width:900px){
     #adesao-root .czad-stats{grid-template-columns:repeat(2,1fr)}
+    #adesao-root .czad-mrow{grid-template-columns:1fr 1fr;row-gap:4px}
     #adesao-root .czad-lhead{display:none}
     #adesao-root .czad-row{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"who who sc" "strip strip strip" "pb why why";row-gap:10px}
     #adesao-root .czad-row .czad-who{grid-area:who}#adesao-root .czad-row .czad-sc{grid-area:sc}#adesao-root .czad-row .czad-strip{grid-area:strip}#adesao-root .czad-row .czad-pb{grid-area:pb}#adesao-root .czad-row .czad-why{grid-area:why}
@@ -278,8 +284,8 @@ export function initAdesaoAdmin(ctx) {
     render();
     try {
       const c = S.cfg;
-      await updateDoc(schoolRef(), { 'adesao.cfg': { minPos: c.minPos, secEx: c.secEx, metaDias: c.metaDias, minDia: c.minDia, limiteSeg: c.limiteSeg, w: c.w } });
-      S.adesao.cfg = { minPos: c.minPos, secEx: c.secEx, metaDias: c.metaDias, minDia: c.minDia, limiteSeg: c.limiteSeg, w: c.w };
+      await updateDoc(schoolRef(), { 'adesao.cfg': { minPos: c.minPos, secEx: c.secEx, metaDias: c.metaDias, minDia: c.minDia, limiteSeg: c.limiteSeg, metaDiaMin: c.metaDiaMin, metaDiasEstudo: c.metaDiasEstudo, minTipo: c.minTipo, w: c.w } });
+      S.adesao.cfg = { minPos: c.minPos, secEx: c.secEx, metaDias: c.metaDias, minDia: c.minDia, limiteSeg: c.limiteSeg, metaDiaMin: c.metaDiaMin, metaDiasEstudo: c.metaDiasEstudo, minTipo: c.minTipo, w: c.w };
       S.dirty = false;
       writeStats();
     } catch (e) { alert('Não consegui salvar as metas: ' + (e.message || e)); }
@@ -341,6 +347,7 @@ export function initAdesaoAdmin(ctx) {
     const baixa = ok.filter(i => i.c.index < 65).length;
     const caindo = ok.filter(i => i.c.trend != null && i.c.trend <= -10).length;
     const conc = ok.filter(i => i.c.tags.some(t => t.t.startsWith('Tudo concentrado'))).length;
+    const metaOk = items.filter(i => i.c.weeks[2].goal.atingida).length;       // meta de estudo da semana passada
     const key = i => i.c.status === 'ok' ? i.c.index : null;
     const list = [...items].sort((a, b) => {
       const ka = key(a), kb = key(b);
@@ -352,7 +359,8 @@ export function initAdesaoAdmin(ctx) {
       + '<div class="czad-stat"><small>Média da turma</small><b>' + (avg == null ? '—' : avg) + '</b><span>de 100</span></div>'
       + '<div class="czad-stat"><small>Adesão baixa</small><b style="color:var(--bad)">' + baixa + '</b><span>abaixo de 65</span></div>'
       + '<div class="czad-stat"><small>Caindo</small><b style="color:var(--warn)">' + caindo + '</b><span>perderam ≥10 pts</span></div>'
-      + '<div class="czad-stat"><small>Só num dia</small><b>' + conc + '</b><span>estudam concentrado</span></div></div>';
+      + '<div class="czad-stat"><small>Só num dia</small><b>' + conc + '</b><span>estudam concentrado</span></div>'
+      + '<div class="czad-stat"><small>Meta de estudo</small><b style="color:var(--ok)">' + metaOk + '</b><span>de ' + items.length + ' bateram na semana passada</span></div></div>';
     h += '<div class="czad-toolbar"><div class="czad-seg" id="czad-segView"><button data-v="lista" class="' + (S.view === 'lista' ? 'on' : '') + '">Lista</button><button data-v="scatter" class="' + (S.view === 'scatter' ? 'on' : '') + '">Adesão × acertos</button></div>';
     if (S.view === 'lista') h += '<div class="czad-seg" id="czad-segSort"><button data-s="asc" class="' + (S.sort === 'asc' ? 'on' : '') + '">Menor adesão primeiro</button><button data-s="desc" class="' + (S.sort === 'desc' ? 'on' : '') + '">Maior</button><button data-s="nome" class="' + (S.sort === 'nome' ? 'on' : '') + '">Nome</button></div>';
     h += '</div>';
@@ -378,6 +386,7 @@ export function initAdesaoAdmin(ctx) {
       + '<li><b>Pós-aula:</b> soma o tempo de todas as aberturas. Meta: ' + cfg.minPos + ' min por pós-aula. Abrir e fechar não conta.</li>'
       + '<li><b>Atividades:</b> % de exercícios feitos × fator de tempo (tempo real ÷ ' + cfg.secEx + ' s por exercício feito, no máximo 1). Responder rápido demais vale menos.</li>'
       + '<li><b>Constância:</b> dias com pelo menos ' + cfg.minDia + ' min ativos ÷ meta de ' + cfg.metaDias + ' dias.</li>'
+      + '<li><b>Meta de estudo:</b> ' + num1(cfg.metaDiaMin) + ' min de estudo por dia, em ' + cfg.metaDiasEstudo + ' dias por semana. O aluno vê a meta de hoje na tela Início e o estudo da semana em Progresso, com o que compôs o tempo (ler pós-aula, chunks e verbos, exercícios). Início, perfil e avisos não contam como estudo.</li>'
       + '<li><b>Como o tempo é medido:</b> o intervalo entre dois movimentos do aluno (toque, clique, rolagem, digitar ou apagar) só conta se tiver até ' + cfg.limiteSeg + ' s. Se ele voltar a mexer dentro desse tempo, o intervalo inteiro entra; se não voltar, o intervalo todo é descartado, então app esquecido aberto não conta. Gravar a fala e ouvir áudio contam o tempo todo. Aba oculta nunca conta.</li>'
       + '<li>O número do aluno é a média das últimas 3 semanas fechadas, com mais peso para a mais recente (1·2·3). Faixas: Alta ≥ 85 · Média 65–84 · Baixa &lt; 65.</li>'
       + '<li>Semanas anteriores à coleta (' + (S.coleta ? 'desde ' + brDate(S.coleta) : 'ainda não começou') + ') não têm tempo nem dias medidos: nelas só entram aulas, atividades e desafio.</li>'
@@ -419,6 +428,19 @@ export function initAdesaoAdmin(ctx) {
     h += S.sub === 'prof' ? profHtml(it) : studentView(it);
     return h;
   }
+  // Meta de estudo de cada semana: dias que bateram a meta diária, minutos e tipos feitos
+  // (ler pós-aula · chunks/verbos/vocabulário · exercício).
+  function metaCardHtml(c) {
+    const rows = c.weeks.map(w => {
+      const g = w.goal;
+      const tipos = A.STUDY_TYPES.map(t => '<span class="czad-chip ' + (g.tipos[t.k] ? 'ok' : 'neutral') + '" title="' + esc(t.name + ' (' + t.inclui + ')') + '">' + t.ic + ' ' + (g.tipos[t.k] ? '✓' : '—') + '</span>').join(' ');
+      return '<div class="czad-mrow"><span class="lab">' + w.label + (w.partial ? ' <em>em andamento</em>' : '') + '</span>'
+        + '<span><b>' + esc(A.goalDaysTxt(g)) + '</b></span><span>' + Math.round(g.minutos) + ' de ' + num1(g.metaSemanaMin) + ' min</span>'
+        + '<span>' + tipos + '</span><span>' + (g.atingida ? '<span class="czad-chip ok">meta batida</span>' : w.partial ? '' : '<span class="czad-chip warn">não bateu</span>') + '</span></div>';
+    }).join('');
+    return '<div class="czad-card czad-sec"><h3>🎯 Meta de estudo (' + num1(c.cfg.metaDiaMin) + ' min por dia, ' + c.cfg.metaDiasEstudo + ' dias por semana)</h3>'
+      + '<div class="sub">Só conta tempo de estudo: pós-aula, atividades, desafio, vocabulário, verbos e chunks. Os ícones mostram os tipos feitos na semana (pós-aula · chunks e verbos · exercícios).</div><div style="margin-top:8px">' + rows + '</div></div>';
+  }
   function profHtml({ s, c }) {
     const ok = c.status === 'ok', cfg = c.cfg;
     const recadoSalvo = s.adesaoRecado && s.adesaoRecado.texto;
@@ -443,7 +465,8 @@ export function initAdesaoAdmin(ctx) {
     h += '<div class="czad-card czad-sec czad-cm"><h3>💬 Recado para ' + esc(firstOf(s)) + '</h3><div class="sub">É o que o aluno lê na tela dele. A sugestão começa pelo que está bom, dá um foco e um passo pequeno. Edite como quiser; salva ao sair do campo.</div>'
       + '<textarea id="czad-cm" rows="4" maxlength="600" aria-label="Recado para o aluno">' + esc(recadoSalvo || A.suggestComment(c, firstOf(s))) + '</textarea>'
       + '<div class="bar"><span class="czad-small czad-muted" id="czad-cm-state">' + (recadoSalvo ? 'Salvo — o aluno já vê este texto' : 'Sugestão automática (o aluno vê esta sugestão até você salvar outro texto)') + '</span><button type="button" class="czad-btn" id="czad-cm-reset">Restaurar sugestão</button></div></div>';
-    h += '<div class="czad-card czad-sec"><h3>Mapa de constância</h3><div class="sub">Cada quadrado é um dia. A cor mostra os minutos ativos no app. Toque num dia para ver o detalhe.</div><div class="czad-hm">'
+    h += metaCardHtml(c);
+    h += '<div class="czad-card czad-sec"><h3>Mapa de constância</h3><div class="sub">Cada quadrado é um dia. A cor mostra os minutos de estudo (pós-aula, atividades, desafio, vocabulário, verbos e chunks); início, perfil e avisos não contam. Toque num dia para ver o detalhe.</div><div class="czad-hm">'
       + '<div class="czad-hm-row hd"><span></span>' + WD.map(d => '<span>' + d + '</span>').join('') + '<span class="sum">Semana</span></div>';
     c.weeks.forEach((w, wi) => {
       h += '<div class="czad-hm-row"><span class="lab">' + w.short + (w.partial ? '<br><span style="font-weight:600;color:var(--muted)">em andamento</span>' : '') + '</span>';
@@ -497,8 +520,7 @@ export function initAdesaoAdmin(ctx) {
     const it = S.items.find(i => i.id === S.sel), w = it.c.weeks[wi], m = w.days[d];
     const el = document.getElementById('czad-dayinfo');
     if (!el) return;
-    el.innerHTML = '<b>' + WD[d] + ' ' + U.ddmm(U.addDays(w.start, d)) + '</b> — ' + (m > 0 ? fm(m) + ' ativos' + (m < it.c.cfg.minDia ? ' (menos de ' + it.c.cfg.minDia + ' min: o dia <b>não conta</b> como ativo)' : '')
-      + ': pós-aula ' + fm(w.dp[d]) + ' · atividades ' + fm(w.da[d]) + ' · outros ' + fm(w.df[d]) : 'não abriu o app.');
+    el.innerHTML = A.sDayText(it.c, wi, d);        // o mesmo texto que o aluno vê: estudo por tipo + outras telas
   }
 
   function studentView(it) {
@@ -506,9 +528,13 @@ export function initAdesaoAdmin(ctx) {
     const lib = S.adesao.liberadaEm;
     const liberado = lib && lib <= todayKey();
     const ribbon = liberado ? 'Visível para o aluno' : lib ? 'Prévia: o aluno só verá a partir de ' + brDate(lib) : 'Prévia: ainda não liberado para os alunos';
-    const html = A.studentHtml(c, { firstName: firstOf(s), recado: s.adesaoRecado && s.adesaoRecado.texto, ribbon, ribbonOpen: liberado, stats: S.stats });
+    // As três telas que o aluno recebe: meta de hoje (Início), Meu estudo e Minha adesão (Progresso).
+    const html = '<div class="czad-ptag">Na tela Início</div>' + A.goalTodayHtml(c, { firstName: firstOf(s) })
+      + '<div class="czad-ptag">Em Progresso › Meu estudo</div>' + A.goalWeekHtml(c)
+      + '<div class="czad-ptag">Em Progresso › Minha adesão</div>'
+      + A.studentHtml(c, { firstName: firstOf(s), recado: s.adesaoRecado && s.adesaoRecado.texto, ribbon, ribbonOpen: liberado, stats: S.stats });
     return '<div class="czad-prevgrid"><div class="czad-notes">'
-      + '<div><b>👁 O que o aluno vê</b><ul><li><b style="display:inline">Primeiro só o cartão da nota</b>: ao tocar nele abre tudo o que está abaixo</li><li>A própria nota (0–100) e a faixa</li><li>O mapa segunda a domingo, com os próprios minutos</li><li>O que conta: os 5 pontos, o peso de cada um e a meta</li><li>O que melhorou e o que caiu desde a semana passada</li><li>O recado do professor (você edita na visão do professor)</li><li>Adesão × acertos dele e a média por faixa, sem nomes</li></ul></div>'
+      + '<div><b>👁 O que o aluno vê</b><ul><li><b style="display:inline">Meta de hoje</b> na tela Início e <b style="display:inline">Meu estudo</b> em Progresso (minutos por tipo, dias com meta, o que conta como estudo)</li><li><b style="display:inline">Minha adesão</b>: primeiro só o cartão da nota; ao tocar nele abre tudo o que está abaixo</li><li>A própria nota (0–100) e a faixa</li><li>O mapa segunda a domingo, com os próprios minutos</li><li>O que conta: os 5 pontos, o peso de cada um e a meta</li><li>O que melhorou e o que caiu desde a semana passada</li><li>O recado do professor (você edita na visão do professor)</li><li>Adesão × acertos dele e a média por faixa, sem nomes</li></ul></div>'
       + '<div><b>🔒 Só você vê</b><ul><li>A lista da turma e a comparação entre alunos</li><li>As etiquetas internas (“Quase não abre o app”…): o aluno vê versões em tom de incentivo</li><li>O gráfico Adesão × acertos da turma, com nomes</li><li>Os controles de metas e pesos</li></ul></div>'
       + '<div><b>⏳ Quando aparece</b>' + (liberado ? 'Já está liberado: o aluno vê esta tela em “Meu progresso”.' : lib ? 'Libera para os alunos em ' + brDate(lib) + '. Até lá você vê aqui e no modo espelho.' : 'Ainda não liberado. Defina a data no topo da página.') + '</div>'
       + '<div><button type="button" class="czad-btn" id="czad-mirror" data-uid="' + esc(it.id) + '">Abrir no app como o aluno (modo espelho)</button></div></div>'
@@ -548,6 +574,10 @@ export function initAdesaoAdmin(ctx) {
       + ctl('metaDias', 'Meta de dias ativos por semana', 1, 7, ' dias', '')
       + ctl('minDia', 'Minutos para o dia contar como ativo', 1, 15, ' min', 'Abrir o app 10 segundos não conta.')
       + ctl('limiteSeg', 'Maior pausa que ainda conta como estudo', 20, 180, ' s', 'Entre dois movimentos do aluno (toque, rolagem, digitar). Se ele voltar a mexer dentro deste tempo, a pausa inteira conta; se passar, é descartada. Vale para a coleta daqui para frente.')
+      + '<h5>Meta de estudo do aluno</h5>'
+      + ctl('metaDiaMin', 'Meta de estudo por dia', 1, 60, ' min', 'Tempo de estudo (pós-aula, atividades, desafio, vocabulário, verbos e chunks) que o aluno tenta bater todo dia.')
+      + ctl('metaDiasEstudo', 'Dias de meta por semana', 1, 7, ' dias', 'Em quantos dias da semana ele precisa bater a meta diária.')
+      + ctl('minTipo', 'Mínimo para um tipo contar como feito', 1, 10, ' min', 'Ler pós-aula, chunks/verbos e exercícios aparecem como “feito” com este tempo no dia.')
       + '<h5>Pesos dos pilares</h5>'
       + KEYS.map(k => '<div class="czad-ctl"><div class="t"><label for="czad-w-' + k + '">' + PIL[k].ic + ' ' + PIL[k].name + '</label><span id="czad-vw-' + k + '">' + cfg.w[k] + '</span></div><small>' + PIL[k].desc + '</small><input type="range" id="czad-w-' + k + '" data-w="' + k + '" min="0" max="50" value="' + cfg.w[k] + '"></div>').join('')
       + '<p class="czad-small czad-muted">Só importa a proporção entre os pesos. A tela recalcula na hora. <b>Salvar</b> grava para a escola toda, e o aluno passa a ver o cálculo com estas metas.</p></div>'
@@ -591,6 +621,13 @@ export function initAdesaoAdmin(ctx) {
       if (t.closest('#czad-back')) { S.tab = 'turma'; render(); return; }
       const wk = t.closest('#czad-wk button'); if (wk) { S.selWeek = +wk.dataset.w; render(); return; }
       const cell = t.closest('.czad-cell'); if (cell && !cell.disabled) { el.querySelectorAll('.czad-cell.sel').forEach(x => x.classList.remove('sel')); cell.classList.add('sel'); dayInfo(+cell.dataset.w, +cell.dataset.d); return; }
+      const gtg = t.closest('[data-cza-gtoggle]'); if (gtg) { A.toggleGoalInfo(gtg); return; }
+      const gd = t.closest('[data-cza-gday]'); if (gd) {
+        const it = S.items.find(i => i.id === S.sel), box = document.getElementById('cza-gdayinfo');
+        if (it && box) box.innerHTML = A.sDayText(it.c, 3, +gd.dataset.czaGday);
+        return;
+      }
+      if (t.closest('[data-cza-go]')) return;      // na prévia os atalhos do Início não navegam
       const tg = t.closest('[data-cza-toggle]'); if (tg) { A.toggleDetails(tg.closest('.cza'), tg); return; }
       const sc = t.closest('.cza-cell'); if (sc && !sc.disabled) {
         el.querySelectorAll('.cza-cell.sel').forEach(x => x.classList.remove('sel')); sc.classList.add('sel');
@@ -619,7 +656,7 @@ export function initAdesaoAdmin(ctx) {
       if (t.dataset.cfg) {
         S.cfg = A.cfgOf({ ...S.cfg, [t.dataset.cfg]: +t.value, coletaDesde: S.coleta || null });
         S.dirty = true; recompute();
-        const u = { minPos: ' min', secEx: ' s', metaDias: ' dias', minDia: ' min', limiteSeg: ' s' }[t.dataset.cfg];
+        const u = { minPos: ' min', secEx: ' s', metaDias: ' dias', minDia: ' min', limiteSeg: ' s', metaDiaMin: ' min', metaDiasEstudo: ' dias', minTipo: ' min' }[t.dataset.cfg];
         const lab = document.getElementById('czad-v-' + t.dataset.cfg); if (lab) lab.textContent = S.cfg[t.dataset.cfg] + u;
         renderBehindDrawer(); return;
       }

@@ -83,11 +83,12 @@ service cloud.firestore {
         && d.keys().hasOnly(['date', 'secs', 'items', 'itemOpens', 'opens', 'updatedAt'])
         && d.date == day
         && d.secs is map
-        && d.secs.keys().hasOnly(['total', 'posaula', 'atividade', 'desafio', 'outros'])
+        && d.secs.keys().hasOnly(['total', 'posaula', 'atividade', 'desafio', 'vocab', 'outros'])
         && d.secs.get('total', 0) <= 86400
         && d.secs.get('posaula', 0) <= 86400
         && d.secs.get('atividade', 0) <= 86400
         && d.secs.get('desafio', 0) <= 86400
+        && d.secs.get('vocab', 0) <= 86400
         && d.secs.get('outros', 0) <= 86400
         && d.get('opens', 0) <= 500
         && d.get('items', {}).size() <= 60
