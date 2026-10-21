@@ -20,8 +20,21 @@ let n = 0;
 const ok = nome => { n += 1; console.log('ok  ', nome); };
 const S = 1000;
 
+// Reproduz o que o Firestore faz num setDoc com { merge: true }: mapas se fundem campo a campo e
+// increment() soma, MAS um mapa vazio SUBSTITUI o campo inteiro (o SDK o coloca na máscara).
+// Foi assim que gravações sem item apagavam os itens do dia em produção (21/10/2026).
+function aplicaMerge(atual, patch) {
+  const out = { ...(atual || {}) };
+  for (const [k, v] of Object.entries(patch)) {
+    if (v && typeof v === 'object' && 'inc' in v) out[k] = (Number(out[k]) || 0) + v.inc;
+    else if (v && typeof v === 'object' && !Array.isArray(v)) out[k] = Object.keys(v).length === 0 ? {} : aplicaMerge(out[k], v);
+    else out[k] = v;
+  }
+  return out;
+}
+
 function ambiente() {
-  const env = { clock: new Date(2026, 9, 20, 10, 0, 0).getTime(), writes: [], timers: [], visible: 'visible', failWrites: false, win: {}, doc: {} };
+  const env = { clock: new Date(2026, 9, 20, 10, 0, 0).getTime(), writes: [], store: {}, timers: [], visible: 'visible', failWrites: false, win: {}, doc: {} };
   class FakeDate extends Date {
     constructor(...a) { if (a.length) super(...a); else super(env.clock); }
     static now() { return env.clock; }
@@ -43,6 +56,7 @@ function ambiente() {
       if (env.failWrites) throw new Error('permission-denied');
       // JSON: os objetos nascem dentro do vm (outro "realm") e o assert estrito não os compara.
       env.writes.push({ ref, data: JSON.parse(JSON.stringify(data)), opts: JSON.parse(JSON.stringify(opts)) });
+      env.store[ref] = aplicaMerge(env.store[ref], JSON.parse(JSON.stringify(data)));
     },
   });
   const contexto = vm.createContext({
@@ -55,7 +69,7 @@ function ambiente() {
   env.flush = () => env.U.flush();
   env.avanca = ms => { env.clock += ms; };
   env.total = () => env.writes.reduce((t, w) => t + w.data.secs.total.inc, 0);
-  env.soma = (campo, k) => env.writes.reduce((t, w) => t + ((w.data[campo][k] && w.data[campo][k].inc) || 0), 0);
+  env.soma = (campo, k) => env.writes.reduce((t, w) => t + ((w.data[campo] && w.data[campo][k] && w.data[campo][k].inc) || 0), 0);
   env.area = k => env.writes.reduce((t, w) => t + w.data.secs[k].inc, 0);
   return env;
 }
@@ -207,6 +221,25 @@ assert.deepEqual(e.events, ['czk-usage-flushed']);
 p = e.U.pendingToday();
 assert.equal(p.total, 0.5);                  // sobra de 0,5 s que não fechou um segundo inteiro
 ok('minutos ainda não gravados aparecem em pendingToday e a gravação avisa a tela');
+
+// 8d) Regressão (produção, 21/10): gravação sem item NÃO pode apagar os itens já gravados no dia
+e = ambiente(); e.U.start('u1');
+e.U.setBucket({ area: 'posaula', item: 'pos_a', blind: false });
+e.avanca(10 * S); e.U.ping();
+await e.flush();                                               // 1: pós-aula (com item)
+e.U.setBucket({ area: 'outros', item: '', blind: false });
+e.avanca(8 * S); e.U.ping();
+await e.flush();                                               // 2: tela inicial (SEM item)
+assert.equal(e.writes[1].data.items, undefined);               // não manda mapa vazio
+assert.equal(e.writes[1].data.itemOpens, undefined);
+e.U.setBucket({ area: 'posaula', item: 'pos_a', blind: false });
+e.avanca(5 * S); e.U.ping();
+await e.flush();                                               // 3: voltou ao pós-aula
+const dia = e.store['students/u1/usage/2026-10-20'];
+assert.equal(dia.items.pos_a, 15);                             // 10 + 5: nada foi apagado
+assert.equal(dia.itemOpens.pos_a, 2);
+assert.equal(dia.secs.posaula, 15); assert.equal(dia.secs.outros, 8); assert.equal(dia.secs.total, 23);
+ok('gravação sem item não apaga os itens do dia (mapa vazio no merge substitui o campo)');
 
 // 9) Limite configurável pela escola
 e = ambiente(); e.U.start('u1');

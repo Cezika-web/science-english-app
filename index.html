@@ -321,10 +321,12 @@ const CzkUsage = (() => {
     let fb;
     try { fb = await getFB(); } catch (e) { jobs.forEach(j => giveBack(j)); return; }
     for (const { day, take } of jobs) {
-      const data = { date: day, secs: {}, items: {}, itemOpens: {}, updatedAt: fb.serverTimestamp() };
+      const data = { date: day, secs: {}, updatedAt: fb.serverTimestamp() };
       ['total', 'posaula', 'atividade', 'desafio', 'vocab', 'outros'].forEach(k => { data.secs[k] = fb.increment(take.secs[k] || 0); });
-      Object.keys(take.items).forEach(k => { data.items[k] = fb.increment(take.items[k]); });
-      Object.keys(take.itemOpens).forEach(k => { data.itemOpens[k] = fb.increment(take.itemOpens[k]); });
+      // Mapa VAZIO num setDoc com merge SUBSTITUI o campo (o SDK o põe na máscara e apagaria o que já
+      // foi gravado no dia). Por isso items/itemOpens só vão quando há o que somar.
+      if (Object.keys(take.items).length) { data.items = {}; Object.keys(take.items).forEach(k => { data.items[k] = fb.increment(take.items[k]); }); }
+      if (Object.keys(take.itemOpens).length) { data.itemOpens = {}; Object.keys(take.itemOpens).forEach(k => { data.itemOpens[k] = fb.increment(take.itemOpens[k]); }); }
       if (take.opens) data.opens = fb.increment(take.opens);
       try {
         await fb.setDoc(fb.doc(fb.db, 'students', uid, 'usage', day), data, { merge: true });
