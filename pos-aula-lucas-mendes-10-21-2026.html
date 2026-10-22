@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Lucas Mendes — 10/21/2026 — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+*{box-sizing:border-box;} body{color:#263442;line-height:1.65;}
+h2{font-size:1.14rem;line-height:1.4;color:#14532D;} h3{font-size:1rem;}
+p{margin:0 0 12px;} li{margin:7px 0;} ul,ol{padding-left:22px;}
+.correction+.correction{border-top:1px solid var(--border);padding-top:14px;margin-top:14px;}
+.correction p{margin:5px 0;} .note{font-size:.87rem;color:var(--muted);}
+.rule{background:#F0FDF4;border-left:4px solid var(--accent);padding:12px;border-radius:6px;}
+.vocab{min-width:190px;} .vocab p{line-height:1.6;}
+.intro{font-style:italic;} .talk-table{font-variant-numeric:tabular-nums;}
+@media(max-width:600px){.wrap{padding:16px 10px;}header{flex-direction:column;}.actions{width:100%;}.btn{justify-content:center;}.actions .btn{width:100%;}.vocab{min-width:0;}.talk-table th,.talk-table td{padding:8px 6px;font-size:.83rem;}}
+@media print{html,body{height:auto;background:white;}.wrap{display:block;padding:0;}.card{max-width:none;border:0;box-shadow:none;padding:12px;}.actions,.vocab-say{display:none;}section{break-inside:auto;}.vocab,.correction{break-inside:avoid;}a{color:inherit;}}
+</style></head><body>
+<div class="wrap"><article class="card" role="main"><header><div><div style="display:flex;gap:10px;align-items:center;"><span class="badge">PÓS-AULA</span><h1>Reported Speech: ordens, pedidos e emergências</h1></div><div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Lucas Mendes &nbsp;•&nbsp; <strong>Data:</strong> 10/21/2026<br>Aula em dupla: Lucas Mendes e Gabriel Mendes</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header><main>
+<section class="panel"><p class="intro" style="margin:0;font-weight:600;color:#14532D;">Lucas, nesta aula você praticou como relatar ordens e pedidos com to e not to, ajustando os pronomes conforme a situação. O vocabulário de emergências ajudou a aplicar a estrutura em exemplos concretos.</p></section>
+<section><h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2><div class="outline-card">
+<p><strong>1. Imperativo: instruções, ordens, conselhos e pedidos.</strong> Antes de relatar a fala de outra pessoa, a turma revisou o imperativo. Na afirmativa, usamos o verbo na forma base, sem <em>to</em>, com o sujeito <em>you</em> normalmente implícito: <em>Open the door.</em> Para negar, usamos <strong>don't + verbo</strong>: <em>Don't go outside.</em> Acrescentar <em>please</em> torna o pedido mais educado.</p>
+<p><strong>2. Direct speech × indirect / reported speech.</strong> No discurso direto, reproduzimos as palavras da pessoa entre aspas: <em>He said, “Bring me a flashlight.”</em> No indireto, contamos a instrução: <em>He told me to bring him a flashlight.</em> A frase deixa de ser uma ordem dirigida ao leitor e passa a ser o relato de uma ordem.</p>
+<div class="rule"><strong>Ordem afirmativa:</strong> pessoa + told + destinatário + <strong>to + verbo</strong>.<br><strong>Ordem negativa:</strong> pessoa + told + destinatário + <strong>not to + verbo</strong>.<br><strong>Pedido:</strong> pessoa + asked + destinatário + <strong>to + verbo</strong>.</div>
+<p style="margin-top:12px;"><strong>3. A negativa muda de estrutura.</strong> O <em>don't</em> do imperativo vira <strong>not to</strong> no relato: <em>“Don't go outside.” → He told me not to go outside.</em> O <em>not</em> vem antes de <em>to</em>; não se coloca <em>don't</em> nem <em>do not</em> nessa posição. Para um pedido, o exemplo foi <em>“Please help me.” → She asked me to help her.</em></p>
+<p><strong>4. Pronomes: acompanhe quem fala, quem ouve e quem relata.</strong> Se Mark diz <em>“Call me”</em>, o <em>me</em> é Mark; ao relatar, usamos <em>call him</em>. Se você relata o que ouviu, o <em>you</em> dirigido a você pode virar <em>I</em>. Antes de um verbo, escolha o pronome de sujeito (<em>I, he, she, we</em>); como complemento, escolha o pronome objeto (<em>me, him, her, us</em>). No aviso do rádio, <em>your doors and windows</em> pôde virar <em>our doors and windows</em> porque os ouvintes estavam relatando uma instrução dirigida a eles.</p>
+<p><strong>5. Aplicação na página 52.</strong> A turma retomou desastres e emergências — explosão, vazamento de óleo, colapso de ponte, acidente aéreo e ferroviário — e reescreveu instruções sobre alimentos de emergência, ligações, saída de casa e portas e janelas. Neste exercício, César orientou a manter o tempo das formas que já estavam no enunciado, incluindo <em>says</em>. A mudança de tempos verbais, com present perfect e past perfect, ficou para a próxima atividade; portanto, não é uma regra geral de que o tempo nunca muda.</p>
+<p><strong>6. Fechamento.</strong> Um jogo de estimativas trabalhou números e leitura de perguntas sobre passos numa maratona, telas de cinema e uma sequência de grãos de arroz. César encerrou reforçando a leitura deste pós-aula e a conclusão das atividades pendentes.</p>
+<p><strong>Seu foco, Lucas:</strong> automatize a troca de <em>don't</em> por <em>not to</em> e confira a forma base depois de <em>to</em>. Na dúvida com pronomes, desenhe três papéis: quem falou, quem ouviu e quem está contando agora. Você identificou que o <em>you</em> dirigido a você pode virar <em>I</em> no relato.</p></div></section>
+<section><h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2><div class="outline-card"><p class="note">Exemplos trabalhados na explicação e na leitura, com grafia e pontuação revisadas.</p><ul><li><strong>“Open the door.”</strong> → Abra a porta. <em>Imperativo afirmativo.</em></li><li><strong>“Bring me a flashlight.”</strong> → Traga uma lanterna para mim.</li><li><strong>“He told me to bring a flashlight.”</strong> → Ele me disse para trazer uma lanterna.</li><li><strong>“Don't go outside.”</strong> → Não saia / não vá lá fora.</li><li><strong>“He told me not to go outside.”</strong> → Ele me disse para não sair.</li><li><strong>“Please help me.” → “She asked me to help her.”</strong><br>“Por favor, me ajude.” → Ela me pediu para ajudá-la.</li><li><strong>“Don't take the warning lightly.”</strong> → Não leve o aviso na brincadeira / leve o aviso a sério.</li><li><strong>“Tell me when you hear the news.”</strong> → Avise-me quando você ouvir as notícias.</li><li><strong>“Please text me when you get back.”</strong> → Por favor, me mande uma mensagem quando você voltar.</li></ul></div></section>
+<section><h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3>flashlight</h3><button type="button" class="vocab-say" data-czk-say="flashlight" aria-label="Ouvir a pronúncia de flashlight" aria-pressed="false" title="Ouvir flashlight">&#128266;</button></div><p><em>lanterna</em><br>Uma fonte portátil de luz, útil em emergências.<br><strong>Ex.:</strong> Bring me a flashlight.<br><small>Traga uma lanterna para mim.</small></p></div><div class="vocab green"><div class="vocab-head"><h3>warning</h3><button type="button" class="vocab-say" data-czk-say="warning" aria-label="Ouvir a pronúncia de warning" aria-pressed="false" title="Ouvir warning">&#128266;</button></div><p><em>aviso / alerta</em><br>Informação que chama atenção para um perigo ou problema.<br><strong>Ex.:</strong> Don't take the warning lightly.<br><small>Leve o alerta a sério.</small></p></div><div class="vocab yellow"><div class="vocab-head"><h3>oil spill</h3><button type="button" class="vocab-say" data-czk-say="oil spill" aria-label="Ouvir a pronúncia de oil spill" aria-pressed="false" title="Ouvir oil spill">&#128266;</button></div><p><em>vazamento / derramamento de óleo</em><br>Liberação de óleo no ambiente, por exemplo, no mar.<br><strong>Ex.:</strong> Call me when you find out about the oil spill.<br><small>Ligue para mim quando souber sobre o vazamento de óleo.</small></p></div></div></section>
+<section><h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2><div class="outline-card"><h3 style="margin-top:0;">Gramática e comunicação</h3><ul><li><strong>imperative</strong> — imperativo; forma usada para dar instruções, ordens e fazer pedidos.</li><li><strong>direct speech / indirect speech / reported speech</strong> — discurso direto / discurso indireto ou relatado.</li><li><strong>infinitive / base form</strong> — infinitivo / forma base do verbo; nesta aula: <em>to go</em> × <em>go</em>.</li><li><strong>quotation marks</strong> — aspas; indicam as palavras exatas da fala direta.</li><li><strong>tell → told / ask → asked / say → said</strong> — dizer a alguém / pedir ou perguntar / dizer; formas de presente e passado.</li><li><strong>subject pronoun / object pronoun</strong> — pronome de sujeito / pronome objeto: <em>she</em> × <em>her</em>, <em>I</em> × <em>me</em>.</li><li><strong>your / our</strong> — seu(s), sua(s), de vocês / nosso(s), nossa(s); a escolha depende do ponto de vista.</li></ul><h3>Desastres e emergência</h3><ul><li><strong>explosion</strong> — explosão; <strong>flood</strong> — enchente / inundação.</li><li><strong>oil spill</strong> — vazamento de óleo; <strong>bridge collapse</strong> — colapso / desabamento de ponte.</li><li><strong>plane crash</strong> — acidente / queda de avião; <strong>train wreck</strong> — acidente ferroviário, que pode envolver um descarrilamento.</li><li><strong>damage</strong> — dano / danos; <strong>wings</strong> — asas; <strong>get stuck</strong> — ficar preso.</li><li><strong>flashlight</strong> — lanterna; <strong>emergency supplies of food</strong> — estoque / suprimentos de alimentos para uma emergência.</li><li><strong>warning / danger</strong> — alerta / perigo; <strong>take a warning lightly</strong> — não levar um alerta a sério.</li><li><strong>roads / doors / windows</strong> — estradas / portas / janelas; <strong>closed</strong> — fechado(s).</li></ul><h3>Ações e expressões da aula</h3><ul><li><strong>go outside / leave home</strong> — sair / sair de casa.</li><li><strong>turn on the news</strong> — ligar a TV ou o rádio para acompanhar as notícias.</li><li><strong>find out / call / text</strong> — descobrir / ligar / mandar mensagem de texto.</li><li><strong>get back</strong> — voltar; <strong>in case</strong> — caso / para o caso de.</li><li><strong>spread</strong> — espalhar-se / alastrar-se, como um incêndio.</li></ul><h3>Jogo de estimativas</h3><ul><li><strong>marathon / steps</strong> — maratona / passos.</li><li><strong>movie screens</strong> — telas de cinema; uma unidade de cinema pode ter várias telas.</li><li><strong>grain of rice / meters</strong> — grão de arroz / metros.</li><li><strong>more than / too high</strong> — mais de / alto demais.</li></ul></div></section>
+<section><h2 style="margin-bottom:8px;">🚨 Correções importantes</h2><div class="outline-card"><p class="note">Pontos retomados com você em aula. Os pares abaixo organizam as dúvidas; onde o áudio não registra a resposta completa, a frase incorreta é um modelo de revisão da estrutura, não uma citação literal.</p><div class="correction"><p><strong>1. Negativa no relato: not to</strong></p><p style="color:#b42318;">❌ He told me don't go outside.</p><p style="color:#276749;">✅ <strong>He told me not to go outside.</strong></p><p>Ao ser perguntado sobre a negativa, você sugeriu <em>don't</em>. Ele funciona na ordem direta: <em>Don't go outside.</em> Depois de <em>told me</em>, usamos <strong>not to + verbo</strong>.</p></div><div class="correction"><p><strong>2. Leave, sem -ing, depois de to</strong></p><p style="color:#b42318;">❌ My sister said to leaving home.</p><p style="color:#276749;">✅ <strong>My sister said to leave home.</strong></p><p>Na reescrita do exercício, apareceu a dúvida entre <em>leaving</em> e <em>leave</em>. Para relatar essa instrução, use <strong>to leave</strong>. O <em>to</em> aqui marca o infinitivo.</p></div><div class="correction"><p><strong>3. Your e our: ponto de vista</strong></p><p style="color:#b42318;">❌ your → our porque doors e windows estão no plural</p><p style="color:#276749;">✅ <strong>your → our quando a instrução dirigida a vocês é relatada por nós</strong></p><p><em>Your</em> pode acompanhar substantivos no singular ou plural: <em>your door / your doors</em>. <em>Our</em> expressa posse de <strong>nós</strong>. No exercício do rádio, a troca depende de quem recebeu e relatou o aviso; a quantidade de portas ou janelas não determina a troca.</p></div><div class="correction"><p><strong>4. Pronome de sujeito × pronome objeto</strong></p><p style="color:#b42318;">❌ Call he when me find out.</p><p style="color:#276749;">✅ <strong>Call him when I find out.</strong></p><p>Modelo de revisão da dúvida trabalhada em aula: depois de <em>call</em>, use o objeto <em>him</em>; antes de <em>find out</em>, use o sujeito <em>I</em>. Primeiro identifique quem é cada pessoa na situação.</p></div></div></section>
+<section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/CHdbsGGe94I" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section>
+<section class="speaking"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Pessoa</th><th>Participação</th><th>Tempo aproximado</th></tr></thead><tbody><tr class="row-teacher"><td class="talk-label">César — professor</td><td class="talk-percent">63%</td><td class="talk-time">21 min 05 s</td></tr><tr class="row-student"><td class="talk-label">Lucas Mendes</td><td class="talk-percent">23%</td><td class="talk-time">7 min 39 s</td></tr><tr class="row-student"><td class="talk-label">Gabriel Mendes</td><td class="talk-percent">14%</td><td class="talk-time">4 min 47 s</td></tr></tbody></table><p class="note" style="margin-top:10px;">Estimativa da aula em dupla pela soma dos intervalos identificados na transcrição, em português e inglês. Pausas e tempo de escrita ficam fora da conta. A gravação dura cerca de 56 minutos; os trechos de fala marcados somam cerca de 33 min 30 s. Os dois alunos somaram aproximadamente 37% da fala.</p></section>
+<section><h2 style="margin-bottom:8px;">📝 Homework</h2><div class="homework"><p><strong>Combinado em aula:</strong> leia este pós-aula para revisar a explicação e conclua as atividades pendentes no app. César reforçou que a prática precisa acompanhar as aulas; havia atividades acumuladas para os dois.</p><ul><li>Leia este pós-aula de <strong>2 a 3 vezes durante a semana</strong>.</li><li>Releia a explicação e as transformações da <strong>página 52</strong>, dando atenção a <em>to</em>, <em>not to</em> e aos pronomes.</li><li>Faça as atividades disponíveis no app e retome as que ainda estão pendentes.</li></ul><p><strong>Prática extra sugerida para você:</strong> faça três pares de ordem negativa → relato com <em>not to</em>, e três pares de ordem afirmativa → relato com <em>to + verbo</em>. Leia os pares em voz alta depois de escrever.</p><p class="note" style="margin-bottom:0;">A atividade com mudança de tempos verbais será aprofundada na próxima aula.</p></div></section>
+</main><footer><p style="margin:18px 0 0;color:var(--muted);font-size:.9rem;">© 2025 CZK English • czkenglish@gmail.com</p></footer></article></div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>
