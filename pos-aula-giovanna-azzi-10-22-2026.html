@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Giovanna Azzi — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+*{box-sizing:border-box;}
+body{color:#374151;line-height:1.6;}
+h2{font-size:1.12rem;color:#14532D;line-height:1.4;}
+h3{font-size:1rem;}
+li+li{margin-top:7px;}
+.outline-card p:first-child{margin-top:0;}
+.outline-card p:last-child{margin-bottom:0;}
+.vocab{min-width:0;flex:1 1 200px;}
+.vocab p{line-height:1.55;}
+header{flex-wrap:wrap;}
+.heading-line{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.actions{margin-top:8px;}
+.rule{background:#F7FDF9;border-left:4px solid var(--accent);padding:10px 12px;border-radius:6px;}
+.correction+.correction{border-top:1px solid var(--border);padding-top:14px;margin-top:14px;}
+.correction p{margin:5px 0;}
+.wrong{color:#b91c1c;}.right{color:#166534;}
+.note{font-size:.88rem;color:var(--muted);}
+@media(max-width:480px){.wrap{padding:18px 10px;}.card{padding:16px;}h1{font-size:1.2rem;}.vocab{width:100%;}.talk-table{font-size:.8rem;}.talk-table th,.talk-table td{padding:7px 6px;}}
+@media print{html,body{height:auto;background:#fff;}.wrap{padding:0;display:block;}.card{max-width:none;border:0;box-shadow:none;padding:0;}.actions,.vocab-say{display:none;}section,.correction,.vocab{break-inside:avoid;}.media-btn{box-shadow:none!important;}h2,h3{break-after:avoid;}a{color:inherit;}}
+</style></head>
+<body><div class="wrap"><article class="card" role="main">
+<header><div><div class="heading-line"><span class="badge">PÓS-AULA</span><h1>Preferências, hábitos e tecnologia — revisão da Unidade 6</h1></div>
+<div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluna:</strong> Giovanna Azzi &nbsp;•&nbsp; <strong>Data:</strong> 10/22/2026</div></div>
+<div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header>
+<main><section class="panel"><p style="margin:0;font-weight:600;color:#14532D;"><em>Giovanna, nesta aula você praticou escolhas com “would rather” e revisou como falar de hábitos e ações em andamento. O foco foi montar perguntas e usar a forma correta do verbo, retomando o vocabulário de tecnologia no fechamento da Unidade 6.</em></p></section>
+<section><h2>📘 Resumo da Aula</h2><div class="outline-card">
+<p><strong>1. Preferências com “Would you rather…?”</strong><br>A aula começou com um jogo de escolhas: sentir um pouco de frio ou de fome, viver sem entretenimento ou sem interação social, viver sem internet ou sem arte e escolher entre situações incômodas, como ter soluços ou ouvir um bebê chorando. Você leu as opções, discutiu suas escolhas e praticou respostas com <strong>I would rather… / I'd rather…</strong> (eu preferiria…).</p>
+<p class="rule"><strong>Resposta:</strong> I would rather + verbo na forma base.<br><strong>Pergunta:</strong> Would you rather + verbo na forma base…?<br>Exemplo retomado da aula: <strong>I'd rather live in a world without internet.</strong><br>“Would” já funciona como auxiliar nessa pergunta; não acrescente “do”.</p>
+<p><strong>2. Revisão das atividades e do desafio</strong><br>O ponto que mais precisou de atenção foi a formação das frases no presente. Para hábitos, usamos o <strong>simple present</strong>: com <strong>he, she e it</strong>, o verbo afirmativo recebe a forma de terceira pessoa, como <strong>checks, watches, goes e wants</strong>. Palavras como <strong>usually</strong> e <strong>never</strong> indicam frequência, mas não substituem essa conjugação. Nas perguntas com <strong>does</strong>, o verbo principal volta à forma base: <strong>Does she work out every day?</strong></p>
+<p class="rule"><strong>Hábito:</strong> She checks her phone. → Does she check her phone?<br><strong>Ação em andamento:</strong> She is checking her phone. → Is she checking her phone?<br><strong>Com “to be”:</strong> You are addicted to your phone. → Are you addicted to your phone?<br>Os pares acima organizam as estruturas retomadas na correção.</p>
+<p>Também revisamos <strong>before × after</strong> (antes × depois), <strong>increase × decrease</strong> (aumentar × diminuir) e a frase <strong>She wants a new phone</strong>. Nesse sentido de desejo, a forma usual é <strong>wants</strong>. Tirar apenas o “is” de “She is wanting…” não resolve a construção trabalhada.</p>
+<p><strong>3. Fechamento da Unidade 6: tecnologia</strong><br>Retomamos os aparelhos e as expressões da unidade, além da diferença entre uma ação em progresso, um plano futuro combinado e um hábito. Vimos que <strong>work</strong> pode significar <strong>funcionar</strong> ao falar de um aparelho: um ar-condicionado que “isn't working” não está funcionando.</p>
+<p>No vídeo <strong>“You are all on your phones”</strong>, uma reunião é interrompida pelo uso de dispositivos. Você identificou pessoas olhando câmeras, enviando fotos para um site e usando um tablet e uma assistente virtual. Ao recontar a história, diferenciamos <strong>upload</strong> (enviar um arquivo para a internet) de <strong>download</strong> (baixar um arquivo), retomamos <strong>fitness tracker</strong> e a compra de uma impressora pela assistente virtual.</p>
+<p><strong>4. Prática final e rotina de estudo</strong><br>Na prática oral, retomamos perguntas e respostas sobre frequência, incluindo <strong>work out</strong> (malhar) e <strong>three times a week</strong> (três vezes por semana). Com três meses de curso, as próximas atividades também terão revisão das unidades anteriores. A meta discutida foi <strong>50 minutos de estudo por semana</strong>, distribuídos em momentos curtos. Ler o pós-aula com atenção, fazer atividades e participar do desafio entram nessa rotina.</p>
+</div></section><section><h2>💬 Frases usadas em aula</h2><div class="outline-card"><p class="note">Frases praticadas, corrigidas ou ouvidas no vídeo em aula, com a escrita em inglês organizada para revisão.</p><ul><li><strong lang="en">I&#x27;d rather live in a world without internet.</strong><br>Eu preferiria viver em um mundo sem internet.</li><li><strong lang="en">Are you addicted to your phone?</strong><br>Você é viciada no seu celular?</li><li><strong lang="en">Are you using your phone right now?</strong><br>Você está usando o celular agora?</li><li><strong lang="en">She wants a new phone.</strong><br>Ela quer um celular novo.</li><li><strong lang="en">You are all on your phones.</strong><br>Vocês estão todos no celular.</li><li><strong lang="en">I&#x27;m uploading photos to our website.</strong><br>Estou enviando fotos para o nosso site.</li><li><strong lang="en">Does she work out every day?</strong><br>Ela malha todos os dias?</li><li><strong lang="en">Yes, she does.</strong><br>Sim, ela malha.</li></ul></div></section><section><h2>⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3 lang="en">would rather</h3>
+    <button type="button" class="vocab-say" data-czk-say="would rather" aria-label="Ouvir a pronúncia de would rather" aria-pressed="false" title="Ouvir would rather">&#128266;</button></div>
+    <p><em>preferiria / preferir (entre opções)</em><br>Expressão para escolher uma alternativa. Depois dela, use o verbo na forma base.</p><p><strong lang="en">I&#x27;d rather live in a world without internet.</strong><br><small>Eu preferiria viver em um mundo sem internet.</small></p></div><div class="vocab green"><div class="vocab-head"><h3 lang="en">work out</h3>
+    <button type="button" class="vocab-say" data-czk-say="work out" aria-label="Ouvir a pronúncia de work out" aria-pressed="false" title="Ouvir work out">&#128266;</button></div>
+    <p><em>malhar / fazer exercício</em><br>A combinação de work com out muda o sentido: aqui, significa fazer exercício.</p><p><strong lang="en">Does she work out every day?</strong><br><small>Ela malha todos os dias?</small></p></div><div class="vocab yellow"><div class="vocab-head"><h3 lang="en">upload</h3>
+    <button type="button" class="vocab-say" data-czk-say="upload" aria-label="Ouvir a pronúncia de upload" aria-pressed="false" title="Ouvir upload">&#128266;</button></div>
+    <p><em>enviar um arquivo para a internet</em><br>Usamos quando mandamos fotos ou outros arquivos do aparelho para um site ou serviço.</p><p><strong lang="en">I&#x27;m uploading photos to our website.</strong><br><small>Estou enviando fotos para o nosso site.</small></p></div></div></section><section><h2>📚 Vocabulário completo da aula</h2><div class="outline-card"><h3>Escolhas, sensações e entretenimento</h3><ul><li><strong lang="en">would rather / would you rather…?</strong> — preferiria / você preferiria…?</li><li><strong lang="en">slightly</strong> — um pouco; levemente</li><li><strong lang="en">cold / hungry / tired</strong> — com frio / com fome / cansado(a)</li><li><strong lang="en">entertainment</strong> — entretenimento</li><li><strong lang="en">social interaction</strong> — interação social</li><li><strong lang="en">without</strong> — sem</li><li><strong lang="en">art / internet</strong> — arte / internet</li><li><strong lang="en">turkey / pet</strong> — peru (animal) / animal de estimação</li><li><strong lang="en">Thanksgiving</strong> — Dia de Ação de Graças</li><li><strong lang="en">hiccups</strong> — soluços</li><li><strong lang="en">a week straight</strong> — uma semana seguida</li><li><strong lang="en">non-stop</strong> — sem parar</li><li><strong lang="en">cry / listen to</strong> — chorar / ouvir; escutar</li><li><strong lang="en">wake up</strong> — acordar</li></ul><h3>Tempo, frequência e mudanças</h3><ul><li><strong lang="en">before / after</strong> — antes / depois</li><li><strong lang="en">right now</strong> — agora mesmo</li><li><strong lang="en">always / usually / never</strong> — sempre / geralmente / nunca</li><li><strong lang="en">every day</strong> — todos os dias</li><li><strong lang="en">three times a week</strong> — três vezes por semana</li><li><strong lang="en">increase / decrease</strong> — aumentar / diminuir</li><li><strong lang="en">work / work out</strong> — trabalhar (ou funcionar, para aparelhos) / malhar</li><li><strong lang="en">check / watch / want</strong> — verificar / assistir / querer</li><li><strong lang="en">good → better → best</strong> — bom → melhor → o melhor</li><li><strong lang="en">bad → worse → worst</strong> — ruim → pior → o pior</li></ul><h3>Tecnologia, aparelhos e reunião</h3><ul><li><strong lang="en">phone / device</strong> — celular ou telefone / aparelho; dispositivo</li><li><strong lang="en">desktop computer / laptop</strong> — computador de mesa / notebook</li><li><strong lang="en">tablet</strong> — tablet</li><li><strong lang="en">scanner / printer</strong> — scanner (digitalizador) / impressora</li><li><strong lang="en">video camera</strong> — câmera de vídeo</li><li><strong lang="en">fitness tracker</strong> — dispositivo que acompanha a atividade física</li><li><strong lang="en">virtual assistant</strong> — assistente virtual</li><li><strong lang="en">air conditioner</strong> — ar-condicionado</li><li><strong lang="en">upload / download</strong> — enviar um arquivo para a internet / baixar um arquivo</li><li><strong lang="en">website / photos</strong> — site / fotos</li><li><strong lang="en">meeting</strong> — reunião</li><li><strong lang="en">on your phone</strong> — usando o celular</li><li><strong lang="en">addicted to</strong> — viciado(a) em</li><li><strong lang="en">isn&#x27;t working</strong> — não está funcionando, quando falamos de um aparelho</li></ul></div></section><section><h2>🚨 Correções importantes</h2><div class="outline-card"><p class="note">Padrões retomados nas atividades, no desafio e na prática oral. Os trechos abaixo organizam os erros para facilitar a revisão.</p><div class="correction"><p><strong>1. “Would” já é o auxiliar</strong></p><p class="wrong">❌ Misturar do + would na mesma pergunta de preferência.</p><p class="right">✅ <strong lang="en">Would you rather live in a world without internet?</strong></p><p>Esse padrão apareceu na revisão das atividades. Coloque <strong>would</strong> antes de <strong>you</strong>; não acrescente <strong>do</strong>. Na resposta: <strong>I would rather live…</strong> ou <strong>I’d rather live…</strong>.</p></div><div class="correction"><p><strong>2. Hábitos com “she”: não esqueça o “s”</strong></p><p class="wrong">❌ She never check… / usar checking sozinho para um hábito.</p><p class="right">✅ <strong lang="en">She never checks…</strong></p><p>Com <strong>she</strong>, a afirmativa no simple present pede a conjugação de terceira pessoa. <strong>Never</strong> não torna a frase uma pergunta e não retira o <strong>s</strong>. Outros verbos retomados: <strong>watch → watches</strong> e <strong>go → goes</strong>. Compare com uma ação em andamento: <strong>She is checking…</strong>.</p></div><div class="correction"><p><strong>3. Pergunta com “to be” e a preposição “to”</strong></p><p class="wrong">❌ Manter a ordem you are… em uma pergunta neutra; addicted on your phone.</p><p class="right">✅ <strong lang="en">Are you addicted to your phone?</strong></p><p>Inverta <strong>you are → are you</strong>. A expressão é <strong>addicted to</strong>, e essa pergunta não usa <strong>do/does</strong>.</p></div><div class="correction"><p><strong>4. “Eu leio” é diferente de “eu estou lendo”</strong></p><p class="wrong">❌ I reading a book… para dizer “eu leio um livro”.</p><p class="right">✅ <strong lang="en">I read a book before bed.</strong></p><p>Para o hábito, use <strong>I read</strong>. Para uma ação em andamento, a estrutura completa é <strong>I am reading</strong>. Revise também o par que gerou confusão: <strong>before = antes</strong> e <strong>after = depois</strong>.</p></div><div class="correction"><p><strong>5. Desejo: “She wants…”</strong></p><p class="wrong">❌ She is wanting a new phone. → tirar só is e deixar She wanting…</p><p class="right">✅ <strong lang="en">She wants a new phone.</strong></p><p>No sentido trabalhado de “querer”, use normalmente o simple present: <strong>she wants</strong>. Não basta retirar <strong>is</strong>: também ajuste <strong>wanting → wants</strong>.</p></div><div class="correction"><p><strong>6. Pergunta sobre rotina com “does”</strong></p><p class="wrong">❌ Usar Is she working out…? para a rotina do exercício, marcada por every day.</p><p class="right">✅ <strong lang="en">Does she work out every day?</strong></p><p>Na pergunta de hábito, use <strong>does + she + work out</strong>. O verbo fica sem <strong>s</strong> e sem <strong>-ing</strong>. A resposta curta praticada foi <strong>Yes, she does</strong>. Para a frequência: <strong>She works out three times a week.</strong></p></div><div class="correction"><p><strong>7. “Upload” não é “baixar”</strong></p><p class="wrong">❌ Interpretar uploading photos como “baixando fotos”.</p><p class="right">✅ <strong lang="en">I&#x27;m uploading photos to our website.</strong></p><p><strong>Upload</strong> é enviar para a internet; <strong>download</strong> é baixar para o aparelho. No vídeo, a pessoa estava enviando fotos ao site.</p></div><div class="correction"><p><strong>8. Sentidos que precisaram de revisão</strong></p><p class="wrong">❌ Trocar increase por decrease; interpretar work out apenas como trabalhar.</p><p class="right">✅ <strong lang="en">Increase = aumentar; decrease = diminuir; work out = malhar.</strong></p><p>Aprenda cada par ou expressão como um bloco. Para aparelhos, <strong>work</strong> pode significar <strong>funcionar</strong>. Na revisão do desafio, também retomamos que o superlativo de <strong>bad</strong> é <strong>worst</strong>, não <strong>baddest</strong>.</p></div></div></section><section>
+  <h2 style="margin-bottom:8px;">Gravação da aula</h2>
+  <div class="media-row"><a class="media-btn" href="https://youtu.be/mLiTOulDQe4" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div>
+</section>
+<section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2>
+<table class="talk-table"><thead><tr><th scope="col">Quem falou</th><th scope="col">Porcentagem</th><th scope="col">Duração aproximada</th></tr></thead>
+<tbody><tr class="row-teacher"><td class="talk-label">César (Professor)</td><td class="talk-percent">72%</td><td class="talk-time">25 min 33 s</td></tr>
+<tr class="row-student"><td class="talk-label">Giovanna Azzi</td><td class="talk-percent">28%</td><td class="talk-time">9 min 44 s</td></tr></tbody></table>
+<p class="note">Estimativa pelos intervalos de fala da transcrição, considerando português e inglês. Exclui o áudio do vídeo, as pausas e o tempo de realização das atividades.</p></section>
+<section><h2>📝 Homework</h2><div class="homework">
+<p><strong>Foco da semana: frequência + terceira pessoa do singular.</strong></p>
+<ul>
+<li>Faça as atividades e os desafios no aplicativo. Antes de responder, confira: é um hábito ou uma ação em andamento? O sujeito é <strong>he, she ou it</strong>? A frase é afirmativa ou pergunta?</li>
+<li>Nas afirmativas de hábito, revise o <strong>s</strong>: <strong>She checks… / She watches… / She works out…</strong> Nas perguntas com <strong>does</strong>, volte à forma base: <strong>Does she check…?</strong></li>
+<li>Faça também a revisão das unidades anteriores indicada no aplicativo, que começa nesta etapa de três meses de curso.</li>
+<li>Leia este pós-aula de <strong>2 a 3 vezes durante a semana</strong>. Leia as frases em voz alta e use os botões de áudio das três expressões-chave.</li>
+<li>Distribua os estudos para buscar a meta de <strong>50 minutos por semana</strong>, por exemplo, em cinco momentos de cerca de 10 minutos. Reserve tempo para entender as correções e retomar o que ainda confunde.</li>
+</ul>
+</div></section></main>
+<footer><p>© 2025 CZK English • czkenglish@gmail.com</p></footer></article></div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>
