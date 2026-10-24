@@ -2540,14 +2540,15 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
 }
 
 // ── HomeTab ─────────────────────────────────────────────────────
-function ProgressRing({ value, goal, label, sublabel }) {
+function ProgressRing({ value, goal, label, sublabel, onClick }) {
   const size = 76, stroke = 8, r = (size - stroke) / 2, c = 2 * Math.PI * r;
   const pct = goal > 0 ? Math.min(value / goal, 1) : 0;
   const off = c - pct * c;
   const complete = goal > 0 && value >= goal;
   const ringColor = complete ? '#F59E0B' : 'var(--brand)';
   return (
-    <GlassCard style={{ padding: '10px 12px 9px', flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, borderRadius: 24, border: complete ? '1px solid rgba(245,158,11,0.4)' : GLASS.border, animation: complete ? 'ringpop 1.4s ease-in-out infinite' : 'none' }}>
+    <GlassCard tappable={!!onClick} onClick={onClick} style={{ position: 'relative', padding: '10px 12px 9px', flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, borderRadius: 24, border: complete ? '1px solid rgba(245,158,11,0.4)' : GLASS.border, animation: complete ? 'ringpop 1.4s ease-in-out infinite' : 'none' }}>
+      {onClick && <span aria-hidden="true" style={{ position: 'absolute', top: 8, right: 12, fontSize: 20, lineHeight: 1, color: complete ? '#D97706' : 'var(--brand)', fontWeight: 800 }}>&#8250;</span>}
       <div style={{ position: 'relative', width: '100%', maxWidth: 66, aspectRatio: '1 / 1' }}>
         <svg viewBox={`0 0 ${size} ${size}`} style={{ width: '100%', height: '100%', display: 'block', transform: 'rotate(-90deg)' }}>
           <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={complete ? 'rgba(245,158,11,0.15)' : 'rgba(var(--brand-rgb),0.12)'} strokeWidth={stroke} />
@@ -2681,7 +2682,7 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities, ad
       {/* Anéis de progresso: aulas no ano + atividades da semana */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
         <ProgressRing value={aulasAno} goal={metaAnual} label="Aulas no ano" sublabel={aulasComplete ? '🎉 meta batida!' : 'meta do ano'} />
-        <ProgressRing value={atividadesFeitas} goal={atividadesTotal} label="Atividades" sublabel={ativsComplete ? '🎉 tudo feito!' : 'da semana'} />
+        <ProgressRing value={atividadesFeitas} goal={atividadesTotal} label="Atividades" sublabel={ativsComplete ? '🎉 tudo feito!' : 'da semana'} onClick={onGoActivities} />
       </div>
 
       {latest ? (

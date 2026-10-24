@@ -305,11 +305,12 @@ ok('cartão do Início: anel, frase curta e a semana com os minutos; tudo abre a
   assert.match(h, /Quase lá, Ana!/);                              // 60% da meta
   assert.match(h, /Faltam <em>4 minutos<\/em> para a meta de hoje/);
   assert.match(h, />6<\/text>/);                                  // minutos no centro do anel
+  assert.match(h, />min<\/text>/);                                // e a unidade, para não parecer dia do mês
   assert.equal((h.match(/class="cza-bb /g) || []).length, 7);
   assert.equal((h.match(/data-cza-open/g) || []).length, 8);      // cartão + 7 bolinhas
   assert.ok(!h.includes('data-cza-go'));                          // sem a lista de atalhos
-  assert.match(h, /cza-bb hit" data-cza-open data-cza-k="2026-10-19" aria-label="segunda 19\/10"><span>12<\/span><i>Seg<\/i>/);
-  assert.match(h, /cza-bb now today" data-cza-open data-cza-k="2026-10-20"[^>]*><span style="--p:60%"><b>6<\/b>/);
+  assert.match(h, /cza-bb hit" data-cza-open data-cza-k="2026-10-19" aria-label="segunda 19\/10"><span><b>12<small>m<\/small><\/b><\/span><i>Seg<\/i>/);
+  assert.match(h, /cza-bb now today" data-cza-open data-cza-k="2026-10-20"[^>]*><span style="--p:60%"><b>6<small>m<\/small><\/b>/);
   assert.match(h, /cza-bb fut" data-cza-open data-cza-k="2026-10-21" disabled/);
   // zerado: o dia anterior sem estudo (medido) leva ✕
   const zero = Adesao.goalHomeHtml(semMeta([]), { firstName: 'Ana' });
@@ -376,7 +377,7 @@ ok('calendário: mês certo, dias futuros travados e navegação só dentro do p
   assert.equal((h.match(/data-cza-pick="cal"/g) || []).length, 31);
   assert.equal((h.match(/cza-cc blank/g) || []).length, 3);        // 1º de outubro de 2026 é quinta
   assert.equal((h.match(/cza-cc fut/g) || []).length, 11);         // 21 a 31
-  assert.match(h, /cza-cc hit" data-cza-pick="cal" data-cza-k="2026-10-19"[^>]*><em>19<\/em><b>12<\/b>/);
+  assert.match(h, /cza-cc hit" data-cza-pick="cal" data-cza-k="2026-10-19"[^>]*><em>19<\/em><b>12<small>m<\/small><\/b>/);
   assert.match(h, /cza-cc x" data-cza-pick="cal" data-cza-k="2026-10-18"[^>]*><em>18<\/em><b>✕<\/b>/);
   assert.match(h, /data-cza-month="next" disabled/);               // não passa do mês de hoje
   assert.ok(!/data-cza-month="prev" disabled/.test(h));            // setembro ainda tem dias medidos
@@ -401,10 +402,49 @@ ok('página de adesão: tudo reunido, dia pré-aberto e sem título repetido', (
   assert.match(h, /Esta semana/);
   assert.match(h, /18 de 50 min|<b>18 min<\/b>/);
   assert.match(h, /O que conta como tempo de estudo\?/);
-  assert.match(h, /data-cza-toggle/);                              // cartão da nota
+  assert.ok(!h.includes('data-cza-toggle'));                      // a nota já vem aberta
   assert.ok(!h.includes('class="cza-title"'));                    // o título "Minha adesão" é da página
   assert.match(Adesao.pageHtml(c, {}), /Toque num dia para ver o detalhe/);
   assert.ok(!/6 de 5/.test(Adesao.pageHtml(semMeta([...[0, 1, 2, 3, 4, 5].map(d => uso(2, d, 12, { pos: 12 })), uso(3, 1, 3)]), {})));
+});
+
+ok('antes da primeira nota: cada ponto mostra o motivo (coletando ou não se aplica), sem precisar abrir nada', () => {
+  // Aluno com aula, Desafio e pós-aula, mas sem atividades; a medição começou quarta 14/10 (semana 12/10 não conta).
+  const base = {
+    now: NOW, student: {}, usage: [uso(3, 0, 8, { pos: 8, items: { pos_p1: 8 * 60 } })],
+    posts: [post('p1', 3, 0)], activities: [],
+    attendance: [pres(3, 0)], challenge: { enabled: true, weeks: [dia(3, 0)], completed: [`${dia(3, 0)}-part-1`] },
+  };
+  const c = compute(base, { coletaDesde: '2026-10-14' });
+  assert.equal(c.status, 'coletando');
+  assert.equal(c.firstNota, '2026-10-26');            // a semana de 19/10 fecha domingo; a nota sai na segunda
+  assert.equal(c.live.aulasPres, 1); assert.equal(c.live.desFeitas, 1); assert.equal(c.live.desDisp, 2); assert.equal(c.live.atN, 0);
+  const h = Adesao.studentHtml(c, { firstName: 'Mateus', collapsible: false });
+  assert.match(h, /A medição começou em 14\/10, então a primeira nota aparece em 26\/10/);
+  assert.match(h, /Esta semana: 1 de 2 dias estudados|Esta semana: 1 dia estudado|Esta semana: 0 de 2 dias estudados/);
+  assert.match(h, /Nenhuma atividade foi enviada para você nas últimas semanas/);        // Atividades: não se aplica, com o motivo
+  assert.match(h, /Você foi a 1 de 1 aulas nas últimas semanas/);                        // Aulas: coletando, com o número de hoje
+  assert.match(h, /Você fez 1 de 2 partes do Desafio nas últimas semanas/);              // Desafio: coletando, com o número de hoje
+  assert.match(h, /Até agora: 8 min de leitura por pós-aula/);
+  assert.match(h, /a nota aparece em 26\/10/);
+  assert.equal((h.match(/<em>coletando<\/em>/g) || []).length, 4);                      // constância, pós-aula, aulas e desafio
+  assert.equal((h.match(/<em>não se aplica<\/em>/g) || []).length, 1);                  // só atividades
+  // Desafio desligado e sem aulas: o motivo é dito
+  const off = compute({ ...base, attendance: [], challenge: { enabled: false } }, { coletaDesde: '2026-10-14' });
+  const ho = Adesao.studentHtml(off, { collapsible: false });
+  assert.match(ho, /O Desafio não está ligado para você/);
+  assert.match(ho, /Não houve aulas previstas para você nas últimas semanas/);
+});
+
+ok('página de adesão: a nota já vem aberta (sem "Ver detalhes") e não repete o mapa de 4 semanas', () => {
+  const c = semMeta([uso(3, 0, 12, { pos: 6, ativ: 6 }), uso(3, 1, 6, { pos: 4, ativ: 2 })]);
+  const h = Adesao.pageHtml(c, { firstName: 'Ana' });
+  assert.ok(!h.includes('Ver detalhes') && !h.includes('data-cza-toggle'));
+  assert.match(h, /O que conta na sua adesão/);
+  assert.match(h, /Seus dias da semana/);
+  assert.ok(!h.includes('Seu mapa de estudo'));        // o calendário da página já faz esse papel
+  assert.ok(!h.includes('<h4>Sua semana</h4>'));        // e a semana em bolinhas também
+  assert.match(h, /Recado do seu professor/);
 });
 
 ok('toques na página: dia abre o detalhe ali mesmo; atalho e cartão avisam o app', () => {

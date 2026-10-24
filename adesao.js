@@ -279,6 +279,25 @@
       opensTotal: opensTotal, hasUsage: usage.length > 0,
       timeReady: used.some(function (w) { return w.hasTime; })
     };
+    // Números "até agora" por pilar (valem mesmo antes da primeira nota): explicam, na tela do aluno, o que
+    // já está sendo olhado e por que um pilar não se aplica. Semanas anteriores ao cadastro ficam de fora.
+    var vw = weeks.filter(function (w) { return !studentStart || addDays(w.start, 6) >= studentStart; });
+    var atAll = [].concat.apply([], vw.map(function (w) { return w.atItems; }));
+    var posRead = [].concat.apply([], vw.map(function (w) { return w.posItems; })).filter(function (i) { return i.minutes > 0; });
+    res.live = {
+      aulasPrev: sum(vw.map(function (w) { return w.aulas[0]; })), aulasPres: sum(vw.map(function (w) { return w.aulas[1]; })),
+      atN: sum(atAll.map(function (i) { return i.n; })), atDone: sum(atAll.map(function (i) { return i.done; })),
+      desDisp: sum(vw.map(function (w) { return w.des[0]; })), desFeitas: sum(vw.map(function (w) { return w.des[1]; })),
+      posN: posRead.length, posAvg: posRead.length ? mean(posRead.map(function (i) { return i.minutes; })) : null
+    };
+    res.desEnabled = ch.enabled !== false;
+    // Só entram semanas inteiras (segunda a domingo) com o tempo medido: a 1ª é a segunda depois do início da
+    // coleta, e a nota aparece na segunda seguinte.
+    if (coleta) {
+      var m0 = mondayOf(parseKey(coleta));
+      if (dayKey(m0) < coleta) m0 = addDays(m0, 7);
+      res.firstNota = dayKey(addDays(m0, 7));
+    } else res.firstNota = null;
     if (!used.length) { res.pm = {}; res.totals = []; res.index = null; res.band = null; res.trend = null; return res; }
 
     var totals = used.map(function (w) { return w.total; });
@@ -499,27 +518,48 @@
     }).join('') + '</div><div class="cza-cap"><b>Média de acertos dos alunos, por faixa de adesão.</b> Quem se dedica mais costuma acertar mais.</div>';
   }
   function ruleRowsHtml(c) {
-    var cfg = c.cfg;
+    var cfg = c.cfg, ok = c.status === 'ok', L = c.live || {};
     var present = {};
     KEYS.forEach(function (k) { present[k] = c.pm[k] != null; });
-    function row(k, status, goal) {
+    var since = c.coleta ? ddmm(parseKey(c.coleta)) : '';
+    var wait = 'Entra na nota quando a primeira semana inteira medida fechar' + (c.firstNota ? ' (a nota aparece em ' + ddmm(parseKey(c.firstNota)) + ')' : '') + '.';
+    // state: 'val' entra na nota · 'coll' ainda coletando · 'na' não se aplica a este aluno (e o motivo aparece em `why`)
+    function row(k, state, status, why, goal) {
       var v = c.pm[k];
-      var late = (k === 'C' || k === 'Pos') && !c.timeReady;
-      if (v == null) {
-        return '<div class="cza-rule"><div class="cza-rh"><span>' + PIL[k].ic + ' ' + PIL[k].name + '</span><em>' + (late ? 'coletando' : 'não se aplica') + '</em></div>'
-          + '<p class="cza-goal">' + (late ? 'Ainda coletando os seus dias. ' : 'Não conta para você, então não entra na sua nota. ') + 'Meta: ' + goal + '</p></div>';
-      }
-      return '<div class="cza-rule"><div class="cza-rh"><span>' + PIL[k].ic + ' ' + PIL[k].name + '</span><em>vale ' + effWeight(present, k, cfg) + '%</em></div>'
-        + '<div class="cza-mt"><i style="width:' + pct(v) + '%;background:' + scol(v) + '"></i></div>'
-        + '<p><b>' + status + '</b></p><p class="cza-goal">Meta: ' + goal + '</p></div>';
+      var tag = state === 'val' ? 'vale ' + effWeight(present, k, cfg) + '%' : state === 'coll' ? 'coletando' : 'não se aplica';
+      return '<div class="cza-rule"><div class="cza-rh"><span>' + PIL[k].ic + ' ' + PIL[k].name + '</span><em>' + tag + '</em></div>'
+        + (state === 'val' ? '<div class="cza-mt"><i style="width:' + pct(v) + '%;background:' + scol(v) + '"></i></div>' : '')
+        + '<p><b>' + status + '</b></p>' + (why ? '<p>' + why + '</p>' : '') + '<p class="cza-goal">Meta: ' + goal + '</p></div>';
     }
-    var stAt = c.entrega == null ? 'Sem atividades enviadas' : c.entrega < .7 ? 'Você fez ' + pct(c.entrega) + '% dos exercícios enviados'
-      : (c.fator != null && c.fator < .8) ? 'Feitas bem rápido: ' + fm(c.timeAll) + ' para ≥ ' + fm(c.expAll) + ' esperados' : 'Você fez ' + pct(c.entrega) + '%, com tempo adequado';
-    return row('C', 'Você estuda em média ' + (c.avgDays != null ? num1(c.avgDays) : '—') + ' dias por semana', 'pelo menos ' + cfg.minDia + ' min de estudo em ' + cfg.metaDias + ' dias da semana. Estudo é pós-aula, atividades, desafio, vocabulário, verbos e chunks, e só conta enquanto você está mexendo no app')
-      + row('At', stAt, 'fazer os exercícios enviados, sem pressa (cerca de ' + cfg.secEx + ' s cada)')
-      + row('Pos', 'Sua média: ' + (c.avgPos != null ? fm(c.avgPos) : '—') + ' por pós-aula', 'ler cada pós-aula por ' + cfg.minPos + ' min ou mais (pode ser em vários momentos)')
-      + row('Aula', 'Você foi a ' + c.aulasPres + ' de ' + c.aulasPrev + ' aulas', 'vir às aulas')
-      + row('Des', 'Você fez ' + c.desFeitas + ' de ' + c.desDisp + ' partes do Desafio', 'participar do Desafio da semana');
+    var gC = 'pelo menos ' + cfg.minDia + ' min de estudo em ' + cfg.metaDias + ' dias da semana. Estudo é pós-aula, atividades, desafio, vocabulário, verbos e chunks, e só conta enquanto você está mexendo no app';
+    var gAt = 'fazer os exercícios enviados, sem pressa (cerca de ' + cfg.secEx + ' s cada)';
+    var gPos = 'ler cada pós-aula por ' + cfg.minPos + ' min ou mais (pode ser em vários momentos)';
+    var h = '';
+    // Constância
+    h += c.pm.C != null
+      ? row('C', 'val', 'Você estuda em média ' + (c.avgDays != null ? num1(c.avgDays) : '—') + ' dias por semana', '', gC)
+      : row('C', 'coll', 'Esta semana: ' + c.cur.activeDays + ' de ' + c.cur.elapsed + (c.cur.elapsed === 1 ? ' dia estudado' : ' dias estudados'), 'O app mede os seus dias desde ' + since + '. ' + wait, gC);
+    // Atividades
+    if (c.pm.At != null) {
+      var stAt = c.entrega == null ? 'Sem atividades enviadas' : c.entrega < .7 ? 'Você fez ' + pct(c.entrega) + '% dos exercícios enviados'
+        : (c.fator != null && c.fator < .8) ? 'Feitas bem rápido: ' + fm(c.timeAll) + ' para ≥ ' + fm(c.expAll) + ' esperados' : 'Você fez ' + pct(c.entrega) + '%, com tempo adequado';
+      h += row('At', 'val', stAt, '', gAt);
+    } else if (L.atN > 0) h += row('At', 'coll', 'Você fez ' + L.atDone + ' de ' + L.atN + ' exercícios enviados nas últimas semanas', wait, gAt);
+    else h += row('At', 'na', 'Nenhuma atividade foi enviada para você nas últimas semanas', 'Por isso este ponto não entra na sua nota. Quando chegarem atividades novas, ele passa a contar.', gAt);
+    // Pós-aula
+    if (c.pm.Pos != null) h += row('Pos', 'val', 'Sua média: ' + (c.avgPos != null ? fm(c.avgPos) : '—') + ' por pós-aula', '', gPos);
+    else if (ok) h += row('Pos', 'na', 'Nenhum pós-aula foi publicado nas semanas da sua nota', 'Por isso este ponto não entra na sua nota.', gPos);
+    else h += row('Pos', 'coll', L.posN ? 'Até agora: ' + fm(L.posAvg) + ' de leitura por pós-aula' : 'Ainda sem leitura medida', 'O app mede a leitura dos pós-aulas desde ' + since + '. ' + wait, gPos);
+    // Aulas
+    if (c.pm.Aula != null) h += row('Aula', 'val', 'Você foi a ' + c.aulasPres + ' de ' + c.aulasPrev + ' aulas', '', 'vir às aulas');
+    else if (L.aulasPrev > 0) h += row('Aula', 'coll', 'Você foi a ' + L.aulasPres + ' de ' + L.aulasPrev + ' aulas nas últimas semanas', wait, 'vir às aulas');
+    else h += row('Aula', 'na', 'Não houve aulas previstas para você nas últimas semanas', 'Por isso este ponto não entra na sua nota. Os outros ganham mais peso.', 'vir às aulas');
+    // Desafio
+    if (c.pm.Des != null) h += row('Des', 'val', 'Você fez ' + c.desFeitas + ' de ' + c.desDisp + ' partes do Desafio', '', 'participar do Desafio da semana');
+    else if (c.desEnabled === false) h += row('Des', 'na', 'O Desafio não está ligado para você', 'Por isso este ponto não entra na sua nota.', 'participar do Desafio da semana');
+    else if (L.desDisp > 0) h += row('Des', 'coll', 'Você fez ' + L.desFeitas + ' de ' + L.desDisp + ' partes do Desafio nas últimas semanas', wait, 'participar do Desafio da semana');
+    else h += row('Des', 'na', 'Nenhum Desafio foi publicado para você nas últimas semanas', 'Por isso este ponto não entra na sua nota.', 'participar do Desafio da semana');
+    return h;
   }
 
   /* c = resultado de compute(); o = { firstName, recado, ribbon, ribbonOpen, stats } */
@@ -551,18 +591,19 @@
       h += '<div class="cza-pc cza-herocard"' + TOG + '><div class="cza-hero">' + ring(c.index, 96, 11, b.soft) + '<div class="cza-t"><b>' + msg[0] + '</b>' + msg[1] + dt + '</div></div>' + (coll ? HINT : chipsHtml) + '</div>';
       h += '<div class="cza-more"' + (coll ? ' hidden' : '') + '>' + (coll ? SUB + chipsHtml : '');
     } else {
-      h += '<div class="cza-pc cza-herocard"' + TOG + '><div class="cza-hero"><div class="cza-t"><b>Estamos conhecendo o seu ritmo</b>Sua nota aparece depois da primeira semana completa (de segunda a domingo). Toque para ver o que conta e como seus dias estão indo.</div></div>' + (coll ? HINT : '') + '</div>';
+      h += '<div class="cza-pc cza-herocard"' + TOG + '><div class="cza-hero"><div class="cza-t"><b>Estamos conhecendo o seu ritmo</b>' + (coll ? 'Sua nota aparece depois da primeira semana completa (de segunda a domingo). Toque para ver o que conta e como seus dias estão indo.' : 'A nota usa semanas inteiras (segunda a domingo) com o tempo medido.' + (c.firstNota && c.coleta ? ' A medição começou em ' + ddmm(parseKey(c.coleta)) + ', então a primeira nota aparece em ' + ddmm(parseKey(c.firstNota)) + '.' : '') + ' Abaixo você vê como estão os seus dias e por que cada ponto está assim.') + '</div></div>' + (coll ? HINT : '') + '</div>';
       h += '<div class="cza-more"' + (coll ? ' hidden' : '') + '>' + (coll ? SUB : '');
     }
     h += '<div class="cza-pc cza-recado"><div class="cza-by">💬 Recado do seu professor</div><p>' + esc(recado) + '</p></div>';
 
-    // semana atual
-    h += '<div class="cza-pc"><h4>Sua semana</h4><div class="cza-hsub">Segunda a domingo. A bolinha verde é um dia estudado.</div><div class="cza-days">' + cur.days.map(function (m, i) {
+    // semana atual (na página de adesão a semana e o calendário já aparecem acima)
+    if (!o.page) h += '<div class="cza-pc"><h4>Sua semana</h4><div class="cza-hsub">Segunda a domingo. A bolinha verde é um dia estudado.</div><div class="cza-days">' + cur.days.map(function (m, i) {
       var fut = i >= cur.elapsed, on = !fut && m >= cfg.minDia;
       return '<div class="cza-dd ' + (fut ? 'fut' : on ? 'on' : 'off') + (i === todayIdx ? ' today' : '') + '"><span>' + (on ? '✓' : '') + '</span>' + WD1[i] + '</div>';
     }).join('') + '</div><div class="cza-cap">Você estudou <b>' + cur.activeDays + ' de ' + cur.elapsed + ' dias</b> até agora. A meta é ' + cfg.metaDias + ' dias por semana.</div></div>';
 
     // mapa de 4 semanas
+    var hSave = h;
     h += '<div class="cza-pc"><h4>Seu mapa de estudo</h4><div class="cza-hsub">Cada quadrado é um dia, e o número são os minutos de estudo. Toque para ver o que você fez.</div><div class="cza-smap"><div class="cza-sm-row cza-hd"><span></span>' + WD.map(function (x) { return '<span>' + x + '</span>'; }).join('') + '</div>';
     c.weeks.forEach(function (w, wi) {
       h += '<div class="cza-sm-row"><span class="cza-wl">' + w.short + '</span>';
@@ -574,8 +615,9 @@
       h += '</div>';
     });
     h += '</div><div class="cza-dayinfo" id="cza-dayinfo">Toque num quadrado para ver o dia.</div>';
+    if (o.page) h = hSave + '<div class="cza-pc">';
     var ws = wdStats(c);
-    h += '<div class="cza-divider"></div><h4 style="margin-top:8px">Seus dias da semana</h4><div class="cza-hsub">Média de minutos de estudo em cada dia, nas últimas semanas.</div><div class="cza-wdb">'
+    h += (o.page ? '' : '<div class="cza-divider"></div>') + '<h4 style="margin-top:8px">Seus dias da semana</h4><div class="cza-hsub">Média de minutos de estudo em cada dia, nas últimas semanas.</div><div class="cza-wdb">'
       + ws.avg.map(function (m, i) {
         return '<div>' + (m >= cfg.minDia ? '<b>' + Math.round(m) + '</b>' : '<b style="color:#94A3B8">' + (m > 0 ? '<1' : '0') + '</b>')
           + '<i class="' + (i === ws.best ? 'best' : m < cfg.minDia ? 'zero' : '') + '" style="height:' + (m < cfg.minDia ? 10 : Math.max(8, m / ws.max * 74)) + 'px"></i>' + WD1[i] + '</div>';
@@ -689,8 +731,8 @@
     return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" role="img" aria-label="' + Math.floor(min) + ' de ' + num1(meta) + ' minutos" style="flex-shrink:0">'
       + '<circle cx="' + c + '" cy="' + c + '" r="' + r + '" fill="none" stroke="#E5F3EA" stroke-width="' + stroke + '"/>'
       + '<circle cx="' + c + '" cy="' + c + '" r="' + r + '" fill="none" stroke="#16A34A" stroke-width="' + stroke + '" stroke-linecap="round" stroke-dasharray="' + (C * frac).toFixed(1) + ' ' + C.toFixed(1) + '" transform="rotate(-90 ' + c + ' ' + c + ')"/>'
-      + '<text x="' + c + '" y="' + (big ? c : c + 7) + '" text-anchor="middle" font-size="' + (big ? 36 : 21) + '" font-weight="800" fill="#0F172A">' + label + '</text>'
-      + (big ? '<text x="' + c + '" y="' + (c + 22) + '" text-anchor="middle" font-size="12.5" font-weight="800" fill="#64748B">de ' + num1(meta) + ' min</text>' : '') + '</svg>';
+      + '<text x="' + c + '" y="' + (big ? c : c + 3) + '" text-anchor="middle" font-size="' + (big ? 36 : 20) + '" font-weight="800" fill="#0F172A">' + label + '</text>'
+      + (big ? '<text x="' + c + '" y="' + (c + 22) + '" text-anchor="middle" font-size="12.5" font-weight="800" fill="#64748B">de ' + num1(meta) + ' min</text>' : '<text x="' + c + '" y="' + (c + 17) + '" text-anchor="middle" font-size="9.5" font-weight="800" fill="#64748B">min</text>') + '</svg>';
   }
 
   // Bolinha de um dia. o.mode 'pick' abre o detalhe ali mesmo; 'open' abre a página de adesão.
@@ -699,8 +741,8 @@
     if (i.st === 'x') label = '✕';
     else if (i.st === 'pre') label = '·';
     else if (i.st === 'fut') label = '';
-    else if (i.st === 'now') label = '<b>' + (i.m >= 1 ? Math.floor(i.m) : i.m > 0 ? '&lt;1' : '0') + '</b>';
-    else label = i.m >= 1 ? Math.floor(i.m) : '&lt;1';
+    else if (i.st === 'now') label = '<b>' + (i.m >= 1 ? Math.floor(i.m) : i.m > 0 ? '&lt;1' : '0') + '<small>m</small></b>';
+    else label = '<b>' + (i.m >= 1 ? Math.floor(i.m) : '&lt;1') + '<small>m</small></b>';
     var prog = i.st === 'now' ? ' style="--p:' + Math.round(Math.min(1, i.m / meta) * 100) + '%"' : '';
     var at = o.mode === 'open' ? 'data-cza-open data-cza-k="' + key + '"' : 'data-cza-pick="week" data-cza-k="' + key + '"';
     return '<button type="button" class="cza-bb ' + i.st + (key === dayKey(c.now) ? ' today' : '') + (o.sel === key ? ' sel' : '') + '" ' + at
@@ -794,7 +836,7 @@
       var key = month + '-' + String(d).padStart(2, '0'), i = dayStatus(c, key), label;
       if (i.st === 'x') label = '✕';
       else if (i.st === 'pre' || i.st === 'fut') label = '';
-      else label = i.m >= 1 ? Math.floor(i.m) : '&lt;1';
+      else label = (i.m >= 1 ? Math.floor(i.m) : '&lt;1') + '<small>m</small>';
       h += '<button type="button" class="cza-cc ' + i.st + (i.st === 'hit' && i.m >= 25 ? ' big' : '') + '" data-cza-pick="cal" data-cza-k="' + key + '"'
         + (i.st === 'fut' ? ' disabled' : '') + ' aria-label="' + ddmm(parseKey(key)) + '"><em>' + d + '</em><b>' + label + '</b></button>';
     }
@@ -863,7 +905,7 @@
       + '<div class="cza-cal" hidden><div class="cza-calbody" data-cza-cur="' + month + '">' + calendarHtml(c, month) + '</div>'
       + '<div data-cza-box="cal">' + DAY_HINT + '</div></div></div>';
     h += '<div class="cza-pc">' + weekTotalsHtml(c) + '</div>';
-    h += studentHtml(c, { firstName: o.firstName, recado: o.recado, ribbon: '', stats: o.stats, noTitle: true });
+    h += studentHtml(c, { firstName: o.firstName, recado: o.recado, ribbon: '', stats: o.stats, noTitle: true, collapsible: false, page: true });
     return h + '</div>';
   }
 
@@ -1051,7 +1093,7 @@
     + '.cza-bb{flex:1;min-width:0;text-align:center;font:inherit;font-size:10.5px;font-weight:800;color:#94A3B8;display:grid;justify-items:center;gap:4px;padding:2px 0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}'
     + '.cza-bb i{font-style:normal}'
     + '.cza-bb span{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;font-size:14.5px;font-weight:800;position:relative}'
-    + '.cza-mini .cza-bb span,.cza-msc .cza-bb span{width:34px;height:34px;font-size:12.5px}'
+    + '.cza-mini .cza-bb span,.cza-msc .cza-bb span{width:38px;height:38px;font-size:13px}.cza-bb span small,.cza-cc b small{font-size:.66em;font-weight:800;margin-left:1px;opacity:.9}'
     + '.cza-bb.hit span{background:#16A34A;color:#fff}'
     + '.cza-bb.part span{background:#FEF3C7;color:#92400E;border:2px solid #FCD34D}'
     + '.cza-bb.x span{background:#FEE2E2;color:#DC2626;border:2px solid #FCA5A5;font-size:19px}.cza-mini .cza-bb.x span,.cza-msc .cza-bb.x span{font-size:16px}'
@@ -1059,7 +1101,7 @@
     + '.cza-bb.fut{cursor:default}.cza-bb.fut span{background:none;border:2px dashed #E2E8F0}'
     + '.cza-bb.now span{background:conic-gradient(#16A34A 0 var(--p,0%),#E5E7EB var(--p,0%) 100%);color:#14532D}'
     + '.cza-bb.now span::before{content:"";position:absolute;inset:4px;border-radius:50%;background:#fff}.cza-mini .cza-bb.now span::before,.cza-msc .cza-bb.now span::before{inset:3.5px}'
-    + '.cza-bb.now span b{position:relative;font-weight:800}'
+    + '.cza-bb span b{font-weight:800}.cza-bb.now span b{position:relative}'
     + '.cza-bb.today i{color:#0F172A}'
     + '.cza-page .cza-bb.sel span{outline:3px solid #0F172A;outline-offset:2px}'
     // detalhe do dia
