@@ -160,7 +160,26 @@
       Object.keys(io).forEach(function (k) { itemOpens[k] = (itemOpens[k] || 0) + Number(io[k] || 0); });
     });
     var coleta = cfg.coletaDesde || earliest;
+    // Dia a dia (página de adesão): minutos de estudo por tipo e os itens de cada dia.
+    var daily = {};
+    Object.keys(usageByDay).forEach(function (k) {
+      var s = usageByDay[k].secs || {}, it = usageByDay[k].items || {};
+      var pos = Number(s.posaula || 0) / 60, act = Number(s.atividade || 0) / 60, des = Number(s.desafio || 0) / 60, voc = Number(s.vocab || 0) / 60;
+      var study = pos + act + des + voc;
+      daily[k] = {
+        pos: pos, act: act, des: des, voc: voc, min: study, out: Math.max(0, Number(s.total || 0) / 60 - study),
+        items: Object.keys(it).map(function (ik) { return { k: ik, min: Number(it[ik] || 0) / 60 }; }).filter(function (x) { return x.min > 0; })
+      };
+    });
     var posts = (input.posts || []).map(function (p) { return { p: p, ref: postRef(p) }; }).filter(function (x) { return x.ref; });
+    // Nomes dos itens que aparecem no detalhe do dia (pós-aula, atividade, extra...).
+    var names = {};
+    posts.forEach(function (x) { names[itemKey('pos', x.p.id)] = x.p.title || ('Pós-aula ' + ddmm(x.ref)); });
+    (input.activities || []).forEach(function (a) { if (a && a.id != null) names[itemKey('act', a.id)] = a.name || 'Atividade'; });
+    Object.keys(input.names || {}).forEach(function (k) { names[k] = input.names[k]; });
+    // O dia só vira "não estudou" depois de o app começar a medir (e do cadastro do aluno).
+    var measureFrom = coleta || dayKey(now);
+    if (studentStart && dayKey(studentStart) > measureFrom) measureFrom = dayKey(studentStart);
     var acts = (input.activities || []).map(function (a) { return { a: a, at: toDate(a.createdAt) }; }).filter(function (x) { return x.at; });
     var att = input.attendance || [];
     var ch = input.challenge || {};
@@ -255,6 +274,7 @@
     var used = weeks.slice(0, 3).filter(function (w) { return w.valid && w.hasTime && w.total != null; });
     var res = {
       cfg: cfg, weeks: weeks, cur: cur, used: used, now: now, coleta: coleta,
+      daily: daily, names: names, measureFrom: measureFrom,
       status: used.length ? 'ok' : 'coletando',
       opensTotal: opensTotal, hasUsage: usage.length > 0,
       timeReady: used.some(function (w) { return w.hasTime; })
@@ -514,7 +534,7 @@
     var SUB = '<div class="cza-sub">Quanto você está presente no curso: aulas, pós-aula, atividades, desafio e constância.</div>';
     var HINT = '<div class="cza-hint"><span class="cza-lbl-open">Ver detalhes</span><span class="cza-lbl-close">Ocultar detalhes</span><span class="cza-chev">›</span></div>';
     var TOG = coll ? ' data-cza-toggle role="button" tabindex="0" aria-expanded="false"' : '';
-    h += '<div class="cza-title">Minha adesão</div>' + (coll ? '' : SUB);
+    h += (o.noTitle ? '' : '<div class="cza-title">Minha adesão</div>') + (coll ? '' : SUB);
     if (o.ribbon) h += '<div class="cza-ribbon' + (o.ribbonOpen ? ' open' : '') + '">' + esc(o.ribbon) + '</div>';
 
     // topo: nota + etiquetas
@@ -591,16 +611,31 @@
     trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
 
-  // ── Meta de estudo: cartão "hoje" (Início) e "Meu estudo" (Progresso) ───
-  var TYPE_COLOR = { leitura: '#16A34A', vocab: '#F59E0B', exercicio: '#3B82F6' };
+  // ── Meta de estudo e página de adesão ───────────────────────────────────
+  // Início: cartão pequeno (anel, frase e a semana em bolinhas com os minutos).
+  // Progresso: cartão "Meu estudo" só com os dias. Os dois abrem a página de adesão,
+  // que reúne atalhos, semana, calendário, total da semana e a nota.
   var TYPE_SOFT = { leitura: '#DCFCE7', vocab: '#FEF3C7', exercicio: '#DBEAFE' };
   var TYPE_GO = { leitura: 'pos', vocab: 'vocab', exercicio: 'aulas' };   // para onde o toque leva no app
-  var TYPE_SHORT = { leitura: 'Ler pós-aula', vocab: 'Chunks e verbos', exercicio: 'Exercícios' };
+  // Os quatro tipos de estudo que aparecem no detalhe do dia (k = chave em cur/daily).
+  var DAY_TYPES = [
+    { k: 'pos', name: 'Pós-aula', ic: '📖', color: '#16A34A', soft: '#DCFCE7' },
+    { k: 'act', name: 'Atividades', ic: '✏️', color: '#3B82F6', soft: '#DBEAFE' },
+    { k: 'des', name: 'Desafio da semana', ic: '🏆', color: '#8B5CF6', soft: '#EDE9FE' },
+    { k: 'voc', name: 'Verbos, chunks e vocabulário', ic: '🧩', color: '#F59E0B', soft: '#FEF3C7' }
+  ];
+  var MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  var VOCAB_NAMES = { vocab_menu: 'Menu do vocabulário', vocab_vocab: 'Meu vocabulário', vocab_verbs: 'Verbos irregulares', vocab_chunks: 'Chunks do inglês' };
+  var DAY_HINT = '<div class="cza-dy hint">Toque num dia para ver o detalhe.</div>';
+
   function limiteTxt(sec) { return sec % 60 === 0 ? (sec / 60) + (sec === 60 ? ' minuto' : ' minutos') : sec + ' segundos'; }
   // "2 de 5 dias com meta"; passou da meta da semana: "6 dias com meta (a meta é 5)".
   function goalDaysTxt(g) {
     return g.hits > g.metaDias ? g.hits + ' dias com meta (a meta é ' + g.metaDias + ')' : g.hits + ' de ' + g.metaDias + ' dias com meta';
   }
+  function parseKey(k) { var p = String(k).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function weekdayOf(key) { return (parseKey(key).getDay() + 6) % 7; }
+  function monthKeyOf(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
   function todayOf(c) {
     var cur = c.cur, cfg = c.cfg, idx = (c.now.getDay() + 6) % 7;
     var min = cur.days[idx] || 0;
@@ -611,49 +646,173 @@
     };
   }
 
-  /* Início: meta de hoje. o = { firstName, ribbon } */
-  function goalTodayHtml(c, o) {
-    o = o || {};
+  // Estado de um dia do ponto de vista do aluno:
+  //   fut = ainda não chegou · pre = antes de o app medir o tempo · now = hoje, ainda correndo
+  //   hit = bateu a meta do dia · part = estudou, mas menos que a meta · x = não estudou (menos de 1 min)
+  // Só vira "x" um dia que já passou e que o app media; hoje nunca é "x" (o dia ainda corre).
+  function dayStatus(c, key) {
+    var d = (c.daily && c.daily[key]) || null, m = d ? d.min : 0, meta = c.cfg.metaDiaMin, today = dayKey(c.now);
+    if (key > today) return { st: 'fut', m: 0, d: d };
+    if (key < c.measureFrom && !d) return { st: 'pre', m: 0, d: d };
+    if (key === today) return { st: m >= meta ? 'hit' : 'now', m: m, d: d };
+    return { st: m >= meta ? 'hit' : m >= 1 ? 'part' : 'x', m: m, d: d };
+  }
+
+  // Mensagem do cartão de hoje. `short` é a frase curta do Início; `text`, a da página.
+  function goalMsg(c, firstName) {
     var cfg = c.cfg, td = todayOf(c), g = c.cur.goal, meta = cfg.metaDiaMin;
-    var frac = Math.min(1, td.min / meta), nm = o.firstName ? ', ' + esc(o.firstName) : '';
-    var title, text;
+    var frac = Math.min(1, td.min / meta), nm = firstName ? ', ' + esc(firstName) : '';
     if (td.hit) {
-      title = 'Meta de hoje batida! 🎯';
-      text = 'Você estudou <em>' + Math.floor(td.min) + ' min</em> hoje. ' + (g.atingida ? 'E a meta da semana também. Parabéns! 🎉' : 'Faltam <em>' + plural(g.metaDias - g.hits, 'dia', 'dias') + '</em> para a meta da semana.');
-    } else if (td.min < 0.05) {
-      title = 'Vamos começar' + nm + '?';
-      text = 'São só <em>' + num1(meta) + ' minutos</em> hoje. Pode ser lendo, praticando ou revendo verbos.';
-    } else {
-      title = (frac >= .6 ? 'Quase lá' : 'Bom começo') + nm + '!';
-      text = 'Faltam <em>' + plural(Math.ceil(td.remaining), 'minuto', 'minutos') + '</em> para bater a meta de hoje. Pode ser lendo, praticando ou revendo verbos.';
+      return {
+        title: 'Meta de hoje batida! 🎯',
+        short: 'Você estudou <em>' + Math.floor(td.min) + ' min</em> hoje.',
+        text: 'Você estudou <em>' + Math.floor(td.min) + ' min</em> hoje. ' + (g.atingida ? 'E a meta da semana também. Parabéns! 🎉' : 'Faltam <em>' + plural(g.metaDias - g.hits, 'dia', 'dias') + '</em> para a meta da semana.')
+      };
     }
-    var C = 2 * Math.PI * 52;
-    var ring = '<svg width="124" height="124" viewBox="0 0 124 124" role="img" aria-label="' + Math.floor(td.min) + ' de ' + num1(meta) + ' minutos" style="flex-shrink:0">'
-      + '<circle cx="62" cy="62" r="52" fill="none" stroke="#E5F3EA" stroke-width="13"/>'
-      + '<circle cx="62" cy="62" r="52" fill="none" stroke="#16A34A" stroke-width="13" stroke-linecap="round" stroke-dasharray="' + (C * frac).toFixed(1) + ' ' + C.toFixed(1) + '" transform="rotate(-90 62 62)"/>'
-      + '<text x="62" y="62" text-anchor="middle" font-size="36" font-weight="800" fill="#0F172A">' + (td.min > 0 && td.min < 1 ? '&lt;1' : Math.floor(td.min)) + '</text>'
-      + '<text x="62" y="84" text-anchor="middle" font-size="12.5" font-weight="800" fill="#64748B">de ' + num1(meta) + ' min</text></svg>';
-    var rows = A_STUDY_TYPES.map(function (t) {
+    if (td.min < 0.05) {
+      return {
+        title: 'Vamos começar' + nm + '?',
+        short: 'São só <em>' + num1(meta) + ' minutos</em> hoje.',
+        text: 'São só <em>' + num1(meta) + ' minutos</em> hoje. Pode ser lendo, praticando ou revendo verbos.'
+      };
+    }
+    var falta = plural(Math.ceil(td.remaining), 'minuto', 'minutos');
+    return {
+      title: (frac >= .6 ? 'Quase lá' : 'Bom começo') + nm + '!',
+      short: 'Faltam <em>' + falta + '</em> para a meta de hoje.',
+      text: 'Faltam <em>' + falta + '</em> para bater a meta de hoje. Pode ser lendo, praticando ou revendo verbos.'
+    };
+  }
+  function goalRing(min, meta, size, stroke) {
+    var r = (size - stroke) / 2 - 1, C = 2 * Math.PI * r, frac = Math.min(1, min / meta), c = size / 2, big = size > 80;
+    var label = min > 0 && min < 1 ? '&lt;1' : Math.floor(min);
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" role="img" aria-label="' + Math.floor(min) + ' de ' + num1(meta) + ' minutos" style="flex-shrink:0">'
+      + '<circle cx="' + c + '" cy="' + c + '" r="' + r + '" fill="none" stroke="#E5F3EA" stroke-width="' + stroke + '"/>'
+      + '<circle cx="' + c + '" cy="' + c + '" r="' + r + '" fill="none" stroke="#16A34A" stroke-width="' + stroke + '" stroke-linecap="round" stroke-dasharray="' + (C * frac).toFixed(1) + ' ' + C.toFixed(1) + '" transform="rotate(-90 ' + c + ' ' + c + ')"/>'
+      + '<text x="' + c + '" y="' + (big ? c : c + 7) + '" text-anchor="middle" font-size="' + (big ? 36 : 21) + '" font-weight="800" fill="#0F172A">' + label + '</text>'
+      + (big ? '<text x="' + c + '" y="' + (c + 22) + '" text-anchor="middle" font-size="12.5" font-weight="800" fill="#64748B">de ' + num1(meta) + ' min</text>' : '') + '</svg>';
+  }
+
+  // Bolinha de um dia. o.mode 'pick' abre o detalhe ali mesmo; 'open' abre a página de adesão.
+  function bubbleHtml(c, key, o) {
+    var i = dayStatus(c, key), w = weekdayOf(key), meta = c.cfg.metaDiaMin, label;
+    if (i.st === 'x') label = '✕';
+    else if (i.st === 'pre') label = '·';
+    else if (i.st === 'fut') label = '';
+    else if (i.st === 'now') label = '<b>' + (i.m >= 1 ? Math.floor(i.m) : i.m > 0 ? '&lt;1' : '0') + '</b>';
+    else label = i.m >= 1 ? Math.floor(i.m) : '&lt;1';
+    var prog = i.st === 'now' ? ' style="--p:' + Math.round(Math.min(1, i.m / meta) * 100) + '%"' : '';
+    var at = o.mode === 'open' ? 'data-cza-open data-cza-k="' + key + '"' : 'data-cza-pick="week" data-cza-k="' + key + '"';
+    return '<button type="button" class="cza-bb ' + i.st + (key === dayKey(c.now) ? ' today' : '') + (o.sel === key ? ' sel' : '') + '" ' + at
+      + (i.st === 'fut' ? ' disabled' : '') + ' aria-label="' + WDF[w] + ' ' + ddmm(parseKey(key)) + '"><span' + prog + '>' + label + '</span><i>' + WD[w] + '</i></button>';
+  }
+  function weekKeys(c) {
+    var mon = mondayOf(c.now), out = [];
+    for (var i = 0; i < 7; i++) out.push(dayKey(addDays(mon, i)));
+    return out;
+  }
+  function weekStripHtml(c, o) {
+    o = o || {};
+    return '<div class="cza-wk">' + weekKeys(c).map(function (k) { return bubbleHtml(c, k, o); }).join('') + '</div>';
+  }
+
+  /* Início: cartão da meta de hoje (anel + frase + semana). Tocar abre a página. o = { firstName, ribbon } */
+  function goalHomeHtml(c, o) {
+    o = o || {};
+    var td = todayOf(c), m = goalMsg(c, o.firstName);
+    return '<div class="cza cza-home">' + (o.ribbon ? '<div class="cza-ribbon">' + esc(o.ribbon) + '</div>' : '')
+      + '<div class="cza-mini" role="button" tabindex="0" data-cza-open aria-label="Abrir minha adesão">'
+      + '<div class="cza-mini-top">' + goalRing(td.min, c.cfg.metaDiaMin, 64, 8)
+      + '<div class="cza-mtx"><small>🎯 Meta de estudo de hoje</small><b>' + m.title + '</b><span class="cza-tx">' + m.short + '</span></div><span class="cza-go">›</span></div>'
+      + weekStripHtml(c, { mode: 'open' }) + '</div></div>';
+  }
+
+  /* Progresso: cartão "Meu estudo", só com os dias. Tocar abre a página. o = { ribbon } */
+  function goalProgressHtml(c, o) {
+    o = o || {};
+    var g = c.cur.goal;
+    return '<div class="cza cza-prog">' + (o.ribbon ? '<div class="cza-ribbon">' + esc(o.ribbon) + '</div>' : '')
+      + '<div class="cza-msc" role="button" tabindex="0" data-cza-open aria-label="Abrir meu estudo">'
+      + '<div class="cza-top"><b>📈 Meu estudo</b><div class="cza-r"><span class="cza-gchip' + (g.atingida ? '' : ' muted') + '">' + Math.round(g.minutos) + ' de ' + num1(g.metaSemanaMin) + ' min na semana</span><span class="cza-go">›</span></div></div>'
+      + weekStripHtml(c, { mode: 'open' }) + '</div></div>';
+  }
+
+  // ── Detalhe de um dia (abre na própria página) ──────────────────────────
+  function itemType(k) {
+    return /^pos_/.test(k) ? 'pos' : /^vocab_/.test(k) ? 'voc' : /^(act|extra|corr)_/.test(k) ? 'act' : null;
+  }
+  function itemName(c, k) {
+    if (c.names && c.names[k]) return c.names[k];
+    if (VOCAB_NAMES[k]) return VOCAB_NAMES[k];
+    if (/^corr_/.test(k)) return 'Correção das atividades';
+    if (/^extra_/.test(k)) return 'Atividade extra';
+    if (/^act_/.test(k)) return 'Atividade';
+    if (/^pos_/.test(k)) return 'Pós-aula';
+    return 'Outro';
+  }
+  function dayDetailHtml(c, key) {
+    var i = dayStatus(c, key);
+    if (i.st === 'fut') return '';
+    var w = weekdayOf(key), d = i.d, m = i.m, meta = c.cfg.metaDiaMin;
+    function head(chip) { return '<div class="cza-dh"><b>' + cap1(WDF[w]) + ', ' + ddmm(parseKey(key)) + '</b>' + chip + '</div>'; }
+    var foot = d && d.out > 0.05 ? '<div class="cza-dfoot">Mais ' + fm(d.out) + ' em outras telas (início, perfil, avisos). Isso não conta como estudo.</div>' : '';
+    if (i.st === 'pre') return '<div class="cza-dy pre">' + head('<span class="cza-gchip muted">sem medição</span>') + '<p>Neste dia o app ainda não media o seu tempo de estudo. Por isso ele fica sem registro.</p></div>';
+    if (i.st === 'x') {
+      var few = m > 0;
+      return '<div class="cza-dy nox">' + head('<span class="cza-gchip red">✕ não estudou</span>')
+        + '<div class="cza-xbox"><span>✕</span><div><b>' + (few ? 'Estudou menos de 1 minuto' : 'Não estudou nenhum minuto') + '</b>' + (few ? 'Foi só uma passada rápida pelo app.' : 'Neste dia não houve estudo no app.') + '</div></div>' + foot + '</div>';
+    }
+    if (i.st === 'now' && m < 0.05) return '<div class="cza-dy amb">' + head('<span class="cza-gchip amber">hoje · em andamento</span>') + '<p>Hoje ainda não teve estudo. Dá tempo! São só ' + num1(meta) + ' minutos.</p>' + foot + '</div>';
+    var chip = i.st === 'hit' ? '<span class="cza-gchip">Meta batida ✓</span>' : i.st === 'now' ? '<span class="cza-gchip amber">hoje · em andamento</span>' : '<span class="cza-gchip amber">estudou um pouco</span>';
+    var rows = '';
+    DAY_TYPES.forEach(function (t) {
+      var v = d[t.k];
+      if (!(v > 0.05)) return;
+      var its = (d.items || []).filter(function (x) { return itemType(x.k) === t.k && x.min >= 0.05; }).sort(function (a, b) { return b.min - a.min; }).slice(0, 8);
+      rows += '<div class="cza-tr"><div class="cza-ti" style="background:' + t.soft + '">' + t.ic + '</div><div class="cza-tb">'
+        + '<div class="cza-tl"><b>' + t.name + '</b><em>' + fm(v) + '</em></div>'
+        + '<div class="cza-pbar"><i style="width:' + Math.max(4, v / m * 100).toFixed(0) + '%;background:' + t.color + '"></i></div>'
+        + (its.length ? '<ul class="cza-its">' + its.map(function (x) { return '<li><span>' + esc(itemName(c, x.k)) + '</span><span>' + fm(x.min) + '</span></li>'; }).join('') + '</ul>' : '')
+        + '</div></div>';
+    });
+    return '<div class="cza-dy' + (i.st === 'hit' ? '' : ' amb') + '">' + head(chip)
+      + '<div class="cza-dtot">' + fm(m) + ' <small>de estudo' + (i.st === 'hit' ? '' : ' · a meta é ' + num1(meta) + ' min') + '</small></div>' + rows + foot + '</div>';
+  }
+
+  // ── Calendário do mês ───────────────────────────────────────────────────
+  function calendarHtml(c, month) {
+    var y = +month.slice(0, 4), mo = +month.slice(5, 7);
+    var minM = String(c.measureFrom).slice(0, 7), maxM = monthKeyOf(c.now);
+    var prev = monthKeyOf(new Date(y, mo - 2, 1)), next = monthKeyOf(new Date(y, mo, 1));
+    var off = (new Date(y, mo - 1, 1).getDay() + 6) % 7, n = new Date(y, mo, 0).getDate();
+    var h = '<div class="cza-calnav"><button type="button" data-cza-month="prev"' + (prev < minM ? ' disabled' : '') + ' aria-label="Mês anterior">‹</button>'
+      + '<b>' + cap1(MESES[mo - 1]) + ' de ' + y + '</b>'
+      + '<button type="button" data-cza-month="next"' + (next > maxM ? ' disabled' : '') + ' aria-label="Próximo mês">›</button></div>'
+      + '<div class="cza-cg">' + WD.map(function (x) { return '<div class="h">' + x + '</div>'; }).join('');
+    for (var b = 0; b < off; b++) h += '<div class="cza-cc blank"></div>';
+    for (var d = 1; d <= n; d++) {
+      var key = month + '-' + String(d).padStart(2, '0'), i = dayStatus(c, key), label;
+      if (i.st === 'x') label = '✕';
+      else if (i.st === 'pre' || i.st === 'fut') label = '';
+      else label = i.m >= 1 ? Math.floor(i.m) : '&lt;1';
+      h += '<button type="button" class="cza-cc ' + i.st + (i.st === 'hit' && i.m >= 25 ? ' big' : '') + '" data-cza-pick="cal" data-cza-k="' + key + '"'
+        + (i.st === 'fut' ? ' disabled' : '') + ' aria-label="' + ddmm(parseKey(key)) + '"><em>' + d + '</em><b>' + label + '</b></button>';
+    }
+    return h + '</div>'
+      + '<div class="cza-leg"><span><i style="background:#22C55E"></i>meta batida (' + num1(c.cfg.metaDiaMin) + '+ min)</span><span><i style="background:#FEF3C7;border:1px solid #FCD34D"></i>estudou um pouco</span>'
+      + '<span><i style="background:#FEE2E2;color:#DC2626">✕</i>não estudou</span><span><i style="background:#F1F5F9;border:1px solid #CBD5E1"></i>sem medição</span></div>';
+  }
+
+  // ── Blocos da página de adesão ──────────────────────────────────────────
+  function todoHtml(c) {
+    var td = todayOf(c);
+    return A_STUDY_TYPES.map(function (t) {
       var m = td.t[t.k], done = td.done[t.k];
       return '<div class="cza-trow' + (done ? ' done' : '') + '" data-cza-go="' + TYPE_GO[t.k] + '" role="button" tabindex="0">'
         + '<div class="cza-tic" style="background:' + TYPE_SOFT[t.k] + '">' + t.ic + '</div>'
         + '<div class="cza-ttx"><b>' + esc(t.name) + '</b><span>' + (m >= 0.05 ? 'Hoje: ' + fm(m) : 'Ainda não hoje') + '</span></div>'
         + '<span class="cza-pill ' + (done ? 'ok' : 'go') + '">' + (done ? 'feito ✓' : 'Abrir ›') + '</span></div>';
     }).join('');
-    var days = c.cur.days.map(function (m, i) {
-      var cls, inner = '';
-      if (i < td.idx) { cls = g.dias[i].hit ? 'on' : 'off'; inner = cls === 'on' ? '✓' : ''; }
-      else if (i === td.idx) { if (td.hit) { cls = 'on'; inner = '✓'; } else cls = 'now'; }
-      else cls = 'fut';
-      return '<div class="cza-gd ' + cls + (i === td.idx ? ' today' : '') + '"><span' + (cls === 'now' ? ' style="--p:' + Math.round(frac * 100) + '%"' : '') + '>' + inner + '</span>' + WD1[i] + '</div>';
-    }).join('');
-    return '<div class="cza cza-goal">'
-      + (o.ribbon ? '<div class="cza-ribbon">' + esc(o.ribbon) + '</div>' : '')
-      + '<div class="cza-pc cza-gfirst"><div class="cza-gtop"><b>🎯 Meta de estudo de hoje</b><span class="cza-gchip muted">' + num1(meta) + ' min por dia</span></div>'
-      + '<div class="cza-gbody">' + ring + '<div class="cza-gt"><b class="big">' + title + '</b>' + text + '</div></div></div>'
-      + '<div class="cza-pc"><div class="cza-sect">O que dá para fazer agora</div><div class="cza-todo">' + rows + '</div></div>'
-      + '<div class="cza-pc"><div class="cza-gtop"><div class="cza-sect" style="margin:0">Sua semana</div><span class="cza-gchip">' + goalDaysTxt(g) + ' ' + (g.atingida ? '🎉' : '✓') + '</span></div>'
-      + '<div class="cza-gweekdays">' + days + '</div></div></div>';
   }
   var A_STUDY_TYPES = [
     { k: 'leitura', name: 'Ler um pós-aula', ic: '📖', inclui: 'pós-aula' },
@@ -661,40 +820,17 @@
     { k: 'exercicio', name: 'Fazer um exercício', ic: '✏️', inclui: 'atividades, extras, correção e desafio' }
   ];
 
-  /* Progresso: "Meu estudo" da semana. o = {} */
-  function goalWeekHtml(c) {
-    var cfg = c.cfg, w = c.cur, g = w.goal, td = todayOf(c);
+  // Total da semana: minutos por tipo, dias com meta e "o que conta".
+  function weekTotalsHtml(c) {
+    var cfg = c.cfg, w = c.cur, g = w.goal;
+    var part = function (arr) { return sum(arr.slice(0, w.elapsed)); };
+    var tot = { pos: part(w.dp), act: part(w.da), des: part(w.dd), voc: part(w.dv) };
     var scale = Math.max(g.metaSemanaMin, g.minutos) || 1;
-    var bar = '<div class="cza-gbar">' + A_STUDY_TYPES.map(function (t) {
-      return '<i style="width:' + (g.mins[t.k] / scale * 100).toFixed(1) + '%;background:' + TYPE_COLOR[t.k] + '"></i>';
-    }).join('') + '</div>';
+    var bar = '<div class="cza-gbar">' + DAY_TYPES.map(function (t) { return '<i style="width:' + (tot[t.k] / scale * 100).toFixed(1) + '%;background:' + t.color + '"></i>'; }).join('') + '</div>';
     var falta = Math.max(0, g.metaDias - g.hits);
     var chips = '<div class="cza-gchips"><span class="cza-gchip">' + goalDaysTxt(g).replace('com meta', 'com meta batida') + '</span>'
       + (g.atingida ? '<span class="cza-gchip">Meta da semana batida 🎉</span>' : '<span class="cza-gchip amber">' + (falta === 1 ? 'falta 1 dia' : 'faltam ' + falta + ' dias') + '</span>') + '</div>';
-    // gráfico: minutos de estudo por dia, empilhados por tipo, com a linha da meta
-    var W = 434, H = 190, L = 30, R = 8, T = 14, B = 26, pw = W - L - R, ph = H - T - B;
-    var ymax = Math.max(cfg.metaDiaMin * 1.6, Math.max.apply(null, w.days) + 2);
-    var step = ymax <= 20 ? 5 : ymax <= 50 ? 10 : 20, top = Math.ceil(ymax / step) * step;
-    function X(i) { return L + pw / 7 * (i + .5); }
-    function Y(v) { return T + ph - (v / top) * ph; }
-    var bw = pw / 7 * 0.62, s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Minutos de estudo por dia">';
-    for (var v = 0; v <= top; v += step) s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="#EEF2F6"/><text x="' + (L - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end" font-size="10" font-weight="700" fill="#94A3B8">' + v + '</text>';
-    s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(cfg.metaDiaMin) + '" y2="' + Y(cfg.metaDiaMin) + '" stroke="#16A34A" stroke-width="2" stroke-dasharray="6 5"/>'
-      + '<text x="' + (W - R) + '" y="' + (Y(cfg.metaDiaMin) - 5) + '" text-anchor="end" font-size="10.5" font-weight="800" fill="#15803D">meta ' + num1(cfg.metaDiaMin) + ' min</text>';
-    w.days.forEach(function (m, i) {
-      var x = X(i) - bw / 2, y0 = Y(0), fut = i >= w.elapsed, parts = [w.dp[i], w.dv[i], w.da[i] + w.dd[i]], cols = [TYPE_COLOR.leitura, TYPE_COLOR.vocab, TYPE_COLOR.exercicio];
-      s += '<g class="cza-gbarg" data-cza-gday="' + i + '" style="cursor:pointer"><rect x="' + (X(i) - pw / 14) + '" y="' + T + '" width="' + (pw / 7) + '" height="' + (ph + B) + '" fill="transparent"/>';
-      if (!fut && m > 0.05) {
-        parts.forEach(function (p, k) { if (p <= 0.01) return; var h = (p / top) * ph; y0 -= h; s += '<rect x="' + x + '" y="' + y0 + '" width="' + bw + '" height="' + h + '" fill="' + cols[k] + '"' + (i === td.idx && !td.hit ? ' opacity=".6"' : '') + ' rx="3"/>'; });
-        s += '<text x="' + X(i) + '" y="' + (y0 - 5) + '" text-anchor="middle" font-size="11" font-weight="800" fill="#0F172A">' + Math.round(m) + '</text>';
-      } else s += '<rect x="' + x + '" y="' + (Y(0) - 5) + '" width="' + bw + '" height="5" fill="none" stroke="#CBD5E1" stroke-dasharray="3 3" rx="2"/>';
-      s += '<text x="' + X(i) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="11" font-weight="800" fill="' + (i === td.idx ? '#0F172A' : '#64748B') + '">' + WD[i] + (i === td.idx ? ' •' : '') + '</text></g>';
-    });
-    s += '</svg>';
-    var legend = '<div class="cza-glegend"><span><i style="background:' + TYPE_COLOR.leitura + '"></i>Pós-aula</span><span><i style="background:' + TYPE_COLOR.vocab + '"></i>Verbos, chunks e vocabulário</span><span><i style="background:' + TYPE_COLOR.exercicio + '"></i>Exercícios</span></div>';
-    var tipos = '<div class="cza-gchips" style="margin-top:10px">' + A_STUDY_TYPES.map(function (t) {
-      return '<span class="cza-gchip' + (g.tipos[t.k] ? '' : ' amber') + '">' + t.ic + ' ' + TYPE_SHORT[t.k] + (g.tipos[t.k] ? ' ✓' : ': ainda não') + '</span>';
-    }).join('') + '</div>';
+    var legend = '<div class="cza-glegend">' + DAY_TYPES.map(function (t) { return '<span><i style="background:' + t.color + '"></i>' + (t.k === 'des' ? 'Desafio' : t.name) + '</span>'; }).join('') + '</div>';
     var info = '<button type="button" class="cza-gq" data-cza-gtoggle aria-expanded="false">O que conta como tempo de estudo? <span class="cza-chev">›</span></button>'
       + '<div class="cza-gmore" hidden>'
       + '<div class="cza-sect" style="margin-top:12px">Conta como estudo</div><div class="cza-glist">'
@@ -705,11 +841,73 @@
       + '<div class="cza-sect" style="margin-top:14px">Não conta</div><div class="cza-glist no">'
       + '<div><span>🏠</span>Ficar na tela inicial, no perfil ou nos avisos</div><div><span>💤</span>Deixar o app aberto sem mexer</div></div>'
       + '<div class="cza-grule"><span style="font-size:18px">⏱️</span><div><b>Como o tempo é contado.</b> O relógio anda enquanto você usa o app: tocando, rolando a página, digitando, ouvindo ou gravando áudio. Pensar um pouco também vale: pausas de até <b>' + limiteTxt(cfg.limiteSeg) + '</b> contam. Passou disso, o app entende que você saiu e não conta.</div></div></div>';
-    return '<div class="cza cza-gweek"><div class="cza-title">Meu estudo</div><div class="cza-sub">Quanto tempo você estudou inglês nesta semana.</div>'
-      + '<div class="cza-pc"><div class="cza-sect">Esta semana</div>'
-      + '<div class="cza-gtot"><b>' + Math.round(g.minutos) + ' min</b><span>de ' + num1(g.metaSemanaMin) + ' min</span></div>' + bar + chips
-      + '<div class="cza-gchart">' + s + '</div>' + legend
-      + '<div class="cza-gday" id="cza-gdayinfo">' + sDayText(c, 3, td.idx) + '</div>' + tipos + info + '</div></div>';
+    return '<div class="cza-sect">Esta semana</div>'
+      + '<div class="cza-gtot"><b>' + Math.round(g.minutos) + ' min</b><span>de ' + num1(g.metaSemanaMin) + ' min</span></div>' + bar + chips + legend + info;
+  }
+
+  /* Página de adesão: tudo do estudo e a nota.
+   * o = { firstName, recado, ribbon, ribbonOpen, stats, sel (dia já aberto, AAAA-MM-DD) } */
+  function pageHtml(c, o) {
+    o = o || {};
+    var cfg = c.cfg, td = todayOf(c), g = c.cur.goal, m = goalMsg(c, o.firstName), sel = o.sel || null;
+    var month = monthKeyOf(c.now);
+    var h = '<div class="cza cza-page">' + (o.ribbon ? '<div class="cza-ribbon' + (o.ribbonOpen ? ' open' : '') + '">' + esc(o.ribbon) + '</div>' : '');
+    h += '<div class="cza-pc cza-gfirst"><div class="cza-gtop"><b>🎯 Meta de estudo de hoje</b><span class="cza-gchip muted">' + num1(cfg.metaDiaMin) + ' min por dia</span></div>'
+      + '<div class="cza-gbody">' + goalRing(td.min, cfg.metaDiaMin, 104, 12) + '<div class="cza-gt"><b class="big">' + m.title + '</b>' + m.text + '</div></div></div>';
+    h += '<div class="cza-pc"><div class="cza-sect" style="margin-bottom:0">O que dá para fazer agora</div><div class="cza-todo">' + todoHtml(c) + '</div></div>';
+    h += '<div class="cza-pc"><div class="cza-gtop"><div class="cza-sect" style="margin:0">Sua semana</div><span class="cza-gchip' + (g.atingida ? '' : ' muted') + '">' + goalDaysTxt(g) + ' ' + (g.atingida ? '🎉' : '✓') + '</span></div>'
+      + weekStripHtml(c, { mode: 'pick', sel: sel })
+      + '<div class="cza-cap">O número é o tempo de estudo do dia, em minutos. Toque numa bolinha para ver onde o tempo foi gasto.</div>'
+      + '<div data-cza-box="week">' + (sel ? dayDetailHtml(c, sel) || DAY_HINT : DAY_HINT) + '</div></div>';
+    h += '<div class="cza-pc"><button type="button" class="cza-calbtn" data-cza-cal aria-expanded="false"><div>📅 Calendário<small>Veja o estudo de cada dia do mês</small></div><span class="cza-chev">›</span></button>'
+      + '<div class="cza-cal" hidden><div class="cza-calbody" data-cza-cur="' + month + '">' + calendarHtml(c, month) + '</div>'
+      + '<div data-cza-box="cal">' + DAY_HINT + '</div></div></div>';
+    h += '<div class="cza-pc">' + weekTotalsHtml(c) + '</div>';
+    h += studentHtml(c, { firstName: o.firstName, recado: o.recado, ribbon: '', stats: o.stats, noTitle: true });
+    return h + '</div>';
+  }
+
+  // Toques dentro da página (usada pelo app do aluno e pela prévia do painel). Mexe só no DOM:
+  // abre o detalhe do dia, o calendário e os "ver detalhes". Devolve null se o toque não é da página,
+  // { go: 'pos'|'vocab'|'aulas' } para um atalho ou { open: 'AAAA-MM-DD'|null } para abrir a página.
+  function pageClick(e, host, c) {
+    var t = e && e.target, el;
+    if (!t || !t.closest) return null;
+    if ((el = t.closest('[data-cza-pick]'))) {
+      var where = el.getAttribute('data-cza-pick'), box = host.querySelector('[data-cza-box="' + where + '"]');
+      Array.prototype.forEach.call(host.querySelectorAll('[data-cza-pick="' + where + '"].sel'), function (x) { x.classList.remove('sel'); });
+      el.classList.add('sel');
+      if (box) box.innerHTML = dayDetailHtml(c, el.getAttribute('data-cza-k')) || DAY_HINT;
+      return {};
+    }
+    if ((el = t.closest('[data-cza-cal]'))) {
+      var cal = host.querySelector('.cza-cal');
+      if (cal) { var open = cal.hidden; cal.hidden = !open; el.setAttribute('aria-expanded', open ? 'true' : 'false'); }
+      return {};
+    }
+    if ((el = t.closest('[data-cza-month]'))) {
+      var body = host.querySelector('.cza-calbody');
+      if (!body || el.disabled) return {};
+      var cur = body.getAttribute('data-cza-cur'), nx = monthKeyOf(new Date(+cur.slice(0, 4), +cur.slice(5, 7) - 1 + (el.getAttribute('data-cza-month') === 'next' ? 1 : -1), 1));
+      body.setAttribute('data-cza-cur', nx);
+      body.innerHTML = calendarHtml(c, nx);
+      var cb = host.querySelector('[data-cza-box="cal"]');
+      if (cb) cb.innerHTML = DAY_HINT;
+      return {};
+    }
+    if ((el = t.closest('[data-cza-gtoggle]'))) { toggleGoalInfo(el); return {}; }
+    if ((el = t.closest('[data-cza-toggle]'))) { toggleDetails(host, el); return {}; }
+    if ((el = t.closest('.cza-cell'))) {
+      if (el.disabled) return {};
+      Array.prototype.forEach.call(host.querySelectorAll('.cza-cell.sel'), function (x) { x.classList.remove('sel'); });
+      el.classList.add('sel');
+      var info = host.querySelector('.cza-dayinfo');
+      if (info) info.innerHTML = sDayText(c, +el.getAttribute('data-cza-w'), +el.getAttribute('data-cza-d'));
+      return {};
+    }
+    if ((el = t.closest('[data-cza-go]'))) return { go: el.getAttribute('data-cza-go') };
+    if ((el = t.closest('[data-cza-open]'))) return { open: el.getAttribute('data-cza-k') || null };
+    return null;
   }
   // Abre/fecha o "O que conta como tempo de estudo?".
   function toggleGoalInfo(trigger) {
@@ -802,7 +1000,7 @@
     + '.cza-more>.cza-sub{margin-top:12px}'
     // meta de estudo
     + '.cza-sect{font-size:12px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}'
-    + '.cza-goal .cza-pc{margin-top:12px}.cza-goal .cza-gfirst{margin-top:0}'
+    + '.cza-page>.cza-pc{margin-top:12px}.cza-page>.cza-gfirst{margin-top:0}.cza-page>.cza>.cza-herocard{margin-top:12px}'
     + '.cza-gtop{display:flex;align-items:center;justify-content:space-between;gap:8px}'
     + '.cza-gtop b{font-size:15px;font-weight:800}'
     + '.cza-gchip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:800;background:#DCFCE7;color:#14532D;white-space:nowrap}'
@@ -820,23 +1018,11 @@
     + '.cza-ttx{flex:1;min-width:0}.cza-ttx b{display:block;font-size:13.5px;font-weight:800}.cza-ttx span{font-size:11.5px;color:#64748B;font-weight:700}'
     + '.cza-pill{font-size:11px;font-weight:800;padding:5px 11px;border-radius:99px;white-space:nowrap}'
     + '.cza-pill.ok{background:#16A34A;color:#fff}.cza-pill.go{background:#FEF3C7;color:#92400E}'
-    + '.cza-gweekdays{display:flex;justify-content:space-between;gap:4px;margin-top:10px}'
-    + '.cza-gd{flex:1;text-align:center;font-size:10.5px;font-weight:800;color:#94A3B8}'
-    + '.cza-gd span{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;margin:0 auto 4px;background:#EEF2F6;color:#94A3B8;font-size:15px}'
-    + '.cza-gd.on span{background:#16A34A;color:#fff}'
-    + '.cza-gd.off span{background:#fff;border:2px solid #E2E8F0}'
-    + '.cza-gd.now span{background:conic-gradient(#16A34A 0 var(--p,0%),#E5E7EB var(--p,0%) 100%);position:relative;color:transparent}'
-    + '.cza-gd.now span::after{content:"";position:absolute;inset:5px;border-radius:50%;background:#fff}'
-    + '.cza-gd.fut span{background:none;border:2px dashed #E2E8F0}'
-    + '.cza-gd.today{color:#0F172A}'
     + '.cza-gtot{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}'
     + '.cza-gtot b{font-size:34px;font-weight:800;letter-spacing:-1px;color:#14532D}.cza-gtot span{font-size:14px;color:#64748B;font-weight:800}'
     + '.cza-gbar{height:12px;border-radius:99px;background:#E5E7EB;margin:10px 0 8px;overflow:hidden;display:flex}.cza-gbar i{display:block;height:100%}'
-    + '.cza-gchart{margin-top:6px}'
     + '.cza-glegend{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;font-weight:800;color:#475569}'
     + '.cza-glegend span{display:inline-flex;align-items:center;gap:6px}.cza-glegend i{width:12px;height:12px;border-radius:4px;display:inline-block}'
-    + '.cza-gday{margin-top:12px;padding:11px 13px;border-radius:14px;background:#F0FDF4;border:1px solid #BBF7D0;font-size:12.5px;font-weight:700;color:#14532D;line-height:1.45}'
-    + '.cza-gday b{color:#0F172A}'
     + '.cza-gq{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;margin-top:14px;padding:11px 13px;border:1.5px solid #E2E8F0;border-radius:14px;background:#fff;font:inherit;font-size:13px;font-weight:800;color:#15803D;cursor:pointer;text-align:left}'
     + '.cza-gq[aria-expanded="true"] .cza-chev{transform:rotate(90deg)}'
     + '.cza-gmore[hidden]{display:none}'
@@ -845,13 +1031,80 @@
     + '.cza-glist>div>span{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:17px;flex-shrink:0;background:#F1F5F9}'
     + '.cza-glist small{display:block;font-size:11.5px;color:#64748B;font-weight:700;margin-top:1px}'
     + '.cza-grule{display:flex;gap:11px;align-items:flex-start;padding:12px 13px;border-radius:15px;background:#FFFBEB;border:1px solid #FDE68A;font-size:12.5px;font-weight:700;color:#78350F;line-height:1.45;margin-top:12px}'
-    + '.cza-grule b{color:#451A03}';
+    + '.cza-grule b{color:#451A03}'
+    // cartões do Início e do Progresso, bolinhas da semana e página de adesão
+    + '.cza-mini,.cza-msc{display:block;width:100%;text-align:left;background:#fff;border:1px solid rgba(22,163,74,.16);border-radius:20px;box-shadow:0 8px 20px rgba(15,23,42,.06);cursor:pointer;-webkit-tap-highlight-color:transparent}'
+    + '.cza-mini{padding:13px 14px 11px}.cza-msc{padding:13px 14px 12px}'
+    + '.cza-mini:focus-visible,.cza-msc:focus-visible{outline:3px solid rgba(22,163,74,.45);outline-offset:2px}'
+    + '.cza-home .cza-ribbon,.cza-prog .cza-ribbon{margin:0 0 8px}'
+    + '.cza-mini-top{display:flex;align-items:center;gap:13px}'
+    + '.cza-mtx{flex:1;min-width:0}'
+    + '.cza-mtx small{display:block;font-size:10px;font-weight:800;letter-spacing:.5px;color:#64748B;text-transform:uppercase}'
+    + '.cza-mtx b{display:block;font-size:16.5px;font-weight:800;line-height:1.2;margin-top:1px}'
+    + '.cza-tx{display:block;font-size:12.5px;font-weight:700;color:#475569;margin-top:2px;line-height:1.3}'
+    + '.cza-tx em{font-style:normal;color:#15803D;font-weight:800}'
+    + '.cza-go{font-size:26px;color:#16A34A;font-weight:800;line-height:1}'
+    + '.cza-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.cza-top b{font-size:15px;font-weight:800}'
+    + '.cza-r{display:flex;align-items:center;gap:8px}.cza-msc .cza-go{font-size:24px}'
+    + '.cza-wk{display:flex;justify-content:space-between;gap:3px;margin-top:12px}'
+    + '.cza-mini .cza-wk{margin-top:10px;padding-top:10px;border-top:1px solid #EEF2F6}.cza-msc .cza-wk{margin-top:8px}'
+    + '.cza-bb{flex:1;min-width:0;text-align:center;font:inherit;font-size:10.5px;font-weight:800;color:#94A3B8;display:grid;justify-items:center;gap:4px;padding:2px 0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}'
+    + '.cza-bb i{font-style:normal}'
+    + '.cza-bb span{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;font-size:14.5px;font-weight:800;position:relative}'
+    + '.cza-mini .cza-bb span,.cza-msc .cza-bb span{width:34px;height:34px;font-size:12.5px}'
+    + '.cza-bb.hit span{background:#16A34A;color:#fff}'
+    + '.cza-bb.part span{background:#FEF3C7;color:#92400E;border:2px solid #FCD34D}'
+    + '.cza-bb.x span{background:#FEE2E2;color:#DC2626;border:2px solid #FCA5A5;font-size:19px}.cza-mini .cza-bb.x span,.cza-msc .cza-bb.x span{font-size:16px}'
+    + '.cza-bb.pre span{background:#F1F5F9;color:#CBD5E1;border:2px dotted #CBD5E1}'
+    + '.cza-bb.fut{cursor:default}.cza-bb.fut span{background:none;border:2px dashed #E2E8F0}'
+    + '.cza-bb.now span{background:conic-gradient(#16A34A 0 var(--p,0%),#E5E7EB var(--p,0%) 100%);color:#14532D}'
+    + '.cza-bb.now span::before{content:"";position:absolute;inset:4px;border-radius:50%;background:#fff}.cza-mini .cza-bb.now span::before,.cza-msc .cza-bb.now span::before{inset:3.5px}'
+    + '.cza-bb.now span b{position:relative;font-weight:800}'
+    + '.cza-bb.today i{color:#0F172A}'
+    + '.cza-page .cza-bb.sel span{outline:3px solid #0F172A;outline-offset:2px}'
+    // detalhe do dia
+    + '.cza-dy{margin-top:10px;border-radius:15px;background:#F0FDF4;border:1px solid #BBF7D0;padding:12px 13px;font-size:12.5px;font-weight:700;color:#14532D;line-height:1.45}'
+    + '.cza-dy.hint{background:#F8FAFC;border-color:#E2E8F0;color:#64748B}.cza-dy.nox{background:#FEE2E2;border-color:#FCA5A5;color:#7F1D1D}'
+    + '.cza-dy.pre{background:#F1F5F9;border-color:#E2E8F0;color:#475569}.cza-dy.amb{background:#FFFBEB;border-color:#FDE68A;color:#78350F}'
+    + '.cza-dy p{margin-top:6px}'
+    + '.cza-dh{display:flex;align-items:center;justify-content:space-between;gap:8px}.cza-dh b{font-size:14px;font-weight:800;color:#0F172A}'
+    + '.cza-gchip.red{background:#FEE2E2;color:#991B1B}'
+    + '.cza-dtot{font-size:22px;font-weight:800;color:#14532D;letter-spacing:-.5px;margin:6px 0 2px}.cza-dtot small{font-size:12px;color:#475569;font-weight:700;letter-spacing:0}'
+    + '.cza-dy.amb .cza-dtot{color:#78350F}'
+    + '.cza-tr{display:flex;gap:10px;margin-top:10px}.cza-ti{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;font-size:16px;flex-shrink:0}'
+    + '.cza-tb{flex:1;min-width:0}.cza-tl{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:#0F172A}.cza-tl em{font-style:normal;font-weight:800}'
+    + '.cza-pbar{height:7px;border-radius:99px;background:rgba(15,23,42,.08);margin:4px 0 3px;overflow:hidden}.cza-pbar i{display:block;height:100%;border-radius:99px}'
+    + '.cza-its{list-style:none;font-size:11.5px;color:#475569;font-weight:700}.cza-its li{display:flex;justify-content:space-between;gap:10px}'
+    + '.cza-its li span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cza-its li span:last-child{flex-shrink:0;color:#0F172A}'
+    + '.cza-dfoot{margin-top:10px;padding-top:8px;border-top:1px dashed rgba(15,23,42,.15);font-size:11.5px;color:#64748B;font-weight:700}'
+    + '.cza-xbox{display:flex;gap:11px;align-items:center;margin-top:8px}'
+    + '.cza-xbox>span{width:40px;height:40px;border-radius:50%;background:#fff;border:2px solid #FCA5A5;color:#DC2626;display:grid;place-items:center;font-size:21px;font-weight:800;flex-shrink:0}'
+    + '.cza-xbox b{display:block;font-size:15px;color:#7F1D1D}'
+    // calendário
+    + '.cza-calbtn{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;font:inherit;font-size:14px;font-weight:800;color:#0F172A;border:0;background:none;padding:0;cursor:pointer}'
+    + '.cza-calbtn small{display:block;font-size:11.5px;font-weight:700;color:#64748B}.cza-calbtn .cza-chev{font-size:20px;color:#15803D}'
+    + '.cza-calbtn[aria-expanded="true"] .cza-chev{transform:rotate(90deg)}'
+    + '.cza-cal[hidden]{display:none}'
+    + '.cza-calnav{display:flex;align-items:center;justify-content:space-between;margin:12px 0 8px}.cza-calnav b{font-size:14px;font-weight:800}'
+    + '.cza-calnav button{width:34px;height:34px;border-radius:11px;border:1.5px solid #E2E8F0;background:#fff;font:inherit;font-size:18px;font-weight:800;color:#15803D;cursor:pointer;padding:0}.cza-calnav button:disabled{opacity:.3;cursor:default}'
+    + '.cza-cg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.cza-cg .h{text-align:center;font-size:10px;font-weight:800;color:#94A3B8;padding-bottom:2px}'
+    + '.cza-cc{aspect-ratio:1/1.02;border-radius:11px;display:grid;align-content:center;justify-items:center;position:relative;font:inherit;font-weight:800;padding:0;border:0;background:#F1F5F9;cursor:pointer;min-width:0}'
+    + '.cza-cc em{position:absolute;top:3px;left:5px;font-style:normal;font-size:8.5px;font-weight:800;opacity:.7}.cza-cc b{font-size:13px;font-weight:800}'
+    + '.cza-cc.hit{background:#22C55E;color:#fff}.cza-cc.hit.big{background:#15803D}.cza-cc.part{background:#FEF3C7;color:#92400E}'
+    + '.cza-cc.x{background:#FEE2E2;color:#DC2626}.cza-cc.x b{font-size:16px}.cza-cc.pre{background:#F1F5F9;color:#CBD5E1}'
+    + '.cza-cc.fut{background:none;border:1.5px dashed #E2E8F0;color:transparent;cursor:default}'
+    + '.cza-cc.now{background:#fff;border:2px solid #16A34A;color:#14532D}.cza-cc.blank{visibility:hidden}'
+    + '.cza-cc.sel{outline:3px solid #0F172A;outline-offset:1px}'
+    + '.cza-leg{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:10px;font-size:10.5px;font-weight:800;color:#475569}.cza-leg span{display:inline-flex;align-items:center;gap:5px}'
+    + '.cza-leg i{width:12px;height:12px;border-radius:4px;display:inline-block;font-style:normal;font-size:9px;line-height:12px;text-align:center;font-weight:800}'
+    + '.cza-page>.cza>.cza-title{display:none}';
 
   var api = {
     KEYS: KEYS, PIL: PIL, WD: WD, WD1: WD1, WDF: WDF, DEFAULTS: DEFAULTS,
     // Os três tipos de estudo da meta diária/semanal e o que cada um reúne.
     STUDY_TYPES: A_STUDY_TYPES,
-    goalTodayHtml: goalTodayHtml, goalWeekHtml: goalWeekHtml, toggleGoalInfo: toggleGoalInfo, todayOf: todayOf, goalDaysTxt: goalDaysTxt,
+    goalHomeHtml: goalHomeHtml, goalProgressHtml: goalProgressHtml, pageHtml: pageHtml, pageClick: pageClick, toggleGoalInfo: toggleGoalInfo,
+    todayOf: todayOf, goalDaysTxt: goalDaysTxt, dayStatus: dayStatus, dayDetailHtml: dayDetailHtml, calendarHtml: calendarHtml, weekStripHtml: weekStripHtml, goalMsg: goalMsg,
     cfgOf: cfgOf, compute: compute, band: band, effWeight: effWeight, combine: combine, itemKey: itemKey,
     tagsOf: tagsOf, diagOf: diagOf, suggestComment: suggestComment, studentChips: studentChips,
     wdStats: wdStats, changes: changes, advice: advice, sDayText: sDayText,

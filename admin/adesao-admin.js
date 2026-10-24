@@ -528,13 +528,14 @@ export function initAdesaoAdmin(ctx) {
     const lib = S.adesao.liberadaEm;
     const liberado = lib && lib <= todayKey();
     const ribbon = liberado ? 'Visível para o aluno' : lib ? 'Prévia: o aluno só verá a partir de ' + brDate(lib) : 'Prévia: ainda não liberado para os alunos';
-    // As três telas que o aluno recebe: meta de hoje (Início), Meu estudo e Minha adesão (Progresso).
-    const html = '<div class="czad-ptag">Na tela Início</div>' + A.goalTodayHtml(c, { firstName: firstOf(s) })
-      + '<div class="czad-ptag">Em Progresso › Meu estudo</div>' + A.goalWeekHtml(c)
-      + '<div class="czad-ptag">Em Progresso › Minha adesão</div>'
-      + A.studentHtml(c, { firstName: firstOf(s), recado: s.adesaoRecado && s.adesaoRecado.texto, ribbon, ribbonOpen: liberado, stats: S.stats });
+    // O que o aluno recebe: o cartão da meta de hoje (Início), o cartão "Meu estudo" (Progresso) e, ao tocar
+    // em qualquer um dos dois, a página de adesão.
+    const html = '<div class="czad-ptag">Na tela Início</div>' + A.goalHomeHtml(c, { firstName: firstOf(s) })
+      + '<div class="czad-ptag">Em Progresso › Meu estudo</div>' + A.goalProgressHtml(c)
+      + '<div class="czad-ptag" id="czad-pageTag">Página de adesão (abre ao tocar em qualquer um dos dois)</div>'
+      + A.pageHtml(c, { firstName: firstOf(s), recado: s.adesaoRecado && s.adesaoRecado.texto, ribbon, ribbonOpen: liberado, stats: S.stats });
     return '<div class="czad-prevgrid"><div class="czad-notes">'
-      + '<div><b>👁 O que o aluno vê</b><ul><li><b style="display:inline">Meta de hoje</b> na tela Início e <b style="display:inline">Meu estudo</b> em Progresso (minutos por tipo, dias com meta, o que conta como estudo)</li><li><b style="display:inline">Minha adesão</b>: primeiro só o cartão da nota; ao tocar nele abre tudo o que está abaixo</li><li>A própria nota (0–100) e a faixa</li><li>O mapa segunda a domingo, com os próprios minutos</li><li>O que conta: os 5 pontos, o peso de cada um e a meta</li><li>O que melhorou e o que caiu desde a semana passada</li><li>O recado do professor (você edita na visão do professor)</li><li>Adesão × acertos dele e a média por faixa, sem nomes</li></ul></div>'
+      + '<div><b>👁 O que o aluno vê</b><ul><li><b style="display:inline">Início</b>: só o cartão da meta de hoje, com a semana em bolinhas e os minutos de cada dia</li><li><b style="display:inline">Progresso</b>: o cartão “Meu estudo”, só com os dias</li><li><b style="display:inline">Página de adesão</b> (ao tocar num dos dois): atalhos, semana, calendário, total da semana e a nota. Tocar num dia abre onde o tempo foi gasto; dia sem estudo leva ✕ vermelho</li><li><b style="display:inline">Minha adesão</b>: primeiro só o cartão da nota; ao tocar nele abre tudo o que está abaixo</li><li>A própria nota (0–100) e a faixa</li><li>O mapa segunda a domingo, com os próprios minutos</li><li>O que conta: os 5 pontos, o peso de cada um e a meta</li><li>O que melhorou e o que caiu desde a semana passada</li><li>O recado do professor (você edita na visão do professor)</li><li>Adesão × acertos dele e a média por faixa, sem nomes</li></ul></div>'
       + '<div><b>🔒 Só você vê</b><ul><li>A lista da turma e a comparação entre alunos</li><li>As etiquetas internas (“Quase não abre o app”…): o aluno vê versões em tom de incentivo</li><li>O gráfico Adesão × acertos da turma, com nomes</li><li>Os controles de metas e pesos</li></ul></div>'
       + '<div><b>⏳ Quando aparece</b>' + (liberado ? 'Já está liberado: o aluno vê esta tela em “Meu progresso”.' : lib ? 'Libera para os alunos em ' + brDate(lib) + '. Até lá você vê aqui e no modo espelho.' : 'Ainda não liberado. Defina a data no topo da página.') + '</div>'
       + '<div><button type="button" class="czad-btn" id="czad-mirror" data-uid="' + esc(it.id) + '">Abrir no app como o aluno (modo espelho)</button></div></div>'
@@ -621,20 +622,15 @@ export function initAdesaoAdmin(ctx) {
       if (t.closest('#czad-back')) { S.tab = 'turma'; render(); return; }
       const wk = t.closest('#czad-wk button'); if (wk) { S.selWeek = +wk.dataset.w; render(); return; }
       const cell = t.closest('.czad-cell'); if (cell && !cell.disabled) { el.querySelectorAll('.czad-cell.sel').forEach(x => x.classList.remove('sel')); cell.classList.add('sel'); dayInfo(+cell.dataset.w, +cell.dataset.d); return; }
-      const gtg = t.closest('[data-cza-gtoggle]'); if (gtg) { A.toggleGoalInfo(gtg); return; }
-      const gd = t.closest('[data-cza-gday]'); if (gd) {
-        const it = S.items.find(i => i.id === S.sel), box = document.getElementById('cza-gdayinfo');
-        if (it && box) box.innerHTML = A.sDayText(it.c, 3, +gd.dataset.czaGday);
+      // Prévia do aluno: os cartões do Início e do Progresso levam à página (rola até ela); dentro da
+      // página os toques funcionam como no app (dia, calendário, "ver detalhes"). Atalhos não navegam.
+      if (t.closest('[data-cza-open]')) {
+        const tag = document.getElementById('czad-pageTag'), box = document.getElementById('czad-phone-scroll');
+        if (tag && box) box.scrollTo({ top: Math.max(0, tag.offsetTop - 30), behavior: 'smooth' });
         return;
       }
-      if (t.closest('[data-cza-go]')) return;      // na prévia os atalhos do Início não navegam
-      const tg = t.closest('[data-cza-toggle]'); if (tg) { A.toggleDetails(tg.closest('.cza'), tg); return; }
-      const sc = t.closest('.cza-cell'); if (sc && !sc.disabled) {
-        el.querySelectorAll('.cza-cell.sel').forEach(x => x.classList.remove('sel')); sc.classList.add('sel');
-        const it = S.items.find(i => i.id === S.sel), box = document.getElementById('cza-dayinfo');
-        if (it && box) box.innerHTML = A.sDayText(it.c, +sc.dataset.czaW, +sc.dataset.czaD);
-        return;
-      }
+      const cur = S.items.find(i => i.id === S.sel);
+      if (cur && A.pageClick(e, el, cur.c)) return;
       if (t.closest('#czad-cm-reset')) { saveRecado(S.sel, null).then(render); return; }
       if (t.closest('#czad-mirror')) { ctx.abrirEspelho(t.closest('#czad-mirror').dataset.uid); return; }
       if (t.closest('#czad-refresh')) { S.loaded = false; load(true); return; }

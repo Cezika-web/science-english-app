@@ -2223,7 +2223,7 @@ function ensureAdesaoCss() {
 // Dados da adesão e da meta de estudo, calculados uma vez no App e usados no Início e no
 // Progresso. O minuto corrente (ainda não gravado) vem do cronômetro, e o dia de hoje é
 // relido do banco toda vez que o cronômetro grava.
-function useAdesaoData(student, posaulas, activities, tab) {
+function useAdesaoData(student, posaulas, activities, tab, extras) {
   const AD = window.CzkAdesao;
   const mirror = !!new URLSearchParams(window.location.search).get('mirror');
   const meta = student?.escolaAdesao || null;
@@ -2302,8 +2302,14 @@ function useAdesaoData(student, posaulas, activities, tab) {
         Object.keys(pend).forEach(k => { secs[k] = (Number(secs[k]) || 0) + pend[k]; });
         usage = [...usage.filter(u => u.date !== day), { ...(base || {}), date: day, secs }];
       }
+      // Nomes que aparecem no detalhe do dia (o uso do dia guarda só o código de cada item).
+      const names = {};
+      activities.forEach(a => { names[CzkUsage.itemKey('act', a.id)] = a.title || a.week || 'Atividade'; });
+      activities.forEach(a => { if (a.week) names[CzkUsage.itemKey('corr', a.week)] = 'Correção da semana de ' + String(a.week).toLowerCase(); });
+      (extras || []).forEach(x => { names[CzkUsage.itemKey('extra', x.id)] = x.title || 'Atividade extra'; });
       return AD.compute({
         now: new Date(), student,
+        names,
         usage,
         posts: posaulas.map(p => ({ id: p.id, title: postTitle(p), createdAt: p.createdAt, classDate: p.classDate, filename: p.filename, url: p.url })),
         activities: activities.filter(a => { const d = dateFrom(a.createdAt); return d && d.getTime() >= Date.now() - 40 * 86400000; }).map(a => {
@@ -2321,7 +2327,7 @@ function useAdesaoData(student, posaulas, activities, tab) {
         challenge: { enabled: student.challengeEnabled !== false, weeks: extra.weekKeys, completed: extra.completed },
       }, { ...(meta?.cfg || {}), coletaDesde: meta?.coletaDesde || null });
     } catch (e) { console.error('Cálculo da adesão:', e); return null; }
-  }, [visivel, extra, student, posaulas, activities, meta, tick]);
+  }, [visivel, extra, student, posaulas, activities, extras, meta, tick]);
 
   return { AD, visivel, liberado, lib, mirror, meta, extra, result };
 }
@@ -2329,82 +2335,74 @@ function useAdesaoData(student, posaulas, activities, tab) {
 const previaAdesao = (lib) => `Prévia: o aluno só verá a partir de ${lib ? lib.slice(8, 10) + '/' + lib.slice(5, 7) : 'a data de liberação'}`;
 const primeiroNome = (student) => student?.firstName || String(student?.name || '').split(' ')[0];
 
-// Início: "Meta de estudo de hoje" (10 min por dia) e a semana em bolinhas.
-function StudyGoalHome({ adesao, student, onGo }) {
+// Enter/Espaço num cartão com role="button" faz o mesmo que tocar nele.
+const adesaoKey = e => {
+  const t = e.target;
+  if ((e.key === 'Enter' || e.key === ' ') && t.getAttribute && t.getAttribute('role') === 'button') { e.preventDefault(); t.click(); }
+};
+
+// Início: cartão da meta de hoje (anel, frase e a semana com os minutos de cada dia).
+// Tocar nele (ou num dia) abre a página de adesão.
+function AdesaoHomeCard({ adesao, student, onOpen }) {
   const { AD, visivel, liberado, lib, result } = adesao;
   if (!visivel || !result) return null;
   ensureAdesaoCss();
-  const html = AD.goalTodayHtml(result, { firstName: primeiroNome(student), ribbon: liberado ? '' : previaAdesao(lib) });
-  const ir = e => {
-    const t = e.target.closest && e.target.closest('[data-cza-go]');
-    if (t) onGo(t.dataset.czaGo);
-  };
+  const html = AD.goalHomeHtml(result, { firstName: primeiroNome(student), ribbon: liberado ? '' : previaAdesao(lib) });
   return (
-    <div style={{ marginBottom: 16 }}>
-      <div className="cza-host" onClick={ir} dangerouslySetInnerHTML={{ __html: html }}
-        onKeyDown={e => {
-          const t = e.target.closest && e.target.closest('[data-cza-go]');
-          if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onGo(t.dataset.czaGo); }
-        }} />
+    <div style={{ marginBottom: 12 }}>
+      <div className="cza-host" dangerouslySetInnerHTML={{ __html: html }} onKeyDown={adesaoKey}
+        onClick={e => { const r = AD.pageClick(e, e.currentTarget, result); if (r && 'open' in r) onOpen(r.open); }} />
     </div>
   );
 }
 
-// Progresso: "Meu estudo" da semana (minutos por tipo, dias com meta, o que conta).
-function StudyWeekSection({ adesao }) {
-  const { AD, visivel, result } = adesao;
+// Progresso: "Meu estudo", só com os dias. Tocar abre a página de adesão.
+function AdesaoProgressCard({ adesao, onOpen }) {
+  const { AD, visivel, liberado, lib, result } = adesao;
   if (!visivel || !result) return null;
   ensureAdesaoCss();
-  const onClick = e => {
-    const tg = e.target.closest && e.target.closest('[data-cza-gtoggle]');
-    if (tg) { AD.toggleGoalInfo(tg); return; }
-    const g = e.target.closest && e.target.closest('[data-cza-gday]');
-    if (g) {
-      const box = e.currentTarget.querySelector('#cza-gdayinfo');
-      if (box) box.innerHTML = AD.sDayText(result, 3, +g.dataset.czaGday);
-    }
-  };
+  const html = AD.goalProgressHtml(result, { ribbon: liberado ? '' : previaAdesao(lib) });
   return (
-    <div style={{ marginTop: 16, width: '100%', maxWidth: '100%', minWidth: 0 }}>
-      <div className="cza-host" onClick={onClick} dangerouslySetInnerHTML={{ __html: AD.goalWeekHtml(result) }} />
+    <div style={{ marginTop: 12, width: '100%', maxWidth: '100%', minWidth: 0 }}>
+      <div className="cza-host" dangerouslySetInnerHTML={{ __html: html }} onKeyDown={adesaoKey}
+        onClick={e => { const r = AD.pageClick(e, e.currentTarget, result); if (r && 'open' in r) onOpen(r.open); }} />
     </div>
   );
 }
 
-// Progresso: "Minha adesão" — só o cartão da nota; tocar nele abre o resto.
-function AdesaoSection({ adesao, student }) {
+// Página de adesão: meta de hoje, o que dá para fazer agora, a semana (tocar num dia abre o detalhe
+// ali mesmo), o calendário, o total da semana e a nota. Abre do Início e do Progresso.
+function AdesaoPage({ adesao, student, startDay, onClose, onGo }) {
   const { AD, visivel, liberado, lib, result, extra } = adesao;
-  if (!visivel) return null;
-  if (!result) return <div style={{ marginTop:16, fontSize:12.5, color:'#64748B', fontWeight:700 }}>Carregando sua adesão…</div>;
-  ensureAdesaoCss();
-  const html = AD.studentHtml(result, {
+  // O HTML só é refeito quando muda o tempo de ESTUDO (ficar nesta página não é estudo). Assim o
+  // calendário e o dia abertos não fecham sozinhos a cada gravação do cronômetro.
+  const sig = result ? Object.keys(result.daily).sort().map(k => { const d = result.daily[k]; return k + ':' + [d.pos, d.act, d.des, d.voc].map(v => Math.floor(v * 6)).join(','); }).join(';') + '|' + AD.util.dayKey(result.now) + '|' + Object.keys(result.names || {}).length : '';
+  const html = React.useMemo(() => (visivel && result) ? AD.pageHtml(result, {
     firstName: primeiroNome(student),
     recado: student.adesaoRecado?.texto || '',
     ribbon: liberado ? '' : previaAdesao(lib), stats: extra?.stats,
-  });
-  const onClick = e => {
-    const toggle = e.target.closest && e.target.closest('[data-cza-toggle]');
-    if (toggle) { AD.toggleDetails(e.currentTarget, toggle); return; }
-    const cell = e.target.closest && e.target.closest('.cza-cell');
-    if (!cell || cell.disabled) return;
-    const host = e.currentTarget;
-    host.querySelectorAll('.cza-cell.sel').forEach(x => x.classList.remove('sel'));
-    cell.classList.add('sel');
-    const box = host.querySelector('#cza-dayinfo');
-    if (box) box.innerHTML = AD.sDayText(result, +cell.dataset.czaW, +cell.dataset.czaD);
-  };
+    sel: startDay || null,
+  }) : '', [visivel, sig, startDay, liberado, lib, student?.adesaoRecado?.texto, extra?.stats]);
+  if (!visivel) return null;
+  ensureAdesaoCss();
   return (
-    <div style={{ marginTop:16, width:'100%', maxWidth:'100%', minWidth:0 }}>
-      <div className="cza-host" onClick={onClick} dangerouslySetInnerHTML={{ __html: html }}
-        onKeyDown={e => {
-          const t = e.target.closest && e.target.closest('[data-cza-toggle]');
-          if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); AD.toggleDetails(e.currentTarget, t); }
-        }} />
+    <div className="scroll-area" style={{ padding: '0 14px 28px', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', overflowX: 'hidden' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 4, display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', background: '#F6F1EA' }}>
+        <button onClick={onClose} aria-label="Voltar" style={{ width: 38, height: 38, borderRadius: 12, background: '#fff', border: '1px solid #E2E8F0', fontSize: 22, fontWeight: 800, color: '#15803D', cursor: 'pointer', fontFamily: 'inherit', padding: 0, lineHeight: 1 }}>‹</button>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', lineHeight: 1.1 }}>Minha adesão</div>
+          <div style={{ fontSize: 11.5, color: '#64748B', fontWeight: 700 }}>Seu estudo, dia a dia</div>
+        </div>
+      </div>
+      {!result
+        ? <div style={{ marginTop: 16, fontSize: 12.5, color: '#64748B', fontWeight: 700 }}>Carregando a sua adesão…</div>
+        : <div className="cza-host" dangerouslySetInnerHTML={{ __html: html }} onKeyDown={adesaoKey}
+            onClick={e => { const r = AD.pageClick(e, e.currentTarget, result); if (r && r.go) onGo(r.go); }} />}
     </div>
   );
 }
 
-function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpenReview, challengeSimulation, challengeState, challengeEnabled, onOpenChallenge, adesao }) {
+function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpenReview, challengeSimulation, challengeState, challengeEnabled, onOpenChallenge, adesao, onOpenAdesao }) {
   const [chartType, setChartType] = useState(() => localStorage.getItem('progressChartType') || 'line');
   const [periodMonths, setPeriodMonths] = useState(() => Number(localStorage.getItem('progressPeriodMonths')) || 3);
   const [errorFilter, setErrorFilter] = useState('all');
@@ -2447,8 +2445,7 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
   return (
     <div className="scroll-area" style={{ padding:'18px 14px 28px', width:'100%', maxWidth:'100%', minWidth:0, boxSizing:'border-box', overflowX:'hidden' }}>
       <div style={{ fontSize:22, fontWeight:800, color:'#0F172A' }}>Meu progresso</div>
-      <StudyWeekSection adesao={adesao} />
-      <AdesaoSection adesao={adesao} student={student} />
+      <AdesaoProgressCard adesao={adesao} onOpen={onOpenAdesao} />
       {challengeEnabled && <ChallengeProgressPanel challengeState={challengeState} onOpenChallenge={onOpenChallenge} />}
       <ProgressSection title="Presença">
         <div style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:8, width:'100%' }}>
@@ -2544,27 +2541,26 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
 
 // ── HomeTab ─────────────────────────────────────────────────────
 function ProgressRing({ value, goal, label, sublabel }) {
-  const size = 118, stroke = 11, r = (size - stroke) / 2, c = 2 * Math.PI * r;
+  const size = 76, stroke = 8, r = (size - stroke) / 2, c = 2 * Math.PI * r;
   const pct = goal > 0 ? Math.min(value / goal, 1) : 0;
   const off = c - pct * c;
   const complete = goal > 0 && value >= goal;
   const ringColor = complete ? '#F59E0B' : 'var(--brand)';
   return (
-    <GlassCard style={{ padding: 16, flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, borderRadius: 24, border: complete ? '1px solid rgba(245,158,11,0.4)' : GLASS.border, animation: complete ? 'ringpop 1.4s ease-in-out infinite' : 'none' }}>
-      <div style={{ position: 'relative', width: '100%', maxWidth: size, aspectRatio: '1 / 1' }}>
+    <GlassCard style={{ padding: '10px 12px 9px', flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, borderRadius: 24, border: complete ? '1px solid rgba(245,158,11,0.4)' : GLASS.border, animation: complete ? 'ringpop 1.4s ease-in-out infinite' : 'none' }}>
+      <div style={{ position: 'relative', width: '100%', maxWidth: 66, aspectRatio: '1 / 1' }}>
         <svg viewBox={`0 0 ${size} ${size}`} style={{ width: '100%', height: '100%', display: 'block', transform: 'rotate(-90deg)' }}>
           <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={complete ? 'rgba(245,158,11,0.15)' : 'rgba(var(--brand-rgb),0.12)'} strokeWidth={stroke} />
           <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={ringColor} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={off} style={{ transition: 'stroke-dashoffset 1s ease' }} />
         </svg>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          {complete && <div style={{ fontSize: 20, lineHeight: 1, marginBottom: 2 }}>&#127881;</div>}
-          <div style={{ fontSize: 24, fontWeight: 800, color: complete ? '#B45309' : '#0F172A', lineHeight: 1 }}>{value}</div>
-          <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginTop: 2 }}>de {goal}</div>
+          {complete && <div style={{ fontSize: 13, lineHeight: 1 }}>&#127881;</div>}
+          <div style={{ fontSize: 19, fontWeight: 800, color: complete ? '#B45309' : '#0F172A', lineHeight: 1 }}>{value}</div>
+          <div style={{ fontSize: 9.5, color: '#64748B', fontWeight: 600, marginTop: 1 }}>de {goal}</div>
         </div>
       </div>
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: 12.5, fontWeight: 800, color: complete ? '#B45309' : 'var(--brand-dark)' }}>{label}</div>
-        <div style={{ fontSize: 11.5, fontWeight: 800, color: complete ? '#D97706' : 'var(--brand)', marginTop: 2 }}>{Math.round(pct * 100)}% da meta</div>
         {sublabel && <div style={{ fontSize: 10.5, color: complete ? '#D97706' : '#64748B', marginTop: 1, fontWeight: complete ? 700 : 500 }}>{sublabel}</div>}
       </div>
     </GlassCard>
@@ -2593,7 +2589,7 @@ function Celebration({ show, onDone }) {
   return <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9998, overflow: 'hidden' }}>{pieces}</div>;
 }
 
-function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities, adesao, onGoVocab }) {
+function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities, adesao, onOpenAdesao }) {
   const latest = posaulas[0] || null;
   const [openGroups, setOpenGroups] = useState({});
   const [btnPressed, setBtnPressed] = useState(false);
@@ -2679,18 +2675,17 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities, ad
     <div className="scroll-area" style={{ padding: '16px 16px 8px', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', overflowX: 'hidden' }}>
       <InstallBanner />
 
-      {/* Meta de estudo de hoje (aparece depois da liberação da Adesão) */}
-      <StudyGoalHome adesao={adesao} student={student}
-        onGo={kind => kind === 'vocab' ? onGoVocab() : kind === 'aulas' ? onGoActivities() : (latest ? onOpenPost(latest) : onGoActivities())} />
+      {/* Meta de estudo de hoje (aparece depois da liberação da Adesão): toque abre a página de adesão */}
+      <AdesaoHomeCard adesao={adesao} student={student} onOpen={onOpenAdesao} />
 
       {/* Anéis de progresso: aulas no ano + atividades da semana */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
         <ProgressRing value={aulasAno} goal={metaAnual} label="Aulas no ano" sublabel={aulasComplete ? '🎉 meta batida!' : 'meta do ano'} />
         <ProgressRing value={atividadesFeitas} goal={atividadesTotal} label="Atividades" sublabel={ativsComplete ? '🎉 tudo feito!' : 'da semana'} />
       </div>
 
       {latest ? (
-        <GlassCard style={{ padding: 22, marginBottom: 14, position: 'relative', overflow: 'hidden' }}>
+        <GlassCard style={{ padding: 16, marginBottom: 12, position: 'relative', overflow: 'hidden' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14 }}>
             <div style={{ flex: 1 }}>
               <Pill>POS-AULA DA SEMANA</Pill>
@@ -2712,8 +2707,8 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities, ad
             onPointerLeave={() => setBtnPressed(false)}
             onClick={() => onOpenPost(latest)}
             style={{
-              marginTop: 18, width: '100%', border: 'none', cursor: 'pointer',
-              padding: '14px 20px', borderRadius: 16, color: '#fff',
+              marginTop: 12, width: '100%', border: 'none', cursor: 'pointer',
+              padding: '12px 20px', borderRadius: 16, color: '#fff',
               fontSize: 15, fontWeight: 800,
               background: 'linear-gradient(180deg,#34D399,var(--brand-light))',
               boxShadow: '0 8px 24px rgba(var(--brand-rgb),0.3)',
@@ -2731,7 +2726,7 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities, ad
         </GlassCard>
       )}
 
-      <GlassCard tappable onClick={onGoActivities} style={{ padding: '16px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
+      <GlassCard tappable onClick={onGoActivities} style={{ padding: '13px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 14 }}>
         <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, background: 'rgba(139,94,52,0.1)', border: '1px solid rgba(139,94,52,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>&#9999;&#65039;</div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A' }}>Minhas Atividades</div>
@@ -5327,6 +5322,7 @@ function App() {
   const [avisos, setAvisos]             = useState([]);
   const [bootError, setBootError]       = useState(null);
   const [tab, setTab]                   = useState('home');
+  const [adesaoPage, setAdesaoPage]     = useState(null);   // página de adesão aberta: { dia }
   const [vocabView, setVocabView]       = useState(null);   // seção aberta em Vocabulário (palavras, verbos, chunks) — só para o tempo de estudo
   const [challengeView, setChallengeView] = useState(null);
   const [challengeSimulation, setChallengeSimulation] = useState(null);
@@ -5376,7 +5372,8 @@ function App() {
   useEffect(() => {
     CzkUsage.setBucket({ area: usageArea, item: usageItem, blind: usageBlind });
   }, [usageArea, usageItem, usageBlind]);
-  const adesao = useAdesaoData(student, posaulas, activities, tab);   // meta de estudo e adesão (Início e Progresso)
+  const adesao = useAdesaoData(student, posaulas, activities, tab, extras);   // meta de estudo e adesão (Início, Progresso e a página)
+  useEffect(() => { setAdesaoPage(null); }, [tab]);   // trocar de aba fecha a página de adesão
   const challengePreviewAccess = Boolean(student) && student?.challengeEnabled !== false;
   const combinedChallengeSimulation = {
     ...(challengeSimulation || {}),
@@ -6043,11 +6040,13 @@ function App() {
       <AppHeader student={student} onNotif={requestPush} showNotifBtn={showNotifBtn} onLogout={handleLogout} onPatchStudent={patchStudent} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-        {tab === 'home'   && <HomeTab   student={student} posaulas={posaulas} activities={activities} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} adesao={adesao} onGoVocab={() => setTab('vocab')} />}
-        {tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={(challenge) => { setSelectedChallenge(challenge || null); setChallengeView('hub'); }} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} />}
-        {tab === 'progresso' && <ProgressTab adesao={adesao} student={student} posaulas={posaulas} activities={activities} reviewReports={reviewReports} onOpenReview={openReviewResult} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} onOpenChallenge={() => { setSelectedChallenge(null); setChallengeView('hub'); }} />}
-        {tab === 'vocab'  && <VocabTab vocab={vocab} onViewChange={setVocabView} />}
-        {tab === 'perfil' && <PerfilTab student={student} onLogout={handleLogout} onPatchStudent={patchStudent} reviews={courseReviews} ownReview={ownCourseReview} onSaveReview={saveCourseReview} openReviewForm={reviewFormRequest} />}
+        {adesaoPage && <AdesaoPage adesao={adesao} student={student} startDay={adesaoPage.dia} onClose={() => setAdesaoPage(null)}
+          onGo={kind => { setAdesaoPage(null); if (kind === 'vocab') setTab('vocab'); else if (kind === 'aulas') setTab('aulas'); else if (posaulas[0]) handleOpenPost(posaulas[0]); else setTab('aulas'); }} />}
+        {!adesaoPage && tab === 'home'   && <HomeTab   student={student} posaulas={posaulas} activities={activities} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} adesao={adesao} onOpenAdesao={dia => setAdesaoPage({ dia })} />}
+        {!adesaoPage && tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={(challenge) => { setSelectedChallenge(challenge || null); setChallengeView('hub'); }} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} />}
+        {!adesaoPage && tab === 'progresso' && <ProgressTab adesao={adesao} onOpenAdesao={dia => setAdesaoPage({ dia })} student={student} posaulas={posaulas} activities={activities} reviewReports={reviewReports} onOpenReview={openReviewResult} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} onOpenChallenge={() => { setSelectedChallenge(null); setChallengeView('hub'); }} />}
+        {!adesaoPage && tab === 'vocab'  && <VocabTab vocab={vocab} onViewChange={setVocabView} />}
+        {!adesaoPage && tab === 'perfil' && <PerfilTab student={student} onLogout={handleLogout} onPatchStudent={patchStudent} reviews={courseReviews} ownReview={ownCourseReview} onSaveReview={saveCourseReview} openReviewForm={reviewFormRequest} />}
       </div>
 
       <BottomNav active={tab} onChange={setTab} />
