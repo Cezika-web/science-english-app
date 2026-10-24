@@ -236,12 +236,15 @@ async function getFB() {
 // (professor vendo a tela do aluno) nunca chama start(), então nunca conta.
 // Falha de gravação (regra ainda não publicada, sem rede) nunca aparece para o aluno.
 const CzkUsage = (() => {
+  // Versão do app que vai junto com o uso (para saber quem ainda roda versão velha). Mantenha igual ao CACHE do sw.js.
+  const APP_BUILD = 'v36';
   const TICK = 1000, MIN_STEP = 200, FLUSH = 60000, NEW_VISIT = 30 * 60000;
   const BLIND_CAP = 10 * 60000, HOLD_CAP = 15 * 60000, MAX_FAILS = 5;
   const EVENTS = ['pointerdown', 'keydown', 'scroll', 'touchstart', 'touchmove', 'wheel', 'input', 'click'];
   const MEDIA_ON = ['play', 'playing'], MEDIA_OFF = ['pause', 'ended', 'emptied'];
   let limitMs = 60000;
   let uid = null, running = false, tickTimer = null, flushTimer = null, fails = 0, hiddenAt = 0;
+  let errW = 0, errJs = 0;                // falhas de gravação e erros do app ainda não informados ao banco
   let bucket = { area: 'outros', item: '', blind: false }, bucketSince = 0;
   let lastMove = 0;                       // último movimento confirmado (0 = nada a creditar)
   const holds = new Map();                // gravando etc.: chave -> início
@@ -252,7 +255,7 @@ const CzkUsage = (() => {
   // Áreas que contam como ESTUDO: posaula, atividade (inclui extras e correção), desafio e
   // vocab (palavras, verbos irregulares e chunks). "outros" (início, progresso, perfil,
   // avisos) é uso do app, mas não é estudo.
-  const slot = day => pending[day] || (pending[day] = { ms: { total: 0, posaula: 0, atividade: 0, desafio: 0, vocab: 0, outros: 0 }, items: {}, itemOpens: {}, opens: 0 });
+  const slot = day => pending[day] || (pending[day] = { ms: { total: 0, posaula: 0, atividade: 0, desafio: 0, vocab: 0, outros: 0 }, items: {}, itemOpens: {}, hrs: {}, opens: 0 });
   const visible = () => document.visibilityState === 'visible';
 
   function credit(ms, b) {
@@ -261,7 +264,20 @@ const CzkUsage = (() => {
     s.ms.total += ms;
     s.ms[b.area] = (s.ms[b.area] || 0) + ms;
     if (b.item) s.items[b.item] = (s.items[b.item] || 0) + ms;
+    // Em que hora do dia (relógio do aluno) ele estuda: só o tempo de estudo, em segundos por hora ("00" a "23").
+    if (b.area !== 'outros') { const h = String(new Date().getHours()).padStart(2, '0'); s.hrs[h] = (s.hrs[h] || 0) + ms; }
   }
+  // Aparelho e versão, só para entender a coleta (nada pessoal): versão do app, instalado na tela inicial e sistema.
+  function appInfo() {
+    let pwa = false, plat = 'outro';
+    try { pwa = !!((window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true); } catch (e) {}
+    try {
+      const ua = String(navigator.userAgent || '');
+      plat = /iPhone|iPad|iPod/.test(ua) ? 'ios' : /Android/.test(ua) ? 'android' : /Windows|Macintosh|Linux|CrOS/.test(ua) ? 'desktop' : 'outro';
+    } catch (e) {}
+    return { v: APP_BUILD, pwa, plat };
+  }
+  const onJsError = () => { if (errJs < 1000) errJs += 1; };
   // Movimento do aluno: fecha o intervalo desde o movimento anterior. Entra inteiro
   // se couber no limite; senão é descartado. Movimentos colados (< MIN_STEP) são
   // ignorados sem perder tempo: o intervalo segue contando do movimento anterior.
@@ -309,17 +325,21 @@ const CzkUsage = (() => {
     const jobs = [];
     Object.keys(pending).forEach(day => {
       const p = pending[day];
-      const take = { secs: {}, items: {}, itemOpens: p.itemOpens, opens: p.opens };
+      const take = { secs: {}, items: {}, hours: {}, itemOpens: p.itemOpens, opens: p.opens };
       let any = p.opens > 0 || Object.keys(p.itemOpens).length > 0;
       // Só grava segundos inteiros; a sobra em milissegundos fica para a próxima gravação.
       Object.keys(p.ms).forEach(k => { const s = Math.floor(p.ms[k] / 1000); if (s > 0) { take.secs[k] = s; p.ms[k] -= s * 1000; any = true; } });
       Object.keys(p.items).forEach(k => { const s = Math.floor(p.items[k] / 1000); if (s > 0) { take.items[k] = s; p.items[k] -= s * 1000; any = true; } });
+      Object.keys(p.hrs).forEach(k => { const s = Math.floor(p.hrs[k] / 1000); if (s > 0) { take.hours[k] = s; p.hrs[k] -= s * 1000; any = true; } });
       p.itemOpens = {}; p.opens = 0;
       if (any) jobs.push({ day, take });
     });
     if (!jobs.length) return;
     let fb;
     try { fb = await getFB(); } catch (e) { jobs.forEach(j => giveBack(j)); return; }
+    // Falhas e erros acumulados vão junto com a próxima gravação que der certo (só no 1º documento desta rodada).
+    const sentW = errW, sentJs = errJs;
+    let levaErros = sentW > 0 || sentJs > 0;
     for (const { day, take } of jobs) {
       const data = { date: day, secs: {}, updatedAt: fb.serverTimestamp() };
       ['total', 'posaula', 'atividade', 'desafio', 'vocab', 'outros'].forEach(k => { data.secs[k] = fb.increment(take.secs[k] || 0); });
@@ -327,14 +347,19 @@ const CzkUsage = (() => {
       // foi gravado no dia). Por isso items/itemOpens só vão quando há o que somar.
       if (Object.keys(take.items).length) { data.items = {}; Object.keys(take.items).forEach(k => { data.items[k] = fb.increment(take.items[k]); }); }
       if (Object.keys(take.itemOpens).length) { data.itemOpens = {}; Object.keys(take.itemOpens).forEach(k => { data.itemOpens[k] = fb.increment(take.itemOpens[k]); }); }
+      if (Object.keys(take.hours).length) { data.hours = {}; Object.keys(take.hours).forEach(k => { data.hours[k] = fb.increment(take.hours[k]); }); }
       if (take.opens) data.opens = fb.increment(take.opens);
+      data.app = appInfo();
+      const comErros = levaErros; levaErros = false;
+      if (comErros) { data.errs = {}; if (sentW > 0) data.errs.w = fb.increment(sentW); if (sentJs > 0) data.errs.js = fb.increment(sentJs); }
       try {
         await fb.setDoc(fb.doc(fb.db, 'students', uid, 'usage', day), data, { merge: true });
         fails = 0;
+        if (comErros) { errW = Math.max(0, errW - sentW); errJs = Math.max(0, errJs - sentJs); }
         // Avisa a tela da meta para reler o dia: o banco acabou de ganhar estes segundos.
         try { if (typeof CustomEvent === 'function') window.dispatchEvent(new CustomEvent('czk-usage-flushed', { detail: { day } })); } catch (e2) {}
       } catch (e) {
-        fails += 1;                       // devolve o que não gravou e tenta de novo no próximo minuto
+        fails += 1; errW += 1;            // devolve o que não gravou e tenta de novo no próximo minuto
         giveBack({ day, take });
         if (fails >= MAX_FAILS) console.warn('Coleta de uso pausada:', e && e.message);
       }
@@ -345,6 +370,7 @@ const CzkUsage = (() => {
     Object.keys(take.secs).forEach(k => { back.ms[k] = (back.ms[k] || 0) + take.secs[k] * 1000; });
     Object.keys(take.items).forEach(k => { back.items[k] = (back.items[k] || 0) + take.items[k] * 1000; });
     Object.keys(take.itemOpens).forEach(k => { back.itemOpens[k] = (back.itemOpens[k] || 0) + take.itemOpens[k]; });
+    Object.keys(take.hours || {}).forEach(k => { back.hrs[k] = (back.hrs[k] || 0) + take.hours[k] * 1000; });
     back.opens += take.opens;
   }
   function start(userUid) {
@@ -359,6 +385,8 @@ const CzkUsage = (() => {
     MEDIA_OFF.forEach(n => document.addEventListener(n, onMediaOff, true));
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('pagehide', flush);
+    window.addEventListener('error', onJsError);
+    window.addEventListener('unhandledrejection', onJsError);
     tickTimer = setInterval(tick, TICK);
     flushTimer = setInterval(flush, FLUSH);
   }
@@ -373,6 +401,8 @@ const CzkUsage = (() => {
     MEDIA_OFF.forEach(n => document.removeEventListener(n, onMediaOff, true));
     document.removeEventListener('visibilitychange', onVisibility);
     window.removeEventListener('pagehide', flush);
+    window.removeEventListener('error', onJsError);
+    window.removeEventListener('unhandledrejection', onJsError);
     holds.clear(); playing.clear();
   }
   // Segundos de hoje ainda não gravados. A tela da meta soma isto ao que já está no banco,

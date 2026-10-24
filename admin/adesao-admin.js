@@ -246,6 +246,7 @@ export function initAdesaoAdmin(ctx) {
         updateDoc(schoolRef(), { 'adesao.coletaDesde': earliest }).then(() => { S.adesao.coletaDesde = earliest; }).catch(() => {});
       }
       writeStats();
+      writeSnapshots();
     } catch (e) {
       console.error('Adesão:', e);
       S.error = 'Não consegui carregar a adesão: ' + (e && e.message ? e.message : e);
@@ -276,6 +277,49 @@ export function initAdesaoAdmin(ctx) {
       setDoc(doc(db, 'schools', escola(), 'adesaoStats', 'atual'), { geradoEm: serverTimestamp(), faixas: S.stats, alunos: S.items.length })
         .catch(e => console.warn('Resumo da adesão não gravado:', e && e.message));
     }, 400);
+  }
+
+  // Retrato semanal: um documento por semana e aluno em schools/{escola}/adesaoSemanal/{semana}_{uid}, com a nota da semana,
+  // as cinco partes, os minutos por tipo e a configuração usada. A nota é recalculada na hora (e muda se você mudar os
+  // pesos), então o retrato guarda como ela estava. Semana fechada: grava uma vez (e troca o retrato parcial que ficou da
+  // semana em andamento). Semana em andamento: atualiza a cada vez que a aba é carregada. Só roda no carregamento da aba,
+  // com a configuração JÁ SALVA (nunca com o rascunho dos controles).
+  let snapBusy = false;
+  const r1 = v => Math.round(Number(v || 0) * 10) / 10;
+  function snapData(it, w) {
+    const c = it.c, cfg = c.cfg, sum = a => a.reduce((t, x) => t + x, 0);
+    const at = w.atItems || [];
+    return {
+      weekKey: w.key, uid: it.id, nome: nameOf(it.s), parcial: !!w.partial, comTempo: !!w.hasTime, nota: w.total == null ? null : w.total,
+      partes: { C: w.parts.C, At: w.parts.At, Pos: w.parts.Pos, Aula: w.parts.Aula, Des: w.parts.Des },
+      diasAtivos: w.activeDays, estudoMin: r1(w.weekMin),
+      porTipoMin: { pos: r1(sum(w.dp)), ativ: r1(sum(w.da)), des: r1(sum(w.dd)), voc: r1(sum(w.dv)) }, outrosMin: r1(sum(w.df)),
+      dias: w.days.map(r1),
+      aulas: { previstas: w.aulas[0], presentes: w.aulas[1] }, desafio: { partes: w.des[0], feitas: w.des[1] },
+      exercicios: { total: sum(at.map(i => i.n)), feitos: sum(at.map(i => i.done)) },
+      leituraPos: (w.posItems || []).map(i => ({ id: String(i.id), nome: String(i.name || ''), min: r1(i.minutes), aberturas: Number(i.opens || 0) })),
+      acertosPct: w.acc == null ? null : w.acc,
+      cfg: { minPos: cfg.minPos, secEx: cfg.secEx, metaDias: cfg.metaDias, minDia: cfg.minDia, metaDiaMin: cfg.metaDiaMin, metaDiasEstudo: cfg.metaDiasEstudo, minTipo: cfg.minTipo, pesos: cfg.w, coletaDesde: cfg.coletaDesde || null },
+      geradoEm: serverTimestamp(),
+    };
+  }
+  async function writeSnapshots() {
+    if (snapBusy || !S.items.length) return;
+    snapBusy = true;
+    try {
+      const snap = await getDocs(collection(db, 'schools', escola(), 'adesaoSemanal'));
+      const fechado = {};
+      snap.docs.forEach(d => { fechado[d.id] = d.data().parcial === false; });
+      const jobs = [];
+      S.items.forEach(it => it.c.weeks.forEach(w => {
+        if (!w.partial && !w.valid) return;                       // semana antes de o aluno entrar
+        const id = w.key + '_' + it.id;
+        if (!w.partial && fechado[id]) return;                    // já tem o retrato da semana fechada
+        jobs.push(setDoc(doc(db, 'schools', escola(), 'adesaoSemanal', id), snapData(it, w)));
+      }));
+      await Promise.all(jobs);
+    } catch (e) { console.warn('Retrato semanal não gravado:', e && e.message); }
+    snapBusy = false;
   }
 
   // ── persistência ──────────────────────────────────────────────────────

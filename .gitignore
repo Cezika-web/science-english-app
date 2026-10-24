@@ -15,3 +15,7 @@ __pycache__/
 # Pós-aulas pertencem ao Firestore autenticado, nunca ao site público.
 pos-aula-*.html
 pos_aula*.html
+
+# Backups de dados de alunos: nunca versionar
+backup-dados/
+*.csv

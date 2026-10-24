@@ -95,9 +95,77 @@ assert.deepEqual(w.data.opens, { inc: 1 });
 ok('parou 45 s e voltou a mexer: o intervalo inteiro conta (10 + 45 = 55 s)');
 
 // o documento só tem os campos que a regra do Firestore aceita
-assert.deepEqual(Object.keys(w.data).sort(), ['date', 'itemOpens', 'items', 'opens', 'secs', 'updatedAt']);
+assert.deepEqual(Object.keys(w.data).sort(), ['app', 'date', 'hours', 'itemOpens', 'items', 'opens', 'secs', 'updatedAt']);
 assert.deepEqual(Object.keys(w.data.secs).sort(), ['atividade', 'desafio', 'outros', 'posaula', 'total', 'vocab']);
 ok('o documento gravado só tem os campos permitidos pela regra');
+
+// Os campos que o app grava têm que estar na regra publicada (foi assim que um campo novo já travaria todo o uso).
+const regras = fs.readFileSync(path.join(aqui, '../../firestore.rules'), 'utf8');
+const fnRegra = nome => new RegExp(`function ${nome}\\([^)]*\\) \\{[\\s\\S]*?\\n    \\}`).exec(regras)[0];
+const lista = (texto, re) => ((re.exec(texto) || [, ''])[1].match(/'([^']+)'/g) || []).map(x => x.slice(1, -1));
+const blocoUso = fnRegra('usageDayIsSafe');
+const topoRegra = lista(blocoUso, /d\.keys\(\)\.hasOnly\(\[([^\]]*)\]\)/);
+const secsRegra = lista(blocoUso, /d\.secs\.keys\(\)\.hasOnly\(\[([^\]]*)\]\)/);
+const horasRegra = lista(fnRegra('usageHoursAreSafe'), /hasOnly\(\[([^\]]*)\]\)/);
+const appRegra = lista(fnRegra('usageAppIsSafe'), /hasOnly\(\[([^\]]*)\]\)/);
+const errsRegra = lista(fnRegra('usageErrsAreSafe'), /hasOnly\(\[([^\]]*)\]\)/);
+assert.ok(topoRegra.includes('hours') && topoRegra.includes('app') && topoRegra.includes('errs'));
+const confereComARegra = (data) => {
+  for (const k of Object.keys(data)) assert.ok(topoRegra.includes(k), `campo "${k}" não está na regra`);
+  for (const k of Object.keys(data.secs || {})) assert.ok(secsRegra.includes(k), `secs.${k} não está na regra`);
+  for (const k of Object.keys(data.hours || {})) assert.ok(horasRegra.includes(k), `hours.${k} não está na regra`);
+  for (const k of Object.keys(data.app || {})) assert.ok(appRegra.includes(k), `app.${k} não está na regra`);
+  for (const k of Object.keys(data.errs || {})) assert.ok(errsRegra.includes(k), `errs.${k} não está na regra`);
+};
+confereComARegra(w.data);
+assert.equal(horasRegra.length, 24);
+ok('tudo que o app grava (inclusive hora do dia, versão e erros) está liberado na regra do Firestore');
+
+// 1b) Hora do dia: só o tempo de ESTUDO entra, na hora do relógio do aluno
+assert.deepEqual(w.data.hours, { '10': { inc: 55 } });
+e = ambiente(); e.U.start('u1');
+e.U.setBucket({ area: 'outros', item: '', blind: false });
+e.avanca(20 * S); e.U.ping();
+await e.flush();
+assert.equal(e.writes[0].data.hours, undefined);                    // início/perfil/avisos não entram
+ok('hora do dia: início, perfil e avisos não entram; estudo entra na hora certa');
+
+e = ambiente(); e.U.start('u1');
+e.U.setBucket({ area: 'atividade', item: 'act_1', blind: false });
+e.avanca(30 * S); e.U.ping();                                       // 10:00:30
+e.avanca(3 * 3600 * S); e.U.ping();                                  // ficou 3 h sem mexer: descartado
+e.avanca(40 * S); e.U.ping();                                        // 13:01:10, 40 s de estudo
+await e.flush();
+assert.deepEqual(e.writes[0].data.hours, { '10': { inc: 30 }, '13': { inc: 40 } });
+confereComARegra(e.writes[0].data);
+ok('hora do dia: estudo em horas diferentes soma em cada hora, e a pausa longa não entra');
+
+// 1c) Versão do app e aparelho
+assert.deepEqual(w.data.app, { v: 'v36', pwa: false, plat: 'outro' });
+const cacheSw = /const CACHE = 'czk-(v\d+)'/.exec(fs.readFileSync(path.join(aqui, '../../sw.js'), 'utf8'))[1];
+assert.equal(w.data.app.v, cacheSw);
+ok('a versão gravada com o uso é a mesma do cache do service worker (sw.js)');
+
+// 1d) Falhas de gravação e erros do app: vão junto com a próxima gravação que der certo, uma vez só
+e = ambiente(); e.U.start('u1');
+e.U.setBucket({ area: 'posaula', item: 'pos_x', blind: false });
+e.failWrites = true;
+e.avanca(10 * S); e.U.ping(); await e.flush();
+e.avanca(10 * S); e.U.ping(); await e.flush();                      // 2 falhas
+e.win.error && e.win.error(); e.win.unhandledrejection && e.win.unhandledrejection();   // 2 erros do app
+assert.equal(e.writes.length, 0);
+e.failWrites = false;
+e.avanca(10 * S); e.U.ping(); await e.flush();
+assert.deepEqual(e.writes[0].data.errs, { w: { inc: 2 }, js: { inc: 2 } });
+confereComARegra(e.writes[0].data);
+e.avanca(10 * S); e.U.ping(); await e.flush();
+assert.equal(e.writes[1].data.errs, undefined);                     // já foi informado: não repete
+assert.equal(e.total(), 40);                                         // e nenhum segundo se perdeu nas falhas
+ok('falhas de gravação e erros do app são contados e informados uma vez, sem perder segundos');
+
+e = ambiente(); e.U.start('u1'); e.U.stop();
+assert.equal(e.win.error, undefined);
+ok('stop() também remove os ouvintes de erro');
 
 // 2) Passou do limite: o intervalo inteiro é descartado (nem os primeiros 30 s contam)
 e = ambiente();

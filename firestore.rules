@@ -113,7 +113,7 @@ service cloud.firestore {
     function usageDayIsSafe(day) {
       let d = request.resource.data;
       return day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
-        && d.keys().hasOnly(['date', 'secs', 'items', 'itemOpens', 'opens', 'updatedAt'])
+        && d.keys().hasOnly(['date', 'secs', 'items', 'itemOpens', 'opens', 'updatedAt', 'hours', 'app', 'errs'])
         && d.date == day
         && d.secs is map
         && d.secs.keys().hasOnly(['total', 'posaula', 'atividade', 'desafio', 'vocab', 'outros'])
@@ -126,7 +126,41 @@ service cloud.firestore {
         && d.get('opens', 0) <= 500
         && d.get('items', {}).size() <= 60
         && d.get('itemOpens', {}).size() <= 60
+        && usageHoursAreSafe(d.get('hours', {}))
+        && usageAppIsSafe(d.get('app', {}))
+        && usageErrsAreSafe(d.get('errs', {}))
         && d.get('updatedAt', request.time) == request.time;
+    }
+
+    // Segundos de estudo por hora do dia ("00" a "23"), no máximo 1 h em cada hora.
+    function usageHourIsSafe(h, k) {
+      return h.get(k, 0) <= 3600;
+    }
+    function usageHoursAreSafe(h) {
+      return h is map
+        && h.keys().hasOnly(['00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11',
+                             '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23'])
+        && usageHourIsSafe(h, '00') && usageHourIsSafe(h, '01') && usageHourIsSafe(h, '02') && usageHourIsSafe(h, '03')
+        && usageHourIsSafe(h, '04') && usageHourIsSafe(h, '05') && usageHourIsSafe(h, '06') && usageHourIsSafe(h, '07')
+        && usageHourIsSafe(h, '08') && usageHourIsSafe(h, '09') && usageHourIsSafe(h, '10') && usageHourIsSafe(h, '11')
+        && usageHourIsSafe(h, '12') && usageHourIsSafe(h, '13') && usageHourIsSafe(h, '14') && usageHourIsSafe(h, '15')
+        && usageHourIsSafe(h, '16') && usageHourIsSafe(h, '17') && usageHourIsSafe(h, '18') && usageHourIsSafe(h, '19')
+        && usageHourIsSafe(h, '20') && usageHourIsSafe(h, '21') && usageHourIsSafe(h, '22') && usageHourIsSafe(h, '23');
+    }
+    // Versão do app, se está instalado na tela inicial e o sistema (nada pessoal).
+    function usageAppIsSafe(a) {
+      return a is map
+        && a.keys().hasOnly(['v', 'pwa', 'plat'])
+        && a.get('v', '') is string && a.get('v', '').size() <= 24
+        && a.get('pwa', false) is bool
+        && a.get('plat', '') is string && a.get('plat', '').size() <= 12;
+    }
+    // Falhas de gravação (w) e erros do app (js) que o aparelho enfrentou desde a última gravação certa.
+    function usageErrsAreSafe(e) {
+      return e is map
+        && e.keys().hasOnly(['w', 'js'])
+        && e.get('w', 0) is number && e.get('w', 0) <= 100000
+        && e.get('js', 0) is number && e.get('js', 0) <= 100000;
     }
 
     // Diretório interno de níveis. Deixou de ser público: contém nome e nível
@@ -196,6 +230,12 @@ service cloud.firestore {
       match /adesaoStats/{statId} {
         allow read: if isAdmin() || ownsSchool(schoolId) || belongsToSchool(schoolId);
         allow write: if isAdmin() || ownsSchool(schoolId);
+      }
+
+      // Retrato semanal da nota de cada aluno (um documento por semana e aluno). Só o professor lê e grava:
+      // o aluno não vê a nota dos outros.
+      match /adesaoSemanal/{snapId} {
+        allow read, write: if isAdmin() || ownsSchool(schoolId);
       }
 
       // O professor monta turmas/duplas; os desafios são espelhados de forma
