@@ -22,6 +22,7 @@ function firestore() {
     runTransaction(callback) { const run = queue.then(async () => {
       const writes = []; const result = await callback({ get:async ref => snapshot(ref),
         set:(...args) => writes.push(args), create:(...args) => writes.push(args) });
+      if (db.failPublication && writes.some(([ref]) => ref.path.includes('/challengeRounds/'))) { db.failPublication = false; throw new Error('Firestore temporariamente indisponível'); }
       writes.forEach(args => write(...args)); return result;
     }); queue = run.catch(() => {}); return run; },
   }; return db;
@@ -112,6 +113,8 @@ assert.equal(calls, 7);
 assert.equal(db.docs.get('students/student-1/challengeRounds/2026-09-21-part-1').questions.length, 5, 'depois de recusas, o aluno recebe as perguntas');
 assert.equal(job(`2026-09-21-part-1_student-1`).status, 'ready');
 assert.match(payload.system[0].text, /NUNCA cite nome de tempo verbal/, 'o prompt proíbe nomear a gramática no enunciado');
+assert.match(payload.system[0].text, /CLAREZA DA PERGUNTA ESCRITA[\s\S]*My ___ \(colegas de trabalho\)/, 'o prompt exige alvo único na lacuna de vocabulário (Anna, 15/10/2026)');
+assert.match(payload.system[0].text, /TEMPO DO VERBO NA LACUNA[\s\S]*Last week, the rooms ___ \(ser\/estar\) very clean/, 'lacuna de verbo leva marcador de tempo na frase (Lorena, 22/10/2026)');
 
 // Caso real da Isabelle (06/10/2026): o enunciado citava "presente simples" e o job travava.
 const second = db.doc('students/student-2'); await second.set({ name:'Segundo', level:'A1', schoolId:'school-1' });
@@ -138,6 +141,95 @@ await service.prepare(studentDoc.id, '2026-09-21-part-2', studentDoc);
 assert.equal(calls, 10, 'job invalid antigo gera uma resposta nova');
 assert.equal(JSON.parse(payload.messages[0].content).tentativaAnteriorRecusada.motivo, 'Pergunta 5: o enunciado não pode dar uma dica gramatical explícita.');
 assert.equal(db.docs.get('students/student-1/challengeRounds/2026-09-21-part-2').questions.length, 5);
+
+// Caso do Gu (14/10/2026): celular e tablet abertos juntos, "Voltar" nos dois, e cada toque
+// seguinte virou um dono novo gerando em paralelo. Quem publica primeiro vale; a segunda
+// geração, que chega depois do aluno já ter começado, não pode trocar rodada nem gabarito.
+const tick = () => new Promise(resolve => setTimeout(resolve, 0));
+const labelled = tag => { const list = questions();
+  list[0] = { ...list[0], context:`Eu estudo ${tag}.`, expected:`I study ${tag}.`, acceptedAnswers:[`I study ${tag}.`, `I study ${tag}`] };
+  return list; };
+const fourth = db.doc('students/student-4'); await fourth.set({ name:'Quarto', level:'A1', schoolId:'school-1' });
+const fourthDoc = await fourth.get(), fourthRound = '2026-09-21-part-2';
+const fourthState = () => JSON.stringify([db.docs.get(`students/student-4/challengeRounds/${fourthRound}`),
+  db.docs.get(`_challengeAnswerKeys/${fourthRound}_student-4`)]);
+queue.push(labelled('A'), labelled('B'));
+const racing = calls; let releaseA, releaseB;
+gate = new Promise(resolve => { releaseA = resolve; });
+const ownerA = service.prepare('student-4', fourthRound, fourthDoc);
+while (calls === racing) await tick();
+gate = new Promise(resolve => { releaseB = resolve; });
+await db.doc(`_challengePartGeneration/${fourthRound}_student-4`).set({ status:'invalid', leaseUntil:0 }, { merge:true });
+const ownerB = service.prepare('student-4', fourthRound, fourthDoc);
+while (calls < racing + 2) await tick();
+releaseA(); await ownerA;
+const seenByStudent = fourthState();
+assert.match(seenByStudent, /Eu estudo A\./, 'a primeira publicação é a que o aluno vê');
+releaseB(); gate = null; await ownerB;
+assert.equal(fourthState(), seenByStudent, 'segunda geração não sobrescreve rodada nem gabarito já publicados');
+assert.equal(job(`${fourthRound}_student-4`).status, 'ready');
+
+// Entre a tentativa recusada e a seguinte o job continua com dono: outro toque só espera.
+const fifth = db.doc('students/student-5'); await fifth.set({ name:'Quinto', level:'A1', schoolId:'school-1' });
+const fifthDoc = await fifth.get(), fifthRound = '2026-09-21-part-2';
+queue.push([], questions());
+const retrying = calls; let releaseFirst, releaseSecond;
+gate = new Promise(resolve => { releaseFirst = resolve; });
+const ownerC = service.prepare('student-5', fifthRound, fifthDoc);
+while (calls === retrying) await tick();
+const secondAttemptGate = new Promise(resolve => { releaseSecond = resolve; });
+releaseFirst(); gate = secondAttemptGate;
+while (calls < retrying + 2) await tick();
+const bystander = await Promise.race([service.prepare('student-5', fifthRound, fifthDoc),
+  new Promise(resolve => setTimeout(() => resolve({ hung:true }), 300))]);
+assert.equal(bystander.preparing, true, 'durante a 2ª tentativa outro aparelho espera em vez de gerar em paralelo');
+assert.equal(calls, retrying + 2);
+releaseSecond(); gate = null; await ownerC;
+assert.equal(job(`${fifthRound}_student-5`).status, 'ready');
+
+// Nova tentativa liberada pelo professor avisa o aluno por push; falha no push nunca desfaz a liberação.
+const pushes = []; let pushFails = false;
+const retryFunctions = createChallengeFunctions({ db, adminEmails:['prof@example.test'],
+  getMessaging:() => ({ sendEachForMulticast:async message => {
+    if (pushFails) throw new Error('FCM fora do ar');
+    pushes.push(message); return { successCount:message.tokens.length, failureCount:0 };
+  } }), Anthropic:FakeAnthropic, anthropicApiKey:{ value:() => 'fake' } });
+const originalRound = db.docs.get('students/student-1/challengeRounds/2026-09-21-part-1');
+const sixth = db.doc('students/student-6');
+await sixth.set({ name:'Sexto', level:'A1', fcmToken:'tok-a', fcmTokens:['tok-a', 'tok-b'] });
+await db.doc('students/student-6/challengeRounds/2026-09-21-part-1').set(originalRound);
+await db.doc('_challengeAnswerKeys/2026-09-21-part-1_student-6').set({ answers:[{ id:'p1q1', expected:'x' }] });
+const reopen = (data, email = 'prof@example.test') => retryFunctions.reabrirDesafioAluno.run({ auth:{ uid:'prof', token:{ email } }, data });
+await assert.rejects(reopen({ uid:'student-6', weekKey:'2026-09-21', part:1 }, 'aluno@example.test'), error => error.code === 'permission-denied');
+assert.equal(pushes.length, 0, 'quem não é professor não dispara aviso');
+const released = await reopen({ uid:'student-6', weekKey:'2026-09-21', part:1 });
+assert.equal(released.notified, true);
+assert.equal(pushes.length, 1);
+assert.deepEqual(pushes[0].tokens, ['tok-a', 'tok-b'], 'tokens repetidos entram uma vez só');
+assert.equal(pushes[0].notification.title, 'Nova tentativa do desafio liberada');
+assert.match(pushes[0].notification.body, /nova tentativa na Parte 1/);
+assert.deepEqual(pushes[0].data, { type:'challenge-retry', roundId:released.roundId, part:'1' });
+assert.match(pushes[0].webpush.fcmOptions.link, /\?challenge=1$/, 'o toque abre direto o desafio');
+assert.equal(db.docs.get('students/student-6/challengeRetries/active').roundId, released.roundId);
+assert.equal(db.docs.get(`students/student-6/challengeRounds/${released.roundId}`).retryOf, '2026-09-21-part-1');
+pushFails = true;
+const silent = await reopen({ uid:'student-6', weekKey:'2026-09-21', part:2 }).catch(error => error);
+assert.equal(silent instanceof Error, true, 'parte sem rodada original continua sendo recusada');
+await db.doc('students/student-6/challengeRounds/2026-09-21-part-2').set(originalRound);
+await db.doc('_challengeAnswerKeys/2026-09-21-part-2_student-6').set({ answers:[] });
+const unreachable = await reopen({ uid:'student-6', weekKey:'2026-09-21', part:2 });
+assert.equal(unreachable.ok, true, 'push fora do ar não impede a liberação');
+assert.equal(unreachable.notified, false);
+assert.equal(db.docs.get('students/student-6/challengeRetries/active').roundId, unreachable.roundId);
+pushFails = false;
+const seventh = db.doc('students/student-7'); await seventh.set({ name:'Sétimo', level:'A1' });
+await db.doc('students/student-7/challengeRounds/2026-09-21-part-1').set(originalRound);
+await db.doc('_challengeAnswerKeys/2026-09-21-part-1_student-7').set({ answers:[] });
+const pushesBefore = pushes.length;
+const noToken = await reopen({ uid:'student-7', weekKey:'2026-09-21', part:1 });
+assert.equal(noToken.ok, true);
+assert.equal(noToken.notified, false, 'aluno sem notificação ativada recebe a tentativa, mas sem push');
+assert.equal(pushes.length, pushesBefore);
 const baseCalls = calls;
 
 const functions = createChallengeFunctions({ db, getMessaging:() => null, adminEmails:[],

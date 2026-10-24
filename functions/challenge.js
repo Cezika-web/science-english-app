@@ -2,6 +2,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { FieldValue } from 'firebase-admin/firestore';
 import { createDemandChallengeService } from './challenge-demand.js';
+import { OPEN_ANSWER_CLARITY } from './challenge-clarity.js';
 
 const REGION = 'southamerica-east1';
 const TIME_ZONE = 'America/Sao_Paulo';
@@ -99,7 +100,8 @@ const FORMAT_RULES = {
     + 'contrações, formas sem contração, conectores opcionais e versões mais específicas que preservem o mesmo sentido. '
     + 'Em exercícios com lacuna, aceite obrigatoriamente só a palavra ou trecho que entra na lacuna; nos demais, '
     + 'peça uma resposta curta o suficiente para ser digitada em 45 segundos no celular. A pergunta precisa admitir uma única construção '
-    + 'natural, porque a correção compara texto — maiúscula, acento e pontuação são ignorados.',
+    + 'natural, porque a correção compara texto — maiúscula, acento e pontuação são ignorados. '
+    + OPEN_ANSWER_CLARITY,
   trueFalse:'Verdadeiro ou falso: exatamente duas alternativas, {"id":"a","text":"True"} e {"id":"b","text":"False"}, '
     + 'correctOption com a letra certa e acceptedAnswers vazio.',
   multipleChoice:'Múltipla escolha com quatro alternativas plausíveis (a, b, c, d), correctOption com a letra certa '
@@ -923,9 +925,10 @@ export function createChallengeFunctions({
         'Em format="multipleChoice": quatro alternativas plausíveis (a, b, c, d), correctOption com a letra certa, acceptedAnswers vazio. ' +
         'Em format="trueFalse": exatamente duas alternativas, {"id":"a","text":"True"} e {"id":"b","text":"False"}, correctOption com a letra certa, acceptedAnswers vazio. ' +
         'Em format="text": options vazio, correctOption vazio, e acceptedAnswers com TODAS as formas corretas de escrever a resposta. ' +
-        'IMPORTANTE: hint deve ser SEMPRE uma string vazia. O prompt deve dizer somente a ação neutra (por exemplo, "Translate to English:" ou "Complete the sentence:") e o texto exato da tarefa deve ficar em context. Em tradução, context precisa conter a frase literal completa que o aluno traduzirá — nunca apenas "Situação:" ou uma descrição vaga. Antes da resposta, nunca cite nome de tempo verbal, estrutura gramatical, voz ativa/passiva, causative, infinitive, base form, past participle, fórmula, regra ou qualquer pista de como construir a resposta. ' +
+        'IMPORTANTE: hint deve ser SEMPRE uma string vazia. O prompt deve dizer somente a ação neutra (por exemplo, "Translate to English:" ou "Complete the sentence:") e o texto exato da tarefa deve ficar em context. Em tradução, context precisa conter a frase literal completa que o aluno traduzirá — nunca apenas "Situação:" ou uma descrição vaga. Antes da resposta, nunca cite nome de tempo verbal, estrutura gramatical, voz ativa/passiva, causative, infinitive, base form, past participle, fórmula, regra ou qualquer pista de como construir a resposta — exceto o marcador de tempo dentro da frase e o sentido entre parênteses exigidos por CLAREZA DA PERGUNTA ESCRITA, que não são pista. ' +
         'Em exercício com lacuna, o aluno pode responder somente a palavra ou o trecho ausente; inclua esse fragmento e a frase completa em acceptedAnswers. Nos demais exercícios escritos, peça uma oração curta, nunca um parágrafo ou redação. Toda resposta deve caber em 45 segundos digitando no celular. ' +
         'A correção é automática e compara construções, então a pergunta precisa admitir um alvo gramatical inequívoco. Preserve obrigatoriamente todas as relações e referências do enunciado na resposta — posse, parentesco e de quem se fala; nunca simplifique "os primos do seu amigo" para "seus primos". Em acceptedAnswers liste EXAUSTIVAMENTE toda variação válida: contração e forma completa ("don\'t" e "do not"), grafia americana e britânica, resposta curta e frase completa, conectores opcionais e palavras mais específicas que mantenham o mesmo sentido e a mesma regra. Não restrinja o gabarito a uma cópia literal quando outra formulação natural também responde corretamente. Se a pergunta admitir sentidos realmente diferentes, reformule para fechar o alvo. Maiúscula, acento e pontuação são ignorados na correção, então não dependa deles. ' +
+        OPEN_ANSWER_CLARITY + ' ' +
         'Em todos os formatos: uma única resposta inequívoca e explicação pedagógica curta. ' +
         'Quando houver resultado da semana anterior, calibre por ele: acima de 80% dos pontos, suba a dificuldade de forma perceptível (nuance mais fina, distratores mais próximos); abaixo de 40%, mantenha exigente mas alcançável. Os erros da semana passada são pista forte de fragilidade — cubra o mesmo ponto gramatical com contexto novo, nunca repetindo a pergunta. ' +
         'Não copie exercícios literalmente. Não mencione ao aluno que um item é fraqueza ou força.' }],
@@ -1445,6 +1448,32 @@ ${item.text}`).join('\n\n')}`
     } catch (error) {
       await logRef.delete().catch(() => {});
       console.error(`Abertura do desafio falhou para ${studentDoc.id}:`, error.message);
+      return false;
+    }
+  }
+
+  // Aviso de nova tentativa liberada pelo professor. Roda depois que a tentativa
+  // já foi gravada: se o push falhar, ela continua valendo e quem liberou só fica
+  // sabendo pelo `notified` da resposta. Sem log de vaga como na abertura: cada
+  // liberação é uma rodada nova e o professor pode liberar de novo de propósito.
+  async function notifyRetryReleased(studentDoc, roundId, part) {
+    const student = studentDoc.data();
+    if (student.archived === true || student.challengeEnabled === false) return false;
+    const tokens = [...new Set([student.fcmToken, ...(Array.isArray(student.fcmTokens) ? student.fcmTokens : [])].filter(Boolean))];
+    if (!tokens.length) return false;
+    try {
+      const response = await getMessaging().sendEachForMulticast({
+        tokens,
+        notification:{
+          title:'Nova tentativa do desafio liberada',
+          body:`Você tem uma nova tentativa na Parte ${part} do desafio. Ela fica aberta por 3 dias.`,
+        },
+        data:{ type:'challenge-retry', roundId, part:String(part) },
+        webpush:{ headers:{ Urgency:'high' }, fcmOptions:{ link:APP_URL } },
+      });
+      return response.successCount > 0;
+    } catch (error) {
+      console.error(`Aviso de nova tentativa falhou para ${studentDoc.id}:`, error.message);
       return false;
     }
   }
@@ -2715,7 +2744,8 @@ ${item.text}`).join('\n\n')}`
         createdBy:request.auth.token?.email || '',
       });
       await batch.commit();
-      return { ok:true, uid, weekKey, part, roundId:retryRoundId, expiresAt:expiresAt.toISOString() };
+      const notified = await notifyRetryReleased(studentDoc, retryRoundId, part);
+      return { ok:true, uid, weekKey, part, roundId:retryRoundId, expiresAt:expiresAt.toISOString(), notified };
     }
   );
 

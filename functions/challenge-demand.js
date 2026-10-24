@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { OPEN_ANSWER_CLARITY } from './challenge-clarity.js';
 
 // Uma resposta recusada na validação não trava mais o aluno: a própria chamada
 // gera de novo, contando à IA o motivo da recusa. Duas tentativas cabem nos 120 s
@@ -80,6 +81,7 @@ export function createDemandChallengeService({ db, FieldValue, HttpsError, Anthr
           'Text: respostas curtas digitáveis em 45 segundos, options=[], correctOption="". Liste todas as variações válidas em acceptedAnswers, incluindo contrações, formas completas e fragmentos de lacunas. ' +
           'MultipleChoice: 4 alternativas a,b,c,d; trueFalse: só a=True,b=False; correctOption é a letra, acceptedAnswers=[]. ' +
           'hint="" sempre. prompt é uma instrução neutra; context contém a frase literal a traduzir ou completar. Nunca dê pistas gramaticais. ' +
+          OPEN_ANSWER_CLARITY + ' ' +
           // O validador recusa o enunciado que nomeia a gramática; avisar a IA antes evita gastar uma nova geração.
           'No prompt NUNCA cite nome de tempo verbal, estrutura ou categoria gramatical (presente simples, presente contínuo, passado, futuro, present perfect, verbo auxiliar, possessivo, advérbio de frequência, gerúndio, forma base…) nem diga qual regra aplicar: o prompt só diz a tarefa ("Complete a frase", "Escolha a frase correta", "Traduza"). ' +
           'trueFalse julga uma frase concreta em inglês colocada em context ("A frase está correta?"), nunca uma afirmação sobre regra gramatical. ' +
@@ -122,25 +124,34 @@ export function createDemandChallengeService({ db, FieldValue, HttpsError, Anthr
           const rejectedText = job.responseText;
           feedback = error.message || 'Resposta fora do formato esperado.'; job = null;
           console.error('Desafio: resposta recusada', uid, roundId, `(tentativa ${attempts})`, feedback);
-          // O status continua 'generating' entre as duas tentativas: outra chamada não entra no meio.
+          // O status volta a 'generating' entre as duas tentativas: outra chamada não entra no meio.
+          // generate() deixou 'generated' e sem responseText o job parecia livre: um 2º aparelho
+          // virava dono e gerava em paralelo (caso do Gu, 14/10/2026: 5 gerações em 2 minutos).
           // O texto recusado sai de responseText (senão seria reaproveitado) e fica em lastRejected.
           await jobRef.set({ lastError:feedback, lastRejected:rejectedText, responseText:'', attempts,
+            status:'generating', leaseUntil:now().getTime() + 150000,
             updatedAt:FieldValue.serverTimestamp() }, { merge:true });
           if (attempt < ATTEMPTS_PER_CALL) continue;
           rejected = true;
           await jobRef.set({ status:'invalid', leaseUntil:0, updatedAt:FieldValue.serverTimestamp() }, { merge:true });
           throw new HttpsError('unavailable', TEMPORARY_FAILURE);
         }
-        const batch = db.batch();
-        batch.set(ref, { roundId, weekKey, part, personalized:true, questionCount:5,
-          questions:publicQuestions(prepared.questions), opensAt:round.opensAt, closesAt:round.closesAt,
-          difficulty:'hard', lookbackDays:90, generationMode:'on-demand', status:'published',
-          updatedAt:FieldValue.serverTimestamp() });
-        batch.set(answerKeyRef(uid, roundId, true), { uid, roundId, weekKey, part,
-          answers:prepared.keys, analysis:generated.analysis, sources:job.sources,
-          sourceKind:job.sourceKind, updatedAt:FieldValue.serverTimestamp() });
-        batch.set(jobRef, { status:'ready', attempts, readyAt:FieldValue.serverTimestamp() }, { merge:true });
-        await batch.commit();
+        // Quem publica primeiro vale: o aluno já pode estar respondendo as perguntas que viu na
+        // tela, e salvarRespostaDesafio só confere o id (p1q1…), não o texto. Sobrescrever a rodada
+        // e o gabarito depois disso corrige as respostas dele contra perguntas que ele nunca viu.
+        await db.runTransaction(async tx => {
+          const published = await tx.get(ref);
+          if (!published.exists) {
+            tx.set(ref, { roundId, weekKey, part, personalized:true, questionCount:5,
+              questions:publicQuestions(prepared.questions), opensAt:round.opensAt, closesAt:round.closesAt,
+              difficulty:'hard', lookbackDays:90, generationMode:'on-demand', status:'published',
+              updatedAt:FieldValue.serverTimestamp() });
+            tx.set(answerKeyRef(uid, roundId, true), { uid, roundId, weekKey, part,
+              answers:prepared.keys, analysis:generated.analysis, sources:job.sources,
+              sourceKind:job.sourceKind, updatedAt:FieldValue.serverTimestamp() });
+          }
+          tx.set(jobRef, { status:'ready', attempts, readyAt:FieldValue.serverTimestamp() }, { merge:true });
+        });
         return { ready:true };
       }
     } catch (error) {

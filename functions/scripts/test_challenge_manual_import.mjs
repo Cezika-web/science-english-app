@@ -57,6 +57,20 @@ const lacuna = validateQuestion({
 assert.ok(lacuna.answerKey.acceptedAnswers.includes('watches'),
   'o conteúdo isolado da lacuna precisa ser aceito como resposta completa');
 
+// Caso real da Anna (15/10/2026): "My ___ are from the UK." aceitava friends e só valia colleagues.
+// Com o significado entre parênteses, a lacuna fecha o alvo e a palavra isolada continua valendo.
+const lacunaFechada = validateQuestion({
+  id:'vocabulario', type:'text', focus:'strong', topic:'Vocabulário profissional',
+  prompt:'Complete a frase.', context:'My ___ (colegas de trabalho) are from the UK.', hint:'',
+  options:[], correctOption:'', acceptedAnswers:['colleagues', 'coworkers', 'My colleagues are from the UK.'],
+  expected:'colleagues', explanation:'Colleagues são as pessoas com quem se trabalha.',
+}, 0);
+assert.ok(lacunaFechada.answerKey.acceptedAnswers.includes('colleagues'));
+assert.equal(lacunaFechada.answerKey.acceptedAnswers.includes('colegas de trabalho'), false,
+  'o parêntese é só o sentido; não entra como resposta nem quebra a extração da lacuna');
+assert.equal(lacunaFechada.publicQuestion.context, 'My ___ (colegas de trabalho) are from the UK.',
+  'o significado fica visível para o aluno');
+
 assert.throws(() => validateQuestion({
   id:'referencia-errada', type:'text', focus:'weak', topic:'To be',
   prompt:'Pergunte se os primos do seu amigo são casados.', context:'', hint:'',
