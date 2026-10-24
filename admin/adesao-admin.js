@@ -259,7 +259,7 @@ export function initAdesaoAdmin(ctx) {
     S.items = S.raw.dados.map(d => {
       const r = d.s, inp = r.adesaoIn || { posts: [], activities: [], attendance: [] };
       const c = A.compute({
-        now, student: r, usage: d.usage, posts: inp.posts, activities: inp.activities, attendance: inp.attendance,
+        now, student: r, usage: d.usage, posts: inp.posts, activities: inp.activities, attendance: inp.attendance, metas: r.metaEstudo || null,
         challenge: { enabled: r.challengeEnabled !== false, weeks: S.raw.weekKeys, completed: d.completed },
       }, S.cfg);
       return { id: r.uid, s: r, c };

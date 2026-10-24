@@ -117,6 +117,13 @@
     };
   }
 
+  // Metas que o aluno escolhe no Perfil: minutos por dia, horas por semana e horas por mês. Vazio = em aberto.
+  function metasOf(m) {
+    m = m || {};
+    function n(v, lo, hi) { v = Number(v); return isFinite(v) && v >= lo && v <= hi ? v : null; }
+    return { diaMin: n(m.diaMin, 1, 600), semH: n(m.semH, 0.5, 120), mesH: n(m.mesH, 0.5, 500) };
+  }
+
   function band(v) {
     if (v >= 85) return { k: 'alta', label: 'Alta', color: '#15935f', soft: '#16A34A' };
     if (v >= 65) return { k: 'media', label: 'Média', color: '#d97706', soft: '#F59E0B' };
@@ -146,6 +153,10 @@
    * } */
   function compute(input, cfgRaw) {
     var cfg = cfgOf(cfgRaw);
+    // A meta por dia que o aluno escolheu vale no lugar da meta da escola, nas telas dele (anel, bolinhas e dias com meta).
+    // Semana e mês só aparecem no quadro "Horas de estudo". Nada disso mexe na nota de adesão.
+    var metas = metasOf(input.metas);
+    if (metas.diaMin) cfg.metaDiaMin = metas.diaMin;
     var now = input.now || new Date();
     var studentStart = toDate(input.student && input.student.createdAt);
     var usage = input.usage || [];
@@ -290,6 +301,26 @@
       desDisp: sum(vw.map(function (w) { return w.des[0]; })), desFeitas: sum(vw.map(function (w) { return w.des[1]; })),
       posN: posRead.length, posAvg: posRead.length ? mean(posRead.map(function (i) { return i.minutes; })) : null
     };
+    // Horas de estudo: o tempo de aula entra a cada pós-aula publicado (sem estimar pela agenda: sem pós-aula, não soma),
+    // com a duração do cadastro (60 min se vazio), contando só desde o início da medição, como o tempo no app.
+    var dur = Number(input.student && input.student.aulaDuracao) > 0 ? Number(input.student.aulaDuracao) : 60;
+    var nowKey = dayKey(now), monKey = dayKey(mondayOf(now)), sunKey = dayKey(addDays(mondayOf(now), 6)), monthKey = nowKey.slice(0, 7);
+    var aN = 0, aSem = 0, aMes = 0, pTot = 0, pSem = 0, pMes = 0;
+    posts.forEach(function (x) {
+      var k = dayKey(x.ref);
+      if (k < measureFrom || k > nowKey) return;
+      aN++; if (k >= monKey && k <= sunKey) aSem++; if (k.slice(0, 7) === monthKey) aMes++;
+    });
+    Object.keys(daily).forEach(function (k) {
+      var m = daily[k].min;
+      pTot += m; if (k >= monKey && k <= sunKey) pSem += m; if (k.slice(0, 7) === monthKey) pMes += m;
+    });
+    res.hours = {
+      dur: dur, aulas: { n: aN, nSem: aSem, nMes: aMes, min: aN * dur, minSem: aSem * dur, minMes: aMes * dur },
+      app: { total: pTot, sem: pSem, mes: pMes },
+      total: aN * dur + pTot, sem: aSem * dur + pSem, mes: aMes * dur + pMes
+    };
+    res.metas = metas;
     res.desEnabled = ch.enabled !== false;
     // Só entram semanas inteiras (segunda a domingo) com o tempo medido: a 1ª é a segunda depois do início da
     // coleta, e a nota aparece na segunda seguinte.
@@ -775,7 +806,7 @@
     var g = c.cur.goal;
     return '<div class="cza cza-prog">' + (o.ribbon ? '<div class="cza-ribbon">' + esc(o.ribbon) + '</div>' : '')
       + '<div class="cza-msc" role="button" tabindex="0" data-cza-open aria-label="Abrir meu estudo">'
-      + '<div class="cza-top"><b>📈 Meu estudo</b><div class="cza-r"><span class="cza-gchip' + (g.atingida ? '' : ' muted') + '">' + Math.round(g.minutos) + ' de ' + num1(g.metaSemanaMin) + ' min na semana</span><span class="cza-go">›</span></div></div>'
+      + '<div class="cza-top"><b>📈 Meu estudo</b><div class="cza-r"><span class="cza-gchip' + (g.atingida ? '' : ' muted') + '">' + (c.metas && c.metas.semH ? fhm(c.hours.sem) + ' de ' + num1(c.metas.semH) + ' h' : fhm(g.minutos) + ' no app') + '</span><span class="cza-go">›</span></div></div>'
       + weekStripHtml(c, { mode: 'open' }) + '</div></div>';
   }
 
@@ -867,7 +898,7 @@
     var cfg = c.cfg, w = c.cur, g = w.goal;
     var part = function (arr) { return sum(arr.slice(0, w.elapsed)); };
     var tot = { pos: part(w.dp), act: part(w.da), des: part(w.dd), voc: part(w.dv) };
-    var scale = Math.max(g.metaSemanaMin, g.minutos) || 1;
+    var scale = g.minutos || 1;
     var bar = '<div class="cza-gbar">' + DAY_TYPES.map(function (t) { return '<i style="width:' + (tot[t.k] / scale * 100).toFixed(1) + '%;background:' + t.color + '"></i>'; }).join('') + '</div>';
     var falta = Math.max(0, g.metaDias - g.hits);
     var chips = '<div class="cza-gchips"><span class="cza-gchip">' + goalDaysTxt(g).replace('com meta', 'com meta batida') + '</span>'
@@ -884,7 +915,35 @@
       + '<div><span>🏠</span>Ficar na tela inicial, no perfil ou nos avisos</div><div><span>💤</span>Deixar o app aberto sem mexer</div></div>'
       + '<div class="cza-grule"><span style="font-size:18px">⏱️</span><div><b>Como o tempo é contado.</b> O relógio anda enquanto você usa o app: tocando, rolando a página, digitando, ouvindo ou gravando áudio. Pensar um pouco também vale: pausas de até <b>' + limiteTxt(cfg.limiteSeg) + '</b> contam. Passou disso, o app entende que você saiu e não conta.</div></div></div>';
     return '<div class="cza-sect">Esta semana</div>'
-      + '<div class="cza-gtot"><b>' + Math.round(g.minutos) + ' min</b><span>de ' + num1(g.metaSemanaMin) + ' min</span></div>' + bar + chips + legend + info;
+      + '<div class="cza-gtot"><b>' + Math.round(g.minutos) + ' min</b><span>de estudo no app</span></div>' + bar + chips + legend + info;
+  }
+
+  // "2 h 33 min", "1 h", "45 min"
+  function fhm(m) {
+    m = Math.round(m);
+    var h = Math.floor(m / 60), r = m % 60;
+    return h ? h + ' h' + (r ? ' ' + r + ' min' : '') : r + ' min';
+  }
+  function goalRowHtml(label, val, h) {
+    if (h) {
+      var goalMin = h * 60;
+      return '<div class="cza-hgoal"><div class="cza-top2"><b>' + esc(label) + '</b><span>' + fhm(val) + ' de ' + num1(h) + ' h</span></div>'
+        + '<div class="cza-hbar"><i style="width:' + Math.min(100, val / goalMin * 100).toFixed(0) + '%"></i></div>'
+        + '<p>' + (val >= goalMin ? 'Meta batida! 🎉' : 'Faltam <b>' + fhm(goalMin - val) + '</b> para a sua meta.') + '</p></div>';
+    }
+    return '<div class="cza-hgoal open"><div class="cza-top2"><b>' + esc(label) + '</b><span>' + fhm(val) + '</span></div>'
+      + '<button type="button" class="cza-setgoal" data-cza-perfil>Escolha a sua meta no Perfil ›</button></div>';
+  }
+  // Total de horas (aulas + estudo no app) e as metas de semana e de mês que o aluno escolheu.
+  function hoursHtml(c) {
+    var H = c.hours, M = c.metas || {}, A = H.aulas;
+    return '<div class="cza-sect">Horas de estudo</div>'
+      + '<div class="cza-hrbig"><b>' + fhm(H.total) + '</b><span>no total</span></div>'
+      + '<div class="cza-hbar2">' + (H.total > 0 ? '<i style="width:' + (A.min / H.total * 100).toFixed(1) + '%;background:#0EA5E9"></i><i style="width:' + (H.app.total / H.total * 100).toFixed(1) + '%;background:#16A34A"></i>' : '') + '</div>'
+      + '<div class="cza-hsplit"><div><span><i style="background:#0EA5E9"></i>🎓 Aulas</span><b>' + fhm(A.min) + '</b><small>' + (A.n ? A.n + (A.n === 1 ? ' aula' : ' aulas') + ' × ' + fhm(H.dur) : 'entra com cada pós-aula') + '</small></div>'
+      + '<div><span><i style="background:#16A34A"></i>📱 No app</span><b>' + fhm(H.app.total) + '</b><small>desde ' + ddmm(parseKey(c.measureFrom)) + '</small></div></div>'
+      + goalRowHtml('Esta semana', H.sem, M.semH) + goalRowHtml(cap1(MESES[c.now.getMonth()]), H.mes, M.mesH)
+      + '<p class="cza-hnote">As metas da semana e do mês somam as aulas e o estudo no app. Cada pós-aula publicado soma o tempo da aula.</p>';
   }
 
   /* Página de adesão: tudo do estudo e a nota.
@@ -904,6 +963,7 @@
     h += '<div class="cza-pc"><button type="button" class="cza-calbtn" data-cza-cal aria-expanded="false"><div>📅 Calendário<small>Veja o estudo de cada dia do mês</small></div><span class="cza-chev">›</span></button>'
       + '<div class="cza-cal" hidden><div class="cza-calbody" data-cza-cur="' + month + '">' + calendarHtml(c, month) + '</div>'
       + '<div data-cza-box="cal">' + DAY_HINT + '</div></div></div>';
+    h += '<div class="cza-pc cza-hrs">' + hoursHtml(c) + '</div>';
     h += '<div class="cza-pc">' + weekTotalsHtml(c) + '</div>';
     h += studentHtml(c, { firstName: o.firstName, recado: o.recado, ribbon: '', stats: o.stats, noTitle: true, collapsible: false, page: true });
     return h + '</div>';
@@ -947,6 +1007,7 @@
       if (info) info.innerHTML = sDayText(c, +el.getAttribute('data-cza-w'), +el.getAttribute('data-cza-d'));
       return {};
     }
+    if (t.closest('[data-cza-perfil]')) return { perfil: true };
     if ((el = t.closest('[data-cza-go]'))) return { go: el.getAttribute('data-cza-go') };
     if ((el = t.closest('[data-cza-open]'))) return { open: el.getAttribute('data-cza-k') || null };
     return null;
@@ -1139,14 +1200,27 @@
     + '.cza-cc.sel{outline:3px solid #0F172A;outline-offset:1px}'
     + '.cza-leg{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:10px;font-size:10.5px;font-weight:800;color:#475569}.cza-leg span{display:inline-flex;align-items:center;gap:5px}'
     + '.cza-leg i{width:12px;height:12px;border-radius:4px;display:inline-block;font-style:normal;font-size:9px;line-height:12px;text-align:center;font-weight:800}'
-    + '.cza-page>.cza>.cza-title{display:none}';
+    + '.cza-page>.cza>.cza-title{display:none}'
+    + '.cza-hrbig{display:flex;align-items:baseline;gap:8px;margin-top:6px}.cza-hrbig b{font-size:32px;font-weight:800;letter-spacing:-1px;color:#0C4A6E}.cza-hrbig span{font-size:14px;color:#64748B;font-weight:800}'
+    + '.cza-hbar2{height:12px;border-radius:99px;background:#E5E7EB;margin:8px 0 10px;overflow:hidden;display:flex}.cza-hbar2 i{display:block;height:100%}'
+    + '.cza-hsplit{display:grid;grid-template-columns:1fr 1fr;gap:8px}'
+    + '.cza-hsplit>div{border:1.5px solid #EEF2F6;border-radius:14px;padding:9px 11px}'
+    + '.cza-hsplit span{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:#475569}.cza-hsplit span i{width:10px;height:10px;border-radius:3px;display:inline-block}'
+    + '.cza-hsplit b{display:block;font-size:17px;font-weight:800;margin-top:3px}.cza-hsplit small{font-size:11px;color:#64748B;font-weight:700}'
+    + '.cza-hgoal{margin-top:10px;padding:10px 12px;border-radius:14px;background:#F0F9FF;border:1px solid #BAE6FD}'
+    + '.cza-top2{display:flex;justify-content:space-between;gap:8px;font-size:13px;font-weight:800;color:#0C4A6E}.cza-top2 span{font-size:12.5px}'
+    + '.cza-hbar{height:9px;border-radius:99px;background:#fff;margin:8px 0 6px;overflow:hidden}.cza-hbar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#0EA5E9,#16A34A)}'
+    + '.cza-hgoal p{font-size:12px;font-weight:700;color:#075985;line-height:1.4}'
+    + '.cza-hgoal.open{background:#F8FAFC;border-color:#E2E8F0}.cza-hgoal.open .cza-top2{color:#0F172A}'
+    + '.cza-setgoal{margin-top:7px;padding:7px 11px;border-radius:99px;background:#fff;border:1.5px dashed #94A3B8;font:inherit;font-size:12px;font-weight:800;color:#0369A1;cursor:pointer}'
+    + '.cza-hnote{margin-top:10px;font-size:11.5px;font-weight:700;color:#64748B;line-height:1.4}';
 
   var api = {
     KEYS: KEYS, PIL: PIL, WD: WD, WD1: WD1, WDF: WDF, DEFAULTS: DEFAULTS,
     // Os três tipos de estudo da meta diária/semanal e o que cada um reúne.
     STUDY_TYPES: A_STUDY_TYPES,
     goalHomeHtml: goalHomeHtml, goalProgressHtml: goalProgressHtml, pageHtml: pageHtml, pageClick: pageClick, toggleGoalInfo: toggleGoalInfo,
-    todayOf: todayOf, goalDaysTxt: goalDaysTxt, dayStatus: dayStatus, dayDetailHtml: dayDetailHtml, calendarHtml: calendarHtml, weekStripHtml: weekStripHtml, goalMsg: goalMsg,
+    todayOf: todayOf, goalDaysTxt: goalDaysTxt, metasOf: metasOf, fhm: fhm, hoursHtml: hoursHtml, dayStatus: dayStatus, dayDetailHtml: dayDetailHtml, calendarHtml: calendarHtml, weekStripHtml: weekStripHtml, goalMsg: goalMsg,
     cfgOf: cfgOf, compute: compute, band: band, effWeight: effWeight, combine: combine, itemKey: itemKey,
     tagsOf: tagsOf, diagOf: diagOf, suggestComment: suggestComment, studentChips: studentChips,
     wdStats: wdStats, changes: changes, advice: advice, sDayText: sDayText,

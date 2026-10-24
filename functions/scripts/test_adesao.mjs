@@ -334,7 +334,8 @@ ok('cartão "Meu estudo" (Progresso): total da semana e só os dias', () => {
   const c = semMeta([uso(3, 0, 12, { pos: 5, ativ: 5 }), uso(3, 1, 14, { pos: 6, ativ: 5 })]);
   const h = Adesao.goalProgressHtml(c);
   assert.match(h, /Meu estudo/);
-  assert.match(h, /26 de 50 min na semana/);
+  assert.match(h, /26 min no app/);
+  assert.match(Adesao.goalProgressHtml(compute({ now: NOW, student: {}, challenge: {}, posts: [], activities: [], attendance: [], usage: [uso(3, 0, 12, { pos: 5, ativ: 5 }), uso(3, 1, 14, { pos: 6, ativ: 5 })], metas: { semH: 3 } }, CFG)), /26 min de 3 h/);
   assert.equal((h.match(/class="cza-bb /g) || []).length, 7);
   assert.equal((h.match(/data-cza-open/g) || []).length, 8);
   assert.ok(!/cza-gchart|cza-gbar/.test(h));
@@ -459,6 +460,58 @@ ok('toques na página: dia abre o detalhe ali mesmo; atalho e cartão avisam o a
   assert.equal(Adesao.pageClick(tap('[data-cza-open]', { 'data-cza-k': '2026-10-19' }), host, c).open, '2026-10-19');
   assert.equal(Adesao.pageClick(tap('[data-cza-open]', {}), host, c).open, null);
   assert.equal(Adesao.pageClick({ target: { closest: () => null } }, host, c), null);
+});
+
+ok('horas de estudo: cada pós-aula publicado soma a duração da aula (só desde a medição), mais o estudo no app', () => {
+  const posts = [post('p0', 0, 1), post('p2', 2, 1), post('p1', 3, 0), post('pf', 3, 5)];   // 29/09, 13/10, 19/10 e uma aula ainda no futuro (25/10)
+  const base = { now: NOW, student: { aulaDuracao: 90 }, usage: [uso(3, 0, 12, { pos: 12 }), uso(2, 2, 30, { ativ: 30 })], posts, activities: [], attendance: [], challenge: { enabled: false } };
+  const c = compute(base, CFG);
+  const H = c.hours;
+  assert.equal(H.dur, 90);
+  assert.deepEqual([H.aulas.n, H.aulas.nSem, H.aulas.nMes], [3, 1, 2]);       // futura não conta; 29/09 é de setembro
+  assert.deepEqual([H.aulas.min, H.aulas.minSem, H.aulas.minMes], [270, 90, 180]);
+  assert.deepEqual([H.app.total, H.app.sem, H.app.mes], [42, 12, 42]);
+  assert.deepEqual([H.total, H.sem, H.mes], [312, 102, 222]);
+  const h = Adesao.hoursHtml(c);
+  assert.match(h, /<b>5 h 12 min<\/b><span>no total/);
+  assert.match(h, /3 aulas × 1 h 30 min/);
+  assert.equal((h.match(/Escolha a sua meta no Perfil/g) || []).length, 2);      // sem meta escolhida: só o tempo
+  assert.ok(!h.includes('de 3 h'));
+  const com = Adesao.hoursHtml(compute({ ...base, metas: { semH: 3, mesH: 12 } }, CFG));
+  assert.match(com, /1 h 42 min de 3 h/);
+  assert.match(com, /3 h 42 min de 12 h/);
+  assert.match(com, /Faltam <b>8 h 18 min<\/b>/);
+  assert.ok(!com.includes('Escolha a sua meta no Perfil'));
+  // sem duração no cadastro vale 60 min; aula antes da medição não entra
+  assert.equal(compute({ ...base, student: {} }, CFG).hours.dur, 60);
+  const tarde = compute(base, { coletaDesde: '2026-10-14' });
+  assert.equal(tarde.hours.aulas.n, 1);                                         // 29/09 e 13/10 ficam de fora
+  // sem pós-aula nenhum: "entra com cada pós-aula" e total só do app
+  const sem = compute({ ...base, posts: [] }, CFG);
+  assert.equal(sem.hours.total, 42);
+  assert.match(Adesao.hoursHtml(sem), /entra com cada pós-aula/);
+});
+
+ok('metas do aluno: a meta por dia troca a da escola nas telas dele e não mexe na nota', () => {
+  const dados = (metas) => ({ ...maratonista(), metas });
+  const sem = compute(dados(undefined), CFG), com = compute(dados({ diaMin: 20, semH: 3, mesH: 12 }), CFG);
+  assert.equal(sem.cfg.metaDiaMin, 10);
+  assert.equal(com.cfg.metaDiaMin, 20);
+  assert.deepEqual(com.metas, { diaMin: 20, semH: 3, mesH: 12 });
+  assert.equal(com.index, sem.index);                                           // a nota de adesão é a mesma
+  // meta por dia de 20: 6 min hoje faltam 14
+  const c = compute({ now: NOW, student: {}, challenge: {}, posts: [], activities: [], attendance: [], usage: [uso(3, 1, 6, { pos: 6 })], metas: { diaMin: 20 } }, CFG);
+  assert.match(Adesao.goalMsg(c, 'Ana').short, /Faltam <em>14 minutos<\/em>/);
+  assert.equal(Adesao.todayOf(c).hit, false);
+  // valores fora do limite ou vazios ficam em aberto
+  assert.deepEqual(Adesao.metasOf({ diaMin: 0, semH: 'x', mesH: 700 }), { diaMin: null, semH: null, mesH: null });
+  assert.deepEqual(Adesao.metasOf(null), { diaMin: null, semH: null, mesH: null });
+  assert.deepEqual(Adesao.metasOf({ diaMin: 600, semH: 0.5, mesH: 500 }), { diaMin: 600, semH: 0.5, mesH: 500 });
+});
+
+ok('"Escolha a sua meta no Perfil" avisa o app', () => {
+  const tap = { target: { closest: sel => (sel === '[data-cza-perfil]' ? {} : null) } };
+  assert.deepEqual(Adesao.pageClick(tap, {}, semMeta([])), { perfil: true });
 });
 
 ok('dias com meta acima do necessário: "6 dias com meta (a meta é 5)", nunca "6 de 5"', () => {

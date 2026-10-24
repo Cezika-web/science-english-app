@@ -78,7 +78,20 @@ service cloud.firestore {
           .affectedKeys().hasAny(['confirmadoEm'])
           || request.resource.data.avisoCobranca.confirmadoEm == request.time);
 
-      return profileFieldsAreSafe || cobrancaFieldsAreSafe;
+      // O aluno escolhe as próprias metas de estudo: minutos por dia e horas por semana e por mês.
+      // Cada campo é opcional (null = em aberto) e tem teto, só para barrar lixo.
+      let metaEstudoFieldsAreSafe = changed.hasOnly(['metaEstudo'])
+        && request.resource.data.metaEstudo is map
+        && request.resource.data.metaEstudo.keys().hasOnly(['diaMin', 'semH', 'mesH'])
+        && metaEstudoValueIsSafe(request.resource.data.metaEstudo.get('diaMin', null), 1, 600)
+        && metaEstudoValueIsSafe(request.resource.data.metaEstudo.get('semH', null), 0.5, 120)
+        && metaEstudoValueIsSafe(request.resource.data.metaEstudo.get('mesH', null), 0.5, 500);
+
+      return profileFieldsAreSafe || cobrancaFieldsAreSafe || metaEstudoFieldsAreSafe;
+    }
+
+    function metaEstudoValueIsSafe(v, min, max) {
+      return v == null || (v is number && v >= min && v <= max);
     }
 
     function activityUpdateIsSafe() {

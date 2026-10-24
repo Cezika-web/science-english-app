@@ -2310,6 +2310,7 @@ function useAdesaoData(student, posaulas, activities, tab, extras) {
       return AD.compute({
         now: new Date(), student,
         names,
+        metas: student?.metaEstudo || null,
         usage,
         posts: posaulas.map(p => ({ id: p.id, title: postTitle(p), createdAt: p.createdAt, classDate: p.classDate, filename: p.filename, url: p.url })),
         activities: activities.filter(a => { const d = dateFrom(a.createdAt); return d && d.getTime() >= Date.now() - 40 * 86400000; }).map(a => {
@@ -2372,7 +2373,7 @@ function AdesaoProgressCard({ adesao, onOpen }) {
 
 // Página de adesão: meta de hoje, o que dá para fazer agora, a semana (tocar num dia abre o detalhe
 // ali mesmo), o calendário, o total da semana e a nota. Abre do Início e do Progresso.
-function AdesaoPage({ adesao, student, startDay, onClose, onGo }) {
+function AdesaoPage({ adesao, student, startDay, onClose, onGo, onPerfil }) {
   const { AD, visivel, liberado, lib, result, extra } = adesao;
   // O HTML só é refeito quando muda o tempo de ESTUDO (ficar nesta página não é estudo). Assim o
   // calendário e o dia abertos não fecham sozinhos a cada gravação do cronômetro.
@@ -2382,7 +2383,7 @@ function AdesaoPage({ adesao, student, startDay, onClose, onGo }) {
     recado: student.adesaoRecado?.texto || '',
     ribbon: liberado ? '' : previaAdesao(lib), stats: extra?.stats,
     sel: startDay || null,
-  }) : '', [visivel, sig, startDay, liberado, lib, student?.adesaoRecado?.texto, extra?.stats]);
+  }) : '', [visivel, sig, startDay, liberado, lib, student?.adesaoRecado?.texto, extra?.stats, JSON.stringify(student?.metaEstudo || {})]);
   if (!visivel) return null;
   ensureAdesaoCss();
   return (
@@ -2397,7 +2398,7 @@ function AdesaoPage({ adesao, student, startDay, onClose, onGo }) {
       {!result
         ? <div style={{ marginTop: 16, fontSize: 12.5, color: '#64748B', fontWeight: 700 }}>Carregando a sua adesão…</div>
         : <div className="cza-host" dangerouslySetInnerHTML={{ __html: html }} onKeyDown={adesaoKey}
-            onClick={e => { const r = AD.pageClick(e, e.currentTarget, result); if (r && r.go) onGo(r.go); }} />}
+            onClick={e => { const r = AD.pageClick(e, e.currentTarget, result); if (r && r.go) onGo(r.go); else if (r && r.perfil) onPerfil(); }} />}
     </div>
   );
 }
@@ -4606,7 +4607,7 @@ function VocabTab({ vocab, onViewChange }) {
 }
 
 // ── PerfilTab ─────────────────────────────────────────────────────
-function PerfilTab({ student, onLogout, onPatchStudent, reviews = [], ownReview, onSaveReview, openReviewForm }) {
+function PerfilTab({ student, mirror, onLogout, onPatchStudent, reviews = [], ownReview, onSaveReview, openReviewForm }) {
   const name    = student?.firstName || student?.name || 'Aluno';
   const level   = student?.level || '';
   const initial = name[0].toUpperCase();
@@ -4619,6 +4620,13 @@ function PerfilTab({ student, onLogout, onPatchStudent, reviews = [], ownReview,
   const [saving, setSaving]       = useState(false);
   const [msg, setMsg]             = useState('');
   const [photoSaving, setPhotoSaving] = useState(false);
+  // Metas de estudo que o próprio aluno escolhe (vazio = em aberto): minutos por dia, horas por semana e por mês.
+  const fmtMeta = v => (v == null || v === '' ? '' : String(v).replace('.', ','));
+  const [mDia, setMDia] = useState(() => fmtMeta(student?.metaEstudo?.diaMin));
+  const [mSem, setMSem] = useState(() => fmtMeta(student?.metaEstudo?.semH));
+  const [mMes, setMMes] = useState(() => fmtMeta(student?.metaEstudo?.mesH));
+  const [metaMsg, setMetaMsg] = useState('');
+  const [metaSaving, setMetaSaving] = useState(false);
   const [showReviewsPage, setShowReviewsPage] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewRating, setReviewRating] = useState(0);
@@ -4716,6 +4724,31 @@ function PerfilTab({ student, onLogout, onPatchStudent, reviews = [], ownReview,
     }
     setSaving(false);
   };
+
+  async function saveMetas() {
+    if (mirror) return;
+    const num = (v, lo, hi) => {
+      const t = String(v).trim().replace(',', '.');
+      if (t === '') return null;
+      const n = Number(t);
+      return Number.isFinite(n) && n >= lo && n <= hi ? n : NaN;
+    };
+    const diaMin = num(mDia, 1, 600), semH = num(mSem, 0.5, 120), mesH = num(mMes, 0.5, 500);
+    if ([diaMin, semH, mesH].some(Number.isNaN)) {
+      setMetaMsg('Confira os números: de 1 a 600 minutos por dia, de 0,5 a 120 horas por semana e de 0,5 a 500 horas por mês.');
+      return;
+    }
+    const arred = (n, casas) => (n == null ? null : Math.round(n * casas) / casas);
+    setMetaSaving(true);
+    try {
+      await onPatchStudent({ metaEstudo: { diaMin: arred(diaMin, 1), semH: arred(semH, 10), mesH: arred(mesH, 10) } });
+      setMetaMsg('✓ Metas salvas. Elas já aparecem na sua página de adesão.');
+    } catch (e) {
+      console.error('Metas de estudo:', e);
+      setMetaMsg('Não consegui salvar agora. Tente de novo em instantes.');
+    }
+    setMetaSaving(false);
+  }
 
   const inp = { width: '100%', padding: '12px 14px', border: '1.5px solid #E2E8F0', borderRadius: 12, fontSize: 14, outline: 'none', background: '#F8FAFC', color: '#0F172A', marginBottom: 8, fontFamily: 'inherit' };
   const actBtn = (color = 'var(--brand)') => ({ width: 92, padding: '10px 0', textAlign: 'center', borderRadius: 12, border: 'none', cursor: 'pointer', background: color, color: '#fff', fontWeight: 700, fontSize: 13, marginRight: 6, marginTop: 4, fontFamily: 'inherit', flexShrink: 0 });
@@ -4855,6 +4888,35 @@ function PerfilTab({ student, onLogout, onPatchStudent, reviews = [], ownReview,
             </div>
           </div>
         )}
+      </GlassCard>
+
+      <GlassCard style={{ padding: 18, marginBottom: 12 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: '#9A6438', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>&#127919; Minhas metas de estudo</div>
+        <div style={{ fontSize: 12.5, color: '#475569', fontWeight: 600, lineHeight: 1.45, marginBottom: 6 }}>Escolha quanto você quer estudar. As três metas são independentes: se numa semana você estudar mais, isso adianta o mês.</div>
+        {[
+          ['Por dia', 'só o estudo no app', 'min', mDia, setMDia, 'ex.: 10'],
+          ['Por semana', 'aulas + estudo no app', 'horas', mSem, setMSem, 'ex.: 3'],
+          ['Por mês', 'aulas + estudo no app', 'horas', mMes, setMMes, 'ex.: 12'],
+        ].map(([titulo, sub, un, val, setVal, ph]) => (
+          <label key={titulo} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 0', borderTop: '1px solid #F1F5F9' }}>
+            <span>
+              <span style={{ display: 'block', fontSize: 14, fontWeight: 800, color: '#0F172A' }}>{titulo}</span>
+              <span style={{ fontSize: 11.5, color: '#64748B', fontWeight: 700 }}>{sub}</span>
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <input value={val} onChange={e => { setVal(e.target.value); setMetaMsg(''); }} inputMode="decimal" placeholder={ph} disabled={mirror}
+                style={{ width: 84, padding: '9px 10px', border: '1.5px solid #CBD5E1', borderRadius: 12, fontSize: 15, fontWeight: 800, textAlign: 'center', background: '#fff', color: '#0F172A', fontFamily: 'inherit', outline: 'none' }} />
+              <span style={{ fontSize: 12, fontWeight: 800, color: '#64748B', width: 38 }}>{un}</span>
+            </span>
+          </label>
+        ))}
+        <button onClick={saveMetas} disabled={metaSaving || mirror}
+          style={{ width: '100%', marginTop: 12, padding: 12, border: 'none', borderRadius: 14, background: 'linear-gradient(160deg,#22C55E,#15803D)', color: '#fff', fontWeight: 800, fontSize: 14.5, cursor: mirror ? 'default' : 'pointer', fontFamily: 'inherit', opacity: metaSaving || mirror ? 0.6 : 1 }}>
+          {metaSaving ? 'Salvando...' : 'Salvar metas'}
+        </button>
+        <div role="status" style={{ marginTop: 8, fontSize: 12, fontWeight: 700, textAlign: 'center', color: metaMsg.startsWith('✓') ? '#15803D' : metaMsg ? '#B91C1C' : '#64748B' }}>
+          {mirror ? 'Modo espelho: só leitura.' : (metaMsg || 'Deixe em branco o que não quiser definir.')}
+        </div>
       </GlassCard>
 
       <button type="button" onClick={() => { setShowReviewsPage(true); setShowReviewForm(false); setReviewMsg(''); }} style={{ width:'100%', padding:0, border:'none', background:'transparent', cursor:'pointer', fontFamily:'inherit', textAlign:'left', marginBottom:12 }}>
@@ -6041,13 +6103,13 @@ function App() {
       <AppHeader student={student} onNotif={requestPush} showNotifBtn={showNotifBtn} onLogout={handleLogout} onPatchStudent={patchStudent} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-        {adesaoPage && <AdesaoPage adesao={adesao} student={student} startDay={adesaoPage.dia} onClose={() => setAdesaoPage(null)}
+        {adesaoPage && <AdesaoPage adesao={adesao} student={student} startDay={adesaoPage.dia} onClose={() => setAdesaoPage(null)} onPerfil={() => { setAdesaoPage(null); setTab('perfil'); }}
           onGo={kind => { setAdesaoPage(null); if (kind === 'vocab') setTab('vocab'); else if (kind === 'aulas') setTab('aulas'); else if (posaulas[0]) handleOpenPost(posaulas[0]); else setTab('aulas'); }} />}
         {!adesaoPage && tab === 'home'   && <HomeTab   student={student} posaulas={posaulas} activities={activities} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} adesao={adesao} onOpenAdesao={dia => setAdesaoPage({ dia })} />}
         {!adesaoPage && tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={(challenge) => { setSelectedChallenge(challenge || null); setChallengeView('hub'); }} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} />}
         {!adesaoPage && tab === 'progresso' && <ProgressTab adesao={adesao} onOpenAdesao={dia => setAdesaoPage({ dia })} student={student} posaulas={posaulas} activities={activities} reviewReports={reviewReports} onOpenReview={openReviewResult} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} onOpenChallenge={() => { setSelectedChallenge(null); setChallengeView('hub'); }} />}
         {!adesaoPage && tab === 'vocab'  && <VocabTab vocab={vocab} onViewChange={setVocabView} />}
-        {!adesaoPage && tab === 'perfil' && <PerfilTab student={student} onLogout={handleLogout} onPatchStudent={patchStudent} reviews={courseReviews} ownReview={ownCourseReview} onSaveReview={saveCourseReview} openReviewForm={reviewFormRequest} />}
+        {!adesaoPage && tab === 'perfil' && <PerfilTab student={student} mirror={mirror} onLogout={handleLogout} onPatchStudent={patchStudent} reviews={courseReviews} ownReview={ownCourseReview} onSaveReview={saveCourseReview} openReviewForm={reviewFormRequest} />}
       </div>
 
       <BottomNav active={tab} onChange={setTab} />
