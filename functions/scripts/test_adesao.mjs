@@ -348,6 +348,8 @@ ok('detalhe do dia: tipos, itens com nome (escapado) e uso fora do estudo', () =
   });
   const h = Adesao.dayDetailHtml(c, '2026-10-19');
   assert.match(h, /Segunda, 19\/10/);
+  assert.match(h, /data-cza-close[^>]*aria-label="Fechar o dia"/);          // X para fechar o dia
+  assert.match(Adesao.dayDetailHtml(c, '2026-10-18'), /data-cza-close/);
   assert.match(h, /Meta batida ✓/);
   assert.match(h, /21 min <small>de estudo/);
   assert.match(h, /<b>Pós-aula<\/b><em>5 min<\/em>/);

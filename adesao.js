@@ -827,7 +827,7 @@
     var i = dayStatus(c, key);
     if (i.st === 'fut') return '';
     var w = weekdayOf(key), d = i.d, m = i.m, meta = c.cfg.metaDiaMin;
-    function head(chip) { return '<div class="cza-dh"><b>' + cap1(WDF[w]) + ', ' + ddmm(parseKey(key)) + '</b>' + chip + '</div>'; }
+    function head(chip) { return '<div class="cza-dh"><b>' + cap1(WDF[w]) + ', ' + ddmm(parseKey(key)) + '</b><span class="cza-dr">' + chip + '<button type="button" class="cza-dx" data-cza-close aria-label="Fechar o dia">×</button></span></div>'; }
     var foot = d && d.out > 0.05 ? '<div class="cza-dfoot">Mais ' + fm(d.out) + ' em outras telas (início, perfil, avisos). Isso não conta como estudo.</div>' : '';
     if (i.st === 'pre') return '<div class="cza-dy pre">' + head('<span class="cza-gchip muted">sem medição</span>') + '<p>Neste dia o app ainda não media o seu tempo de estudo. Por isso ele fica sem registro.</p></div>';
     if (i.st === 'x') {
@@ -975,6 +975,15 @@
   function pageClick(e, host, c) {
     var t = e && e.target, el;
     if (!t || !t.closest) return null;
+    if ((el = t.closest('[data-cza-close]'))) {
+      var cbox = el.closest('[data-cza-box]');
+      if (cbox) {
+        var cwhere = cbox.getAttribute('data-cza-box');
+        Array.prototype.forEach.call(host.querySelectorAll('[data-cza-pick="' + cwhere + '"].sel'), function (x) { x.classList.remove('sel'); });
+        cbox.innerHTML = DAY_HINT;
+      }
+      return {};
+    }
     if ((el = t.closest('[data-cza-pick]'))) {
       var where = el.getAttribute('data-cza-pick'), box = host.querySelector('[data-cza-box="' + where + '"]');
       Array.prototype.forEach.call(host.querySelectorAll('[data-cza-pick="' + where + '"].sel'), function (x) { x.classList.remove('sel'); });
@@ -1171,6 +1180,9 @@
     + '.cza-dy.pre{background:#F1F5F9;border-color:#E2E8F0;color:#475569}.cza-dy.amb{background:#FFFBEB;border-color:#FDE68A;color:#78350F}'
     + '.cza-dy p{margin-top:6px}'
     + '.cza-dh{display:flex;align-items:center;justify-content:space-between;gap:8px}.cza-dh b{font-size:14px;font-weight:800;color:#0F172A}'
+    + '.cza-dr{display:inline-flex;align-items:center;gap:8px}'
+    + '.cza-dx{width:26px;height:26px;border-radius:50%;border:0;background:rgba(15,23,42,.09);color:#334155;font:inherit;font-size:18px;font-weight:700;line-height:1;display:grid;place-items:center;flex-shrink:0;cursor:pointer;padding:0 0 2px}'
+    + '.cza-dx:active{background:rgba(15,23,42,.18)}'
     + '.cza-gchip.red{background:#FEE2E2;color:#991B1B}'
     + '.cza-dtot{font-size:22px;font-weight:800;color:#14532D;letter-spacing:-.5px;margin:6px 0 2px}.cza-dtot small{font-size:12px;color:#475569;font-weight:700;letter-spacing:0}'
     + '.cza-dy.amb .cza-dtot{color:#78350F}'
