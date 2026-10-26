@@ -45,6 +45,7 @@ print("com notificação (fcmToken):", sum(1 for _, s in ativos if s.get("fcmTok
 por_dia = collections.Counter(); sem, ultimo = [], {}
 versoes, plats, pwa, com_horas, docs_total, erros_w, erros_js, anomalias = collections.Counter(), collections.Counter(), collections.Counter(), 0, 0, 0, 0, []
 sem_app = collections.Counter()
+perdido = collections.Counter(); perdido_por_aluno = collections.Counter()
 for uid, s in ativos:
     us = [(d, f) for d, f in docs(f"students/{uid}/usage") if d >= DESDE]
     if not us: sem.append(s["name"]); continue
@@ -61,6 +62,7 @@ for uid, s in ativos:
         else: sem_app[s["name"]] += 1
         if f.get("hours"): com_horas += 1
         e = f.get("errs") or {}; erros_w += float(e.get("w", 0)); erros_js += float(e.get("js", 0))
+        for k, v in (f.get("lost") or {}).items(): perdido[k] += float(v); perdido_por_aluno[s["name"]] += float(v)
 
 print("\nAlunos com uso medido por dia:", dict(sorted(por_dia.items())))
 print(f"Documentos de uso: {docs_total} | alunos com algum dia medido: {len(ultimo)} | sem nenhum: {len(sem)}")
@@ -71,4 +73,13 @@ print("\nCampos novos (a partir da versão que grava hora, versão e erros):")
 print("  documentos com versão do app:", sum(versoes.values()), "| versões:", dict(versoes), "| aparelho:", dict(plats), "| instalado ou navegador:", dict(pwa))
 print("  documentos com hora do dia:", com_horas, "| falhas de gravação informadas:", int(erros_w), "| erros do app informados:", int(erros_js))
 print("  alunos com documentos SEM versão (app antigo ou dia anterior à atualização):", dict(sem_app) or "nenhum")
+print("\nTempo parado DESCARTADO em tela de estudo (segundos que voltariam com um limite maior; limite atual 60 s):")
+if perdido:
+    acum = 0
+    for k in ("g90", "g120", "g180", "g300"):
+        acum += perdido.get(k, 0)
+        print(f"  com limite de {k[1:]} s voltariam +{round(acum / 60, 1)} min no total (faixa {k}: {round(perdido.get(k, 0) / 60, 1)} min)")
+    print("  por aluno (min descartados, até 5 min):", {n: round(v / 60, 1) for n, v in perdido_por_aluno.most_common(8)})
+else:
+    print("  ainda sem dados (campo novo; começa a encher quando os alunos abrem a versão nova)")
 print("\nAnomalias:", anomalias or "nenhuma")

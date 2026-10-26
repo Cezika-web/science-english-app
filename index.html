@@ -237,7 +237,7 @@ async function getFB() {
 // Falha de gravação (regra ainda não publicada, sem rede) nunca aparece para o aluno.
 const CzkUsage = (() => {
   // Versão do app que vai junto com o uso (para saber quem ainda roda versão velha). Mantenha igual ao CACHE do sw.js.
-  const APP_BUILD = 'v36';
+  const APP_BUILD = 'v37';
   const TICK = 1000, MIN_STEP = 200, FLUSH = 60000, NEW_VISIT = 30 * 60000;
   const BLIND_CAP = 10 * 60000, HOLD_CAP = 15 * 60000, MAX_FAILS = 5;
   const EVENTS = ['pointerdown', 'keydown', 'scroll', 'touchstart', 'touchmove', 'wheel', 'input', 'click'];
@@ -255,7 +255,7 @@ const CzkUsage = (() => {
   // Áreas que contam como ESTUDO: posaula, atividade (inclui extras e correção), desafio e
   // vocab (palavras, verbos irregulares e chunks). "outros" (início, progresso, perfil,
   // avisos) é uso do app, mas não é estudo.
-  const slot = day => pending[day] || (pending[day] = { ms: { total: 0, posaula: 0, atividade: 0, desafio: 0, vocab: 0, outros: 0 }, items: {}, itemOpens: {}, hrs: {}, opens: 0 });
+  const slot = day => pending[day] || (pending[day] = { ms: { total: 0, posaula: 0, atividade: 0, desafio: 0, vocab: 0, outros: 0 }, items: {}, itemOpens: {}, hrs: {}, lost: {}, opens: 0 });
   const visible = () => document.visibilityState === 'visible';
 
   function credit(ms, b) {
@@ -278,6 +278,15 @@ const CzkUsage = (() => {
     return { v: APP_BUILD, pwa, plat };
   }
   const onJsError = () => { if (errJs < 1000) errJs += 1; };
+  // Intervalos que passaram do limite parado e foram descartados (só em tela de estudo). Guarda quantos segundos voltariam com um
+  // limite maior (90, 120, 180 ou 300 s), para decidir o limite com dado e não no palpite. Acima de 5 min é abandono: não entra.
+  const LOST_EDGES = [90, 120, 180, 300];
+  function noteLost(ms) {
+    const edge = LOST_EDGES.find(e => ms / 1000 <= e);
+    if (!edge) return;
+    const l = slot(dayOf()).lost, k = 'g' + edge;
+    l[k] = (l[k] || 0) + ms;
+  }
   // Movimento do aluno: fecha o intervalo desde o movimento anterior. Entra inteiro
   // se couber no limite; senão é descartado. Movimentos colados (< MIN_STEP) são
   // ignorados sem perder tempo: o intervalo segue contando do movimento anterior.
@@ -287,6 +296,7 @@ const CzkUsage = (() => {
     if (lastMove && now - lastMove < MIN_STEP) return;
     const gap = lastMove ? now - lastMove : 0;
     if (gap > 0 && gap <= limitMs && visible()) credit(gap, bucket);
+    else if (gap > limitMs && visible() && bucket.area !== 'outros') noteLost(gap);
     lastMove = now;
   }
   function onVisibility() {
@@ -325,12 +335,13 @@ const CzkUsage = (() => {
     const jobs = [];
     Object.keys(pending).forEach(day => {
       const p = pending[day];
-      const take = { secs: {}, items: {}, hours: {}, itemOpens: p.itemOpens, opens: p.opens };
+      const take = { secs: {}, items: {}, hours: {}, lost: {}, itemOpens: p.itemOpens, opens: p.opens };
       let any = p.opens > 0 || Object.keys(p.itemOpens).length > 0;
       // Só grava segundos inteiros; a sobra em milissegundos fica para a próxima gravação.
       Object.keys(p.ms).forEach(k => { const s = Math.floor(p.ms[k] / 1000); if (s > 0) { take.secs[k] = s; p.ms[k] -= s * 1000; any = true; } });
       Object.keys(p.items).forEach(k => { const s = Math.floor(p.items[k] / 1000); if (s > 0) { take.items[k] = s; p.items[k] -= s * 1000; any = true; } });
       Object.keys(p.hrs).forEach(k => { const s = Math.floor(p.hrs[k] / 1000); if (s > 0) { take.hours[k] = s; p.hrs[k] -= s * 1000; any = true; } });
+      Object.keys(p.lost).forEach(k => { const s = Math.floor(p.lost[k] / 1000); if (s > 0) { take.lost[k] = s; p.lost[k] -= s * 1000; any = true; } });
       p.itemOpens = {}; p.opens = 0;
       if (any) jobs.push({ day, take });
     });
@@ -348,6 +359,7 @@ const CzkUsage = (() => {
       if (Object.keys(take.items).length) { data.items = {}; Object.keys(take.items).forEach(k => { data.items[k] = fb.increment(take.items[k]); }); }
       if (Object.keys(take.itemOpens).length) { data.itemOpens = {}; Object.keys(take.itemOpens).forEach(k => { data.itemOpens[k] = fb.increment(take.itemOpens[k]); }); }
       if (Object.keys(take.hours).length) { data.hours = {}; Object.keys(take.hours).forEach(k => { data.hours[k] = fb.increment(take.hours[k]); }); }
+      if (Object.keys(take.lost).length) { data.lost = {}; Object.keys(take.lost).forEach(k => { data.lost[k] = fb.increment(take.lost[k]); }); }
       if (take.opens) data.opens = fb.increment(take.opens);
       data.app = appInfo();
       const comErros = levaErros; levaErros = false;
@@ -371,6 +383,7 @@ const CzkUsage = (() => {
     Object.keys(take.items).forEach(k => { back.items[k] = (back.items[k] || 0) + take.items[k] * 1000; });
     Object.keys(take.itemOpens).forEach(k => { back.itemOpens[k] = (back.itemOpens[k] || 0) + take.itemOpens[k]; });
     Object.keys(take.hours || {}).forEach(k => { back.hrs[k] = (back.hrs[k] || 0) + take.hours[k] * 1000; });
+    Object.keys(take.lost || {}).forEach(k => { back.lost[k] = (back.lost[k] || 0) + take.lost[k] * 1000; });
     back.opens += take.opens;
   }
   function start(userUid) {
@@ -413,7 +426,15 @@ const CzkUsage = (() => {
     if (p) Object.keys(out).forEach(k => { out[k] = (p.ms[k] || 0) / 1000; });
     return out;
   }
-  return { start, stop, ping, setBucket, hold, release, configure, flush, itemKey, pendingToday };
+  // Intervalo em curso, ainda não creditado: só entra na conta se o aluno voltar a mexer dentro do limite. O cronômetro soma
+  // isto para andar a cada segundo. Passou do limite parado, vira "parado" (idle) e esse intervalo deixa de contar.
+  function live() {
+    if (!running || !visible() || !lastMove) return { gap: 0, idle: false };
+    const gap = Date.now() - lastMove;
+    if (gap > limitMs) return { gap: 0, idle: true };
+    return { gap: bucket.area === 'outros' ? 0 : gap / 1000, idle: false };
+  }
+  return { start, stop, ping, setBucket, hold, release, configure, flush, itemKey, pendingToday, live };
 })();
 
 function showToast(msg, ms = 3500) {
@@ -2430,6 +2451,106 @@ function AdesaoPage({ adesao, student, startDay, onClose, onGo, onPerfil }) {
         : <div className="cza-host" dangerouslySetInnerHTML={{ __html: html }} onKeyDown={adesaoKey}
             onClick={e => { const r = AD.pageClick(e, e.currentTarget, result); if (r && r.go) onGo(r.go); else if (r && r.perfil) onPerfil(); }} />}
     </div>
+  );
+}
+
+// ── Cronômetro de estudo ──────────────────────────────────────────────────
+// Total de estudo de HOJE num cantinho, só enquanto o tempo está contando (pós-aula, atividades, Desafio, Vocabulário). Não recebe
+// toque (o clique atravessa) e procura sozinho um canto sem botão, campo, iframe nem texto por baixo; se aparecer um botão no lugar
+// dele, muda de canto. Mostra o que já está gravado hoje (então continua de onde parou ao reabrir o app) mais o intervalo em curso.
+// Só aparece junto com a adesão (depois da liberação; o modo espelho mostra parado).
+const TIMER_HIT = 'a,button,input,textarea,select,summary,label,iframe,audio,video,canvas,img,[role="button"],[role="link"],[onclick],[contenteditable="true"],[tabindex]:not([tabindex="-1"])';
+const TIMER_STUDY = ['posaula', 'atividade', 'desafio', 'vocab'];
+// Quanto o retângulo atrapalha: 10 por ponto em cima de algo clicável, 2 por ponto em cima de texto, 50 fora da tela.
+function timerSpotScore(x, y, w, h) {
+  let score = 0;
+  const xs = [x - 5, x + w / 2, x + w + 5], ys = [y - 5, y + h / 2, y + h + 5];
+  for (const px of xs) for (const py of ys) {
+    if (px < 0 || py < 0 || px >= window.innerWidth || py >= window.innerHeight) { score += 50; continue; }
+    const stack = document.elementsFromPoint(px, py);
+    for (const el of stack) {
+      if (el === document.documentElement || el === document.body || el.id === 'root') break;
+      if ((el.matches && el.matches(TIMER_HIT)) || getComputedStyle(el).cursor === 'pointer') { score += 10; break; }
+    }
+    const topo = stack[0];
+    if (topo && topo !== document.documentElement && topo !== document.body && timerOverText(topo, px, py)) score += 2;
+  }
+  return score;
+}
+// O ponto cai em cima de uma LINHA de texto do elemento (e não só dentro da caixa dele, que pode ser larga e vazia nas pontas)?
+function timerOverText(el, px, py) {
+  for (const n of el.childNodes) {
+    if (n.nodeType !== 3 || !n.textContent.trim()) continue;
+    const rg = document.createRange();
+    rg.selectNodeContents(n);
+    for (const q of rg.getClientRects()) if (px >= q.left - 2 && px <= q.right + 2 && py >= q.top - 2 && py <= q.bottom + 2) return true;
+  }
+  return false;
+}
+// Cantos para testar, do preferido (alto à direita) ao menos preferido. 74 = barra de abas embaixo.
+function timerCandidates(w, h) {
+  const sh = document.querySelector('.student-app-shell')?.getBoundingClientRect();
+  const L = (sh ? sh.left : 0) + 8, R = (sh ? sh.right : window.innerWidth) - w - 8, T = 8, B = window.innerHeight - h - 74, VH = window.innerHeight;
+  const lista = [[R, T], [L, T], [Math.round((L + R) / 2), T], [R - w - 12, T], [L + w + 12, T]];
+  for (let y = T + 12; y <= 150; y += 12) lista.push([R, y]);                    // descendo pela borda direita (barras de título com 2 linhas)
+  lista.push([R, B], [L, B], [R, Math.round(VH * 0.3)], [L, Math.round(VH * 0.3)], [R, Math.round(VH * 0.5)], [L, Math.round(VH * 0.5)], [R, Math.round(VH * 0.68)], [L, Math.round(VH * 0.68)]);
+  return lista;
+}
+function StudyTimer({ adesao, student, usageArea, mirror }) {
+  const { AD, visivel, extra, result } = adesao;
+  const ativo = !!AD && visivel && !!extra && usageArea !== 'outros';
+  const [, setTick] = useState(0);
+  const [pos, setPos] = useState({ x: -999, y: -999 });
+  const posRef = useRef({ x: -999, y: -999 });
+  const boxRef = useRef(null);
+  const recMax = useRef({ day: '', v: 0 });
+
+  const place = () => {
+    const el = boxRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect(), w = Math.max(60, r.width), h = Math.max(18, r.height);
+    const atual = posRef.current.x < 0 ? Infinity : timerSpotScore(posRef.current.x, posRef.current.y, w, h);
+    if (atual === 0) return;                                    // o lugar de agora continua livre
+    let melhor = null, nota = Infinity;
+    for (const [x, y] of timerCandidates(w, h)) {
+      const sc = timerSpotScore(x, y, w, h);
+      if (sc < nota) { melhor = { x, y }; nota = sc; if (sc === 0) break; }
+    }
+    if (melhor && nota < atual) { posRef.current = melhor; setPos(melhor); }
+  };
+  useEffect(() => {
+    if (!ativo) { posRef.current = { x: -999, y: -999 }; setPos({ x: -999, y: -999 }); return undefined; }
+    let timer = 0;
+    const agenda = (ms) => { clearTimeout(timer); timer = setTimeout(place, typeof ms === 'number' ? ms : 250); };
+    agenda(120);
+    const relogio = setInterval(() => setTick(n => n + 1), 1000);
+    const confere = setInterval(place, 1500);
+    window.addEventListener('resize', agenda);
+    window.addEventListener('scroll', agenda, true);
+    const mo = new MutationObserver(ms => { if (ms.some(m => !(boxRef.current && boxRef.current.contains(m.target)))) agenda(400); });
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => { clearTimeout(timer); clearInterval(relogio); clearInterval(confere); mo.disconnect(); window.removeEventListener('resize', agenda); window.removeEventListener('scroll', agenda, true); };
+  }, [ativo, usageArea]);
+
+  if (!ativo) return null;
+  const dia = AD.util.dayKey(new Date());
+  const doc = extra.usage.find(u => u.date === dia);
+  const base = doc ? TIMER_STUDY.reduce((t, k) => t + (Number(doc.secs && doc.secs[k]) || 0), 0) : 0;
+  const pend = CzkUsage.pendingToday();
+  const gravado = base + TIMER_STUDY.reduce((t, k) => t + (pend[k] || 0), 0);
+  if (recMax.current.day !== dia) recMax.current = { day: dia, v: 0 };
+  if (gravado > recMax.current.v) recMax.current.v = gravado;    // o gravado só cresce: uma releitura do banco não faz o relógio voltar
+  const vivo = mirror ? { gap: 0, idle: false } : CzkUsage.live();
+  const total = recMax.current.v + vivo.gap;
+  const meta = result?.cfg?.metaDiaMin || student?.metaEstudo?.diaMin || adesao.meta?.cfg?.metaDiaMin || 10;
+  const cor = { r: ['#DC2626', '#fff'], y: ['#FBBF24', '#451A03'], g: ['#16A34A', '#fff'] }[AD.timerTone(total, meta)];
+  return (
+    <div ref={boxRef} aria-hidden="true" style={{
+      position: 'fixed', left: pos.x, top: pos.y, zIndex: 9990, pointerEvents: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, height: 20, padding: '0 8px',
+      borderRadius: 99, fontSize: 11, fontWeight: 800, fontVariantNumeric: 'tabular-nums', letterSpacing: 0.2, whiteSpace: 'nowrap', background: cor[0], color: cor[1],
+      border: '1.5px solid rgba(255,255,255,.9)', boxShadow: '0 2px 6px rgba(15,23,42,.25)', opacity: vivo.idle ? 0.5 : 0.95, visibility: pos.x < 0 ? 'hidden' : 'visible',
+      transition: 'left .25s ease, top .25s ease, background .4s, opacity .3s',
+    }}><span style={{ fontSize: 10 }}>&#9201;</span>{AD.fmtTimer(total)}</div>
   );
 }
 
@@ -6006,6 +6127,7 @@ function App() {
 
   if (readerPost) {
     return (
+      <>
       <ReaderView post={readerPost} onBack={async () => {
         setReaderPost(null);
         // No espelho, o logado é o admin: ler de user.uid traz zero pós-aula e
@@ -6021,6 +6143,8 @@ function App() {
           console.error('Pós-aulas ao voltar do leitor:', e);
         }
       }} />
+      <StudyTimer adesao={adesao} student={student} usageArea={usageArea} mirror={mirror} />
+      </>
     );
   }
 
@@ -6143,6 +6267,7 @@ function App() {
       </div>
 
       <BottomNav active={tab} onChange={setTab} />
+      <StudyTimer adesao={adesao} student={student} usageArea={usageArea} mirror={mirror} />
 
       {!mirror && student?.avisoCobranca?.ativo && !avisoCobrancaFechado &&
         <AvisoCobranca aviso={student.avisoCobranca} nome={student.firstName || ''} onClose={confirmarAvisoCobranca} />}

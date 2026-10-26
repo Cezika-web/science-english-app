@@ -918,6 +918,20 @@
       + '<div class="cza-gtot"><b>' + Math.round(g.minutos) + ' min</b><span>de estudo no app</span></div>' + bar + chips + legend + info;
   }
 
+  // Cronômetro de estudo (cantinho da tela): "45 s" abaixo de 1 min, "1:05" depois e "1:05:10" a partir de 1 h.
+  function fmtTimer(secs) {
+    var t = Math.max(0, Math.floor(Number(secs) || 0));
+    if (t < 60) return t + ' s';
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    var h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), sec = t % 60;
+    return h ? h + ':' + p(m) + ':' + p(sec) : m + ':' + p(sec);
+  }
+  // Cor do cronômetro pela meta do dia (em minutos): vermelho até 75%, amarelo até bater a meta, verde daí em diante.
+  function timerTone(secs, goalMin) {
+    var goal = (Number(goalMin) > 0 ? Number(goalMin) : DEFAULTS.metaDiaMin) * 60, r = (Number(secs) || 0) / goal;
+    return r >= 1 ? 'g' : r >= 0.75 ? 'y' : 'r';
+  }
+
   // "2 h 33 min", "1 h", "45 min"
   function fhm(m) {
     m = Math.round(m);
@@ -1232,7 +1246,7 @@
     // Os três tipos de estudo da meta diária/semanal e o que cada um reúne.
     STUDY_TYPES: A_STUDY_TYPES,
     goalHomeHtml: goalHomeHtml, goalProgressHtml: goalProgressHtml, pageHtml: pageHtml, pageClick: pageClick, toggleGoalInfo: toggleGoalInfo,
-    todayOf: todayOf, goalDaysTxt: goalDaysTxt, metasOf: metasOf, fhm: fhm, hoursHtml: hoursHtml, dayStatus: dayStatus, dayDetailHtml: dayDetailHtml, calendarHtml: calendarHtml, weekStripHtml: weekStripHtml, goalMsg: goalMsg,
+    todayOf: todayOf, goalDaysTxt: goalDaysTxt, metasOf: metasOf, fhm: fhm, hoursHtml: hoursHtml, fmtTimer: fmtTimer, timerTone: timerTone, dayStatus: dayStatus, dayDetailHtml: dayDetailHtml, calendarHtml: calendarHtml, weekStripHtml: weekStripHtml, goalMsg: goalMsg,
     cfgOf: cfgOf, compute: compute, band: band, effWeight: effWeight, combine: combine, itemKey: itemKey,
     tagsOf: tagsOf, diagOf: diagOf, suggestComment: suggestComment, studentChips: studentChips,
     wdStats: wdStats, changes: changes, advice: advice, sDayText: sDayText,

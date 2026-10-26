@@ -109,13 +109,15 @@ const secsRegra = lista(blocoUso, /d\.secs\.keys\(\)\.hasOnly\(\[([^\]]*)\]\)/);
 const horasRegra = lista(fnRegra('usageHoursAreSafe'), /hasOnly\(\[([^\]]*)\]\)/);
 const appRegra = lista(fnRegra('usageAppIsSafe'), /hasOnly\(\[([^\]]*)\]\)/);
 const errsRegra = lista(fnRegra('usageErrsAreSafe'), /hasOnly\(\[([^\]]*)\]\)/);
-assert.ok(topoRegra.includes('hours') && topoRegra.includes('app') && topoRegra.includes('errs'));
+const lostRegra = lista(fnRegra('usageLostIsSafe'), /hasOnly\(\[([^\]]*)\]\)/);
+assert.ok(topoRegra.includes('hours') && topoRegra.includes('app') && topoRegra.includes('errs') && topoRegra.includes('lost'));
 const confereComARegra = (data) => {
   for (const k of Object.keys(data)) assert.ok(topoRegra.includes(k), `campo "${k}" não está na regra`);
   for (const k of Object.keys(data.secs || {})) assert.ok(secsRegra.includes(k), `secs.${k} não está na regra`);
   for (const k of Object.keys(data.hours || {})) assert.ok(horasRegra.includes(k), `hours.${k} não está na regra`);
   for (const k of Object.keys(data.app || {})) assert.ok(appRegra.includes(k), `app.${k} não está na regra`);
   for (const k of Object.keys(data.errs || {})) assert.ok(errsRegra.includes(k), `errs.${k} não está na regra`);
+  for (const k of Object.keys(data.lost || {})) assert.ok(lostRegra.includes(k), `lost.${k} não está na regra`);
 };
 confereComARegra(w.data);
 assert.equal(horasRegra.length, 24);
@@ -141,7 +143,7 @@ confereComARegra(e.writes[0].data);
 ok('hora do dia: estudo em horas diferentes soma em cada hora, e a pausa longa não entra');
 
 // 1c) Versão do app e aparelho
-assert.deepEqual(w.data.app, { v: 'v36', pwa: false, plat: 'outro' });
+assert.deepEqual(w.data.app, { v: 'v37', pwa: false, plat: 'outro' });
 const cacheSw = /const CACHE = 'czk-(v\d+)'/.exec(fs.readFileSync(path.join(aqui, '../../sw.js'), 'utf8'))[1];
 assert.equal(w.data.app.v, cacheSw);
 ok('a versão gravada com o uso é a mesma do cache do service worker (sw.js)');
@@ -366,6 +368,51 @@ e.avanca(5 * S); e.U.ping();
 await e.flush();
 assert.equal(e.writes.length, 0);
 ok('5 falhas seguidas pausam a coleta (não fica insistindo)');
+
+// 12b) Tempo em curso para o cronômetro: anda enquanto o aluno está dentro do limite e vira "parado" depois dele
+const vivo = () => JSON.parse(JSON.stringify(e.U.live()));   // objetos do vm: compara via JSON
+e = ambiente(); e.U.start('u1');
+e.U.setBucket({ area: 'atividade', item: 'act_1', blind: false });
+e.avanca(20 * S);
+assert.deepEqual(vivo(), { gap: 20, idle: false });             // 20 s sem tocar: ainda conta se ele voltar
+e.avanca(45 * S);                                                    // 65 s parado: passou do limite
+assert.deepEqual(vivo(), { gap: 0, idle: true });
+e.U.ping();                                                          // voltou: o intervalo de 65 s foi descartado
+assert.deepEqual(vivo(), { gap: 0, idle: false });
+await e.flush();
+assert.equal(e.total(), 0);                                          // e nenhum segundo foi gravado por ele (só a abertura)
+e.visible = 'hidden'; e.avanca(5 * S);
+assert.deepEqual(vivo(), { gap: 0, idle: false });               // fora do app não anda
+e.visible = 'visible';
+e.U.setBucket({ area: 'outros', item: '', blind: false }); e.U.ping(); e.avanca(8 * S);
+assert.deepEqual(vivo(), { gap: 0, idle: false });               // na tela de início não é estudo
+e = ambiente();
+assert.deepEqual(vivo(), { gap: 0, idle: false });               // modo espelho (nunca chamou start)
+ok('cronômetro: o intervalo em curso anda, vira parado depois do limite e nunca existe fora do estudo');
+
+// 12c) Tempo descartado por ficar parado além do limite: vira dado, por faixa, só em tela de estudo
+e = ambiente(); e.U.start('u1');
+e.U.setBucket({ area: 'atividade', item: 'act_1', blind: false });
+e.avanca(50 * S); e.U.ping();                       // 50 s: conta
+e.avanca(70 * S); e.U.ping();                       // 70 s: descartado, faixa até 90 s
+e.avanca(100 * S); e.U.ping();                      // 100 s: faixa até 120 s
+e.avanca(200 * S); e.U.ping();                      // 200 s: faixa até 300 s
+e.avanca(400 * S); e.U.ping();                      // 400 s: abandono, não entra em nenhuma faixa
+e.U.setBucket({ area: 'outros', item: '', blind: false });
+e.avanca(75 * S); e.U.ping();                       // parado no início/perfil: não é estudo, não entra
+await e.flush();
+const dado = e.writes[0].data;
+assert.equal(dado.secs.total.inc, 50);
+assert.deepEqual(dado.lost, { g90: { inc: 70 }, g120: { inc: 100 }, g300: { inc: 200 } });
+confereComARegra(dado);
+ok('tempo parado além do limite fica registrado por faixa (90, 120, 180, 300 s), só em tela de estudo');
+
+e = ambiente(); e.U.start('u1');
+e.U.setBucket({ area: 'posaula', item: 'pos_x', blind: false });
+e.avanca(30 * S); e.U.ping();
+await e.flush();
+assert.equal(e.writes[0].data.lost, undefined);     // sem intervalo descartado, o campo nem vai
+ok('sem intervalo descartado o documento não leva o campo lost');
 
 // 13) stop() não deixa ouvintes e o modo espelho (que nunca chama start) não conta
 e = ambiente(); e.U.start('u5');

@@ -516,6 +516,22 @@ ok('"Escolha a sua meta no Perfil" avisa o app', () => {
   assert.deepEqual(Adesao.pageClick(tap, {}, semMeta([])), { perfil: true });
 });
 
+ok('cronômetro de estudo: segundos até 1 min, depois minutos e segundos, depois horas', () => {
+  const f = Adesao.fmtTimer;
+  assert.equal(f(0), '0 s'); assert.equal(f(5), '5 s'); assert.equal(f(59.9), '59 s');
+  assert.equal(f(60), '1:00'); assert.equal(f(65), '1:05'); assert.equal(f(450), '7:30'); assert.equal(f(600), '10:00');
+  assert.equal(f(3599), '59:59'); assert.equal(f(3600), '1:00:00'); assert.equal(f(3661), '1:01:01');
+  assert.equal(f(-4), '0 s'); assert.equal(f(NaN), '0 s'); assert.equal(f(undefined), '0 s');
+});
+
+ok('cronômetro de estudo: vermelho até 75% da meta do dia, amarelo até bater, verde depois', () => {
+  const c = Adesao.timerTone;
+  assert.equal(c(0, 10), 'r'); assert.equal(c(449, 10), 'r'); assert.equal(c(450, 10), 'y');     // 7:30 com meta de 10 min
+  assert.equal(c(599, 10), 'y'); assert.equal(c(600, 10), 'g'); assert.equal(c(5000, 10), 'g');
+  assert.equal(c(899, 20), 'r'); assert.equal(c(900, 20), 'y'); assert.equal(c(1200, 20), 'g');  // meta de 20 min do Perfil
+  assert.equal(c(449), 'r'); assert.equal(c(450), 'y'); assert.equal(c(600, 0), 'g');            // sem meta, vale a da escola (10)
+});
+
 ok('dias com meta acima do necessário: "6 dias com meta (a meta é 5)", nunca "6 de 5"', () => {
   assert.equal(Adesao.goalDaysTxt({ hits: 2, metaDias: 5 }), '2 de 5 dias com meta');
   assert.equal(Adesao.goalDaysTxt({ hits: 5, metaDias: 5 }), '5 de 5 dias com meta');
