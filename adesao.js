@@ -702,6 +702,8 @@
   var DAY_HINT = '<div class="cza-dy hint">Toque num dia para ver o detalhe.</div>';
 
   function limiteTxt(sec) { return sec % 60 === 0 ? (sec / 60) + (sec === 60 ? ' minuto' : ' minutos') : sec + ' segundos'; }
+  // Lendo o pós-aula a pausa aceita é de pelo menos isto (ler é parado). Igual a READ_MS do CzkUsage, no index.html.
+  var LEITURA_SEG = 180;
   // "2 de 5 dias com meta"; passou da meta da semana: "6 dias com meta (a meta é 5)".
   function goalDaysTxt(g) {
     return g.hits > g.metaDias ? g.hits + ' dias com meta (a meta é ' + g.metaDias + ')' : g.hits + ' de ' + g.metaDias + ' dias com meta';
@@ -913,7 +915,7 @@
       + '<div><span style="background:#FEF3C7">🧩</span>Meu vocabulário, a lista de verbos e os chunks</div></div>'
       + '<div class="cza-sect" style="margin-top:14px">Não conta</div><div class="cza-glist no">'
       + '<div><span>🏠</span>Ficar na tela inicial, no perfil ou nos avisos</div><div><span>💤</span>Deixar o app aberto sem mexer</div></div>'
-      + '<div class="cza-grule"><span style="font-size:18px">⏱️</span><div><b>Como o tempo é contado.</b> O relógio anda enquanto você usa o app: tocando, rolando a página, digitando, ouvindo ou gravando áudio. Pensar um pouco também vale: pausas de até <b>' + limiteTxt(cfg.limiteSeg) + '</b> contam. Passou disso, o app entende que você saiu e não conta.</div></div></div>';
+      + '<div class="cza-grule"><span style="font-size:18px">⏱️</span><div><b>Como o tempo é contado.</b> O relógio anda enquanto você usa o app: tocando, rolando a página, digitando, ouvindo ou gravando áudio. Pensar um pouco também vale: pausas de até <b>' + limiteTxt(cfg.limiteSeg) + '</b> contam' + (cfg.limiteSeg < LEITURA_SEG ? ' (lendo o pós-aula, até <b>' + limiteTxt(LEITURA_SEG) + '</b>)' : '') + '. Passou disso, o app entende que você saiu e não conta.</div></div></div>';
     return '<div class="cza-sect">Esta semana</div>'
       + '<div class="cza-gtot"><b>' + Math.round(g.minutos) + ' min</b><span>de estudo no app</span></div>' + bar + chips + legend + info;
   }
@@ -1242,7 +1244,7 @@
     + '.cza-hnote{margin-top:10px;font-size:11.5px;font-weight:700;color:#64748B;line-height:1.4}';
 
   var api = {
-    KEYS: KEYS, PIL: PIL, WD: WD, WD1: WD1, WDF: WDF, DEFAULTS: DEFAULTS,
+    KEYS: KEYS, PIL: PIL, WD: WD, WD1: WD1, WDF: WDF, DEFAULTS: DEFAULTS, LEITURA_SEG: LEITURA_SEG,
     // Os três tipos de estudo da meta diária/semanal e o que cada um reúne.
     STUDY_TYPES: A_STUDY_TYPES,
     goalHomeHtml: goalHomeHtml, goalProgressHtml: goalProgressHtml, pageHtml: pageHtml, pageClick: pageClick, toggleGoalInfo: toggleGoalInfo,

@@ -227,6 +227,9 @@ async function getFB() {
 //   mexer dentro do limite, o intervalo TODO entra; se passar do limite, o
 //   intervalo inteiro é descartado. Nada conta sem um movimento que o confirme,
 //   então o tempo depois do último toque (app esquecido aberto) nunca entra.
+//   LEITURA do pós-aula é a exceção do limite: ler é parado (uma tela por minuto ou
+//   mais), então ali o limite é de pelo menos 3 min (READ_MS). Sem isso a leitura
+//   inteira era descartada e o pós-aula media 0 min (caso Gu, 27/10/2026).
 // Exceções, que são estudo sem encostar na tela e contam o tempo todo:
 //   gravando a própria fala, ouvindo um áudio/vídeo e lendo um pós-aula aberto
 //   por URL (iframe que não avisa movimento; vale por até 10 min por abertura).
@@ -237,9 +240,10 @@ async function getFB() {
 // Falha de gravação (regra ainda não publicada, sem rede) nunca aparece para o aluno.
 const CzkUsage = (() => {
   // Versão do app que vai junto com o uso (para saber quem ainda roda versão velha). Mantenha igual ao CACHE do sw.js.
-  const APP_BUILD = 'v37';
+  const APP_BUILD = 'v38';
   const TICK = 1000, MIN_STEP = 200, FLUSH = 60000, NEW_VISIT = 30 * 60000;
   const BLIND_CAP = 10 * 60000, HOLD_CAP = 15 * 60000, MAX_FAILS = 5;
+  const READ_MS = 180000;                 // maior pausa aceita na leitura do pós-aula (igual a LEITURA_SEG do adesao.js)
   const EVENTS = ['pointerdown', 'keydown', 'scroll', 'touchstart', 'touchmove', 'wheel', 'input', 'click'];
   const MEDIA_ON = ['play', 'playing'], MEDIA_OFF = ['pause', 'ended', 'emptied'];
   let limitMs = 60000;
@@ -257,6 +261,8 @@ const CzkUsage = (() => {
   // avisos) é uso do app, mas não é estudo.
   const slot = day => pending[day] || (pending[day] = { ms: { total: 0, posaula: 0, atividade: 0, desafio: 0, vocab: 0, outros: 0 }, items: {}, itemOpens: {}, hrs: {}, lost: {}, opens: 0 });
   const visible = () => document.visibilityState === 'visible';
+  // Maior pausa que ainda conta nesta tela: a da escola (limiteSeg) em toda parte; lendo o pós-aula, pelo menos READ_MS.
+  const limitFor = b => (b.area === 'posaula' && !b.blind) ? Math.max(limitMs, READ_MS) : limitMs;
 
   function credit(ms, b) {
     if (!(ms > 0)) return;
@@ -295,8 +301,9 @@ const CzkUsage = (() => {
     const now = Date.now();
     if (lastMove && now - lastMove < MIN_STEP) return;
     const gap = lastMove ? now - lastMove : 0;
-    if (gap > 0 && gap <= limitMs && visible()) credit(gap, bucket);
-    else if (gap > limitMs && visible() && bucket.area !== 'outros') noteLost(gap);
+    const lim = limitFor(bucket);
+    if (gap > 0 && gap <= lim && visible()) credit(gap, bucket);
+    else if (gap > lim && visible() && bucket.area !== 'outros') noteLost(gap);
     lastMove = now;
   }
   function onVisibility() {
@@ -431,7 +438,7 @@ const CzkUsage = (() => {
   function live() {
     if (!running || !visible() || !lastMove) return { gap: 0, idle: false };
     const gap = Date.now() - lastMove;
-    if (gap > limitMs) return { gap: 0, idle: true };
+    if (gap > limitFor(bucket)) return { gap: 0, idle: true };
     return { gap: bucket.area === 'outros' ? 0 : gap / 1000, idle: false };
   }
   return { start, stop, ping, setBucket, hold, release, configure, flush, itemKey, pendingToday, live };

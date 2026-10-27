@@ -143,9 +143,8 @@ confereComARegra(e.writes[0].data);
 ok('hora do dia: estudo em horas diferentes soma em cada hora, e a pausa longa não entra');
 
 // 1c) Versão do app e aparelho
-assert.deepEqual(w.data.app, { v: 'v37', pwa: false, plat: 'outro' });
 const cacheSw = /const CACHE = 'czk-(v\d+)'/.exec(fs.readFileSync(path.join(aqui, '../../sw.js'), 'utf8'))[1];
-assert.equal(w.data.app.v, cacheSw);
+assert.deepEqual(w.data.app, { v: cacheSw, pwa: false, plat: 'outro' });
 ok('a versão gravada com o uso é a mesma do cache do service worker (sw.js)');
 
 // 1d) Falhas de gravação e erros do app: vão junto com a próxima gravação que der certo, uma vez só
@@ -413,6 +412,70 @@ e.avanca(30 * S); e.U.ping();
 await e.flush();
 assert.equal(e.writes[0].data.lost, undefined);     // sem intervalo descartado, o campo nem vai
 ok('sem intervalo descartado o documento não leva o campo lost');
+
+// 12d) LEITURA do pós-aula é parada (uma tela por minuto ou mais): ali a pausa aceita é de pelo menos 3 min.
+// Caso Gu (27/10/2026): leu o pós-aula, mediu 0,0 min porque cada pausa passava de 60 s e era descartada inteira.
+e = ambiente(); e.U.start('u1');
+e.U.setBucket({ area: 'posaula', item: 'pos_x', blind: false });
+e.avanca(100 * S); e.U.ping();                      // leu 100 s sem mexer e rolou: conta (antes era descartado)
+e.avanca(150 * S); e.U.ping();                      // mais 150 s: conta
+e.avanca(200 * S); e.U.ping();                      // 200 s passa de 3 min: descartado e registrado (faixa até 300 s)
+await e.flush();
+assert.equal(e.area('posaula'), 250);
+assert.equal(e.soma('items', 'pos_x'), 250);
+assert.deepEqual(JSON.parse(JSON.stringify(e.writes[0].data.lost)), { g300: { inc: 200 } });
+ok('lendo o pós-aula, pausas de até 3 min contam; além disso é descartado');
+
+e = ambiente(); e.U.start('u1');
+e.U.setBucket({ area: 'atividade', item: 'act_1', blind: false });
+e.avanca(100 * S); e.U.ping();                      // atividade segue com 60 s: descartado
+e.U.setBucket({ area: 'desafio', item: '', blind: false });
+e.avanca(100 * S); e.U.ping();
+e.U.setBucket({ area: 'vocab', item: 'vocab_menu', blind: false });
+e.avanca(100 * S); e.U.ping();
+await e.flush();
+assert.equal(e.total(), 0);
+ok('o limite maior é só da leitura do pós-aula: atividade, desafio e vocabulário seguem com o da escola');
+
+e = ambiente(); e.U.start('u1');
+e.U.configure({ limitSec: 20 });                    // escola com limite curto: a leitura continua com 3 min
+e.U.setBucket({ area: 'posaula', item: 'pos_x', blind: false });
+e.avanca(100 * S); e.U.ping();
+e.U.setBucket({ area: 'atividade', item: 'act_1', blind: false });
+e.avanca(30 * S); e.U.ping();                       // 30 s passa do limite de 20 s da escola
+await e.flush();
+assert.equal(e.area('posaula'), 100);
+assert.equal(e.area('atividade'), 0);
+e.U.configure({ limitSec: 180 });                   // escola com 180 s: igual, o limite da leitura nunca diminui o da escola
+e.U.setBucket({ area: 'posaula', item: 'pos_x', blind: false });
+e.avanca(170 * S); e.U.ping();
+await e.flush();
+assert.equal(e.area('posaula'), 270);
+ok('o limite da leitura é o maior entre o da escola e 3 min');
+
+// o cronômetro anda durante a leitura até 3 min e só então vira "parado"
+e = ambiente(); e.U.start('u1');
+e.U.setBucket({ area: 'posaula', item: 'pos_x', blind: false }); e.U.ping();
+e.avanca(100 * S);
+assert.deepEqual(vivo(), { gap: 100, idle: false });
+e.avanca(81 * S);                                   // 181 s parado
+assert.deepEqual(vivo(), { gap: 0, idle: true });
+e.U.setBucket({ area: 'atividade', item: 'act_1', blind: false }); e.U.ping();
+e.avanca(61 * S);
+assert.deepEqual(vivo(), { gap: 0, idle: true });   // na atividade 61 s já é parado
+ok('cronômetro: leitura anda até 3 min parado; atividade vira parado em 60 s');
+
+// pós-aula aberto por URL (cego) segue pela regra própria, sem o limite de leitura
+e = ambiente(); e.U.start('u1');
+e.U.setBucket({ area: 'posaula', item: 'pos_antigo', blind: true });
+e.avanca(100 * S); e.U.ping();                      // gesto isolado depois de 100 s: cego não ganha os 3 min
+await e.flush();
+assert.equal(e.area('posaula'), 0);
+ok('pós-aula cego não ganha o limite de leitura (ele já conta o tempo todo, até 10 min)');
+
+// o texto do aluno e o app usam o mesmo número
+assert.equal(Number(/const READ_MS = (\d+);/.exec(html)[1]), Adesao.LEITURA_SEG * 1000);
+ok('LEITURA_SEG do adesao.js = READ_MS do cronômetro');
 
 // 13) stop() não deixa ouvintes e o modo espelho (que nunca chama start) não conta
 e = ambiente(); e.U.start('u5');

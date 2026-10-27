@@ -431,7 +431,7 @@ export function initAdesaoAdmin(ctx) {
       + '<li><b>Atividades:</b> % de exercícios feitos × fator de tempo (tempo real ÷ ' + cfg.secEx + ' s por exercício feito, no máximo 1). Responder rápido demais vale menos.</li>'
       + '<li><b>Constância:</b> dias com pelo menos ' + cfg.minDia + ' min ativos ÷ meta de ' + cfg.metaDias + ' dias.</li>'
       + '<li><b>Meta de estudo:</b> ' + num1(cfg.metaDiaMin) + ' min de estudo por dia, em ' + cfg.metaDiasEstudo + ' dias por semana. O aluno vê a meta de hoje na tela Início e o estudo da semana em Progresso, com o que compôs o tempo (ler pós-aula, chunks e verbos, exercícios). Início, perfil e avisos não contam como estudo.</li>'
-      + '<li><b>Como o tempo é medido:</b> o intervalo entre dois movimentos do aluno (toque, clique, rolagem, digitar ou apagar) só conta se tiver até ' + cfg.limiteSeg + ' s. Se ele voltar a mexer dentro desse tempo, o intervalo inteiro entra; se não voltar, o intervalo todo é descartado, então app esquecido aberto não conta. Gravar a fala e ouvir áudio contam o tempo todo. Aba oculta nunca conta.</li>'
+      + '<li><b>Como o tempo é medido:</b> o intervalo entre dois movimentos do aluno (toque, clique, rolagem, digitar ou apagar) só conta se tiver até ' + cfg.limiteSeg + ' s. Se ele voltar a mexer dentro desse tempo, o intervalo inteiro entra; se não voltar, o intervalo todo é descartado, então app esquecido aberto não conta. Ler o pós-aula é a exceção: como a leitura é parada, a pausa aceita ali é de pelo menos ' + A.LEITURA_SEG + ' s. Gravar a fala e ouvir áudio contam o tempo todo. Aba oculta nunca conta.</li>'
       + '<li>O número do aluno é a média das últimas 3 semanas fechadas, com mais peso para a mais recente (1·2·3). Faixas: Alta ≥ 85 · Média 65–84 · Baixa &lt; 65.</li>'
       + '<li>Semanas anteriores à coleta (' + (S.coleta ? 'desde ' + brDate(S.coleta) : 'ainda não começou') + ') não têm tempo nem dias medidos: nelas só entram aulas, atividades e desafio.</li>'
       + '<li>O aluno vê estes mesmos critérios na tela dele (aba “Aluno” → “O que o aluno vê”).</li></ul></details>';
@@ -618,7 +618,7 @@ export function initAdesaoAdmin(ctx) {
       + ctl('secEx', 'Tempo esperado por exercício', 5, 60, ' s', 'Abaixo disso, a atividade conta menos.')
       + ctl('metaDias', 'Meta de dias ativos por semana', 1, 7, ' dias', '')
       + ctl('minDia', 'Minutos para o dia contar como ativo', 1, 15, ' min', 'Abrir o app 10 segundos não conta.')
-      + ctl('limiteSeg', 'Maior pausa que ainda conta como estudo', 20, 180, ' s', 'Entre dois movimentos do aluno (toque, rolagem, digitar). Se ele voltar a mexer dentro deste tempo, a pausa inteira conta; se passar, é descartada. Vale para a coleta daqui para frente.')
+      + ctl('limiteSeg', 'Maior pausa que ainda conta como estudo', 20, 180, ' s', 'Entre dois movimentos do aluno (toque, rolagem, digitar). Se ele voltar a mexer dentro deste tempo, a pausa inteira conta; se passar, é descartada. Lendo o pós-aula vale pelo menos ' + A.LEITURA_SEG + ' s. Vale para a coleta daqui para frente.')
       + '<h5>Meta de estudo do aluno</h5>'
       + ctl('metaDiaMin', 'Meta de estudo por dia', 1, 60, ' min', 'Tempo de estudo (pós-aula, atividades, desafio, vocabulário, verbos e chunks) que o aluno tenta bater todo dia.')
       + ctl('metaDiasEstudo', 'Dias de meta por semana', 1, 7, ' dias', 'Em quantos dias da semana ele precisa bater a meta diária.')
