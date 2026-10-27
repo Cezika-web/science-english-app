@@ -43,12 +43,19 @@ print(f"Hoje {hoje} | medição desde {DESDE} | alunos ativos: {len(ativos)}")
 print("com notificação (fcmToken):", sum(1 for _, s in ativos if s.get("fcmToken") or s.get("fcmTokens")), "| com metas de estudo escolhidas:", sum(1 for _, s in ativos if s.get("metaEstudo")))
 
 por_dia = collections.Counter(); sem, ultimo = [], {}
+sem_com_conteudo, sem_sem_conteudo = [], []
 versoes, plats, pwa, com_horas, docs_total, erros_w, erros_js, anomalias = collections.Counter(), collections.Counter(), collections.Counter(), 0, 0, 0, 0, []
 sem_app = collections.Counter()
 perdido = collections.Counter(); perdido_por_aluno = collections.Counter()
 for uid, s in ativos:
     us = [(d, f) for d, f in docs(f"students/{uid}/usage") if d >= DESDE]
-    if not us: sem.append(s["name"]); continue
+    if not us:
+        # sem uso medido só preocupa se o aluno TEM conteúdo novo (pós-aula ou atividade) desde o início da medição
+        n_pos = sum(1 for _, f in docs(f"students/{uid}/posaulas") if str(f.get("createdAt") or "") >= DESDE)
+        n_atv = sum(1 for _, f in docs(f"students/{uid}/activities") if str(f.get("createdAt") or "") >= DESDE)
+        if n_pos or n_atv: sem_com_conteudo.append(f"{s['name']} ({n_pos} pós-aula, {n_atv} atividades novas)")
+        else: sem_sem_conteudo.append(s["name"])
+        sem.append(s["name"]); continue
     ultimo[s["name"]] = max(d for d, _ in us)
     for d, f in us:
         docs_total += 1; por_dia[d] += 1
@@ -66,7 +73,8 @@ for uid, s in ativos:
 
 print("\nAlunos com uso medido por dia:", dict(sorted(por_dia.items())))
 print(f"Documentos de uso: {docs_total} | alunos com algum dia medido: {len(ultimo)} | sem nenhum: {len(sem)}")
-print("SEM NENHUM DIA MEDIDO:", ", ".join(sem) or "ninguém")
+print("SEM USO, mas já receberam conteúdo novo desde a medição e não abriram o app:", ", ".join(sem_com_conteudo) or "ninguém")
+print("SEM USO e sem conteúdo novo (normal: ainda não tiveram aula):", ", ".join(sem_sem_conteudo) or "ninguém")
 sumidos = [(n, d) for n, d in ultimo.items() if d < (dt.date.fromisoformat(hoje) - dt.timedelta(days=3)).isoformat()]
 print("SUMIRAM (último dia medido há mais de 3 dias):", ", ".join(f"{n} ({d})" for n, d in sorted(sumidos)) or "ninguém")
 print("\nCampos novos (a partir da versão que grava hora, versão e erros):")
