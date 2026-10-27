@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Resumo Pós-Aula — Gu — CZK English</title>
+<style>
+:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+<article class="card" role="main">
+  <header>
+    <div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <span class="badge">PÓS-AULA</span>
+        <h1>Causatives &amp; Customer Service</h1>
+      </div>
+      <div class="meta" style="margin-top:8px;">
+        <strong>Professor:</strong> César &nbsp;•&nbsp;
+        <strong>Aluno:</strong> Gu &nbsp;•&nbsp;
+        <strong>Data:</strong> 10/26/2026
+      </div>
+    </div>
+    <div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div>
+  </header>
+  <main>
+    <section class="panel">
+      <p style="margin:0;font-weight:600;color:#14532D;"><em>Gu, nesta aula você revisou como pedir que alguém faça algo e como falar de serviços feitos por outras pessoas. Depois, aplicou essas estruturas à leitura sobre atendimento ao cliente, com foco em conhecimento do produto e confiança.</em></p>
+    </section>
+
+    <section>
+      <h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2>
+      <div class="outline-card">
+        <p>A conversa inicial trouxe situações do dia a dia: o boné, planos de aniversário, família e rotina de trabalho. Também conversamos sobre a constância nos estudos e sobre usar as correções para entender o raciocínio por trás de cada resposta. Tentar primeiro e depois comparar as respostas ajuda a perceber exatamente onde está a dúvida.</p>
+        <p><strong>Revisão do desafio:</strong> retomamos o <em>present perfect</em> para uma ação passada com consequência no presente, como em <em>“He has lost his passport, so he can't travel today.”</em> Já um período encerrado, como <em>last year</em>, pede <em>simple past</em>: <em>“I visited Japan last year.”</em> Também apareceram a concordância em <em>“The flight arrives every morning”</em>, a tag question <em>“She works every day, doesn't she?”</em> e os pronomes reflexivos, como <em>themselves</em>. Na escrita de <em>regretted</em>, revisamos a duplicação do <em>t</em>: a sílaba final de <em>regret</em> é tônica e termina em consoante–vogal–consoante.</p>
+        <p><strong>Estimativas em inglês:</strong> no jogo Fermi, você estimou o peso total de medalhas, o faturamento por minuto de uma empresa e a duração de uma maratona de filmes de James Bond. O objetivo foi explicar hipóteses e cálculos com expressões como <em>on average</em>, <em>per minute</em>, <em>times</em> e <em>divided by</em>. As respostas do jogo eram estimativas; o foco foi comunicar o raciocínio.</p>
+        <p><strong>Causativo ativo:</strong> quando dizemos quem fará a ação, usamos <strong>have + pessoa + verbo na forma base</strong> ou <strong>get + pessoa + to + verbo</strong>. Compare: <em>“I will have my assistant call you”</em> e <em>“Get the customer to believe...”</em> No contexto trabalhado, <em>have</em> expressa organizar ou solicitar uma ação; <em>get</em> destaca conseguir que alguém faça algo, inclusive por persuasão.</p>
+        <p><strong>Causativo passivo:</strong> quando o foco é o serviço ou o objeto que recebe a ação, usamos <strong>have/get + objeto + particípio</strong>. Em <em>“I had my car repaired yesterday”</em>, outra pessoa consertou o carro. Quem marca o tempo é o causativo: <em>had</em> no passado; <em>will have</em> no futuro. O particípio <em>repaired</em> permanece. Retomamos a página 18 e o exercício F, com vocabulário de serviços e ajustes de roupas: <em>dry-cleaned, shortened</em> e <em>lengthened</em>.</p>
+        <p><strong>Listening — um pedido urgente:</strong> no diálogo da lavanderia, um cliente precisava mandar lavar um paletó a seco para uma apresentação no dia seguinte. Ele também pediu para encurtar uma saia. Você entendeu a conversa e depois voltou a identificar <em>“get this jacket dry-cleaned”</em> como causativo passivo. O áudio trouxe pedidos educados e expressões como <em>last minute</em>, <em>pick it up</em> e <em>I owe you one</em>.</p>
+        <p style="margin-bottom:0;"><strong>Customer service — página 20:</strong> a leitura relacionou satisfação do cliente à qualidade do relacionamento, além do produto. Trabalhamos <em>be knowledgeable</em> — conhecer bem o que se oferece — e <em>be reliable</em> — cumprir o que se promete. Você identificou corretamente <em>“get the customer to believe”</em> como causativo ativo e, com orientação, reconheceu <em>“have a microwave delivered”</em> como passivo. O texto também trouxe atitudes úteis: buscar respostas, evitar decepcionar o cliente, pedir desculpas por erros e oferecer soluções.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2>
+      <div class="outline-card">
+        <p style="margin-top:0;color:var(--muted);font-size:.9rem;">Frases trabalhadas na revisão, na conversa e na leitura, com grafia normalizada.</p>
+        <ul>
+          <li><strong>“He has lost his passport, so he can't travel today.”</strong><br>Ele perdeu o passaporte, então não pode viajar hoje.</li>
+          <li><strong>“I had my car repaired yesterday.”</strong><br>Mandei consertar meu carro ontem.</li>
+          <li><strong>“I will have my laptop repaired tomorrow.”</strong><br>Vou mandar consertar meu notebook amanhã.</li>
+          <li><strong>“She works every day, doesn't she?”</strong><br>Ela trabalha todos os dias, não é?</li>
+          <li><strong>“Have you ever regretted a decision at your work?”</strong><br>Você já se arrependeu de uma decisão no trabalho?</li>
+          <li><strong>“I have never worked for a client like this before.”</strong><br>Nunca trabalhei para um cliente assim antes.</li>
+          <li><strong>“How long would it take to watch every official James Bond film back-to-back?”</strong><br>Quanto tempo levaria para assistir a todos os filmes oficiais de James Bond, um após o outro?</li>
+          <li><strong>“But don't just say, ‘I don't know.’ Say, ‘I'll find out.’”</strong><br>Mas não diga apenas “Não sei”. Diga “Vou descobrir”.</li>
+          <li><strong>“If you can get the customer to believe...”</strong><br>Se você conseguir fazer o cliente acreditar...</li>
+          <li><strong>“I will have my assistant call you.”</strong><br>Vou pedir ao meu assistente que ligue para você.</li>
+          <li><strong>“I'm wondering if it's too late to get this jacket dry-cleaned by tomorrow.”</strong><br>Gostaria de saber se já é tarde demais para mandar lavar este paletó a seco até amanhã.</li>
+          <li><strong>“Our customers always remember what you do more than what you say, so don't let them down.”</strong><br>Nossos clientes sempre se lembram mais do que você faz do que do que você diz; por isso, não os decepcione.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2>
+      <div class="vocab-grid">
+        <div class="vocab">
+          <div class="vocab-head"><h3>knowledgeable</h3><button type="button" class="vocab-say" data-czk-say="knowledgeable" aria-label="Ouvir a pronúncia de knowledgeable" aria-pressed="false" title="Ouvir knowledgeable">&#128266;</button></div>
+          <p><em>(pt) bem informado; que tem conhecimento</em><br><small>Adjetivo para quem conhece bem um assunto ou produto.<br><strong>“Be knowledgeable.”</strong> — Tenha conhecimento do que você oferece.<br><em>Know</em> = saber; <em>knowledge</em> = conhecimento.</small></p>
+        </div>
+        <div class="vocab green">
+          <div class="vocab-head"><h3>reliable</h3><button type="button" class="vocab-say" data-czk-say="reliable" aria-label="Ouvir a pronúncia de reliable" aria-pressed="false" title="Ouvir reliable">&#128266;</button></div>
+          <p><em>(pt) confiável</em><br><small>Alguém ou algo em que se pode confiar. No atendimento, envolve cumprir os combinados.<br><strong>“Be reliable.”</strong> — Seja confiável.<br><em>Rely on</em> = confiar em; contar com.</small></p>
+        </div>
+        <div class="vocab yellow">
+          <div class="vocab-head"><h3>let down</h3><button type="button" class="vocab-say" data-czk-say="let down" aria-label="Ouvir a pronúncia de let down" aria-pressed="false" title="Ouvir let down">&#128266;</button></div>
+          <p><em>(pt) decepcionar; deixar na mão</em><br><small>Não corresponder ao que alguém esperava de você.<br><strong>“Don't let them down.”</strong> — Não os decepcione.<br>Com pronome, ele fica no meio: <em>let them down</em>.</small></p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2>
+      <div class="outline-card">
+        <h3 style="margin-top:0;">Atendimento e relacionamento</h3>
+        <ul>
+          <li><strong>customer service</strong> — atendimento ao cliente; inclui orientação e suporte.</li>
+          <li><strong>customer / client</strong> — cliente.</li>
+          <li><strong>customer satisfaction</strong> — satisfação do cliente.</li>
+          <li><strong>loyal customer</strong> — cliente fiel.</li>
+          <li><strong>treat</strong> — tratar; <em>treat our customers well</em> = tratar bem nossos clientes.</li>
+          <li><strong>build relationships</strong> — construir relacionamentos.</li>
+          <li><strong>recommend</strong> — recomendar.</li>
+          <li><strong>colleagues</strong> — colegas de trabalho.</li>
+          <li><strong>come back for more</strong> — voltar para comprar ou utilizar o serviço novamente.</li>
+          <li><strong>crucial / success</strong> — fundamental / sucesso.</li>
+        </ul>
+        <h3>Qualidade, conhecimento e solução de problemas</h3>
+        <ul>
+          <li><strong>awesome</strong> — incrível; excelente.</li>
+          <li><strong>first-rate</strong> — de primeira qualidade.</li>
+          <li><strong>knowledge / knowledgeable</strong> — conhecimento / bem informado.</li>
+          <li><strong>expertise</strong> — conhecimento especializado; domínio de um assunto.</li>
+          <li><strong>rely on / reliable</strong> — confiar em / confiável.</li>
+          <li><strong>count on</strong> — contar com.</li>
+          <li><strong>advice</strong> — conselho; orientação.</li>
+          <li><strong>find out</strong> — descobrir; buscar uma informação.</li>
+          <li><strong>let someone down</strong> — decepcionar alguém.</li>
+          <li><strong>promise</strong> — prometer; promessa.</li>
+          <li><strong>make a mistake / apologize</strong> — cometer um erro / pedir desculpas.</li>
+          <li><strong>offer a solution</strong> — oferecer uma solução.</li>
+          <li><strong>complaint / address a complaint</strong> — reclamação / lidar com uma reclamação.</li>
+          <li><strong>likely to</strong> — com probabilidade de; propenso a.</li>
+        </ul>
+        <h3>Serviços e causativos</h3>
+        <ul>
+          <li><strong>repair / repaired</strong> — consertar / consertado.</li>
+          <li><strong>deliver / delivered</strong> — entregar / entregue.</li>
+          <li><strong>dry-clean / dry-cleaned</strong> — lavar a seco / lavado a seco.</li>
+          <li><strong>shorten / lengthen</strong> — encurtar / alongar.</li>
+          <li><strong>dress / skirt</strong> — vestido / saia.</li>
+          <li><strong>jacket / inches</strong> — jaqueta ou paletó / polegadas.</li>
+          <li><strong>appliance / vacuum / microwave</strong> — eletrodoméstico / aspirador de pó / micro-ondas.</li>
+          <li><strong>assistant</strong> — assistente.</li>
+          <li><strong>convince / believe</strong> — convencer / acreditar.</li>
+          <li><strong>have someone do something</strong> — pedir ou providenciar que alguém faça algo.</li>
+          <li><strong>get someone to do something</strong> — conseguir que alguém faça algo.</li>
+          <li><strong>have/get something done</strong> — providenciar que algo seja feito.</li>
+        </ul>
+        <h3>Estimativas, cálculos e conversa</h3>
+        <ul>
+          <li><strong>weigh / weight / heavy</strong> — pesar / peso / pesado.</li>
+          <li><strong>grams / kilos / medal</strong> — gramas / quilos / medalha.</li>
+          <li><strong>revenue</strong> — faturamento; receita.</li>
+          <li><strong>fiscal year / on average / per minute</strong> — ano fiscal / em média / por minuto.</li>
+          <li><strong>million / dollars</strong> — milhão / dólares.</li>
+          <li><strong>times / divided by</strong> — vezes / dividido por.</li>
+          <li><strong>back-to-back</strong> — em sequência, um após o outro.</li>
+          <li><strong>napkin math</strong> — cálculo rápido e aproximado, como uma conta em um guardanapo.</li>
+          <li><strong>last minute / urgent</strong> — de última hora / urgente.</li>
+          <li><strong>pick it up / at lunchtime</strong> — buscar; retirar / na hora do almoço.</li>
+          <li><strong>first thing tomorrow</strong> — amanhã logo cedo; como primeira tarefa.</li>
+          <li><strong>by the way / I owe you one</strong> — a propósito / fico te devendo essa.</li>
+          <li><strong>fans / goalkeeper</strong> — torcedores / goleiro.</li>
+          <li><strong>cap / stinky</strong> — boné / fedido.</li>
+          <li><strong>regret / regretted</strong> — arrepender-se / arrependeu-se; também é o particípio.</li>
+          <li><strong>passport / themselves</strong> — passaporte / eles mesmos; elas mesmas.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2 style="margin-bottom:8px;">🚨 Correções importantes</h2>
+      <div class="outline-card">
+        <p style="margin-top:0;color:var(--muted);font-size:.9rem;">Ajustes da sua fala e da leitura, seguidos dos pontos retomados na revisão do desafio.</p>
+        <p><strong>1. Perguntar o significado de uma palavra</strong><br><span style="color:#c53030;">❌ “What's revenue means?”</span><br><span style="color:#276749;">✅ <strong>“What does revenue mean?”</strong></span><br>Com <em>does</em>, o verbo principal fica na forma base: <em>mean</em>. <em>Revenue</em> significa faturamento ou receita.</p>
+        <p><strong>2. Quantidade e moeda</strong><br><span style="color:#c53030;">❌ “Two million dollar.”</span><br><span style="color:#276749;">✅ <strong>“Two million dollars.”</strong></span><br>Depois de um número, <em>million</em> permanece sem <em>s</em>; a moeda vai para o plural: <em>dollars</em>.</p>
+        <p><strong>3. Enviar algo para alguém</strong><br><span style="color:#c53030;">❌ “I will send it for you in WhatsApp.”</span><br><span style="color:#276749;">✅ <strong>“I'll send it to you on WhatsApp.”</strong></span><br>Use <em>to you</em> para o destinatário e <em>on WhatsApp</em> para a plataforma.</p>
+        <p><strong>4. Verbo depois de will</strong><br><span style="color:#c53030;">❌ “A customer who will recommended our products...”</span><br><span style="color:#276749;">✅ <strong>“A customer who will recommend our products...”</strong></span><br>Na leitura, apareceu <em>recommended</em> depois de <em>will</em>. O modal pede a forma base: <em>recommend</em>.</p>
+        <p><strong>5. Knowledge é substantivo; knowledgeable é adjetivo</strong><br><span style="color:#c53030;">❌ “Be knowledge.”</span><br><span style="color:#276749;">✅ <strong>“Be knowledgeable.”</strong></span><br><em>Knowledge</em> é “conhecimento”. Para dizer que a pessoa conhece bem o assunto, use <em>knowledgeable</em>. Treine com o botão de áudio acima.</p>
+        <p><strong>6. Pronúncia na leitura</strong><br><span style="color:#c53030;">❌ Trocar “success” por “sources” no trecho sobre atendimento.</span><br><span style="color:#276749;">✅ <strong>“Great customer service is crucial to our success.”</strong></span><br><em>Success</em> significa “sucesso”, com força na segunda sílaba. Também vale reler <em>promise</em> com atenção à pronúncia trabalhada em aula.</p>
+        <p><strong>7. Causativo ativo × passivo — revisão</strong><br><span style="color:#c53030;">❌ Classificar “get the customer to believe” como passivo.</span><br><span style="color:#276749;">✅ <strong>É ativo:</strong> o cliente é quem acredita.</span><br><em>Get + pessoa + to + verbo</em>: <em>get the customer to believe</em>.<br><strong>É passivo:</strong> <em>have a microwave delivered</em>. O micro-ondas recebe a ação de ser entregue; por isso usamos <em>delivered</em>.<br>💡 Compare: <em>I have my assistant deliver it</em> × <em>I have it delivered</em>.</p>
+        <p><strong>8. Have causativo não é automaticamente present perfect — revisão</strong><br><span style="color:#c53030;">❌ Interpretar “I will have my laptop repaired tomorrow” como present perfect.</span><br><span style="color:#276749;">✅ <strong>É um causativo no futuro:</strong> vou providenciar o conserto amanhã.</span><br>Em <em>have + objeto + particípio</em>, há um serviço feito por outra pessoa. Em <em>have/has + particípio</em>, como <em>he has lost</em>, temos o present perfect. Observe a estrutura inteira.</p>
+        <p style="margin-bottom:0;"><strong>9. Tempo encerrado × consequência atual — revisão do desafio</strong><br><span style="color:#c53030;">❌ “I have visited Japan last year.”</span><br><span style="color:#276749;">✅ <strong>“I visited Japan last year.”</strong></span><br><em>Last year</em> indica um período concluído. Já <em>“He has lost his passport, so he can't travel today”</em> destaca a consequência que ainda existe no presente.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2>
+      <div class="media-row">
+        <a class="media-btn" href="https://youtu.be/qfBSjJ8HBxU" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a>
+      </div>
+    </section>
+
+    <section class="speaking" aria-label="Distribuição de fala">
+      <h2>🗣️ Tempo de Fala</h2>
+      <table class="talk-table">
+        <thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead>
+        <tbody>
+          <tr class="row-teacher"><td class="talk-label">César (Professor)</td><td class="talk-percent">65%</td><td class="talk-time">~27 minutos</td></tr>
+          <tr class="row-student"><td class="talk-label">Gu</td><td class="talk-percent">35%</td><td class="talk-time">~15 minutos</td></tr>
+        </tbody>
+      </table>
+      <p style="margin:10px 0 0;color:var(--muted);font-size:.85rem;">Estimativa baseada na duração dos trechos identificados na transcrição, incluindo fala em português e leitura em voz alta. Pausas e áudio do material não entram no cálculo.</p>
+    </section>
+
+    <section>
+      <h2 style="margin-bottom:8px;">📝 Homework</h2>
+      <div class="homework">
+        <p style="margin-top:0;"><strong>Revisão sugerida para consolidar a aula:</strong></p>
+        <ul style="margin:0 0 6px 18px;padding:0;font-size:.94rem;color:var(--muted);">
+          <li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana e ouça as três palavras-chave.</li>
+          <li>Releia os trechos <em>Be knowledgeable</em> e <em>Be reliable</em> da página 20. Marque as estruturas com <em>have</em> e <em>get</em> e identifique quem faz ou recebe cada ação.</li>
+          <li>Escreva três frases sobre o seu trabalho: uma com <strong>have + pessoa + verbo</strong>, outra com <strong>get + pessoa + to + verbo</strong> e outra com <strong>have + objeto + particípio</strong>.</li>
+          <li>Pratique uma resposta de atendimento usando <em>“I'll find out”</em> e uma solução para um problema de entrega.</li>
+          <li>Nas atividades disponíveis no app, tente responder primeiro e depois confira a correção, anotando a regra que explica cada ajuste.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer><p style="margin:18px 0 0;">© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer>
+</article>
+</div>
+
+<script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Resumo Pós-Aula — Felipe Nemeth — 10/26/2026 — CZK English</title>
+<style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+*{box-sizing:border-box;}
+body{color:#374151;line-height:1.6;}
+h1{line-height:1.3;}h2{font-size:1.16rem;color:#0f1724;line-height:1.35;}
+h3{font-size:1rem;color:#14532D;}
+.header-title{display:flex;gap:10px;align-items:center;}
+.badge{white-space:nowrap;}.actions .btn{font-family:inherit;font-size:.82rem;line-height:1.35;}
+.outline-card p{margin:0 0 12px;}.outline-card p:last-child{margin-bottom:0;}
+.outline-card ul{margin:8px 0;padding-left:22px;}.outline-card li{margin-bottom:8px;}
+.vocab{min-width:190px;}.vocab p{color:#4b5563;}
+.grammar-table{width:100%;border-collapse:collapse;font-size:.92rem;margin:12px 0;}
+.grammar-table th,.grammar-table td{padding:10px;text-align:left;border:1px solid var(--border);vertical-align:top;}
+.grammar-table th{background:#E7F6EC;color:#14532D;}
+.correction{padding:12px 0;border-bottom:1px solid var(--border);}
+.correction:first-child{padding-top:0;}.correction:last-child{border-bottom:0;padding-bottom:0;}
+.correction p{margin:4px 0;}.wrong{color:#b91c1c;}.right{color:#166534;}
+.note{color:var(--muted);font-size:.86rem;}.homework li{margin-bottom:8px;}
+@media(max-width:720px){.wrap{padding:20px 12px;}header{flex-direction:column;}
+.header-title{flex-wrap:wrap;}.actions{width:100%;}.actions .btn{width:100%;justify-content:center;}
+.vocab{min-width:0;}.talk-table{font-size:.82rem;}.talk-table th,.talk-table td{padding:8px 5px;}
+.grammar-table th,.grammar-table td{padding:8px 6px;}}
+@media print{html,body{height:auto;background:#fff;}.wrap{display:block;min-height:0;padding:0;}
+.card{max-width:none;box-shadow:none;border:0;padding:0;}.actions,.vocab-say{display:none;}
+.vocab,.correction,.homework,.speaking,tr{break-inside:avoid;}h2,h3{break-after:avoid;}
+.media-btn{background:#fff!important;color:#14532D!important;border:1px solid #DCF0E3!important;}}
+</style></head>
+<body><div class="wrap"><article class="card" role="main">
+<header><div><div class="header-title"><span class="badge">PÓS-AULA</span><h1>Gerúndio, infinitivo e expressões sobre leitura</h1></div><div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Felipe Nemeth &nbsp;•&nbsp; <strong>Data:</strong> 10/26/2026</div></div><div class="actions"><button type="button" class="btn" data-czk-action="print">Imprimir / Salvar PDF</button></div></header>
+<main><section class="panel"><p style="margin:0;font-weight:600;color:#14532D;"><em>Felipe, nesta aula você praticou opiniões e estimativas em inglês e retomou expressões sobre leitura. O foco gramatical foi escolher entre verbo com -ing e infinitivo com to, aprendendo combinações completas como hooked on reading e want to speak.</em></p></section><section><h2>📘 Resumo da Aula</h2><div class="outline-card">
+<p><strong>Conversa e relato no passado.</strong> Você começou contando que seu filho machucou um dedo do pé enquanto brincava com uma cadeira e que vocês foram ao hospital. Esse relato trouxe vocabulário de partes do corpo e a necessidade de marcar ações passadas: <em>broke</em>, <em>fell</em> e <em>took</em>. Depois, a conversa sobre eleições e debates serviu para expressar opiniões, comparar resultados e comentar escolhas. Uma palavra explicada foi <strong>former</strong>, que indica uma função exercida anteriormente, como em <em>former president</em> e <em>former lawyer</em>.</p>
+<p><strong>Rotina de estudo e estimativas.</strong> César mostrou o acompanhamento de tempo de estudo e constância no app e pediu que você observe se o tempo registrado corresponde aproximadamente ao período em que estudou. No jogo Fermi, vocês estimaram quantas pessoas falam português como primeira língua, a população dos países que integravam a União Soviética e o total de dentes das pessoas em um estádio lotado. A prática envolveu leitura, hipóteses, contas e números grandes. Você chegou ao melhor resultado do jogo até aquele momento na turma, segundo o comentário do professor.</p>
+<p><strong>Retomada da página 27: leitura.</strong> O diálogo do livro tratava de hábitos de leitura, livros físicos e digitais e preferências literárias. Foram retomadas as expressões <em>I can't put it down</em> (não consigo parar de ler), <em>I'm not big on…</em> (não sou muito fã de…), <em>hooked on reading</em> (viciado em ler) e <em>better off asking…</em> (seria melhor perguntar…). O objetivo foi reconhecer o sentido do bloco inteiro, sem traduzir palavra por palavra.</p>
+<p><strong>Quando usar -ing ou to + verbo?</strong> A forma do segundo verbo depende da combinação em que ele aparece. <em>Enjoy</em> pede <strong>-ing</strong>; <em>want</em> pede <strong>to + verbo base</strong>; <em>like</em> aceita as duas formas em muitos contextos. A aula enfatizou a repetição de blocos frequentes para tornar essa escolha mais natural.</p>
+<table class="grammar-table"><thead><tr><th>Combinação</th><th>Modelo para lembrar</th></tr></thead><tbody>
+<tr><td><strong>enjoy / avoid / keep / suggest + -ing</strong></td><td><em>enjoy reading</em> — gostar de ler<br><em>avoid speaking</em> — evitar falar</td></tr>
+<tr><td><strong>want / decide / hope / would like + to + verbo</strong></td><td><em>I want to speak.</em> — Quero falar.<br><em>Would you like to speak?</em> — Você gostaria de falar?</td></tr>
+<tr><td><strong>like + -ing ou to + verbo</strong></td><td><em>I like swimming.</em> / <em>I like to swim.</em><br>As duas podem expressar que você gosta de nadar.</td></tr>
+<tr><td><strong>preposição + -ing</strong></td><td><em>hooked on reading</em><br><em>crazy about cooking</em><br><em>look forward to speaking</em></td></tr>
+</tbody></table>
+<p><strong>O ponto decisivo: existem dois usos de to.</strong> Em <em>I want <strong>to speak</strong></em>, o <em>to</em> marca o infinitivo. Já em <em>I look forward <strong>to speaking</strong></em> e <em>object <strong>to speaking</strong></em>, ele é uma preposição que faz parte da expressão. Se vier um verbo imediatamente após essa preposição, use <strong>-ing</strong>. Aprenda <em>look forward to</em> como um bloco, assim como <em>think about</em>, <em>talk about</em> e <em>hooked on</em>.</p>
+<p><strong>-ing não significa sempre “estar fazendo”.</strong> Em <em>I enjoy reading</em>, a atividade é “ler”; não estamos dizendo “eu estou lendo”. Além disso, <em>better off + -ing</em> é uma combinação própria: <em>You'd be better off asking…</em> = seria melhor você perguntar. Evite transformar todos os verbos com partículas numa regra única: o importante é identificar a construção de cada expressão.</p>
+</div></section><section><h2>💬 Frases usadas em aula</h2><div class="outline-card"><p class="note">Frases da conversa e dos exemplos trabalhados em aula, com pontuação e contrações normalizadas.</p><ul><li><strong lang="en">Did you watch the debate?</strong><br>Você assistiu ao debate?</li><li><strong lang="en">It’s just strange, really strange.</strong><br>É simplesmente estranho, muito estranho.</li><li><strong lang="en">How many people live in those?</strong><br>Quantas pessoas moram nesses países?</li><li><strong lang="en">I can’t put it down.</strong><br>Não consigo largar o livro / parar de ler.</li><li><strong lang="en">When I was her age, I was totally hooked on reading.</strong><br>Quando eu tinha a idade dela, era completamente viciado em ler.</li><li><strong lang="en">She’s always up on the list of bestsellers.</strong><br>Ela está sempre por dentro da lista dos livros mais vendidos.</li><li><strong lang="en">I like to swim.</strong><br>Eu gosto de nadar.</li><li><strong lang="en">I like swimming.</strong><br>Eu gosto de nadar.</li><li><strong lang="en">I want to speak.</strong><br>Eu quero falar.</li><li><strong lang="en">Would you like to speak?</strong><br>Você gostaria de falar?</li><li><strong lang="en">I am crazy about cooking.</strong><br>Eu adoro cozinhar / sou apaixonado por cozinhar.</li></ul></div></section><section><h2>⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3 lang="en">hooked on</h3><button type="button" class="vocab-say" data-czk-say="hooked on" aria-label="Ouvir a pronúncia de hooked on" aria-pressed="false" title="Ouvir hooked on">&#128266;</button></div><p><em>viciado em; muito envolvido com</em></p><p>Expressa grande interesse ou vontade de continuar uma atividade. Antes de outro verbo, use -ing.</p><p><strong lang="en">I was totally hooked on reading.</strong><br><small>Eu era completamente viciado em ler.</small></p></div><div class="vocab green"><div class="vocab-head"><h3 lang="en">better off</h3><button type="button" class="vocab-say" data-czk-say="better off" aria-label="Ouvir a pronúncia de better off" aria-pressed="false" title="Ouvir better off">&#128266;</button></div><p><em>em uma situação melhor; seria melhor</em></p><p>Indica uma alternativa mais vantajosa. Para recomendar uma ação, use better off + -ing.</p><p><strong lang="en">You’d be better off asking my sister.</strong><br><small>Seria melhor você perguntar à minha irmã.</small></p></div><div class="vocab yellow"><div class="vocab-head"><h3 lang="en">look forward to</h3><button type="button" class="vocab-say" data-czk-say="look forward to" aria-label="Ouvir a pronúncia de look forward to" aria-pressed="false" title="Ouvir look forward to">&#128266;</button></div><p><em>aguardar com expectativa; estar ansioso por</em></p><p>Expressa expectativa positiva. O to é preposição: se vier um verbo depois, use -ing.</p><p><strong lang="en">I look forward to speaking.</strong><br><small>Estou ansioso para falar.</small></p></div></div></section><section><h2>📚 Vocabulário completo da aula</h2><div class="outline-card"><h3>Leitura e preferências</h3><ul><li><strong lang="en">reading</strong> — leitura; ler, quando usado como nome de atividade</li><li><strong lang="en">printed books / digital books</strong> — livros impressos / livros digitais</li><li><strong lang="en">nonfiction</strong> — não ficção</li><li><strong lang="en">bestseller / list of bestsellers</strong> — livro mais vendido / lista dos livros mais vendidos</li><li><strong lang="en">can’t put it down</strong> — não conseguir largar um livro envolvente</li><li><strong lang="en">not be big on</strong> — não gostar muito de; não ser muito fã de</li><li><strong lang="en">be hooked on / be addicted to</strong> — estar viciado em; seguido de -ing quando vem outro verbo</li><li><strong lang="en">be up on</strong> — estar por dentro de; estar atualizado sobre</li><li><strong lang="en">be better off + -ing</strong> — ser melhor fazer determinada coisa</li></ul><h3>Blocos com -ing, infinitivo e preposição</h3><ul><li><strong lang="en">enjoy / dislike / don’t mind + -ing</strong> — gostar de / não gostar de / não se importar de fazer algo</li><li><strong lang="en">avoid / keep / practice / quit + -ing</strong> — evitar / continuar / praticar / parar de fazer algo</li><li><strong lang="en">discuss / suggest + -ing</strong> — discutir / sugerir fazer algo</li><li><strong lang="en">feel like + -ing</strong> — estar com vontade de fazer algo</li><li><strong lang="en">agree / choose / decide + to + verbo</strong> — concordar / escolher / decidir fazer algo</li><li><strong lang="en">expect / hope / learn / want / wish + to + verbo</strong> — esperar / ter esperança de / aprender a / querer / desejar fazer algo</li><li><strong lang="en">would like to + verbo</strong> — gostaria de fazer algo</li><li><strong lang="en">like / hate / begin / continue</strong> — verbos vistos como exemplos que admitem -ing ou infinitivo em vários contextos</li><li><strong lang="en">can’t stand</strong> — não suportar; combinação comum: can’t stand doing something</li><li><strong lang="en">be crazy about + -ing</strong> — adorar uma atividade; ser apaixonado por ela</li><li><strong lang="en">talk about / think about / worry about</strong> — falar sobre / pensar sobre / preocupar-se com</li><li><strong lang="en">object to / be opposed to + -ing</strong> — opor-se a / ser contrário a fazer algo</li><li><strong lang="en">look forward to + -ing</strong> — aguardar com expectativa uma atividade futura</li></ul><h3>Números e jogo de estimativas</h3><ul><li><strong lang="en">first language</strong> — primeira língua; língua materna</li><li><strong lang="en">population / country / countries</strong> — população / país / países</li><li><strong lang="en">million / half a million</strong> — milhão / meio milhão; após um número exato, million não recebe -s</li><li><strong lang="en">three hundred and fifty million</strong> — trezentos e cinquenta milhões</li><li><strong lang="en">sold out</strong> — com todos os ingressos vendidos; esgotado</li><li><strong lang="en">seat / adult / teeth</strong> — assento / adulto / dentes; o singular de teeth é tooth</li><li><strong lang="en">small countries</strong> — países pequenos</li><li><strong lang="en">easier / the best result / beat a result</strong> — mais fácil / o melhor resultado / superar um resultado</li></ul><h3>Conversa, acontecimentos e opiniões</h3><ul><li><strong lang="en">finger / toe</strong> — dedo da mão / dedo do pé</li><li><strong lang="en">thumb / index finger / middle finger / pinky</strong> — polegar / indicador / dedo médio / mindinho</li><li><strong lang="en">break → broke / fall → fell / take → took</strong> — quebrar → quebrou / cair → caiu / levar → levou</li><li><strong lang="en">election / first round / second round</strong> — eleição / primeiro turno / segundo turno</li><li><strong lang="en">vote / debate / speech</strong> — voto ou votar / debate / discurso</li><li><strong lang="en">lose → lost</strong> — perder → perdeu</li><li><strong lang="en">former</strong> — ex-; que ocupava um cargo ou função anteriormente</li><li><strong lang="en">senator / Senate / lawyer</strong> — senador / Senado / advogado</li><li><strong lang="en">scenario / change one’s opinion</strong> — cenário / mudar de opinião</li></ul></div></section><section><h2>🚨 Correções importantes</h2><div class="outline-card"><p class="note">Trechos do aluno foram abreviados para destacar o ponto de revisão. As frases completas em verde mostram formas naturais de expressar a mesma ideia.</p><div class="correction"><p><strong>1. Dedo do pé: toe</strong></p><p class="wrong">❌ …his finger… the feet…</p><p class="right">✅ <strong>My son broke his toe.</strong></p><p>Para um dedo do pé, use toe. Finger é dedo da mão; foot é um pé e feet é o plural. A frase completa significa: “Meu filho quebrou o dedo do pé”.</p></div><div class="correction"><p><strong>2. Passado de fall</strong></p><p class="wrong">❌ …fall on his finger.</p><p class="right">✅ <strong>The chair fell on his toe.</strong></p><p>Ao contar o acidente já ocorrido, use fell, passado de fall. A cadeira é o sujeito da ação; toe mantém o sentido de dedo do pé.</p></div><div class="correction"><p><strong>3. Números exatos: million sem -s</strong></p><p class="wrong">❌ 250… millions. / 3 or 4 hundred millions.</p><p class="right">✅ <strong>250 million. / 300 or 400 million.</strong></p><p>Após um número exato, million e hundred ficam no singular. Para uma quantidade vaga, use millions of people: milhões de pessoas.</p></div><div class="correction"><p><strong>4. Comparativo de easy</strong></p><p class="wrong">❌ …was more easier.</p><p class="right">✅ <strong>It was easier.</strong></p><p>Easier já significa “mais fácil”. Não acrescente more. Para esta palavra, pratique a forma mais comum: easy → easier.</p></div><div class="correction"><p><strong>5. Sentido de crazy about</strong></p><p class="wrong">❌ I’m crazy about cooking. → Estou doido para cozinhar.</p><p class="right">✅ <strong>I’m crazy about cooking. → Eu adoro cozinhar.</strong></p><p>Crazy about descreve entusiasmo ou gosto pela atividade. Não significa apenas vontade de cozinhar naquele momento. About é preposição, por isso vem cooking.</p></div><div class="correction"><p><strong>6. Falar de população</strong></p><p class="wrong">❌ I don’t know how many people has on the Russia today.</p><p class="right">✅ <strong>I don’t know how many people live in Russia today.</strong></p><p>Use people live para “pessoas moram”. Outra opção é how many people there are in Russia. Use in Russia, sem the antes de Russia.</p></div><div class="correction"><p><strong>7. Preposição com scenario</strong></p><p class="wrong">❌ On this scenario…</p><p class="right">✅ <strong>In this scenario…</strong></p><p>A combinação natural para “nesse cenário” é in this scenario. Memorize a expressão inteira.</p></div><div class="correction"><p><strong>8. Lose ou lost?</strong></p><p class="wrong">❌ …lost or lose is better?</p><p class="right">✅ <strong>He lost some votes.</strong></p><p>Você perguntou qual forma usar ao comentar um debate já ocorrido. Use lost no passado; lose é a forma base.</p></div><p style="margin-top:14px;"><strong>💡 Para fixar a gramática:</strong> <em>enjoy reading</em> • <em>want to read</em> • <em>look forward to reading</em>. Essas três combinações mostram que não basta olhar a palavra <em>to</em>: é preciso reconhecer a expressão inteira.</p></div></section><section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/UK-9x3SDxR4" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section><section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead><tbody><tr class="row-teacher"><td><span class="talk-label">César (Professor)</span></td><td><span class="talk-percent">72%</span></td><td class="talk-time">~31 minutos</td></tr><tr class="row-student"><td><span class="talk-label">Felipe Nemeth</span></td><td><span class="talk-percent">28%</span></td><td class="talk-time">~12 minutos</td></tr></tbody></table><p class="note" style="margin-bottom:0;">Estimativa baseada na duração dos trechos atribuídos a cada participante na transcrição, incluindo português e inglês. As pausas não entram na conta. A parte final teve bastante explicação gramatical.</p></section><section><h2>📝 Homework</h2><div class="homework">
+<p style="margin-top:0;"><strong>📌 Revisão sugerida a partir desta aula</strong></p>
+<ol style="padding-left:22px;">
+<li><strong>Leia este pós-aula de 2 a 3 vezes durante a semana.</strong> Em cada leitura, repita em voz alta os três destaques e ouça os botões de pronúncia.</li>
+<li><strong>Escreva seis frases pessoais:</strong> duas com <em>enjoy + -ing</em>, duas com <em>want to + verbo</em> e duas com <em>look forward to + -ing</em>. Pense em leitura, trabalho ou lazer.</li>
+<li><strong>Grave um áudio de 45 a 60 segundos sobre leitura.</strong> Diga o que você gosta de ler, se prefere livros impressos ou digitais e qual atividade está ansioso para fazer. Inclua <em>I'm not big on…</em> ou <em>I'm hooked on…</em>, se fizer sentido para você.</li>
+<li><strong>Treine os números:</strong> leia em voz alta <em>250 million</em>, <em>350 million</em> e <em>half a million</em>. Depois, contraste <em>It was easy</em> com <em>It was easier</em>.</li>
+</ol>
+<p style="margin-bottom:0;"><strong>Combinado em aula:</strong> ao estudar no app, observe aproximadamente quanto tempo você ficou e confira se o registro se aproxima desse tempo. Se notar diferença, avise o César.</p>
+</div></section></main>
+<footer><p style="margin:18px 0 0 0;">© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer>
+</article></div>
+<script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+</script>
+</body></html>
