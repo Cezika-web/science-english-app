@@ -1,5 +1,7 @@
-// Plano de R$100 — o Caminho: uma trilha em ordem cronológica em que a AULA do mês
-// libera de 5 a 6 tarefas, e o material de estudo vem dentro de cada tarefa.
+// Science Lab — o Caminho: uma trilha em ordem cronológica em que a AULA do mês libera
+// as tarefas do mês (agrupadas em semanas). O material é o LIVRO (a aluna faz o exercício
+// com o livro aberto e responde aqui) e os PÓS-AULAS dela; o app só traz as perguntas, que
+// são nossas — o texto e as imagens do livro nunca são copiados.
 //
 // Este arquivo só entra em cena quando o aluno tem `plano` no cadastro ou quando um
 // administrador abre o app com ?planoteste=1 (prévia: nada é gravado no banco, o
@@ -12,17 +14,28 @@ const PLANO_ADMINS = ['cmo.sep@gmail.com', 'czkenglish@gmail.com'];
 const PLANO_WHATS_PADRAO = '5515996371614';
 const PLANO_COR = '#7C3AED';
 
-/* ───────── conteúdo: Connectivity 1 · Unit 4 (o mesmo do exemplo-unidade-conn1-u04.json) ───────── */
+/* ───────── conteúdo: Connectivity 1 · Unit 4 (p. 37–48) ───────── */
 const PLANO_UNIDADE_4 = {
   id: 'conn1-u04',
   titulo: 'Talking about People',
   livro: 'Connectivity 1 · Unit 4 · p. 37–48',
+  semanas: ['Família', 'Presente simples', 'Comparar pessoas', 'Semelhanças e tendências'],
   temas: {
     'do-does': { rotulo: 'Presente simples: do / does', palavras: ['simple present', 'presente simples', 'do/does', 'does', 'auxiliar', 'forma base'] },
     'comparativos': { rotulo: 'Comparativos', palavras: ['comparativ', 'comparative', 'than', 'more', 'better', 'worse'] },
     'familia': { rotulo: 'Família e estado civil', palavras: ['family', 'família', 'in-law', 'in-laws', 'divorced', 'estado civil', 'cousin', 'niece', 'nephew'] },
   },
   estudos: {
+    'familia': {
+      titulo: 'Parentes por casamento (-in-law)', tema: 'familia',
+      blocos: [
+        { t: 'p', x: 'Família + adjetivos de personalidade = descrições completas.' },
+        { t: 'tab', cab: ['Imediata', 'Estendida', 'Por casamento'], lin: [['parents, brother, sister', 'uncle, aunt, cousin, niece, nephew', 'mother-in-law, father-in-law']] },
+        { t: 'ex', en: 'My uncle is hardworking, but my aunt is more outgoing.', pt: 'Meu tio é trabalhador, mas minha tia é mais extrovertida.' },
+        { t: 'dica', x: '**-in-law** = parente por casamento: o pai do seu marido é seu *father-in-law*.' },
+      ],
+      teste: { p: 'O pai do seu marido é seu ___.', o: ['father-in-law', 'grandfather'], c: 0, ok: 'Isso mesmo!', no: 'Parente por casamento leva -in-law: father-in-law.' },
+    },
     'do-does': {
       titulo: 'Presente simples: do ou does?', tema: 'do-does',
       blocos: [
@@ -43,38 +56,98 @@ const PLANO_UNIDADE_4 = {
       ],
       teste: { p: 'My sister is ___ than me.', o: ['funnier', 'more funny'], c: 0, ok: 'Certo! Funny termina em y → funnier.', no: 'Funny termina em y: troca por ier → funnier.' },
     },
-    'familia': {
-      titulo: 'Família e descrição de pessoas', tema: 'familia',
-      blocos: [
-        { t: 'p', x: 'Família + adjetivos de personalidade = descrições completas.' },
-        { t: 'tab', cab: ['Imediata', 'Estendida', 'Por casamento'], lin: [['parents, brother, sister', 'uncle, aunt, cousin, niece, nephew', 'mother-in-law, father-in-law']] },
-        { t: 'ex', en: 'My uncle is hardworking, but my aunt is more outgoing.', pt: 'Meu tio é trabalhador, mas minha tia é mais extrovertida.' },
-        { t: 'dica', x: '**-in-law** = parente por casamento: o pai do seu marido é seu *father-in-law*.' },
-      ],
-      teste: { p: 'O pai do seu marido é seu ___.', o: ['father-in-law', 'grandfather'], c: 0, ok: 'Isso mesmo!', no: 'Parente por casamento leva -in-law: father-in-law.' },
-    },
   },
-  vocab: [['niece', 'sobrinha'], ['nephew', 'sobrinho'], ['cousin', 'primo(a)'], ['mother-in-law', 'sogra'], ['divorced', 'divorciado(a)'], ['single', 'solteiro(a)'],
-    ['hardworking', 'trabalhador(a)'], ['outgoing', 'extrovertido(a)'], ['athletic', 'atlético(a)'], ['funny', 'engraçado(a)'], ['younger', 'mais novo(a)'], ['older', 'mais velho(a)']],
+  vocab: {
+    familia: [['grandmother', 'avó'], ['grandfather', 'avô'], ['grandson', 'neto'], ['granddaughter', 'neta'], ['aunt', 'tia'], ['uncle', 'tio'], ['cousin', 'primo(a)'],
+      ['niece', 'sobrinha'], ['nephew', 'sobrinho'], ['mother-in-law', 'sogra'], ['father-in-law', 'sogro'], ['son-in-law', 'genro'], ['sister-in-law', 'cunhada'], ['brother-in-law', 'cunhado']],
+    civil: [['single', 'solteiro(a)'], ['engaged', 'noivo(a)'], ['married', 'casado(a)'], ['separated', 'separado(a)'], ['divorced', 'divorciado(a)'], ['widowed', 'viúvo(a)'], ['ex-husband', 'ex-marido'], ['ex-wife', 'ex-esposa']],
+    adjetivos: [['intelligent', 'inteligente'], ['athletic', 'atlético(a)'], ['friendly', 'simpático(a)'], ['quiet', 'quieto(a), calado(a)'], ['funny', 'engraçado(a)'],
+      ['hard-working', 'trabalhador(a)'], ['shy', 'tímido(a)'], ['outgoing', 'extrovertido(a)'], ['younger', 'mais novo(a)'], ['older', 'mais velho(a)']],
+  },
   jogos: {
-    memoria: [['niece', 'sobrinha'], ['nephew', 'sobrinho'], ['cousin', 'primo(a)'], ['aunt', 'tia'], ['divorced', 'divorciado(a)'], ['hardworking', 'trabalhador(a)']],
+    memoria: [['niece', 'sobrinha'], ['nephew', 'sobrinho'], ['aunt', 'tia'], ['uncle', 'tio'], ['cousin', 'primo(a)'], ['grandson', 'neto']],
     relampago: [
       { f: '___ your sister live here?', o: ['Do', 'Does'], c: 1 }, { f: 'My cousins ___ not work on Sundays.', o: ['do', 'does'], c: 0 },
-      { f: 'She ___ two nieces.', o: ['has', 'have'], c: 0 }, { f: 'He is ___ than his brother.', o: ['taller', 'more tall'], c: 0 },
-      { f: 'My sister is ___ than me.', o: ['funnier', 'more funny'], c: 0 }, { f: '___ they have any cousins?', o: ['Do', 'Does'], c: 0 },
-      { f: 'She is ___ hardworking than me.', o: ['more', 'most'], c: 0 }, { f: 'My brother ___ not like soccer.', o: ['do', 'does'], c: 1 },
+      { f: 'She ___ two nieces.', o: ['has', 'have'], c: 0 }, { f: '___ they have any kids?', o: ['Do', 'Does'], c: 0 },
+      { f: 'My uncle ___ in Miami.', o: ['live', 'lives'], c: 1 }, { f: 'He ___ like hip-hop.', o: ["don't", "doesn't"], c: 1 },
+      { f: 'Where ___ your in-laws live?', o: ['do', 'does'], c: 0 }, { f: 'What ___ her ex-husband do?', o: ['do', 'does'], c: 1 },
     ],
     montar: [
-      { pt: 'Sua irmã mora em Miami?', w: ['Does', 'your', 'sister', 'live', 'in', 'Miami?'] },
       { pt: 'Meu irmão é mais alto que meu pai.', w: ['My', 'brother', 'is', 'taller', 'than', 'my', 'father.'] },
-      { pt: 'Meus primos não trabalham aos domingos.', w: ['My', 'cousins', "don't", 'work', 'on', 'Sundays.'] },
+      { pt: 'Minha irmã é mais engraçada que eu.', w: ['My', 'sister', 'is', 'funnier', 'than', 'me.'] },
+      { pt: 'Seu tio é mais velho que sua tia?', w: ['Is', 'your', 'uncle', 'older', 'than', 'your', 'aunt?'] },
+    ],
+    forca: [{ w: 'cousin', d: 'primo(a)' }, { w: 'nephew', d: 'sobrinho' }, { w: 'divorced', d: 'divorciado(a)' }, { w: 'outgoing', d: 'extrovertido(a)' }, { w: 'married', d: 'casado(a)' }],
+  },
+  // t: 'mc' (escolha), 'vf' (verdadeiro/falso), 'gap' (digitar). Perguntas nossas, com gabarito.
+  perguntas: {
+    'livro-38': [
+      { t: 'mc', q: 'Kim e Matt são casados. Para o Matt, a Kim é a ___.', o: ['wife', 'mother', 'sister'], c: 0 },
+      { t: 'mc', q: 'Amy é filha da Kim. Então Amy é a ___ da Kim.', o: ['daughter', 'niece', 'sister'], c: 0 },
+      { t: 'mc', q: 'Para o Luke, a Amy é a ___.', o: ['sister', 'cousin', 'niece'], c: 0 },
+      { t: 'mc', q: 'Judy é mãe da Kim. Para o Luke e a Amy, a Judy é a ___.', o: ['aunt', 'grandmother', 'mother-in-law'], c: 1 },
+      { t: 'mc', q: 'Para a Judy e o Bill, o Luke é o ___.', o: ['nephew', 'son-in-law', 'grandson'], c: 2 },
+      { t: 'mc', q: 'Bill é pai da Kim. Para o Matt (marido da Kim), o Bill é o ___.', o: ['father-in-law', 'grandfather', 'uncle'], c: 0 },
+      { t: 'mc', q: 'Nina é irmã da Kim. Para o Luke e a Amy, a Nina é a ___.', o: ['grandmother', 'aunt', 'cousin'], c: 1 },
+      { t: 'mc', q: 'Beth e Jake são filhos da Nina. Para o Luke e a Amy, eles são ___.', o: ['cousins', 'brothers', 'nephews'], c: 0 },
+      { t: 'gap', q: 'Para a Kim, a Beth (filha da irmã dela) é a sua ___ (em inglês).', a: ['niece'], exp: 'Filha do irmão ou da irmã = niece; filho = nephew.' },
+    ],
+    'livro-39': [
+      { t: 'mc', q: 'Emi diz que é “an only child”. Isso quer dizer que ela…', o: ['não tem irmãos', 'tem muitos irmãos', 'tem só um irmão'], c: 0 },
+      { t: 'mc', q: '“Tons of cousins” quer dizer…', o: ['nenhum primo', 'muitos primos', 'só dois primos'], c: 1 },
+      { t: 'mc', q: '“Keep in touch” quer dizer…', o: ['manter contato', 'brigar', 'morar junto'], c: 0 },
+      { t: 'mc', q: '“Get together” quer dizer…', o: ['se despedir', 'se encontrar', 'se mudar'], c: 1 },
+      { t: 'mc', q: '“Drop by” quer dizer…', o: ['fazer uma visita rápida', 'cair no chão', 'telefonar'], c: 0 },
+      { t: 'mc', q: 'Se alguém é “super outgoing”, essa pessoa é…', o: ['um pouco tímida', 'muito extrovertida', 'muito quieta'], c: 1 },
+      { t: 'mc', q: 'Quantos primos a Emi tem do lado do pai?', o: ['3', '12', '15'], c: 0 },
+      { t: 'mc', q: 'Quantos anos tem a bisavó da Emi?', o: ['19', '81', '91'], c: 2 },
+      { t: 'mc', q: 'Quem é mais extrovertida: a Emi ou a bisavó dela?', o: ['a Emi', 'a bisavó'], c: 1 },
+    ],
+    'posaula-do': [
+      { t: 'mc', q: 'Em “My sister does the laundry”, o does é…', o: ['o verbo principal “fazer”', 'o auxiliar da pergunta', 'parte do sujeito'], c: 0 },
+      { t: 'mc', q: 'Qual frase está certa?', o: ["My sister doesn't the laundry.", "My sister doesn't does the laundry.", "My sister doesn't do the laundry."], c: 2 },
+      { t: 'mc', q: 'Depois de does/doesn’t (auxiliar), o verbo principal fica…', o: ['na forma base', 'com -s', 'no passado'], c: 0 },
+      { t: 'gap', q: '___ your brother work on Sundays?', a: ['does'], exp: 'Com he/she/it (your brother = he) a pergunta começa com Does.' },
+      { t: 'mc', q: 'Qual pergunta está certa?', o: ['How long a banana peel does take to decompose?', 'How long does a banana peel take to decompose?', 'How long does a banana peel takes to decompose?'], c: 1 },
+    ],
+    'livro-44': [
+      { t: 'vf', q: 'Paula e Rosie são gêmeas idênticas.', c: true },
+      { t: 'vf', q: 'Jonah e Brandon se parecem muito fisicamente.', c: false, exp: 'No texto, os amigos não têm dificuldade em distingui-los.' },
+      { t: 'mc', q: 'Quem é mais extrovertido?', o: ['Brandon', 'Jonah'], c: 1 },
+      { t: 'mc', q: 'Que estilo de música o Brandon prefere?', o: ['jazz', 'heavy metal', 'classical'], c: 0 },
+      { t: 'mc', q: 'Que estilo de música Paula e Rosie adoram?', o: ['jazz', 'heavy metal', 'classical'], c: 2 },
+      { t: 'vf', q: 'Jonah e Brandon têm gostos parecidos para comida.', c: true },
+      { t: 'mc', q: 'Quem é mais alto e mais atlético?', o: ['Jonah', 'Brandon'], c: 0 },
+      { t: 'mc', q: 'Segundo o texto, gêmeos idênticos…', o: ['sempre são iguais em tudo', 'geralmente se parecem, mas nem todos', 'nunca se parecem'], c: 1 },
+      { t: 'gap', q: 'Jonah is ___ than Brandon. (friendly)', a: ['friendlier', 'more friendly'], exp: 'Friendly termina em y: friendlier.' },
+    ],
+    'livro-46': [
+      { t: 'mc', q: '“Single-parent household” é uma casa com…', o: ['um só pai ou mãe', 'só avós', 'muitos primos'], c: 0 },
+      { t: 'mc', q: '“Multi-generational household” é uma casa onde moram…', o: ['só jovens', 'várias gerações da família', 'só duas pessoas'], c: 1 },
+      { t: 'mc', q: '“Trend” quer dizer…', o: ['tendência', 'tradição', 'tamanho'], c: 0 },
+      { t: 'mc', q: '“Children leave home when they get a job.” Isso quer dizer que eles saem de casa quando…', o: ['arrumam um emprego', 'perdem o emprego', 'terminam a escola'], c: 0 },
+      { t: 'gap', q: 'Families are ___ than before. (small)', a: ['smaller'], exp: 'Small + er = smaller.' },
+      { t: 'mc', q: 'Single-parent households are ___ common today.', o: ['more', 'most', 'morer'], c: 0 },
+    ],
+    'teste': [
+      { t: 'mc', q: 'Does she ___ here?', o: ['work', 'works'], c: 0 },
+      { t: 'mc', q: 'My cousins ___ not live in Brazil.', o: ['do', 'does'], c: 0 },
+      { t: 'mc', q: 'My brother is ___ than me.', o: ['taller', 'more tall'], c: 0 },
+      { t: 'mc', q: 'My sister is ___ than my mother. (funny)', o: ['funnier', 'more funny'], c: 0 },
+      { t: 'mc', q: 'She is ___ athletic than her brother.', o: ['less', 'least'], c: 0 },
+      { t: 'mc', q: 'Como se diz “sobrinho” em inglês?', o: ['nephew', 'niece'], c: 0 },
+      { t: 'mc', q: 'O pai da sua esposa é seu ___.', o: ['father-in-law', 'grandfather'], c: 0 },
+      { t: 'mc', q: 'He ___ two cousins.', o: ['has', 'have'], c: 0 },
+      { t: 'mc', q: 'Qual está certa?', o: ['Does he works here?', 'Does he work here?'], c: 1 },
+      { t: 'mc', q: 'Better é o comparativo de…', o: ['good', 'bad'], c: 0 },
     ],
   },
+  agoraPosso: ['Responder a boas e más notícias', 'Descrever e comparar pessoas', 'Descrever semelhanças e diferenças', 'Falar de tendências em famílias'],
 };
 
-/* ───────── caminho de exemplo (prévia e ponto de partida do plano) ───────── */
+/* ───────── o caminho do mês (a aula libera estas 20 tarefas) ───────── */
 const PLANO_PREVIA = {
-  nome: 'Science Connect',
+  nome: 'Science Lab',
   curso: 'Connectivity 1',
   unidade: PLANO_UNIDADE_4,
   aulas: [
@@ -83,16 +156,42 @@ const PLANO_PREVIA = {
   ],
   pacotes: [
     { aula: 'a0', titulo: 'Talking about People', tarefas: [
-      { id: 't1', tipo: 'estudo', ref: 'do-does', titulo: 'Presente simples: do ou does?', sub: 'Estudo + teste · 6 min', ic: '📖' },
-      { id: 't2', tipo: 'estudo', ref: 'comparativos', titulo: 'Comparativos', sub: 'Estudo + teste · 6 min', ic: '⚖️' },
-      { id: 't3', tipo: 'estudo', ref: 'familia', titulo: 'Família e descrição', sub: 'Estudo + teste · 5 min', ic: '👨‍👩‍👧' },
-      { id: 't4', tipo: 'vocab', titulo: 'Vocabulário', sub: '12 palavras com áudio', ic: '🔤' },
-      { id: 't5', tipo: 'jogos', titulo: 'Jogos', sub: '3 jogos para fixar', ic: '🎮' },
-      { id: 't6', tipo: 'atividades', titulo: 'Atividades e extras', sub: 'Corrija ao terminar', ic: '✏️' },
+      // Semana 1 · Família (p. 37–39)
+      { id: 't1', sem: 0, tipo: 'livro', ref: 'livro-38', ic: '📘', titulo: 'Livro: a família da Kim', sub: 'p. 38 · exercício A', pagina: 'p. 38 — exercício A',
+        oQue: 'Abra o livro na página 38 e olhe as fotos da família da Kim. Depois responda aqui, em vez de escrever no livro.' },
+      { id: 't2', sem: 0, tipo: 'vocab', ref: 'familia', ic: '🔤', titulo: 'Vocabulário: família', sub: '14 palavras com áudio' },
+      { id: 't3', sem: 0, tipo: 'estudo', ref: 'familia', ic: '👨‍👩‍👧', titulo: 'Parentes por casamento', sub: 'Estudo + teste · 5 min' },
+      { id: 't4', sem: 0, tipo: 'jogo', formato: 'memoria', ic: '🃏', titulo: 'Jogo: memória da família', sub: 'Palavra e significado' },
+      { id: 't5', sem: 0, tipo: 'livro', ref: 'livro-39', ic: '💬', titulo: 'Livro: a conversa Kyla e Emi', sub: 'p. 39 · Zoom-In', pagina: 'p. 39 — Zoom-In',
+        oQue: 'Leia a conversa de Kyla e Emi na página 39 (se quiser, ouça o áudio do livro). Depois responda aqui.' },
+      // Semana 2 · Presente simples (p. 40–41)
+      { id: 't6', sem: 1, tipo: 'vocab', ref: 'civil', ic: '💍', titulo: 'Vocabulário: estado civil', sub: '8 palavras · p. 40' },
+      { id: 't7', sem: 1, tipo: 'estudo', ref: 'do-does', ic: '📖', titulo: 'Do ou does?', sub: 'Estudo + teste · 6 min' },
+      { id: 't8', sem: 1, tipo: 'posaula', ref: 'posaula-do', tema: 'do-does', ic: '📄', titulo: 'Reler a sua aula', sub: 'do / does · 5 perguntas',
+        oQue: 'Releia o pós-aula que explicou do/does (veja abaixo) e responda.' },
+      { id: 't9', sem: 1, tipo: 'jogo', formato: 'relampago', ic: '⚡', titulo: 'Jogo: do ou does?', sub: 'Responda rápido' },
+      { id: 't10', sem: 1, tipo: 'extra', ic: '🗣️', titulo: 'Falar: boas e más notícias', sub: 'Extras · grave sua voz', pagina: 'p. 41 — modelo da conversa',
+        oQue: 'Leia a conversa-modelo da página 41 (boas e más notícias). Depois, na aba Atividades → Extras, grave você contando uma novidade boa e uma ruim de alguém da família.' },
+      // Semana 3 · Comparar pessoas (p. 42–43)
+      { id: 't11', sem: 2, tipo: 'vocab', ref: 'adjetivos', ic: '😀', titulo: 'Vocabulário: personalidade', sub: '10 palavras · p. 42' },
+      { id: 't12', sem: 2, tipo: 'estudo', ref: 'comparativos', ic: '⚖️', titulo: 'Comparativos', sub: 'Estudo + teste · 6 min' },
+      { id: 't13', sem: 2, tipo: 'atividade', ic: '✏️', titulo: 'Atividade: comparativos', sub: 'Corrija ao terminar' },
+      { id: 't14', sem: 2, tipo: 'jogo', formato: 'montar', ic: '🧩', titulo: 'Jogo: montar a frase', sub: 'Comparativos' },
+      { id: 't15', sem: 2, tipo: 'extra', ic: '🎧', titulo: 'Extra: ditado', sub: 'Listening · Daily Dictation',
+        oQue: 'Na aba Atividades → Extras, faça o ditado (Listening): ouça e escreva o que entender.' },
+      // Semana 4 · Semelhanças e tendências (p. 44–48)
+      { id: 't16', sem: 3, tipo: 'livro', ref: 'livro-44', ic: '👯', titulo: 'Livro: as gêmeas', sub: 'p. 44 · leitura', pagina: 'p. 44 — leitura “Are twins always alike?”',
+        oQue: 'Leia o texto sobre os dois pares de gêmeos na página 44. Depois responda aqui.' },
+      { id: 't17', sem: 3, tipo: 'extra', ic: '✍️', titulo: 'Escrever: duas pessoas', sub: 'p. 45 · Extras', pagina: 'p. 45 — Writing',
+        oQue: 'Escreva de 4 a 6 frases comparando duas pessoas da sua família (use comparativos). Faça na aba Atividades → Extras.' },
+      { id: 't18', sem: 3, tipo: 'jogo', formato: 'forca', ic: '🔠', titulo: 'Jogo: forca', sub: 'Vocabulário da unidade' },
+      { id: 't19', sem: 3, tipo: 'livro', ref: 'livro-46', ic: '🏠', titulo: 'Livro: tendências', sub: 'p. 46–47', pagina: 'p. 46–47 — rádio e pesquisa',
+        oQue: 'Na página 46, ouça o programa de rádio do livro; na 47, veja a pesquisa sobre famílias. Depois responda aqui.' },
+      { id: 't20', sem: 3, tipo: 'teste', ref: 'teste', ic: '🏁', titulo: 'Mini-teste da unidade', sub: '10 perguntas · selo' },
     ] },
     { aula: 'a1', futuro: true, titulo: 'Eating in Restaurants', tarefas: [
-      { id: 'f1', ic: '📖', titulo: 'Estudo' }, { id: 'f2', ic: '📖', titulo: 'Estudo' }, { id: 'f3', ic: '📖', titulo: 'Estudo' },
-      { id: 'f4', ic: '🔤', titulo: 'Vocabulário' }, { id: 'f5', ic: '🎮', titulo: 'Jogos' }, { id: 'f6', ic: '✏️', titulo: 'Atividades' },
+      { id: 'f1', ic: '📘', titulo: 'Livro' }, { id: 'f2', ic: '🔤', titulo: 'Vocabulário' }, { id: 'f3', ic: '📖', titulo: 'Estudo' },
+      { id: 'f4', ic: '🎮', titulo: 'Jogo' }, { id: 'f5', ic: '✏️', titulo: 'Atividade' },
     ] },
   ],
 };
@@ -115,6 +214,8 @@ function PlanoDataCurta(iso) { const [, m, d] = iso.split('-'); return `${d}/${m
 function PlanoEmDias(iso) { const n = PlanoDias(iso); return n === 0 ? 'hoje' : n === 1 ? 'amanhã' : n < 0 ? `há ${-n} dias` : `em ${n} dias`; }
 function PlanoEmbaralhar(a) { const r = [...a]; for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; }
 function PlanoNorm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+// Resposta digitada: ignora maiúscula, ponto, vírgula e espaço sobrando (só o "I" importa, e isso a gente não cobra aqui).
+function PlanoNormResp(s) { return PlanoNorm(s).replace(/[’‘`]/g, "'").replace(/[.,!?;:"]/g, '').replace(/\s+/g, ' ').trim(); }
 function PlanoTituloAula(p) { return typeof postTitle === 'function' ? postTitle(p) : (p.title || 'Pós-aula'); }
 function PlanoTextoAula(p) { return PlanoNorm(String(p.html || '').replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]+>/g, ' ')); }
 function PlanoWhatsLink(student, texto) {
@@ -201,30 +302,34 @@ function PlanoNav({ active, onChange }) {
 /* ───────── o Caminho (trilha) ───────── */
 const PLANO_X = [170, 214, 240, 214, 170, 126];
 function PlanoLayout(cfg, feitas, ativOk) {
-  const itens = []; let y = 14; let primeiraAberta = true; let idxNo = 0;
-  const feitaT = t => t.tipo === 'atividades' ? ativOk : !!feitas[t.id];
+  const itens = []; let y = 14; let primeiraAberta = true; let n = 0;
+  const feitaT = t => t.tipo === 'atividade' ? ativOk : !!feitas[t.id];
   cfg.aulas.forEach(aula => {
-    const pacAnt = cfg.pacotes.find(p => p.aula === aula.id);
+    const pac = cfg.pacotes.find(p => p.aula === aula.id);
     itens.push({ k: 'aula', aula, x: 170, y: y + 52, h: 120, r: 42 }); y += 120;
-    if (!pacAnt) return;
-    itens.push({ k: 'cab', pac: pacAnt, y: y + 8, h: 64 }); y += 64;
-    pacAnt.tarefas.forEach((t, i) => {
+    if (!pac) return;
+    itens.push({ k: 'cab', pac, y: y + 8, h: 64 }); y += 64;
+    let sem = null;
+    pac.tarefas.forEach(t => {
+      if (!pac.futuro && t.sem !== undefined && t.sem !== sem) {
+        sem = t.sem;
+        itens.push({ k: 'sem', rotulo: `SEMANA ${t.sem + 1} · ${String((cfg.unidade.semanas || [])[t.sem] || '').toUpperCase()}`, y: y + 10, h: 60 }); y += 60;
+      }
       let estado;
-      if (pacAnt.futuro) estado = 'trancada';
+      if (pac.futuro) estado = 'trancada';
       else if (feitaT(t)) estado = 'feita';
       else if (primeiraAberta) { estado = 'atual'; primeiraAberta = false; }
       else estado = 'aberta';
-      itens.push({ k: 'tarefa', t, pac: pacAnt, estado, x: PLANO_X[i % PLANO_X.length], y: y + 52, h: 104, r: 32 }); y += 104;
+      itens.push({ k: 'tarefa', t, pac, estado, x: PLANO_X[n % PLANO_X.length], y: y + 52, h: 104, r: 32 }); y += 104; n++;
     });
   });
-  // a próxima aula só fica "em foco" quando todas as tarefas do pacote atual acabaram
   const nos = itens.filter(i => i.k === 'aula' || i.k === 'tarefa');
-  const proxAula = nos.find(n => n.k === 'aula' && !n.aula.feita);
-  nos.forEach(n => { if (n.k === 'aula') n.estado = n.aula.feita ? 'feita' : (primeiraAberta ? 'proxima-foco' : 'proxima'); });
-  const ultimoFeito = (() => { let u = -1; nos.forEach((n, i) => { if ((n.k === 'tarefa' && n.estado === 'feita') || (n.k === 'aula' && n.estado === 'feita')) u = i; }); return u; })();
+  const proxAula = nos.find(no => no.k === 'aula' && !no.aula.feita);
+  nos.forEach(no => { if (no.k === 'aula') no.estado = no.aula.feita ? 'feita' : (primeiraAberta ? 'proxima-foco' : 'proxima'); });
+  const ultimoFeito = (() => { let u = -1; nos.forEach((no, i) => { if (no.estado === 'feita') u = i; }); return u; })();
   const curva = (a, b) => { const dy = (b.y - a.y) / 2; return `C ${a.x} ${a.y + dy} ${b.x} ${b.y - dy} ${b.x} ${b.y}`; };
   let todo = '', feito = '';
-  nos.forEach((n, i) => { if (i === 0) { todo += `M ${n.x} ${n.y}`; feito += `M ${n.x} ${n.y}`; return; } todo += ' ' + curva(nos[i - 1], n); if (i <= ultimoFeito) feito += ' ' + curva(nos[i - 1], n); });
+  nos.forEach((no, i) => { if (i === 0) { todo += `M ${no.x} ${no.y}`; feito += `M ${no.x} ${no.y}`; return; } todo += ' ' + curva(nos[i - 1], no); if (i <= ultimoFeito) feito += ' ' + curva(nos[i - 1], no); });
   return { itens, altura: y + 40, todo, feito: ultimoFeito > 0 ? feito : '', proxAula };
 }
 
@@ -237,8 +342,12 @@ function PlanoNo({ it, onTarefa, onAula }) {
         {fut ? '🔒 DEPOIS DA AULA · ' : '📘 '}{it.pac.titulo}
       </div></div>;
   }
-  const dir = it.x >= 200;
-  const lblEsq = dir;
+  if (it.k === 'sem') {
+    return <div style={{ position: 'absolute', left: 0, right: 0, top: it.y, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ flex: 1, height: 1, background: '#DDD6FE' }} /><div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: .7, color: '#6D28D9' }}>{it.rotulo}</div><div style={{ flex: 1, height: 1, background: '#DDD6FE' }} />
+    </div>;
+  }
+  const lblEsq = it.x >= 200;
   const rotulo = { position: 'absolute', top: it.y - 22, width: `${((lblEsq ? it.x - it.r - 12 : W - (it.x + it.r + 8) - 4) / W) * 100}%`,
     left: lblEsq ? `${(4 / W) * 100}%` : `${((it.x + it.r + 8) / W) * 100}%`, textAlign: lblEsq ? 'right' : 'left', pointerEvents: 'none' };
   const nodeBase = { position: 'absolute', top: it.y - it.r, left: `${(it.x / W) * 100}%`, transform: 'translateX(-50%)', width: it.r * 2, height: it.r * 2, border: 0, fontFamily: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 };
@@ -280,8 +389,9 @@ function PlanoCaminho({ cfg, feitas, ativOk, onTarefa, onAula, onComoFunciona })
   const ref = React.useRef(null);
   const L = React.useMemo(() => PlanoLayout(cfg, feitas, ativOk), [cfg, feitas, ativOk]);
   const tarefas = cfg.pacotes.filter(p => !p.futuro).flatMap(p => p.tarefas);
-  const feitasN = tarefas.filter(t => t.tipo === 'atividades' ? ativOk : !!feitas[t.id]).length;
+  const feitasN = tarefas.filter(t => t.tipo === 'atividade' ? ativOk : !!feitas[t.id]).length;
   const prox = L.proxAula && L.proxAula.aula;
+  const selo = !!feitas['selo:' + cfg.unidade.id];
   React.useEffect(() => { const el = ref.current && ref.current.querySelector('[data-atual="1"]'); if (el) el.scrollIntoView({ block: 'center' }); }, []);
   return (
     <div className="scroll-area" ref={ref} style={{ padding: '14px 16px 24px', position: 'relative' }}>
@@ -293,6 +403,7 @@ function PlanoCaminho({ cfg, feitas, ativOk, onTarefa, onAula, onComoFunciona })
           <div style={{ fontSize: 12.5, fontWeight: 800 }}>{feitasN}/{tarefas.length}</div>
         </div>
         <div style={{ fontSize: 12.5, fontWeight: 700, opacity: .92, marginTop: 8 }}>{prox ? `Próxima aula ${PlanoEmDias(prox.data)} · ${PlanoDataCurta(prox.data)}${prox.hora ? ' às ' + prox.hora : ''}` : 'Sem aula marcada'}</div>
+        {selo && <div style={{ marginTop: 10, display: 'inline-block', background: 'rgba(255,255,255,.18)', borderRadius: 99, padding: '5px 12px', fontSize: 12, fontWeight: 800 }}>🏅 Selo da Unit 4 conquistado</div>}
       </div>
       <button onClick={onComoFunciona} style={{ display: 'block', margin: '10px auto 0', background: 'none', border: 0, color: '#5B21B6', fontWeight: 800, fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Como funciona o caminho</button>
       <div style={{ position: 'relative', width: '100%', maxWidth: 340, margin: '6px auto 0', height: L.altura }}>
@@ -337,7 +448,86 @@ function PlanoFolha({ onClose, children }) {
   );
 }
 
-/* ───────── tarefa: estudo (o material mora aqui) ───────── */
+/* ───────── perguntas com correção automática (livro, pós-aula e mini-teste) ───────── */
+function PlanoPerguntas({ perguntas, minimo = 0, rotuloFim = 'Concluir tarefa ✓', onFim }) {
+  const [i, setI] = React.useState(0); const [sel, setSel] = React.useState(null); const [txt, setTxt] = React.useState('');
+  const [ok, setOk] = React.useState(null); const [acertos, setAcertos] = React.useState(0);
+  const total = perguntas.length; const fim = i >= total; const q = perguntas[i];
+  const responder = valor => {
+    if (ok !== null || !q) return;
+    const certo = q.t === 'gap' ? q.a.map(PlanoNormResp).includes(PlanoNormResp(valor)) : valor === q.c;
+    setSel(valor); setOk(certo); if (certo) setAcertos(a => a + 1);
+  };
+  const proxima = () => { setI(i + 1); setSel(null); setTxt(''); setOk(null); };
+  const recomecar = () => { setI(0); setSel(null); setTxt(''); setOk(null); setAcertos(0); };
+  if (fim) {
+    const passou = acertos >= minimo;
+    return <div style={{ textAlign: 'center', padding: '20px 4px' }}>
+      <div style={{ fontSize: 56 }}>{passou ? '🎉' : '💪'}</div>
+      <div style={{ fontSize: 22, fontWeight: 800, margin: '4px 0' }}>{acertos} de {total} certas</div>
+      <div style={{ color: '#64748B', fontWeight: 700, fontSize: 14, margin: '0 0 16px' }}>{passou ? 'Muito bem!' : `Quase! Para passar você precisa de ${minimo}. Revise e tente de novo.`}</div>
+      {passou ? <button className="plano-btn" onClick={() => onFim(acertos, total)}>{rotuloFim}</button> : <button className="plano-btn violeta" onClick={recomecar}>Tentar de novo</button>}
+    </div>;
+  }
+  const respostaCerta = q.t === 'gap' ? q.a[0] : q.t === 'vf' ? (q.c ? 'Verdadeiro' : 'Falso') : q.o[q.c];
+  return <div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+      <div style={{ flex: 1, height: 8, borderRadius: 99, background: '#E5E7EB', overflow: 'hidden' }}><div style={{ width: `${(i / total) * 100}%`, height: '100%', background: 'linear-gradient(90deg,var(--brand),var(--brand-light))', transition: 'width .3s' }} /></div>
+      <div style={{ fontSize: 12, fontWeight: 800, color: '#64748B' }}>{i + 1}/{total}</div>
+    </div>
+    <div style={{ background: '#fff', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 18, padding: 15, fontSize: 16.5, fontWeight: 800, lineHeight: 1.4, boxShadow: '0 8px 24px rgba(15,23,42,.05)' }}>{q.q}</div>
+    {q.t === 'mc' && q.o.map((o, k) => <button key={k} disabled={ok !== null} onClick={() => responder(k)} className={`plano-opt ${ok !== null ? (k === q.c ? 'ok' : k === sel ? 'no' : '') : ''}`}>{o}</button>)}
+    {q.t === 'vf' && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 7 }}>{[[true, 'Verdadeiro'], [false, 'Falso']].map(([v, l]) => <button key={l} disabled={ok !== null} onClick={() => responder(v)} className={`plano-opt ${ok !== null ? (v === q.c ? 'ok' : v === sel ? 'no' : '') : ''}`} style={{ textAlign: 'center', marginTop: 0 }}>{l}</button>)}</div>}
+    {q.t === 'gap' && <div style={{ marginTop: 10 }}>
+      <input value={txt} disabled={ok !== null} onChange={e => setTxt(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && txt.trim()) responder(txt); }} placeholder="Digite a resposta" autoCapitalize="none" autoCorrect="off" spellCheck="false"
+        style={{ width: '100%', border: `2px solid ${ok === null ? '#CBD5E1' : ok ? '#22C55E' : '#F87171'}`, borderRadius: 14, padding: '13px 14px', fontSize: 16, fontWeight: 700, fontFamily: 'inherit', outline: 'none', background: ok === null ? '#fff' : ok ? '#F0FDF4' : '#FEF2F2' }} />
+      {ok === null && <button className="plano-btn" style={{ marginTop: 10 }} disabled={!txt.trim()} onClick={() => responder(txt)}>Conferir</button>}
+    </div>}
+    {ok !== null && <div style={{ marginTop: 12, padding: '11px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, background: ok ? '#F0FDF4' : '#FEF2F2', color: ok ? '#14532D' : '#7F1D1D', border: `1px solid ${ok ? '#BBF7D0' : '#FECACA'}` }}>
+      {ok ? '✔ Isso!' : `✘ A resposta certa é: ${respostaCerta}`}{q.exp ? <div style={{ fontWeight: 600, marginTop: 3 }}>{q.exp}</div> : null}
+    </div>}
+    {ok !== null && <button className="plano-btn" style={{ marginTop: 12 }} onClick={proxima}>{i + 1 >= total ? 'Ver resultado' : 'Continuar ›'}</button>}
+  </div>;
+}
+
+function PlanoCartaoLivro({ t, unidade }) {
+  return <div style={{ background: 'linear-gradient(150deg,#FFFBEB,#fff)', border: '1px solid #FDE68A', borderRadius: 18, padding: 14, marginBottom: 14 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ fontSize: 34 }}>📘</div>
+      <div><div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .7, color: '#92400E' }}>NO SEU LIVRO</div>
+        <div style={{ fontSize: 15, fontWeight: 800, lineHeight: 1.25 }}>{t.pagina}</div>
+        <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B' }}>{unidade.livro}</div></div>
+    </div>
+    <div style={{ fontSize: 13.5, fontWeight: 700, color: '#475569', lineHeight: 1.5, marginTop: 10 }}>{t.oQue}</div>
+  </div>;
+}
+
+function PlanoTarefaLivro({ t, unidade, onFeita, onClose, onAsk }) {
+  return (
+    <PlanoCamada titulo={t.titulo} sub={t.pagina} onClose={onClose} onAsk={onAsk}>
+      <PlanoCartaoLivro t={t} unidade={unidade} />
+      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: .6, color: '#64748B', margin: '0 2px 8px' }}>RESPONDA AQUI, NÃO NO LIVRO</div>
+      <PlanoPerguntas perguntas={unidade.perguntas[t.ref]} onFim={onFeita} />
+    </PlanoCamada>
+  );
+}
+
+function PlanoTarefaPosaula({ t, unidade, posaulas, onOpenPost, onFeita, onClose, onAsk }) {
+  const aulas = React.useMemo(() => PlanoAulasDoTema(unidade.temas[t.tema], posaulas || []), [t, unidade, posaulas]);
+  return (
+    <PlanoCamada titulo={t.titulo} sub="Pós-aula · suas aulas" onClose={onClose} onAsk={onAsk}>
+      <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 18, padding: 14, marginBottom: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .7, color: '#5B21B6' }}>RELEIA SUAS AULAS</div>
+        <div style={{ fontSize: 13.5, fontWeight: 700, color: '#475569', lineHeight: 1.5, margin: '4px 0 6px' }}>{t.oQue}</div>
+        {aulas.length ? aulas.map(p => <button key={p.id} onClick={() => onOpenPost(p)} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 0, padding: '6px 0 0', fontFamily: 'inherit', fontWeight: 800, fontSize: 13, color: '#5B21B6', textDecoration: 'underline', cursor: 'pointer' }}>📄 {PlanoTituloAula(p)}</button>)
+          : <div style={{ fontSize: 12.5, fontWeight: 700, color: '#64748B' }}>Você ainda não tem um pós-aula sobre este assunto. Use o estudo do caminho como referência.</div>}
+      </div>
+      <PlanoPerguntas perguntas={unidade.perguntas[t.ref]} onFim={onFeita} />
+    </PlanoCamada>
+  );
+}
+
+/* ───────── estudo (o material mora aqui) ───────── */
 function PlanoEstudo({ estudo, unidade, posaulas, onOpenPost, onFeita, onClose, onAsk }) {
   const [resp, setResp] = React.useState(null);
   const tema = unidade.temas[estudo.tema];
@@ -367,13 +557,13 @@ function PlanoEstudo({ estudo, unidade, posaulas, onOpenPost, onFeita, onClose, 
   );
 }
 
-/* ───────── tarefa: vocabulário ───────── */
+/* ───────── vocabulário ───────── */
 function PlanoFalar(texto) { try { if ('speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(texto); u.lang = 'en-US'; u.rate = .9; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } } catch (e) {} }
-function PlanoVocab({ vocab, unidade, onFeita, onClose, onAsk }) {
+function PlanoVocab({ vocab, titulo, onFeita, onClose, onAsk }) {
   const [i, setI] = React.useState(0); const [vira, setVira] = React.useState(false);
   const [en, pt] = vocab[i]; const ultimo = i === vocab.length - 1;
   return (
-    <PlanoCamada titulo="Vocabulário" sub={`${i + 1} de ${vocab.length}`} onClose={onClose} onAsk={onAsk}
+    <PlanoCamada titulo={titulo || 'Vocabulário'} sub={`${i + 1} de ${vocab.length}`} onClose={onClose} onAsk={onAsk}
       rodape={<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         <button className="plano-btn sec" disabled={i === 0} onClick={() => { setI(i - 1); setVira(false); }}>‹ Anterior</button>
         {ultimo ? <button className="plano-btn" onClick={onFeita}>Concluir ✓</button> : <button className="plano-btn" onClick={() => { setI(i + 1); setVira(false); }}>Próxima ›</button>}
@@ -389,7 +579,7 @@ function PlanoVocab({ vocab, unidade, onFeita, onClose, onAsk }) {
   );
 }
 
-/* ───────── tarefa: jogos ───────── */
+/* ───────── jogos (cada formato é uma tarefa; o conteúdo vem da unidade) ───────── */
 function PlanoJogoMemoria({ pares, onFim }) {
   const [cartas] = React.useState(() => PlanoEmbaralhar(pares.flatMap(([a, b], i) => [{ k: i, t: a }, { k: i, t: b }])));
   const [viradas, setViradas] = React.useState([]); const [achadas, setAchadas] = React.useState([]); const [jogadas, setJogadas] = React.useState(0);
@@ -460,34 +650,94 @@ function PlanoJogoMontar({ frases, onFim }) {
   </div>;
 }
 
-function PlanoJogos({ jogos, feitas, onJogoFeito, onClose, onAsk }) {
-  const [ativo, setAtivo] = React.useState(null);
-  const lista = [
-    { id: 'memoria', ic: '🃏', bg: '#DCFCE7', t: 'Family Match', d: 'Memória: palavra e significado' },
-    { id: 'relampago', ic: '⚡', bg: '#FEF3C7', t: 'Speed Quiz', d: 'Do ou does? Comparativos? Rápido!' },
-    { id: 'montar', ic: '🧩', bg: '#DBEAFE', t: 'Build It!', d: 'Monte a frase tocando nas palavras' },
-  ];
-  const sair = () => ativo ? setAtivo(null) : onClose();
-  const fim = id => () => { onJogoFeito(id); setAtivo(null); };
-  const j = lista.find(x => x.id === ativo);
+// Forca: 6 vidas por palavra; a dica é o significado em português.
+function PlanoJogoForca({ palavras, onFim }) {
+  const [i, setI] = React.useState(0); const [certas, setCertas] = React.useState([]); const [erradas, setErradas] = React.useState([]);
+  const [res, setRes] = React.useState(null); const [pontos, setPontos] = React.useState(0);
+  if (i >= palavras.length) return <div style={{ textAlign: 'center', padding: '24px 4px' }}><div style={{ fontSize: 56 }}>🔠</div><div style={{ fontSize: 22, fontWeight: 800 }}>{pontos} de {palavras.length} palavras!</div><div style={{ color: '#64748B', fontWeight: 700, margin: '4px 0 16px' }}>Bom treino de vocabulário.</div><button className="plano-btn" onClick={() => onFim(pontos)}>Concluir ✓</button></div>;
+  const alvo = palavras[i]; const w = alvo.w.toLowerCase(); const letras = 'abcdefghijklmnopqrstuvwxyz'.split('');
+  const tentar = l => {
+    if (res || certas.includes(l) || erradas.includes(l)) return;
+    if (w.includes(l)) {
+      const nc = [...certas, l]; setCertas(nc);
+      if (w.split('').every(c => nc.includes(c))) { setRes('ganhou'); setPontos(p => p + 1); }
+    } else { const ne = [...erradas, l]; setErradas(ne); if (ne.length >= 6) setRes('perdeu'); }
+  };
+  const proxima = () => { setI(i + 1); setCertas([]); setErradas([]); setRes(null); };
+  return <div>
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 800, color: '#64748B', marginBottom: 8 }}><span>Palavra {i + 1} de {palavras.length}</span><span>{'❤️'.repeat(6 - erradas.length)}{'🤍'.repeat(erradas.length)}</span></div>
+    <div style={{ background: '#fff', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 18, padding: '16px 12px', textAlign: 'center' }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B' }}>Significa: <b style={{ color: '#0F172A' }}>{alvo.d}</b></div>
+      <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: 6, marginTop: 8, fontFamily: 'ui-monospace,Menlo,monospace' }}>{w.split('').map(c => certas.includes(c) || res ? c : '_').join(' ')}</div>
+    </div>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 6, marginTop: 14 }}>{letras.map(l => { const c = certas.includes(l), e = erradas.includes(l); return <button key={l} disabled={c || e || !!res} onClick={() => tentar(l)} style={{ padding: '10px 0', borderRadius: 10, border: '1.5px solid ' + (c ? '#22C55E' : e ? '#F87171' : '#CBD5E1'), background: c ? '#DCFCE7' : e ? '#FEE2E2' : '#fff', color: c ? '#14532D' : e ? '#7F1D1D' : '#0F172A', fontWeight: 800, fontSize: 15, fontFamily: 'inherit', textTransform: 'uppercase', cursor: 'pointer', opacity: c || e ? .6 : 1 }}>{l}</button>; })}</div>
+    {res && <div style={{ marginTop: 14 }}><div style={{ textAlign: 'center', fontWeight: 800, marginBottom: 10, color: res === 'ganhou' ? '#14532D' : '#7F1D1D' }}>{res === 'ganhou' ? `✔ Isso! ${alvo.w}` : `✘ Era “${alvo.w}”`}</div><button className="plano-btn" onClick={proxima}>{i + 1 >= palavras.length ? 'Ver resultado' : 'Próxima ›'}</button></div>}
+  </div>;
+}
+
+const PLANO_JOGOS = {
+  memoria: { jogo: 'memoria', sub: 'Memória', render: (d, fim) => <PlanoJogoMemoria pares={d.memoria} onFim={fim} /> },
+  relampago: { sub: 'Relâmpago', render: (d, fim) => <PlanoJogoRelampago perguntas={d.relampago} onFim={fim} /> },
+  montar: { sub: 'Montar a frase', render: (d, fim) => <PlanoJogoMontar frases={d.montar} onFim={fim} /> },
+  forca: { sub: 'Forca', render: (d, fim) => <PlanoJogoForca palavras={d.forca} onFim={fim} /> },
+};
+function PlanoTarefaJogo({ t, unidade, onFeita, onClose, onAsk }) {
+  const g = PLANO_JOGOS[t.formato];
   return (
-    <PlanoCamada titulo={j ? j.t : 'Jogos'} sub={j ? j.d : 'Termine ao menos um para concluir a tarefa'} onClose={sair} onAsk={onAsk}>
-      {!ativo && lista.map(g => (
-        <button key={g.id} onClick={() => setAtivo(g.id)} style={{ display: 'flex', width: '100%', alignItems: 'center', gap: 12, background: '#fff', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 18, padding: 13, marginBottom: 10, fontFamily: 'inherit', textAlign: 'left', cursor: 'pointer', boxShadow: '0 8px 24px rgba(15,23,42,.06)' }}>
-          <div style={{ width: 54, height: 54, borderRadius: 16, background: g.bg, display: 'grid', placeItems: 'center', fontSize: 27, flexShrink: 0 }}>{g.ic}</div>
-          <div style={{ flex: 1 }}><div style={{ fontSize: 15, fontWeight: 800 }}>{g.t}</div><div style={{ fontSize: 12, fontWeight: 700, color: '#64748B' }}>{g.d}</div>
-            <span style={{ display: 'inline-block', marginTop: 5, fontSize: 10, fontWeight: 800, letterSpacing: .7, padding: '3px 9px', borderRadius: 99, background: feitas['t5:' + g.id] ? '#DCFCE7' : '#F5F3FF', color: feitas['t5:' + g.id] ? '#166534' : '#5B21B6' }}>{feitas['t5:' + g.id] ? 'FEITO ✓' : 'NOVO'}</span></div>
-          <span style={{ color: '#94A3B8', fontSize: 22 }}>›</span>
-        </button>))}
-      {ativo === 'memoria' && <PlanoJogoMemoria pares={jogos.memoria} onFim={fim('memoria')} />}
-      {ativo === 'relampago' && <PlanoJogoRelampago perguntas={jogos.relampago} onFim={fim('relampago')} />}
-      {ativo === 'montar' && <PlanoJogoMontar frases={jogos.montar} onFim={fim('montar')} />}
+    <PlanoCamada titulo={t.titulo} sub={g ? g.sub : ''} onClose={onClose} onAsk={onAsk}>
+      {g ? g.render(unidade.jogos, onFeita) : <div style={{ fontWeight: 700 }}>Este jogo ainda não está disponível.</div>}
+    </PlanoCamada>
+  );
+}
+
+/* ───────── vídeo (YouTube não listado ou link) ───────── */
+function PlanoTarefaVideo({ t, onFeita, onClose, onAsk }) {
+  const id = t.youtubeId; const url = t.url;
+  return (
+    <PlanoCamada titulo={t.titulo} sub={t.sub} onClose={onClose} onAsk={onAsk}
+      rodape={<button className="plano-btn" onClick={onFeita}>Já assisti ✓</button>}>
+      {id ? <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 18, overflow: 'hidden', background: '#0F172A', boxShadow: '0 12px 30px rgba(15,23,42,.2)' }}>
+          <iframe title={t.titulo} src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?rel=0&modestbranding=1`} allow="accelerometer; encrypted-media; picture-in-picture" allowFullScreen referrerPolicy="strict-origin-when-cross-origin"
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }} /></div>
+        : url ? <a href={url} target="_blank" rel="noopener noreferrer" className="plano-btn violeta" style={{ textDecoration: 'none', textAlign: 'center' }}>▶ Abrir o vídeo</a>
+        : <div style={{ background: '#fff', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: '#64748B' }}>🎬 Vídeo em breve.</div>}
+      {t.oQue && <div style={{ fontSize: 13.5, fontWeight: 700, color: '#475569', lineHeight: 1.5, marginTop: 12 }}>{t.oQue}</div>}
+    </PlanoCamada>
+  );
+}
+
+/* ───────── tarefa que se faz em Atividades → Extras ───────── */
+function PlanoTarefaExtra({ t, unidade, onAbrirExtras, onFeita, onClose, onAsk }) {
+  return (
+    <PlanoCamada titulo={t.titulo} sub={t.sub} onClose={onClose} onAsk={onAsk}
+      rodape={<button className="plano-btn" onClick={onFeita}>Já fiz ✓</button>}>
+      {t.pagina && <PlanoCartaoLivro t={{ ...t, oQue: '' }} unidade={unidade} />}
+      <div style={{ background: '#fff', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 18, padding: 15, fontSize: 14.5, fontWeight: 700, color: '#334155', lineHeight: 1.55 }}>{t.oQue}</div>
+      <button className="plano-btn violeta" style={{ marginTop: 14 }} onClick={onAbrirExtras}>🎧 Abrir os Extras</button>
+      <div style={{ fontSize: 12, fontWeight: 700, color: '#94A3B8', textAlign: 'center', marginTop: 8 }}>Em Atividades, toque na aba “Extras”.</div>
+    </PlanoCamada>
+  );
+}
+
+/* ───────── mini-teste + "Agora eu consigo" + selo ───────── */
+function PlanoTarefaTeste({ t, unidade, onFeita, onClose, onAsk }) {
+  const [fase, setFase] = React.useState('perguntas'); const [marcas, setMarcas] = React.useState({});
+  return (
+    <PlanoCamada titulo={t.titulo} sub={fase === 'perguntas' ? 'Acerte 7 ou mais para ganhar o selo' : 'Agora eu consigo…'} onClose={onClose} onAsk={onAsk}>
+      {fase === 'perguntas'
+        ? <PlanoPerguntas perguntas={unidade.perguntas[t.ref]} minimo={7} rotuloFim="Continuar ›" onFim={() => setFase('selo')} />
+        : <div>
+          <div style={{ textAlign: 'center', padding: '6px 0 16px' }}><div style={{ fontSize: 64 }}>🏅</div><div style={{ fontSize: 22, fontWeight: 800 }}>Selo da Unit 4!</div><div style={{ color: '#64748B', fontWeight: 700, fontSize: 13.5 }}>Marque o que você já consegue fazer:</div></div>
+          {unidade.agoraPosso.map(a => <button key={a} onClick={() => setMarcas(m => ({ ...m, [a]: !m[a] }))} style={{ display: 'flex', width: '100%', alignItems: 'center', gap: 12, textAlign: 'left', background: marcas[a] ? '#F0FDF4' : '#fff', border: `1.5px solid ${marcas[a] ? '#22C55E' : '#E2E8F0'}`, borderRadius: 14, padding: '12px 14px', marginBottom: 8, fontFamily: 'inherit', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>
+            <span style={{ width: 24, height: 24, borderRadius: 7, background: marcas[a] ? '#22C55E' : '#fff', border: `2px solid ${marcas[a] ? '#22C55E' : '#CBD5E1'}`, color: '#fff', display: 'grid', placeItems: 'center', fontSize: 14, flexShrink: 0 }}>{marcas[a] ? '✓' : ''}</span>{a}</button>)}
+          <button className="plano-btn" style={{ marginTop: 10 }} onClick={onFeita}>Concluir a unidade ✓</button>
+        </div>}
     </PlanoCamada>
   );
 }
 
 /* ───────── aula, dúvida (IA + WhatsApp) e boas-vindas ───────── */
-function PlanoAulaFolha({ aula, student, cfg, onClose, onAsk }) {
+function PlanoAulaFolha({ aula, student, cfg, onClose }) {
   const feita = aula.feita; const zoom = student && student.zoomLink;
   return (
     <PlanoFolha onClose={onClose}>
@@ -495,7 +745,7 @@ function PlanoAulaFolha({ aula, student, cfg, onClose, onAsk }) {
       <div style={{ fontSize: 22, fontWeight: 800, margin: '2px 0' }}>{aula.rotulo}</div>
       <div style={{ fontSize: 14, fontWeight: 700, color: '#64748B' }}>{PlanoDataCurta(aula.data)}{aula.hora ? ` às ${aula.hora}` : ''}{!feita ? ` · ${PlanoEmDias(aula.data)}` : ''}</div>
       <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 14, padding: '11px 13px', margin: '14px 0', fontSize: 13.5, fontWeight: 700, color: '#1E3A8A', lineHeight: 1.5 }}>
-        {feita ? 'Essa aula liberou as tarefas do seu caminho. Faça no seu ritmo até a próxima.' : 'Na aula de 1 hora o César revisa o seu caminho, tira dúvidas e libera as próximas 5 ou 6 tarefas.'}
+        {feita ? 'Essa aula liberou as tarefas do seu caminho. Faça no seu ritmo até a próxima.' : 'Na aula de 1 hora o César revisa o seu caminho, tira dúvidas e libera as tarefas do próximo mês.'}
       </div>
       {!feita && zoom && <a href={zoom} target="_blank" rel="noopener noreferrer" className="plano-btn" style={{ textDecoration: 'none', textAlign: 'center', marginBottom: 10, background: 'linear-gradient(180deg,#3B82F6,#1E40AF)', boxShadow: '0 8px 20px rgba(30,64,175,.28)' }}>📹 Entrar na aula (Zoom)</a>}
       <a href={PlanoWhatsLink(student, `Oi, César! Aqui é ${student.firstName || student.name || 'sua aluna'} (${cfg.nome}). Sobre a ${aula.rotulo.toLowerCase()} de ${PlanoDataCurta(aula.data)}: `)} target="_blank" rel="noopener noreferrer" className="plano-btn" style={{ textDecoration: 'none', textAlign: 'center', background: '#25D366', boxShadow: 'none', marginBottom: 10 }}>💬 Falar com o César no WhatsApp</a>
@@ -515,7 +765,9 @@ function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose }) {
       let r;
       if (cfg.previa || !onAsk) { await new Promise(res => setTimeout(res, 900)); r = { resposta: 'Boa pergunta! Depois de **do/does/don’t/doesn’t** o verbo principal fica sempre na forma base: *Does she work?* (e não *Does she works?*).\n\n(Resposta de exemplo — o assistente de verdade ainda não está ligado.)' }; }
       else r = await onAsk(pergunta, contexto);
-      setMsgs(m => [...m, { de: 'ia', x: r.resposta }]);
+      // O servidor conta as perguntas do mês e a aluna não vê contador: só este aviso ao chegar no limite.
+      if (r && r.limite) setMsgs(m => [...m, { de: 'ia', x: 'Suas perguntas chegaram ao limite mensal. Se precisar, fale com o César pelo WhatsApp.', erro: true }]);
+      else setMsgs(m => [...m, { de: 'ia', x: r.resposta }]);
     } catch (e) { setMsgs(m => [...m, { de: 'ia', x: 'Não consegui responder agora. Pergunte direto ao César no WhatsApp, ele responde assim que puder.', erro: true }]); }
     setPensando(false);
   };
@@ -526,7 +778,7 @@ function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose }) {
       <div style={{ fontSize: 18, fontWeight: 800 }}>💬 Tem uma dúvida?</div>
       <div style={{ fontSize: 12.5, fontWeight: 700, color: '#64748B', margin: '2px 0 12px' }}>{contexto ? `Sobre: ${contexto}` : 'Pergunte sobre o que está estudando.'}</div>
       <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 16, padding: 10, minHeight: 110, maxHeight: 280, overflowY: 'auto' }}>
-        {msgs.length === 0 && <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B', padding: 6 }}>Escreva a sua dúvida abaixo. O assistente responde em português, com exemplos em inglês. Se precisar do César, toque em WhatsApp.</div>}
+        {msgs.length === 0 && <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B', padding: 6 }}>Escreva a sua dúvida abaixo. O assistente responde em poucas palavras, em português, com um exemplo em inglês. Se precisar do César, toque em WhatsApp.</div>}
         {msgs.map((m, i) => <div key={i} style={{ display: 'flex', justifyContent: m.de === 'eu' ? 'flex-end' : 'flex-start', margin: '6px 0' }}><div style={{ maxWidth: '86%', padding: '9px 12px', borderRadius: 14, fontSize: 13.5, fontWeight: 600, lineHeight: 1.5, whiteSpace: 'pre-wrap', background: m.de === 'eu' ? '#7C3AED' : m.erro ? '#FEF2F2' : '#fff', color: m.de === 'eu' ? '#fff' : '#0F172A', border: m.de === 'eu' ? 0 : '1px solid #E2E8F0' }}>{m.de === 'ia' ? <PlanoMd x={m.x} /> : m.x}</div></div>)}
         {pensando && <div style={{ fontSize: 13, fontWeight: 700, color: '#64748B', padding: 6 }}>Pensando…</div>}
         <div ref={fimRef} />
@@ -546,7 +798,7 @@ function PlanoBoasVindas({ cfg, nome, onFim }) {
   const slides = [
     <><div style={{ fontSize: 60 }}>🎉</div><h2 style={{ fontSize: 26, margin: '8px 0 12px', lineHeight: 1.2 }}>{nome}, seu plano mudou!</h2><p>Agora você estuda no <b>{cfg.nome}</b>: um caminho em ordem, com o livro <b>{cfg.curso}</b>, jogos, atividades e a sua aula de 1 hora por mês com o professor César.</p><p>Suas aulas e pós-aulas <b>continuam com você</b> — agora ligados ao que você estuda.</p></>,
     <><div style={{ fontSize: 60 }}>🛤️</div><h2 style={{ fontSize: 26, margin: '8px 0 12px', lineHeight: 1.2 }}>Como o caminho funciona</h2>
-      {[['1', <>A <b>aula do mês</b> libera de 5 a 6 tarefas.</>], ['2', <>O <b>estudo está dentro de cada tarefa</b>: explicação, exemplos e teste.</>], ['3', <>Faça no seu ritmo até a próxima aula. Os jogos e extras ajudam a fixar.</>], ['4', <>Ficou com dúvida? Toque em <b>💬</b> para perguntar ou falar com o César.</>]].map(([n, t]) => <div key={n} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', background: 'rgba(255,255,255,.12)', borderRadius: 16, padding: '11px 13px', marginBottom: 9, fontSize: 14, fontWeight: 700, lineHeight: 1.4 }}><span style={{ width: 28, height: 28, borderRadius: '50%', background: '#DDD6FE', color: '#4C1D95', display: 'grid', placeItems: 'center', fontWeight: 800, flexShrink: 0 }}>{n}</span><span>{t}</span></div>)}</>,
+      {[['1', <>A <b>aula do mês</b> libera as tarefas do mês, em 4 semanas.</>], ['2', <>Muitas tarefas vêm do <b>seu livro</b>: você faz o exercício no livro e responde aqui.</>], ['3', <>Tem estudo, vocabulário, jogos e extras para fixar. Corrige na hora.</>], ['4', <>Ficou com dúvida? Toque em <b>💬</b> para perguntar ou falar com o César.</>]].map(([n, t]) => <div key={n} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', background: 'rgba(255,255,255,.12)', borderRadius: 16, padding: '11px 13px', marginBottom: 9, fontSize: 14, fontWeight: 700, lineHeight: 1.4 }}><span style={{ width: 28, height: 28, borderRadius: '50%', background: '#DDD6FE', color: '#4C1D95', display: 'grid', placeItems: 'center', fontWeight: 800, flexShrink: 0 }}>{n}</span><span>{t}</span></div>)}</>,
     <><div style={{ fontSize: 60 }}>🧭</div><h2 style={{ fontSize: 26, margin: '8px 0 12px', lineHeight: 1.2 }}>Onde ficam as coisas</h2>
       {[['🛤️', 'Caminho', 'suas tarefas, na ordem'], ['✏️', 'Atividades', 'exercícios, correção, extras e desafio'], ['📄', 'Aulas', 'todos os seus pós-aulas'], ['👤', 'Perfil', 'seus dados e ajuda']].map(([i, t, d]) => <div key={t} style={{ display: 'flex', gap: 12, alignItems: 'center', background: 'rgba(255,255,255,.12)', borderRadius: 14, padding: '9px 12px', marginBottom: 8, fontSize: 13.5, fontWeight: 700 }}><span style={{ fontSize: 22, width: 32, textAlign: 'center' }}>{i}</span><span><b style={{ display: 'block', fontSize: 14.5 }}>{t}</b>{d}</span></div>)}</>,
   ];
@@ -587,23 +839,24 @@ function PlanoConteudo({ tab, onTab, cfg, student, posaulas, activities, slots, 
   const [feitas, marcar, zerar] = usePlanoFeitas(uid);
   const chaveBV = `plano-boasvindas-v1-${uid}`;
   const [bv, setBv] = React.useState(() => { try { return !localStorage.getItem(chaveBV); } catch (e) { return false; } });
-  const [tarefa, setTarefa] = React.useState(null);   // { t, pac }
+  const [tarefa, setTarefa] = React.useState(null);
   const [aula, setAula] = React.useState(null);
-  const [duvida, setDuvida] = React.useState(null);   // { contexto }
+  const [duvida, setDuvida] = React.useState(null);
   const [aviso, setAviso] = React.useState('');
   const nome = student.firstName || String(student.name || '').split(' ')[0] || 'Olá';
   const ativOk = activities.length > 0 && activities.every(a => a.finalizada || a.status === 'corrected');
   const avisar = x => { setAviso(x); setTimeout(() => setAviso(''), 2200); };
+  const u = cfg.unidade;
 
   const abrirTarefa = (t, estado) => {
     if (estado === 'trancada') { const prox = cfg.aulas.find(a => !a.feita); avisar(`🔒 Libera depois da aula${prox ? ' de ' + PlanoDataCurta(prox.data) : ''}.`); return; }
-    if (t.tipo === 'atividades') { onTab('atividades'); return; }
+    if (t.tipo === 'atividade') { onTab('atividades'); avisar('✏️ Faça as atividades e toque em Corrigir.'); return; }
     setTarefa(t);
   };
-  const concluir = id => { marcar(id); setTarefa(null); avisar('✅ Tarefa concluída!'); };
+  const concluir = (id, extra) => { marcar(id); if (extra) marcar(extra); setTarefa(null); avisar(extra ? '🏅 Selo conquistado!' : '✅ Tarefa concluída!'); };
   const fechar = () => setTarefa(null);
   const perguntar = () => setDuvida({ contexto: tarefa ? tarefa.titulo : '' });
-  const u = cfg.unidade;
+  const f = () => concluir(tarefa.id);
 
   return (
     <>
@@ -619,9 +872,14 @@ function PlanoConteudo({ tab, onTab, cfg, student, posaulas, activities, slots, 
       {!tarefa && !aula && !duvida && tab !== 'perfil' &&
         <button onClick={() => setDuvida({ contexto: '' })} aria-label="Tirar dúvida" style={{ position: 'fixed', bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))', right: 'max(16px, calc(50vw - 224px))', zIndex: 300, width: 54, height: 54, borderRadius: '50%', border: 0, background: 'linear-gradient(150deg,#8B5CF6,#6D28D9)', color: '#fff', fontSize: 24, boxShadow: '0 10px 24px rgba(109,40,217,.4)', cursor: 'pointer' }}>💬</button>}
 
-      {tarefa && tarefa.tipo === 'estudo' && <PlanoEstudo estudo={u.estudos[tarefa.ref]} unidade={u} posaulas={posaulas} onOpenPost={onOpenPost} onFeita={() => concluir(tarefa.id)} onClose={fechar} onAsk={perguntar} />}
-      {tarefa && tarefa.tipo === 'vocab' && <PlanoVocab vocab={u.vocab} unidade={u} onFeita={() => concluir(tarefa.id)} onClose={fechar} onAsk={perguntar} />}
-      {tarefa && tarefa.tipo === 'jogos' && <PlanoJogos jogos={u.jogos} feitas={feitas} onJogoFeito={id => { marcar('t5:' + id); marcar(tarefa.id); avisar('🎮 Jogo concluído!'); }} onClose={fechar} onAsk={perguntar} />}
+      {tarefa && tarefa.tipo === 'livro' && <PlanoTarefaLivro t={tarefa} unidade={u} onFeita={f} onClose={fechar} onAsk={perguntar} />}
+      {tarefa && tarefa.tipo === 'posaula' && <PlanoTarefaPosaula t={tarefa} unidade={u} posaulas={posaulas} onOpenPost={onOpenPost} onFeita={f} onClose={fechar} onAsk={perguntar} />}
+      {tarefa && tarefa.tipo === 'estudo' && <PlanoEstudo estudo={u.estudos[tarefa.ref]} unidade={u} posaulas={posaulas} onOpenPost={onOpenPost} onFeita={f} onClose={fechar} onAsk={perguntar} />}
+      {tarefa && tarefa.tipo === 'vocab' && <PlanoVocab vocab={u.vocab[tarefa.ref]} titulo={tarefa.titulo} onFeita={f} onClose={fechar} onAsk={perguntar} />}
+      {tarefa && tarefa.tipo === 'jogo' && <PlanoTarefaJogo t={tarefa} unidade={u} onFeita={f} onClose={fechar} onAsk={perguntar} />}
+      {tarefa && tarefa.tipo === 'video' && <PlanoTarefaVideo t={tarefa} onFeita={f} onClose={fechar} onAsk={perguntar} />}
+      {tarefa && tarefa.tipo === 'extra' && <PlanoTarefaExtra t={tarefa} unidade={u} onAbrirExtras={() => { fechar(); onTab('atividades'); }} onFeita={f} onClose={fechar} onAsk={perguntar} />}
+      {tarefa && tarefa.tipo === 'teste' && <PlanoTarefaTeste t={tarefa} unidade={u} onFeita={() => concluir(tarefa.id, 'selo:' + u.id)} onClose={fechar} onAsk={perguntar} />}
       {aula && <PlanoAulaFolha aula={aula} student={student} cfg={cfg} onClose={() => setAula(null)} />}
       {duvida && <PlanoPerguntar cfg={cfg} student={student} contexto={duvida.contexto} onAsk={cfg.previa ? null : onAsk} onClose={() => setDuvida(null)} />}
       {bv && <PlanoBoasVindas cfg={cfg} nome={nome} onFim={() => { try { localStorage.setItem(chaveBV, '1'); } catch (e) {} setBv(false); }} />}

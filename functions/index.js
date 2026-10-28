@@ -2287,3 +2287,90 @@ export const ajustarCreditos = onCall(
     return { ok: true, saldoCentavos };
   }
 );
+
+
+/* ───────── Assistente de dúvidas do Science Lab ─────────
+ * A aluna do plano pergunta dentro de uma tarefa. A resposta é curtíssima de propósito
+ * (custo baixo) e o limite é de LIMITE_ASSISTENTE_MES perguntas por mês, contado AQUI no
+ * servidor em _assistenteUso/{uid}_{AAAA-MM}. A aluna não vê contador: só recebe o aviso
+ * de limite quando chega nele. Pergunta e resposta ficam em students/{uid}/duvidas (só o
+ * professor lê; a regra da subcoleção já nasce fechada para o aluno) e o custo vai para
+ * _apiUsage (tipo "assistente").
+ */
+const LIMITE_ASSISTENTE_MES = 20;
+
+const REGRAS_ASSISTENTE = `Você é o assistente de dúvidas de inglês de uma aluna brasileira do professor César (curso com o livro Connectivity, nível iniciante).
+
+RESPONDA CURTÍSSIMO: no máximo 3 frases curtas, em português, com um exemplo em inglês quando ajudar. Sem saudação, sem elogio, sem lista, sem repetir a pergunta.
+
+Só responda dúvidas de inglês e da tarefa que ela está fazendo. Se for outro assunto, diga em uma frase que só ajuda com inglês.
+Se não tiver certeza, diga para perguntar ao César pelo WhatsApp. Nunca invente regra.
+
+Siga o jeito do César: possessivo com apóstrofo depois do s (Chris') está certo; maiúscula e pontuação não são cobradas, exceto o "I"; uma frase natural que passa o mesmo sentido também está certa.`;
+
+export const perguntarAssistente = onCall(
+  {
+    region: 'southamerica-east1',
+    secrets: [ANTHROPIC_API_KEY],
+    timeoutSeconds: 60,
+    memory: '256MiB',
+    cors: [
+      'https://cezika-web.github.io',
+      /^http:\/\/localhost(:\d+)?$/,
+      /^http:\/\/127\.0\.0\.1(:\d+)?$/,
+    ],
+  },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
+
+    const pergunta = String(request.data?.pergunta || '').trim().slice(0, 300);
+    const contexto = String(request.data?.contexto || '').trim().slice(0, 120);
+    if (!pergunta) throw new HttpsError('invalid-argument', 'Escreva a sua dúvida.');
+
+    // Só quem está no plano usa (e o professor pode desligar por aluna com plano.assistente:false).
+    const alunoSnap = await db.doc(`students/${uid}`).get();
+    const aluno = alunoSnap.exists ? alunoSnap.data() : null;
+    const noPlano = aluno && aluno.plano && aluno.plano.ativo !== false && aluno.plano.assistente !== false;
+    if (!noPlano) throw new HttpsError('permission-denied', 'O assistente é exclusivo do plano.');
+
+    // Conta a pergunta ANTES de chamar a IA, numa transação: duas abas abertas não furam o limite.
+    const mes = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' }).slice(0, 7);
+    const usoRef = db.doc(`_assistenteUso/${uid}_${mes}`);
+    const liberada = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(usoRef);
+      const feitas = snap.exists ? Number(snap.data().perguntas || 0) : 0;
+      if (feitas >= LIMITE_ASSISTENTE_MES) return false;
+      tx.set(usoRef, { uid, mes, perguntas: feitas + 1, atualizadoEm: FieldValue.serverTimestamp() }, { merge: true });
+      return true;
+    });
+    if (!liberada) return { limite: true };
+
+    const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY.value() });
+    let resposta;
+    try {
+      resposta = await client.messages.create({
+        model: MODEL,
+        max_tokens: 220,
+        system: REGRAS_ASSISTENTE,
+        messages: [{
+          role: 'user',
+          content: `${contexto ? `Tarefa: ${contexto}\n` : ''}Nível: ${aluno.level || 'iniciante'}\nPergunta: ${pergunta}`,
+        }],
+      });
+    } catch (erro) {
+      // Falha nossa não pode gastar a pergunta dela.
+      await usoRef.set({ perguntas: FieldValue.increment(-1) }, { merge: true });
+      console.error('Assistente: falha na API:', erro);
+      throw new HttpsError('internal', 'Não consegui responder agora.');
+    }
+
+    const texto = (resposta.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
+    const lote = db.batch();
+    registrarUso(lote, { tipo: 'assistente', uid, escolaId: aluno.schoolId || 'science-english', uso: resposta.usage || {} });
+    lote.set(db.collection(`students/${uid}/duvidas`).doc(), { pergunta, resposta: texto, contexto, criadoEm: FieldValue.serverTimestamp() });
+    await lote.commit();
+
+    return { resposta: texto };
+  }
+);
