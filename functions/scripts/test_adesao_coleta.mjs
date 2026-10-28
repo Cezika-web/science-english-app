@@ -473,6 +473,71 @@ await e.flush();
 assert.equal(e.area('posaula'), 0);
 ok('pós-aula cego não ganha o limite de leitura (ele já conta o tempo todo, até 10 min)');
 
+// 12e) "Consultar pós-aula" dentro de uma atividade: o tempo lido é de pós-aula, não da atividade que está por baixo.
+e = ambiente(); e.U.start('u1');
+e.U.setBucket({ area: 'atividade', item: 'act_1', blind: false });
+e.avanca(10 * S); e.U.ping();                       // 10 s fazendo a atividade
+e.U.setOverlay({ area: 'posaula', item: 'pos_x', blind: false });   // abriu a consulta
+e.avanca(40 * S); e.U.ping();                       // 40 s lendo
+e.U.setOverlay(null);                               // fechou
+e.avanca(20 * S); e.U.ping();                       // 20 s de volta à atividade
+await e.flush();
+assert.equal(e.area('posaula'), 40);
+assert.equal(e.area('atividade'), 30);
+assert.equal(e.soma('items', 'pos_x'), 40);
+assert.equal(e.soma('items', 'act_1'), 30);
+assert.equal(e.soma('itemOpens', 'pos_x'), 1);
+assert.equal(e.soma('itemOpens', 'act_1'), 1);      // só a abertura de verdade; voltar da consulta não reabre a atividade
+ok('consulta ao pós-aula: o tempo vai para a leitura (área e item da pós-aula) e volta para a atividade ao fechar');
+
+e = ambiente(); e.U.start('u1');
+e.U.setBucket({ area: 'atividade', item: 'act_1', blind: false });
+e.U.setOverlay({ area: 'posaula', item: 'pos_x', blind: false });
+e.avanca(10 * S); e.U.ping();
+e.U.setBucket({ area: 'atividade', item: 'act_1', blind: false });   // o App refaz o bucket enquanto a consulta está aberta
+e.avanca(10 * S); e.U.ping();
+await e.flush();
+assert.equal(e.area('posaula'), 20);
+assert.equal(e.area('atividade'), 0);
+ok('refazer o bucket da atividade com a consulta aberta não rouba o tempo da leitura');
+
+e = ambiente(); e.U.start('u1');
+e.U.setBucket({ area: 'atividade', item: 'act_1', blind: false });
+e.U.setOverlay({ area: 'posaula', item: 'pos_x', blind: false });
+e.avanca(100 * S); e.U.ping();                      // leitura parada: aceita até 3 min
+e.U.setOverlay(null); e.U.ping();
+e.avanca(100 * S); e.U.ping();                      // atividade: 100 s passa de 60 s, descartado
+await e.flush();
+assert.equal(e.area('posaula'), 100);
+assert.equal(e.area('atividade'), 0);
+ok('na consulta vale a pausa da leitura (3 min); ao fechar volta a da atividade (60 s)');
+
+e = ambiente(); e.U.start('u1');
+e.U.setBucket({ area: 'atividade', item: 'act_1', blind: false }); e.U.ping();
+e.U.setOverlay({ area: 'posaula', item: 'pos_x', blind: false }); e.U.ping();
+e.avanca(100 * S);
+assert.deepEqual(vivo(), { gap: 100, idle: false });   // o cronômetro também segue a consulta
+e.U.setOverlay(null); e.U.ping();
+e.avanca(61 * S);
+assert.deepEqual(vivo(), { gap: 0, idle: true });
+ok('cronômetro: segue a consulta enquanto aberta e volta à regra da atividade ao fechar');
+
+e = ambiente(); e.U.start('u1');
+e.U.setBucket({ area: 'atividade', item: 'act_1', blind: false });
+e.U.setOverlay({ area: 'posaula', item: '', blind: false });        // pós-aula só com link, sem id no banco
+e.avanca(30 * S); e.U.ping();
+await e.flush();
+assert.equal(e.area('posaula'), 30);
+assert.equal(Object.keys(e.writes[0].data.items || {}).length, 0);
+ok('consulta de pós-aula sem id conta como leitura, só que sem item');
+
+e = ambiente();                                     // espelho: sem start() a consulta também não conta nem grava
+e.U.setOverlay({ area: 'posaula', item: 'pos_x', blind: false });
+e.avanca(30 * S); e.U.ping();
+await e.flush();
+assert.equal(e.writes.length, 0);
+ok('modo espelho: abrir a consulta não conta nada');
+
 // o texto do aluno e o app usam o mesmo número
 assert.equal(Number(/const READ_MS = (\d+);/.exec(html)[1]), Adesao.LEITURA_SEG * 1000);
 ok('LEITURA_SEG do adesao.js = READ_MS do cronômetro');

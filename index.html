@@ -234,6 +234,7 @@ async function getFB() {
 // Exceções, que são estudo sem encostar na tela e contam o tempo todo:
 //   gravando a própria fala, ouvindo um áudio/vídeo e lendo um pós-aula aberto
 //   por URL (iframe que não avisa movimento; vale por até 10 min por abertura).
+// "Consultar pós-aula" dentro de uma atividade conta como leitura de pós-aula (setOverlay), não como atividade.
 // Aba oculta nunca conta. O pós-aula normal roda num iframe isolado e avisa o
 // movimento por postMessage (ponte do leitor). Grava no máximo 1x por minuto em
 // students/{uid}/usage/AAAA-MM-DD, com contadores que só crescem. O modo espelho
@@ -241,7 +242,7 @@ async function getFB() {
 // Falha de gravação (regra ainda não publicada, sem rede) nunca aparece para o aluno.
 const CzkUsage = (() => {
   // Versão do app que vai junto com o uso (para saber quem ainda roda versão velha). Mantenha igual ao CACHE do sw.js.
-  const APP_BUILD = 'v42';
+  const APP_BUILD = 'v43';
   const TICK = 1000, MIN_STEP = 200, FLUSH = 60000, NEW_VISIT = 30 * 60000;
   const BLIND_CAP = 10 * 60000, HOLD_CAP = 15 * 60000, MAX_FAILS = 5;
   const READ_MS = 180000;                 // maior pausa aceita na leitura do pós-aula (igual a LEITURA_SEG do adesao.js)
@@ -251,6 +252,10 @@ const CzkUsage = (() => {
   let uid = null, running = false, tickTimer = null, flushTimer = null, fails = 0, hiddenAt = 0;
   let errW = 0, errJs = 0;                // falhas de gravação e erros do app ainda não informados ao banco
   let bucket = { area: 'outros', item: '', blind: false }, bucketSince = 0;
+  // Tela por cima da atual (a consulta ao pós-aula aberta dentro de uma atividade): enquanto existir, o tempo vai para ela
+  // e não para a tela de baixo. Fica separada do bucket porque o App refaz o bucket sempre que o estado dele muda.
+  let overlay = null;
+  const cur = () => overlay || bucket;
   let lastMove = 0;                       // último movimento confirmado (0 = nada a creditar)
   const holds = new Map();                // gravando etc.: chave -> início
   const playing = new Set();              // <audio>/<video> tocando
@@ -302,9 +307,9 @@ const CzkUsage = (() => {
     const now = Date.now();
     if (lastMove && now - lastMove < MIN_STEP) return;
     const gap = lastMove ? now - lastMove : 0;
-    const lim = limitFor(bucket);
-    if (gap > 0 && gap <= lim && visible()) credit(gap, bucket);
-    else if (gap > lim && visible() && bucket.area !== 'outros') noteLost(gap);
+    const b = cur(), lim = limitFor(b);
+    if (gap > 0 && gap <= lim && visible()) credit(gap, b);
+    else if (gap > lim && visible() && b.area !== 'outros') noteLost(gap);
     lastMove = now;
   }
   function onVisibility() {
@@ -321,7 +326,7 @@ const CzkUsage = (() => {
     playing.forEach(el => { if (!el.isConnected || el.paused || el.ended) playing.delete(el); });
     holds.forEach((since, k) => { if (now - since > HOLD_CAP) holds.delete(k); });
     // Sem movimento possível de ver: gravando, ouvindo áudio, ou lendo num iframe que não avisa.
-    if (holds.size || playing.size || (bucket.blind && now - bucketSince <= BLIND_CAP)) ping();
+    if (holds.size || playing.size || (cur().blind && now - bucketSince <= BLIND_CAP)) ping();
   }
   function setBucket(next) {
     const item = next.item || '';
@@ -329,6 +334,15 @@ const CzkUsage = (() => {
     // Abrir um pós-aula/atividade (item novo) conta como "uma abertura" dele.
     if (running && item && item !== bucket.item) { const s = slot(dayOf()); s.itemOpens[item] = (s.itemOpens[item] || 0) + 1; }
     bucket = { area: next.area || 'outros', item, blind: !!next.blind };
+    bucketSince = Date.now();
+  }
+  // Abre (ou troca) a tela por cima; `null` fecha e devolve o tempo à tela de baixo. Mesma regra do setBucket: o intervalo até
+  // aqui pertence à tela anterior, e abrir um item novo conta como uma abertura dele.
+  function setOverlay(next) {
+    ping();
+    const item = (next && next.item) || '';
+    if (running && item && item !== cur().item) { const s = slot(dayOf()); s.itemOpens[item] = (s.itemOpens[item] || 0) + 1; }
+    overlay = next ? { area: next.area || 'outros', item, blind: !!next.blind } : null;
     bucketSince = Date.now();
   }
   function hold(key) { holds.set(key, Date.now()); ping(); }
@@ -438,11 +452,11 @@ const CzkUsage = (() => {
   // isto para andar a cada segundo. Passou do limite parado, vira "parado" (idle) e esse intervalo deixa de contar.
   function live() {
     if (!running || !visible() || !lastMove) return { gap: 0, idle: false };
-    const gap = Date.now() - lastMove;
-    if (gap > limitFor(bucket)) return { gap: 0, idle: true };
-    return { gap: bucket.area === 'outros' ? 0 : gap / 1000, idle: false };
+    const gap = Date.now() - lastMove, b = cur();
+    if (gap > limitFor(b)) return { gap: 0, idle: true };
+    return { gap: b.area === 'outros' ? 0 : gap / 1000, idle: false };
   }
-  return { start, stop, ping, setBucket, hold, release, configure, flush, itemKey, pendingToday, live };
+  return { start, stop, ping, setBucket, setOverlay, hold, release, configure, flush, itemKey, pendingToday, live };
 })();
 
 function showToast(msg, ms = 3500) {
@@ -5214,6 +5228,14 @@ function PosaulaPeek({ open, activity, posaulas, onClose }) {
 
   const [sel, setSel] = useState(null);
   useEffect(() => { if (open) setSel(alvo); }, [open, alvo]);
+
+  // Ler a pós-aula pela consulta é leitura de pós-aula, não tempo da atividade que está por baixo.
+  // Na lista de escolha (nenhuma aberta ainda) o tempo segue com a atividade.
+  useEffect(() => {
+    if (!open || !sel) return undefined;
+    CzkUsage.setOverlay({ area: 'posaula', item: sel.id ? CzkUsage.itemKey('pos', sel.id) : '', blind: !sel.html });
+    return () => CzkUsage.setOverlay(null);
+  }, [open, sel]);
 
   if (!open) return null;
   const listaConsulta = fontesRevisao.length ? fontesRevisao : lista;
