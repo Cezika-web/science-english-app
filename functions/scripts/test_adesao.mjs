@@ -390,25 +390,60 @@ ok('calendário: mês certo, dias futuros travados e navegação só dentro do p
   assert.match(set, /cza-cc pre" data-cza-pick="cal" data-cza-k="2026-09-27"/);
 });
 
-ok('página de adesão: tudo reunido, dia pré-aberto e sem título repetido', () => {
+ok('página de adesão: cartão de hoje e seções fechadas com resumo; "Como essa área funciona" é a última', () => {
   const c = semMeta([uso(3, 0, 12, { pos: 6, ativ: 6 }), uso(3, 1, 6, { pos: 4, ativ: 2 })]);
-  const h = Adesao.pageHtml(c, { firstName: 'Ana', sel: '2026-10-19' });
+  const h = Adesao.pageHtml(c, { firstName: 'Ana' });
   assert.match(h, /Meta de estudo de hoje/);
-  assert.match(h, /O que dá para fazer agora/);
-  assert.equal((h.match(/data-cza-go=/g) || []).length, 3);
-  assert.match(h, /Sua semana/);
-  assert.match(h, /cza-bb hit sel" data-cza-pick="week" data-cza-k="2026-10-19"/);
-  assert.match(h, /data-cza-box="week"><div class="cza-dy">.*Segunda, 19\/10/);
-  assert.match(h, /Calendário/);
-  assert.match(h, /data-cza-cal aria-expanded="false"/);
-  assert.match(h, /<div class="cza-cal" hidden>/);
-  assert.match(h, /Esta semana/);
-  assert.match(h, /18 de 50 min|<b>18 min<\/b>/);
-  assert.match(h, /O que conta como tempo de estudo\?/);
-  assert.ok(!h.includes('data-cza-toggle'));                      // a nota já vem aberta
-  assert.ok(!h.includes('class="cza-title"'));                    // o título "Minha adesão" é da página
+  assert.equal((h.match(/data-cza-go=/g) || []).length, 3);                          // três atalhos no cartão de hoje
+  const ids = [...h.matchAll(/data-cza-sec="(\w+)"/g)].map(m => m[1]);
+  assert.deepEqual(ids, ['sem', 'cal', 'evo', 'hor', 'nota', 'ace', 'como']);
+  assert.equal((h.match(/aria-expanded="false"/g) || []).length, 7);                 // tudo fechado ao abrir
+  assert.equal((h.match(/<div class="cza-acb" hidden>/g) || []).length, 7);
+  assert.match(h, /<b>Minha semana<\/b><small>1 de 5 dias com meta · 18 min<\/small>/);
+  assert.match(h, /<b>Calendário<\/b><small>Outubro · 1 dia com meta batida<\/small>/);
+  assert.match(h, /<b>Evolução<\/b><small><em>0 de 3<\/em> semanas com a meta batida<\/small>/);          // 3 semanas fechadas desde 28/09, sem estudo nelas
+  assert.match(h, /<b>Horas de estudo<\/b><small>18 min no total · 18 min esta semana<\/small>/);
+  assert.match(h, /<b>Minha nota<\/b><small>Adesão <em style="color:#dc2626">0<\/em> · Baixa<\/small>/);        // 3 semanas fechadas sem estudo
+  const cedo = compute({ now: NOW, student: {}, challenge: {}, posts: [], activities: [], attendance: [], usage: [uso(3, 1, 6, { pos: 6 })] }, { coletaDesde: '2026-10-14' });
+  assert.match(Adesao.pageHtml(cedo, {}), /<b>Minha nota<\/b><small>Coletando · a 1ª nota aparece em 26\/10<\/small>/);
+  assert.match(h, /<b>Como essa área funciona<\/b>/);
+  assert.ok(!h.includes('data-cza-toggle') && !h.includes('data-cza-cal') && !h.includes('data-cza-gtoggle'));
+  assert.ok(!h.includes('class="cza-title"'));                                       // o título "Minha adesão" é da página
   assert.match(Adesao.pageHtml(c, {}), /Toque num dia para ver o detalhe/);
   assert.ok(!/6 de 5/.test(Adesao.pageHtml(semMeta([...[0, 1, 2, 3, 4, 5].map(d => uso(2, d, 12, { pos: 12 })), uso(3, 1, 3)]), {})));
+});
+
+ok('página de adesão: a explicação (o que conta, tempo, 5 pontos, nota, metas) só existe no fim, em "Como essa área funciona"', () => {
+  const c = semMeta([uso(3, 0, 12, { pos: 6, ativ: 6 })]);
+  const h = Adesao.pageHtml(c, { firstName: 'Ana' });
+  const i = h.indexOf('data-cza-ac="como"');
+  assert.ok(i > 0);
+  const antes = h.slice(0, i), fim = h.slice(i);
+  for (const t of ['O que conta como estudo', 'O que não conta', 'Como o tempo é contado', 'Os 5 pontos da sua adesão', 'Como a nota é calculada', 'Suas metas', 'A linha de meta do gráfico']) {
+    assert.ok(fim.includes(t), 'falta no fim: ' + t);
+    assert.ok(!antes.includes(t), 'não devia aparecer antes: ' + t);
+  }
+  assert.match(fim, /pausas de até <b>1 minuto<\/b> contam \(lendo o pós-aula, até <b>3 minutos<\/b>\)/);
+  assert.match(fim, /Constância vale <b>25%<\/b>, Atividades <b>25%<\/b>, Pós-aula <b>20%<\/b>, Aulas <b>20%<\/b> e Desafio <b>10%<\/b>/);
+  assert.match(fim, /Por dia é a meta do dia \(10 min\)\. Por semana é a meta do dia × 5 dias de estudo\. Por mês é a da semana × 52 ÷ 12/);
+  assert.equal((fim.match(/class="cza-rule"/g) || []).length, 5);                    // os 5 pontos, cada um com a meta
+  // pesos mexidos no painel (soma diferente de 100): a conta mostrada é a proporção
+  const p = compute({ now: NOW, student: {}, challenge: {}, posts: [], activities: [], attendance: [], usage: [] }, { ...CFG, w: { C: 50, At: 50, Pos: 0, Aula: 0, Des: 0 } });
+  assert.match(Adesao.pageHtml(p, {}), /Constância vale <b>50%<\/b>, Atividades <b>50%<\/b>, Pós-aula <b>0%<\/b>/);
+});
+
+ok('página de adesão: tocar numa bolinha do Início abre a página já com a semana e o dia abertos; open abre outras seções', () => {
+  const c = semMeta([uso(3, 0, 12, { pos: 6, ativ: 6 }), uso(3, 1, 6, { pos: 4, ativ: 2 })]);
+  const h = Adesao.pageHtml(c, { firstName: 'Ana', sel: '2026-10-19' });
+  assert.match(h, /data-cza-sec="sem" aria-expanded="true"/);
+  assert.match(h, /cza-bb hit sel" data-cza-pick="week" data-cza-k="2026-10-19"/);
+  assert.match(h, /data-cza-box="week"><div class="cza-dy">.*Segunda, 19\/10/);
+  assert.equal((h.match(/aria-expanded="true"/g) || []).length, 1);
+  const o = Adesao.pageHtml(c, { open: ['evo', 'como'] });
+  assert.match(o, /data-cza-sec="evo" aria-expanded="true"/);
+  assert.match(o, /data-cza-sec="como" aria-expanded="true"/);
+  assert.match(o, /<section class="cza-ac open" data-cza-ac="evo">/);
+  assert.equal((o.match(/<div class="cza-acb" hidden>/g) || []).length, 5);
 });
 
 ok('antes da primeira nota: cada ponto mostra o motivo (coletando ou não se aplica), sem precisar abrir nada', () => {
@@ -439,15 +474,124 @@ ok('antes da primeira nota: cada ponto mostra o motivo (coletando ou não se apl
   assert.match(ho, /Não houve aulas previstas para você nas últimas semanas/);
 });
 
-ok('página de adesão: a nota já vem aberta (sem "Ver detalhes") e não repete o mapa de 4 semanas', () => {
-  const c = semMeta([uso(3, 0, 12, { pos: 6, ativ: 6 }), uso(3, 1, 6, { pos: 4, ativ: 2 })]);
+ok('página de adesão: "Minha nota" reúne a nota, o recado, o que mudou e o próximo passo (sem "Ver detalhes")', () => {
+  const c = compute({ now: NOW, student: {}, challenge: {}, posts: [], activities: [], attendance: [], usage: [uso(3, 0, 12, { pos: 6, ativ: 6 }), uso(3, 1, 6, { pos: 4, ativ: 2 })] }, { coletaDesde: '2026-10-14' });
   const h = Adesao.pageHtml(c, { firstName: 'Ana' });
-  assert.ok(!h.includes('Ver detalhes') && !h.includes('data-cza-toggle'));
-  assert.match(h, /O que conta na sua adesão/);
-  assert.match(h, /Seus dias da semana/);
-  assert.ok(!h.includes('Seu mapa de estudo'));        // o calendário da página já faz esse papel
-  assert.ok(!h.includes('<h4>Sua semana</h4>'));        // e a semana em bolinhas também
+  assert.ok(!h.includes('Ver detalhes'));
+  assert.match(h, /Estamos conhecendo o seu ritmo/);
+  assert.match(h, /A medição começou em 14\/10, então a primeira nota aparece em 26\/10/);
   assert.match(h, /Recado do seu professor/);
+  assert.ok(!h.includes('Seu mapa de estudo'));
+  assert.ok(!h.includes('<h4>Sua semana</h4>'));
+  // com nota: faixa, o que mudou e o próximo passo
+  const ok3 = compute(maratonista(), CFG);
+  const g = Adesao.pageHtml(ok3, { firstName: 'Ana', recado: 'Parabéns <b>Ana</b>' });
+  assert.match(g, /<b>Minha nota<\/b><small>Adesão <em style="color:#d97706">78<\/em> · Média<\/small>/);
+  assert.match(g, /Seu próximo passo/);
+  assert.match(g, /Parabéns &lt;b&gt;Ana&lt;\/b&gt;/);                                // recado escapado
+  assert.match(g, /<b>Adesão e acertos<\/b>/);
+  assert.match(g, /Seus dias da semana/);                                            // fica dentro de Evolução
+});
+
+ok('evolução: série por dia, semana e mês; Geral é só estudo no app e as aulas ficam à parte', () => {
+  const base = maratonista();
+  base.usage.push(uso(3, 1, 12, { pos: 6, ativ: 6 }));                                // terça de hoje
+  base.posts.push(post('p3', 3, 1));
+  const c = compute(base, CFG);
+  assert.deepEqual(c.evo.weeks.map(w => w.key), ['2026-09-28', '2026-10-05', '2026-10-12', '2026-10-19']);
+  const w0 = c.evo.weeks[0], w3 = c.evo.weeks[3];
+  assert.deepEqual([w0.v.pos, w0.v.act, w0.v.voc, w0.v.des, w0.v.tot], [7, 34, 0, 0, 41]);
+  assert.equal(w0.v.aul, 60);                                                         // 1 pós-aula × 60 min (sem duração no cadastro)
+  assert.equal(w0.v.tot, w0.v.pos + w0.v.act + w0.v.voc + w0.v.des);                  // as aulas não entram no Geral
+  assert.ok(!w0.partial && !w0.pre && w3.partial);
+  assert.equal(w3.v.tot, 12);
+  // dias: os 14 últimos, até hoje; só o último é o que ainda corre
+  assert.equal(c.evo.days.length, 14);
+  assert.equal(c.evo.days[0].key, '2026-10-07'); assert.equal(c.evo.days[13].key, '2026-10-20');
+  assert.ok(c.evo.days[13].partial && !c.evo.days[12].partial);
+  assert.equal(c.evo.days.find(d => d.key === '2026-10-13').v.tot, 41);
+  assert.equal(c.evo.days.find(d => d.key === '2026-10-14').v.tot, 0);                // dia sem uso conta 0
+  // meses: setembro começou antes da medição (pre) e outubro ainda corre
+  assert.deepEqual(c.evo.months.map(m => [m.key, !!m.pre, !!m.partial, m.v.tot]), [['2026-09', true, false, 41], ['2026-10', false, true, 94]]);
+  // metas: dia 10, semana 10 × 5 = 50, mês = 50 × 52 ÷ 12 arredondado a 5 min
+  assert.deepEqual(c.evo.goal, { d: 10, w: 50, m: 215 });
+  // a meta do dia do aluno e os dias de estudo da escola mexem nas três
+  assert.deepEqual(compute({ ...base, metas: { diaMin: 20 } }, CFG).evo.goal, { d: 20, w: 100, m: 435 });
+  assert.deepEqual(compute(base, { ...CFG, metaDiasEstudo: 3 }).evo.goal, { d: 10, w: 30, m: 130 });
+  // aula antes da medição não entra, e a 1ª semana/mês fica marcada como "começou no meio"
+  const tarde = compute(base, { coletaDesde: '2026-10-14' });
+  assert.deepEqual(tarde.evo.weeks.map(w => [w.key, !!w.pre, w.v.aul]), [['2026-10-12', true, 0], ['2026-10-19', false, 60]]);
+  assert.equal(tarde.evo.days.length, 7);                                             // de 14/10 a 20/10
+  // coleta que começa hoje: um ponto só
+  const hoje = compute(base, { coletaDesde: '2026-10-20' });
+  assert.equal(hoje.evo.weeks.length, 1); assert.equal(hoje.evo.days.length, 1);
+  // sem posts as aulas ficam em 0
+  assert.equal(compute({ ...base, posts: [] }, CFG).evo.weeks[0].v.aul, 0);
+});
+
+ok('evolução: linha de meta só na ficha Geral, com acima/abaixo e "meta batida em X de Y"', () => {
+  const base = maratonista();                                                          // 41 min nas 3 terças fechadas: abaixo da meta da semana (50)
+  base.usage.push(uso(3, 1, 12, { pos: 6, ativ: 6 }));
+  const c = compute(base, CFG);
+  const st = (o) => ({ mode: 'w', area: 'tot', sel: '', ...o });
+  const g = Adesao.evoBodyHtml(c, st());
+  assert.match(g, /stroke-dasharray="7 4"/);                                           // a linha tracejada da meta
+  assert.match(g, /<rect x="0" y="[\d.]+" width="38" height="16" rx="8" fill="#FEF3C7"\/><text x="19" y="[\d.]+" text-anchor="middle"[^>]*>50 min<\/text>/);   // etiqueta fixa no eixo
+  assert.match(g, /Meta \(por semana: 10 min × 5 dias\)/);
+  assert.match(g, /Estudo no app por semana/);
+  assert.match(g, /faltam 38 min para a meta de 50 min/);                              // semana atual, ainda correndo: 12 min de 50
+  assert.match(g, /Meta batida em 0 de 3 semanas<\/b> · em média <b>0,8×<\/b> a meta/);
+  assert.ok(!g.includes('cza-nudge'));
+  assert.match(g, /🎓 Aulas <em>\(fora da meta\)<\/em><span>—<\/span>/);                       // esta semana ainda não teve pós-aula
+  // tocar numa semana fechada (índice 0): 41 de 50
+  const p0 = Adesao.evoBodyHtml(c, st({ sel: '0' }));
+  assert.match(p0, /Semana de 28\/09 a 04\/10/);
+  assert.match(p0, /▼ 9 min abaixo da meta \(50 min\)/);
+  assert.match(p0, /🎓 Aulas <em>\(fora da meta\)<\/em><span>1 h<\/span>/);                                  // a aula da semana, fora do Geral
+  // fichas por área não levam a linha, só a nota de que a meta é do total
+  const pos = Adesao.evoBodyHtml(c, st({ area: 'pos' }));
+  assert.ok(!pos.includes('stroke-dasharray="7 4"'));
+  assert.match(pos, /A meta é do estudo no total\. A linha dela está na ficha <b>Geral<\/b>/);
+  assert.match(pos, /Pós-aula por semana/);
+  // todas juntas: uma linha por área, sem a meta
+  const all = Adesao.evoBodyHtml(c, st({ area: 'all' }));
+  assert.equal((all.match(/<polyline/g) || []).length, 5);
+  assert.ok(!all.includes('stroke-dasharray="7 4"'));
+  // dias e meses
+  const dias = Adesao.evoBodyHtml(c, st({ mode: 'd' }));
+  assert.match(dias, /Estudo no app por dia \(14 dias\)/); assert.match(dias, /Meta \(por dia\)/);
+  assert.match(dias, /Meta batida em 1 de 13 dias<\/b> · em média <b>0,3×<\/b> a meta/);      // só a terça 13/10 (41 min) cai nos 14 dias; hoje ainda corre
+  const meses = Adesao.evoBodyHtml(c, st({ mode: 'm' }));
+  assert.match(meses, /Estudo no app por mês/);
+  assert.match(meses, /Ainda não há mês fechado para comparar com a meta/);           // setembro começou no meio e outubro corre
+  // quem está sempre bem acima da meta recebe o convite para subir a própria
+  const forte = maratonista();
+  for (let s = 0; s < 3; s++) forte.usage[s] = uso(s, 1, 90, { pos: 30, ativ: 60 });
+  forte.usage.push(uso(3, 1, 20, { pos: 10, ativ: 10 }));
+  const cf = compute(forte, CFG);
+  const gf = Adesao.evoBodyHtml(cf, st());
+  assert.match(gf, /Meta batida em 3 de 3 semanas<\/b> · em média <b>1,8×<\/b> a meta/);
+  assert.match(gf, /cza-nudge[^>]*>🌟 <span>Você está bem acima da meta há um bom tempo\. Que tal subir a sua\?<\/span><button type="button" data-cza-perfil>Ajustar no Perfil ›<\/button>/);
+  assert.match(Adesao.evoBodyHtml(cf, st({ sel: '0' })), /▲ 40 min acima da meta \(50 min\)/);
+  // só 2 períodos fechados: ainda não é "há um bom tempo"
+  const dois = maratonista(); dois.usage.splice(0, 1); dois.usage.push(uso(3, 1, 20, { pos: 10, ativ: 10 }));
+  for (let s = 1; s < 3; s++) dois.usage[s - 1] = uso(s, 1, 90, { pos: 30, ativ: 60 });
+  assert.ok(!Adesao.evoBodyHtml(compute(dois, CFG), st()).includes('cza-nudge'));
+  // 1 ponto só: explica em vez de desenhar
+  const um = compute(base, { coletaDesde: '2026-10-20' });
+  assert.match(Adesao.evoBodyHtml(um, st()), /O gráfico por semana aparece quando houver pelo menos 2 semanas de dados/);
+  assert.match(Adesao.evoBodyHtml(um, st({ mode: 'd' })), /Ainda não há dias suficientes/);
+});
+
+ok('evolução: o resumo da seção fechada e o período inicial dependem de quantas semanas já existem', () => {
+  const base = maratonista();
+  base.usage.push(uso(3, 1, 60, { pos: 30, ativ: 30 }));
+  const c = compute(base, CFG);
+  assert.match(Adesao.pageHtml(c, {}), /<b>Evolução<\/b><small><em>0 de 3<\/em> semanas com a meta batida<\/small>/);
+  assert.match(Adesao.pageHtml(c, {}), /data-cza-evo data-mode="w" data-area="tot" data-sel=""/);     // 4 semanas: começa por semanas
+  const cedo = compute(base, { coletaDesde: '2026-10-14' });
+  assert.match(Adesao.pageHtml(cedo, {}), /data-cza-evo data-mode="d"/);                              // poucas semanas: começa por dias
+  assert.match(Adesao.pageHtml(cedo, {}), /<b>Evolução<\/b><small><em>Meta da semana batida<\/em> \(50 min\)<\/small>/);               // menos de 2 semanas fechadas: mostra a semana em curso
 });
 
 ok('toques na página: dia abre o detalhe ali mesmo; atalho e cartão avisam o app', () => {
@@ -464,6 +608,53 @@ ok('toques na página: dia abre o detalhe ali mesmo; atalho e cartão avisam o a
   assert.equal(Adesao.pageClick({ target: { closest: () => null } }, host, c), null);
 });
 
+ok('toques na página: a seção abre e fecha; o gráfico troca de período, de ficha e de ponto', () => {
+  const base = maratonista();
+  base.usage.push(uso(3, 1, 12, { pos: 6, ativ: 6 }));
+  const c = compute(base, CFG);
+  // seção
+  const body = { hidden: true, querySelector: () => null };
+  const box = { querySelector: s => (s === '.cza-acb' ? body : null), classList: { on: null, toggle(_, f) { this.on = f; } } };
+  const trigger = { v: '', closest: s => (s === '.cza-ac' ? box : null), setAttribute(_, v) { this.v = v; } };
+  const tapSec = { target: { closest: s => (s === '[data-cza-sec]' ? trigger : null) } };
+  assert.deepEqual(Adesao.pageClick(tapSec, {}, c), {});
+  assert.equal(body.hidden, false); assert.equal(trigger.v, 'true'); assert.equal(box.classList.on, true);
+  Adesao.pageClick(tapSec, {}, c);
+  assert.equal(body.hidden, true); assert.equal(trigger.v, 'false'); assert.equal(box.classList.on, false);
+  // gráfico: o estado fica nos atributos do contêiner
+  const attrs = { 'data-mode': 'w', 'data-area': 'tot', 'data-sel': '' };
+  const evoEl = { innerHTML: '', getAttribute: k => (k in attrs ? attrs[k] : null), setAttribute: (k, v) => { attrs[k] = v; }, querySelector: () => null };
+  const host = { querySelector: s => (s === '[data-cza-evo]' ? evoEl : null), querySelectorAll: () => [] };
+  const tap = (sel, a) => ({ target: { closest: s => (s === sel ? { getAttribute: k => a[k] } : null) } });
+  assert.deepEqual(Adesao.pageClick(tap('[data-cza-evo-mode]', { 'data-cza-evo-mode': 'm' }), host, c), {});
+  assert.equal(attrs['data-mode'], 'm');
+  assert.match(evoEl.innerHTML, /Estudo no app por mês/);
+  Adesao.pageClick(tap('[data-cza-evo-area]', { 'data-cza-evo-area': 'pos' }), host, c);
+  assert.equal(attrs['data-area'], 'pos'); assert.equal(attrs['data-sel'], '');
+  assert.match(evoEl.innerHTML, /Pós-aula por mês/);
+  Adesao.pageClick(tap('[data-cza-evo-mode]', { 'data-cza-evo-mode': 'w' }), host, c);
+  Adesao.pageClick(tap('[data-cza-evo-pt]', { 'data-cza-evo-pt': '1' }), host, c);
+  assert.equal(attrs['data-sel'], '1');
+  assert.match(evoEl.innerHTML, /Semana de 05\/10 a 11\/10/);
+  Adesao.pageClick(tap('[data-cza-evo-mode]', { 'data-cza-evo-mode': 'd' }), host, c);          // trocar de período volta para o último ponto
+  assert.equal(attrs['data-sel'], '');
+  assert.match(evoEl.innerHTML, /Terça, 20\/10/);
+  // sem o contêiner do gráfico (página sem ele) o toque não quebra
+  assert.deepEqual(Adesao.pageClick(tap('[data-cza-evo-mode]', { 'data-cza-evo-mode': 'd' }), { querySelector: () => null }, c), {});
+  // o convite para subir a meta avisa o app
+  assert.deepEqual(Adesao.pageClick({ target: { closest: s => (s === '[data-cza-perfil]' ? {} : null) } }, {}, c), { perfil: true });
+});
+
+ok('seções: todas as classes novas da página têm estilo no CSS do aluno', () => {
+  const css = Adesao.studentCss();
+  const base = maratonista(); base.usage.push(uso(3, 1, 12, { pos: 6, ativ: 6 }));
+  const h = Adesao.pageHtml(compute(base, CFG), { open: ['sem', 'cal', 'evo', 'hor', 'nota', 'ace', 'como'] }) + Adesao.evoBodyHtml(compute(base, CFG), { mode: 'w', area: 'all', sel: '' });
+  const usadas = new Set([...h.matchAll(/class="([^"]+)"/g)].flatMap(m => m[1].split(/\s+/)).filter(k => /^cza-/.test(k)));
+  const novas = ['cza-ac', 'cza-ach', 'cza-aci', 'cza-act', 'cza-acb', 'cza-tiles', 'cza-tile', 'cza-evh', 'cza-sg', 'cza-fch', 'cza-fc', 'cza-evw', 'cza-evy', 'cza-evg', 'cza-evr', 'cza-vg', 'cza-brk', 'cza-lgd', 'cza-msum', 'cza-lead', 'cza-sub2'];
+  for (const k of novas) { assert.ok(usadas.has(k), 'a página não usa ' + k); assert.ok(css.includes('.' + k), 'sem estilo para .' + k); }
+  for (const k of ['cza-trow', 'cza-tic', 'cza-ttx', 'cza-pill', 'cza-gq', 'cza-gmore', 'cza-calbtn']) assert.ok(!css.includes('.' + k), 'sobrou estilo morto: ' + k);
+});
+
 ok('horas de estudo: cada pós-aula publicado soma a duração da aula (só desde a medição), mais o estudo no app', () => {
   const posts = [post('p0', 0, 1), post('p2', 2, 1), post('p1', 3, 0), post('pf', 3, 5)];   // 29/09, 13/10, 19/10 e uma aula ainda no futuro (25/10)
   const base = { now: NOW, student: { aulaDuracao: 90 }, usage: [uso(3, 0, 12, { pos: 12 }), uso(2, 2, 30, { ativ: 30 })], posts, activities: [], attendance: [], challenge: { enabled: false } };
@@ -477,6 +668,8 @@ ok('horas de estudo: cada pós-aula publicado soma a duração da aula (só desd
   const h = Adesao.hoursHtml(c);
   assert.match(h, /<b>5 h 12 min<\/b><span>no total/);
   assert.match(h, /3 aulas × 1 h 30 min/);
+  assert.match(h, /<div class="cza-sect">Horas de estudo<\/div>/);
+  assert.ok(!Adesao.hoursHtml(c, { noTitle: true }).includes('Horas de estudo'));          // dentro da seção o título já é o da linha
   assert.equal((h.match(/Escolha a sua meta no Perfil/g) || []).length, 2);      // sem meta escolhida: só o tempo
   assert.ok(!h.includes('de 3 h'));
   const com = Adesao.hoursHtml(compute({ ...base, metas: { semH: 3, mesH: 12 } }, CFG));
@@ -536,14 +729,6 @@ ok('dias com meta acima do necessário: "6 dias com meta (a meta é 5)", nunca "
   assert.equal(Adesao.goalDaysTxt({ hits: 2, metaDias: 5 }), '2 de 5 dias com meta');
   assert.equal(Adesao.goalDaysTxt({ hits: 5, metaDias: 5 }), '5 de 5 dias com meta');
   assert.equal(Adesao.goalDaysTxt({ hits: 6, metaDias: 5 }), '6 dias com meta (a meta é 5)');
-});
-
-ok('"O que conta" abre e fecha', () => {
-  const mais = { hidden: true }, gatilho = { v: '', parentElement: { querySelector: () => mais }, setAttribute(k, v) { this.v = v; } };
-  Adesao.toggleGoalInfo(gatilho);
-  assert.equal(mais.hidden, false); assert.equal(gatilho.v, 'true');
-  Adesao.toggleGoalInfo(gatilho);
-  assert.equal(mais.hidden, true); assert.equal(gatilho.v, 'false');
 });
 
 console.log(`\n${n} testes passaram`);

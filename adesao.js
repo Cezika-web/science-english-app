@@ -320,6 +320,7 @@
       app: { total: pTot, sem: pSem, mes: pMes },
       total: aN * dur + pTot, sem: aSem * dur + pSem, mes: aMes * dur + pMes
     };
+    res.evo = evoSeries(res, posts, dur);
     res.metas = metas;
     res.desEnabled = ch.enabled !== false;
     // Só entram semanas inteiras (segunda a domingo) com o tempo medido: a 1ª é a segunda depois do início da
@@ -879,15 +880,16 @@
   }
 
   // ── Blocos da página de adesão ──────────────────────────────────────────
-  function todoHtml(c) {
+  // Os três atalhos do cartão de hoje: um quadradinho por tipo de estudo, com o que já foi feito hoje.
+  var TILE_NAME = { leitura: 'Pós-aula', vocab: 'Vocabulário', exercicio: 'Exercícios' };
+  function tilesHtml(c) {
     var td = todayOf(c);
-    return A_STUDY_TYPES.map(function (t) {
+    return '<div class="cza-tiles">' + A_STUDY_TYPES.map(function (t) {
       var m = td.t[t.k], done = td.done[t.k];
-      return '<div class="cza-trow' + (done ? ' done' : '') + '" data-cza-go="' + TYPE_GO[t.k] + '" role="button" tabindex="0">'
-        + '<div class="cza-tic" style="background:' + TYPE_SOFT[t.k] + '">' + t.ic + '</div>'
-        + '<div class="cza-ttx"><b>' + esc(t.name) + '</b><span>' + (m >= 0.05 ? 'Hoje: ' + fm(m) : 'Ainda não hoje') + '</span></div>'
-        + '<span class="cza-pill ' + (done ? 'ok' : 'go') + '">' + (done ? 'feito ✓' : 'Abrir ›') + '</span></div>';
-    }).join('');
+      return '<button type="button" class="cza-tile' + (done ? ' done' : '') + '" data-cza-go="' + TYPE_GO[t.k] + '">'
+        + '<span class="i" style="background:' + TYPE_SOFT[t.k] + '">' + t.ic + '</span><b>' + TILE_NAME[t.k] + '</b>'
+        + '<small>' + (done ? 'feito ✓' : m >= 0.05 ? 'hoje ' + fm(m) : 'ainda não hoje') + '</small></button>';
+    }).join('') + '</div>';
   }
   var A_STUDY_TYPES = [
     { k: 'leitura', name: 'Ler um pós-aula', ic: '📖', inclui: 'pós-aula' },
@@ -895,9 +897,9 @@
     { k: 'exercicio', name: 'Fazer um exercício', ic: '✏️', inclui: 'atividades, extras, correção e desafio' }
   ];
 
-  // Total da semana: minutos por tipo, dias com meta e "o que conta".
+  // Total da semana: minutos por tipo e dias com meta. O que conta como estudo fica em "Como essa área funciona".
   function weekTotalsHtml(c) {
-    var cfg = c.cfg, w = c.cur, g = w.goal;
+    var w = c.cur, g = w.goal;
     var part = function (arr) { return sum(arr.slice(0, w.elapsed)); };
     var tot = { pos: part(w.dp), act: part(w.da), des: part(w.dd), voc: part(w.dv) };
     var scale = g.minutos || 1;
@@ -906,18 +908,8 @@
     var chips = '<div class="cza-gchips"><span class="cza-gchip">' + goalDaysTxt(g).replace('com meta', 'com meta batida') + '</span>'
       + (g.atingida ? '<span class="cza-gchip">Meta da semana batida 🎉</span>' : '<span class="cza-gchip amber">' + (falta === 1 ? 'falta 1 dia' : 'faltam ' + falta + ' dias') + '</span>') + '</div>';
     var legend = '<div class="cza-glegend">' + DAY_TYPES.map(function (t) { return '<span><i style="background:' + t.color + '"></i>' + (t.k === 'des' ? 'Desafio' : t.name) + '</span>'; }).join('') + '</div>';
-    var info = '<button type="button" class="cza-gq" data-cza-gtoggle aria-expanded="false">O que conta como tempo de estudo? <span class="cza-chev">›</span></button>'
-      + '<div class="cza-gmore" hidden>'
-      + '<div class="cza-sect" style="margin-top:12px">Conta como estudo</div><div class="cza-glist">'
-      + '<div><span style="background:#DCFCE7">📖</span>Ler o pós-aula</div>'
-      + '<div><span style="background:#DBEAFE">✏️</span><div>Fazer as atividades e as atividades extras<small>e ler a correção</small></div></div>'
-      + '<div><span style="background:#EDE9FE">🏆</span>O Desafio da semana</div>'
-      + '<div><span style="background:#FEF3C7">🧩</span>Meu vocabulário, a lista de verbos e os chunks</div></div>'
-      + '<div class="cza-sect" style="margin-top:14px">Não conta</div><div class="cza-glist no">'
-      + '<div><span>🏠</span>Ficar na tela inicial, no perfil ou nos avisos</div><div><span>💤</span>Deixar o app aberto sem mexer</div></div>'
-      + '<div class="cza-grule"><span style="font-size:18px">⏱️</span><div><b>Como o tempo é contado.</b> O relógio anda enquanto você usa o app: tocando, rolando a página, digitando, ouvindo ou gravando áudio. Pensar um pouco também vale: pausas de até <b>' + limiteTxt(cfg.limiteSeg) + '</b> contam' + (cfg.limiteSeg < LEITURA_SEG ? ' (lendo o pós-aula, até <b>' + limiteTxt(LEITURA_SEG) + '</b>)' : '') + '. Passou disso, o app entende que você saiu e não conta.</div></div></div>';
-    return '<div class="cza-sect">Esta semana</div>'
-      + '<div class="cza-gtot"><b>' + Math.round(g.minutos) + ' min</b><span>de estudo no app</span></div>' + bar + chips + legend + info;
+    return '<div class="cza-sect">Total da semana</div>'
+      + '<div class="cza-gtot"><b>' + Math.round(g.minutos) + ' min</b><span>de estudo no app</span></div>' + bar + chips + legend;
   }
 
   // Cronômetro de estudo (cantinho da tela): "45 s" abaixo de 1 min, "1:05" depois e "1:05:10" a partir de 1 h.
@@ -951,9 +943,9 @@
       + '<button type="button" class="cza-setgoal" data-cza-perfil>Escolha a sua meta no Perfil ›</button></div>';
   }
   // Total de horas (aulas + estudo no app) e as metas de semana e de mês que o aluno escolheu.
-  function hoursHtml(c) {
+  function hoursHtml(c, o) {
     var H = c.hours, M = c.metas || {}, A = H.aulas;
-    return '<div class="cza-sect">Horas de estudo</div>'
+    return ((o && o.noTitle) ? '' : '<div class="cza-sect">Horas de estudo</div>')
       + '<div class="cza-hrbig"><b>' + fhm(H.total) + '</b><span>no total</span></div>'
       + '<div class="cza-hbar2">' + (H.total > 0 ? '<i style="width:' + (A.min / H.total * 100).toFixed(1) + '%;background:#0EA5E9"></i><i style="width:' + (H.app.total / H.total * 100).toFixed(1) + '%;background:#16A34A"></i>' : '') + '</div>'
       + '<div class="cza-hsplit"><div><span><i style="background:#0EA5E9"></i>🎓 Aulas</span><b>' + fhm(A.min) + '</b><small>' + (A.n ? A.n + (A.n === 1 ? ' aula' : ' aulas') + ' × ' + fhm(H.dur) : 'entra com cada pós-aula') + '</small></div>'
@@ -962,35 +954,332 @@
       + '<p class="cza-hnote">As metas da semana e do mês somam as aulas e o estudo no app. Cada pós-aula publicado soma o tempo da aula.</p>';
   }
 
-  /* Página de adesão: tudo do estudo e a nota.
-   * o = { firstName, recado, ribbon, ribbonOpen, stats, sel (dia já aberto, AAAA-MM-DD) } */
+  // ── Evolução: gráfico de linha por dia, semana e mês, com a linha de meta ─────
+  var MES3 = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  var EVO = [
+    { k: 'tot', n: 'Geral', color: '#14532D' },
+    { k: 'all', n: 'Todas juntas', color: '#334155' },
+    { k: 'pos', n: 'Pós-aula', ic: '📖', color: '#16A34A' },
+    { k: 'act', n: 'Atividades', ic: '✏️', color: '#3B82F6' },
+    { k: 'voc', n: 'Vocabulário', ic: '🧩', color: '#F59E0B' },
+    { k: 'des', n: 'Desafio', ic: '🏆', color: '#8B5CF6' },
+    { k: 'aul', n: 'Aulas', ic: '🎓', color: '#0EA5E9' }
+  ];
+  var EVO_ALL = ['pos', 'act', 'voc', 'des', 'aul'], EVO_APP = ['pos', 'act', 'voc', 'des'];
+  var EVO_GOAL_COLOR = '#B45309';
+  var EVO_MODES = {
+    d: { list: 'days', per: 'por dia (14 dias)', one: 'dia', many: 'dias', prev: 'o dia anterior', cur: 'hoje', colW: 36 },
+    w: { list: 'weeks', per: 'por semana', one: 'semana', many: 'semanas', prev: 'a semana anterior', cur: 'semana em andamento', colW: 52 },
+    m: { list: 'months', per: 'por mês', one: 'mês', many: 'meses', prev: 'o mês anterior', cur: 'mês em andamento', colW: 74 }
+  };
+  function evoBy(k) { return EVO.filter(function (x) { return x.k === k; })[0]; }
+
+  // Série de estudo por dia (últimos 14), semana e mês, desde o início da medição. "tot" (Geral) é o estudo no app, SEM as aulas,
+  // porque é isso que a meta mede. As aulas (pós-aulas publicados × duração, como em Horas de estudo) ficam à parte, em "aul".
+  // Período "partial" = o que ainda corre; "pre" = o primeiro, em que a medição começou no meio (não entra na conta da meta).
+  // Meta, em minutos: por dia = a meta do dia; por semana = meta do dia × dias de estudo da semana; por mês = semana × 52 ÷ 12 (12 meses fecham o ano).
+  function evoSeries(c, posts, dur) {
+    var mf = c.measureFrom, today = dayKey(c.now), aulDay = {}, i;
+    posts.forEach(function (x) { var k = dayKey(x.ref); if (k >= mf && k <= today) aulDay[k] = (aulDay[k] || 0) + dur; });
+    function cell(k) {
+      var d = c.daily[k] || { pos: 0, act: 0, des: 0, voc: 0 };
+      var v = { pos: d.pos, act: d.act, voc: d.voc, des: d.des, aul: aulDay[k] || 0 };
+      v.tot = v.pos + v.act + v.voc + v.des;
+      return v;
+    }
+    function add(a, b) { var o = {}; Object.keys(a).forEach(function (x) { o[x] = a[x] + b[x]; }); return o; }
+    var zero = { pos: 0, act: 0, voc: 0, des: 0, aul: 0, tot: 0 };
+    var days = [], weeks = [], months = [];
+    var d0 = addDays(c.now, -13); if (dayKey(d0) < mf) d0 = parseKey(mf);
+    for (var d = d0; dayKey(d) <= today; d = addDays(d, 1)) {
+      var k = dayKey(d), w = (d.getDay() + 6) % 7;
+      days.push({ key: k, label: String(d.getDate()), sub: WD1[w], long: cap1(WDF[w]) + ', ' + ddmm(d), partial: k === today, v: cell(k) });
+    }
+    var curMon = dayKey(mondayOf(c.now));
+    for (var m = mondayOf(parseKey(mf)); dayKey(m) <= curMon; m = addDays(m, 7)) {
+      var v = zero, mk = dayKey(m);
+      for (i = 0; i < 7; i++) { var kk = dayKey(addDays(m, i)); if (kk >= mf && kk <= today) v = add(v, cell(kk)); }
+      weeks.push({ key: mk, label: ddmm(m), sub: '', long: 'Semana de ' + ddmm(m) + ' a ' + ddmm(addDays(m, 6)), partial: mk === curMon, pre: mk < mf, v: v });
+    }
+    var curM = today.slice(0, 7), p0 = parseKey(mf);
+    for (var mo = new Date(p0.getFullYear(), p0.getMonth(), 1); dayKey(mo).slice(0, 7) <= curM; mo = new Date(mo.getFullYear(), mo.getMonth() + 1, 1)) {
+      var key = dayKey(mo).slice(0, 7), nd = new Date(mo.getFullYear(), mo.getMonth() + 1, 0).getDate(), vm = zero;
+      for (i = 1; i <= nd; i++) { var k2 = key + '-' + String(i).padStart(2, '0'); if (k2 >= mf && k2 <= today) vm = add(vm, cell(k2)); }
+      months.push({ key: key, label: MES3[mo.getMonth()], sub: '', long: cap1(MESES[mo.getMonth()]) + ' de ' + mo.getFullYear(), partial: key === curM, pre: dayKey(mo) < mf, v: vm });
+    }
+    var gd = c.cfg.metaDiaMin, gw = gd * c.cfg.metaDiasEstudo;
+    return { days: days, weeks: weeks, months: months, goal: { d: gd, w: gw, m: Math.round(gw * 52 / 12 / 5) * 5 } };
+  }
+
+  function evoNiceMax(v) {
+    var steps = [10, 20, 30, 40, 60, 80, 120, 180, 240, 300, 360, 480, 600, 900, 1200, 1800, 2400, 3600, 4800, 6000];
+    for (var i = 0; i < steps.length; i++) if (steps[i] >= v * 1.05) return steps[i];
+    return Math.ceil(v / 1200) * 1200;
+  }
+  function evoTick(v) { return v === 0 ? '0' : v < 120 ? v + ' min' : num1(v / 60) + ' h'; }
+  function evoSel(pts, st) { var i = st.sel === '' || st.sel == null ? NaN : +st.sel; return isNaN(i) || i < 0 || i >= pts.length ? pts.length - 1 : i; }
+  function evoPts(c, st) { return c.evo[EVO_MODES[st.mode].list]; }
+  // A meta é do total de estudo: só a ficha Geral leva a linha.
+  function evoGoal(c, st) { return st.area === 'tot' ? c.evo.goal[st.mode] : null; }
+  function evoGoalName(c, st) {
+    return st.mode === 'd' ? 'por dia' : st.mode === 'w' ? 'por semana: ' + fhm(c.evo.goal.d) + ' × ' + c.cfg.metaDiasEstudo + ' dias' : 'por mês';
+  }
+
+  function evoChartHtml(pts, st, goal) {
+    var n = pts.length, keys = st.area === 'all' ? EVO_ALL : [st.area], M = EVO_MODES[st.mode];
+    var colW = M.colW, L = 12, R = 14, T = 16, B = 38, H = 190, MINW = 290;
+    var scroll = n * colW + L + R > MINW, W = scroll ? n * colW + L + R : MINW;
+    var top = Math.max.apply(null, [1, goal || 0].concat(pts.map(function (p) { return Math.max.apply(null, keys.map(function (k) { return p.v[k]; })); })));
+    var max = evoNiceMax(top), pw = W - L - R, ph = H - T - B, sel = evoSel(pts, st);
+    function X(i) { return n === 1 ? L + pw / 2 : L + (scroll ? colW / 2 + i * (pw - colW) / (n - 1) : i * pw / (n - 1)); }
+    function Y(v) { return T + (max - v) / max * ph; }
+    // eixo de minutos fixo à esquerda; só a área das linhas rola
+    var ax = '<svg class="cza-evy" width="38" height="' + H + '" viewBox="0 0 38 ' + H + '" aria-hidden="true">';
+    [0, max / 2, max].forEach(function (v) {
+      if (goal && v > 0 && Math.abs(Y(v) - Y(goal)) < 13) return;          // a etiqueta da meta ocupa o lugar
+      ax += '<text x="34" y="' + (Y(v) + 3.5) + '" text-anchor="end" font-size="9.5" font-weight="700" fill="#64748B">' + evoTick(Math.round(v)) + '</text>';
+    });
+    if (goal) {
+      var gy = Math.min(Y(goal), Y(0) - 11);
+      ax += '<rect x="0" y="' + (gy - 8) + '" width="38" height="16" rx="8" fill="#FEF3C7"/><text x="19" y="' + (gy + 3.5) + '" text-anchor="middle" font-size="9.5" font-weight="800" fill="#92400E">' + evoTick(goal) + '</text>';
+    }
+    ax += '</svg>';
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="' + (scroll ? 'width:' + W + 'px;height:' + H + 'px' : 'width:100%;height:auto') + '" role="img" aria-label="Evolução do estudo">';
+    if (goal) s += '<rect x="0" y="' + T + '" width="' + W + '" height="' + Math.max(0, Y(goal) - T) + '" fill="rgba(22,163,74,.08)"/>';
+    [0, max / 2, max].forEach(function (v) { s += '<line x1="0" x2="' + W + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="#E2E8F0"/>'; });
+    s += '<line x1="' + X(sel) + '" x2="' + X(sel) + '" y1="' + T + '" y2="' + (T + ph) + '" stroke="#94A3B8" stroke-dasharray="3 3"/>';
+    pts.forEach(function (p, i) {
+      s += '<text x="' + X(i) + '" y="' + (H - 21) + '" text-anchor="middle" font-size="9.5" font-weight="' + (i === sel ? 800 : 700) + '" fill="' + (i === sel ? '#0F172A' : '#64748B') + '">' + p.label + '</text>';
+      if (p.sub) s += '<text x="' + X(i) + '" y="' + (H - 9) + '" text-anchor="middle" font-size="9" font-weight="700" fill="#94A3B8">' + p.sub + '</text>';
+    });
+    if (goal) s += '<line x1="0" x2="' + W + '" y1="' + Y(goal) + '" y2="' + Y(goal) + '" stroke="' + EVO_GOAL_COLOR + '" stroke-width="2" stroke-dasharray="7 4"/>';
+    keys.forEach(function (key) {
+      var col = evoBy(key).color, thick = st.area === 'all' ? 2.6 : 3;
+      var solid = pts.map(function (p, i) { return X(i) + ',' + Y(p.v[key]); });
+      var lastPartial = pts[n - 1].partial && n > 1;
+      if (lastPartial) {
+        if (n > 2) s += '<polyline points="' + solid.slice(0, n - 1).join(' ') + '" fill="none" stroke="' + col + '" stroke-width="' + thick + '" stroke-linejoin="round" stroke-linecap="round"/>';
+        s += '<line x1="' + X(n - 2) + '" y1="' + Y(pts[n - 2].v[key]) + '" x2="' + X(n - 1) + '" y2="' + Y(pts[n - 1].v[key]) + '" stroke="' + col + '" stroke-width="' + thick + '" stroke-dasharray="1 6" stroke-linecap="round"/>';
+      } else if (n > 1) s += '<polyline points="' + solid.join(' ') + '" fill="none" stroke="' + col + '" stroke-width="' + thick + '" stroke-linejoin="round" stroke-linecap="round"/>';
+      pts.forEach(function (p, i) {
+        var hollow = p.partial, r = i === sel ? 6 : 4;
+        s += '<circle cx="' + X(i) + '" cy="' + Y(p.v[key]) + '" r="' + r + '" fill="' + (hollow ? '#fff' : col) + '" stroke="' + (hollow ? col : '#fff') + '" stroke-width="' + (hollow ? 2.5 : 2) + '"/>';
+      });
+    });
+    var cw = n === 1 ? pw : (scroll ? colW : pw / (n - 1));
+    pts.forEach(function (p, i) { s += '<rect data-cza-evo-pt="' + i + '" x="' + (X(i) - cw / 2) + '" y="0" width="' + cw + '" height="' + H + '" fill="transparent" style="cursor:pointer"/>'; });
+    return '<div class="cza-evw">' + ax + '<div class="cza-evg" data-cza-evg>' + s + '</svg></div></div>';
+  }
+  function evoDelta(pts, i, st) {
+    var p = pts[i], prev = pts[i - 1], key = st.area === 'all' ? 'tot' : st.area;
+    if (p.partial || !prev || prev.pre) return { cls: 'eq', txt: '' };
+    var d = Math.round(p.v[key] - prev.v[key]), unit = EVO_MODES[st.mode].prev;
+    if (Math.abs(d) < 1) return { cls: 'eq', txt: '● igual a ' + unit };
+    return d > 0 ? { cls: 'up', txt: '▲ ' + fhm(d) + ' a mais que ' + unit } : { cls: 'dn', txt: '▼ ' + fhm(-d) + ' a menos que ' + unit };
+  }
+  // Onde o ponto está em relação à meta (só a ficha Geral).
+  function evoVsGoal(p, goal) {
+    var v = p.v.tot, d = Math.round(v - goal);
+    if (p.pre) return null;
+    if (p.partial) return v >= goal ? { cls: 'up', txt: '✓ meta já batida (' + fhm(goal) + ')' } : { cls: 'eq', txt: 'faltam ' + fhm(goal - v) + ' para a meta de ' + fhm(goal) };
+    if (v >= goal) return { cls: 'up', txt: (d < 1 ? '✓ bateu a meta' : '▲ ' + fhm(d) + ' acima da meta') + ' (' + fhm(goal) + ')' };
+    return { cls: 'dn', txt: '▼ ' + fhm(goal - v) + ' abaixo da meta (' + fhm(goal) + ')' };
+  }
+  function evoReadHtml(pts, st, goal) {
+    var i = evoSel(pts, st), p = pts[i], key = st.area === 'all' ? 'tot' : st.area, e = evoBy(st.area), dl = evoDelta(pts, i, st), M = EVO_MODES[st.mode];
+    var tag = p.partial ? '<span class="cza-gchip amber">' + M.cur + '</span>' : p.pre ? '<span class="cza-gchip muted">a medição começou no meio</span>' : '';
+    var h = '<div class="cza-evr"><div class="h"><span>' + esc(p.long) + '</span>' + tag + '</div>'
+      + '<div class="v" style="color:' + (st.area === 'all' || st.area === 'tot' ? '#14532D' : e.color) + '">' + (p.v[key] >= 0.5 ? fhm(p.v[key]) : '0 min') + '<small class="' + dl.cls + '">' + dl.txt + '</small></div>';
+    var vg = goal ? evoVsGoal(p, goal) : null;
+    if (vg) h += '<div class="cza-vg ' + vg.cls + '">' + vg.txt + '</div>';
+    if (st.area === 'tot' || st.area === 'all') {
+      h += '<div class="cza-brk">' + EVO_APP.map(function (k) { var x = evoBy(k); return '<div><i style="background:' + x.color + '"></i>' + x.ic + ' ' + x.n + '<span>' + (p.v[k] >= 0.5 ? fhm(p.v[k]) : '—') + '</span></div>'; }).join('')
+        + '<div class="out"><i style="background:' + evoBy('aul').color + '"></i>🎓 Aulas <em>(fora da meta)</em><span>' + (p.v.aul >= 0.5 ? fhm(p.v.aul) : '—') + '</span></div></div>';
+    }
+    return h + '</div>';
+  }
+  // "Meta batida em 6 de 8 semanas" e, se estiver sempre bem acima, um convite para o aluno subir a própria meta.
+  function evoGoalSummary(pts, st, goal) {
+    var closed = pts.filter(function (p) { return !p.partial && !p.pre; }), M = EVO_MODES[st.mode];
+    if (!closed.length) return '<div class="cza-msum">Ainda não há ' + M.one + ' fechado para comparar com a meta.</div>';
+    var hit = closed.filter(function (p) { return p.v.tot >= goal; }).length, strong = closed.filter(function (p) { return p.v.tot >= 1.5 * goal; }).length;
+    var ratio = mean(closed.map(function (p) { return p.v.tot / goal; }));
+    var h = '<div class="cza-msum"><b>Meta batida em ' + hit + ' de ' + closed.length + ' ' + (closed.length === 1 ? M.one : M.many) + '</b> · em média <b>' + num1(ratio) + '×</b> a meta</div>';
+    if (closed.length >= 3 && strong / closed.length >= 0.75) h += '<div class="cza-nudge">🌟 <span>Você está bem acima da meta há um bom tempo. Que tal subir a sua?</span><button type="button" data-cza-perfil>Ajustar no Perfil ›</button></div>';
+    return h;
+  }
+  function evoTitle(st) {
+    var what = st.area === 'tot' ? 'Estudo no app' : st.area === 'all' ? 'Tempo por área' : evoBy(st.area).n;
+    return what + ' ' + EVO_MODES[st.mode].per;
+  }
+  // st = { mode: 'd'|'w'|'m', area: 'tot'|'all'|'pos'|'act'|'voc'|'des'|'aul', sel: índice do ponto tocado ('' = o último) }
+  function evoBodyHtml(c, st) {
+    var pts = evoPts(c, st), goal = evoGoal(c, st), M = EVO_MODES[st.mode];
+    var h = '<div class="cza-evh"><span class="t">' + evoTitle(st) + '</span>'
+      + '<div class="cza-sg">' + ['d', 'w', 'm'].map(function (k) { return '<button type="button" data-cza-evo-mode="' + k + '" class="' + (st.mode === k ? 'on' : '') + '">' + { d: 'Dias', w: 'Semanas', m: 'Meses' }[k] + '</button>'; }).join('') + '</div></div>'
+      + '<div class="cza-fch">' + EVO.map(function (x) {
+        var on = x.k === st.area;
+        return '<button type="button" class="cza-fc' + (on ? ' on' : '') + '" data-cza-evo-area="' + x.k + '"' + (on ? ' style="background:' + x.color + '"' : '') + '>' + (x.ic ? x.ic + ' ' : '') + x.n + '</button>';
+      }).join('') + '</div>';
+    if (pts.length < 2) return h + '<div class="cza-evx">' + (st.mode === 'd' ? 'Ainda não há dias suficientes para desenhar a linha.' : 'O gráfico por ' + M.one + ' aparece quando houver pelo menos 2 ' + M.many + ' de dados. Enquanto isso, olhe os dias: toque em <b>Dias</b>.') + '</div>';
+    h += evoChartHtml(pts, st, goal);
+    h += '<div class="cza-lgd">' + (st.area === 'all' ? EVO_ALL.map(function (k) { var x = evoBy(k); return '<span><i style="background:' + x.color + '"></i>' + x.n + '</span>'; }).join('') : '')
+      + (goal ? '<span><i class="m"></i>Meta (' + evoGoalName(c, st) + ')</span><span><i class="b"></i>acima da meta</span>' : '')
+      + '<span><span class="f"></span> ' + M.one + ' fechado</span><span><span class="o" style="border-color:' + evoBy(st.area).color + '"></span> ' + M.cur + '</span></div>';
+    h += evoReadHtml(pts, st, goal);
+    if (goal) h += evoGoalSummary(pts, st, goal);
+    else if (st.area !== 'tot') h += '<div class="cza-msum soft">A meta é do estudo no total. A linha dela está na ficha <b>Geral</b>.</div>';
+    return h;
+  }
+  // Resumo da seção fechada: em quantas semanas bateu a meta (ou, no começo, quanto falta esta semana).
+  function evoSummary(c) {
+    var g = c.evo.goal.w, w = c.evo.weeks.filter(function (x) { return !x.partial && !x.pre; });
+    if (w.length >= 2) return '<em>' + w.filter(function (x) { return x.v.tot >= g; }).length + ' de ' + w.length + '</em> semanas com a meta batida';
+    var cur = c.evo.weeks[c.evo.weeks.length - 1];
+    if (!cur) return 'Aparece com os primeiros dias de dados';
+    return cur.v.tot >= g ? '<em>Meta da semana batida</em> (' + fhm(g) + ')' : 'Esta semana: ' + fhm(cur.v.tot) + ' de ' + fhm(g) + ' da meta';
+  }
+  // O estado do gráfico (período, ficha, ponto) fica em atributos do contêiner: o clique só lê, muda e redesenha.
+  function evoRedraw(host, patch, c) {
+    var el = host.querySelector && host.querySelector('[data-cza-evo]');
+    if (!el || !c || !c.evo) return;
+    var st = { mode: el.getAttribute('data-mode') || 'd', area: el.getAttribute('data-area') || 'tot', sel: el.getAttribute('data-sel') || '' };
+    Object.keys(patch).forEach(function (k) { st[k] = patch[k]; });
+    el.setAttribute('data-mode', st.mode); el.setAttribute('data-area', st.area); el.setAttribute('data-sel', st.sel);
+    var g0 = el.querySelector('[data-cza-evg]'), keep = g0 ? g0.scrollLeft : 0;
+    el.innerHTML = evoBodyHtml(c, st);
+    var g = el.querySelector('[data-cza-evg]');
+    var tapped = ('sel' in patch) && patch.sel !== '' && Object.keys(patch).length === 1;
+    if (g) g.scrollLeft = tapped ? keep : g.scrollWidth;       // trocar de período ou ficha mostra o fim (o mais recente); tocar num ponto não rola
+  }
+
+  // ── Seções que abrem e fecham ───────────────────────────────────────────
+  function accHtml(id, ic, bg, title, summary, body, open) {
+    return '<section class="cza-ac' + (open ? ' open' : '') + '" data-cza-ac="' + id + '"><button type="button" class="cza-ach" data-cza-sec="' + id + '" aria-expanded="' + (open ? 'true' : 'false') + '">'
+      + '<span class="cza-aci" style="background:' + bg + '">' + ic + '</span><span class="cza-act"><b>' + title + '</b><small>' + summary + '</small></span><span class="cza-chev">›</span></button>'
+      + '<div class="cza-acb"' + (open ? '' : ' hidden') + '>' + body + '</div></section>';
+  }
+  function toggleSec(trigger) {
+    var box = trigger.closest('.cza-ac'), body = box && box.querySelector('.cza-acb');
+    if (!body) return;
+    var open = body.hidden;                       // estava fechada: vai abrir
+    body.hidden = !open;
+    trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (box.classList) box.classList.toggle('open', open);
+    if (open) { var g = body.querySelector('[data-cza-evg]'); if (g) g.scrollLeft = g.scrollWidth; }   // o gráfico abre mostrando o mais recente
+  }
+
+  // "Seus dias da semana": média de minutos de estudo em cada dia da semana.
+  function weekdaysHtml(c) {
+    var ws = wdStats(c), cfg = c.cfg;
+    return '<div class="cza-sub2">Seus dias da semana</div><div class="cza-hsub">Média de minutos de estudo em cada dia, nas últimas semanas.</div><div class="cza-wdb">'
+      + ws.avg.map(function (m, i) {
+        return '<div>' + (m >= cfg.minDia ? '<b>' + Math.round(m) + '</b>' : '<b style="color:#94A3B8">' + (m > 0 ? '<1' : '0') + '</b>')
+          + '<i class="' + (i === ws.best ? 'best' : m < cfg.minDia ? 'zero' : '') + '" style="height:' + (m < cfg.minDia ? 10 : Math.max(8, m / ws.max * 74)) + 'px"></i>' + WD1[i] + '</div>';
+      }).join('') + '</div>'
+      + '<div class="cza-cap">' + (ws.best >= 0 ? 'Seu dia mais forte é <b>' + WDF[ws.best] + '</b>. ' : '')
+      + (ws.blanks.length ? 'Dias em branco: <b>' + listPt(ws.blanks.map(function (i) { return WDF[i]; })) + '</b>. Que tal escolher um deles para 10 minutinhos?' : 'Você estuda em todos os dias da semana. 👏') + '</div>';
+  }
+
+  // Minha nota: a nota e a faixa, o recado do professor, o que mudou e o próximo passo.
+  function notaBodyHtml(c, o) {
+    var ok = c.status === 'ok', h = '';
+    if (ok) {
+      var b = c.band, d = c.trend;
+      var msg = b.k === 'alta' ? ['Ritmo excelente', 'Você aparece em quase tudo que o curso oferece. É isso que faz o inglês fixar.']
+        : b.k === 'media' ? ['Bom ritmo, dá para crescer', 'Você já faz bastante coisa. Veja abaixo onde um pequeno ajuste rende mais.']
+        : ['Vamos aumentar o ritmo', 'O inglês fixa com prática frequente. Comece pelos passos abaixo: pequenos já contam.'];
+      var dt = d == null ? '' : d >= 3 ? '<small style="color:#16A34A">▲ +' + d + ' pts desde a semana passada</small>'
+        : d <= -3 ? '<small style="color:#EA580C">▼ ' + d + ' pts desde a semana passada</small>'
+        : '<small style="color:#64748B">● estável desde a semana passada</small>';
+      var chips = studentChips(c);
+      h += '<div class="cza-hero">' + ring(c.index, 92, 11, b.soft) + '<div class="cza-t"><b>' + msg[0] + '</b>' + msg[1] + dt + '</div></div>'
+        + (chips.length ? '<div class="cza-chs">' + chips.map(function (x) { return '<span class="' + x.c + '">' + esc(x.t) + '</span>'; }).join('') + '</div>' : '');
+    } else {
+      h += '<div class="cza-hero"><div class="cza-t"><b>Estamos conhecendo o seu ritmo</b>A nota usa semanas inteiras (segunda a domingo) com o tempo medido.'
+        + (c.firstNota && c.coleta ? ' A medição começou em ' + ddmm(parseKey(c.coleta)) + ', então a primeira nota aparece em ' + ddmm(parseKey(c.firstNota)) + '.' : '')
+        + ' Os seus dias e o que conta estão nas outras seções e em “Como essa área funciona”.</div></div>';
+    }
+    h += '<div class="cza-pc cza-recado"><div class="cza-by">💬 Recado do seu professor</div><p>' + esc(o.recado || suggestComment(c, o.firstName)) + '</p></div>';
+    if (ok) {
+      var ch = changes(c), adv = advice(c);
+      if (ch.from) {
+        h += '<div class="cza-sub2">O que mudou <span class="cza-soft">· semana de ' + ch.to + ' x ' + ch.from + '</span></div><div class="cza-chg">'
+          + (ch.up.length ? '<h5>Melhorando</h5>' + ch.up.map(function (x) { return '<div class="u"><span>▲</span><span>' + esc(x) + '</span></div>'; }).join('') : '')
+          + (ch.down.length ? '<h5>Pede atenção</h5>' + ch.down.map(function (x) { return '<div class="d"><span>▼</span><span>' + esc(x) + '</span></div>'; }).join('') : '')
+          + (!ch.up.length && !ch.down.length ? '<div class="n"><span>●</span><span>Seu ritmo ficou estável de uma semana para a outra.</span></div>' : '') + '</div>';
+      }
+      h += '<div class="cza-sub2">Seu próximo passo</div>' + (adv.length ? adv.map(function (a) { return '<div class="cza-adv"><span style="font-size:20px">' + PIL[a.k].ic + '</span><div><b>' + esc(a.t[0]) + '</b>' + esc(a.t[1]) + '</div></div>'; }).join('')
+        : '<div class="cza-adv good"><span style="font-size:20px">🎉</span><div><b>Nada a corrigir</b>Mantenha o ritmo.</div></div>');
+    }
+    return h;
+  }
+
+  // Como essa área funciona: tudo o que explica a regra fica aqui, no fim da página.
+  function howHtml(c) {
+    var cfg = c.cfg, W = cfg.w, tw = sum(KEYS.map(function (k) { return W[k]; })) || 1;
+    function wp(k) { return Math.round(100 * W[k] / tw); }
+    return '<div class="cza-sect">O que conta como estudo</div><div class="cza-glist">'
+      + '<div><span style="background:#DCFCE7">📖</span>Ler o pós-aula</div>'
+      + '<div><span style="background:#DBEAFE">✏️</span><div>Fazer as atividades e as atividades extras<small>e ler a correção</small></div></div>'
+      + '<div><span style="background:#EDE9FE">🏆</span>O Desafio da semana</div>'
+      + '<div><span style="background:#FEF3C7">🧩</span>Meu vocabulário, a lista de verbos e os chunks</div></div>'
+      + '<div class="cza-sect" style="margin-top:14px">O que não conta</div><div class="cza-glist no">'
+      + '<div><span>🏠</span>Ficar na tela inicial, no perfil ou nos avisos</div><div><span>💤</span>Deixar o app aberto sem mexer</div></div>'
+      + '<div class="cza-grule"><span style="font-size:18px">⏱️</span><div><b>Como o tempo é contado.</b> O relógio anda enquanto você usa o app: tocando, rolando a página, digitando, ouvindo ou gravando áudio. Pensar um pouco também vale: pausas de até <b>' + limiteTxt(cfg.limiteSeg) + '</b> contam' + (cfg.limiteSeg < LEITURA_SEG ? ' (lendo o pós-aula, até <b>' + limiteTxt(LEITURA_SEG) + '</b>)' : '') + '. Passou disso, o app entende que você saiu e não conta.</div></div>'
+      + '<div class="cza-sect" style="margin-top:16px">Os 5 pontos da sua adesão</div><div class="cza-lead">Cada ponto vale uma parte da nota. A barra mostra como você está e a meta diz o que fazer.</div>' + ruleRowsHtml(c)
+      + '<div class="cza-sect" style="margin-top:16px">Como a nota é calculada</div>'
+      + '<p class="cza-cap">A nota vai de 0 a 100 e é feita toda semana (segunda a domingo). Constância vale <b>' + wp('C') + '%</b>, Atividades <b>' + wp('At') + '%</b>, Pós-aula <b>' + wp('Pos') + '%</b>, Aulas <b>' + wp('Aula') + '%</b> e Desafio <b>' + wp('Des') + '%</b>. Vale a média das últimas 3 semanas fechadas, e a mais recente pesa mais. Se um ponto não se aplica a você, os outros ganham o peso dele.</p>'
+      + '<div class="cza-sect" style="margin-top:16px">Suas metas</div>'
+      + '<p class="cza-cap">Você escolhe no <b>Perfil</b> quantos minutos por dia, e quantas horas por semana e por mês quer estudar. A meta do dia vale só para o app. As da semana e do mês somam as aulas. As metas não mexem na nota.</p>'
+      + '<div class="cza-sect" style="margin-top:16px">A linha de meta do gráfico</div>'
+      + '<p class="cza-cap">Na ficha <b>Geral</b> da Evolução, a linha tracejada mostra onde chegar. Ela compara só o estudo no app (as aulas ficam de fora). Por dia é a meta do dia (' + fhm(cfg.metaDiaMin) + '). Por semana é a meta do dia × ' + cfg.metaDiasEstudo + ' dias de estudo. Por mês é a da semana × 52 ÷ 12. A faixa verde é a área acima da meta.</p>';
+  }
+
+  /* Página de adesão: em cima o cartão de hoje; embaixo, seções que abrem e fecham (todas fechadas, cada uma com um resumo).
+   * "Como essa área funciona" é a última. Tocar numa bolinha do Início abre a página já com o dia aberto.
+   * o = { firstName, recado, ribbon, ribbonOpen, stats, sel (dia já aberto, AAAA-MM-DD), open (ids de seções abertas) } */
   function pageHtml(c, o) {
     o = o || {};
-    var cfg = c.cfg, td = todayOf(c), g = c.cur.goal, m = goalMsg(c, o.firstName), sel = o.sel || null;
-    var month = monthKeyOf(c.now);
+    var cfg = c.cfg, td = todayOf(c), g = c.cur.goal, m = goalMsg(c, o.firstName), H = c.hours, ok = c.status === 'ok', sel = o.sel || null;
+    var opened = {}; (o.open || []).forEach(function (id) { opened[id] = true; });
+    if (sel) opened.sem = true;
+    var month = monthKeyOf(c.now), y = +month.slice(0, 4), mo = +month.slice(5, 7), hits = 0;
+    for (var d = 1, nd = new Date(y, mo, 0).getDate(); d <= nd; d++) if (dayStatus(c, month + '-' + String(d).padStart(2, '0')).st === 'hit') hits++;
     var h = '<div class="cza cza-page">' + (o.ribbon ? '<div class="cza-ribbon' + (o.ribbonOpen ? ' open' : '') + '">' + esc(o.ribbon) + '</div>' : '');
     h += '<div class="cza-pc cza-gfirst"><div class="cza-gtop"><b>🎯 Meta de estudo de hoje</b><span class="cza-gchip muted">' + num1(cfg.metaDiaMin) + ' min por dia</span></div>'
-      + '<div class="cza-gbody">' + goalRing(td.min, cfg.metaDiaMin, 104, 12) + '<div class="cza-gt"><b class="big">' + m.title + '</b>' + m.text + '</div></div></div>';
-    h += '<div class="cza-pc"><div class="cza-sect" style="margin-bottom:0">O que dá para fazer agora</div><div class="cza-todo">' + todoHtml(c) + '</div></div>';
-    h += '<div class="cza-pc"><div class="cza-gtop"><div class="cza-sect" style="margin:0">Sua semana</div><span class="cza-gchip' + (g.atingida ? '' : ' muted') + '">' + goalDaysTxt(g) + ' ' + (g.atingida ? '🎉' : '✓') + '</span></div>'
-      + weekStripHtml(c, { mode: 'pick', sel: sel })
+      + '<div class="cza-gbody">' + goalRing(td.min, cfg.metaDiaMin, 88, 11) + '<div class="cza-gt"><b class="big">' + m.title + '</b>' + m.text + '</div></div>' + tilesHtml(c) + '</div>';
+
+    h += accHtml('sem', '🗓️', '#DCFCE7', 'Minha semana', goalDaysTxt(g) + ' · ' + Math.round(g.minutos) + ' min',
+      weekStripHtml(c, { mode: 'pick', sel: sel })
       + '<div class="cza-cap">O número é o tempo de estudo do dia, em minutos. Toque numa bolinha para ver onde o tempo foi gasto.</div>'
-      + '<div data-cza-box="week">' + (sel ? dayDetailHtml(c, sel) || DAY_HINT : DAY_HINT) + '</div></div>';
-    h += '<div class="cza-pc"><button type="button" class="cza-calbtn" data-cza-cal aria-expanded="false"><div>📅 Calendário<small>Veja o estudo de cada dia do mês</small></div><span class="cza-chev">›</span></button>'
-      + '<div class="cza-cal" hidden><div class="cza-calbody" data-cza-cur="' + month + '">' + calendarHtml(c, month) + '</div>'
-      + '<div data-cza-box="cal">' + DAY_HINT + '</div></div></div>';
-    h += '<div class="cza-pc cza-hrs">' + hoursHtml(c) + '</div>';
-    h += '<div class="cza-pc">' + weekTotalsHtml(c) + '</div>';
-    h += studentHtml(c, { firstName: o.firstName, recado: o.recado, ribbon: '', stats: o.stats, noTitle: true, collapsible: false, page: true });
+      + '<div data-cza-box="week">' + (sel ? dayDetailHtml(c, sel) || DAY_HINT : DAY_HINT) + '</div>' + weekTotalsHtml(c), opened.sem);
+    h += accHtml('cal', '📅', '#E0F2FE', 'Calendário', cap1(MESES[mo - 1]) + ' · ' + (hits === 1 ? '1 dia' : hits + ' dias') + ' com meta batida',
+      '<div class="cza-calbody" data-cza-cur="' + month + '">' + calendarHtml(c, month) + '</div><div data-cza-box="cal">' + DAY_HINT + '</div>', opened.cal);
+    var st0 = { mode: c.evo.weeks.length >= 3 ? 'w' : 'd', area: 'tot', sel: '' };
+    h += accHtml('evo', '📈', '#DCFCE7', 'Evolução', evoSummary(c),
+      '<div data-cza-evo data-mode="' + st0.mode + '" data-area="' + st0.area + '" data-sel="">' + evoBodyHtml(c, st0) + '</div>' + weekdaysHtml(c), opened.evo);
+    h += accHtml('hor', '⏱️', '#E0F2FE', 'Horas de estudo', fhm(H.total) + ' no total · ' + fhm(H.sem) + ' esta semana', hoursHtml(c, { noTitle: true }), opened.hor);
+    h += accHtml('nota', '🏅', '#FEF3C7', 'Minha nota',
+      ok ? 'Adesão <em style="color:' + c.band.color + '">' + c.index + '</em> · ' + c.band.label : 'Coletando' + (c.firstNota ? ' · a 1ª nota aparece em ' + ddmm(parseKey(c.firstNota)) : ''),
+      notaBodyHtml(c, o), opened.nota);
+    h += accHtml('ace', '🎯', '#EDE9FE', 'Adesão e acertos', ok && c.accLast != null ? 'Acertos <em>' + c.accLast + '%</em> na última semana' : 'Aparece com 2 semanas de nota',
+      ok ? '<div class="cza-hsub">Mais prática, mais acertos. Veja se isso acontece com você.</div>' + lineChartHtml(c) + '<div class="cza-divider"></div>' + groupBarsHtml(c, o.stats)
+        : '<div class="cza-cap">O gráfico de adesão e acertos aparece quando houver pelo menos 2 semanas de nota.</div>', opened.ace);
+    h += accHtml('como', '❓', '#F1F5F9', 'Como essa área funciona', 'O que conta, quanto tempo e o que fazer', howHtml(c), opened.como);
     return h + '</div>';
   }
 
   // Toques dentro da página (usada pelo app do aluno e pela prévia do painel). Mexe só no DOM:
-  // abre o detalhe do dia, o calendário e os "ver detalhes". Devolve null se o toque não é da página,
-  // { go: 'pos'|'vocab'|'aulas' } para um atalho ou { open: 'AAAA-MM-DD'|null } para abrir a página.
+  // abre e fecha seções, muda o gráfico, abre o detalhe do dia e o calendário. Devolve null se o toque não é da página,
+  // { go: 'pos'|'vocab'|'aulas' } para um atalho, { perfil: true } para o Perfil ou { open: 'AAAA-MM-DD'|null } para abrir a página.
   function pageClick(e, host, c) {
     var t = e && e.target, el;
     if (!t || !t.closest) return null;
+    if ((el = t.closest('[data-cza-sec]'))) { toggleSec(el); return {}; }
+    if ((el = t.closest('[data-cza-evo-mode]'))) { evoRedraw(host, { mode: el.getAttribute('data-cza-evo-mode'), sel: '' }, c); return {}; }
+    if ((el = t.closest('[data-cza-evo-area]'))) { evoRedraw(host, { area: el.getAttribute('data-cza-evo-area'), sel: '' }, c); return {}; }
+    if ((el = t.closest('[data-cza-evo-pt]'))) { evoRedraw(host, { sel: el.getAttribute('data-cza-evo-pt') }, c); return {}; }
     if ((el = t.closest('[data-cza-close]'))) {
       var cbox = el.closest('[data-cza-box]');
       if (cbox) {
@@ -1007,11 +1296,6 @@
       if (box) box.innerHTML = dayDetailHtml(c, el.getAttribute('data-cza-k')) || DAY_HINT;
       return {};
     }
-    if ((el = t.closest('[data-cza-cal]'))) {
-      var cal = host.querySelector('.cza-cal');
-      if (cal) { var open = cal.hidden; cal.hidden = !open; el.setAttribute('aria-expanded', open ? 'true' : 'false'); }
-      return {};
-    }
     if ((el = t.closest('[data-cza-month]'))) {
       var body = host.querySelector('.cza-calbody');
       if (!body || el.disabled) return {};
@@ -1022,7 +1306,6 @@
       if (cb) cb.innerHTML = DAY_HINT;
       return {};
     }
-    if ((el = t.closest('[data-cza-gtoggle]'))) { toggleGoalInfo(el); return {}; }
     if ((el = t.closest('[data-cza-toggle]'))) { toggleDetails(host, el); return {}; }
     if ((el = t.closest('.cza-cell'))) {
       if (el.disabled) return {};
@@ -1036,14 +1319,6 @@
     if ((el = t.closest('[data-cza-go]'))) return { go: el.getAttribute('data-cza-go') };
     if ((el = t.closest('[data-cza-open]'))) return { open: el.getAttribute('data-cza-k') || null };
     return null;
-  }
-  // Abre/fecha o "O que conta como tempo de estudo?".
-  function toggleGoalInfo(trigger) {
-    var more = trigger && trigger.parentElement && trigger.parentElement.querySelector('.cza-gmore');
-    if (!more) return;
-    var open = more.hidden;
-    more.hidden = !open;
-    trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
 
   var STUDENT_CSS = ''
@@ -1128,7 +1403,7 @@
     + '.cza-more>.cza-sub{margin-top:12px}'
     // meta de estudo
     + '.cza-sect{font-size:12px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}'
-    + '.cza-page>.cza-pc{margin-top:12px}.cza-page>.cza-gfirst{margin-top:0}.cza-page>.cza>.cza-herocard{margin-top:12px}'
+    + '.cza-page>.cza-pc{margin-top:12px}.cza-page>.cza-gfirst{margin-top:0}.cza-page>.cza-ac{margin-top:10px}'
     + '.cza-gtop{display:flex;align-items:center;justify-content:space-between;gap:8px}'
     + '.cza-gtop b{font-size:15px;font-weight:800}'
     + '.cza-gchip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:800;background:#DCFCE7;color:#14532D;white-space:nowrap}'
@@ -1138,22 +1413,11 @@
     + '.cza-gt{font-size:13.5px;font-weight:700;color:#334155;line-height:1.4}'
     + '.cza-gt b.big{display:block;font-size:19px;font-weight:800;color:#0F172A;margin-bottom:3px}'
     + '.cza-gt em{font-style:normal;color:#15803D;font-weight:800}'
-    + '.cza-todo{display:grid;gap:8px;margin-top:4px}'
-    + '.cza-trow{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:15px;border:1.5px solid #EEF2F6;background:#fff;cursor:pointer}'
-    + '.cza-trow:focus-visible{outline:3px solid rgba(22,163,74,.45);outline-offset:2px}'
-    + '.cza-trow.done{background:#F0FDF4;border-color:#BBF7D0}'
-    + '.cza-tic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:19px;flex-shrink:0}'
-    + '.cza-ttx{flex:1;min-width:0}.cza-ttx b{display:block;font-size:13.5px;font-weight:800}.cza-ttx span{font-size:11.5px;color:#64748B;font-weight:700}'
-    + '.cza-pill{font-size:11px;font-weight:800;padding:5px 11px;border-radius:99px;white-space:nowrap}'
-    + '.cza-pill.ok{background:#16A34A;color:#fff}.cza-pill.go{background:#FEF3C7;color:#92400E}'
     + '.cza-gtot{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}'
     + '.cza-gtot b{font-size:34px;font-weight:800;letter-spacing:-1px;color:#14532D}.cza-gtot span{font-size:14px;color:#64748B;font-weight:800}'
     + '.cza-gbar{height:12px;border-radius:99px;background:#E5E7EB;margin:10px 0 8px;overflow:hidden;display:flex}.cza-gbar i{display:block;height:100%}'
     + '.cza-glegend{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;font-weight:800;color:#475569}'
     + '.cza-glegend span{display:inline-flex;align-items:center;gap:6px}.cza-glegend i{width:12px;height:12px;border-radius:4px;display:inline-block}'
-    + '.cza-gq{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;margin-top:14px;padding:11px 13px;border:1.5px solid #E2E8F0;border-radius:14px;background:#fff;font:inherit;font-size:13px;font-weight:800;color:#15803D;cursor:pointer;text-align:left}'
-    + '.cza-gq[aria-expanded="true"] .cza-chev{transform:rotate(90deg)}'
-    + '.cza-gmore[hidden]{display:none}'
     + '.cza-glist{display:grid;gap:9px}'
     + '.cza-glist>div{display:flex;gap:11px;align-items:flex-start;font-size:13.5px;font-weight:700;color:#1E293B;line-height:1.35}'
     + '.cza-glist>div>span{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:17px;flex-shrink:0;background:#F1F5F9}'
@@ -1212,10 +1476,6 @@
     + '.cza-xbox>span{width:40px;height:40px;border-radius:50%;background:#fff;border:2px solid #FCA5A5;color:#DC2626;display:grid;place-items:center;font-size:21px;font-weight:800;flex-shrink:0}'
     + '.cza-xbox b{display:block;font-size:15px;color:#7F1D1D}'
     // calendário
-    + '.cza-calbtn{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;font:inherit;font-size:14px;font-weight:800;color:#0F172A;border:0;background:none;padding:0;cursor:pointer}'
-    + '.cza-calbtn small{display:block;font-size:11.5px;font-weight:700;color:#64748B}.cza-calbtn .cza-chev{font-size:20px;color:#15803D}'
-    + '.cza-calbtn[aria-expanded="true"] .cza-chev{transform:rotate(90deg)}'
-    + '.cza-cal[hidden]{display:none}'
     + '.cza-calnav{display:flex;align-items:center;justify-content:space-between;margin:12px 0 8px}.cza-calnav b{font-size:14px;font-weight:800}'
     + '.cza-calnav button{width:34px;height:34px;border-radius:11px;border:1.5px solid #E2E8F0;background:#fff;font:inherit;font-size:18px;font-weight:800;color:#15803D;cursor:pointer;padding:0}.cza-calnav button:disabled{opacity:.3;cursor:default}'
     + '.cza-cg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.cza-cg .h{text-align:center;font-size:10px;font-weight:800;color:#94A3B8;padding-bottom:2px}'
@@ -1228,7 +1488,6 @@
     + '.cza-cc.sel{outline:3px solid #0F172A;outline-offset:1px}'
     + '.cza-leg{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:10px;font-size:10.5px;font-weight:800;color:#475569}.cza-leg span{display:inline-flex;align-items:center;gap:5px}'
     + '.cza-leg i{width:12px;height:12px;border-radius:4px;display:inline-block;font-style:normal;font-size:9px;line-height:12px;text-align:center;font-weight:800}'
-    + '.cza-page>.cza>.cza-title{display:none}'
     + '.cza-hrbig{display:flex;align-items:baseline;gap:8px;margin-top:6px}.cza-hrbig b{font-size:32px;font-weight:800;letter-spacing:-1px;color:#0C4A6E}.cza-hrbig span{font-size:14px;color:#64748B;font-weight:800}'
     + '.cza-hbar2{height:12px;border-radius:99px;background:#E5E7EB;margin:8px 0 10px;overflow:hidden;display:flex}.cza-hbar2 i{display:block;height:100%}'
     + '.cza-hsplit{display:grid;grid-template-columns:1fr 1fr;gap:8px}'
@@ -1241,13 +1500,64 @@
     + '.cza-hgoal p{font-size:12px;font-weight:700;color:#075985;line-height:1.4}'
     + '.cza-hgoal.open{background:#F8FAFC;border-color:#E2E8F0}.cza-hgoal.open .cza-top2{color:#0F172A}'
     + '.cza-setgoal{margin-top:7px;padding:7px 11px;border-radius:99px;background:#fff;border:1.5px dashed #94A3B8;font:inherit;font-size:12px;font-weight:800;color:#0369A1;cursor:pointer}'
-    + '.cza-hnote{margin-top:10px;font-size:11.5px;font-weight:700;color:#64748B;line-height:1.4}';
+    + '.cza-hnote{margin-top:10px;font-size:11.5px;font-weight:700;color:#64748B;line-height:1.4}'
+    // seções que abrem e fecham
+    + '.cza-ac{background:#fff;border:1px solid rgba(22,163,74,.12);border-radius:18px;overflow:hidden}'
+    + '.cza-ac.open{border-color:rgba(22,163,74,.32);box-shadow:0 6px 16px rgba(15,23,42,.05)}'
+    + '.cza-ach{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;color:inherit;border:0;background:none;padding:12px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent}'
+    + '.cza-ach:focus-visible{outline:3px solid rgba(22,163,74,.45);outline-offset:-3px;border-radius:18px}'
+    + '.cza-aci{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:19px;flex-shrink:0}'
+    + '.cza-act{flex:1;min-width:0}.cza-act b{display:block;font-size:14.5px;font-weight:800;color:#0F172A}'
+    + '.cza-act small{display:block;font-size:12px;font-weight:700;color:#64748B;margin-top:1px;line-height:1.3}.cza-act small em{font-style:normal;font-weight:800;color:#15803D}'
+    + '.cza-ach .cza-chev{font-size:22px;color:#15803D}.cza-ach[aria-expanded="true"] .cza-chev{transform:rotate(90deg)}'
+    + '.cza-acb{padding:6px 14px 14px;border-top:1px solid #EEF2F6}.cza-acb[hidden]{display:none}'
+    + '.cza-acb>.cza-sect{margin-top:14px}.cza-acb>.cza-sect:first-child{margin-top:8px}'
+    + '.cza-acb>.cza-hero{margin-top:10px}.cza-acb>.cza-pc{margin-top:12px}'
+    + '.cza-lead{font-size:12px;color:#64748B;font-weight:600;margin:2px 0 8px}'
+    + '.cza-sub2{font-size:12.5px;font-weight:800;color:#0F172A;margin:14px 0 4px}.cza-soft{font-weight:600;color:#64748B}'
+    // atalhos do cartão de hoje
+    + '.cza-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}'
+    + '.cza-tile{display:grid;justify-items:center;gap:2px;text-align:center;font:inherit;color:inherit;padding:10px 4px 9px;border-radius:14px;border:1.5px solid #EEF2F6;background:#fff;cursor:pointer}'
+    + '.cza-tile:focus-visible{outline:3px solid rgba(22,163,74,.45);outline-offset:2px}'
+    + '.cza-tile .i{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:17px;margin-bottom:2px}'
+    + '.cza-tile b{font-size:12px;font-weight:800}.cza-tile small{font-size:10.5px;font-weight:700;color:#64748B}'
+    + '.cza-tile.done{background:#F0FDF4;border-color:#BBF7D0}.cza-tile.done small{color:#15803D;font-weight:800}'
+    // gráfico de evolução
+    + '.cza-evh{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}.cza-evh .t{font-size:12px;font-weight:700;color:#64748B}'
+    + '.cza-sg{display:inline-flex;background:#F1F5F9;border-radius:99px;padding:3px;flex-shrink:0}'
+    + '.cza-sg button{border:0;background:none;font:inherit;font-size:11.5px;font-weight:800;color:#64748B;padding:5px 12px;border-radius:99px;cursor:pointer}'
+    + '.cza-sg button.on{background:#fff;color:#0F172A;box-shadow:0 1px 3px rgba(15,23,42,.18)}'
+    + '.cza-fch{display:flex;gap:6px;overflow-x:auto;padding:10px 0 4px;scrollbar-width:none}.cza-fch::-webkit-scrollbar{display:none}'
+    + '.cza-fc{flex-shrink:0;border:1.5px solid #E2E8F0;background:#fff;border-radius:99px;font:inherit;font-size:12px;font-weight:800;color:#475569;padding:6px 12px;cursor:pointer;white-space:nowrap}'
+    + '.cza-fc.on{color:#fff;border-color:transparent}'
+    + '.cza-evw{display:flex;align-items:flex-start;margin-top:4px}.cza-evy{flex-shrink:0;display:block}'
+    + '.cza-evg{flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}.cza-evg::-webkit-scrollbar{display:none}.cza-evg svg{display:block}.cza-evg text,.cza-evy text{font-family:inherit}'
+    + '.cza-evr{margin-top:8px;padding:11px 12px;border-radius:15px;background:#F8FAFC;border:1px solid #E2E8F0}'
+    + '.cza-evr .h{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:800;color:#475569}'
+    + '.cza-evr .v{font-size:24px;font-weight:800;letter-spacing:-.5px;margin-top:2px}.cza-evr .v small{font-size:12px;font-weight:800;letter-spacing:0;margin-left:6px}'
+    + '.cza-evr .up{color:#15803D}.cza-evr .dn{color:#C2410C}.cza-evr .eq{color:#64748B}'
+    + '.cza-vg{margin-top:6px;display:inline-block;padding:4px 10px;border-radius:99px;font-size:12px;font-weight:800;background:#F1F5F9;color:#475569}'
+    + '.cza-vg.up{background:#DCFCE7;color:#14532D}.cza-vg.dn{background:#FFEDD5;color:#7C2D12}'
+    + '.cza-brk{display:grid;gap:5px;margin-top:9px;padding-top:9px;border-top:1px dashed #CBD5E1}'
+    + '.cza-brk div{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#334155}.cza-brk i{width:10px;height:10px;border-radius:3px;flex-shrink:0}'
+    + '.cza-brk span{margin-left:auto;font-weight:800;color:#0F172A}'
+    + '.cza-brk .out{margin-top:2px;padding-top:6px;border-top:1px dashed #CBD5E1;color:#64748B}.cza-brk .out em{font-style:normal;font-size:11px;font-weight:700}'
+    + '.cza-lgd{display:flex;gap:6px 14px;flex-wrap:wrap;margin-top:8px;font-size:11px;font-weight:800;color:#64748B}.cza-lgd span{display:inline-flex;align-items:center;gap:5px}'
+    + '.cza-lgd i{width:14px;height:4px;border-radius:2px;display:inline-block}'
+    + '.cza-lgd i.m{width:20px;height:0;border-top:2px dashed #B45309;background:none;border-radius:0}.cza-lgd i.b{width:12px;height:12px;border-radius:3px;background:rgba(22,163,74,.18)}'
+    + '.cza-lgd .o{width:9px;height:9px;border-radius:50%;background:#fff;border:2.5px solid #64748B}.cza-lgd .f{width:9px;height:9px;border-radius:50%;background:#64748B}'
+    + '.cza-evx{margin-top:8px;padding:12px;border-radius:14px;background:#F8FAFC;border:1px dashed #CBD5E1;font-size:12.5px;font-weight:700;color:#475569;line-height:1.45}'
+    + '.cza-msum{margin-top:8px;padding:10px 12px;border-radius:14px;background:#FFFBEB;border:1px solid #FDE68A;font-size:12.5px;font-weight:700;color:#78350F;line-height:1.4}'
+    + '.cza-msum.soft{background:#F8FAFC;border-color:#E2E8F0;color:#64748B}'
+    + '.cza-nudge{margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border-radius:14px;background:#F0FDF4;border:1px solid #BBF7D0;font-size:12.5px;font-weight:700;color:#14532D;line-height:1.4}'
+    + '.cza-nudge span{flex:1;min-width:160px}'
+    + '.cza-nudge button{padding:6px 12px;border-radius:99px;background:#fff;border:1.5px solid #86EFAC;font:inherit;font-size:12px;font-weight:800;color:#15803D;cursor:pointer}';
 
   var api = {
     KEYS: KEYS, PIL: PIL, WD: WD, WD1: WD1, WDF: WDF, DEFAULTS: DEFAULTS, LEITURA_SEG: LEITURA_SEG,
     // Os três tipos de estudo da meta diária/semanal e o que cada um reúne.
     STUDY_TYPES: A_STUDY_TYPES,
-    goalHomeHtml: goalHomeHtml, goalProgressHtml: goalProgressHtml, pageHtml: pageHtml, pageClick: pageClick, toggleGoalInfo: toggleGoalInfo,
+    goalHomeHtml: goalHomeHtml, goalProgressHtml: goalProgressHtml, pageHtml: pageHtml, pageClick: pageClick, evoBodyHtml: evoBodyHtml,
     todayOf: todayOf, goalDaysTxt: goalDaysTxt, metasOf: metasOf, fhm: fhm, hoursHtml: hoursHtml, fmtTimer: fmtTimer, timerTone: timerTone, dayStatus: dayStatus, dayDetailHtml: dayDetailHtml, calendarHtml: calendarHtml, weekStripHtml: weekStripHtml, goalMsg: goalMsg,
     cfgOf: cfgOf, compute: compute, band: band, effWeight: effWeight, combine: combine, itemKey: itemKey,
     tagsOf: tagsOf, diagOf: diagOf, suggestComment: suggestComment, studentChips: studentChips,
