@@ -250,6 +250,14 @@
     .read-badge { font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; flex-shrink: 0; }
     .read-badge.read { background: #d1fae5; color: #065f46; }
     .read-badge.unread { background: #fff3cd; color: #92400e; }
+    /* Aluno do plano (Science Lab): violeta na lista e na coluna de pendências */
+    .student-row.student-row-plano { background: #f5f3ff; border-color: #c4b5fd; box-shadow: inset 5px 0 0 #7c3aed; }
+    .student-row-plano .avatar { background: #ede9fe; color: #5b21b6; }
+    .student-row-plano .progress-chip { background: #fff; border-color: #ddd6fe; }
+    .read-badge.plano { background: #ede9fe; color: #5b21b6; }
+    .kebab-item.plano { background: #f5f3ff; color: #5b21b6; font-weight: 800; }
+    .pend-card-plano { border: 1px solid #c4b5fd; }
+    .pend-card-plano > h2 { color: #5b21b6; }
     .badge-stack { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
     .act-badge { font-size: 0.72rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; flex-shrink: 0; white-space: nowrap; }
     .act-badge.tocorrect { background: #d1fae5; color: #065f46; box-shadow: 0 0 0 3px rgba(6,95,70,0.10); }
@@ -1160,6 +1168,10 @@
             <h2 style="margin:0;padding:16px 18px 0;">🎨 Atividades</h2>
             <div id="pend-feed-atividades"><div class="loading">Carregando...</div></div>
           </div>
+          <div class="form-card pend-card-plano" style="margin:0;padding:0;overflow:hidden;">
+            <h2 style="margin:0;padding:16px 18px 0;">💜 Science Lab</h2>
+            <div id="pend-feed-plano"><div class="loading">Carregando...</div></div>
+          </div>
         </div>
 
         <details class="form-card" style="margin:16px 0 0;">
@@ -1755,6 +1767,31 @@
         </div>
         <button class="btn-add" id="e-save">Salvar alterações</button>
         <div class="form-msg" id="e-msg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mudar / editar o plano do aluno (Science Lab) -->
+  <div class="modal-overlay" id="plano-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="pl-titulo">💜 Science Lab</h2>
+        <button class="btn-close" id="pl-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="pl-uid" />
+        <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:10px 12px;font-size:0.8rem;color:#4c1d95;margin-bottom:14px;">
+          Ao salvar, o aluno passa a ver o <strong>Caminho</strong> no app na próxima vez que abrir. Ele continua com os pós-aulas e as atividades de antes. <strong>A agenda e o financeiro não são alterados</strong>: ajuste o horário semanal em "Editar dados" e a mensalidade no Financeiro.
+        </div>
+        <div class="field"><label>Nome do plano</label><input type="text" id="pl-nome" /></div>
+        <div class="field"><label>Mensalidade (R$) — só anotação por enquanto</label><input type="number" id="pl-mensalidade" min="0" step="1" /></div>
+        <div class="field"><label>No plano desde</label><input type="date" id="pl-desde" /></div>
+        <div class="field"><label>Próxima aula do mês (data)</label><input type="date" id="pl-aula" /></div>
+        <div class="field"><label>Hora da aula</label><input type="time" id="pl-hora" /></div>
+        <div class="field"><label>Unidade atual (texto curto)</label><input type="text" id="pl-unidade" placeholder="Unit 4" /></div>
+        <div class="field"><label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="pl-assistente" /> Assistente de dúvidas ligado (20 perguntas por mês)</label></div>
+        <button class="btn-add" id="pl-save">Salvar</button>
+        <div class="form-msg" id="pl-msg"></div>
       </div>
     </div>
   </div>
@@ -6101,7 +6138,17 @@
       const attendance = progress.attendance || {};
       const exercise = progress.exercise || {};
       const talk = progress.talk || {};
-      const progressHtml = archived ? '' : `<div class="student-progress-mini" aria-label="Estatísticas de ${nm}">
+      // Aluno do plano (Science Lab): sem pós-aula semanal, então sem "Lido", presença e talk time.
+      const emPlano = !archived && s.plano && s.plano.ativo !== false;
+      const plNome = esc((s.plano && s.plano.nome) || 'Science Lab');
+      const plDia = iso => (iso && /^\d{4}-\d{2}-\d{2}/.test(iso)) ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : '—';
+      const progressPlano = emPlano ? `<div class="student-progress-mini" aria-label="Plano de ${nm}">
+        <div class="progress-chip"><span class="pc-label">Unidade</span><span class="pc-value" style="color:#5b21b6">${esc(s.plano.unidadeRotulo || '—')}</span></div>
+        <div class="progress-chip"><span class="pc-label">Próx. aula</span><span class="pc-value">${plDia(s.plano.proximaAula)}</span></div>
+        <div class="progress-chip"><span class="pc-label">Atividades</span><span class="pc-value" style="color:${adminMetricColor(exercise.accuracy)}">${exercise.accuracy == null ? '—' : `${exercise.accuracy}%`}</span></div>
+        <div class="progress-chip"><span class="pc-label">No plano desde</span><span class="pc-value">${plDia(s.plano.desde)}</span></div>
+      </div>` : '';
+      const progressHtml = emPlano ? progressPlano : archived ? '' : `<div class="student-progress-mini" aria-label="Estatísticas de ${nm}">
         <div class="progress-chip"><span class="pc-label">Presença</span><span class="pc-value" style="color:${adminMetricColor(attendance.rate)}">${attendance.rate == null ? '—' : `${attendance.rate}%`}</span></div>
         <div class="progress-chip"><span class="pc-label">Sequência</span><span class="pc-value" style="color:${attendance.currentStreak >= 10 ? '#16a34a' : '#2563eb'}">${attendance.currentStreak || 0} aulas</span></div>
         <div class="progress-chip"><span class="pc-label">Atividades</span><span class="pc-value" style="color:${adminMetricColor(exercise.accuracy)}">${exercise.accuracy == null ? '—' : `${exercise.accuracy}%`}</span></div>
@@ -6109,6 +6156,7 @@
       </div>`;
       const posBadge = archived
         ? `<span class="read-badge" style="background:#f3f4f6;color:var(--muted)">Ex-aluno</span>`
+        : emPlano ? `<span class="read-badge plano">💜 ${plNome}</span>`
         : (s.latestTitle
             ? `<span class="read-badge ${s.latestRead ? 'read' : 'unread'}">${s.latestRead ? '✓ Lido' : '⏳ Não lido'}</span>`
             : `<span class="read-badge" style="background:#f3f4f6;color:var(--muted)">Sem pós-aula</span>`);
@@ -6116,13 +6164,18 @@
       // Só aparece quando o gap é grande — quem teve aula recente não precisa desse aviso.
       // (diasSemAula só existe pra aluno ativo, então isso já sai vazio pro ex-aluno.)
       let gapBadge = '';
-      if (s.diasSemAula >= 14)      gapBadge = `<span class="gap-badge alert">🕐 ${s.diasSemAula} dias sem aula</span>`;
+      if (emPlano) gapBadge = '';   // aula mensal: "dias sem aula" não se aplica
+      else if (s.diasSemAula >= 14)      gapBadge = `<span class="gap-badge alert">🕐 ${s.diasSemAula} dias sem aula</span>`;
       else if (s.diasSemAula >= 7)  gapBadge = `<span class="gap-badge warn">🕐 ${s.diasSemAula} dias sem aula</span>`;
       const badge = `<div class="badge-stack">${posBadge}${actBadge}${gapBadge}</div>`;
       const menuItem = `<button class="kebab-item" data-action="mirror" data-uid="${s.uid}" data-name="${nm}">🪞 Espelho (ver área do aluno)</button>`
         + `<button class="kebab-item" data-action="challenge" data-uid="${s.uid}" data-name="${nm}">🏆 Desafios do aluno</button>`
         + `<button class="kebab-item" data-action="edit" data-uid="${s.uid}" data-name="${nm}">✏️ Editar dados</button>`
         + `<button class="kebab-item" data-action="extras" data-uid="${s.uid}" data-name="${nm}">🎧 Atividades Extras</button>`
+        + (archived ? '' : emPlano
+          ? `<button class="kebab-item plano" data-action="editar-plano" data-uid="${s.uid}" data-name="${nm}">💜 Editar plano (${plNome})</button>`
+            + `<button class="kebab-item" data-action="sem-plano" data-uid="${s.uid}" data-name="${nm}">↩ Voltar para aulas semanais</button>`
+          : `<button class="kebab-item plano" data-action="mudar-plano" data-uid="${s.uid}" data-name="${nm}">💜 Mudar para o Science Lab</button>`)
         + (archived
           ? `<button class="kebab-item" data-action="reactivate" data-uid="${s.uid}" data-name="${nm}">↩️ Reativar aluno</button>`
           : `<button class="kebab-item" data-action="archive" data-uid="${s.uid}" data-name="${nm}">🗄️ Enviar para Ex-alunos</button>`)
@@ -6131,7 +6184,7 @@
         ? `<img class="avatar" src="${s.photo}" alt="" style="object-fit:cover;" />`
         : `<div class="avatar">${(s.firstName || s.name || '?')[0].toUpperCase()}</div>`;
       return `
-        <div class="student-row${archived ? ' student-row-ex' : ''}">
+        <div class="student-row${archived ? ' student-row-ex' : ''}${emPlano ? ' student-row-plano' : ''}">
           ${avatar}
           <div class="student-info">
             <div class="name">${nm}</div>
@@ -6177,6 +6230,13 @@
           } else if (action === 'extras') {
             openStudentExtras(uid, name);
             return;
+          } else if (action === 'mudar-plano' || action === 'editar-plano') {
+            abrirPlanoModal(uid);
+            return;
+          } else if (action === 'sem-plano') {
+            if (!confirm(`Voltar ${name} para as aulas semanais?\n\nEla deixa de ver o Caminho do Science Lab e volta ao app de sempre (pós-aulas, atividades e desafio). Nada do que ela já fez é apagado. A agenda e o financeiro não mudam.`)) return;
+            try { await updateDoc(doc(db, 'students', uid), { plano: deleteField() }); }
+            catch (error) { alert(`Não foi possível voltar ${name} para as aulas semanais: ${error.message}`); return; }
           } else if (action === 'archive') {
             if (!confirm(`Enviar ${name} para Ex-alunos?\n\nEle sai da agenda e do financeiro. Pagamentos recebidos, pós-aulas e atividades ficam preservados.`)) return;
             try { await archiveStudent(uid); }
@@ -7492,6 +7552,60 @@
       }
     };
 
+    // ── PLANO (Science Lab) ─────────────────────────────────────────────
+    // Grava `plano` no aluno. O app lê esse campo e troca o miolo pelo Caminho (plano.jsx);
+    // `aulas` é a linha do tempo que o Caminho mostra (início do plano + próxima aula).
+    // Agenda e financeiro NÃO mudam aqui: só o cadastro do aluno.
+    function abrirPlanoModal(uid) {
+      const s = allStudents.find(x => x.uid === uid);
+      if (!s) return;
+      const p = (s.plano && typeof s.plano === 'object') ? s.plano : {};
+      const nome = s.name || s.firstName || 'Aluno';
+      document.getElementById('pl-uid').value = uid;
+      document.getElementById('pl-titulo').textContent = p.ativo ? `💜 Editar plano de ${nome}` : `💜 Mudar ${nome} para o Science Lab`;
+      document.getElementById('pl-nome').value = p.nome || 'Science Lab';
+      document.getElementById('pl-mensalidade').value = p.mensalidade != null ? p.mensalidade : 100;
+      document.getElementById('pl-desde').value = p.desde || adminDateKey(new Date());
+      document.getElementById('pl-aula').value = p.proximaAula || '';
+      document.getElementById('pl-hora').value = p.hora || '';
+      document.getElementById('pl-unidade').value = p.unidadeRotulo || 'Unit 4';
+      document.getElementById('pl-assistente').checked = p.assistente !== false;
+      document.getElementById('pl-save').textContent = p.ativo ? 'Salvar alterações' : 'Mudar para o plano';
+      showMsg('pl-msg', '', 'info');
+      document.getElementById('plano-modal').classList.add('open');
+    }
+    document.getElementById('pl-close').onclick = () => document.getElementById('plano-modal').classList.remove('open');
+    document.getElementById('plano-modal').onclick = e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); };
+    document.getElementById('pl-save').onclick = async () => {
+      const uid = document.getElementById('pl-uid').value;
+      const nome = document.getElementById('pl-nome').value.trim() || 'Science Lab';
+      const mensalidade = Number(document.getElementById('pl-mensalidade').value);
+      const desde = document.getElementById('pl-desde').value;
+      const proxima = document.getElementById('pl-aula').value;
+      const hora = document.getElementById('pl-hora').value;
+      const unidade = document.getElementById('pl-unidade').value.trim() || 'Unit 4';
+      if (!desde) { showMsg('pl-msg', 'Informe desde quando o aluno está no plano.', 'err'); return; }
+      const aulas = [{ id: 'a0', rotulo: 'Início do plano', data: desde, feita: true }];
+      if (proxima) aulas.push({ id: 'a1', rotulo: 'Aula do mês', data: proxima, ...(hora ? { hora } : {}), feita: false });
+      const btn = document.getElementById('pl-save');
+      const textoBtn = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Salvando...';
+      try {
+        await updateDoc(doc(db, 'students', uid), { plano: {
+          ativo: true, nome, mensalidade: Number.isFinite(mensalidade) ? mensalidade : 100,
+          desde, proximaAula: proxima || '', hora: hora || '', unidadeRotulo: unidade,
+          assistente: document.getElementById('pl-assistente').checked, aulas,
+          atualizadoEm: serverTimestamp(), atualizadoPor: auth.currentUser?.email || '',
+        } });
+        btn.disabled = false; btn.textContent = textoBtn;
+        document.getElementById('plano-modal').classList.remove('open');
+        loadStudents();
+      } catch (e) {
+        btn.disabled = false; btn.textContent = textoBtn;
+        showMsg('pl-msg', 'Erro: ' + e.message, 'err');
+      }
+    };
+
     function abrirGeradorParaAluno(uid, destino) {
       if (destino === 'posaula') {
         document.querySelector('.tab[data-tab="posaula"]')?.click();
@@ -7564,6 +7678,7 @@
       const workingDays = Array.isArray(calendarSettings.workingDays) ? calendarSettings.workingDays.map(Number) : [...CALENDAR_DEFAULTS.workingDays];
       pendLinhasAtuais.forEach(linha => {
         if (!linha.pendEntradas) return;
+        if (linha.plano && linha.plano.ativo !== false) { linha.posaulaPendente = null; linha.atividadesPendente = null; return; }   // plano: sem agenda semanal
         const novo = calcularPendencias(linha, { ...linha.pendEntradas, eventos: porAluno[linha.uid] || [], workingDays, hoje });
         linha.posaulaPendente = novo.posaulaPendente;
         linha.atividadesPendente = novo.atividadesPendente;
@@ -7749,18 +7864,62 @@
       return { posaulaPendente, atividadesPendente, diasSemAula };
     }
 
+    // Pendências de quem está no plano (Science Lab). Não dependem da agenda semanal:
+    //  1) terminou atividade → corrigir; 2) aula do mês chegando / pós-aula e direção depois dela;
+    //  3) liberar as atividades e os extras do mês (nenhuma enviada neste ciclo).
+    function pendPlanoItens(s) {
+      const p = s.plano;
+      if (!p || p.ativo === false) return [];
+      const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+      const disp = (s.pendEntradas && s.pendEntradas.dispensadas) || new Set();
+      const dia = iso => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; };
+      const itens = [];
+      const por = (tipo, ref, item) => { if (!disp.has(`${tipo}_${ref}`)) itens.push({ tipo, refData: ref, ...item }); };
+
+      // 1) atividades finalizadas, ainda sem correção
+      if (s.actToCorrect > 0) {
+        por('plano-corrigir', calendarDateKey(hoje), { botao: 'Corrigir', badge: 'today', texto: 'Corrigir agora',
+          detalhe: `${s.actToCorrect} atividade${s.actToCorrect > 1 ? 's' : ''} finalizada${s.actToCorrect > 1 ? 's' : ''}, aguardando correção`, extra: '' });
+      }
+
+      // 2) aula do mês
+      const aula = dia(p.proximaAula);
+      if (aula) {
+        const diff = Math.round((aula - hoje) / 86400000);
+        const quando = `${pendFmtData(aula)}${p.hora ? ' às ' + p.hora : ''}`;
+        const ultimaPos = s.pendEntradas && s.pendEntradas.ultimaPosData;
+        if (diff === 1) por('plano-aula', p.proximaAula, { botao: 'Pós-aula', badge: 'tomorrow', texto: 'Aula do mês amanhã', detalhe: `${quando} — depois: pós-aula e direção do mês`, extra: '' });
+        else if (diff === 0) por('plano-aula', p.proximaAula, { botao: 'Pós-aula', badge: 'today', texto: 'Aula do mês hoje', detalhe: `${quando} — depois: pós-aula e direção do mês`, extra: '' });
+        else if (diff < 0 && (!ultimaPos || ultimaPos < aula)) por('plano-aula', p.proximaAula, { botao: 'Pós-aula', badge: 'late', texto: 'Pós-aula e direção pendentes', detalhe: `Aula de ${quando}`, extra: 'Depois de enviar, ajuste a próxima aula em "Editar plano"' });
+      }
+
+      // 3) atividades e extras do mês (ciclo = desde a última aula feita)
+      const feitas = (p.aulas || []).filter(a => a && a.feita).map(a => a.data).sort();
+      const cicloIni = dia(feitas.length ? feitas[feitas.length - 1] : p.desde);
+      const ultAtiv = s.pendEntradas && s.pendEntradas.ultimaAtividadeCriada;
+      if (cicloIni && cicloIni <= hoje && (!ultAtiv || ultAtiv < cicloIni)) {
+        por('plano-liberar', calendarDateKey(cicloIni), { botao: 'Atividades', badge: 'today', texto: 'Enviar as atividades e os extras do mês',
+          detalhe: `Nenhuma atividade enviada desde ${pendFmtData(cicloIni)}`, extra: 'Atividade da unidade + extras de falar, ditado e escrever' });
+      }
+      return itens;
+    }
+
     function renderPendencias(rows) {
       const ORDEM = { late:0, today:1, tomorrow:2 };
-      const itensPosaula = [], itensAtividades = [];
+      const itensPosaula = [], itensAtividades = [], itensPlano = [];
       rows.forEach(s => {
         if (s.posaulaPendente) itensPosaula.push({ student:s, tipo:'posaula', ...s.posaulaPendente });
         if (s.atividadesPendente) itensAtividades.push({ student:s, tipo:'atividades', ...s.atividadesPendente });
+        pendPlanoItens(s).forEach(it => itensPlano.push({ student:s, ...it }));
       });
       itensPosaula.sort((a, b) => ORDEM[a.badge] - ORDEM[b.badge]);
       itensAtividades.sort((a, b) => ORDEM[a.badge] - ORDEM[b.badge]);
+      itensPlano.sort((a, b) => ORDEM[a.badge] - ORDEM[b.badge]);
 
       const itemId = it => `${it.student.uid}-${it.tipo}-${it.refData}`;
-      const motivosRapidos = it => it.tipo === 'posaula'
+      const motivosRapidos = it => it.tipo.startsWith('plano')
+        ? ['Já combinei com o aluno', 'Aluno em pausa', 'Faço mais tarde']
+        : it.tipo === 'posaula'
         ? ['Vou gravar em outro dia', 'Aluno remarcou a aula', 'Aluno afastado/de férias']
         : ['Não finalizou o ciclo anterior', 'Vou combinar direto com o aluno', 'Aluno afastado/de férias'];
 
@@ -7774,7 +7933,7 @@
               ${it.extra ? `<div class="pend-extra">${esc(it.extra)}</div>` : ''}
             </button>
             <div style="display:flex;gap:6px;flex-shrink:0;">
-              <button class="pend-action" data-uid="${it.student.uid}" data-destino="${it.tipo}" type="button" style="border:1px solid var(--brand,#16A34A);background:#fff;color:var(--brand,#16A34A);padding:7px 9px;border-radius:8px;font-weight:700;cursor:pointer;white-space:nowrap;">${it.tipo === 'posaula' ? 'Pós-aula' : 'Atividades'} →</button>
+              <button class="pend-action" data-uid="${it.student.uid}" data-name="${esc(it.student.name || it.student.firstName || 'Aluno')}" data-destino="${it.tipo}" type="button" style="border:1px solid var(--brand,#16A34A);background:#fff;color:var(--brand,#16A34A);padding:7px 9px;border-radius:8px;font-weight:700;cursor:pointer;white-space:nowrap;">${it.botao || (it.tipo === 'posaula' ? 'Pós-aula' : 'Atividades')} →</button>
               <button class="pend-dismiss-toggle" data-toggle="${id}" type="button" title="Excluir com motivo" style="border:1px solid var(--border);background:#fff;color:var(--muted);padding:7px 9px;border-radius:8px;font-weight:700;cursor:pointer;">✕</button>
             </div>
           </div>
@@ -7798,8 +7957,12 @@
       feedAtividades.innerHTML = itensAtividades.length
         ? itensAtividades.map(item).join('')
         : '<div class="pend-feed-empty">✓ Nenhuma atividade pendente.</div>';
+      const feedPlano = document.getElementById('pend-feed-plano');
+      if (feedPlano) feedPlano.innerHTML = itensPlano.length
+        ? itensPlano.map(item).join('')
+        : '<div class="pend-feed-empty">✓ Nada pendente no plano.</div>';
 
-      const itens = [...itensPosaula, ...itensAtividades];
+      const itens = [...itensPosaula, ...itensAtividades, ...itensPlano];
       pendenciasAtuais = itens.map(it => `${it.student.uid}:${it.tipo}`);
       const vistas = lerPendenciasVistas();
       // Pendência resolvida sai da memória: se voltar a acontecer, avisa de novo.
@@ -7816,7 +7979,13 @@
         btn.onclick = () => openDetail(btn.dataset.uid, btn.dataset.name);
       });
       document.querySelectorAll('#tab-pendencias .pend-action').forEach(btn => {
-        btn.onclick = () => abrirGeradorParaAluno(btn.dataset.uid, btn.dataset.destino);
+        btn.onclick = () => {
+          const d = btn.dataset.destino;
+          if (d === 'plano-corrigir') openDetail(btn.dataset.uid, btn.dataset.name);       // a ficha tem o botão de corrigir
+          else if (d === 'plano-aula') abrirGeradorParaAluno(btn.dataset.uid, 'posaula');
+          else if (d === 'plano-liberar') abrirGeradorParaAluno(btn.dataset.uid, 'atividades');
+          else abrirGeradorParaAluno(btn.dataset.uid, d);
+        };
       });
       document.querySelectorAll('#tab-pendencias .pend-dismiss-toggle').forEach(btn => {
         btn.onclick = () => document.getElementById(`pend-dismiss-form-${btn.dataset.toggle}`).style.display = 'block';
@@ -7883,7 +8052,7 @@
       box.innerHTML = pendenciasDispensadasRecentes.length ? pendenciasDispensadasRecentes.map(d => `
         <div style="display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--border);font-size:0.8rem;flex-wrap:wrap;align-items:center;">
           <div>
-            <strong>${esc(d.nome)}</strong> — ${d.tipo === 'posaula' ? 'Pós-aula' : 'Atividades'}
+            <strong>${esc(d.nome)}</strong> — ${String(d.tipo).startsWith('plano') ? 'Science Lab' : d.tipo === 'posaula' ? 'Pós-aula' : 'Atividades'}
             <div style="color:var(--muted);">"${esc(d.motivo)}" · dispensado ${pendFmtQuando(d.quando)}</div>
           </div>
           <button type="button" class="pend-undo" data-uid="${d.uid}" data-tipo="${d.tipo}" data-ref="${d.refData}" style="background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;font-size:0.78rem;">↺ Desfazer</button>
@@ -8184,13 +8353,14 @@
           ultimaPosData, ultimaAulaData, semAtividades: activityCounts.semAtividades, ultimaAtividadeCriada: pendMidnight(dateOfAdm(activities[0]?.createdAt)),
           eventos: pendEventosPorAluno[s.uid] || [], workingDays: pendWorkingDays, hoje: pendHoje, dispensadas,
         });
+        const emPlanoS = !!(s.plano && s.plano.ativo !== false);   // aluno do plano: pendências próprias (coluna Science Lab)
         const reviewReports = reviewSnap.docs.map(d => ({ id:d.id, ...d.data() }));
         const progress = adminProgressSummary(s, posts, activities);
         const adesaoIn = adminAdesaoInput(s, posts, activities, progress);
         return {
           ...s, latestRead: isRead, latestTitle: latest?.title || null,
           ...activityCounts,
-          posaulaPendente, atividadesPendente, diasSemAula,
+          posaulaPendente: emPlanoS ? null : posaulaPendente, atividadesPendente: emPlanoS ? null : atividadesPendente, diasSemAula,
           reviewReports, progress, adesaoIn,
           pendEntradas: { ultimaPosData, ultimaAulaData, semAtividades: activityCounts.semAtividades,
             ultimaAtividadeCriada: pendMidnight(dateOfAdm(activities[0]?.createdAt)), dispensadas },

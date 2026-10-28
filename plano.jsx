@@ -691,16 +691,58 @@ function PlanoTarefaJogo({ t, unidade, onFeita, onClose, onAsk }) {
 }
 
 /* ───────── vídeo (YouTube não listado ou link) ───────── */
+// Aceita o ID ou qualquer link do YouTube (watch?v=, youtu.be/, /embed/, /shorts/, /live/).
+function PlanoYoutubeId(v) {
+  const s = String(v || '').trim();
+  if (/^[\w-]{11}$/.test(s)) return s;
+  const m = s.match(/(?:youtu\.be\/|[?&]v=|\/embed\/|\/shorts\/|\/live\/)([\w-]{11})/);
+  return m ? m[1] : '';
+}
+// A API do player do YouTube é carregada uma vez só; ela deixa o app saber quando o vídeo terminou.
+let PLANO_YT_PROMESSA = null;
+function PlanoCarregarYT() {
+  if (window.YT && window.YT.Player) return Promise.resolve(window.YT);
+  if (PLANO_YT_PROMESSA) return PLANO_YT_PROMESSA;
+  PLANO_YT_PROMESSA = new Promise((resolve, reject) => {
+    const antes = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => { if (typeof antes === 'function') antes(); resolve(window.YT); };
+    const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; s.async = true;
+    s.onerror = () => { PLANO_YT_PROMESSA = null; reject(new Error('yt')); };
+    document.head.appendChild(s);
+  });
+  return PLANO_YT_PROMESSA;
+}
+
+// O vídeo toca DENTRO do app (YouTube "não listado" incorporado, sem abrir o YouTube). Campos da tarefa:
+//   youtube: link ou ID · inicio / fim (segundos, opcionais, para fatiar um vídeo longo em várias tarefas) · url: link externo.
 function PlanoTarefaVideo({ t, onFeita, onClose, onAsk }) {
-  const id = t.youtubeId; const url = t.url;
+  const id = PlanoYoutubeId(t.youtube || t.youtubeId); const url = t.url;
+  const caixa = React.useRef(null);
+  const [terminou, setTerminou] = React.useState(false); const [semApi, setSemApi] = React.useState(false);
+  React.useEffect(() => {
+    if (!id || !caixa.current) return undefined;
+    let player = null; let vivo = true;
+    PlanoCarregarYT().then(YT => {
+      if (!vivo || !caixa.current) return;
+      const alvo = document.createElement('div'); caixa.current.appendChild(alvo);
+      player = new YT.Player(alvo, {
+        videoId: id, width: '100%', height: '100%',
+        playerVars: { rel: 0, playsinline: 1, modestbranding: 1, iv_load_policy: 3, fs: 1, hl: 'pt-BR', start: t.inicio || 0, ...(t.fim ? { end: t.fim } : {}) },
+        events: { onStateChange: e => { if (e.data === 0 && vivo) setTerminou(true); } },
+      });
+    }).catch(() => { if (vivo) setSemApi(true); });   // sem a API o vídeo ainda toca (iframe simples), só não detecta o fim
+    return () => { vivo = false; try { if (player && player.destroy) player.destroy(); } catch (e) {} };
+  }, [id, t.inicio, t.fim]);
+  const moldura = { position: 'relative', paddingTop: '56.25%', borderRadius: 18, overflow: 'hidden', background: '#0F172A', boxShadow: '0 12px 30px rgba(15,23,42,.2)' };
   return (
     <PlanoCamada titulo={t.titulo} sub={t.sub} onClose={onClose} onAsk={onAsk}
-      rodape={<button className="plano-btn" onClick={onFeita}>Já assisti ✓</button>}>
-      {id ? <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 18, overflow: 'hidden', background: '#0F172A', boxShadow: '0 12px 30px rgba(15,23,42,.2)' }}>
-          <iframe title={t.titulo} src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?rel=0&modestbranding=1`} allow="accelerometer; encrypted-media; picture-in-picture" allowFullScreen referrerPolicy="strict-origin-when-cross-origin"
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }} /></div>
+      rodape={<button className="plano-btn" onClick={onFeita}>{terminou ? 'Concluir tarefa ✓' : 'Já assisti ✓'}</button>}>
+      {id ? (semApi
+        ? <div style={moldura}><iframe title={t.titulo} src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?rel=0&modestbranding=1&playsinline=1`} allow="encrypted-media; picture-in-picture; fullscreen" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }} /></div>
+        : <div style={moldura}><div ref={caixa} style={{ position: 'absolute', inset: 0 }} /></div>)
         : url ? <a href={url} target="_blank" rel="noopener noreferrer" className="plano-btn violeta" style={{ textDecoration: 'none', textAlign: 'center' }}>▶ Abrir o vídeo</a>
         : <div style={{ background: '#fff', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: '#64748B' }}>🎬 Vídeo em breve.</div>}
+      {terminou && <div style={{ marginTop: 12, padding: '10px 13px', borderRadius: 14, background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#14532D', fontWeight: 800, fontSize: 13.5 }}>🎉 Vídeo terminado! Toque em “Concluir tarefa”.</div>}
       {t.oQue && <div style={{ fontSize: 13.5, fontWeight: 700, color: '#475569', lineHeight: 1.5, marginTop: 12 }}>{t.oQue}</div>}
     </PlanoCamada>
   );
@@ -757,6 +799,7 @@ function PlanoAulaFolha({ aula, student, cfg, onClose }) {
 function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose }) {
   const [texto, setTexto] = React.useState(''); const [msgs, setMsgs] = React.useState([]); const [pensando, setPensando] = React.useState(false);
   const fimRef = React.useRef(null);
+  const semIA = cfg.assistente === false;   // o professor desligou o assistente deste aluno (janela do plano no painel)
   React.useEffect(() => { if (fimRef.current) fimRef.current.scrollIntoView({ block: 'end' }); }, [msgs, pensando]);
   const enviar = async () => {
     const pergunta = texto.trim(); if (!pergunta || pensando) return;
@@ -777,6 +820,7 @@ function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose }) {
     <PlanoFolha onClose={onClose}>
       <div style={{ fontSize: 18, fontWeight: 800 }}>💬 Tem uma dúvida?</div>
       <div style={{ fontSize: 12.5, fontWeight: 700, color: '#64748B', margin: '2px 0 12px' }}>{contexto ? `Sobre: ${contexto}` : 'Pergunte sobre o que está estudando.'}</div>
+      {semIA ? <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 16, padding: 14, margin: '0 0 12px', fontSize: 13.5, fontWeight: 600, color: '#475569', lineHeight: 1.5 }}>Para tirar dúvidas, fale direto com o César pelo WhatsApp. Ele responde assim que puder.</div> : <>
       <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 16, padding: 10, minHeight: 110, maxHeight: 280, overflowY: 'auto' }}>
         {msgs.length === 0 && <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B', padding: 6 }}>Escreva a sua dúvida abaixo. O assistente responde em poucas palavras, em português, com um exemplo em inglês. Se precisar do César, toque em WhatsApp.</div>}
         {msgs.map((m, i) => <div key={i} style={{ display: 'flex', justifyContent: m.de === 'eu' ? 'flex-end' : 'flex-start', margin: '6px 0' }}><div style={{ maxWidth: '86%', padding: '9px 12px', borderRadius: 14, fontSize: 13.5, fontWeight: 600, lineHeight: 1.5, whiteSpace: 'pre-wrap', background: m.de === 'eu' ? '#7C3AED' : m.erro ? '#FEF2F2' : '#fff', color: m.de === 'eu' ? '#fff' : '#0F172A', border: m.de === 'eu' ? 0 : '1px solid #E2E8F0' }}>{m.de === 'ia' ? <PlanoMd x={m.x} /> : m.x}</div></div>)}
@@ -787,8 +831,9 @@ function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose }) {
         <input value={texto} onChange={e => setTexto(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') enviar(); }} placeholder="Digite sua dúvida…" style={{ flex: 1, border: '1.5px solid #CBD5E1', borderRadius: 14, padding: '12px 13px', fontSize: 14.5, fontFamily: 'inherit', fontWeight: 600, outline: 'none' }} />
         <button onClick={enviar} disabled={!texto.trim() || pensando} style={{ border: 0, borderRadius: 14, padding: '0 16px', background: PLANO_COR, color: '#fff', fontWeight: 800, fontFamily: 'inherit', fontSize: 14, cursor: 'pointer', opacity: !texto.trim() || pensando ? .5 : 1 }}>Enviar</button>
       </div>
+      </>}
       <a href={wa} target="_blank" rel="noopener noreferrer" className="plano-btn" style={{ textDecoration: 'none', textAlign: 'center', background: '#25D366', boxShadow: 'none' }}>💬 Falar com o César no WhatsApp</a>
-      <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textAlign: 'center', marginTop: 8 }}>O assistente é uma ajuda automática e pode errar. Na dúvida, fale com o César.</div>
+      {!semIA && <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textAlign: 'center', marginTop: 8 }}>O assistente é uma ajuda automática e pode errar. Na dúvida, fale com o César.</div>}
     </PlanoFolha>
   );
 }
