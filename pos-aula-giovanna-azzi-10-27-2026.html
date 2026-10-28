@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Giovanna Azzi — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+*{box-sizing:border-box}body{color:#374151;line-height:1.6}h2{font-size:1.12rem;color:#14532D;line-height:1.4}h3{font-size:1rem}li+li{margin-top:7px}.outline-card p:first-child{margin-top:0}.outline-card p:last-child{margin-bottom:0}.vocab{min-width:0;flex:1 1 200px}.vocab p{line-height:1.55}header{flex-wrap:wrap}.heading-line{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.actions{margin-top:8px}.rule{background:#F7FDF9;border-left:4px solid var(--accent);padding:10px 12px;border-radius:6px}.correction+.correction{border-top:1px solid var(--border);padding-top:14px;margin-top:14px}.correction p{margin:5px 0}.wrong{color:#b91c1c}.right{color:#166534}.note{font-size:.88rem;color:var(--muted)}
+@media(max-width:480px){.wrap{padding:18px 10px}.card{padding:16px}h1{font-size:1.2rem}.vocab{width:100%}.talk-table{font-size:.8rem}.talk-table th,.talk-table td{padding:7px 6px}}
+@media print{html,body{height:auto;background:#fff}.wrap{padding:0;display:block}.card{max-width:none;border:0;box-shadow:none;padding:0}.actions,.vocab-say{display:none}section,.correction,.vocab{break-inside:avoid}.media-btn{box-shadow:none!important}h2,h3{break-after:avoid}a{color:inherit}}
+</style></head>
+<body><div class="wrap"><article class="card" role="main">
+<header><div><div class="heading-line"><span class="badge">PÓS-AULA</span><h1>Inglês com Homem-Aranha: vocabulário e listening</h1></div><div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluna:</strong> Giovanna Azzi &nbsp;•&nbsp; <strong>Data:</strong> 10/27/2026</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header>
+<main><section class="panel"><p style="margin:0;font-weight:600;color:#14532D;"><em>Giovanna, nesta aula você aprendeu palavras e expressões com uma cena do Homem-Aranha e treinou como reconhecer essas palavras na fala dos personagens. Também retomamos pontos do desafio e a importância de revisar em momentos curtos para guardar o vocabulário.</em></p></section>
+<section><h2>📘 Resumo da Aula</h2><div class="outline-card">
+<p><strong>1. Aquecimento e revisão do desafio</strong><br>Antes do vídeo, você fez o desafio no aplicativo e alcançou <strong>70 pontos</strong>. Na correção, retomamos três pontos: a terminação <strong>-es</strong> em verbos como <strong>watches, catches, washes e fixes</strong>; o <strong>present continuous</strong> para uma ação em andamento; e a negativa de <strong>would rather</strong>. Também apareceu a preposição <strong>at</strong> para indicar horário.</p>
+<p class="rule"><strong>Hábito:</strong> She watches movies. — Ela assiste a filmes.<br><strong>Agora:</strong> She is talking on the phone right now. — Ela está falando ao telefone agora.<br><strong>Preferência negativa:</strong> I'd rather not have dinner today. — Eu preferiria não jantar hoje.<br><small>Exemplos organizados para revisar as estruturas corrigidas no desafio.</small></p>
+<p><strong>2. Preparação do vocabulário da cena</strong><br>A proposta foi conhecer as palavras primeiro e depois tentar ouvi-las no vídeo. O trecho mostra a chegada de um Peter Parker por um <strong>portal</strong> e os testes para descobrir se ele é mesmo o Homem-Aranha. Apareceram <strong>string theory</strong> (teoria das cordas), <strong>multidimensional reality</strong> (realidade multidimensional) e <strong>matter displacement</strong> (deslocamento de matéria), como vocabulário de ficção científica da cena.</p>
+<p>Na parte de magia, diferenciamos <strong>a spell</strong> (um feitiço) de <strong>a magician</strong> (um mágico). Para demonstrar que algo é verdadeiro, vimos <strong>prove</strong> (provar/comprovar). A expressão <strong>it kind of defeats the whole thing</strong> indica que algo acaba anulando o propósito da situação — foi explicada com um exemplo de hábitos que atrapalham o resultado da academia.</p>
+<p><strong>3. Listening: ligar a palavra ao que acontece</strong><br>Depois da primeira exibição, você estimou ter entendido <strong>8 de 10</strong> do contexto. Reassistimos a trechos para localizar as expressões e explicar a intenção de cada personagem. A legenda foi buscada, mas o trecho disponível não a tinha; por isso, o trabalho continuou com repetição e discussão do contexto.</p>
+<p>Você identificou o <strong>“tingle thing”</strong> como uma referência ao sentido aranha, na parte em que jogam pão no personagem. Relacionou <strong>crawl around</strong> a engatinhar para provar sua identidade e <strong>cobweb</strong> à teia que pedem para ele tirar. Retomamos <strong>stick</strong> (grudar), <strong>ceiling</strong> (teto) e <strong>plenty</strong>: naquela discussão, o personagem considera que a demonstração já é <strong>mais do que suficiente</strong>.</p>
+<p>Também vimos que <strong>ouch!</strong> pode ser uma reação a um comentário que magoa, além de dor física. Quando uma personagem quer encontrar o Peter Parker “verdadeiro”, o outro reage porque ele também é um Peter Parker de verdade. <strong>No offense</strong> significa “sem ofensa”.</p>
+<p><strong>4. Revisão mensal e continuidade</strong><br>No final, fizemos a rodada das <strong>30 palavras mensais</strong>, com leitura em voz alta, reconhecimento de imagens e ajustes de pronúncia. Entre os itens reconhecíveis na transcrição estavam <strong>walk, jury, diaper, Ireland, neck, brain, tailor, lampshade, forest, skin e hand fan</strong>. Conversamos ainda sobre filmes e séries que você gosta, como Frozen, Moana, Hilda e Wandinha, para futuras aulas com cenas.</p>
+<p>O combinado foi <strong>ler o pós-aula no dia seguinte</strong> e rever o conteúdo para fixar pelo menos quatro ou cinco palavras ou expressões. Na quinta-feira haveria outra aula e, na sexta-feira, atividades para praticar o conteúdo. A aula também apresentou o acompanhamento do tempo de estudo no aplicativo, ainda em teste.</p>
+</div></section>
+<section><h2>💬 Frases usadas em aula</h2><div class="outline-card"><p class="note">Expressões lidas, praticadas ou retomadas durante a aula, com a escrita em inglês normalizada para revisão.</p><ul><li><strong lang="en">It kind of defeats the whole thing.</strong><br>Isso meio que anula o propósito da coisa toda.</li><li><strong lang="en">The tingle thing.</strong><br>Aquele “formigamento” — referência ao sentido aranha no contexto da cena.</li><li><strong lang="en">Crawl around.</strong><br>Engatinhar / deslocar-se engatinhando.</li><li><strong lang="en">No offense.</strong><br>Sem ofensa.</li><li><strong lang="en">Ouch!</strong><br>Ai! — também pode reagir a um comentário que magoa.</li><li><strong lang="en">This is a spider web.</strong><br>Isto é uma teia de aranha.</li><li><strong lang="en">Like a baby or a spider.</strong><br>Como um bebê ou uma aranha.</li><li><strong lang="en">Right now.</strong><br>Agora mesmo.</li><li><strong lang="en">Does she work out every day?</strong><br>Ela malha todos os dias?</li></ul></div></section>
+<section><h2>⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3 lang="en">prove</h3><button type="button" class="vocab-say" data-czk-say="prove" aria-label="Ouvir a pronúncia de prove" aria-pressed="false" title="Ouvir prove">&#128266;</button></div><p><em>provar / comprovar</em><br>Mostrar que uma afirmação é verdadeira. Na cena, pedem uma demonstração de que ele é o Homem-Aranha.</p><p><strong lang="en">Prove it.</strong><br><small>Prove isso.</small></p></div><div class="vocab green"><div class="vocab-head"><h3 lang="en">crawl around</h3><button type="button" class="vocab-say" data-czk-say="crawl around" aria-label="Ouvir a pronúncia de crawl around" aria-pressed="false" title="Ouvir crawl around">&#128266;</button></div><p><em>engatinhar / andar engatinhando</em><br>Deslocar-se com as mãos e os joelhos, como um bebê; no contexto da cena, mover-se como uma aranha.</p><p><strong lang="en">The baby can crawl around.</strong><br><small>O bebê consegue engatinhar por aí.</small></p></div><div class="vocab yellow"><div class="vocab-head"><h3 lang="en">plenty</h3><button type="button" class="vocab-say" data-czk-say="plenty" aria-label="Ouvir a pronúncia de plenty" aria-pressed="false" title="Ouvir plenty">&#128266;</button></div><p><em>mais do que suficiente / bastante</em><br>Indica uma quantidade suficiente ou até maior do que o necessário. Na cena, a demonstração já basta para o personagem.</p><p><strong lang="en">That&#x27;s plenty.</strong><br><small>Isso já é mais do que suficiente.</small></p></div></div></section>
+<section><h2>📚 Vocabulário completo da aula</h2><div class="outline-card"><p class="note">Vocabulário da cena, do desafio e itens identificáveis da revisão mensal.</p><h3>Cena: ciência, magia e identidade</h3><ul><li><strong lang="en">string theory</strong> — teoria das cordas</li><li><strong lang="en">multidimensional reality</strong> — realidade multidimensional</li><li><strong lang="en">matter displacement</strong> — deslocamento de matéria</li><li><strong lang="en">portal</strong> — portal</li><li><strong lang="en">a spell</strong> — um feitiço</li><li><strong lang="en">magic</strong> — magia</li><li><strong lang="en">a magician</strong> — um mágico</li><li><strong lang="en">prove</strong> — provar / comprovar</li><li><strong lang="en">real</strong> — real / verdadeiro</li><li><strong lang="en">spider sense</strong> — sentido aranha</li><li><strong lang="en">the tingle thing</strong> — expressão da cena que se refere ao sentido aranha</li></ul><h3>Movimentos, objetos e partes do corpo</h3><ul><li><strong lang="en">crawl / crawl around</strong> — engatinhar / deslocar-se engatinhando</li><li><strong lang="en">hands</strong> — mãos</li><li><strong lang="en">knees</strong> — joelhos</li><li><strong lang="en">stick</strong> — grudar / aderir a uma superfície, neste contexto</li><li><strong lang="en">ceiling</strong> — teto, a superfície interna superior de um cômodo</li><li><strong lang="en">spider web / web</strong> — teia de aranha / teia</li><li><strong lang="en">cobweb</strong> — teia de aranha, especialmente uma teia velha ou empoeirada</li><li><strong lang="en">bread</strong> — pão</li></ul><h3>Expressões e revisão do desafio</h3><ul><li><strong lang="en">plenty</strong> — bastante / mais do que suficiente</li><li><strong lang="en">enough</strong> — suficiente</li><li><strong lang="en">it kind of defeats the whole thing</strong> — isso meio que anula o propósito da coisa toda</li><li><strong lang="en">useless / pointless</strong> — inútil / sem propósito</li><li><strong lang="en">ouch!</strong> — ai! — reação a dor física ou a um comentário que magoa</li><li><strong lang="en">no offense</strong> — sem ofensa</li><li><strong lang="en">right now</strong> — agora mesmo</li><li><strong lang="en">every day</strong> — todos os dias</li><li><strong lang="en">work out</strong> — malhar / fazer exercício</li><li><strong lang="en">would rather not</strong> — preferiria não</li><li><strong lang="en">at + horário</strong> — às…; usado para indicar a hora de algo</li></ul><h3>Revisão mensal: objetos e ações</h3><ul><li><strong lang="en">wood</strong> — madeira</li><li><strong lang="en">spoon</strong> — colher</li><li><strong lang="en">walk</strong> — caminhar</li><li><strong lang="en">jury</strong> — júri</li><li><strong lang="en">Santa Claus</strong> — Papai Noel</li><li><strong lang="en">diaper</strong> — fralda</li><li><strong lang="en">tailor</strong> — alfaiate</li><li><strong lang="en">lampshade</strong> — cúpula de abajur</li><li><strong lang="en">playground</strong> — parquinho</li><li><strong lang="en">ice skates</strong> — patins de gelo</li><li><strong lang="en">hand fan</strong> — leque</li><li><strong lang="en">scales</strong> — balança, no contexto de objetos</li></ul><h3>Revisão mensal: corpo, natureza e lugares</h3><ul><li><strong lang="en">lynx</strong> — lince</li><li><strong lang="en">calf</strong> — panturrilha, no contexto do corpo</li><li><strong lang="en">wheat</strong> — trigo</li><li><strong lang="en">triangle</strong> — triângulo</li><li><strong lang="en">Ireland</strong> — Irlanda</li><li><strong lang="en">stork</strong> — cegonha</li><li><strong lang="en">neck</strong> — pescoço</li><li><strong lang="en">brain</strong> — cérebro</li><li><strong lang="en">skin</strong> — pele</li><li><strong lang="en">heart</strong> — coração</li><li><strong lang="en">hair</strong> — cabelo / pelos</li><li><strong lang="en">orange</strong> — laranja</li><li><strong lang="en">forest</strong> — floresta</li><li><strong lang="en">celery</strong> — aipo / salsão</li><li><strong lang="en">grass</strong> — grama</li><li><strong lang="en">pineapple</strong> — abacaxi</li></ul></div></section>
+<section><h2>🚨 Correções importantes</h2><div class="outline-card"><p class="note">Ajustes de significado feitos em aula e pontos retomados na correção do desafio.</p><div class="correction"><p><strong>“Prove” não é “adivinhar”</strong></p><p class="wrong">❌ Interpretar prove como “adivinhar”.</p><p class="right">✅ <strong>Prove = provar / comprovar.</strong></p><p>Você sugeriu “adivinhar” e depois chegou a “provar”. A intenção é apresentar uma evidência de que algo é verdadeiro.</p></div><div class="correction"><p><strong>“String theory” é uma expressão inteira</strong></p><p class="wrong">❌ Traduzir string theory como “uma teoria pequena”.</p><p class="right">✅ <strong>String theory = teoria das cordas.</strong></p><p>Guarde a combinação completa do vocabulário de ficção científica trabalhado na cena.</p></div><div class="correction"><p><strong>“Cobweb”: a teia, não o personagem</strong></p><p class="wrong">❌ Entender a definição de cobweb como “Homem-Aranha antigo”.</p><p class="right">✅ <strong>Cobweb = teia de aranha, especialmente velha ou empoeirada.</strong></p><p>Spider é aranha; spider web é teia de aranha. Na definição lida, old descreve a teia.</p></div><div class="correction"><p><strong>“Plenty” no contexto</strong></p><p class="wrong">❌ Parar a interpretação apenas em “muito”.</p><p class="right">✅ <strong>Na cena: “isso já é mais do que suficiente”.</strong></p><p>O ponto é entender que a demonstração já basta. Relacione plenty a enough para lembrar a intenção da resposta.</p></div><div class="correction"><p><strong>Terceira pessoa: quando acrescentar “-es”</strong></p><p class="wrong">❌ Modelo a evitar: she watch / she watchs.</p><p class="right">✅ <strong>She watches. / She catches. / She washes. / She fixes.</strong></p><p>Ponto retomado no desafio: com he, she e it, esses verbos recebem -es no simple present afirmativo. Os exemplos errados acima são modelos de revisão.</p></div><div class="correction"><p><strong>Ação acontecendo agora: “present continuous”</strong></p><p class="wrong">❌ Identificar a ação em andamento apenas como simple present.</p><p class="right">✅ <strong>She is talking on the phone right now.</strong></p><p>Você respondeu “presente”; especificamos present continuous. Estrutura: sujeito + am/is/are + verbo com -ing. Right now ajuda a perceber o sentido de agora, neste exemplo.</p></div><div class="correction"><p><strong>Negativa com “would rather”</strong></p><p class="wrong">❌ Modelo a evitar: I&#x27;d rather don&#x27;t have dinner today.</p><p class="right">✅ <strong>I&#x27;d rather not have dinner today.</strong></p><p>Ponto corrigido no desafio: use would rather + not + verbo na forma base. Não acrescente don’t ou doesn’t nessa estrutura; o exemplo incorreto é um modelo de revisão.</p></div><p class="rule">💡 <strong>Pronúncia retomada:</strong> em <span lang="en">walk</span>, o <strong>l</strong> não é pronunciado. Pratique também <span lang="en">jury</span> em duas sílabas e escute novamente <span lang="en">diaper, Ireland, ceiling e hand fan</span>.</p></div></section>
+<section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/nfAYxIplx6c" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section>
+<section class="speaking"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Participante</th><th>Proporção</th><th>Tempo aproximado</th></tr></thead><tbody><tr class="row-teacher"><td class="talk-label">César (Professor)</td><td class="talk-percent">65%</td><td class="talk-time">19min30s</td></tr><tr class="row-student"><td class="talk-label">Giovanna Azzi</td><td class="talk-percent">35%</td><td class="talk-time">10min30s</td></tr></tbody></table><p class="note">Estimativa pelos intervalos de fala da transcrição, em português e inglês. Considera apenas professor e aluna; exclui áudios compartilhados, pausas e tempo de atividades. Não representa a duração total da aula.</p></section>
+<section><h2>📝 Homework</h2><div class="homework"><p style="margin-top:0;"><strong>Combinado em aula</strong></p><ul><li><strong>Ler este pós-aula no dia seguinte à aula, 28/10</strong>, e revisitar o conteúdo de 2 a 3 vezes durante a semana.</li><li><strong>Rever as palavras e expressões da cena</strong> para conseguir lembrar pelo menos quatro ou cinco delas.</li><li><strong>Fazer as atividades quando forem disponibilizadas na sexta-feira, 30/10</strong>, conforme combinado.</li></ul><p><strong>Sugestão para sua revisão:</strong> escolha quatro ou cinco palavras, diga o significado sem olhar e depois confira. Use os três botões de áudio e repita em voz alta. Ao rever o trecho na gravação, tente identificar <span lang="en">crawl around, plenty, cobweb, ouch e no offense</span> e explicar o que está acontecendo em cada momento.</p></div></section>
+</main><footer><p>© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer></article></div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>

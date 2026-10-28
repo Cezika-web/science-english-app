@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Lorena Nemeth — 10/27/2026 — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+*{box-sizing:border-box} body{color:#374151;line-height:1.6}
+h2{font-size:1.12rem;color:#14532D;line-height:1.35} h3{font-size:1rem;color:#14532D}
+p{margin:0 0 12px} p:last-child{margin-bottom:0} li+li{margin-top:7px}
+ul,ol{padding-left:22px;margin:8px 0 0} .rule{background:#F0FDF4;border-left:3px solid var(--accent);padding:12px;margin-top:12px;border-radius:6px}
+.intro-title{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+header{flex-wrap:wrap}.actions .btn{font-family:inherit;font-size:.85rem}
+.vocab{min-width:200px} .correction+.correction{border-top:1px solid var(--border);margin-top:16px;padding-top:16px}
+.wrong{color:#b91c1c}.right{color:#166534}.note{font-size:.86rem;color:var(--muted)}
+.compare{width:100%;border-collapse:collapse;font-size:.91rem;margin-top:8px;overflow-wrap:anywhere}.compare td,.compare th{padding:7px 8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}.compare th{background:#F0FDF4;color:#14532D}
+@media(max-width:480px){.wrap{padding:16px 10px}.card{padding:16px}.intro-title{align-items:flex-start}.vocab{min-width:0}.actions{width:100%}.actions .btn{width:100%;justify-content:center}.compare{font-size:.81rem}.compare td,.compare th{padding:6px 4px}.talk-table{font-size:.8rem}.talk-table td,.talk-table th{padding:7px 5px}}
+@media print{html,body{height:auto;background:#fff}.wrap{display:block;padding:0}.card{max-width:none;border:0;box-shadow:none;padding:0}.actions,.vocab-say{display:none}.vocab,.correction,.homework,.speaking{break-inside:avoid}header{break-after:avoid}h2,h3{break-after:avoid}a{color:#14532D}thead{display:table-header-group}tr{break-inside:avoid}}
+</style></head><body>
+<div class="wrap"><article class="card" role="main">
+<header><div><div class="intro-title"><span class="badge">PÓS-AULA</span><h1>Perguntas no passado: was/were ou did?</h1></div>
+<div class="meta" style="margin-top:8px"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluna:</strong> Lorena Nemeth &nbsp;•&nbsp; <strong>Data:</strong> 10/27/2026</div></div>
+<div class="actions"><button type="button" class="btn" data-czk-action="print">Imprimir / Salvar PDF</button></div></header>
+<main>
+<section class="panel"><p style="margin:0;font-weight:600;color:#14532D"><em>Lorena, nesta aula revisamos como falar do passado com was/were e com os outros verbos, que usam did nas perguntas e didn’t nas negativas. O vocabulário de viagens ajudou a praticar essas estruturas, e você começou a reconhecer quando a própria palavra interrogativa é o sujeito da pergunta.</em></p></section>
+
+<section><h2>📘 Resumo da Aula</h2><div class="outline-card">
+<p>Começamos retomando o vocabulário de passagens e os <strong>verbos regulares e irregulares</strong>. Nos regulares, o passado segue o padrão de <strong>-ed</strong>, com os ajustes de escrita necessários: <em>like → liked, study → studied, work → worked, return → returned</em>. Os irregulares têm formas próprias, como <em>buy → bought, do → did, eat → ate, get → got, go → went, have → had</em> e <em>meet → met</em>. Em <em>read → read</em>, a escrita permanece igual, mas a pronúncia muda.</p>
+<h3>A diferença central: estar em um lugar × ir a um lugar</h3>
+<p>Você deu o exemplo <strong>I was in London</strong>. Essa frase significa “Eu estava/estive em Londres”. Para contar o deslocamento, “Eu fui para Londres”, usamos <strong>I went to London</strong>. Em português, “fui” pode aparecer com sentidos diferentes; por isso, antes de montar a frase em inglês, pense se a ideia é <strong>ser/estar</strong> ou <strong>ir</strong>.</p>
+<p>Com o <strong>verbo to be no passado</strong>, usamos <strong>was</strong> com <em>I/he/she/it</em> e <strong>were</strong> com <em>you/we/they</em>. Na negativa, acrescentamos <em>not</em>: <strong>wasn’t / weren’t</strong>. Na pergunta, colocamos <em>was/were</em> antes do sujeito. Nessa estrutura, não usamos <em>did</em>.</p>
+<div class="rule"><strong>Compare as duas famílias:</strong>
+<table class="compare"><thead><tr><th>Forma</th><th>To be: ser/estar</th><th>Go: ir</th></tr></thead><tbody>
+<tr><th>Afirmativa</th><td>I was at school.<br><small>Eu estava na escola.</small></td><td>I went to school.<br><small>Eu fui à escola.</small></td></tr>
+<tr><th>Negativa</th><td>I wasn’t at school.</td><td>I didn’t go to school.</td></tr>
+<tr><th>Pergunta</th><td>Were you at school?</td><td>Did you go to school?</td></tr>
+<tr><th>Resposta curta</th><td>Yes, I was.<br>No, I wasn’t.</td><td>Yes, I did.<br>No, I didn’t.</td></tr>
+</tbody></table></div>
+<p style="margin-top:12px">Com <strong>outros verbos no passado simples</strong>, a afirmativa usa o verbo no passado, enquanto a negativa e a pergunta usam o auxiliar: <strong>sujeito + didn’t + forma base</strong> e <strong>Did + sujeito + forma base?</strong> O <em>did</em> já marca o passado; portanto, dizemos <em>Did she have…?</em>, com <strong>have</strong>, e <em>Did he buy…?</em>, com <strong>buy</strong>. Essa regra funciona com verbos regulares e irregulares, e <strong>did é o mesmo para todos os sujeitos</strong>.</p>
+<h3>Viagens e a página 79</h3>
+<p>Retomamos o texto da página 78 e fizemos os diálogos da página 79. Você revisou <strong>one-way ticket</strong> (só ida), <strong>round-trip ticket</strong> (ida e volta), <strong>window seat</strong> (janela) e <strong>aisle seat</strong> (corredor). Em <em>aisle</em>, o <strong>s não é pronunciado</strong>. Também distinguimos <strong>nonstop flight</strong>, que não faz paradas intermediárias, de <strong>direct flight</strong>, que pode ter uma parada mantendo o mesmo número de voo. No exemplo do livro, não era preciso trocar de avião. Já <strong>connecting flight</strong> envolve uma conexão com outro voo.</p>
+<p>No diálogo, <strong>I’d like a window seat</strong> significa “Eu gostaria de um assento na janela”: aqui, <strong>I’d = I would</strong>. César explicou que <em>’d</em> também pode representar <em>had</em> em outras estruturas, assunto para uma etapa posterior. Você também viu <em>do/does</em> como verbo de ação em <strong>do the laundry</strong> (lavar roupa) e <strong>do the dishes</strong> (lavar a louça), além do uso como auxiliar. O passado de <em>have/has</em> é <strong>had</strong>.</p>
+<h3>O papel do sujeito</h3>
+<p>Em <strong>It makes a stop</strong>, <strong>it</strong> retoma o voo e funciona como sujeito. O português permite dizer apenas “Faz uma parada”, mas, nessa frase completa em inglês, precisamos indicar o sujeito: <em>It makes…</em> O <strong>-s</strong> de <em>makes</em> aparece porque é uma afirmativa no presente com <em>it</em>. Com auxiliar, usamos a forma base: <em>Does it make…?</em> / <em>Did it make…?</em></p>
+<h3>Perguntas com WH: quem pratica a ação?</h3>
+<p>Você leu perguntas como <strong>Where did you go?</strong>, <strong>How much luggage did she have?</strong> e <strong>Who did they meet?</strong> Nessas frases, há um sujeito — <em>you, she, they</em> — entre <em>did</em> e o verbo. A estrutura é <strong>WH + did + sujeito + forma base</strong>.</p>
+<div class="rule"><strong>Quando a expressão interrogativa é o sujeito:</strong><br>
+<strong>Who returned the wallet?</strong> — Quem devolveu a carteira?<br>
+Aqui, <strong>who</strong> pergunta por quem fez a ação. Na pergunta neutra, não acrescentamos <em>did</em>: usamos <strong>returned</strong>, no passado.<br><br>
+<strong>How many people work here?</strong> — Quantas pessoas trabalham aqui?<br>
+<strong>How many people worked here?</strong> — Quantas pessoas trabalharam aqui?<br>
+Nesses exemplos, <strong>how many people</strong> é o sujeito. Já em <strong>How many people do you know?</strong>, o sujeito é <strong>you</strong>, então usamos <strong>do</strong>.</div>
+<p style="margin-top:12px"><strong>Um cuidado de significado:</strong> <em>know</em> é conhecer/já ter familiaridade com alguém: <em>How many people did you know?</em> = “Quantas pessoas você conhecia?”. Para perguntar quantas pessoas você conheceu pela primeira vez, use <strong>How many people did you meet?</strong></p>
+<p>No encerramento, o pedido principal foi reler este material com atenção e consolidar a diferença entre <strong>to be</strong> e <strong>os outros verbos</strong>. O objetivo é reconhecer a estrutura antes de escolher <em>was/were</em> ou <em>did</em>.</p>
+</div></section>
+
+<section><h2>💬 Frases usadas em aula</h2><div class="outline-card"><p class="note">Frases trabalhadas na aula, com a escrita normalizada a partir da transcrição.</p><ul>
+<li><strong>I was in London.</strong> — Eu estava/estive em Londres.</li>
+<li><strong>I went to school.</strong> — Eu fui à escola.</li>
+<li><strong>I didn’t go to school.</strong> — Eu não fui à escola.</li>
+<li><strong>Were you at school this morning?</strong> — Você estava na escola hoje de manhã?</li>
+<li><strong>Did you go to school?</strong> — Você foi à escola?</li>
+<li><strong>I’d like a window seat.</strong> — Eu gostaria de um assento na janela.</li>
+<li><strong>He does the laundry every day.</strong> — Ele lava roupa todos os dias.</li>
+<li><strong>He does the dishes every day.</strong> — Ele lava a louça todos os dias.</li>
+<li><strong>It makes a stop.</strong> — Ele faz uma parada. <em>(O voo.)</em></li>
+<li><strong>Did we get aisle seats?</strong> — Nós conseguimos assentos no corredor?</li>
+<li><strong>Where did you go?</strong> — Aonde você foi?</li>
+<li><strong>How much luggage did she have?</strong> — Quanta bagagem ela tinha?</li>
+<li><strong>Who did they meet?</strong> — Quem eles conheceram/encontraram?</li>
+<li><strong>Who returned the wallet?</strong> — Quem devolveu a carteira?</li>
+<li><strong>How many people work here?</strong> — Quantas pessoas trabalham aqui?</li>
+</ul></div></section>
+
+<section><h2>⭐ Vocabulário-chave</h2><div class="vocab-grid">
+<div class="vocab"><div class="vocab-head"><h3>aisle seat</h3><button type="button" class="vocab-say" data-czk-say="aisle seat" aria-label="Ouvir a pronúncia de aisle seat" aria-pressed="false" title="Ouvir aisle seat">&#128266;</button></div><p><em>assento no corredor</em><br>Assento ao lado do corredor do avião, trem ou ônibus. Em <strong>aisle</strong>, o <strong>s</strong> é mudo.</p><p><strong>Did we get aisle seats?</strong><br><small>Nós conseguimos assentos no corredor?</small></p></div>
+<div class="vocab green"><div class="vocab-head"><h3>luggage</h3><button type="button" class="vocab-say" data-czk-say="luggage" aria-label="Ouvir a pronúncia de luggage" aria-pressed="false" title="Ouvir luggage">&#128266;</button></div><p><em>bagagem</em><br>Nome coletivo e incontável em inglês: usamos <strong>how much luggage</strong>, sem acrescentar <em>-s</em>.</p><p><strong>How much luggage did she have?</strong><br><small>Quanta bagagem ela tinha?</small></p></div>
+<div class="vocab yellow"><div class="vocab-head"><h3>return</h3><button type="button" class="vocab-say" data-czk-say="return" aria-label="Ouvir a pronúncia de return" aria-pressed="false" title="Ouvir return">&#128266;</button></div><p><em>devolver; voltar</em><br>Em <em>return the wallet</em>, significa devolver a carteira. É regular: <strong>return → returned</strong>.</p><p><strong>Who returned the wallet?</strong><br><small>Quem devolveu a carteira?</small></p></div>
+</div></section>
+
+<section><h2>📚 Vocabulário completo da aula</h2><div class="outline-card">
+<h3 style="margin-top:0">Viagens, passagens e assentos</h3><ul>
+<li><strong>ticket</strong> — passagem; <strong>one-way ticket</strong> — passagem só de ida; <strong>round-trip ticket</strong> — passagem de ida e volta.</li>
+<li><strong>flight</strong> — voo; <strong>nonstop flight</strong> — voo sem paradas intermediárias.</li>
+<li><strong>direct flight</strong> — voo direto, que pode incluir parada com o mesmo número de voo.</li>
+<li><strong>connecting flight</strong> — voo com conexão para outro voo.</li>
+<li><strong>make a stop</strong> — fazer uma parada; <strong>change planes</strong> — trocar de avião.</li>
+<li><strong>seat</strong> — assento; <strong>aisle seat</strong> — assento no corredor; <strong>window seat</strong> — assento na janela.</li>
+<li><strong>aisle</strong> — corredor entre fileiras de assentos ou prateleiras; também usado no supermercado.</li>
+<li><strong>luggage</strong> — bagagem; <strong>scenery</strong> — paisagem; <strong>first car</strong> — primeiro vagão, no contexto do trem.</li>
+<li><strong>I’d like… / Would you like…?</strong> — Eu gostaria de… / Você gostaria de…?</li>
+</ul>
+<h3>Verbos e formas do passado revisados</h3>
+<table class="compare"><thead><tr><th>Forma base</th><th>Passado</th><th>Sentido</th></tr></thead><tbody>
+<tr><td>be</td><td>was / were</td><td>ser / estar</td></tr>
+<tr><td>buy</td><td>bought</td><td>comprar</td></tr>
+<tr><td>do</td><td>did</td><td>fazer</td></tr>
+<tr><td>eat</td><td>ate</td><td>comer</td></tr>
+<tr><td>get</td><td>got</td><td>conseguir / pegar</td></tr>
+<tr><td>go</td><td>went</td><td>ir</td></tr>
+<tr><td>have</td><td>had</td><td>ter</td></tr>
+<tr><td>read</td><td>read</td><td>ler; passado pronunciado como “red”</td></tr>
+<tr><td>meet</td><td>met</td><td>conhecer / encontrar</td></tr>
+<tr><td>like</td><td>liked</td><td>gostar</td></tr>
+<tr><td>study</td><td>studied</td><td>estudar</td></tr>
+<tr><td>work</td><td>worked</td><td>trabalhar</td></tr>
+<tr><td>return</td><td>returned</td><td>devolver / voltar</td></tr>
+</tbody></table>
+<h3>Ações do dia a dia e outras palavras</h3><ul>
+<li><strong>do the laundry</strong> — lavar roupa; <strong>do the dishes</strong> — lavar a louça; <strong>wash</strong> — lavar; <strong>clean</strong> — limpar.</li>
+<li><strong>every day</strong> — todos os dias; <strong>this morning</strong> — hoje de manhã; <strong>weekend</strong> — fim de semana.</li>
+<li><strong>school</strong> — escola; <strong>wallet</strong> — carteira; <strong>people</strong> — pessoas.</li>
+<li><strong>where</strong> — onde / aonde; <strong>who</strong> — quem; <strong>how many</strong> — quantos / quantas; <strong>how much</strong> — quanto / quanta.</li>
+<li><strong>subject</strong> — sujeito da frase; <strong>base form</strong> — forma base do verbo; <strong>short answer</strong> — resposta curta.</li>
+</ul></div></section>
+
+<section><h2>🚨 Correções importantes</h2><div class="outline-card"><p class="note">Pontos de dúvida e correções trabalhados na aula. As formas abaixo estão normalizadas para facilitar a revisão.</p>
+<div class="correction"><h3>1. Was não significa “foi para”</h3>
+<p class="wrong">❌ Interpretar “I was in London” como “Eu fui para Londres”.</p>
+<p class="right">✅ <strong>I was in London.</strong> = Eu estava/estive em Londres.<br>✅ <strong>I went to London.</strong> = Eu fui para Londres.</p>
+<p>O primeiro exemplo descreve onde você estava; o segundo conta para onde você foi.</p></div>
+<div class="correction"><h3>2. Falta a preposição depois de went</h3>
+<p class="wrong">❌ I went school.</p><p class="right">✅ <strong>I went to school.</strong></p>
+<p>Para esse destino, usamos <strong>go/went to school</strong>. Guarde o conjunto completo: <em>went to school</em>.</p></div>
+<div class="correction"><h3>3. A negativa com go precisa de didn’t + go</h3>
+<p class="wrong">❌ Usar wasn’t/weren’t para negar “I went to school” ou manter went depois de didn’t.</p>
+<p class="right">✅ <strong>I didn’t go to school.</strong></p>
+<p>A dúvida apareceu na tentativa de negar a frase. O verbo é <strong>go</strong>; o auxiliar <strong>didn’t</strong> marca a negativa e o passado, e <strong>go</strong> fica na forma base.</p></div>
+<div class="correction"><h3>4. Depois de did she, usamos have</h3>
+<p class="wrong">❌ How much luggage did she has?</p><p class="right">✅ <strong>How much luggage did she have?</strong></p>
+<p>Você cogitou trocar <em>have</em> por <em>has</em>. Com <strong>did</strong>, usamos <strong>have</strong> para qualquer sujeito. <em>Has</em> aparece em afirmativas no presente com <em>he/she/it</em>.</p></div>
+<div class="correction"><h3>5. A frase precisa de it para retomar o voo</h3>
+<p class="wrong">❌ No, is a direct flight.</p><p class="right">✅ <strong>No, it is a direct flight.</strong></p>
+<p>Nessa resposta, <strong>it</strong> substitui o voo mencionado. Da mesma forma, dizemos <strong>It makes a stop</strong>. Se a resposta for curta, use <strong>No, it isn’t</strong> ou <strong>Yes, it is</strong>, conforme a pergunta e o sentido pretendido.</p></div>
+<div class="correction"><h3>6. Laundry, nesse conjunto, é roupa para lavar</h3>
+<p class="wrong">❌ He does the laundry every day. = “Ele faz a lavanderia todos os dias.”</p>
+<p class="right">✅ <strong>Ele lava roupa todos os dias.</strong></p>
+<p>Aprenda a expressão inteira: <strong>do the laundry</strong>. Compare com <strong>do the dishes</strong>, lavar a louça.</p></div>
+<div class="correction"><h3>7. O nome completo da passagem de ida e volta</h3>
+<p class="wrong">❌ round ticket</p><p class="right">✅ <strong>round-trip ticket</strong></p>
+<p>Na retomada inicial, faltou <strong>trip</strong>. O par para memorizar é <strong>one-way ticket × round-trip ticket</strong>.</p></div>
+<div class="correction"><h3>8. Aisle: o s é mudo</h3>
+<p class="wrong">❌ Pronunciar o s de aisle.</p><p class="right">✅ <strong>aisle</strong> soa como <strong>I’ll</strong>; <strong>aisle seat</strong> = assento no corredor.</p>
+<p>Esse foi um ponto de pronúncia praticado durante a leitura. Use o botão de áudio para ouvir e repetir a expressão completa.</p></div>
+<div class="rule">💡 <strong>Antes de montar a pergunta:</strong> identifique o verbo e o sujeito. É <em>to be</em>? Use <em>was/were</em>. É outro verbo no passado? Normalmente, use <em>did + sujeito + forma base</em>. A pergunta busca o próprio sujeito, como em <em>Who returned the wallet?</em>? Na forma neutra, o verbo fica no passado, sem <em>did</em>.</div>
+</div></section>
+
+<section><h2 style="margin-bottom:8px">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/bz4Iq_jfc3Q" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section>
+
+<section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2>
+<table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead><tbody>
+<tr class="row-teacher"><td><span class="talk-label">César (Professor)</span></td><td><span class="talk-percent">77%</span></td><td class="talk-time">32 min 08 s</td></tr>
+<tr class="row-student"><td><span class="talk-label">Lorena</span></td><td><span class="talk-percent">23%</span></td><td class="talk-time">9 min 24 s</td></tr>
+</tbody></table><p class="note" style="margin-top:10px">Estimativa pela soma dos intervalos de fala marcados na transcrição, sujeita a imprecisões da legendagem. Percentuais sobre a fala registrada; pausas e tempo de exercício não entram no cálculo.</p></section>
+
+<section><h2>📝 Homework</h2><div class="homework">
+<p>📌 <strong>Pedido feito na aula:</strong> reler o pós-aula com calma, dedicando atenção especial à diferença entre <strong>was/were</strong> e <strong>did/didn’t</strong>. Leia para entender a estrutura, além de reconhecer as palavras.</p>
+<ul><li>Leia este pós-aula de <strong>2 a 3 vezes durante a semana</strong>. Na primeira leitura, acompanhe a tabela do resumo; nas seguintes, tente explicar a regra com suas palavras.</li>
+<li>Na revisão, diga em voz alta os dois conjuntos: <strong>I was at school → I wasn’t at school → Were you at school?</strong> e <strong>I went to school → I didn’t go to school → Did you go to school?</strong></li>
+<li>Compare <strong>Who returned the wallet?</strong> com <strong>Who did they meet?</strong> e identifique o sujeito em cada pergunta.</li>
+<li>Ouça e repita as três palavras-chave. Se precisar retomar a explicação, use a gravação acima.</li></ul>
+</div></section>
+</main><footer><p style="margin:18px 0 0;color:var(--muted);font-size:0.9rem">© 2025 CZK English • czkenglish@gmail.com</p></footer>
+</article></div>
+
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>
