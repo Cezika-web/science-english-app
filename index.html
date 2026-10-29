@@ -242,7 +242,7 @@ async function getFB() {
 // Falha de gravação (regra ainda não publicada, sem rede) nunca aparece para o aluno.
 const CzkUsage = (() => {
   // Versão do app que vai junto com o uso (para saber quem ainda roda versão velha). Mantenha igual ao CACHE do sw.js.
-  const APP_BUILD = 'v44';
+  const APP_BUILD = 'v45';
   const TICK = 1000, MIN_STEP = 200, FLUSH = 60000, NEW_VISIT = 30 * 60000;
   const BLIND_CAP = 10 * 60000, HOLD_CAP = 15 * 60000, MAX_FAILS = 5;
   const READ_MS = 180000;                 // maior pausa aceita na leitura do pós-aula (igual a LEITURA_SEG do adesao.js)
@@ -5227,7 +5227,8 @@ function PosaulaPeek({ open, activity, posaulas, onClose, onRead }) {
   }, [activity, lista, fontesRevisao]);
 
   const [sel, setSel] = useState(null);
-  useEffect(() => { if (open) setSel(alvo); }, [open, alvo]);
+  // Ao fechar zera a escolha: ao reabrir, a consulta começa na pós-aula da atividade (ou na lista), nunca na que sobrou da vez anterior.
+  useEffect(() => { setSel(open ? alvo : null); }, [open, alvo]);
 
   // Chaves simples nas dependências: o objeto `sel` é refeito quando a lista recarrega (ex.: ao marcar como lida) e isso
   // não pode fechar e reabrir a leitura no cronômetro.
@@ -5235,10 +5236,10 @@ function PosaulaPeek({ open, activity, posaulas, onClose, onRead }) {
   const selItem = sel && sel.id ? CzkUsage.itemKey('pos', sel.id) : '';
   const selBlind = !!sel && !sel.html;
 
-  // Ler a pós-aula pela consulta é leitura de pós-aula, não tempo da atividade que está por baixo.
-  // Na lista de escolha (nenhuma aberta ainda) o tempo segue com a atividade.
+  // Enquanto a consulta está aberta o tempo é de leitura de pós-aula, não da atividade que está por baixo: do momento em que
+  // ela abre (mesmo na lista, antes de escolher a pós-aula; aí sem item) até fechar, quando volta a contar a atividade.
   useEffect(() => {
-    if (!open || !selKey) return undefined;
+    if (!open) return undefined;
     CzkUsage.setOverlay({ area: 'posaula', item: selItem, blind: selBlind });
     return () => CzkUsage.setOverlay(null);
   }, [open, selKey, selItem, selBlind]);
