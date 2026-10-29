@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Felipe Nemeth — 10/28/2026 — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+*{box-sizing:border-box;} body{line-height:1.6;} h2{font-size:1.12rem;color:#14532D;line-height:1.35;}
+h3{font-size:1rem;} .title-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+header>div:first-child{min-width:0;} .actions{flex-shrink:0;} .btn{font:600 .85rem inherit;text-align:center;}
+.outline-card p:first-child{margin-top:0;} .outline-card p:last-child{margin-bottom:0;}
+li+li{margin-top:6px;} .vocab{min-width:200px;} .table-wrap{overflow-x:auto;}
+.grammar-table{width:100%;border-collapse:collapse;font-size:.92rem;}
+.grammar-table th,.grammar-table td{border:1px solid var(--border);padding:9px;text-align:left;vertical-align:top;}
+.grammar-table th{background:#E7F6EC;color:#14532D;} .note{color:var(--muted);font-size:.88rem;}
+.correction+.correction{margin-top:18px;padding-top:14px;border-top:1px solid var(--border);}
+.correction p{margin:4px 0;} .wrong{color:#b42318;} .right{color:#276749;}
+@media(max-width:600px){.wrap{padding:16px 10px;} header{flex-direction:column;}.actions,.actions .btn{width:100%;}.vocab{min-width:0;} .meta{font-size:.85rem;}.talk-table th,.talk-table td{padding:7px;font-size:.8rem;}}
+@media print{html,body{height:auto;background:white;}.wrap{padding:0;display:block;min-height:0;}.card{max-width:none;border:0;box-shadow:none;padding:0;}.actions,.vocab-say{display:none;}.vocab,.correction,tr{break-inside:avoid;}a{color:#14532D;}h2{break-after:avoid;}}
+</style></head><body>
+<div class="wrap"><article class="card" role="main"><header><div><div class="title-row"><span class="badge">PÓS-AULA</span><h1>Livros, noun clauses e respostas com so / not</h1></div><div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Felipe Nemeth &nbsp;•&nbsp; <strong>Data:</strong> 10/28/2026</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header><main>
+<section class="panel"><p style="margin:0;font-weight:600;color:#14532D;"><em>Felipe, nesta aula você aprendeu a descrever livros e a conectar ideias com <strong>that</strong>. O foco foi entender o que uma <strong>noun clause</strong> expressa e responder com naturalidade: <strong>I think so</strong>, <strong>I don’t think so</strong> e <strong>I hope not</strong>.</em></p></section>
+<section><h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2><div class="outline-card">
+<p><strong>1. Revisão: verbos depois de preposições.</strong> Retomamos a regra de usar <strong>verbo com -ing</strong> após uma preposição. O ponto central foi perceber que <strong>to</strong> pode introduzir um infinitivo, como em <em>to read</em>, ou funcionar como preposição, como em <em>object to reading</em> e <em>switch over to reading</em>. Por isso, ver <em>to</em> antes de um verbo não basta para escolher a forma seguinte: é preciso reconhecer a expressão completa.</p>
+<p><strong>2. Como falar sobre livros.</strong> Você leu e discutiu <em>best seller, page-turner, cliffhanger, a fast read, hard to follow</em> e <em>trash</em>. A conversa incluiu seus hábitos de leitura, livros de autoajuda e de história, além do interesse por biografias. Também apareceu a diferença entre <strong>can</strong> como verbo modal e como substantivo em <em>a can of Coke</em> e <em>trash can</em>.</p>
+<p><strong>3. Noun clauses com that.</strong> Uma <em>clause</em> é uma oração; nos exemplos trabalhados, ela tem sujeito e verbo. Em <em>I hear (that) Dan Brown is writing a children’s book</em>, a parte <strong>Dan Brown is writing a children’s book</strong> informa <em>o que</em> a pessoa ouviu. Essa oração funciona como complemento de <em>hear</em>. Compare <em>I like pizza</em>, com um substantivo como objeto, e <em>I think that travel books are a waste of time</em>, com uma oração como complemento. Nesses exemplos com <em>that</em>, a palavra pode ser omitida sem mudar o sentido.</p>
+<p><strong>4. Montagem das frases.</strong> Nos exercícios sobre escritores e livros, você identificou onde inserir <strong>that</strong> e qual forma verbal usar dentro da segunda oração. Retomamos o passado de verbos como <em>win → won</em> e <em>write → wrote</em>, a concordância <em>book is / books are</em> e a expressão <strong>was born</strong> para dizer onde alguém nasceu. O tempo verbal dessa segunda oração depende do sentido e do contexto.</p>
+<p><strong>5. Respostas curtas com so e not.</strong> Em vez de repetir uma informação inteira, podemos usar <strong>so</strong>: <em>I think so, I believe so, I guess so, I hope so</em>. Nas negativas praticadas, usamos <strong>I don’t think so / I don’t believe so</strong> e <strong>I guess not / I hope not</strong>. <em>Think</em> indica opinião; <em>believe</em>, crença ou convicção; <em>guess</em>, uma suposição; e <em>hope</em>, um desejo.</p>
+<div class="table-wrap"><table class="grammar-table"><thead><tr><th>Intenção</th><th>Afirmativa</th><th>Negativa trabalhada</th></tr></thead><tbody>
+<tr><td>Achar</td><td>I think so.</td><td>I don’t think so.</td></tr><tr><td>Acreditar</td><td>I believe so.</td><td>I don’t believe so.</td></tr><tr><td>Supor</td><td>I guess so.</td><td>I guess not.</td></tr><tr><td>Esperar / desejar</td><td>I hope so.</td><td>I hope not.</td></tr></tbody></table></div>
+<p><strong>6. Pronúncia e próximos passos.</strong> O treino de escuta destacou a ênfase no verbo de opinião, como em <em>I <strong>THINK</strong> so</em> e <em>I <strong>HOPE</strong> not</em>, e a ligação das palavras na fala natural. Na próxima aula, a revisão será sobre <em>to</em> como preposição ou parte do infinitivo, junto das respostas com <em>think, believe, guess</em> e <em>hope</em>. O <strong>past perfect</strong> foi anunciado como conteúdo futuro da unidade.</p>
+<p class="note"><strong>Para fixar com precisão:</strong> uma <em>noun clause</em> pode exercer diferentes funções; nos exemplos desta aula, ela aparece como complemento de um verbo. Nem tudo que vem depois de um verbo é objeto direto. Respostas com <em>so</em> retomam uma ideia de sim ou não; respostas com auxiliares também podem ser corretas, dependendo da pergunta e do sentido pretendido. Por exemplo: <em>Do you think it’s good? — Yes, I do.</em> / <em>Is it good? — I think so.</em></p>
+</div></section>
+<section><h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2><div class="outline-card"><p class="note">Frases lidas ou praticadas em aula, com grafia e pontuação normalizadas.</p><ul><li><strong>It’s a best seller.</strong><br>É um sucesso de vendas.</li><li><strong>It’s a page-turner.</strong><br>É um livro que prende a atenção.</li><li><strong>It’s a cliffhanger.</strong><br>É uma história que deixa você em suspense.</li><li><strong>It’s a fast read.</strong><br>É um livro que se lê rapidamente.</li><li><strong>It’s hard to follow.</strong><br>É difícil de acompanhar / entender.</li><li><strong>It’s trash.</strong><br>É lixo / é muito ruim. (Opinião forte e informal.)</li><li><strong>I hear that Dan Brown is writing a children’s book.</strong><br>Ouvi dizer que Dan Brown está escrevendo um livro infantil.</li><li><strong>She thinks that travel books are a waste of time.</strong><br>Ela acha que livros de viagem são uma perda de tempo.</li><li><strong>I think so. / I don’t think so.</strong><br>Acho que sim. / Acho que não.</li><li><strong>I believe so. / I don’t believe so.</strong><br>Acredito que sim. / Acredito que não.</li><li><strong>I guess so. / I guess not.</strong><br>Suponho que sim. / Suponho que não.</li><li><strong>I hope so. / I hope not.</strong><br>Espero que sim. / Espero que não.</li></ul></div></section>
+<section><h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3>page-turner</h3><button type="button" class="vocab-say" data-czk-say="page-turner" aria-label="Ouvir a pronúncia de page-turner" aria-pressed="false" title="Ouvir page-turner">&#128266;</button></div><p><em>livro que prende a atenção</em><br>Uma leitura tão envolvente que dá vontade de continuar virando as páginas.</p><p><strong>Exemplo:</strong> This book is a real page-turner.<br><small>Este livro prende muito a atenção.</small></p></div><div class="vocab green"><div class="vocab-head"><h3>cliffhanger</h3><button type="button" class="vocab-say" data-czk-say="cliffhanger" aria-label="Ouvir a pronúncia de cliffhanger" aria-pressed="false" title="Ouvir cliffhanger">&#128266;</button></div><p><em>situação ou final que deixa em suspense</em><br>Um momento em que algo decisivo fica sem resolução, despertando a vontade de saber o que acontece depois.</p><p><strong>Exemplo:</strong> The chapter ends with a cliffhanger.<br><small>O capítulo termina deixando o leitor em suspense.</small></p></div><div class="vocab yellow"><div class="vocab-head"><h3>hard to follow</h3><button type="button" class="vocab-say" data-czk-say="hard to follow" aria-label="Ouvir a pronúncia de hard to follow" aria-pressed="false" title="Ouvir hard to follow">&#128266;</button></div><p><em>difícil de acompanhar / entender</em><br>Usado quando a sequência de ideias ou acontecimentos é difícil de compreender.</p><p><strong>Exemplo:</strong> The story is hard to follow.<br><small>A história é difícil de acompanhar.</small></p></div></div></section>
+<section><h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2><div class="outline-card"><h3>Livros, avaliações e gêneros</h3><ul><li><strong>book</strong> — livro</li><li><strong>best seller / bestseller</strong> — livro de grande sucesso de vendas</li><li><strong>page-turner</strong> — livro que prende a atenção</li><li><strong>cliffhanger</strong> — situação ou final que deixa em suspense</li><li><strong>a fast read</strong> — livro que se lê rapidamente; leitura rápida</li><li><strong>hard to follow</strong> — difícil de acompanhar ou entender</li><li><strong>trash / just plain trash</strong> — lixo / simplesmente lixo; avaliação bastante negativa</li><li><strong>novel</strong> — romance: obra narrativa de ficção, que pode ser realista, fantástica, de suspense etc.</li><li><strong>thriller</strong> — livro ou filme de suspense</li><li><strong>children’s book</strong> — livro infantil</li><li><strong>travel books</strong> — livros de viagem</li><li><strong>self-help books</strong> — livros de autoajuda</li><li><strong>history books</strong> — livros de história</li><li><strong>biography / biographies</strong> — biografia / biografias</li></ul><h3>Autores, leitura e exercícios</h3><ul><li><strong>author / writer</strong> — autor(a) / escritor(a)</li><li><strong>novelist</strong> — romancista; autor(a) de romances</li><li><strong>songwriter</strong> — compositor(a) de canções</li><li><strong>read</strong> — ler; no presente soa como “reed”; no passado, como “red”</li><li><strong>write → wrote</strong> — escrever → escreveu</li><li><strong>win → won</strong> — ganhar → ganhou</li><li><strong>receive → received</strong> — receber → recebeu</li><li><strong>publish</strong> — publicar</li><li><strong>was born</strong> — nasceu; forma usada para situar um nascimento no passado</li><li><strong>a waste of time</strong> — uma perda de tempo</li><li><strong>no offense, but…</strong> — sem querer ofender, mas…</li><li><strong>the fact that…</strong> — o fato de que…</li></ul><h3>Gramática e respostas curtas</h3><ul><li><strong>clause</strong> — oração</li><li><strong>noun</strong> — substantivo</li><li><strong>noun clause</strong> — oração que exerce uma função de substantivo</li><li><strong>subject / verb</strong> — sujeito / verbo</li><li><strong>direct object</strong> — objeto direto</li><li><strong>that</strong> — que; introduz as orações estudadas</li><li><strong>short answer</strong> — resposta curta</li><li><strong>think / believe / guess / hope</strong> — achar / acreditar / supor / esperar ou desejar</li><li><strong>so</strong> — nessas respostas, retoma a ideia afirmativa anterior</li><li><strong>not</strong> — negação em I hope not e I guess not</li><li><strong>stress</strong> — ênfase / destaque na pronúncia</li></ul><h3>Revisão e vocabulário da conversa</h3><ul><li><strong>preposition</strong> — preposição</li><li><strong>infinitive</strong> — infinitivo</li><li><strong>object to + -ing</strong> — opor-se a fazer algo</li><li><strong>switch over to + -ing</strong> — mudar / passar a fazer algo</li><li><strong>can</strong> — poder / conseguir, como modal; lata, como substantivo</li><li><strong>a can of Coke</strong> — uma lata de Coca-Cola</li><li><strong>trash can</strong> — lixeira</li><li><strong>shelter</strong> — abrigo</li><li><strong>arrested</strong> — preso / detido</li><li><strong>a long day</strong> — um dia longo / puxado</li></ul><p class="note"><strong>Diferenças úteis:</strong> <em>a fast read</em> descreve uma leitura rápida; <em>speed reading</em> é a técnica de leitura dinâmica. <em>Novel</em> não significa necessariamente uma história real: em português, a tradução mais útil aqui é <em>romance</em>.</p></div></section>
+<section><h2 style="margin-bottom:8px;">🚨 Correções importantes</h2><div class="outline-card"><p class="note">Pontos que apareceram nas suas leituras, interpretações e dúvidas durante a aula.</p><div class="correction"><p><strong>1. Page-turner não é marcador de página</strong></p><p class="wrong">❌ “Page-turner” = “marca a página”.</p><p class="right">✅ <strong>A page-turner = um livro que prende a atenção.</strong></p><p>Você associou a expressão a marcar uma página. Aqui, ela vem da ideia de continuar virando as páginas. Marcador de página é bookmark.</p></div><div class="correction"><p><strong>2. Pronúncia e forma de cliffhanger</strong></p><p class="wrong">❌ Leitura como “cliff ranger”.</p><p class="right">✅ <strong>Cliffhanger.</strong></p><p>O professor retomou a palavra logo após sua leitura. Pratique as partes cliff + hanger, com o destaque em CLIFF. A expressão sugere suspense, especialmente quando uma situação fica sem resolução.</p></div><div class="correction"><p><strong>3. So em uma resposta de opinião</strong></p><p class="wrong">❌ Interpretar so como “então” em I think so.</p><p class="right">✅ <strong>I think so. = Acho que sim.</strong></p><p>Você perguntou se so era “então”. Nessa estrutura, ele substitui a informação que seria repetida. Não é uma tradução fixa: o sentido depende da expressão.</p></div><div class="correction"><p><strong>4. Nascimento: is born ou was born?</strong></p><p class="wrong">❌ Escolher is born para contar onde uma pessoa nasceu no passado.</p><p class="right">✅ <strong>He was born in Panama.</strong></p><p>Essa foi sua dúvida no exercício. Para um nascimento já ocorrido, use was born com he/she/I e were born com you/we/they. Em português, a tradução natural é “nasceu”.</p></div><div class="correction"><p><strong>5. Onde entra that?</strong></p><p class="wrong">❌ Usar “depois da oração” como única regra para posicionar that.</p><p class="right">✅ <strong>I didn’t know that + sujeito + verbo + complemento.</strong></p><p>A referência mais útil é o início da segunda oração: I didn’t know that he was born in Panama. That conecta a ideia principal à informação que você não sabia. Nesses exemplos como complemento, também pode ser omitido.</p></div><div class="correction"><p><strong>💡 Duas revisões para não misturar</strong></p><p><em>Think / believe:</em> <strong>I don’t think so / I don’t believe so.</strong><br><em>Guess / hope:</em> <strong>I guess not / I hope not.</strong></p><p>Na pronúncia, ligue as palavras e destaque o verbo de opinião, mas mantenha a negativa reconhecível em <em>don’t think</em>. Reduzir sons na fala não significa trocar palavras por sons aleatórios.</p></div></div></section>
+<section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/XP9WRITQUTM" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section>
+<section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead><tbody><tr class="row-teacher"><td class="talk-label">César (Professor)</td><td class="talk-percent">73%</td><td class="talk-time">27 min 10 s</td></tr><tr class="row-student"><td class="talk-label">Felipe</td><td class="talk-percent">27%</td><td class="talk-time">10 min 15 s</td></tr></tbody></table><p class="note" style="margin-bottom:0;">Estimativa pela duração dos trechos atribuídos a cada participante na transcrição. Exclui pausas e o áudio compartilhado do livro; não representa a duração total da gravação. A aula teve bastante explicação gramatical, e você participou com leituras, exemplos e perguntas de confirmação.</p></section>
+<section><h2 style="margin-bottom:8px;">📝 Homework</h2><div class="homework"><p><strong>Combinado para esta semana:</strong> revisar os dois pontos que serão retomados na próxima aula e conferir as atividades pendentes no app, incluindo eventuais gravações de áudio.</p><ol>
+<li><strong>Leia este pós-aula 2 ou 3 vezes.</strong> Ouça e repita as três palavras-chave; depois, use uma delas para descrever um livro que conhece.</li>
+<li><strong>Revise to + verbo e to + -ing.</strong> Compare <em>I want to read</em> e <em>I object to reading</em>. Identifique a função de <em>to</em> antes de escolher a forma verbal.</li>
+<li><strong>Localize a noun clause.</strong> Em <em>I think that this book is a page-turner</em>, separe a oração principal da informação introduzida por <em>that</em>.</li>
+<li><strong>Pratique os quatro pares em voz alta.</strong> <em>I think so / I don’t think so; I believe so / I don’t believe so; I guess so / I guess not; I hope so / I hope not.</em> Dê destaque ao verbo e mantenha as palavras ligadas.</li>
+<li><strong>Confira suas pendências no app.</strong> No fim da aula, vocês combinaram colocar as atividades em dia; verifique quais ainda precisam de resposta ou áudio.</li>
+</ol><p class="note" style="margin-bottom:0;">As frases de treino acima são sugestões de revisão deste pós-aula. Os exercícios anunciados pelo professor para a próxima aula vão reforçar esses mesmos pontos.</p></div></section>
+</main><footer>© 2025 CZK English • czkenglish@gmail.com</footer></article></div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>
