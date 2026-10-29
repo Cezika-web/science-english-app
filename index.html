@@ -242,7 +242,7 @@ async function getFB() {
 // Falha de gravação (regra ainda não publicada, sem rede) nunca aparece para o aluno.
 const CzkUsage = (() => {
   // Versão do app que vai junto com o uso (para saber quem ainda roda versão velha). Mantenha igual ao CACHE do sw.js.
-  const APP_BUILD = 'v43';
+  const APP_BUILD = 'v44';
   const TICK = 1000, MIN_STEP = 200, FLUSH = 60000, NEW_VISIT = 30 * 60000;
   const BLIND_CAP = 10 * 60000, HOLD_CAP = 15 * 60000, MAX_FAILS = 5;
   const READ_MS = 180000;                 // maior pausa aceita na leitura do pós-aula (igual a LEITURA_SEG do adesao.js)
@@ -5206,7 +5206,7 @@ function ActivityModal({ activity, onClose, onOpenPart }) {
 // Abre por CIMA da atividade: a parte continua montada, então nada do que o
 // aluno já digitou se perde. Atividades antigas não têm posaulaId/posaulaUrl —
 // nesse caso cai na lista de pós-aulas do aluno, nunca em erro.
-function PosaulaPeek({ open, activity, posaulas, onClose }) {
+function PosaulaPeek({ open, activity, posaulas, onClose, onRead }) {
   const lista = posaulas || [];
 
   const fontesRevisao = React.useMemo(() => {
@@ -5232,12 +5232,24 @@ function PosaulaPeek({ open, activity, posaulas, onClose }) {
   // Ler a pós-aula pela consulta é leitura de pós-aula, não tempo da atividade que está por baixo.
   // Na lista de escolha (nenhuma aberta ainda) o tempo segue com a atividade.
   useEffect(() => {
-    if (!open || !sel) return undefined;
-    CzkUsage.setOverlay({ area: 'posaula', item: sel.id ? CzkUsage.itemKey('pos', sel.id) : '', blind: !sel.html });
+    if (!open || !selKey) return undefined;
+    CzkUsage.setOverlay({ area: 'posaula', item: selItem, blind: selBlind });
     return () => CzkUsage.setOverlay(null);
-  }, [open, sel]);
+  }, [open, selKey, selItem, selBlind]);
+
+  // Abrir a pós-aula na consulta também a marca como lida (o App ignora se já estava lida).
+  const onReadRef = useRef(onRead);
+  onReadRef.current = onRead;
+  useEffect(() => {
+    if (open && sel && sel.id && onReadRef.current) onReadRef.current(sel);
+  }, [open, selKey]);
 
   if (!open) return null;
+  // Chaves simples nas dependências: o objeto `sel` é refeito quando a lista recarrega (ex.: ao marcar como lida) e isso
+  // não pode fechar e reabrir a leitura no cronômetro.
+  const selKey = sel ? (sel.id || sel.url || 'sem-id') : '';
+  const selItem = sel && sel.id ? CzkUsage.itemKey('pos', sel.id) : '';
+  const selBlind = !!sel && !sel.html;
   const listaConsulta = fontesRevisao.length ? fontesRevisao : lista;
   const podeVoltar = !alvo && !!sel;
 
@@ -5284,7 +5296,7 @@ function PosaulaPeek({ open, activity, posaulas, onClose }) {
   );
 }
 
-function PartModal({ part, activity, posaulas, onBack, onClose, onFinish, onSaveDraft, mirror = false }) {
+function PartModal({ part, activity, posaulas, onBack, onClose, onFinish, onSaveDraft, onReadPost, mirror = false }) {
   const contentRef = useRef(null);
   const valuesRef  = useRef({});
   const oralDraftsRef = useRef({});
@@ -5425,7 +5437,7 @@ function PartModal({ part, activity, posaulas, onBack, onClose, onFinish, onSave
           </div>
         )}
 
-        <PosaulaPeek open={peek} activity={activity} posaulas={posaulas} onClose={() => setPeek(false)} />
+        <PosaulaPeek open={peek} activity={activity} posaulas={posaulas} onClose={() => setPeek(false)} onRead={onReadPost} />
       </div>
     </div>
   );
@@ -6003,6 +6015,19 @@ function App() {
   const handleRequestNotif = () => requestPush();
 
   async function requestPush() {
+  // Consultar a pós-aula dentro de uma atividade também a marca como lida, só na 1ª vez (igual ao openPost). Aqui a lista não
+  // recarrega ao fechar a consulta, então o "Lido em" é atualizado na própria lista, e o que já foi marcado não repete.
+  const readMarkedRef = useRef(new Set());
+  const markPostRead = async (post) => {
+    if (mirror || !user?.uid || !post || !post.id || post.readAt || readMarkedRef.current.has(post.id)) return;
+    readMarkedRef.current.add(post.id);
+    try {
+      const f = await getFB();
+      await f.updateDoc(f.doc(f.db, 'students', user.uid, 'posaulas', post.id), { readAt: f.serverTimestamp() });
+      setPosaulas(prev => prev.map(p => (p.id === post.id && !p.readAt) ? { ...p, readAt: new Date() } : p));
+    } catch (e) { readMarkedRef.current.delete(post.id); }
+  };
+
     const fb = await getFB();
     if (!fb.messaging) { showToast('Notificacoes nao suportadas neste dispositivo.'); return; }
     try {
@@ -6392,7 +6417,7 @@ function App() {
       />}
 
       <ActivityModal activity={openActivity} onClose={handleCloseAll} onOpenPart={handleOpenPart} />
-      <PartModal part={openPart} activity={openActivity} posaulas={posaulas} onBack={handleClosePart} onClose={handleCloseAll} onFinish={handleFinishPart} onSaveDraft={handleSaveDraftPart} mirror={mirror} />
+      <PartModal part={openPart} activity={openActivity} posaulas={posaulas} onBack={handleClosePart} onClose={handleCloseAll} onFinish={handleFinishPart} onSaveDraft={handleSaveDraftPart} onReadPost={markPostRead} mirror={mirror} />
       <ExtraModal extra={openExtra} onClose={() => setOpenExtra(null)} onFinish={handleFinishExtra} onSaveDraft={handleSaveDraftExtra} mirror={mirror} />
       <CorrecaoModal data={openCorrecao} onClose={() => setOpenCorrecao(null)} />
 
