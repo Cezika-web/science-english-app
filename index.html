@@ -5229,6 +5229,12 @@ function PosaulaPeek({ open, activity, posaulas, onClose, onRead }) {
   const [sel, setSel] = useState(null);
   useEffect(() => { if (open) setSel(alvo); }, [open, alvo]);
 
+  // Chaves simples nas dependências: o objeto `sel` é refeito quando a lista recarrega (ex.: ao marcar como lida) e isso
+  // não pode fechar e reabrir a leitura no cronômetro.
+  const selKey = sel ? (sel.id || sel.url || 'sem-id') : '';
+  const selItem = sel && sel.id ? CzkUsage.itemKey('pos', sel.id) : '';
+  const selBlind = !!sel && !sel.html;
+
   // Ler a pós-aula pela consulta é leitura de pós-aula, não tempo da atividade que está por baixo.
   // Na lista de escolha (nenhuma aberta ainda) o tempo segue com a atividade.
   useEffect(() => {
@@ -5245,11 +5251,6 @@ function PosaulaPeek({ open, activity, posaulas, onClose, onRead }) {
   }, [open, selKey]);
 
   if (!open) return null;
-  // Chaves simples nas dependências: o objeto `sel` é refeito quando a lista recarrega (ex.: ao marcar como lida) e isso
-  // não pode fechar e reabrir a leitura no cronômetro.
-  const selKey = sel ? (sel.id || sel.url || 'sem-id') : '';
-  const selItem = sel && sel.id ? CzkUsage.itemKey('pos', sel.id) : '';
-  const selBlind = !!sel && !sel.html;
   const listaConsulta = fontesRevisao.length ? fontesRevisao : lista;
   const podeVoltar = !alvo && !!sel;
 
@@ -6007,14 +6008,6 @@ function App() {
     } catch(e) {}
   }
 
-  function updateNotifBtn() {
-    if (typeof Notification === 'undefined') { setShowNotifBtn(false); return; }
-    setShowNotifBtn(Notification.permission === 'default' && isStandalone());
-  }
-
-  const handleRequestNotif = () => requestPush();
-
-  async function requestPush() {
   // Consultar a pós-aula dentro de uma atividade também a marca como lida, só na 1ª vez (igual ao openPost). Aqui a lista não
   // recarrega ao fechar a consulta, então o "Lido em" é atualizado na própria lista, e o que já foi marcado não repete.
   const readMarkedRef = useRef(new Set());
@@ -6028,6 +6021,14 @@ function App() {
     } catch (e) { readMarkedRef.current.delete(post.id); }
   };
 
+  function updateNotifBtn() {
+    if (typeof Notification === 'undefined') { setShowNotifBtn(false); return; }
+    setShowNotifBtn(Notification.permission === 'default' && isStandalone());
+  }
+
+  const handleRequestNotif = () => requestPush();
+
+  async function requestPush() {
     const fb = await getFB();
     if (!fb.messaging) { showToast('Notificacoes nao suportadas neste dispositivo.'); return; }
     try {
