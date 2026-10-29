@@ -1579,44 +1579,109 @@
         </div>
       </div>
 
-      <!-- CURSO — o livro (Connectivity) dentro do app: unidades, exercícios e o que está ligado -->
+      <!-- CURSO — o livro (Connectivity) dentro do app: revisar o que fica, checklist, vídeos -->
       <div class="tab-panel" id="tab-curso">
         <style>
-          .cr-un { background:var(--card); border:1px solid var(--border); border-radius:14px; margin-bottom:10px; overflow:hidden; }
-          .cr-un > summary { list-style:none; cursor:pointer; padding:13px 15px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-weight:700; }
-          .cr-un > summary::-webkit-details-marker { display:none; }
-          .cr-un .cr-chip { font-size:.72rem; font-weight:700; padding:2px 9px; border-radius:99px; background:#f1f5f9; color:#475569; }
-          .cr-un .cr-chip.ok { background:#dcfce7; color:#166534; } .cr-un .cr-chip.vazia { background:#fef3c7; color:#92400e; }
-          .cr-corpo { padding:4px 15px 14px; border-top:1px solid var(--border); }
-          .cr-bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:10px 0; }
-          .cr-bar button { font-size:.8rem; padding:7px 12px; border-radius:9px; border:1px solid var(--border); background:#fff; cursor:pointer; font-weight:600; }
-          .cr-bar button.pri { background:#7c3aed; color:#fff; border-color:#7c3aed; }
-          .cr-bar button:disabled { opacity:.45; cursor:default; }
-          .cr-t { padding:7px 0; border-top:1px solid #f1f5f9; }
-          .cr-t > label { display:flex; gap:9px; align-items:flex-start; font-weight:700; font-size:.88rem; cursor:pointer; }
-          .cr-t small { color:var(--muted); font-weight:600; margin-left:4px; }
-          .cr-t.off > label { opacity:.5; text-decoration:line-through; }
-          .cr-ex { margin:4px 0 2px 26px; display:grid; gap:2px; }
-          .cr-ex label { display:flex; gap:8px; align-items:flex-start; font-size:.8rem; font-weight:500; cursor:pointer; line-height:1.35; }
-          .cr-ex label.off { opacity:.45; text-decoration:line-through; }
-          .cr-tipo { flex-shrink:0; font-size:.62rem; font-weight:800; letter-spacing:.4px; padding:1px 6px; border-radius:6px; background:#f5f3ff; color:#5b21b6; text-transform:uppercase; margin-top:1px; }
-          .cr-video { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0; padding:9px 11px; border-radius:11px; background:#f8fafc; border:1px solid var(--border); font-size:.83rem; }
+          .cr-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px 16px; margin-bottom:12px; }
+          .cr-card h2 { font-size:1rem; margin:0 0 4px; }
+          .cr-sub { font-size:.82rem; color:var(--muted); margin:0 0 10px; line-height:1.5; }
+          .cr-check { display:grid; gap:2px; }
+          .cr-check label { display:flex; gap:9px; align-items:flex-start; padding:7px 4px; border-top:1px solid #f1f5f9; font-size:.86rem; cursor:pointer; line-height:1.4; }
+          .cr-check label:first-child { border-top:0; }
+          .cr-check input { margin-top:3px; }
+          .cr-quem { flex-shrink:0; font-size:.65rem; font-weight:800; padding:2px 8px; border-radius:99px; margin-top:2px; }
+          .cr-quem.voce { background:#fef3c7; color:#92400e; } .cr-quem.eu { background:#ede9fe; color:#5b21b6; }
+          .cr-check .feito > span.tx { text-decoration:line-through; color:var(--muted); }
+          .cr-check small { color:var(--muted); font-weight:600; }
+          .cr-estrela { color:#d97706; font-weight:800; font-size:.75rem; }
+          .cr-un-linha { display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:9px 0; border-top:1px solid #f1f5f9; font-size:.88rem; }
+          .cr-un-linha:first-child { border-top:0; }
+          .cr-un-linha b { min-width:190px; }
+          .cr-barra { flex:1; min-width:110px; height:8px; border-radius:9px; background:#e2e8f0; overflow:hidden; }
+          .cr-barra i { display:block; height:100%; background:#7c3aed; }
+          .cr-btn { font-size:.8rem; padding:7px 13px; border-radius:9px; border:1px solid var(--border); background:#fff; cursor:pointer; font-weight:700; }
+          .cr-btn.pri { background:#7c3aed; color:#fff; border-color:#7c3aed; }
+          .cr-btn:disabled { opacity:.4; cursor:default; }
+          #cr-revisor { display:none; }
+          .cr-rev-topo { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+          .cr-rev-topo h2 { margin:0; flex:1; min-width:200px; font-size:1rem; }
+          .cr-mapa { display:flex; flex-wrap:wrap; gap:4px; margin:8px 0 12px; }
+          .cr-pt { width:30px; height:26px; border-radius:7px; border:1px solid var(--border); background:#fff; font-size:.7rem; font-weight:700; cursor:pointer; padding:0; }
+          .cr-pt.ok { background:#dcfce7; border-color:#86efac; } .cr-pt.out { background:#fee2e2; border-color:#fca5a5; } .cr-pt.opc { border-style:dashed; }
+          .cr-pt.at { outline:2px solid #7c3aed; outline-offset:1px; }
+          .cr-grade { display:grid; grid-template-columns:minmax(260px,1fr) minmax(300px,1.1fr); gap:16px; align-items:start; }
+          @media (max-width:860px) { .cr-grade { grid-template-columns:1fr; } }
+          .cr-pagina { position:sticky; top:8px; background:#3b3f4a; border-radius:12px; padding:8px; text-align:center; }
+          .cr-pagina img { width:100%; border-radius:6px; background:#fff; display:block; cursor:zoom-in; }
+          .cr-pagina .cr-pgnav { display:flex; justify-content:space-between; align-items:center; color:#e2e8f0; font-size:.78rem; font-weight:700; padding:6px 4px 0; }
+          .cr-pagina .cr-pgnav button { background:#fff; border:0; border-radius:7px; padding:3px 11px; font-weight:800; cursor:pointer; }
+          .cr-vazio { background:#f8fafc; border:1px dashed #cbd5e1; border-radius:12px; padding:18px; font-size:.86rem; color:#475569; line-height:1.55; }
+          .cr-direita h3 { font-size:1rem; margin:0 0 2px; }
+          .cr-direita .meta { font-size:.78rem; color:var(--muted); margin-bottom:10px; }
+          .cr-tirar { display:flex; gap:9px; align-items:center; padding:10px 12px; border-radius:11px; background:#fef2f2; border:1px solid #fecaca; font-weight:800; font-size:.86rem; cursor:pointer; margin-bottom:10px; }
+          .cr-tirar.lig { background:#f0fdf4; border-color:#bbf7d0; }
+          .cr-tirar.on { background:#fee2e2; border-color:#f87171; } .cr-tirar.lig.on { background:#dcfce7; border-color:#4ade80; }
+          .cr-ex { display:flex; gap:9px; align-items:flex-start; padding:9px 10px; border:1px solid #e2e8f0; border-radius:10px; margin-bottom:7px; font-size:.85rem; line-height:1.4; cursor:pointer; background:#fff; }
+          .cr-ex.off { background:#fef2f2; border-color:#fca5a5; }
+          .cr-ex.off .tx { text-decoration:line-through; opacity:.55; }
+          .cr-ex .tx { flex:1; }
+          .cr-ex .resp { display:block; margin-top:3px; font-size:.76rem; color:#475569; font-weight:500; }
+          .cr-tipo { flex-shrink:0; font-size:.62rem; font-weight:800; letter-spacing:.4px; padding:1px 6px; border-radius:6px; background:#f5f3ff; color:#5b21b6; text-transform:uppercase; margin-top:2px; }
+          .cr-nota { width:100%; min-height:58px; padding:8px 10px; border:1px solid var(--border); border-radius:9px; font-size:.84rem; font-family:inherit; margin-top:4px; }
+          .cr-rodape { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:12px; }
+          .cr-video { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:6px 0; padding:8px 10px; border-radius:10px; background:#f8fafc; border:1px solid var(--border); font-size:.82rem; }
           .cr-video input { flex:1; min-width:180px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:.82rem; }
         </style>
-        <div class="form-card">
+
+        <div class="cr-card">
           <h2>📘 Curso: Connectivity 1 dentro do app</h2>
-          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:6px;">
-            Aqui está <strong>todo o conteúdo</strong> que o aluno vê no Caminho: páginas do livro, exercícios, vocabulário, jogos e mini-teste. Desmarque o que você acha desnecessário
-            (uma tarefa inteira ou só um exercício) e clique em <strong>Salvar</strong>: some do app de todos os alunos na próxima vez que abrirem.
-            Os <strong>extras do livro</strong> (Grammar Expander, Writing, Soft Skills) vêm desligados. O vídeo de cada unidade só aparece quando você colar o link.
+          <p class="cr-sub">
+            Primeiro você <strong>revisa o livro e marca só o que SAI</strong> (a página aparece ao lado, com os exercícios que montei). Depois eu crio atividades novas no lugar,
+            com as suas observações. Só então vale a pena juntar áudio e vídeo: assim não sobra nada que você não vai usar.
           </p>
-          <div class="cr-bar">
-            <button type="button" id="cr-baixar">📄 Baixar a lista completa (.txt)</button>
-            <button type="button" id="cr-recarregar">↻ Recarregar</button>
+          <div class="cr-rev-topo" style="margin:0;">
+            <button type="button" class="cr-btn" id="cr-baixar">📄 Baixar a lista completa (.txt)</button>
+            <button type="button" class="cr-btn" id="cr-recarregar">↻ Recarregar</button>
             <span id="cr-msg" style="font-size:.8rem;color:var(--muted);"></span>
           </div>
         </div>
-        <div id="cr-lista"><div class="loading">Carregando...</div></div>
+
+        <div class="cr-card">
+          <h2>✅ Checklist para o curso começar a funcionar</h2>
+          <p class="cr-sub">Marque aqui o que já foi feito. <span class="cr-estrela">⭐</span> = precisa estar pronto para a Fátima começar em 02/11.</p>
+          <div class="cr-check" id="cr-checklist"><div class="loading">Carregando...</div></div>
+        </div>
+
+        <div class="cr-card">
+          <h2>📖 Revisar o livro (marque só o que SAI)</h2>
+          <p class="cr-sub">Escolha uma unidade. Em cada passo você vê a página do livro e os exercícios dela. <strong>Marque só o que quer tirar</strong>; o que ficar sem marca continua no app. Salva sozinho.</p>
+          <div id="cr-resumo"><div class="loading">Carregando...</div></div>
+        </div>
+
+        <div class="cr-card" id="cr-revisor">
+          <div class="cr-rev-topo">
+            <h2 id="cr-rev-tit"></h2>
+            <span id="cr-rev-pos" style="font-size:.8rem;color:var(--muted);font-weight:700;"></span>
+            <span id="cr-salvo" style="font-size:.78rem;color:#16a34a;font-weight:700;"></span>
+            <button type="button" class="cr-btn" id="cr-fechar-rev">Fechar a revisão</button>
+          </div>
+          <div class="cr-mapa" id="cr-mapa"></div>
+          <div class="cr-grade">
+            <div id="cr-esquerda"></div>
+            <div class="cr-direita" id="cr-passo"></div>
+          </div>
+          <div class="cr-rodape">
+            <button type="button" class="cr-btn" id="cr-anterior">‹ Anterior</button>
+            <button type="button" class="cr-btn pri" id="cr-proxima">Próxima ›</button>
+            <span style="font-size:.76rem;color:var(--muted);">Ao passar para a próxima, o passo conta como revisado.</span>
+          </div>
+        </div>
+
+        <div class="cr-card">
+          <h2>🎬 Vídeos <small style="font-weight:600;color:var(--muted);">(depois da revisão: só os que ficaram)</small></h2>
+          <p class="cr-sub">Cada unidade tem 3 vagas de vídeo. Suba no YouTube como “não listado”, cole o link e a tarefa liga sozinha no app.</p>
+          <div id="cr-videos"><div class="loading">Carregando...</div></div>
+        </div>
       </div>
 
       <!-- NOVO ALUNO -->
@@ -2124,6 +2189,8 @@
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
     import { getMessaging, getToken, isSupported }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
+    import { getStorage, ref as storageRef, getDownloadURL }
+      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
     import { arrayUnion, arrayRemove }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -2138,6 +2205,7 @@
 
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const storage = getStorage(app);
     const db   = getFirestore(app);
     const fns  = getFunctions(app, 'southamerica-east1');
     const app2 = initializeApp({ ...firebaseConfig }, 'secondary');
@@ -7764,107 +7832,238 @@
       return { livro, unidadeInicial:ini, unidadeAtual:atual };
     }
 
-    // Aba "Curso": todas as unidades, tarefas e exercícios, com caixinhas para ligar/desligar.
+    // ── Aba "Curso": revisar o livro (marcar só o que SAI), checklist, vídeos e lista completa ──
+    // Regra da tela: marcado = TIRAR do app. Só as tarefas "opcionais" (vídeo, revisão e extras do livro) vêm desligadas
+    // e aí a marca é ao contrário (LIGAR). Tudo vai para `ocultos` da unidade; `revisadas` e `notas` guardam o andamento.
     const CR_ROTULO = { mc:'escolher', vf:'V ou F', gap:'digitar', match:'ligar', order:'montar', ouvir:'ouvir', ditado:'ditado', speak:'falar' };
-    const crAlteracoes = {};   // uid -> Set de ids que mudaram de estado, ainda não salvos
-    function crOcultosAtuais(un) { return new Set(un.ocultosEdit || un.ocultos || []); }
-    function crResumo(texto) { return String(texto || '').replace(/\s+/g, ' ').slice(0, 110); }
+    const crUrls = {};
+    let crUn = null, crPasso = 0, crTimer = null, crPdf = 0;
+    const crEhOpcional = t => t.tipo === 'video' || t.tipo === 'revisao' || !!t.extra;
+    const crLinha = s => esc(String(s || '').replace(/\s+/g, ' '));
+    function crResposta(e) {
+      if (e.t === 'mc' || e.t === 'ouvir') return (e.o || []).map((o, k) => k === e.c ? `<b>✓ ${esc(o)}</b>` : esc(o)).join(' · ');
+      if (e.t === 'vf') return `<b>${e.c ? 'Verdadeiro' : 'Falso'}</b>`;
+      if (e.t === 'gap' || e.t === 'ditado') return `<b>${esc((e.a || []).join(' / '))}</b>`;
+      if (e.t === 'match') return (e.pares || []).map(p => esc(Array.isArray(p) ? `${p[0]} = ${p[1]}` : `${p.a} = ${p.b}`)).join(' · ');
+      if (e.t === 'order') return `<b>${esc((e.w || []).join(' '))}</b>`;
+      return esc(e.dica || '');
+    }
+    function crUrl(pdf) {
+      const caminho = `livros/${CURSO_ID}/pdf-${String(pdf).padStart(3, '0')}.jpg`;
+      if (!crUrls[caminho]) crUrls[caminho] = getDownloadURL(storageRef(storage, caminho)).catch(e => { delete crUrls[caminho]; throw e; });
+      return crUrls[caminho];
+    }
+    function crStats(un) {
+      const oc = new Set(un.ocultos || []), rev = new Set(un.revisadas || []);
+      const regulares = (un.tarefas || []).filter(t => !crEhOpcional(t));
+      return {
+        total: regulares.length, revisadas: regulares.filter(t => rev.has(t.id)).length,
+        tiradas: regulares.filter(t => oc.has(t.id)).length,
+        exTirados: regulares.reduce((n, t) => n + (t.exercicios || []).filter(e => oc.has(e.id)).length, 0),
+        notas: Object.values(un.notas || {}).filter(x => String(x).trim()).length,
+      };
+    }
+
     async function carregarCurso() {
-      const lista = document.getElementById('cr-lista');
-      lista.innerHTML = '<div class="loading">Carregando...</div>';
+      const resumo = document.getElementById('cr-resumo');
       try {
         const ind = await cursoCarregarIndice(true);
-        lista.innerHTML = '';
-        (ind.unidades || []).forEach(u => {
-          const det = document.createElement('details');
-          det.className = 'cr-un'; det.dataset.uid = u.id;
-          det.innerHTML = `<summary>📘 Unit ${u.n} · ${esc(u.titulo)}
-            <span class="cr-chip ${u.pronta ? 'ok' : 'vazia'}">${u.pronta ? 'pronta' : 'vazia'}</span>
-            ${u.pronta ? `<span class="cr-chip">${u.tarefas} tarefas</span><span class="cr-chip">${u.exercicios} exercícios</span>` : ''}</summary>
-            <div class="cr-corpo"><div class="loading">Abra para carregar...</div></div>`;
-          if (u.pronta) det.addEventListener('toggle', () => { if (det.open && !det.dataset.ok) { det.dataset.ok = '1'; crMostrarUnidade(u.id); } });
-          lista.appendChild(det);
-        });
-      } catch (e) {
-        lista.innerHTML = `<div class="form-msg err" style="display:block">Não consegui carregar o curso: ${esc(e.message)}</div>`;
-      }
+        await Promise.all((ind.unidades || []).filter(u => u.pronta).map(u => cursoCarregarUnidade(u.id, true)));
+        crRenderChecklist(ind); crRenderResumo(ind); crRenderVideos(ind);
+        if (crUn && cursoUnidades[crUn.id]) { crUn = cursoUnidades[crUn.id]; crRenderPasso(); }
+      } catch (e) { resumo.innerHTML = `<div class="form-msg err" style="display:block">Não consegui carregar o curso: ${esc(e.message)}</div>`; }
     }
-    async function crMostrarUnidade(uid, forcar = false) {
-      const corpo = document.querySelector(`.cr-un[data-uid="${uid}"] .cr-corpo`);
-      corpo.innerHTML = '<div class="loading">Carregando...</div>';
-      const un = await cursoCarregarUnidade(uid, forcar);
-      if (!un) { corpo.innerHTML = '<p>Unidade sem conteúdo.</p>'; return; }
-      un.ocultosEdit = [...(un.ocultos || [])]; crAlteracoes[uid] = new Set();
-      const oc = new Set(un.ocultosEdit);
-      const videos = (un.tarefas || []).filter(t => t.tipo === 'video');
-      const html =(un.tarefas || []).map(t => {
-        const exs = (t.exercicios || []).map(e => `<label class="${oc.has(e.id) ? 'off' : ''}"><input type="checkbox" data-e="${esc(e.id)}" ${oc.has(e.id) ? '' : 'checked'}><span class="cr-tipo">${CR_ROTULO[e.t] || e.t}</span><span>${esc(crResumo(e.q))}</span></label>`).join('');
-        const extra = t.perguntas ? ` <small>(${t.perguntas.length} perguntas sorteadas dos exercícios)</small>` : '';
-        const nEx = (t.exercicios || []).length ? ` <small>${t.exercicios.length} exercícios</small>` : '';
-        return `<div class="cr-t ${oc.has(t.id) ? 'off' : ''}"><label><input type="checkbox" data-t="${esc(t.id)}" ${oc.has(t.id) ? '' : 'checked'}><span>${esc(t.ic || '')} ${esc(t.titulo)}${nEx}${extra}<small>${esc(t.grupo ? '· ' + t.grupo : '')}</small></span></label>${exs ? `<div class="cr-ex">${exs}</div>` : ''}</div>`;
+
+    // Checklist (os itens manuais ficam salvos em cursos/connectivity-1.checklist)
+    function crItensChecklist(ind) {
+      const unidades = (ind.unidades || []).filter(u => u.pronta).map(u => cursoUnidades[u.id]).filter(Boolean);
+      const revisadas = unidades.filter(un => { const s = crStats(un); return s.total && s.revisadas >= s.total; }).length;
+      const videos = unidades.flatMap(un => (un.tarefas || []).filter(t => t.tipo === 'video'));
+      const comLink = videos.filter(v => v.youtube).length;
+      return [
+        { id:'rev', quem:'voce', estrela:true, t:'Revisar o livro, unidade por unidade, e marcar só o que SAI', nota:`${revisadas}/${unidades.length} unidades revisadas` },
+        { id:'novas', quem:'eu', estrela:true, t:'Criar atividades novas no lugar do que saiu (com as suas observações de cada página)' },
+        { id:'ligar', quem:'voce', estrela:true, t:'Ligar a Fátima: ⋮ → Editar plano → Connectivity 1 → escolher a unidade (Unit 4 ou 5) e salvar' },
+        { id:'espelho', quem:'voce', estrela:true, t:'Conferir no espelho da Fátima: o Caminho, as páginas do livro e o progresso aparecendo' },
+        { id:'dinheiro', quem:'voce', estrela:true, t:'Financeiro: mensalidade de R$ 100 da Fátima (ainda é manual)' },
+        { id:'audio1', quem:'voce', t:'Áudios: baixar só os das páginas que ficaram e me mandar uma unidade de teste' },
+        { id:'audio2', quem:'eu', t:'Áudios: transcrever automaticamente, montar o player com o texto acompanhando e testar com você' },
+        { id:'video', quem:'voce', t:'Vídeos: subir no YouTube (não listado) só os que ficaram e colar o link aqui embaixo', nota:`${comLink}/${videos.length} vagas com link` },
+        { id:'wb1', quem:'voce', t:'Workbook: me mandar o PDF' },
+        { id:'wb2', quem:'voce', t:'Workbook: marcar só o que SAI (mesma tela de revisão)' },
+        { id:'wb3', quem:'eu', t:'Montar as revisões de cada unidade com o workbook' },
+      ];
+    }
+    function crRenderChecklist(ind) {
+      const marcados = ind.checklist || {};
+      document.getElementById('cr-checklist').innerHTML = crItensChecklist(ind).map(i => {
+        const feito = !!marcados[i.id];
+        return `<label class="${feito ? 'feito' : ''}"><input type="checkbox" data-cr-check="${i.id}" ${feito ? 'checked' : ''}>
+          <span class="cr-quem ${i.quem}">${i.quem === 'voce' ? 'VOCÊ' : 'EU'}</span>
+          <span class="tx">${i.estrela ? '<span class="cr-estrela">⭐</span> ' : ''}${esc(i.t)}${i.nota ? ` <small>· ${esc(i.nota)}</small>` : ''}</span></label>`;
       }).join('');
-      corpo.innerHTML = `
-        ${videos.map(v => `<div class="cr-video">🎬 <strong>${esc(v.titulo)}</strong>
-          <input type="text" id="cr-yt-${esc(v.id)}" placeholder="Cole aqui o link do vídeo no YouTube (não listado)" value="${esc(v.youtube || '')}">
-          <button type="button" class="btn-add" style="width:auto;padding:7px 14px;" data-cr-yt="${esc(v.id)}">Salvar vídeo</button>
-          <span style="color:var(--muted);font-size:.78rem;">${v.youtube ? 'ligado' : 'sem vídeo: a tarefa fica escondida'}</span></div>`).join('')}
-        <div class="cr-bar">
-          <button type="button" class="pri" data-cr-salvar="${uid}" disabled>Salvar alterações</button>
-          <button type="button" data-cr-todos="${uid}:1">Ligar tudo</button>
-          <button type="button" data-cr-todos="${uid}:0">Desligar tudo</button>
-          <span data-cr-estado="${uid}" style="font-size:.78rem;color:var(--muted);"></span></div>
-        ${html}`;
-      corpo.querySelectorAll('input[data-t],input[data-e]').forEach(cx => cx.addEventListener('change', () => crMarcar(uid, cx)));
-      corpo.querySelector(`[data-cr-salvar]`).onclick = () => crSalvar(uid);
-      corpo.querySelectorAll('[data-cr-todos]').forEach(b => b.onclick = () => crTodos(uid, b.dataset.crTodos.endsWith(':1')));
-      corpo.querySelectorAll('[data-cr-yt]').forEach(b => b.onclick = () => crSalvarVideo(uid, b.dataset.crYt));
+      document.querySelectorAll('[data-cr-check]').forEach(cx => cx.onchange = async () => {
+        try {
+          await updateDoc(doc(db, 'cursos', CURSO_ID), { [`checklist.${cx.dataset.crCheck}`]: cx.checked });
+          cursoIndice.checklist = { ...(cursoIndice.checklist || {}), [cx.dataset.crCheck]: cx.checked };
+          cx.closest('label').classList.toggle('feito', cx.checked);
+        } catch (e) { alert('Não consegui salvar: ' + e.message); cx.checked = !cx.checked; }
+      });
     }
-    function crMarcar(uid, cx) {
-      const un = cursoUnidades[uid]; const id = cx.dataset.t || cx.dataset.e;
-      const oc = crOcultosAtuais(un);
-      if (cx.checked) oc.delete(id); else oc.add(id);
-      un.ocultosEdit = [...oc];
-      (cx.dataset.t ? cx.closest('.cr-t') : cx.closest('label')).classList.toggle('off', !cx.checked);
-      const original = new Set(un.ocultos || []);
-      crAlteracoes[uid] = new Set([...oc, ...original].filter(x => oc.has(x) !== original.has(x)));
-      crAtualizarBotao(uid);
+
+    // Resumo por unidade
+    function crRenderResumo(ind) {
+      document.getElementById('cr-resumo').innerHTML = (ind.unidades || []).map(u => {
+        const un = cursoUnidades[u.id];
+        if (!un) return `<div class="cr-un-linha"><b>Unit ${u.n} · ${esc(u.titulo)}</b><span style="color:var(--muted)">sem conteúdo ainda</span></div>`;
+        const s = crStats(un), pct = s.total ? Math.round(s.revisadas / s.total * 100) : 0;
+        return `<div class="cr-un-linha"><b>Unit ${u.n} · ${esc(u.titulo)}</b>
+          <div class="cr-barra" title="${s.revisadas} de ${s.total} passos revisados"><i style="width:${pct}%"></i></div>
+          <span style="min-width:215px;font-size:.78rem;color:var(--muted);">${s.revisadas}/${s.total} revisados · ${s.tiradas} tarefas e ${s.exTirados} exercícios tirados${s.notas ? ` · ${s.notas} observações` : ''}</span>
+          <button type="button" class="cr-btn pri" data-cr-abrir="${u.id}">${s.revisadas ? (s.revisadas >= s.total ? 'Rever' : 'Continuar') : 'Começar'}</button></div>`;
+      }).join('');
+      document.querySelectorAll('[data-cr-abrir]').forEach(b => b.onclick = () => crAbrir(b.dataset.crAbrir));
     }
-    function crAtualizarBotao(uid) {
-      const n = crAlteracoes[uid].size;
-      const btn = document.querySelector(`.cr-un[data-uid="${uid}"] [data-cr-salvar]`);
-      btn.disabled = n === 0; btn.textContent = n ? `Salvar alterações (${n})` : 'Salvar alterações';
+
+    // Revisão passo a passo
+    function crAbrir(uid) {
+      crUn = cursoUnidades[uid]; if (!crUn) return;
+      const rev = new Set(crUn.revisadas || []);
+      const primeiro = (crUn.tarefas || []).findIndex(t => !crEhOpcional(t) && !rev.has(t.id));
+      crPasso = primeiro >= 0 ? primeiro : 0;
+      document.getElementById('cr-revisor').style.display = 'block';
+      crRenderPasso();
+      document.getElementById('cr-revisor').scrollIntoView({ behavior:'smooth', block:'start' });
     }
-    function crTodos(uid, ligar) {
-      const corpo = document.querySelector(`.cr-un[data-uid="${uid}"] .cr-corpo`);
-      corpo.querySelectorAll('input[data-t],input[data-e]').forEach(cx => { if (cx.checked !== ligar) { cx.checked = ligar; crMarcar(uid, cx); } });
+    async function crRenderPasso() {
+      const un = crUn, t = un.tarefas[crPasso];
+      document.getElementById('cr-rev-tit').textContent = `Unit ${un.n} · ${un.titulo}`;
+      document.getElementById('cr-rev-pos').textContent = `Passo ${crPasso + 1} de ${un.tarefas.length}`;
+      document.getElementById('cr-anterior').disabled = crPasso === 0;
+      document.getElementById('cr-proxima').textContent = crPasso === un.tarefas.length - 1 ? 'Terminar a unidade ✓' : 'Próxima ›';
+      crRenderMapa();
+      // esquerda: a página do livro (ou um resumo da tarefa)
+      const esq = document.getElementById('cr-esquerda');
+      if (t.pdf) {
+        crPdf = t.pdf;
+        esq.innerHTML = `<div class="cr-pagina"><img id="cr-img" alt="Página do livro"><div class="cr-pgnav"><button type="button" data-pg="-1">‹</button><span id="cr-pgnum"></span><button type="button" data-pg="1">›</button></div></div>`;
+        crMostrarPagina();
+        esq.querySelectorAll('[data-pg]').forEach(b => b.onclick = () => { crPdf = Math.min(177, Math.max(15, crPdf + Number(b.dataset.pg))); crMostrarPagina(); });
+      } else {
+        const pals = t.tipo === 'vocab' ? (un.vocab || {})[t.ref] : null;
+        const lista = pals ? '<br><br>' + pals.map(p => esc(Array.isArray(p) ? `${p[0]} — ${p[1]}` : `${p.a} — ${p.b}`)).join('<br>') : '';
+        const texto = { vocab:'Cartões de vocabulário com áudio (o aluno vira o cartão):', jogo:'Jogo sobre o vocabulário desta lição.', teste:`Mini-teste da unidade: ${(t.perguntas || []).length} perguntas sorteadas dos exercícios das páginas (se você tirar exercícios, o teste continua com os que ficaram).`,
+          video:'Vídeo do livro. A tarefa só aparece no app quando você colar o link do YouTube (lá embaixo, em Vídeos).', revisao:'Revisão da unidade (vem do workbook). Eu monto quando você mandar o PDF.' }[t.tipo] || '';
+        esq.innerHTML = `<div class="cr-vazio"><div style="font-size:2rem;">${esc(t.ic || '')}</div><strong>${esc(t.titulo)}</strong><br>${esc(texto)}${lista}</div>`;
+      }
+      crRenderDireita();
     }
-    async function crSalvar(uid) {
-      const un = cursoUnidades[uid]; const est = document.querySelector(`.cr-un[data-uid="${uid}"] [data-cr-estado]`);
-      est.textContent = 'Salvando...';
+    async function crMostrarPagina() {
+      const img = document.getElementById('cr-img'), num = document.getElementById('cr-pgnum'); if (!img) return;
+      num.textContent = `página ${crPdf - 14} do livro`;
+      try { img.src = await crUrl(crPdf); img.onclick = () => window.open(img.src, '_blank'); }
+      catch (e) { img.alt = 'Não consegui abrir a página: ' + e.message; }
+    }
+    function crRenderMapa() {
+      const un = crUn, oc = new Set(un.ocultos || []), rev = new Set(un.revisadas || []);
+      document.getElementById('cr-mapa').innerHTML = un.tarefas.map((x, i) => {
+        const opc = crEhOpcional(x);
+        return `<button type="button" class="cr-pt ${i === crPasso ? 'at' : ''} ${rev.has(x.id) ? 'ok' : ''} ${!opc && oc.has(x.id) ? 'out' : ''} ${opc ? 'opc' : ''}" data-i="${i}" title="${esc(x.titulo)}">${i + 1}</button>`;
+      }).join('');
+      document.querySelectorAll('#cr-mapa [data-i]').forEach(b => b.onclick = () => crIr(Number(b.dataset.i)));
+    }
+    function crRenderDireita() {
+      const un = crUn, t = un.tarefas[crPasso], oc = new Set(un.ocultos || []), opc = crEhOpcional(t);
+      const fora = oc.has(t.id);
+      const exs = (t.exercicios || []).map(e => {
+        const off = oc.has(e.id) || (!opc && fora);
+        return `<label class="cr-ex ${off ? 'off' : ''}"><input type="checkbox" data-ex="${esc(e.id)}" ${oc.has(e.id) ? 'checked' : ''}>
+          <span class="cr-tipo">${CR_ROTULO[e.t] || e.t}</span><span class="tx">${crLinha(e.q)}<span class="resp">${crResposta(e)}</span></span></label>`;
+      }).join('');
+      document.getElementById('cr-passo').innerHTML = `
+        <h3>${esc(t.ic || '')} ${esc(t.titulo)}</h3>
+        <div class="meta">${esc(t.grupo || '')} · ${esc(t.sub || '')}</div>
+        ${opc
+          ? `<label class="cr-tirar lig ${fora ? '' : 'on'}"><input type="checkbox" data-tarefa="${esc(t.id)}" data-lig="1" ${fora ? '' : 'checked'}> Ligar no app (esta vem DESLIGADA)</label>`
+          : `<label class="cr-tirar ${fora ? 'on' : ''}"><input type="checkbox" data-tarefa="${esc(t.id)}" ${fora ? 'checked' : ''}> 🗑 TIRAR esta tarefa inteira do app</label>`}
+        ${exs ? `<div style="font-size:.76rem;color:var(--muted);margin:2px 0 6px;font-weight:700;">EXERCÍCIOS DESTA PÁGINA — marque só os que quer tirar</div>${exs}` : ''}
+        <div style="font-size:.76rem;color:var(--muted);margin:10px 0 2px;font-weight:700;">O QUE VOCÊ QUERIA NO LUGAR? (opcional, é para eu criar as novas)</div>
+        <textarea class="cr-nota" data-nota="${esc(t.id)}" placeholder="Ex.: mais exercícios de ouvir; trocar por conversa sobre o trabalho; mais fácil...">${esc((un.notas || {})[t.id] || '')}</textarea>`;
+    }
+    document.getElementById('cr-passo').addEventListener('change', e => {
+      const cx = e.target; if (cx.tagName !== 'INPUT') return;
+      const un = crUn, t = un.tarefas[crPasso], oc = new Set(un.ocultos || []);
+      const id = cx.dataset.tarefa || cx.dataset.ex; if (!id) return;
+      if (cx.dataset.lig === '1') { if (cx.checked) oc.delete(id); else oc.add(id); }
+      else { if (cx.checked) oc.add(id); else oc.delete(id); }
+      un.ocultos = [...oc];
+      crMarcarRevisada(t.id); crAgendarSalvar(); crRenderMapa(); crRenderDireita();
+    });
+    document.getElementById('cr-passo').addEventListener('input', e => {
+      if (!e.target.dataset || !e.target.dataset.nota) return;
+      const un = crUn; un.notas = { ...(un.notas || {}), [e.target.dataset.nota]: e.target.value };
+      crAgendarSalvar();
+    });
+    function crMarcarRevisada(id) { const s = new Set(crUn.revisadas || []); s.add(id); crUn.revisadas = [...s]; }
+    function crAgendarSalvar() {
+      document.getElementById('cr-salvo').style.color = '#b45309'; document.getElementById('cr-salvo').textContent = 'salvando...';
+      clearTimeout(crTimer); crTimer = setTimeout(crSalvarAgora, 700);
+    }
+    async function crSalvarAgora() {
+      clearTimeout(crTimer); crTimer = null; const un = crUn; if (!un) return;
+      const sel = document.getElementById('cr-salvo');
       try {
-        await updateDoc(doc(db, 'cursos', CURSO_ID, 'unidades', uid), { ocultos: un.ocultosEdit, atualizadoEm: serverTimestamp() });
-        un.ocultos = [...un.ocultosEdit]; crAlteracoes[uid] = new Set(); crAtualizarBotao(uid);
-        est.textContent = '✅ Salvo. Os alunos veem a mudança na próxima vez que abrirem o app.';
-      } catch (e) { est.textContent = '❌ ' + e.message; }
+        await updateDoc(doc(db, 'cursos', CURSO_ID, 'unidades', un.id), { ocultos: un.ocultos || [], revisadas: un.revisadas || [], notas: un.notas || {}, atualizadoEm: serverTimestamp() });
+        sel.style.color = '#16a34a'; sel.textContent = '✅ salvo';
+        crRenderResumo(cursoIndice); crRenderChecklist(cursoIndice);
+      } catch (e) { sel.style.color = '#dc2626'; sel.textContent = '❌ ' + e.message; }
+    }
+    function crIr(i) {
+      const un = crUn; crPasso = Math.max(0, Math.min(un.tarefas.length - 1, i));
+      if (crTimer) crSalvarAgora();
+      crRenderPasso();
+    }
+    document.getElementById('cr-proxima').onclick = async () => {
+      const un = crUn, t = un.tarefas[crPasso];
+      if (!crEhOpcional(t)) { crMarcarRevisada(t.id); await crSalvarAgora(); }
+      if (crPasso >= un.tarefas.length - 1) { document.getElementById('cr-revisor').style.display = 'none'; document.getElementById('cr-resumo').scrollIntoView({ behavior:'smooth' }); return; }
+      crIr(crPasso + 1);
+    };
+    document.getElementById('cr-anterior').onclick = () => crIr(crPasso - 1);
+    document.getElementById('cr-fechar-rev').onclick = async () => { if (crTimer) await crSalvarAgora(); document.getElementById('cr-revisor').style.display = 'none'; };
+
+    // Vídeos: 3 vagas por unidade
+    function crRenderVideos(ind) {
+      const box = document.getElementById('cr-videos');
+      box.innerHTML = (ind.unidades || []).filter(u => u.pronta).map(u => {
+        const un = cursoUnidades[u.id]; if (!un) return '';
+        const videos = (un.tarefas || []).filter(t => t.tipo === 'video'); const n = videos.filter(v => v.youtube).length;
+        return `<details class="cr-un-linha" style="display:block;"><summary style="cursor:pointer;font-weight:700;">Unit ${u.n} · ${esc(u.titulo)} <small style="color:var(--muted);font-weight:600;">· ${n}/${videos.length} com link</small></summary>
+          ${videos.map(v => `<div class="cr-video">🎬 <strong>${esc(v.titulo)}</strong>
+            <input type="text" id="cr-yt-${esc(v.id)}" placeholder="Link do vídeo no YouTube (não listado)" value="${esc(v.youtube || '')}">
+            <button type="button" class="cr-btn pri" data-cr-yt="${esc(u.id)}|${esc(v.id)}">Salvar</button>
+            <span style="color:var(--muted);font-size:.76rem;">${v.youtube ? 'ligado' : 'sem link: fica escondido'}</span></div>`).join('')}</details>`;
+      }).join('');
+      box.querySelectorAll('[data-cr-yt]').forEach(b => b.onclick = () => { const [uid, id] = b.dataset.crYt.split('|'); crSalvarVideo(uid, id); });
     }
     async function crSalvarVideo(uid, id) {
-      const un = cursoUnidades[uid]; const campo = document.getElementById('cr-yt-' + id);
-      const link = campo.value.trim();
+      const un = cursoUnidades[uid]; const link = document.getElementById('cr-yt-' + id).value.trim();
       const tarefas = (un.tarefas || []).map(t => t.id === id ? { ...t, youtube: link } : t);
       const oc = new Set(un.ocultos || []);
       if (link) oc.delete(id); else oc.add(id);
       try {
         await updateDoc(doc(db, 'cursos', CURSO_ID, 'unidades', uid), { tarefas, ocultos: [...oc], atualizadoEm: serverTimestamp() });
-        un.tarefas = tarefas; un.ocultos = [...oc]; un.ocultosEdit = [...oc];
-        await crMostrarUnidade(uid, false);
-        const est = document.querySelector(`.cr-un[data-uid="${uid}"] [data-cr-estado]`); if (est) est.textContent = link ? '✅ Vídeo ligado na unidade.' : 'Vídeo desligado.';
+        un.tarefas = tarefas; un.ocultos = [...oc]; if (crUn && crUn.id === uid) { crUn = un; }
+        crRenderVideos(cursoIndice); crRenderChecklist(cursoIndice);
       } catch (e) { alert('Não consegui salvar o vídeo: ' + e.message); }
     }
+
     document.getElementById('cr-recarregar').onclick = () => carregarCurso();
     document.getElementById('cr-baixar').onclick = async () => {
       const msg = document.getElementById('cr-msg'); msg.textContent = 'Montando a lista...';
       try {
-        const ind = await cursoCarregarIndice(true); const linhas = [`CONTEÚDO DO CURSO — ${ind.nome || 'Connectivity 1'}`, 'Marcado [x] = aparece no app. [ ] = desligado.', ''];
+        const ind = await cursoCarregarIndice(true);
+        const linhas = [`CONTEÚDO DO CURSO — ${ind.nome || 'Connectivity 1'}`, '[x] = fica no app   |   [ ] = TIRADO (ou desligado)   |   > = sua observação', ''];
         for (const u of (ind.unidades || []).filter(x => x.pronta)) {
           const un = await cursoCarregarUnidade(u.id, true); const oc = new Set(un.ocultos || []);
           linhas.push('='.repeat(70), `UNIT ${u.n} · ${u.titulo}`, '='.repeat(70));
@@ -7872,8 +8071,8 @@
           (un.tarefas || []).forEach(t => {
             if (t.grupo !== grupo) { grupo = t.grupo; linhas.push('', `-- ${grupo} --`); }
             linhas.push(`[${oc.has(t.id) ? ' ' : 'x'}] ${t.titulo}  (${t.sub || ''})`);
-            (t.exercicios || []).forEach(e => linhas.push(`      [${oc.has(e.id) ? ' ' : 'x'}] ${(CR_ROTULO[e.t] || e.t).toUpperCase()}: ${crResumo(e.q)}`));
-            if (t.perguntas) linhas.push(`      (${t.perguntas.length} perguntas sorteadas dos exercícios acima)`);
+            (t.exercicios || []).forEach(e => linhas.push(`      [${oc.has(e.id) ? ' ' : 'x'}] ${(CR_ROTULO[e.t] || e.t).toUpperCase()}: ${String(e.q).replace(/\s+/g, ' ').slice(0, 120)}`));
+            if ((un.notas || {})[t.id]) linhas.push(`      > ${String(un.notas[t.id]).replace(/\s+/g, ' ')}`);
           });
           linhas.push('');
         }
