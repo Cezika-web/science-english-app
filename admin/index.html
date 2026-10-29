@@ -254,6 +254,13 @@
     .student-row.student-row-plano { background: #f5f3ff; border-color: #c4b5fd; box-shadow: inset 5px 0 0 #7c3aed; }
     .student-row-plano .avatar { background: #ede9fe; color: #5b21b6; }
     .student-row-plano .progress-chip { background: #fff; border-color: #ddd6fe; }
+    /* Cadastro de aluno: dois contextos. Em Science Lab some o que é da grade semanal. */
+    .add-modo { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; background: #eef2f7; border-radius: 12px; margin-bottom: 18px; }
+    .add-modo button { border: none; background: transparent; padding: 11px 10px; border-radius: 9px; font: inherit; font-weight: 700; font-size: .9rem; color: var(--muted); cursor: pointer; }
+    .add-modo button.on { background: #fff; color: var(--text); box-shadow: 0 1px 4px rgba(15,23,42,.12); }
+    .add-modo button[data-modo="lab"].on { background: #7c3aed; color: #fff; }
+    #tab-add[data-modo="lab"] .add-so-regular { display: none !important; }
+    #tab-add:not([data-modo="lab"]) .add-so-lab { display: none !important; }
     .read-badge.plano { background: #ede9fe; color: #5b21b6; }
     .kebab-item.plano { background: #f5f3ff; color: #5b21b6; font-weight: 800; }
     .pend-card-plano { border: 1px solid #c4b5fd; }
@@ -1041,7 +1048,8 @@
               <div class="calendar-legend-title">Calendários</div>
               <div class="calendar-legend-row"><span class="calendar-legend-dot" id="calendar-lesson-dot"></span> Aulas</div>
               <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#dc2626"></span> Horário disponível</div>
-              <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#8b5cf6"></span> Particular</div>
+              <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#8b5cf6"></span> Science Lab (1h no mês)</div>
+              <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#ec4899"></span> Particular</div>
               <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#64748b"></span> Horário bloqueado</div>
               <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:repeating-linear-gradient(135deg,#e2e8f0,#e2e8f0 2px,#cbd5e1 2px,#cbd5e1 4px)"></span> Aula cancelada</div>
               <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#f97316"></span> Reposição</div>
@@ -1615,10 +1623,15 @@
         </div>
       </div>
 
-      <div class="tab-panel" id="tab-add">
+      <div class="tab-panel" id="tab-add" data-modo="regular">
         <div class="form-card">
           <h2>Cadastrar novo aluno</h2>
           <p id="add-escola-aviso" style="display:none;font-size:0.85rem;margin:0 0 16px 0;padding:10px 12px;border-radius:8px;background:#fff8e1;border:1px solid #fde68a;color:#7c5e10;"></p>
+          <div class="add-modo" id="add-modo" role="group" aria-label="Tipo de curso">
+            <button type="button" class="on" data-modo="regular" aria-pressed="true">📘 Curso de sempre</button>
+            <button type="button" data-modo="lab" aria-pressed="false">💜 Science Lab</button>
+          </div>
+          <p class="add-so-lab" style="margin:-4px 0 16px;padding:10px 12px;border-radius:8px;background:#f5f3ff;border:1px solid #ddd6fe;color:#4c1d95;font-size:.78rem;line-height:1.5;">💜 <strong>Science Lab</strong>: uma aula de 1h por mês e o app com o Caminho. Não tem dia nem horário semanal — o dia da aula você combina com o aluno todo mês.</p>
           <div class="field"><label>Nome completo</label><input type="text" id="f-name" placeholder="Mateus Richter" /></div>
           <div class="field"><label>E-mail (para login)</label><input type="email" id="f-email" placeholder="aluno@email.com" /></div>
           <div class="field"><label>Senha inicial</label><input type="password" id="f-pass" placeholder="Mínimo 6 caracteres" /></div>
@@ -1631,8 +1644,8 @@
               <option>Upper-Intermediate (B2)</option><option>Advanced (C1)</option>
             </select>
           </div>
-          <div class="field"><label>Meta de aulas no ano</label><input type="number" id="f-meta" placeholder="Ex: 40" min="1" /></div>
-          <div class="field">
+          <div class="field add-so-regular"><label>Meta de aulas no ano</label><input type="number" id="f-meta" placeholder="Ex: 40" min="1" /></div>
+          <div class="field add-so-regular">
             <label>Dias da aula</label>
             <div class="dias-week" id="f-dias-week">
               <label><input type="checkbox" data-d="0">Dom</label>
@@ -1644,11 +1657,11 @@
               <label><input type="checkbox" data-d="6">Sáb</label>
             </div>
           </div>
-          <label class="hora-mesma"><input type="checkbox" id="f-hora-mesma" checked><span><strong>Usar o mesmo horário em todos os dias</strong><small>Ao marcar dois dias, os horários separados aparecem automaticamente. Ex.: 08:00 em um dia e 08:15 no outro.</small></span></label>
-          <div class="field" id="f-hora-unica"><label>Horário da aula</label>
+          <label class="hora-mesma add-so-regular"><input type="checkbox" id="f-hora-mesma" checked><span><strong>Usar o mesmo horário em todos os dias</strong><small>Ao marcar dois dias, os horários separados aparecem automaticamente. Ex.: 08:00 em um dia e 08:15 no outro.</small></span></label>
+          <div class="field add-so-regular" id="f-hora-unica"><label>Horário da aula</label>
             <div class="hora-faixa"><input type="time" id="f-hora" step="900" /><span class="ate">até</span><input type="time" id="f-fim" step="900" /><button type="button" class="hora-mais15" data-fim="f-fim">+15</button><span class="hora-duracao" id="f-duracao-nota"></span></div>
           </div>
-          <div class="field" id="f-hora-por-dia" style="display:none;"><label>Horário de cada dia</label><div class="hora-dias" id="f-hora-dias"></div></div>
+          <div class="field add-so-regular" id="f-hora-por-dia" style="display:none;"><label>Horário de cada dia</label><div class="hora-dias" id="f-hora-dias"></div></div>
           <div class="calendar-form-grid">
             <div class="field"><label for="f-mensalidade" id="f-mensalidade-label">Mensalidade (R$)</label><input type="number" id="f-mensalidade" min="0" step="0.01" placeholder="250,00" /></div>
             <div class="field"><label for="f-vencimento">Data do pagamento</label><input type="date" id="f-vencimento" /><small id="f-vencimento-dica" style="display:block;margin-top:4px;color:#64748b;font-size:.7rem;line-height:1.4;">Vem com a data de início das aulas; troque se o primeiro pagamento for outro dia.</small></div>
@@ -1656,8 +1669,17 @@
           <div class="field" style="margin-top:14px;"><label for="f-ciclo">Como esse aluno paga</label><select id="f-ciclo"><option value="monthly">Uma vez por mês</option><option value="biweekly">Quinzenal — duas vezes por mês</option><option value="annual">Anual — paga o ano inteiro de uma vez</option></select></div>
           <div class="field" id="f-anual-field" style="display:none;"><label for="f-anual-mes">Mês em que o anual foi (ou será) pago</label><input type="month" id="f-anual-mes" /></div>
           <div class="field"><label for="f-pagamento">Este mês, o aluno</label><select id="f-pagamento"><option value="pendente">Ainda vai pagar — fica pendente no Financeiro</option><option value="pago">Já pagou — entra como recebido</option></select></div>
-          <div class="field"><label>Data de início das aulas</label><input type="date" id="f-inicio" /></div>
-          <p style="margin:-4px 0 16px;padding:10px 12px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A;font-size:.78rem;line-height:1.5;">📅 Os dias e o horário já entram sozinhos na <strong>Agenda</strong> como aula semanal, e a mensalidade já entra no <strong>Financeiro</strong>. <span id="f-mensalidade-hint"></span></p>
+          <div class="field"><label id="f-inicio-label">Data de início das aulas</label><input type="date" id="f-inicio" /></div>
+          <div class="add-so-lab">
+            <div class="calendar-form-grid">
+              <div class="field"><label for="f-lab-aula">Próxima aula do mês (opcional)</label><input type="date" id="f-lab-aula" /></div>
+              <div class="field"><label for="f-lab-hora">Hora da aula</label><input type="time" id="f-lab-hora" step="900" /></div>
+            </div>
+            <div class="field"><label for="f-lab-unidade">Unidade atual (texto curto)</label><input type="text" id="f-lab-unidade" placeholder="Unit 4" /></div>
+            <div class="field"><label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="f-lab-assistente" checked /> Assistente de dúvidas ligado (20 perguntas por mês)</label></div>
+            <p style="margin:-4px 0 16px;padding:10px 12px;border-radius:8px;background:#f5f3ff;border:1px solid #ddd6fe;color:#4c1d95;font-size:.78rem;line-height:1.5;">📅 Com data e hora, a aula entra na <strong>Agenda</strong> como <strong>Science Lab</strong> (1h, roxo). Sem elas, você marca depois pela Agenda. A mensalidade já entra no <strong>Financeiro</strong>.</p>
+          </div>
+          <p class="add-so-regular" style="margin:-4px 0 16px;padding:10px 12px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A;font-size:.78rem;line-height:1.5;">📅 Os dias e o horário já entram sozinhos na <strong>Agenda</strong> como aula semanal, e a mensalidade já entra no <strong>Financeiro</strong>. <span id="f-mensalidade-hint"></span></p>
           <button class="btn-add" id="btn-create-student">Criar aluno</button>
           <div class="form-msg" id="create-msg"></div>
         </div>
@@ -1781,7 +1803,7 @@
       <div class="modal-body">
         <input type="hidden" id="pl-uid" />
         <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:10px 12px;font-size:0.8rem;color:#4c1d95;margin-bottom:14px;">
-          Ao salvar, o aluno passa a ver o <strong>Caminho</strong> no app na próxima vez que abrir. Ele continua com os pós-aulas e as atividades de antes. <strong>A agenda e o financeiro não são alterados</strong>: ajuste o horário semanal em "Editar dados" e a mensalidade no Financeiro.
+          Ao salvar, o aluno passa a ver o <strong>Caminho</strong> no app na próxima vez que abrir. Ele continua com os pós-aulas e as atividades de antes. <strong>Ele sai da agenda semanal</strong> (o que já passou fica como histórico) e, com data e hora, a aula do mês entra na agenda como <strong>Science Lab</strong> (1h, roxo). O financeiro não muda: ajuste a mensalidade lá.
         </div>
         <div class="field"><label>Nome do plano</label><input type="text" id="pl-nome" /></div>
         <div class="field"><label>Mensalidade (R$) — só anotação por enquanto</label><input type="number" id="pl-mensalidade" min="0" step="1" /></div>
@@ -1860,7 +1882,7 @@
         <input type="hidden" id="calendar-event-id">
         <div class="field">
           <label for="calendar-event-type">Tipo</label>
-          <select id="calendar-event-type"><option value="lesson">Aula de aluno</option><option value="reposicao">Reposição</option><option value="experimental">Aula experimental</option><option value="available">Horário disponível</option><option value="personal">Compromisso particular</option><option value="blocked">Horário bloqueado</option></select>
+          <select id="calendar-event-type"><option value="lesson">Aula de aluno</option><option value="reposicao">Reposição</option><option value="experimental">Aula experimental</option><option value="sciencelab">Science Lab (1h no mês)</option><option value="available">Horário disponível</option><option value="personal">Compromisso particular</option><option value="blocked">Horário bloqueado</option></select>
         </div>
         <div class="field" id="calendar-student-field">
           <label for="calendar-event-student">Aluno</label>
@@ -1961,6 +1983,7 @@
         <option value="lesson">Aula de um aluno</option>
         <option value="reposicao">Reposição</option>
         <option value="experimental">Aula experimental</option>
+        <option value="sciencelab">Science Lab (1h no mês)</option>
         <option value="personal">Compromisso particular</option>
         <option value="blocked">Horário bloqueado</option>
         <option value="available">Horário disponível</option>
@@ -2757,14 +2780,20 @@
 
     function calendarEventColor(event) {
       if (event.color) return event.color; // cor escolhida à mão vence a do tipo
-      return event.type === 'available' ? '#dc2626' : event.type === 'personal' ? '#8b5cf6'
+      // Roxo é do Science Lab (aula de 1h no mês); o Particular (a Sofia) é rosa.
+      return event.type === 'available' ? '#dc2626' : event.type === 'personal' ? '#ec4899'
+        : event.type === 'sciencelab' ? '#8b5cf6'
         : event.type === 'blocked' ? '#64748b' : event.type === 'reposicao' ? '#f97316'
         : event.type === 'experimental' ? '#eab308' : calendarSchoolColor();
     }
 
+    // Tipos que carregam um aluno. O Science Lab é de um aluno só (nunca dupla/turma).
+    const calendarTipoComAluno = type => type === 'lesson' || type === 'reposicao' || type === 'sciencelab';
+
     function calendarDefaultTitle(type) {
       return type === 'available' ? 'Horário disponível' : type === 'blocked' ? 'Horário bloqueado'
         : type === 'personal' ? 'Compromisso particular' : type === 'reposicao' ? 'Reposição'
+        : type === 'sciencelab' ? 'Science Lab'
         : type === 'experimental' ? 'Experimental' : 'Aula';
     }
 
@@ -3770,14 +3799,14 @@
 
     function calendarSyncEventForm() {
       const type = document.getElementById('calendar-event-type').value, repeat = document.getElementById('calendar-event-repeat').value;
-      const comAluno = type === 'lesson' || type === 'reposicao';
+      const comAluno = calendarTipoComAluno(type);
       document.getElementById('calendar-student-field').style.display = comAluno ? 'block' : 'none';
       document.getElementById('calendar-makeup-field').style.display = type === 'reposicao' ? 'block' : 'none';
       // A pauta só faz sentido em aula de aluno, e só depois de escolher quem é.
       calendarSyncBriefing('event', type, document.getElementById('calendar-event-student').value);
       document.getElementById('calendar-repeat-until-field').style.display = repeat !== 'none' ? 'block' : 'none';
       const repeatSelect = document.getElementById('calendar-event-repeat');
-      repeatSelect.disabled = type === 'reposicao' || type === 'experimental';
+      repeatSelect.disabled = TIPOS_SEM_REPETICAO.includes(type);
       if (repeatSelect.disabled) {
         repeatSelect.value = 'none';
         document.getElementById('calendar-repeat-until-field').style.display = 'none';
@@ -3787,7 +3816,7 @@
         if (date) calendarModalDraft.repeatDays = [new Date(`${date}T00:00:00`).getDay()];
       }
       renderCalendarDayChips('calendar-event-days', 'calendar-event-repeat', calendarModalDraft);
-      document.getElementById('calendar-event-title').placeholder = type === 'lesson' ? 'Ex.: Aula de conversação' : type === 'reposicao' ? 'Reposição do aluno' : type === 'available' ? 'Ex.: Horário disponível' : type === 'personal' ? 'Ex.: Médico' : 'Ex.: Indisponível';
+      document.getElementById('calendar-event-title').placeholder = type === 'lesson' ? 'Ex.: Aula de conversação' : type === 'reposicao' ? 'Reposição do aluno' : type === 'sciencelab' ? 'Science Lab do aluno' : type === 'available' ? 'Ex.: Horário disponível' : type === 'personal' ? 'Ex.: Médico' : 'Ex.: Indisponível';
     }
 
     // Com repetição diária/semanal/mensal/personalizada não dá pra comparar por
@@ -3824,7 +3853,7 @@
       const id = document.getElementById('calendar-event-id').value, type = document.getElementById('calendar-event-type').value;
       const studentSelect = document.getElementById('calendar-event-student'), entity = calendarEntity(studentSelect.value);
       const student = entity?.kind === 'student' ? entity.student : null;
-      const comAluno = type === 'lesson' || type === 'reposicao';
+      const comAluno = calendarTipoComAluno(type);
       const event = {
         type, studentUid:comAluno && entity?.kind === 'student' ? entity.value : '', studentName:comAluno ? (entity?.label || '') : '',
         groupId:comAluno && entity?.kind === 'group' ? entity.group.id : '', groupName:comAluno && entity?.kind === 'group' ? entity.label : '',
@@ -3839,6 +3868,7 @@
       };
       if (!event.date || !event.startTime || !event.endTime) return showMsg('calendar-event-msg','Preencha data, início e término.','err');
       if (comAluno && !entity) return showMsg('calendar-event-msg','Escolha o aluno, dupla ou grupo desta aula.','err');
+      if (type === 'sciencelab' && entity.kind !== 'student') return showMsg('calendar-event-msg','O Science Lab é de um aluno só: escolha um aluno individual.','err');
       if (type === 'reposicao' && !event.makeupForDate) return showMsg('calendar-event-msg','Escolha qual falta esta reposição compensa.','err');
       if (event.repeat === 'custom' && !event.repeatDays.length) return showMsg('calendar-event-msg','Escolha pelo menos um dia da semana.','err');
       if (calendarMinutes(event.endTime) <= calendarMinutes(event.startTime)) return showMsg('calendar-event-msg','O horário final precisa ser depois do inicial.','err');
@@ -3901,7 +3931,7 @@
     document.getElementById('calendar-event-student').onchange = event => {
       const entity = calendarEntity(event.target.value), title = document.getElementById('calendar-event-title');
       const type = document.getElementById('calendar-event-type').value;
-      if (entity && (!title.value || title.value.startsWith('Aula · ') || title.value.startsWith('Reposição · '))) title.value = `${type === 'reposicao' ? 'Reposição' : 'Aula'} · ${entity.label}`;
+      if (entity && (!title.value || title.value.startsWith('Aula · ') || title.value.startsWith('Reposição · ') || title.value.startsWith('Science Lab · '))) title.value = `${type === 'reposicao' ? 'Reposição' : type === 'sciencelab' ? 'Science Lab' : 'Aula'} · ${entity.label}`;
       calendarSyncEventForm();
       calendarFillMakeupDates('calendar-event-makeup-for', event.target.value, document.getElementById('calendar-event-date').value, '');
     };
@@ -3948,6 +3978,7 @@
       { type:'blocked',   label:'Horário bloqueado' },
       { type:'reposicao', label:'Reposição' },
       { type:'experimental', label:'Aula experimental' },
+      { type:'sciencelab', label:'Science Lab' },
     ];
     let calendarPopDraft = null;
     let calendarSelectionGhost = null; // bloco arrastado que fica marcado enquanto o popover está aberto
@@ -4007,7 +4038,8 @@
     // são de um dia, então a repetição fica travada. Particular e bloqueado
     // NASCEM sem repetir mas continuam editáveis: a agenda já tem particular
     // semanal (a Sofia), e travar apagaria a série na primeira edição.
-    const TIPOS_SEM_REPETICAO = ['reposicao', 'experimental'];
+    // Science Lab é uma aula só por mês, combinada mês a mês: um dia só também.
+    const TIPOS_SEM_REPETICAO = ['reposicao', 'experimental', 'sciencelab'];
 
     // Trocar o TIPO de um compromisso que já existe para reposição/experimental
     // não pode regravar o compromisso: esses dois valem um dia só, e o original
@@ -4082,7 +4114,8 @@
       if (!calendarPopDraft) return;
       const ehReposicao = calendarPopDraft.type === 'reposicao';
       const ehAula = calendarPopDraft.type === 'lesson';
-      const comAluno = ehAula || ehReposicao;
+      const ehLab = calendarPopDraft.type === 'sciencelab';
+      const comAluno = ehAula || ehReposicao || ehLab;
       const botao = document.getElementById('calendar-pop-reposicao');
       botao.classList.toggle('on', ehReposicao);
       botao.textContent = ehReposicao
@@ -4093,7 +4126,7 @@
       // botão aparece na própria aula cancelada.
       const aulaOcupada = Boolean(calendarPopDraft.id && ehAula
         && !calendarCancelada(calendarPopDraft, calendarPopDraft.ocorrencia));
-      botao.style.display = aulaOcupada ? 'none' : 'block';
+      botao.style.display = aulaOcupada || ehLab ? 'none' : 'block';
       document.getElementById('calendar-pop-student-row').style.display = comAluno ? 'grid' : 'none';
       document.getElementById('calendar-pop-makeup-row').style.display = ehReposicao ? 'grid' : 'none';
       document.getElementById('calendar-pop-tipo').value = calendarPopDraft.type;
@@ -4224,7 +4257,7 @@
       const startTime = document.getElementById('calendar-pop-start').value, endTime = document.getElementById('calendar-pop-end').value;
       if (!startTime || !endTime) return calendarPopFail('Preencha o horário.');
       if (calendarMinutes(endTime) <= calendarMinutes(startTime)) return calendarPopFail('O fim precisa ser depois do início.');
-      const comAluno = type === 'lesson' || type === 'reposicao';
+      const comAluno = calendarTipoComAluno(type);
       const uidEscolhido = comAluno ? document.getElementById('calendar-pop-student').value : '';
       const entity = calendarEntity(uidEscolhido);
       const student = entity?.kind === 'student' ? entity.student : null;
@@ -4232,6 +4265,7 @@
       const repeatDays = repeat === 'custom' ? (calendarPopDraft.repeatDays || []).map(Number) : [];
       if (repeat === 'custom' && !repeatDays.length) return calendarPopFail('Escolha pelo menos um dia da semana.');
       if (comAluno && !entity) return calendarPopFail('Escolha o aluno, dupla ou grupo desta aula.');
+      if (type === 'sciencelab' && entity.kind !== 'student') return calendarPopFail('O Science Lab é de um aluno só: escolha um aluno individual.');
       const makeupForDate = type === 'reposicao' ? document.getElementById('calendar-pop-makeup-for').value : '';
       if (type === 'reposicao' && !makeupForDate) return calendarPopFail('Escolha qual falta esta reposição compensa.');
       const payload = {
@@ -4502,7 +4536,11 @@
     async function syncStudentLessons(students, replace = true) {
       let total = 0;
       for (const student of students) {
-        const events = studentLessonEvents(student);
+        // Aluno no Science Lab não tem grade semanal: o cadastro pode até guardar
+        // dias e hora de antes, mas a agenda não recria as aulas (nem ao reativar
+        // ou ao salvar "Editar dados"). Quem chama sem o campo `plano` vale o do banco.
+        const plano = 'plano' in student ? student.plano : allStudents.find(item => item.uid === student.uid)?.plano;
+        const events = plano?.ativo ? [] : studentLessonEvents(student);
         if (!events.length && !replace) continue;
         if (replace) {
           // Uma consulta só por aluno inclui tanto a série atual quanto a versão
@@ -6234,8 +6272,13 @@
             abrirPlanoModal(uid);
             return;
           } else if (action === 'sem-plano') {
-            if (!confirm(`Voltar ${name} para as aulas semanais?\n\nEla deixa de ver o Caminho do Science Lab e volta ao app de sempre (pós-aulas, atividades e desafio). Nada do que ela já fez é apagado. A agenda e o financeiro não mudam.`)) return;
-            try { await updateDoc(doc(db, 'students', uid), { plano: deleteField() }); }
+            if (!confirm(`Voltar ${name} para as aulas semanais?\n\nEla deixa de ver o Caminho do Science Lab e volta ao app de sempre (pós-aulas, atividades e desafio). Nada do que ela já fez é apagado. Na agenda, as aulas Science Lab que ainda não aconteceram saem e a grade semanal do cadastro volta a valer a partir de hoje. O financeiro não muda.`)) return;
+            try {
+              const aluno = allStudents.find(item => item.uid === uid);
+              await updateDoc(doc(db, 'students', uid), { plano: deleteField() });
+              await planoAplicarNaAgenda(uid, null);
+              if (aluno) await syncStudentLessons([{ ...aluno, plano:null, aulaDiasDesde:calendarDateKey(new Date()) }]);
+            }
             catch (error) { alert(`Não foi possível voltar ${name} para as aulas semanais: ${error.message}`); return; }
           } else if (action === 'archive') {
             if (!confirm(`Enviar ${name} para Ex-alunos?\n\nEle sai da agenda e do financeiro. Pagamentos recebidos, pós-aulas e atividades ficam preservados.`)) return;
@@ -7555,7 +7598,80 @@
     // ── PLANO (Science Lab) ─────────────────────────────────────────────
     // Grava `plano` no aluno. O app lê esse campo e troca o miolo pelo Caminho (plano.jsx);
     // `aulas` é a linha do tempo que o Caminho mostra (início do plano + próxima aula).
-    // Agenda e financeiro NÃO mudam aqui: só o cadastro do aluno.
+    // A agenda acompanha (planoAplicarNaAgenda): sai da grade semanal e a aula do mês
+    // entra como Science Lab. O financeiro NÃO muda aqui.
+
+    // Mesmo critério do archiveStudent: o passado fica como histórico, a série
+    // semanal termina na véspera do corte e o que é futuro some. `plano` nulo
+    // = voltou às aulas semanais: só tira as aulas Science Lab que ainda não aconteceram.
+    async function planoAplicarNaAgenda(uid, plano, nomeDoAluno = '') {
+      const resumo = { encerradas:0, removidos:0, lab:null };
+      if (!escolaAtual) return resumo;
+      const aluno = allStudents.find(item => item.uid === uid);
+      const nome = nomeDoAluno || aluno?.name || aluno?.firstName || 'Aluno';
+      const hoje = calendarDateKey(new Date());
+      // Plano que só começa depois de hoje: as aulas semanais até lá continuam.
+      const corte = plano?.desde && plano.desde > hoje ? plano.desde : hoje;
+      const vespera = calendarDateKey(calendarAddDays(new Date(`${corte}T00:00:00`), -1));
+      const snap = await getDocs(query(collection(db, 'schools', escolaAtual, 'calendarEvents'), where('studentUid', '==', uid)));
+      const batch = writeBatch(db);
+      const aluPatch = {};
+      const por = auth.currentUser?.email || '';
+
+      // Aulas Science Lab que devem existir: as do plano ainda não feitas, com data e hora.
+      const queridas = new Map();
+      (plano?.aulas || []).filter(aula => aula && !aula.feita && aula.data && aula.hora).forEach(aula => {
+        queridas.set(`sciencelab-${uid}-${aula.data}`, aula);
+      });
+
+      snap.docs.forEach(item => {
+        const ev = item.data();
+        const data = String(ev.date || '');
+        if (ev.type === 'sciencelab') {
+          // O que já passou é história. O futuro que não está mais no plano sai.
+          if (data >= hoje && !queridas.has(item.id)) { batch.delete(item.ref); resumo.removidos += 1; }
+          return;
+        }
+        if (!plano) return;
+        const repete = ev.repeat && ev.repeat !== 'none';
+        const aindaVale = !ev.repeatUntil || ev.repeatUntil >= corte;
+        let saiu = false;
+        if (repete && aindaVale) {
+          if (data < corte) {
+            batch.update(item.ref, { repeatUntil:vespera, updatedAt:serverTimestamp(), updatedBy:por });
+            resumo.encerradas += 1;
+          } else { batch.delete(item.ref); resumo.removidos += 1; saiu = true; }
+        } else if (!repete && data >= corte) { batch.delete(item.ref); resumo.removidos += 1; saiu = true; }
+        if (saiu && ev.type === 'reposicao') aluPatch[`attendanceMakeups.${item.id}`] = deleteField();
+      });
+
+      queridas.forEach((aula, id) => {
+        batch.set(doc(db, 'schools', escolaAtual, 'calendarEvents', id), {
+          type:'sciencelab', studentUid:uid, studentName:nome, groupId:'', groupName:'', memberUids:[], memberNames:[],
+          title:`Science Lab · ${nome}`, date:aula.data, startTime:aula.hora,
+          endTime:calendarTime(calendarMinutes(aula.hora) + 60),
+          repeat:'none', repeatDays:[], repeatUntil:'', timezone:'America/Sao_Paulo', source:'plano',
+          createdAt:serverTimestamp(), createdBy:por, updatedAt:serverTimestamp(), updatedBy:por,
+        }, { merge:true });
+        resumo.lab = aula;
+      });
+      if (Object.keys(aluPatch).length) batch.update(doc(db, 'students', uid), aluPatch);
+      await batch.commit();
+      if (aluno?.attendanceMakeups) Object.keys(aluPatch).forEach(chave => delete aluno.attendanceMakeups[chave.split('.')[1]]);
+      return resumo;
+    }
+
+    // O objeto `plano` do aluno, igual para "Mudar para o plano" e para o cadastro novo.
+    function planoMontar({ nome = '', mensalidade, desde, proxima = '', hora = '', unidade = '', assistente = true }) {
+      const aulas = [{ id:'a0', rotulo:'Início do plano', data:desde, feita:true }];
+      if (proxima) aulas.push({ id:'a1', rotulo:'Aula do mês', data:proxima, ...(hora ? { hora } : {}), feita:false });
+      return {
+        ativo:true, nome:nome || 'Science Lab', mensalidade:Number.isFinite(mensalidade) && mensalidade > 0 ? mensalidade : 100,
+        desde, proximaAula:proxima || '', hora:hora || '', unidadeRotulo:unidade || 'Unit 4', assistente, aulas,
+        atualizadoEm:serverTimestamp(), atualizadoPor:auth.currentUser?.email || '',
+      };
+    }
+
     function abrirPlanoModal(uid) {
       const s = allStudents.find(x => x.uid === uid);
       if (!s) return;
@@ -7585,24 +7701,29 @@
       const hora = document.getElementById('pl-hora').value;
       const unidade = document.getElementById('pl-unidade').value.trim() || 'Unit 4';
       if (!desde) { showMsg('pl-msg', 'Informe desde quando o aluno está no plano.', 'err'); return; }
-      const aulas = [{ id: 'a0', rotulo: 'Início do plano', data: desde, feita: true }];
-      if (proxima) aulas.push({ id: 'a1', rotulo: 'Aula do mês', data: proxima, ...(hora ? { hora } : {}), feita: false });
+      const novoPlano = planoMontar({ nome, mensalidade, desde, proxima, hora, unidade,
+        assistente: document.getElementById('pl-assistente').checked });
       const btn = document.getElementById('pl-save');
       const textoBtn = btn.textContent;
       btn.disabled = true; btn.textContent = 'Salvando...';
+      let planoSalvo = false;
       try {
-        await updateDoc(doc(db, 'students', uid), { plano: {
-          ativo: true, nome, mensalidade: Number.isFinite(mensalidade) ? mensalidade : 100,
-          desde, proximaAula: proxima || '', hora: hora || '', unidadeRotulo: unidade,
-          assistente: document.getElementById('pl-assistente').checked, aulas,
-          atualizadoEm: serverTimestamp(), atualizadoPor: auth.currentUser?.email || '',
-        } });
+        await updateDoc(doc(db, 'students', uid), { plano: novoPlano });
+        planoSalvo = true;
+        // Sai da grade semanal e a aula do mês entra na agenda como Science Lab.
+        const agenda = await planoAplicarNaAgenda(uid, novoPlano);
         btn.disabled = false; btn.textContent = textoBtn;
-        document.getElementById('plano-modal').classList.remove('open');
+        const partes = ['✅ Plano salvo.'];
+        if (agenda.encerradas || agenda.removidos) partes.push('A aula semanal saiu da agenda.');
+        partes.push(agenda.lab ? `Science Lab marcado em ${agenda.lab.data.split('-').reverse().join('/')} às ${agenda.lab.hora}.`
+          : 'Sem data e hora da aula, o Science Lab ainda não aparece na agenda.');
+        showMsg('pl-msg', partes.join(' '), 'ok');
         loadStudents();
+        setTimeout(() => document.getElementById('plano-modal').classList.remove('open'), 1600);
       } catch (e) {
         btn.disabled = false; btn.textContent = textoBtn;
-        showMsg('pl-msg', 'Erro: ' + e.message, 'err');
+        showMsg('pl-msg', (planoSalvo ? 'O plano foi salvo, mas a agenda não foi atualizada: ' : 'Erro: ') + e.message, 'err');
+        if (planoSalvo) loadStudents();
       }
     };
 
@@ -10400,7 +10521,32 @@ Salvar assim mesmo?`)) return;
       }, 0) / 60;
     }
 
+    // Dois contextos no cadastro: o curso de sempre (aula semanal) e o Science Lab
+    // (1h por mês, sem dia nem horário fixo). O CSS esconde o que não vale em cada um.
+    const MENSALIDADE_LAB = 100;
+    const cadastroEhLab = () => document.getElementById('tab-add').dataset.modo === 'lab';
+    function sincronizarModoCadastro(modo) {
+      const painel = document.getElementById('tab-add'), lab = modo === 'lab';
+      painel.dataset.modo = lab ? 'lab' : 'regular';
+      document.querySelectorAll('#add-modo button').forEach(botao => {
+        const ligado = botao.dataset.modo === painel.dataset.modo;
+        botao.classList.toggle('on', ligado); botao.setAttribute('aria-pressed', ligado ? 'true' : 'false');
+      });
+      document.getElementById('f-inicio-label').textContent = lab ? 'No Science Lab desde' : 'Data de início das aulas';
+      dicaDataDoPagamento();
+      const campo = document.getElementById('f-mensalidade');
+      if (lab) {
+        if (!mensalidadeEditadaNaMao) campo.value = MENSALIDADE_LAB;
+        showMsg('create-msg', '', 'info');
+      } else {
+        if (!mensalidadeEditadaNaMao) campo.value = '';
+        sugerirMensalidade();
+      }
+    }
+    document.querySelectorAll('#add-modo button').forEach(botao => botao.onclick = () => sincronizarModoCadastro(botao.dataset.modo));
+
     function sugerirMensalidade() {
+      if (cadastroEhLab()) return; // no Science Lab o valor é fixo (R$ 100), não vem das horas por semana
       const horas = horasSemanaDoCadastro(), campo = document.getElementById('f-mensalidade'), dica = document.getElementById('f-mensalidade-hint');
       if (!horas) { dica.textContent = ''; return; }
       const mensal = Math.max(0, Math.round(MENSALIDADE_1H + MENSALIDADE_HORA_EXTRA * (horas - 1)));
@@ -10436,7 +10582,7 @@ Salvar assim mesmo?`)) return;
       const data = document.getElementById('f-vencimento').value, dica = document.getElementById('f-vencimento-dica');
       dica.textContent = data
         ? `Vence todo dia ${Number(data.slice(8, 10))}. Antes de ${data.split('-').reverse().join('/')} o aluno não é cobrado nem aparece como atrasado.`
-        : 'Vem com a data de início das aulas; troque se o primeiro pagamento for outro dia.';
+        : `Vem com a data de ${cadastroEhLab() ? 'entrada no Science Lab' : 'início das aulas'}; troque se o primeiro pagamento for outro dia.`;
     }
     document.getElementById('f-inicio').addEventListener('change', evento => {
       const campo = document.getElementById('f-vencimento');
@@ -10455,8 +10601,12 @@ Salvar assim mesmo?`)) return;
       const email  = document.getElementById('f-email').value.trim();
       const pass   = document.getElementById('f-pass').value;
       const level  = document.getElementById('f-level').value;
-      const meta   = parseInt(document.getElementById('f-meta').value, 10);
-      const aula   = readAula('f-dias-week', 'f-hora');
+      const lab    = cadastroEhLab();
+      // No Science Lab não há meta de aulas nem grade semanal: dia e hora são combinados todo mês.
+      const meta   = lab ? NaN : parseInt(document.getElementById('f-meta').value, 10);
+      const aula   = lab ? { texto:'', aulaDias:[], aulaHora:'', aulaHorarios:{}, aulaFins:{}, aulaDuracao:0 } : readAula('f-dias-week', 'f-hora');
+      const labAula = lab ? document.getElementById('f-lab-aula').value : '';
+      const labHora = lab ? document.getElementById('f-lab-hora').value : '';
       const duracao = aula.aulaDuracao;
       const mensalidade = Math.round(Number(document.getElementById('f-mensalidade').value) * 100);
       const dataPagCampo = document.getElementById('f-vencimento').value;
@@ -10470,14 +10620,22 @@ Salvar assim mesmo?`)) return;
       if (!name || !email || !pass) { showMsg('create-msg', 'Preencha nome, e-mail e senha.', 'err'); return; }
       if (ehAnual && !anualMes) { showMsg('create-msg', 'Escolha o mês em que o pagamento anual cai.', 'err'); return; }
       if (pass.length < 6)          { showMsg('create-msg', 'Senha mínima de 6 caracteres.', 'err'); return; }
+      if (lab && !inicio) { showMsg('create-msg', 'Informe desde quando o aluno está no Science Lab.', 'err'); return; }
+      if (lab && Boolean(labAula) !== Boolean(labHora)) { showMsg('create-msg', 'Para a aula entrar na agenda, informe a data e a hora (ou deixe os dois em branco).', 'err'); return; }
       // Pergunta ANTES de criar o usuário: criar é irreversível, e desistir do
       // horário depois de criado deixaria o aluno pela metade.
-      const batendo = await conflitoDaAula('', studentLessonEvents({ uid:'', name, firstName:name.split(' ')[0],
-        aulaDias:aula.aulaDias, aulaHora:aula.aulaHora, aulaHorarios:aula.aulaHorarios, aulaFins:aula.aulaFins,
-        aulaDuracao:duracao, inicioCurso:inicio }));
+      const eventosDoCadastro = lab
+        ? (labAula && labHora ? [{ type:'sciencelab', date:labAula, startTime:labHora, endTime:calendarTime(calendarMinutes(labHora) + 60), repeat:'none' }] : [])
+        : studentLessonEvents({ uid:'', name, firstName:name.split(' ')[0],
+            aulaDias:aula.aulaDias, aulaHora:aula.aulaHora, aulaHorarios:aula.aulaHorarios, aulaFins:aula.aulaFins,
+            aulaDuracao:duracao, inicioCurso:inicio });
+      const batendo = await conflitoDaAula('', eventosDoCadastro);
       if (batendo && !confirmarAulaJunta(batendo)) return;
       try {
         const cred = await createUserWithEmailAndPassword(auth2, email, pass);
+        const planoNovo = lab ? planoMontar({ mensalidade:Number(document.getElementById('f-mensalidade').value), desde:inicio,
+          proxima:labAula, hora:labHora, unidade:document.getElementById('f-lab-unidade').value.trim(),
+          assistente:document.getElementById('f-lab-assistente').checked }) : null;
         await setDoc(doc(db, 'students', cred.user.uid), {
           name, firstName: name.split(' ')[0],
           slug: name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-'),
@@ -10489,12 +10647,17 @@ Salvar assim mesmo?`)) return;
           ...(aula.aulaHora && { aulaHora: aula.aulaHora, aulaDuracao: duracao }),
           ...(Object.keys(aula.aulaHorarios).length && { aulaHorarios: aula.aulaHorarios }),
           ...(Object.keys(aula.aulaFins).length && { aulaFins: aula.aulaFins }),
-          ...(inicio && { inicioCurso: inicio }),
+          ...(inicio && !lab && { inicioCurso: inicio }),
+          ...(planoNovo && { plano: planoNovo }),
           createdAt: serverTimestamp()
         });
         await signOut(auth2);
         // As aulas do cadastro já entram na agenda — sem criar compromisso na mão.
-        let naAgenda = 0;
+        let naAgenda = 0, labNaAgenda = null;
+        if (planoNovo && labAula && labHora) {
+          try { labNaAgenda = (await planoAplicarNaAgenda(cred.user.uid, planoNovo, name)).lab; }
+          catch (erroAgenda) { console.error('Agenda do Science Lab:', erroAgenda); }
+        }
         if (aula.aulaDias.length && aula.aulaHora) {
           try {
             naAgenda = await syncStudentLessons([{ uid: cred.user.uid, name, firstName: name.split(' ')[0],
@@ -10551,9 +10714,10 @@ Salvar assim mesmo?`)) return;
           } catch (erroFinanceiro) { console.error('Financeiro do aluno:', erroFinanceiro); }
         }
         const extras = [naAgenda ? `${naAgenda} aula(s) na agenda` : '',
+          labNaAgenda ? `Science Lab na agenda em ${labNaAgenda.data.split('-').reverse().join('/')} às ${labNaAgenda.hora}` : '',
           noFinanceiro ? `${ehAnual ? `anual de ${financeMoney(mensalidade)} em ${anualMes.split('-').reverse().join('/')}` : `mensalidade de ${financeMoney(mensalidade)}`} no financeiro${jaPago ? ' (já dada como paga)' : ' (pendente)'}` : ''].filter(Boolean);
         showMsg('create-msg', `✅ Aluno ${name} criado!${extras.length ? ` Já entrou com ${extras.join(' e ')}.` : ''}`, 'ok');
-        ['f-name','f-email','f-pass','f-meta','f-hora','f-inicio','f-vencimento'].forEach(id => document.getElementById(id).value = '');
+        ['f-name','f-email','f-pass','f-meta','f-hora','f-inicio','f-vencimento','f-lab-aula','f-lab-hora','f-lab-unidade'].forEach(id => document.getElementById(id).value = '');
         delete document.getElementById('f-vencimento').dataset.mexeu; dicaDataDoPagamento();
         document.querySelectorAll('#f-dias-week input').forEach(c => c.checked = false);
         document.getElementById('f-hora-mesma').checked = true; sincronizarModoHora('f');
