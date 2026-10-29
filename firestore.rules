@@ -338,6 +338,19 @@ service cloud.firestore {
         || (isOwnStudent(uid) && studentProfileUpdateIsSafe());
       allow delete: if managesStudent(uid);
 
+      // Progresso no Caminho (livro no app): o que a aluna já fez, guardado na conta dela (vale em qualquer aparelho).
+      match /planoProgresso/{docId} {
+        allow read: if isOwnStudent(uid) || managesStudent(uid);
+        allow create, update: if managesStudent(uid) || (
+          isOwnStudent(uid)
+          && docId == 'feitas'
+          && request.resource.data.keys().hasOnly(['feitas', 'atualizadoEm'])
+          && request.resource.data.feitas is map
+          && request.resource.data.feitas.size() <= 1500
+        );
+        allow delete: if managesStudent(uid);
+      }
+
       match /posaulas/{postId} {
         allow read: if isOwnStudent(uid) || managesStudent(uid);
         allow create, delete: if managesStudent(uid);

@@ -242,14 +242,41 @@ function PlanoAulasDoTema(tema, posaulas) {
   }).filter(x => x.score >= 6).sort((a, b) => b.score - a.score).slice(0, 3).map(x => x.p);
 }
 
-function usePlanoFeitas(uid) {
+// O que a aluna já fez fica no aparelho (rápido, funciona sem internet) E na conta dela:
+// students/{uid}/planoProgresso/feitas. Trocou de celular? Ao abrir, o app junta os dois lados.
+// `nuvem` é falso na prévia do admin. No espelho (admin olhando a aluna) só lê, nunca grava.
+function usePlanoFeitas(uid, nuvem) {
   const chave = `plano-feitas-v1-${uid || 'x'}`;
-  const [feitas, setFeitas] = React.useState(() => { try { return JSON.parse(localStorage.getItem(chave) || '{}'); } catch (e) { return {}; } });
+  const lerLocal = () => { try { return JSON.parse(localStorage.getItem(chave) || '{}'); } catch (e) { return {}; } };
+  const [feitas, setFeitas] = React.useState(lerLocal);
+  const conta = React.useRef(null);   // { fb, ref } quando é a própria aluna e o banco respondeu
+  React.useEffect(() => {
+    if (!nuvem || !uid || uid === 'x' || typeof getFB !== 'function') return undefined;
+    let vivo = true;
+    getFB().then(async fb => {
+      const dono = !!(fb.auth && fb.auth.currentUser && fb.auth.currentUser.uid === uid);
+      const ref = fb.doc(fb.db, 'students', uid, 'planoProgresso', 'feitas');
+      const snap = await fb.getDoc(ref);
+      if (!vivo) return;
+      const remoto = snap.exists() ? (snap.data().feitas || {}) : {};
+      const local = lerLocal();
+      const uniao = dono ? { ...local, ...remoto } : { ...remoto };   // espelho: só o que está na conta
+      if (dono) {
+        try { localStorage.setItem(chave, JSON.stringify(uniao)); } catch (e) {}
+        const faltando = {}; Object.keys(local).forEach(k => { if (!remoto[k]) faltando[k] = true; });
+        if (Object.keys(faltando).length) fb.setDoc(ref, { feitas: faltando, atualizadoEm: fb.serverTimestamp() }, { merge: true }).catch(() => {});
+        conta.current = { fb, ref };
+      }
+      setFeitas(dono ? (atual => ({ ...atual, ...uniao })) : uniao);   // espelho: só o que a aluna fez, não o que está neste navegador
+    }).catch(() => {});   // sem rede ou sem permissão: segue só com o aparelho
+    return () => { vivo = false; };
+  }, [uid, nuvem, chave]);
   const marcar = React.useCallback((id) => {
     setFeitas(atual => {
       if (atual[id]) return atual;
       const novo = { ...atual, [id]: true };
       try { localStorage.setItem(chave, JSON.stringify(novo)); } catch (e) {}
+      if (conta.current) conta.current.fb.setDoc(conta.current.ref, { feitas: { [id]: true }, atualizadoEm: conta.current.fb.serverTimestamp() }, { merge: true }).catch(() => {});
       return novo;
     });
   }, [chave]);
@@ -1087,7 +1114,7 @@ function PlanoAulasLista({ posaulas, onOpenPost }) {
 /* ───────── o conteúdo do plano (troca o miolo do app) ───────── */
 function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slots, onOpenPost, onAsk }) {
   const uid = student.uid || 'x';
-  const [feitas, marcar, zerar] = usePlanoFeitas(uid);
+  const [feitas, marcar, zerar] = usePlanoFeitas(uid, !cfg.previa);
   const chaveBV = `plano-boasvindas-v1-${uid}`;
   const [bv, setBv] = React.useState(() => { try { return !localStorage.getItem(chaveBV); } catch (e) { return false; } });
   const [tarefa, setTarefa] = React.useState(null);
