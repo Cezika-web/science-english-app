@@ -33,6 +33,12 @@ service firebase.storage {
         && (request.auth.uid == uid || isAdmin() || ownsStudent(uid));
     }
 
+    // Páginas do livro do curso (Connectivity): só quem está logado vê; o envio é feito pelo servidor.
+    match /livros/{livro}/{arquivo} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
     // Qualquer caminho não previsto fica fechado.
     match /{allPaths=**} {
       allow read, write: if false;

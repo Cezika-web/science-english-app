@@ -877,6 +877,7 @@
           <button class="tab" data-tab="correct"><span class="ic">✅</span><span class="lb">Correção</span></button>
           <button class="tab" data-tab="vocab"><span class="ic">📖</span><span class="lb">Vocabulário</span></button>
           <button class="tab" data-tab="extras"><span class="ic">🎧</span><span class="lb">Extras</span></button>
+          <button class="tab" data-tab="curso"><span class="ic">📘</span><span class="lb">Curso</span></button>
         </div>
 
         <div class="side-group">
@@ -1578,6 +1579,46 @@
         </div>
       </div>
 
+      <!-- CURSO — o livro (Connectivity) dentro do app: unidades, exercícios e o que está ligado -->
+      <div class="tab-panel" id="tab-curso">
+        <style>
+          .cr-un { background:var(--card); border:1px solid var(--border); border-radius:14px; margin-bottom:10px; overflow:hidden; }
+          .cr-un > summary { list-style:none; cursor:pointer; padding:13px 15px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-weight:700; }
+          .cr-un > summary::-webkit-details-marker { display:none; }
+          .cr-un .cr-chip { font-size:.72rem; font-weight:700; padding:2px 9px; border-radius:99px; background:#f1f5f9; color:#475569; }
+          .cr-un .cr-chip.ok { background:#dcfce7; color:#166534; } .cr-un .cr-chip.vazia { background:#fef3c7; color:#92400e; }
+          .cr-corpo { padding:4px 15px 14px; border-top:1px solid var(--border); }
+          .cr-bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:10px 0; }
+          .cr-bar button { font-size:.8rem; padding:7px 12px; border-radius:9px; border:1px solid var(--border); background:#fff; cursor:pointer; font-weight:600; }
+          .cr-bar button.pri { background:#7c3aed; color:#fff; border-color:#7c3aed; }
+          .cr-bar button:disabled { opacity:.45; cursor:default; }
+          .cr-t { padding:7px 0; border-top:1px solid #f1f5f9; }
+          .cr-t > label { display:flex; gap:9px; align-items:flex-start; font-weight:700; font-size:.88rem; cursor:pointer; }
+          .cr-t small { color:var(--muted); font-weight:600; margin-left:4px; }
+          .cr-t.off > label { opacity:.5; text-decoration:line-through; }
+          .cr-ex { margin:4px 0 2px 26px; display:grid; gap:2px; }
+          .cr-ex label { display:flex; gap:8px; align-items:flex-start; font-size:.8rem; font-weight:500; cursor:pointer; line-height:1.35; }
+          .cr-ex label.off { opacity:.45; text-decoration:line-through; }
+          .cr-tipo { flex-shrink:0; font-size:.62rem; font-weight:800; letter-spacing:.4px; padding:1px 6px; border-radius:6px; background:#f5f3ff; color:#5b21b6; text-transform:uppercase; margin-top:1px; }
+          .cr-video { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0; padding:9px 11px; border-radius:11px; background:#f8fafc; border:1px solid var(--border); font-size:.83rem; }
+          .cr-video input { flex:1; min-width:180px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:.82rem; }
+        </style>
+        <div class="form-card">
+          <h2>📘 Curso: Connectivity 1 dentro do app</h2>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:6px;">
+            Aqui está <strong>todo o conteúdo</strong> que o aluno vê no Caminho: páginas do livro, exercícios, vocabulário, jogos e mini-teste. Desmarque o que você acha desnecessário
+            (uma tarefa inteira ou só um exercício) e clique em <strong>Salvar</strong>: some do app de todos os alunos na próxima vez que abrirem.
+            Os <strong>extras do livro</strong> (Grammar Expander, Writing, Soft Skills) vêm desligados. O vídeo de cada unidade só aparece quando você colar o link.
+          </p>
+          <div class="cr-bar">
+            <button type="button" id="cr-baixar">📄 Baixar a lista completa (.txt)</button>
+            <button type="button" id="cr-recarregar">↻ Recarregar</button>
+            <span id="cr-msg" style="font-size:.8rem;color:var(--muted);"></span>
+          </div>
+        </div>
+        <div id="cr-lista"><div class="loading">Carregando...</div></div>
+      </div>
+
       <!-- NOVO ALUNO -->
       <!-- AVISOS — mensagem que aparece para todos os alunos da escola -->
       <div class="tab-panel" id="tab-avisos">
@@ -1676,6 +1717,11 @@
               <div class="field"><label for="f-lab-hora">Hora da aula</label><input type="time" id="f-lab-hora" step="900" /></div>
             </div>
             <div class="field"><label for="f-lab-unidade">Unidade atual (texto curto)</label><input type="text" id="f-lab-unidade" placeholder="Unit 4" /></div>
+            <div class="field"><label for="f-lab-curso">Curso (o livro dentro do app)</label><select id="f-lab-curso"></select></div>
+            <div id="f-lab-curso-box">
+              <div class="field"><label for="f-lab-un-ini">O aluno começa na unidade</label><select id="f-lab-un-ini"></select></div>
+              <div class="field"><label for="f-lab-un-atual">Unidade liberada agora</label><select id="f-lab-un-atual"></select></div>
+            </div>
             <div class="field"><label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="f-lab-assistente" checked /> Assistente de dúvidas ligado (20 perguntas por mês)</label></div>
             <p style="margin:-4px 0 16px;padding:10px 12px;border-radius:8px;background:#f5f3ff;border:1px solid #ddd6fe;color:#4c1d95;font-size:.78rem;line-height:1.5;">📅 Com data e hora, a aula entra na <strong>Agenda</strong> como <strong>Science Lab</strong> (1h, roxo). Sem elas, você marca depois pela Agenda. A mensalidade já entra no <strong>Financeiro</strong>.</p>
           </div>
@@ -1811,6 +1857,11 @@
         <div class="field"><label>Próxima aula do mês (data)</label><input type="date" id="pl-aula" /></div>
         <div class="field"><label>Hora da aula</label><input type="time" id="pl-hora" /></div>
         <div class="field"><label>Unidade atual (texto curto)</label><input type="text" id="pl-unidade" placeholder="Unit 4" /></div>
+        <div class="field"><label>Curso (o livro dentro do app)</label><select id="pl-curso"></select></div>
+        <div id="pl-curso-box">
+          <div class="field"><label>O aluno começou na unidade</label><select id="pl-un-ini"></select></div>
+          <div class="field"><label>Unidade liberada agora (é a que o Caminho dele mostra; troque depois da aula do mês)</label><select id="pl-un-atual"></select></div>
+        </div>
         <div class="field"><label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="pl-assistente" /> Assistente de dúvidas ligado (20 perguntas por mês)</label></div>
         <button class="btn-add" id="pl-save">Salvar</button>
         <div class="form-msg" id="pl-msg"></div>
@@ -5768,6 +5819,7 @@
         if (tab.dataset.tab === 'adesao') loadAdesaoAdmin();
         if (tab.dataset.tab === 'calendar') loadCalendar();
         if (tab.dataset.tab === 'finance') loadFinance();
+        if (tab.dataset.tab === 'curso') carregarCurso();
       };
     });
 
@@ -5781,7 +5833,7 @@
     // Quem administra a escola vê a interface dela — inclusive o César, ao
     // trocar de escola no seletor do topo.
     const ABAS_POR_MODO = {
-      manual:    ['students', 'groups', 'calendar', 'finance', 'challenge', 'adesao', 'creditos', 'posaula', 'processos', 'publish', 'correct', 'vocab', 'extras', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
+      manual:    ['students', 'groups', 'calendar', 'finance', 'challenge', 'adesao', 'creditos', 'posaula', 'processos', 'publish', 'correct', 'vocab', 'extras', 'curso', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
       assistido: ['students', 'groups', 'calendar', 'finance', 'challenge', 'adesao', 'creditos', 'posaula', 'processos', 'publish', 'extras', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
     };
 
@@ -7661,13 +7713,185 @@
       return resumo;
     }
 
+    // ── CURSO (livro Connectivity dentro do app) ────────────────────────
+    // O conteúdo mora em cursos/connectivity-1 (índice) e cursos/connectivity-1/unidades/uNN (tarefas e exercícios).
+    // O aluno do plano com `plano.livro` vê esse curso no Caminho; sem `livro`, vê o pacote antigo da Unit 4.
+    const CURSO_ID = 'connectivity-1';
+    let cursoIndice = null;
+    const cursoUnidades = {};
+    async function cursoCarregarIndice(forcar = false) {
+      if (cursoIndice && !forcar) return cursoIndice;
+      const s = await getDoc(doc(db, 'cursos', CURSO_ID));
+      cursoIndice = s.exists() ? s.data() : { nome:'Connectivity 1', unidades:[] };
+      return cursoIndice;
+    }
+    async function cursoCarregarUnidade(id, forcar = false) {
+      if (cursoUnidades[id] && !forcar) return cursoUnidades[id];
+      const s = await getDoc(doc(db, 'cursos', CURSO_ID, 'unidades', id));
+      cursoUnidades[id] = s.exists() ? { id, ...s.data() } : null;
+      return cursoUnidades[id];
+    }
+    // Preenche os 3 seletores (curso, começou em, liberada agora) do plano ou do cadastro. `p` = plano atual (opcional).
+    async function cursoPreencherSelects(prefixo, p = {}) {
+      const selC = document.getElementById(prefixo + '-curso');
+      const selI = document.getElementById(prefixo + '-un-ini');
+      const selA = document.getElementById(prefixo + '-un-atual');
+      const caixa = document.getElementById(prefixo + '-curso-box');
+      if (!selC || !selI || !selA) return;
+      let ind = { unidades:[] };
+      try { ind = await cursoCarregarIndice(); } catch (e) { console.warn('curso: índice não carregou', e); }
+      const prontas = (ind.unidades || []).filter(u => u.pronta);
+      selC.innerHTML = '<option value="">(sem curso — pacote antigo)</option>' + (prontas.length ? `<option value="${CURSO_ID}">${esc(ind.nome || 'Connectivity 1')}</option>` : '');
+      const opcoes = prontas.map(u => `<option value="${u.id}">Unit ${u.n} · ${esc(u.titulo)}</option>`).join('');
+      selI.innerHTML = opcoes; selA.innerHTML = opcoes;
+      const padrao = prontas.some(u => u.id === 'u04') ? 'u04' : (prontas[0]?.id || '');
+      selC.value = p.livro || (prontas.length ? CURSO_ID : '');   // o curso no app é o padrão; "sem curso" mantém o pacote antigo
+      selI.value = p.unidadeInicial || padrao;
+      selA.value = p.unidadeAtual || p.unidadeInicial || padrao;
+      const mostra = () => { if (caixa) caixa.style.display = selC.value ? '' : 'none'; };
+      selC.onchange = mostra; mostra();
+      // "começou em" e "liberada agora" andam juntos até a pessoa mexer na segunda
+      selI.onchange = () => { if (selA.dataset.mexeu !== '1') selA.value = selI.value; };
+      selA.onchange = () => { selA.dataset.mexeu = '1'; };
+      selA.dataset.mexeu = (p.unidadeAtual && p.unidadeAtual !== p.unidadeInicial) ? '1' : '';
+    }
+    // Lê os 3 seletores e devolve o que o plano precisa (vazio quando não há curso).
+    function cursoLerSelects(prefixo) {
+      const livro = document.getElementById(prefixo + '-curso')?.value || '';
+      if (!livro) return { livro:'', unidadeInicial:'', unidadeAtual:'' };
+      const ini = document.getElementById(prefixo + '-un-ini').value;
+      const atual = document.getElementById(prefixo + '-un-atual').value || ini;
+      return { livro, unidadeInicial:ini, unidadeAtual:atual };
+    }
+
+    // Aba "Curso": todas as unidades, tarefas e exercícios, com caixinhas para ligar/desligar.
+    const CR_ROTULO = { mc:'escolher', vf:'V ou F', gap:'digitar', match:'ligar', order:'montar', ouvir:'ouvir', ditado:'ditado', speak:'falar' };
+    const crAlteracoes = {};   // uid -> Set de ids que mudaram de estado, ainda não salvos
+    function crOcultosAtuais(un) { return new Set(un.ocultosEdit || un.ocultos || []); }
+    function crResumo(texto) { return String(texto || '').replace(/\s+/g, ' ').slice(0, 110); }
+    async function carregarCurso() {
+      const lista = document.getElementById('cr-lista');
+      lista.innerHTML = '<div class="loading">Carregando...</div>';
+      try {
+        const ind = await cursoCarregarIndice(true);
+        lista.innerHTML = '';
+        (ind.unidades || []).forEach(u => {
+          const det = document.createElement('details');
+          det.className = 'cr-un'; det.dataset.uid = u.id;
+          det.innerHTML = `<summary>📘 Unit ${u.n} · ${esc(u.titulo)}
+            <span class="cr-chip ${u.pronta ? 'ok' : 'vazia'}">${u.pronta ? 'pronta' : 'vazia'}</span>
+            ${u.pronta ? `<span class="cr-chip">${u.tarefas} tarefas</span><span class="cr-chip">${u.exercicios} exercícios</span>` : ''}</summary>
+            <div class="cr-corpo"><div class="loading">Abra para carregar...</div></div>`;
+          if (u.pronta) det.addEventListener('toggle', () => { if (det.open && !det.dataset.ok) { det.dataset.ok = '1'; crMostrarUnidade(u.id); } });
+          lista.appendChild(det);
+        });
+      } catch (e) {
+        lista.innerHTML = `<div class="form-msg err" style="display:block">Não consegui carregar o curso: ${esc(e.message)}</div>`;
+      }
+    }
+    async function crMostrarUnidade(uid, forcar = false) {
+      const corpo = document.querySelector(`.cr-un[data-uid="${uid}"] .cr-corpo`);
+      corpo.innerHTML = '<div class="loading">Carregando...</div>';
+      const un = await cursoCarregarUnidade(uid, forcar);
+      if (!un) { corpo.innerHTML = '<p>Unidade sem conteúdo.</p>'; return; }
+      un.ocultosEdit = [...(un.ocultos || [])]; crAlteracoes[uid] = new Set();
+      const oc = new Set(un.ocultosEdit);
+      const videos = (un.tarefas || []).filter(t => t.tipo === 'video');
+      const html =(un.tarefas || []).map(t => {
+        const exs = (t.exercicios || []).map(e => `<label class="${oc.has(e.id) ? 'off' : ''}"><input type="checkbox" data-e="${esc(e.id)}" ${oc.has(e.id) ? '' : 'checked'}><span class="cr-tipo">${CR_ROTULO[e.t] || e.t}</span><span>${esc(crResumo(e.q))}</span></label>`).join('');
+        const extra = t.perguntas ? ` <small>(${t.perguntas.length} perguntas sorteadas dos exercícios)</small>` : '';
+        const nEx = (t.exercicios || []).length ? ` <small>${t.exercicios.length} exercícios</small>` : '';
+        return `<div class="cr-t ${oc.has(t.id) ? 'off' : ''}"><label><input type="checkbox" data-t="${esc(t.id)}" ${oc.has(t.id) ? '' : 'checked'}><span>${esc(t.ic || '')} ${esc(t.titulo)}${nEx}${extra}<small>${esc(t.grupo ? '· ' + t.grupo : '')}</small></span></label>${exs ? `<div class="cr-ex">${exs}</div>` : ''}</div>`;
+      }).join('');
+      corpo.innerHTML = `
+        ${videos.map(v => `<div class="cr-video">🎬 <strong>${esc(v.titulo)}</strong>
+          <input type="text" id="cr-yt-${esc(v.id)}" placeholder="Cole aqui o link do vídeo no YouTube (não listado)" value="${esc(v.youtube || '')}">
+          <button type="button" class="btn-add" style="width:auto;padding:7px 14px;" data-cr-yt="${esc(v.id)}">Salvar vídeo</button>
+          <span style="color:var(--muted);font-size:.78rem;">${v.youtube ? 'ligado' : 'sem vídeo: a tarefa fica escondida'}</span></div>`).join('')}
+        <div class="cr-bar">
+          <button type="button" class="pri" data-cr-salvar="${uid}" disabled>Salvar alterações</button>
+          <button type="button" data-cr-todos="${uid}:1">Ligar tudo</button>
+          <button type="button" data-cr-todos="${uid}:0">Desligar tudo</button>
+          <span data-cr-estado="${uid}" style="font-size:.78rem;color:var(--muted);"></span></div>
+        ${html}`;
+      corpo.querySelectorAll('input[data-t],input[data-e]').forEach(cx => cx.addEventListener('change', () => crMarcar(uid, cx)));
+      corpo.querySelector(`[data-cr-salvar]`).onclick = () => crSalvar(uid);
+      corpo.querySelectorAll('[data-cr-todos]').forEach(b => b.onclick = () => crTodos(uid, b.dataset.crTodos.endsWith(':1')));
+      corpo.querySelectorAll('[data-cr-yt]').forEach(b => b.onclick = () => crSalvarVideo(uid, b.dataset.crYt));
+    }
+    function crMarcar(uid, cx) {
+      const un = cursoUnidades[uid]; const id = cx.dataset.t || cx.dataset.e;
+      const oc = crOcultosAtuais(un);
+      if (cx.checked) oc.delete(id); else oc.add(id);
+      un.ocultosEdit = [...oc];
+      (cx.dataset.t ? cx.closest('.cr-t') : cx.closest('label')).classList.toggle('off', !cx.checked);
+      const original = new Set(un.ocultos || []);
+      crAlteracoes[uid] = new Set([...oc, ...original].filter(x => oc.has(x) !== original.has(x)));
+      crAtualizarBotao(uid);
+    }
+    function crAtualizarBotao(uid) {
+      const n = crAlteracoes[uid].size;
+      const btn = document.querySelector(`.cr-un[data-uid="${uid}"] [data-cr-salvar]`);
+      btn.disabled = n === 0; btn.textContent = n ? `Salvar alterações (${n})` : 'Salvar alterações';
+    }
+    function crTodos(uid, ligar) {
+      const corpo = document.querySelector(`.cr-un[data-uid="${uid}"] .cr-corpo`);
+      corpo.querySelectorAll('input[data-t],input[data-e]').forEach(cx => { if (cx.checked !== ligar) { cx.checked = ligar; crMarcar(uid, cx); } });
+    }
+    async function crSalvar(uid) {
+      const un = cursoUnidades[uid]; const est = document.querySelector(`.cr-un[data-uid="${uid}"] [data-cr-estado]`);
+      est.textContent = 'Salvando...';
+      try {
+        await updateDoc(doc(db, 'cursos', CURSO_ID, 'unidades', uid), { ocultos: un.ocultosEdit, atualizadoEm: serverTimestamp() });
+        un.ocultos = [...un.ocultosEdit]; crAlteracoes[uid] = new Set(); crAtualizarBotao(uid);
+        est.textContent = '✅ Salvo. Os alunos veem a mudança na próxima vez que abrirem o app.';
+      } catch (e) { est.textContent = '❌ ' + e.message; }
+    }
+    async function crSalvarVideo(uid, id) {
+      const un = cursoUnidades[uid]; const campo = document.getElementById('cr-yt-' + id);
+      const link = campo.value.trim();
+      const tarefas = (un.tarefas || []).map(t => t.id === id ? { ...t, youtube: link } : t);
+      const oc = new Set(un.ocultos || []);
+      if (link) oc.delete(id); else oc.add(id);
+      try {
+        await updateDoc(doc(db, 'cursos', CURSO_ID, 'unidades', uid), { tarefas, ocultos: [...oc], atualizadoEm: serverTimestamp() });
+        un.tarefas = tarefas; un.ocultos = [...oc]; un.ocultosEdit = [...oc];
+        await crMostrarUnidade(uid, false);
+        const est = document.querySelector(`.cr-un[data-uid="${uid}"] [data-cr-estado]`); if (est) est.textContent = link ? '✅ Vídeo ligado na unidade.' : 'Vídeo desligado.';
+      } catch (e) { alert('Não consegui salvar o vídeo: ' + e.message); }
+    }
+    document.getElementById('cr-recarregar').onclick = () => carregarCurso();
+    document.getElementById('cr-baixar').onclick = async () => {
+      const msg = document.getElementById('cr-msg'); msg.textContent = 'Montando a lista...';
+      try {
+        const ind = await cursoCarregarIndice(true); const linhas = [`CONTEÚDO DO CURSO — ${ind.nome || 'Connectivity 1'}`, 'Marcado [x] = aparece no app. [ ] = desligado.', ''];
+        for (const u of (ind.unidades || []).filter(x => x.pronta)) {
+          const un = await cursoCarregarUnidade(u.id, true); const oc = new Set(un.ocultos || []);
+          linhas.push('='.repeat(70), `UNIT ${u.n} · ${u.titulo}`, '='.repeat(70));
+          let grupo = '';
+          (un.tarefas || []).forEach(t => {
+            if (t.grupo !== grupo) { grupo = t.grupo; linhas.push('', `-- ${grupo} --`); }
+            linhas.push(`[${oc.has(t.id) ? ' ' : 'x'}] ${t.titulo}  (${t.sub || ''})`);
+            (t.exercicios || []).forEach(e => linhas.push(`      [${oc.has(e.id) ? ' ' : 'x'}] ${(CR_ROTULO[e.t] || e.t).toUpperCase()}: ${crResumo(e.q)}`));
+            if (t.perguntas) linhas.push(`      (${t.perguntas.length} perguntas sorteadas dos exercícios acima)`);
+          });
+          linhas.push('');
+        }
+        const blob = new Blob([linhas.join('\n')], { type:'text/plain;charset=utf-8' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'conteudo-do-curso-connectivity-1.txt'; a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000); msg.textContent = '✅ Lista baixada.';
+      } catch (e) { msg.textContent = '❌ ' + e.message; }
+    };
+
     // O objeto `plano` do aluno, igual para "Mudar para o plano" e para o cadastro novo.
-    function planoMontar({ nome = '', mensalidade, desde, proxima = '', hora = '', unidade = '', assistente = true }) {
+    function planoMontar({ nome = '', mensalidade, desde, proxima = '', hora = '', unidade = '', assistente = true, livro = '', unidadeInicial = '', unidadeAtual = '' }) {
       const aulas = [{ id:'a0', rotulo:'Início do plano', data:desde, feita:true }];
       if (proxima) aulas.push({ id:'a1', rotulo:'Aula do mês', data:proxima, ...(hora ? { hora } : {}), feita:false });
+      const curso = livro ? { livro, unidadeInicial:unidadeInicial || unidadeAtual, unidadeAtual:unidadeAtual || unidadeInicial } : {};
+      const rotuloUnidade = livro && curso.unidadeAtual ? `Unit ${parseInt(String(curso.unidadeAtual).replace(/\D/g, ''), 10) || ''}`.trim() : '';
       return {
         ativo:true, nome:nome || 'Science Lab', mensalidade:Number.isFinite(mensalidade) && mensalidade > 0 ? mensalidade : 100,
-        desde, proximaAula:proxima || '', hora:hora || '', unidadeRotulo:unidade || 'Unit 4', assistente, aulas,
+        desde, proximaAula:proxima || '', hora:hora || '', unidadeRotulo:rotuloUnidade || unidade || 'Unit 4', assistente, aulas, ...curso,
         atualizadoEm:serverTimestamp(), atualizadoPor:auth.currentUser?.email || '',
       };
     }
@@ -7686,6 +7910,7 @@
       document.getElementById('pl-hora').value = p.hora || '';
       document.getElementById('pl-unidade').value = p.unidadeRotulo || 'Unit 4';
       document.getElementById('pl-assistente').checked = p.assistente !== false;
+      cursoPreencherSelects('pl', p);
       document.getElementById('pl-save').textContent = p.ativo ? 'Salvar alterações' : 'Mudar para o plano';
       showMsg('pl-msg', '', 'info');
       document.getElementById('plano-modal').classList.add('open');
@@ -7702,7 +7927,7 @@
       const unidade = document.getElementById('pl-unidade').value.trim() || 'Unit 4';
       if (!desde) { showMsg('pl-msg', 'Informe desde quando o aluno está no plano.', 'err'); return; }
       const novoPlano = planoMontar({ nome, mensalidade, desde, proxima, hora, unidade,
-        assistente: document.getElementById('pl-assistente').checked });
+        assistente: document.getElementById('pl-assistente').checked, ...cursoLerSelects('pl') });
       const btn = document.getElementById('pl-save');
       const textoBtn = btn.textContent;
       btn.disabled = true; btn.textContent = 'Salvando...';
@@ -10533,6 +10758,7 @@ Salvar assim mesmo?`)) return;
         botao.classList.toggle('on', ligado); botao.setAttribute('aria-pressed', ligado ? 'true' : 'false');
       });
       document.getElementById('f-inicio-label').textContent = lab ? 'No Science Lab desde' : 'Data de início das aulas';
+      if (lab) cursoPreencherSelects('f-lab');
       dicaDataDoPagamento();
       const campo = document.getElementById('f-mensalidade');
       if (lab) {
@@ -10635,7 +10861,7 @@ Salvar assim mesmo?`)) return;
         const cred = await createUserWithEmailAndPassword(auth2, email, pass);
         const planoNovo = lab ? planoMontar({ mensalidade:Number(document.getElementById('f-mensalidade').value), desde:inicio,
           proxima:labAula, hora:labHora, unidade:document.getElementById('f-lab-unidade').value.trim(),
-          assistente:document.getElementById('f-lab-assistente').checked }) : null;
+          assistente:document.getElementById('f-lab-assistente').checked, ...cursoLerSelects('f-lab') }) : null;
         await setDoc(doc(db, 'students', cred.user.uid), {
           name, firstName: name.split(' ')[0],
           slug: name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'-'),

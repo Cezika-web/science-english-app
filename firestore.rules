@@ -195,6 +195,18 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Curso (livro Connectivity): conteúdo igual para todos os alunos do plano.
+    // Só quem está logado lê; só a equipe grava (o painel e os scripts do servidor).
+    match /cursos/{cursoId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+
+      match /unidades/{unidadeId} {
+        allow read: if signedIn();
+        allow write: if isAdmin();
+      }
+    }
+
     // Conteúdo público do desafio para usuários autenticados. Gabaritos e
     // resultados individuais ficam em coleções internas sem regra de leitura.
     match /challengeWeeks/{weekKey} {

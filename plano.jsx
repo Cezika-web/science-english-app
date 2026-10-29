@@ -200,10 +200,13 @@ const PLANO_PREVIA = {
 function planoModo(student, user, mirror) {
   if (!student) return null;
   const admin = PLANO_ADMINS.includes(String((user && user.email) || '').toLowerCase());
-  const teste = new URLSearchParams(window.location.search).get('planoteste') === '1';
-  if (teste && admin) return { ...PLANO_PREVIA, previa: true };
+  const q = new URLSearchParams(window.location.search);
+  const teste = q.get('planoteste') === '1';
+  // ?planoteste=1&curso=u04 (admin): prévia do Caminho do curso (livro no app) nessa unidade, sem gravar nada.
+  if (teste && admin) return { ...PLANO_PREVIA, previa: true, cursoRef: q.get('curso') ? { id: 'connectivity-1', inicial: q.get('inicial') || q.get('curso'), atual: q.get('curso') } : null };
   const p = student.plano;
-  if (p && p.ativo !== false) return { ...PLANO_PREVIA, ...(typeof p === 'object' ? p : {}), previa: false };
+  // Com plano.livro (ex.: 'connectivity-1') o Caminho vem do curso no Firestore; sem ele, o pacote antigo da Unit 4.
+  if (p && p.ativo !== false) return { ...PLANO_PREVIA, ...(typeof p === 'object' ? p : {}), previa: false, cursoRef: p.livro ? { id: p.livro, inicial: p.unidadeInicial || p.unidadeAtual, atual: p.unidadeAtual || p.unidadeInicial } : null };
   return null;
 }
 
@@ -311,9 +314,11 @@ function PlanoLayout(cfg, feitas, ativOk) {
     itens.push({ k: 'cab', pac, y: y + 8, h: 64 }); y += 64;
     let sem = null;
     pac.tarefas.forEach(t => {
-      if (!pac.futuro && t.sem !== undefined && t.sem !== sem) {
-        sem = t.sem;
-        itens.push({ k: 'sem', rotulo: `SEMANA ${t.sem + 1} · ${String((cfg.unidade.semanas || [])[t.sem] || '').toUpperCase()}`, y: y + 10, h: 60 }); y += 60;
+      // O curso (livro) agrupa por lição (t.grupo); o pacote antigo agrupa por semana (t.sem).
+      const grupo = t.grupo !== undefined ? t.grupo : (t.sem !== undefined ? `SEMANA ${t.sem + 1} · ${String((cfg.unidade.semanas || [])[t.sem] || '').toUpperCase()}` : null);
+      if (!pac.futuro && grupo && grupo !== sem) {
+        sem = grupo;
+        itens.push({ k: 'sem', rotulo: grupo, y: y + 10, h: 60 }); y += 60;
       }
       let estado;
       if (pac.futuro) estado = 'trancada';
@@ -403,8 +408,11 @@ function PlanoCaminho({ cfg, feitas, ativOk, onTarefa, onAula, onComoFunciona })
           <div style={{ fontSize: 12.5, fontWeight: 800 }}>{feitasN}/{tarefas.length}</div>
         </div>
         <div style={{ fontSize: 12.5, fontWeight: 700, opacity: .92, marginTop: 8 }}>{prox ? `Próxima aula ${PlanoEmDias(prox.data)} · ${PlanoDataCurta(prox.data)}${prox.hora ? ' às ' + prox.hora : ''}` : 'Sem aula marcada'}</div>
-        {selo && <div style={{ marginTop: 10, display: 'inline-block', background: 'rgba(255,255,255,.18)', borderRadius: 99, padding: '5px 12px', fontSize: 12, fontWeight: 800 }}>🏅 Selo da Unit 4 conquistado</div>}
+        {selo && <div style={{ marginTop: 10, display: 'inline-block', background: 'rgba(255,255,255,.18)', borderRadius: 99, padding: '5px 12px', fontSize: 12, fontWeight: 800 }}>🏅 Selo da Unit {cfg.unidade.numero || 4} conquistado</div>}
       </div>
+      {cfg.unidadesLista && cfg.unidadesLista.length > 1 && <div style={{ display: 'flex', gap: 7, justifyContent: 'center', flexWrap: 'wrap', marginTop: 10 }}>
+        {cfg.unidadesLista.map(u => { const on = u.id === cfg.unidade.id; return <button key={u.id} onClick={() => cfg.onUnidade && cfg.onUnidade(u.id)} style={{ border: `1.5px solid ${on ? '#6D28D9' : '#DDD6FE'}`, background: on ? '#6D28D9' : '#fff', color: on ? '#fff' : '#5B21B6', borderRadius: 99, padding: '5px 13px', fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer' }}>Unit {u.n}</button>; })}
+      </div>}
       <button onClick={onComoFunciona} style={{ display: 'block', margin: '10px auto 0', background: 'none', border: 0, color: '#5B21B6', fontWeight: 800, fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Como funciona o caminho</button>
       <div style={{ position: 'relative', width: '100%', maxWidth: 340, margin: '6px auto 0', height: L.altura }}>
         <svg viewBox={`0 0 340 ${L.altura}`} preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible' }}>
@@ -558,7 +566,7 @@ function PlanoEstudo({ estudo, unidade, posaulas, onOpenPost, onFeita, onClose, 
 }
 
 /* ───────── vocabulário ───────── */
-function PlanoFalar(texto) { try { if ('speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(texto); u.lang = 'en-US'; u.rate = .9; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } } catch (e) {} }
+function PlanoFalar(texto, taxa) { try { if ('speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(texto); u.lang = 'en-US'; u.rate = taxa || .9; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } } catch (e) {} }
 function PlanoVocab({ vocab, titulo, onFeita, onClose, onAsk }) {
   const [i, setI] = React.useState(0); const [vira, setVira] = React.useState(false);
   const [en, pt] = vocab[i]; const ultimo = i === vocab.length - 1;
@@ -685,7 +693,7 @@ function PlanoTarefaJogo({ t, unidade, onFeita, onClose, onAsk }) {
   const g = PLANO_JOGOS[t.formato];
   return (
     <PlanoCamada titulo={t.titulo} sub={g ? g.sub : ''} onClose={onClose} onAsk={onAsk}>
-      {g ? g.render(unidade.jogos, onFeita) : <div style={{ fontWeight: 700 }}>Este jogo ainda não está disponível.</div>}
+      {g ? g.render(t.jogo ? { ...(unidade.jogos || {}), [t.formato]: t.jogo } : unidade.jogos, onFeita) : <div style={{ fontWeight: 700 }}>Este jogo ainda não está disponível.</div>}
     </PlanoCamada>
   );
 }
@@ -749,6 +757,203 @@ function PlanoTarefaVideo({ t, onFeita, onClose, onAsk }) {
 }
 
 /* ───────── tarefa que se faz em Atividades → Extras ───────── */
+/* ───────── livro dentro do app: a página como imagem + exercícios próprios ───────── */
+// As páginas ficam no Firebase Storage (só quem está logado lê): livros/{curso}/pdf-NNN.jpg.
+const PLANO_IMG = {};
+function PlanoUrlPagina(curso, pdf) {
+  const caminho = `livros/${curso}/pdf-${String(pdf).padStart(3, '0')}.jpg`;
+  if (!PLANO_IMG[caminho]) {
+    PLANO_IMG[caminho] = (typeof getFB === 'function' ? getFB() : Promise.reject(new Error('sem firebase')))
+      .then(fb => fb.getDownloadURL(fb.storageRef(fb.storage, caminho)))
+      .catch(e => { delete PLANO_IMG[caminho]; throw e; });
+  }
+  return PLANO_IMG[caminho];
+}
+
+// A página aparece inteira (largura da tela); dois toques, pinça, roda do mouse ou +/− aproximam; arrastar anda na página.
+function PlanoLeitor({ curso, pdf }) {
+  const caixa = React.useRef(null); const img = React.useRef(null);
+  const V = React.useRef({ s: 1, x: 0, y: 0, w: 0, h: 0, fit: 1 });
+  const ptr = React.useRef(new Map()); const pinca = React.useRef(null); const toque = React.useRef({ t: 0, x: 0, y: 0, mov: 0 });
+  const [url, setUrl] = React.useState(''); const [erro, setErro] = React.useState(false); const [dica, setDica] = React.useState(true);
+  const aplicar = React.useCallback(() => {
+    const c = caixa.current, el = img.current, v = V.current; if (!c || !el || !v.w) return;
+    const vw = c.clientWidth, vh = c.clientHeight, W = v.w * v.s, H = v.h * v.s;
+    v.x = W <= vw ? (vw - W) / 2 : Math.min(0, Math.max(vw - W, v.x));
+    v.y = H <= vh ? (vh - H) / 2 : Math.min(0, Math.max(vh - H, v.y));
+    el.style.transform = `translate(${v.x}px,${v.y}px) scale(${v.s})`;
+  }, []);
+  const ajustar = React.useCallback(() => { const c = caixa.current, v = V.current; if (!c || !v.w) return; v.fit = c.clientWidth / v.w; v.s = v.fit; v.x = 0; v.y = 0; aplicar(); }, [aplicar]);
+  const zoom = React.useCallback((fator, cx, cy) => {
+    const v = V.current; const novo = Math.min(v.fit * 5, Math.max(v.fit, v.s * fator)); const k = novo / v.s;
+    v.x = cx - (cx - v.x) * k; v.y = cy - (cy - v.y) * k; v.s = novo; aplicar();
+  }, [aplicar]);
+  React.useEffect(() => {
+    let vivo = true; setUrl(''); setErro(false);
+    PlanoUrlPagina(curso, pdf).then(u => { if (vivo) setUrl(u); }).catch(() => { if (vivo) setErro(true); });
+    [pdf - 1, pdf + 1].forEach(p => { if (p >= 15) PlanoUrlPagina(curso, p).catch(() => {}); });
+    return () => { vivo = false; };
+  }, [curso, pdf]);
+  React.useEffect(() => { const t = setTimeout(() => setDica(false), 3500); return () => clearTimeout(t); }, [pdf]);
+  React.useEffect(() => {
+    const c = caixa.current; if (!c) return undefined;
+    const roda = e => { e.preventDefault(); const r = c.getBoundingClientRect(); zoom(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - r.left, e.clientY - r.top); };
+    c.addEventListener('wheel', roda, { passive: false });
+    let ro = null; try { ro = new ResizeObserver(() => aplicar()); ro.observe(c); } catch (e) {}
+    return () => { c.removeEventListener('wheel', roda); if (ro) ro.disconnect(); };
+  }, [zoom, aplicar]);
+  React.useEffect(() => { const f = () => ajustar(); window.addEventListener('resize', f); return () => window.removeEventListener('resize', f); }, [ajustar]);
+  const desce = e => {
+    if (e.target.closest && e.target.closest('[data-zoomctl]')) return;
+    try { caixa.current.setPointerCapture(e.pointerId); } catch (x) {}
+    ptr.current.set(e.pointerId, { x: e.clientX, y: e.clientY }); pinca.current = null; toque.current.mov = 0;
+  };
+  const mexe = e => {
+    if (!ptr.current.has(e.pointerId)) return;
+    const ant = ptr.current.get(e.pointerId); const cur = { x: e.clientX, y: e.clientY };
+    if (ptr.current.size === 1) { const v = V.current; v.x += cur.x - ant.x; v.y += cur.y - ant.y; toque.current.mov += Math.abs(cur.x - ant.x) + Math.abs(cur.y - ant.y); ptr.current.set(e.pointerId, cur); aplicar(); }
+    else if (ptr.current.size === 2) {
+      ptr.current.set(e.pointerId, cur); const [a, b] = [...ptr.current.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); const r = caixa.current.getBoundingClientRect();
+      if (pinca.current) zoom(d / pinca.current, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top);
+      pinca.current = d; toque.current.mov += 99;
+    }
+  };
+  const sobe = e => {
+    const eraUm = ptr.current.size === 1; ptr.current.delete(e.pointerId); pinca.current = null;
+    if (eraUm && toque.current.mov < 8) {   // dois toques seguidos: aproxima ou volta
+      const agora = Date.now(); const r = caixa.current.getBoundingClientRect(); const t = toque.current;
+      if (agora - t.t < 320 && Math.hypot(e.clientX - t.x, e.clientY - t.y) < 30) { const v = V.current; if (v.s > v.fit * 1.2) ajustar(); else zoom(2.4, e.clientX - r.left, e.clientY - r.top); t.t = 0; }
+      else { t.t = agora; t.x = e.clientX; t.y = e.clientY; }
+    }
+  };
+  const meio = () => { const c = caixa.current; return c ? [c.clientWidth / 2, c.clientHeight / 2] : [0, 0]; };
+  const bt = { width: 38, height: 38, borderRadius: 12, border: 0, background: 'rgba(255,255,255,.95)', boxShadow: '0 3px 10px rgba(0,0,0,.28)', fontWeight: 800, fontSize: 18, fontFamily: 'inherit', cursor: 'pointer', color: '#0F172A' };
+  return (
+    <div ref={caixa} onPointerDown={desce} onPointerMove={mexe} onPointerUp={sobe} onPointerCancel={sobe}
+      style={{ position: 'relative', flex: 1, minHeight: 90, overflow: 'hidden', background: '#3B3F4A', touchAction: 'none', cursor: 'grab' }}>
+      {url && <img ref={img} src={url} alt="Página do livro" draggable="false" onLoad={e => { V.current.w = e.target.naturalWidth; V.current.h = e.target.naturalHeight; e.target.style.width = V.current.w + 'px'; e.target.style.height = V.current.h + 'px'; ajustar(); }}
+        style={{ position: 'absolute', left: 0, top: 0, transformOrigin: '0 0', userSelect: 'none', WebkitUserDrag: 'none', maxWidth: 'none', willChange: 'transform' }} />}
+      {!url && !erro && <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: '#CBD5E1', fontWeight: 800, fontSize: 14 }}>Abrindo a página…</div>}
+      {erro && <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: '#FECACA', fontWeight: 800, fontSize: 14, textAlign: 'center', padding: 24 }}>Não consegui abrir a página agora. Confira a internet e tente de novo.</div>}
+      <div data-zoomctl="1" style={{ position: 'absolute', right: 8, top: 8, display: 'flex', flexDirection: 'column', gap: 6, zIndex: 2 }}>
+        <button style={bt} aria-label="Aproximar" onClick={() => { const [x, y] = meio(); zoom(1.4, x, y); }}>＋</button>
+        <button style={bt} aria-label="Afastar" onClick={() => { const [x, y] = meio(); zoom(1 / 1.4, x, y); }}>−</button>
+        <button style={bt} aria-label="Ajustar à tela" onClick={ajustar}>⤢</button>
+      </div>
+      <div style={{ position: 'absolute', left: 8, bottom: 8, background: 'rgba(15,23,42,.78)', color: '#fff', fontSize: 11, fontWeight: 700, padding: '5px 10px', borderRadius: 99, pointerEvents: 'none', opacity: dica && url ? 1 : 0, transition: 'opacity .5s' }}>Pince ou dê 2 toques para ampliar</div>
+    </div>
+  );
+}
+
+const PLANO_ROTULO_EX = { mc: 'Escolher', vf: 'Verdadeiro ou falso', gap: 'Digitar', match: 'Ligar', order: 'Montar a frase', ouvir: 'Ouvir e escolher', ditado: 'Ouvir e escrever', speak: 'Falar' };
+
+// Um exercício por vez. Avisa o resultado uma única vez (onFim) e mostra a correção.
+function PlanoExercicio({ ex, onFim }) {
+  const [fim, setFim] = React.useState(null); const [sel, setSel] = React.useState(null); const [txt, setTxt] = React.useState('');
+  const [montada, setMontada] = React.useState([]); const [ligados, setLigados] = React.useState({}); const [selE, setSelE] = React.useState(null);
+  const [erros, setErros] = React.useState(0); const [piscar, setPiscar] = React.useState(null);
+  const banco = React.useMemo(() => ex.t === 'order' ? PlanoEmbaralhar(ex.w.map((w, k) => ({ w, k }))) : [], [ex]);
+  const dir = React.useMemo(() => ex.pares ? PlanoEmbaralhar(ex.pares.map((p, k) => ({ x: p[1], k }))) : [], [ex]);
+  const certaTxt = ex.t === 'mc' || ex.t === 'ouvir' ? ex.o[ex.c] : ex.t === 'vf' ? (ex.c ? 'Verdadeiro' : 'Falso') : ex.t === 'order' ? ex.w.join(' ') : (ex.a || [''])[0];
+  const fechar = (ok, extra) => { if (fim) return; setFim({ ok, extra }); onFim(ok); };
+  const confere = valor => fechar((ex.a || []).map(PlanoNormResp).includes(PlanoNormResp(valor)));
+  const opcoes = (ex.t === 'mc' || ex.t === 'ouvir') && ex.o.map((o, k) => <button key={k} disabled={!!fim} onClick={() => { setSel(k); fechar(k === ex.c); }} className={`plano-opt ${fim ? (k === ex.c ? 'ok' : k === sel ? 'no' : '') : ''}`}>{o}</button>);
+  const caixaTxt = (ex.t === 'gap' || ex.t === 'ditado') && <div style={{ marginTop: 10 }}>
+    <input value={txt} disabled={!!fim} onChange={e => setTxt(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && txt.trim()) confere(txt); }} placeholder={ex.t === 'ditado' ? 'Escreva o que você ouviu' : 'Digite a resposta'} autoCapitalize="none" autoCorrect="off" spellCheck="false"
+      style={{ width: '100%', border: `2px solid ${!fim ? '#CBD5E1' : fim.ok ? '#22C55E' : '#F87171'}`, borderRadius: 14, padding: '12px 14px', fontSize: 16, fontWeight: 700, fontFamily: 'inherit', outline: 'none', background: !fim ? '#fff' : fim.ok ? '#F0FDF4' : '#FEF2F2' }} />
+    {!fim && <button className="plano-btn" style={{ marginTop: 9 }} disabled={!txt.trim()} onClick={() => confere(txt)}>Conferir</button>}
+  </div>;
+  const ordem = ex.t === 'order' && <div style={{ marginTop: 8 }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, minHeight: 46, padding: 8, borderRadius: 12, border: '1.5px dashed #CBD5E1', marginBottom: 9 }}>
+      {montada.map(c => <button key={c.k} disabled={!!fim} onClick={() => setMontada(m => m.filter(x => x !== c))} style={{ padding: '7px 11px', borderRadius: 10, background: '#F5F3FF', border: '1.5px solid #DDD6FE', fontWeight: 800, fontSize: 14, fontFamily: 'inherit', cursor: 'pointer' }}>{c.w}</button>)}
+    </div>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+      {banco.filter(c => !montada.includes(c)).map(c => <button key={c.k} disabled={!!fim} onClick={() => setMontada(m => [...m, c])} style={{ padding: '7px 11px', borderRadius: 10, background: '#fff', border: '1.5px solid #CBD5E1', fontWeight: 800, fontSize: 14, fontFamily: 'inherit', cursor: 'pointer' }}>{c.w}</button>)}
+    </div>
+    {!fim && <button className="plano-btn" style={{ marginTop: 10 }} disabled={montada.length !== ex.w.length} onClick={() => fechar(PlanoNormResp(montada.map(c => c.w).join(' ')) === PlanoNormResp(ex.w.join(' ')))}>Conferir</button>}
+  </div>;
+  const ligar = ex.t === 'match' && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 6 }}>
+    <div>{ex.pares.map((p, k) => <button key={k} disabled={!!ligados[k]} onClick={() => setSelE(k)} className={`plano-opt ${ligados[k] ? 'ok' : selE === k ? '' : ''}`} style={selE === k && !ligados[k] ? { borderColor: '#7C3AED', background: '#F5F3FF' } : undefined}>{p[0]}</button>)}</div>
+    <div>{dir.map(c => <button key={c.k} disabled={!!ligados[c.k]} onClick={() => {
+      if (selE === null) return;
+      if (selE === c.k) { const nl = { ...ligados, [c.k]: true }; setLigados(nl); setSelE(null); if (Object.keys(nl).length === ex.pares.length) fechar(erros === 0, erros ? `Você errou ${erros} ligação(ões), mas completou.` : 'Todas ligadas de primeira.'); }
+      else { setErros(n => n + 1); setPiscar(c.k); setTimeout(() => setPiscar(null), 450); }
+    }} className={`plano-opt ${ligados[c.k] ? 'ok' : piscar === c.k ? 'no' : ''}`}>{c.x}</button>)}</div>
+  </div>;
+  const fala = ex.t === 'speak' && <div style={{ marginTop: 6 }}>
+    {ex.dica && <div style={{ fontSize: 13, fontWeight: 700, color: '#64748B', lineHeight: 1.45, marginBottom: 10 }}>{ex.dica}</div>}
+    {!fim && <button className="plano-btn violeta" onClick={() => fechar(true)}>🎤 Já falei em voz alta ✓</button>}
+  </div>;
+  return (
+    <div>
+      <div style={{ display: 'inline-block', fontSize: 10, fontWeight: 800, letterSpacing: .6, textTransform: 'uppercase', color: '#5B21B6', background: '#F5F3FF', border: '1px solid #DDD6FE', padding: '2px 9px', borderRadius: 99, marginBottom: 7 }}>{PLANO_ROTULO_EX[ex.t] || 'Exercício'}</div>
+      <div style={{ fontSize: 15.5, fontWeight: 800, lineHeight: 1.4, marginBottom: 6 }}>{ex.q}</div>
+      {(ex.t === 'ouvir' || ex.t === 'ditado') && <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
+        <button className="plano-btn sec" style={{ width: 'auto', padding: '9px 14px', fontSize: 14 }} onClick={() => PlanoFalar(ex.fala)}>🔊 Ouvir</button>
+        <button className="plano-btn sec" style={{ width: 'auto', padding: '9px 14px', fontSize: 14 }} onClick={() => PlanoFalar(ex.fala, .6)}>🐢 Devagar</button>
+      </div>}
+      {ex.t === 'vf' && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 7 }}>{[[true, 'Verdadeiro'], [false, 'Falso']].map(([v, l]) => <button key={l} disabled={!!fim} onClick={() => { setSel(v); fechar(v === ex.c); }} className={`plano-opt ${fim ? (v === ex.c ? 'ok' : v === sel ? 'no' : '') : ''}`} style={{ textAlign: 'center', marginTop: 0 }}>{l}</button>)}</div>}
+      {opcoes}{caixaTxt}{ordem}{ligar}{fala}
+      {fim && ex.t !== 'speak' && ex.t !== 'match' && <div style={{ marginTop: 11, padding: '10px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, background: fim.ok ? '#F0FDF4' : '#FEF2F2', color: fim.ok ? '#14532D' : '#7F1D1D', border: `1px solid ${fim.ok ? '#BBF7D0' : '#FECACA'}` }}>
+        {fim.ok ? '✔ Isso!' : `✘ A resposta certa é: ${certaTxt}`}{ex.exp ? <div style={{ fontWeight: 600, marginTop: 3 }}>{ex.exp}</div> : null}</div>}
+      {fim && ex.t === 'match' && <div style={{ marginTop: 11, padding: '10px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, background: fim.ok ? '#F0FDF4' : '#FFFBEB', color: fim.ok ? '#14532D' : '#78350F', border: `1px solid ${fim.ok ? '#BBF7D0' : '#FDE68A'}` }}>{fim.ok ? '✔ ' : ''}{fim.extra}</div>}
+    </div>
+  );
+}
+
+// Tarefa "Livro": a página do livro em cima, os exercícios dela numa gaveta embaixo.
+function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk }) {
+  const exs = t.exercicios || []; const total = exs.length;
+  const [pdf, setPdf] = React.useState(t.pdf); const [i, setI] = React.useState(0); const [res, setRes] = React.useState([]);
+  const [aberta, setAberta] = React.useState(false); const [respondeu, setRespondeu] = React.useState(false);
+  const acabou = total > 0 && i >= total; const acertos = res.filter(r => r === true).length;
+  const respondidos = res.filter(r => r !== undefined).length;
+  const onFim = ok => { setRes(r => { const n = [...r]; if (n[i] === undefined) n[i] = ok; return n; }); setRespondeu(true); };
+  const pagina = pdf - 14; const btn = { width: 34, height: 34, borderRadius: 10, border: 0, background: '#F5F3FF', color: '#5B21B6', fontWeight: 800, fontSize: 18, fontFamily: 'inherit', cursor: 'pointer' };
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(15,23,42,.4)', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ width: '100%', maxWidth: 480, height: '100%', background: '#F6F1EA', display: 'flex', flexDirection: 'column', animation: 'planoSurge .22s' }}>
+        <div style={{ background: '#fff', borderBottom: '1px solid rgba(var(--brand-rgb),.12)', padding: '9px 10px', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <button onClick={onClose} aria-label="Fechar" style={{ width: 36, height: 36, borderRadius: 12, border: 0, background: '#F1F5F9', fontSize: 18, fontWeight: 800, color: '#475569', cursor: 'pointer' }}>✕</button>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A', lineHeight: 1.15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.titulo}</div>
+            <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B' }}>Connectivity 1 · página {pagina}</div>
+          </div>
+          <button style={btn} aria-label="Página anterior" disabled={pdf <= 15} onClick={() => setPdf(p => p - 1)}>‹</button>
+          <button style={btn} aria-label="Próxima página" disabled={pdf >= 177} onClick={() => setPdf(p => p + 1)}>›</button>
+          {onAsk && <button onClick={onAsk} aria-label="Dúvida" style={{ ...btn, width: 'auto', padding: '0 9px', fontSize: 15 }}>💬</button>}
+        </div>
+        <PlanoLeitor curso={cursoId} pdf={pdf} />
+        {total === 0
+          ? <div style={{ padding: '10px 14px calc(12px + env(safe-area-inset-bottom, 0px))', background: '#fff', borderTop: '1px solid rgba(var(--brand-rgb),.12)', flexShrink: 0 }}>
+            <button className="plano-btn violeta" onClick={onFeita}>Já li a página ✓</button></div>
+          : <div style={{ background: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, boxShadow: '0 -8px 24px rgba(15,23,42,.18)', flexShrink: 0, display: 'flex', flexDirection: 'column', height: aberta ? '54%' : 'auto', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+            <button onClick={() => setAberta(a => !a)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', border: 0, background: 'none', padding: '11px 14px 10px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left', flexShrink: 0 }}>
+              <span style={{ fontSize: 14, fontWeight: 800, flex: 1 }}>✏️ Exercícios desta página</span>
+              <span style={{ fontSize: 11.5, fontWeight: 800, color: '#5B21B6', background: '#F5F3FF', border: '1px solid #DDD6FE', padding: '3px 10px', borderRadius: 99 }}>{respondidos}/{total}</span>
+              <span style={{ fontSize: 12, color: '#64748B' }}>{aberta ? '▼' : '▲'}</span>
+            </button>
+            {aberta && <div style={{ flex: 1, overflowY: 'auto', padding: '2px 14px 16px' }}>
+              {acabou
+                ? <div style={{ textAlign: 'center', padding: '8px 4px' }}>
+                  <div style={{ fontSize: 46 }}>🎉</div>
+                  <div style={{ fontSize: 19, fontWeight: 800, margin: '2px 0' }}>{acertos} de {total} certas</div>
+                  <div style={{ color: '#64748B', fontWeight: 700, fontSize: 13, margin: '0 0 12px' }}>Você pode rever a página antes de concluir.</div>
+                  <button className="plano-btn" onClick={onFeita}>Concluir tarefa ✓</button>
+                  <button className="plano-btn sec" style={{ marginTop: 8 }} onClick={() => { setI(0); setRes([]); setRespondeu(false); }}>Refazer os exercícios</button>
+                </div>
+                : <>
+                  <div style={{ display: 'flex', gap: 5, marginBottom: 10 }}>{exs.map((e, k) => <div key={e.id || k} style={{ flex: 1, height: 5, borderRadius: 9, background: k < i ? '#22C55E' : k === i ? '#7C3AED' : '#E2E8F0' }} />)}</div>
+                  <PlanoExercicio key={exs[i].id || i} ex={exs[i]} onFim={onFim} />
+                  {respondeu && <button className="plano-btn" style={{ marginTop: 12 }} onClick={() => { setI(i + 1); setRespondeu(false); }}>{i + 1 >= total ? 'Ver resultado' : 'Continuar ›'}</button>}
+                </>}
+            </div>}
+          </div>}
+      </div>
+    </div>
+  );
+}
+
 function PlanoTarefaExtra({ t, unidade, onAbrirExtras, onFeita, onClose, onAsk }) {
   return (
     <PlanoCamada titulo={t.titulo} sub={t.sub} onClose={onClose} onAsk={onAsk}
@@ -764,12 +969,13 @@ function PlanoTarefaExtra({ t, unidade, onAbrirExtras, onFeita, onClose, onAsk }
 /* ───────── mini-teste + "Agora eu consigo" + selo ───────── */
 function PlanoTarefaTeste({ t, unidade, onFeita, onClose, onAsk }) {
   const [fase, setFase] = React.useState('perguntas'); const [marcas, setMarcas] = React.useState({});
+  const perguntas = t.perguntas || unidade.perguntas[t.ref]; const minimo = t.perguntas ? Math.ceil(perguntas.length * 0.7) : 7;
   return (
-    <PlanoCamada titulo={t.titulo} sub={fase === 'perguntas' ? 'Acerte 7 ou mais para ganhar o selo' : 'Agora eu consigo…'} onClose={onClose} onAsk={onAsk}>
+    <PlanoCamada titulo={t.titulo} sub={fase === 'perguntas' ? `Acerte ${minimo} ou mais para ganhar o selo` : 'Agora eu consigo…'} onClose={onClose} onAsk={onAsk}>
       {fase === 'perguntas'
-        ? <PlanoPerguntas perguntas={unidade.perguntas[t.ref]} minimo={7} rotuloFim="Continuar ›" onFim={() => setFase('selo')} />
+        ? <PlanoPerguntas perguntas={perguntas} minimo={minimo} rotuloFim="Continuar ›" onFim={() => setFase('selo')} />
         : <div>
-          <div style={{ textAlign: 'center', padding: '6px 0 16px' }}><div style={{ fontSize: 64 }}>🏅</div><div style={{ fontSize: 22, fontWeight: 800 }}>Selo da Unit 4!</div><div style={{ color: '#64748B', fontWeight: 700, fontSize: 13.5 }}>Marque o que você já consegue fazer:</div></div>
+          <div style={{ textAlign: 'center', padding: '6px 0 16px' }}><div style={{ fontSize: 64 }}>🏅</div><div style={{ fontSize: 22, fontWeight: 800 }}>Selo da Unit {unidade.numero || 4}!</div><div style={{ color: '#64748B', fontWeight: 700, fontSize: 13.5 }}>Marque o que você já consegue fazer:</div></div>
           {unidade.agoraPosso.map(a => <button key={a} onClick={() => setMarcas(m => ({ ...m, [a]: !m[a] }))} style={{ display: 'flex', width: '100%', alignItems: 'center', gap: 12, textAlign: 'left', background: marcas[a] ? '#F0FDF4' : '#fff', border: `1.5px solid ${marcas[a] ? '#22C55E' : '#E2E8F0'}`, borderRadius: 14, padding: '12px 14px', marginBottom: 8, fontFamily: 'inherit', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>
             <span style={{ width: 24, height: 24, borderRadius: 7, background: marcas[a] ? '#22C55E' : '#fff', border: `2px solid ${marcas[a] ? '#22C55E' : '#CBD5E1'}`, color: '#fff', display: 'grid', placeItems: 'center', fontSize: 14, flexShrink: 0 }}>{marcas[a] ? '✓' : ''}</span>{a}</button>)}
           <button className="plano-btn" style={{ marginTop: 10 }} onClick={onFeita}>Concluir a unidade ✓</button>
@@ -879,7 +1085,7 @@ function PlanoAulasLista({ posaulas, onOpenPost }) {
 }
 
 /* ───────── o conteúdo do plano (troca o miolo do app) ───────── */
-function PlanoConteudo({ tab, onTab, cfg, student, posaulas, activities, slots, onOpenPost, onAsk }) {
+function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slots, onOpenPost, onAsk }) {
   const uid = student.uid || 'x';
   const [feitas, marcar, zerar] = usePlanoFeitas(uid);
   const chaveBV = `plano-boasvindas-v1-${uid}`;
@@ -917,7 +1123,10 @@ function PlanoConteudo({ tab, onTab, cfg, student, posaulas, activities, slots, 
       {!tarefa && !aula && !duvida && tab !== 'perfil' &&
         <button onClick={() => setDuvida({ contexto: '' })} aria-label="Tirar dúvida" style={{ position: 'fixed', bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))', right: 'max(16px, calc(50vw - 224px))', zIndex: 300, width: 54, height: 54, borderRadius: '50%', border: 0, background: 'linear-gradient(150deg,#8B5CF6,#6D28D9)', color: '#fff', fontSize: 24, boxShadow: '0 10px 24px rgba(109,40,217,.4)', cursor: 'pointer' }}>💬</button>}
 
-      {tarefa && tarefa.tipo === 'livro' && <PlanoTarefaLivro t={tarefa} unidade={u} onFeita={f} onClose={fechar} onAsk={perguntar} />}
+      {tarefa && tarefa.tipo === 'livro' && (tarefa.pdf
+        ? <PlanoTarefaPagina t={tarefa} cursoId={cfg.cursoId} onFeita={f} onClose={fechar} onAsk={perguntar} />
+        : <PlanoTarefaLivro t={tarefa} unidade={u} onFeita={f} onClose={fechar} onAsk={perguntar} />)}
+      {tarefa && tarefa.tipo === 'revisao' && <PlanoCamada titulo={tarefa.titulo} sub={tarefa.sub} onClose={fechar}><div style={{ background: '#fff', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: '#64748B' }}>📝 Esta revisão ainda está sendo montada.</div></PlanoCamada>}
       {tarefa && tarefa.tipo === 'posaula' && <PlanoTarefaPosaula t={tarefa} unidade={u} posaulas={posaulas} onOpenPost={onOpenPost} onFeita={f} onClose={fechar} onAsk={perguntar} />}
       {tarefa && tarefa.tipo === 'estudo' && <PlanoEstudo estudo={u.estudos[tarefa.ref]} unidade={u} posaulas={posaulas} onOpenPost={onOpenPost} onFeita={f} onClose={fechar} onAsk={perguntar} />}
       {tarefa && tarefa.tipo === 'vocab' && <PlanoVocab vocab={u.vocab[tarefa.ref]} titulo={tarefa.titulo} onFeita={f} onClose={fechar} onAsk={perguntar} />}
@@ -931,4 +1140,66 @@ function PlanoConteudo({ tab, onTab, cfg, student, posaulas, activities, slots, 
       {aviso && <div style={{ position: 'fixed', left: '50%', bottom: 'calc(150px + env(safe-area-inset-bottom, 0px))', transform: 'translateX(-50%)', background: '#0F172A', color: '#fff', padding: '10px 18px', borderRadius: 12, fontSize: 13.5, fontWeight: 700, zIndex: 700, whiteSpace: 'nowrap', animation: 'planoSurge .2s' }}>{aviso}</div>}
     </>
   );
+}
+
+/* ───────── o curso (livro no app): carrega a unidade do Firestore e monta o Caminho ───────── */
+const PLANO_CURSO_CACHE = {};
+function PlanoCarregarDoc(chave, caminho) {
+  if (!PLANO_CURSO_CACHE[chave]) {
+    PLANO_CURSO_CACHE[chave] = (typeof getFB === 'function' ? getFB() : Promise.reject(new Error('sem firebase')))
+      .then(fb => fb.getDoc(fb.doc(fb.db, ...caminho)))
+      .then(s => (s.exists() ? s.data() : null))
+      .catch(e => { delete PLANO_CURSO_CACHE[chave]; throw e; });
+  }
+  return PLANO_CURSO_CACHE[chave];
+}
+function PlanoNumUnidade(id) { return parseInt(String(id || '').replace(/\D/g, ''), 10) || 0; }
+
+// Transforma a unidade do curso no mesmo formato de cfg que o Caminho já entende.
+// `ocultos` guarda o que o César desligou no painel (tarefas ou exercícios soltos).
+function PlanoCfgDoCurso(cfg, indice, un, ref, setSel) {
+  const oc = new Set(un.ocultos || []);
+  // O Firestore guarda pares como {a, b} (não aceita lista dentro de lista); o resto do app usa [a, b].
+  const par = p => (Array.isArray(p) ? p : [p.a, p.b]);
+  const exercicio = e => (e.t === 'match' ? { ...e, pares: (e.pares || []).map(par) } : e);
+  const tarefas = (un.tarefas || []).filter(t => !oc.has(t.id))
+    .map(t => {
+      const n = t.exercicios ? { ...t, exercicios: t.exercicios.filter(e => !oc.has(e.id)).map(exercicio) } : { ...t };
+      if (t.tipo === 'jogo' && t.formato === 'memoria' && t.jogo) n.jogo = t.jogo.map(par);
+      return n;
+    })
+    .filter(t => !(t.tipo === 'teste' && !(t.perguntas && t.perguntas.length)));
+  const vocab = {}; Object.keys(un.vocab || {}).forEach(k => { vocab[k] = un.vocab[k].map(par); });
+  const unidade = { id: un.id, numero: un.n, titulo: un.titulo, livro: un.livro, vocab, agoraPosso: un.agoraPosso || [], jogos: {}, perguntas: {}, estudos: {}, temas: {}, semanas: [] };
+  const a0 = (cfg.aulas && cfg.aulas[0] && cfg.aulas[0].id) || 'a0'; const a1 = (cfg.aulas && cfg.aulas[1] && cfg.aulas[1].id) || 'a1';
+  const lista = ((indice && indice.unidades) || []).filter(u => u.pronta && u.n >= PlanoNumUnidade(ref.inicial) && u.n <= PlanoNumUnidade(ref.atual));
+  const prox = ((indice && indice.unidades) || []).find(u => u.n === un.n + 1 && u.pronta);
+  const pacotes = [{ aula: a0, titulo: `Unit ${un.n} · ${un.titulo}`, tarefas }];
+  if (prox && un.id === ref.atual) pacotes.push({ aula: a1, futuro: true, titulo: `Unit ${prox.n} · ${prox.titulo}`, tarefas: [{ id: 'f1', ic: '📖', titulo: 'Livro' }, { id: 'f2', ic: '🔤', titulo: 'Vocabulário' }, { id: 'f3', ic: '🃏', titulo: 'Jogo' }, { id: 'f4', ic: '🏁', titulo: 'Mini-teste' }] });
+  return { ...cfg, unidade, pacotes, cursoId: ref.id, unidadesLista: lista, onUnidade: setSel };
+}
+
+function PlanoConteudoCurso(props) {
+  const ref = props.cfg.cursoRef;
+  const [sel, setSel] = React.useState(ref.atual);
+  const [dados, setDados] = React.useState(null); const [erro, setErro] = React.useState('');
+  React.useEffect(() => {
+    let vivo = true; setDados(null); setErro('');
+    Promise.all([PlanoCarregarDoc(`${ref.id}`, ['cursos', ref.id]), PlanoCarregarDoc(`${ref.id}/${sel}`, ['cursos', ref.id, 'unidades', sel])])
+      .then(([indice, un]) => { if (!vivo) return; if (!un) setErro('Esta unidade ainda não está pronta.'); else setDados({ indice, un: { ...un, id: sel } }); })
+      .catch(() => { if (vivo) setErro('Não consegui carregar o conteúdo agora. Confira a internet e abra o app de novo.'); });
+    return () => { vivo = false; };
+  }, [ref.id, sel]);
+  const cfg = React.useMemo(() => (dados ? PlanoCfgDoCurso(props.cfg, dados.indice, dados.un, ref, setSel) : null), [dados, props.cfg, ref]);
+  if (!cfg) {
+    if (props.tab !== 'caminho') return <PlanoConteudoBase {...props} />;
+    return <div className="scroll-area" style={{ padding: '40px 24px', textAlign: 'center', fontWeight: 700, color: erro ? '#B91C1C' : '#64748B' }}>
+      <style>{PLANO_CSS}</style>{erro || 'Carregando o seu caminho…'}</div>;
+  }
+  return <PlanoConteudoBase {...props} cfg={cfg} />;
+}
+
+// Quem tem plano.livro vê o curso (livro no app); os demais continuam com o pacote da Unit 4.
+function PlanoConteudo(props) {
+  return props.cfg && props.cfg.cursoRef ? <PlanoConteudoCurso {...props} /> : <PlanoConteudoBase {...props} />;
 }
