@@ -6396,13 +6396,18 @@ function App() {
   // EurekIA, o assistente de dúvidas de inglês, para TODOS os alunos (no Caminho do Science Lab, além do botão
   // flutuante, cada tarefa tem o seu 💡). Escolas de outros professores só veem se o professor liberou
   // (schools/{id}.assistente === true); o servidor confere de novo.
-  const assistenteLiberado = !mirror && typeof PlanoPerguntar === 'function' && student?.assistente !== false
+  // `assistenteDoAluno`: o aluno tem a EurekIA (é o que o espelho mostra). `assistenteLiberado`: quem está logado
+  // pode de fato perguntar. No espelho o logado é o admin: o servidor contaria a cota e gravaria a dúvida na conta
+  // dele, então lá o botão aparece mas só avisa que é somente leitura.
+  const assistenteDoAluno = typeof PlanoPerguntar === 'function' && student?.assistente !== false
     && !(student?.plano && student.plano.assistente === false)
     && (!student?.schoolId || student.schoolId === 'science-english' || student.escolaAssistente === true);
+  const assistenteLiberado = !mirror && assistenteDoAluno;
+  const abrirAssistente = () => { if (mirror) { showToast('👁 Modo espelho — somente leitura'); return; } setDuvidaGeral(true); };
   const emAtividade = !!(openActivity || openPart || openExtra || readerPost);   // aqui ela também fica à mão, por cima da atividade
   const assistenteBloqueado = !!(adesaoPage || openCorrecao || challengeView);   // no desafio e na correção, não
   // Nas telas principais: botão flutuante. Dentro das atividades ela vem no cabeçalho (ao lado do X), sem cobrir nada.
-  const mostraBotaoIA = assistenteLiberado && !assistenteBloqueado && !duvidaGeral && !emAtividade && !planoCfg && tab !== 'perfil';
+  const mostraBotaoIA = assistenteDoAluno && !assistenteBloqueado && !duvidaGeral && !emAtividade && !planoCfg && tab !== 'perfil';
   const contextoAssistente = openPart ? [openActivity?.title, openPart.title].filter(Boolean).join(' — ')
     : openActivity ? (openActivity.title || '') : openExtra ? (openExtra.title || 'Atividade extra')
     : readerPost ? `Pós-aula: ${postTitle(readerPost)}` : '';
@@ -6471,7 +6476,7 @@ function App() {
       <StudyTimer adesao={adesao} student={student} usageArea={usageArea} mirror={mirror} />
 
       {mostraBotaoIA &&
-        <button onClick={() => setDuvidaGeral(true)} aria-label="Perguntar à EurekIA" style={{ position: 'fixed', bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))', right: 'max(16px, calc(50vw - 224px))', zIndex: 300, width: 54, height: 54, borderRadius: '50%', border: 0, padding: 0, background: 'none', boxShadow: '0 10px 24px rgba(109,40,217,.4)', cursor: 'pointer' }}><EurekiaAvatar size={54} /></button>}
+        <button onClick={abrirAssistente} aria-label="Perguntar à EurekIA" style={{ position: 'fixed', bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))', right: 'max(16px, calc(50vw - 224px))', zIndex: 300, width: 54, height: 54, borderRadius: '50%', border: 0, padding: 0, background: 'none', boxShadow: '0 10px 24px rgba(109,40,217,.4)', cursor: 'pointer' }}><EurekiaAvatar size={54} /></button>}
       {assistenteLiberado && duvidaGeral && <>
         <style>{PLANO_CSS}</style>
         <PlanoPerguntar z={1000} cfg={planoCfg ? { ...planoCfg, assistente: true } : { nome: 'Science English', assistente: true, previa: false }} student={student} contexto={contextoAssistente} sugestao={perguntaPronta} onAsk={perguntarAssistente} onClose={() => { setDuvidaGeral(false); setPerguntaPronta(''); }} />
@@ -6553,9 +6558,9 @@ function App() {
         onPlay={state => { setPeerLiveDuel(null); setPeerGameState(state); }}
       />}
 
-      <ActivityModal activity={openActivity} onClose={handleCloseAll} onOpenPart={handleOpenPart} onAsk={assistenteLiberado ? () => setDuvidaGeral(true) : null} />
-      <PartModal part={openPart} activity={openActivity} posaulas={posaulas} onBack={handleClosePart} onClose={handleCloseAll} onFinish={handleFinishPart} onSaveDraft={handleSaveDraftPart} onReadPost={markPostRead} mirror={mirror} onAsk={assistenteLiberado ? () => setDuvidaGeral(true) : null} />
-      <ExtraModal extra={openExtra} onClose={() => setOpenExtra(null)} onFinish={handleFinishExtra} onSaveDraft={handleSaveDraftExtra} mirror={mirror} posaulas={posaulas} onReadPost={markPostRead} onAsk={assistenteLiberado ? () => setDuvidaGeral(true) : null} />
+      <ActivityModal activity={openActivity} onClose={handleCloseAll} onOpenPart={handleOpenPart} onAsk={assistenteDoAluno ? abrirAssistente : null} />
+      <PartModal part={openPart} activity={openActivity} posaulas={posaulas} onBack={handleClosePart} onClose={handleCloseAll} onFinish={handleFinishPart} onSaveDraft={handleSaveDraftPart} onReadPost={markPostRead} mirror={mirror} onAsk={assistenteDoAluno ? abrirAssistente : null} />
+      <ExtraModal extra={openExtra} onClose={() => setOpenExtra(null)} onFinish={handleFinishExtra} onSaveDraft={handleSaveDraftExtra} mirror={mirror} posaulas={posaulas} onReadPost={markPostRead} onAsk={assistenteDoAluno ? abrirAssistente : null} />
       <CorrecaoModal data={openCorrecao} onClose={() => setOpenCorrecao(null)} />
 
       <AvisoModal aviso={avisos[0] || null} onConfirmar={confirmarAviso} />
