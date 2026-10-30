@@ -268,6 +268,13 @@ service cloud.firestore {
 
       // Agenda e expediente são privados do professor. Alunos não recebem
       // acesso, inclusive aos compromissos marcados como particulares.
+      // EurekIA: resumo por aluno (a função grava; o professor lê e zera a "bolinha" de pergunta nova).
+      match /eurekiaAlunos/{alunoId} {
+        allow read: if isAdmin() || ownsSchool(schoolId);
+        allow update: if (isAdmin() || ownsSchool(schoolId))
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['naoVistas', 'vistaEm']);
+      }
+
       match /calendarEvents/{eventId} {
         allow read, write: if isAdmin() || ownsSchool(schoolId);
       }
@@ -337,6 +344,11 @@ service cloud.firestore {
           && request.resource.data.schoolId == resource.data.schoolId)
         || (isOwnStudent(uid) && studentProfileUpdateIsSafe());
       allow delete: if managesStudent(uid);
+
+      // EurekIA: perguntas e respostas do aluno. A função grava; só o professor lê (o aluno nunca vê o histórico dos outros).
+      match /duvidas/{duvidaId} {
+        allow read: if managesStudent(uid);
+      }
 
       // Progresso no Caminho (livro no app): o que a aluna já fez, guardado na conta dela (vale em qualquer aparelho).
       match /planoProgresso/{docId} {

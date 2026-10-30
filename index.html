@@ -173,6 +173,7 @@
 <script type="text/babel" data-presets="react" src="challenge.jsx"></script>
 <script type="text/babel" data-presets="react" src="plano.jsx"></script>
 <script type="text/babel" data-presets="react" src="trilha.jsx"></script>
+<script type="text/babel" data-presets="react" src="novidades.jsx"></script>
 <script type="text/babel" data-presets="react">
 const FB_CONFIG = {
   apiKey:            "AIzaSyDgDlLyU15p8wQ1YtCN8NebGes_oq3atU8",
@@ -243,7 +244,7 @@ async function getFB() {
 // Falha de gravação (regra ainda não publicada, sem rede) nunca aparece para o aluno.
 const CzkUsage = (() => {
   // Versão do app que vai junto com o uso (para saber quem ainda roda versão velha). Mantenha igual ao CACHE do sw.js.
-  const APP_BUILD = 'v50';
+  const APP_BUILD = 'v51';
   const TICK = 1000, MIN_STEP = 200, FLUSH = 60000, NEW_VISIT = 30 * 60000;
   const BLIND_CAP = 10 * 60000, HOLD_CAP = 15 * 60000, MAX_FAILS = 5;
   const READ_MS = 180000;                 // maior pausa aceita na leitura do pós-aula (igual a LEITURA_SEG do adesao.js)
@@ -3871,7 +3872,7 @@ function OralExercisePanel({ exercise, saved = {}, readOnly = false, lockComplet
   );
 }
 
-function ExtraModal({ extra, onClose, onFinish, onSaveDraft, mirror, posaulas, onReadPost }) {
+function ExtraModal({ extra, onClose, onFinish, onSaveDraft, mirror, posaulas, onReadPost, onAsk }) {
   const contentRef = useRef(null);
   const valuesRef  = useRef({});
   const audioRef   = useRef({ blob: null, ext: null });
@@ -3957,6 +3958,7 @@ function ExtraModal({ extra, onClose, onFinish, onSaveDraft, mirror, posaulas, o
           {total > 0 && (
             <div style={{ fontSize: 12, fontWeight: 800, color: pct === 100 ? 'var(--brand)' : '#9A6438', flexShrink: 0 }}>{pct}%</div>
           )}
+          {onAsk && <EurekiaMini onClick={onAsk} />}
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -5209,7 +5211,7 @@ function PerfilTab({ student, mirror, onLogout, onPatchStudent, reviews = [], ow
 }
 
 // ── Activity Modals ──────────────────────────────────────────────
-function ActivityModal({ activity, onClose, onOpenPart }) {
+function ActivityModal({ activity, onClose, onOpenPart, onAsk }) {
   const parts = activity?.parts || [];
   return (
     <div className={'modal-overlay' + (activity ? ' open' : '')} onClick={e => e.target === e.currentTarget && onClose()}>
@@ -5221,6 +5223,7 @@ function ActivityModal({ activity, onClose, onOpenPart }) {
             {activity?.week && <div style={{ fontSize: 11, color: '#9A6438', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>{activity.week}</div>}
             <div style={{ fontSize: 15, fontWeight: 800, color: '#0F172A' }}>{activity?.title || 'Atividade'}</div>
           </div>
+          {onAsk && <EurekiaMini onClick={onAsk} />}
           <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: '#F1F5F9', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', fontFamily: 'inherit' }}>&#x2715;</button>
         </div>
         <div style={{ padding: 16 }}>
@@ -5356,7 +5359,7 @@ function PosaulaPeek({ open, activity, posaulas, onClose, onRead, titulo }) {
   );
 }
 
-function PartModal({ part, activity, posaulas, onBack, onClose, onFinish, onSaveDraft, onReadPost, mirror = false }) {
+function PartModal({ part, activity, posaulas, onBack, onClose, onFinish, onSaveDraft, onReadPost, mirror = false, onAsk }) {
   const contentRef = useRef(null);
   const valuesRef  = useRef({});
   const oralDraftsRef = useRef({});
@@ -5450,6 +5453,7 @@ function PartModal({ part, activity, posaulas, onBack, onClose, onFinish, onSave
           {total > 0 && !isCorrected && (
             <div style={{ fontSize: 12, fontWeight: 800, color: pct === 100 ? 'var(--brand)' : '#9A6438', flexShrink: 0 }}>{pct}%</div>
           )}
+          {onAsk && <EurekiaMini onClick={onAsk} />}
           <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: '#F1F5F9', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', flexShrink: 0, fontFamily: 'inherit' }}>&#x2715;</button>
         </div>
 
@@ -5640,7 +5644,10 @@ function App() {
   const [bootError, setBootError]       = useState(null);
   const [tab, setTab]                   = useState('home');
   const [planoTab, setPlanoTab]         = useState('caminho');   // aba do Caminho (só para quem está no plano — ver plano.jsx)
-  const [duvidaGeral, setDuvidaGeral]   = useState(false);   // assistente de dúvidas aberto (alunos fora do plano)
+  const [duvidaGeral, setDuvidaGeral]   = useState(false);   // EurekIA (assistente de dúvidas) aberta
+  const [perguntaPronta, setPerguntaPronta] = useState('');  // pergunta já escrita ao abrir pela apresentação ("Experimentar agora")
+  const [novidadesFechadas, setNovidadesFechadas] = useState({});   // apresentações de novidade já fechadas nesta sessão
+  const introForcada = useRef(new URLSearchParams(window.location.search).get('intro') || '').current;   // ?intro=eurekia ou ?intro=adesao: só para ver
   const [adesaoPage, setAdesaoPage]     = useState(null);   // página de adesão aberta: { dia }
   const [vocabView, setVocabView]       = useState(null);   // seção aberta em Vocabulário (palavras, verbos, chunks) — só para o tempo de estudo
   const [challengeView, setChallengeView] = useState(null);
@@ -6386,11 +6393,41 @@ function App() {
     const r = await fb.httpsCallable(fb.functions, 'perguntarAssistente', { timeout: 60000 })({ pergunta, contexto, anterior: anterior || null });
     return r.data;
   };
-  // Assistente de dúvidas de inglês para TODOS os alunos (no Caminho do Science Lab ele já vem pelo 💬 de cada tarefa).
-  // Escolas de outros professores só veem se o professor liberou (schools/{id}.assistente === true); o servidor confere de novo.
-  const podeAssistente = !mirror && !planoCfg && typeof PlanoPerguntar === 'function' && student?.assistente !== false
+  // EurekIA, o assistente de dúvidas de inglês, para TODOS os alunos (no Caminho do Science Lab, além do botão
+  // flutuante, cada tarefa tem o seu 💡). Escolas de outros professores só veem se o professor liberou
+  // (schools/{id}.assistente === true); o servidor confere de novo.
+  const assistenteLiberado = !mirror && typeof PlanoPerguntar === 'function' && student?.assistente !== false
+    && !(student?.plano && student.plano.assistente === false)
     && (!student?.schoolId || student.schoolId === 'science-english' || student.escolaAssistente === true);
-  const algumaTelaAberta = !!(adesaoPage || readerPost || openActivity || openPart || openExtra || openCorrecao || challengeView);
+  const emAtividade = !!(openActivity || openPart || openExtra || readerPost);   // aqui ela também fica à mão, por cima da atividade
+  const assistenteBloqueado = !!(adesaoPage || openCorrecao || challengeView);   // no desafio e na correção, não
+  // Nas telas principais: botão flutuante. Dentro das atividades ela vem no cabeçalho (ao lado do X), sem cobrir nada.
+  const mostraBotaoIA = assistenteLiberado && !assistenteBloqueado && !duvidaGeral && !emAtividade && !planoCfg && tab !== 'perfil';
+  const contextoAssistente = openPart ? [openActivity?.title, openPart.title].filter(Boolean).join(' — ')
+    : openActivity ? (openActivity.title || '') : openExtra ? (openExtra.title || 'Atividade extra')
+    : readerPost ? `Pós-aula: ${postTitle(readerPost)}` : '';
+
+  // Apresentações de novidade (novidades.jsx): uma vez por aluno, uma de cada vez, nunca por cima de outro aviso.
+  // EurekIA: na próxima abertura. Adesão: só depois que o professor liberar (schools/{escola}.adesao.liberadaEm).
+  const novidadeVista = chave => { try { return !!localStorage.getItem(`czk-novidade-${chave}-${student?.uid}`); } catch (e) { return false; } };
+  const fecharNovidade = chave => {
+    if (!introForcada && !mirror) { try { localStorage.setItem(`czk-novidade-${chave}-${student?.uid}`, '1'); } catch (e) {} }
+    setNovidadesFechadas(f => ({ ...f, [chave]: true }));
+  };
+  const outrosAvisos = !!(avisos.length || reviewReady || challengeBadgeItems || achievementItems || showCourseReviewPrompt || challengeView || adesaoPage
+    || openActivity || openPart || openExtra || openCorrecao || readerPost || duvidaGeral || (!mirror && student?.avisoCobranca?.ativo && !avisoCobrancaFechado));
+  const novidadeAtual = (() => {
+    if (typeof NovidadePassos !== 'function' || !student?.uid || outrosAvisos) return null;
+    if (introForcada) {
+      if (introForcada === 'eurekia' && !novidadesFechadas.eurekia) return 'eurekia';
+      if (introForcada === 'adesao' && !novidadesFechadas.adesao && adesao.result) return 'adesao';
+      return null;
+    }
+    if (mirror) return null;
+    if (assistenteLiberado && !novidadesFechadas.eurekia && !novidadeVista('eurekia')) return 'eurekia';
+    if (adesao.visivel && adesao.liberado && adesao.result && !novidadesFechadas.adesao && !novidadeVista('adesao')) return 'adesao';
+    return null;
+  })();
 
   async function confirmarAvisoCobranca() {
     if (mirror || !user?.uid) return;
@@ -6433,12 +6470,16 @@ function App() {
       {planoCfg ? <PlanoNav active={planoTab} onChange={setPlanoTab} /> : <BottomNav active={tab} onChange={setTab} />}
       <StudyTimer adesao={adesao} student={student} usageArea={usageArea} mirror={mirror} />
 
-      {podeAssistente && !algumaTelaAberta && !duvidaGeral && tab !== 'perfil' &&
+      {mostraBotaoIA &&
         <button onClick={() => setDuvidaGeral(true)} aria-label="Perguntar à EurekIA" style={{ position: 'fixed', bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))', right: 'max(16px, calc(50vw - 224px))', zIndex: 300, width: 54, height: 54, borderRadius: '50%', border: 0, padding: 0, background: 'none', boxShadow: '0 10px 24px rgba(109,40,217,.4)', cursor: 'pointer' }}><EurekiaAvatar size={54} /></button>}
-      {podeAssistente && duvidaGeral && <>
+      {assistenteLiberado && duvidaGeral && <>
         <style>{PLANO_CSS}</style>
-        <PlanoPerguntar cfg={{ nome: 'Science English', assistente: true, previa: false }} student={student} contexto="" onAsk={perguntarAssistente} onClose={() => setDuvidaGeral(false)} />
+        <PlanoPerguntar z={1000} cfg={planoCfg ? { ...planoCfg, assistente: true } : { nome: 'Science English', assistente: true, previa: false }} student={student} contexto={contextoAssistente} sugestao={perguntaPronta} onAsk={perguntarAssistente} onClose={() => { setDuvidaGeral(false); setPerguntaPronta(''); }} />
       </>}
+      {novidadeAtual === 'eurekia' && <NovidadeEurekIA onFim={() => fecharNovidade('eurekia')}
+        onExperimentar={assistenteLiberado ? () => { fecharNovidade('eurekia'); setPerguntaPronta(NOV_PERGUNTA_INICIAL); setDuvidaGeral(true); } : null} />}
+      {novidadeAtual === 'adesao' && <NovidadeAdesao AD={adesao.AD} result={adesao.result} student={student} onFim={() => fecharNovidade('adesao')}
+        onVer={() => { fecharNovidade('adesao'); setAdesaoPage({ dia: null }); }} />}
 
       {!mirror && student?.avisoCobranca?.ativo && !avisoCobrancaFechado &&
         <AvisoCobranca aviso={student.avisoCobranca} nome={student.firstName || ''} onClose={confirmarAvisoCobranca} />}
@@ -6512,9 +6553,9 @@ function App() {
         onPlay={state => { setPeerLiveDuel(null); setPeerGameState(state); }}
       />}
 
-      <ActivityModal activity={openActivity} onClose={handleCloseAll} onOpenPart={handleOpenPart} />
-      <PartModal part={openPart} activity={openActivity} posaulas={posaulas} onBack={handleClosePart} onClose={handleCloseAll} onFinish={handleFinishPart} onSaveDraft={handleSaveDraftPart} onReadPost={markPostRead} mirror={mirror} />
-      <ExtraModal extra={openExtra} onClose={() => setOpenExtra(null)} onFinish={handleFinishExtra} onSaveDraft={handleSaveDraftExtra} mirror={mirror} posaulas={posaulas} onReadPost={markPostRead} />
+      <ActivityModal activity={openActivity} onClose={handleCloseAll} onOpenPart={handleOpenPart} onAsk={assistenteLiberado ? () => setDuvidaGeral(true) : null} />
+      <PartModal part={openPart} activity={openActivity} posaulas={posaulas} onBack={handleClosePart} onClose={handleCloseAll} onFinish={handleFinishPart} onSaveDraft={handleSaveDraftPart} onReadPost={markPostRead} mirror={mirror} onAsk={assistenteLiberado ? () => setDuvidaGeral(true) : null} />
+      <ExtraModal extra={openExtra} onClose={() => setOpenExtra(null)} onFinish={handleFinishExtra} onSaveDraft={handleSaveDraftExtra} mirror={mirror} posaulas={posaulas} onReadPost={markPostRead} onAsk={assistenteLiberado ? () => setDuvidaGeral(true) : null} />
       <CorrecaoModal data={openCorrecao} onClose={() => setOpenCorrecao(null)} />
 
       <AvisoModal aviso={avisos[0] || null} onConfirmar={confirmarAviso} />

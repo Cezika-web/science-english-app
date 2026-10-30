@@ -87,6 +87,13 @@
     .tab.tem-coisa:hover .lb { color: var(--text); }
     .tab.active.tem-coisa .lb { color: #fff; }
 
+    /* EurekIA: uma bolinha roxa (sem número) quando há pergunta nova de aluno. Pedido à parte, só para esta aba. */
+    .tab .nova-bolinha { display: none; width: 9px; height: 9px; border-radius: 50%; background: #7c3aed; margin-left: auto; flex-shrink: 0; }
+    .tab.tem-bolinha .nova-bolinha { display: inline-block; }
+    .tab.tem-bolinha .lb { font-weight: 800; color: var(--text); }
+    .tab.active .nova-bolinha { background: #fff; }
+    .tab.active.tem-bolinha .lb { color: #fff; }
+
     /* Avaliações: item de duas linhas, com prévia da avaliação mais recente
        logo abaixo do nome — pra ver sem precisar abrir a aba. */
     .tab-review { flex-direction: column; align-items: stretch; justify-content:flex-start; text-align:left; padding: 7px 10px 8px; gap: 2px; }
@@ -889,6 +896,7 @@
           <button class="tab" data-tab="vocab"><span class="ic">📖</span><span class="lb">Vocabulário</span></button>
           <button class="tab" data-tab="extras"><span class="ic">🎧</span><span class="lb">Extras</span></button>
           <button class="tab" data-tab="curso"><span class="ic">📘</span><span class="lb">Curso</span></button>
+          <button class="tab" data-tab="eurekia"><span class="ic">💡</span><span class="lb">EurekIA</span><span class="nova-bolinha" aria-hidden="true"></span></button>
         </div>
 
         <div class="side-group">
@@ -1587,6 +1595,41 @@
           <div class="students-grid" id="extras-list">
             <div class="loading">Carregando...</div>
           </div>
+        </div>
+      </div>
+
+      <!-- EUREKIA — o que os alunos perguntaram ao assistente de dúvidas, separado por aluno -->
+      <div class="tab-panel" id="tab-eurekia">
+        <style>
+          .eu-grade { display:grid; grid-template-columns:minmax(260px,340px) 1fr; gap:16px; align-items:start; }
+          @media (max-width:860px) { .eu-grade { grid-template-columns:1fr; } }
+          .eu-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px 16px; }
+          .eu-card h2 { font-size:1rem; margin:0 0 4px; }
+          .eu-sub { font-size:.82rem; color:var(--muted); margin:0 0 10px; line-height:1.5; }
+          .eu-aluno { display:flex; align-items:center; gap:10px; width:100%; text-align:left; border:1px solid var(--border); background:#fff; border-radius:12px; padding:10px 12px; margin-bottom:8px; cursor:pointer; font-family:inherit; }
+          .eu-aluno:hover { border-color:#c4b5fd; background:#faf5ff; }
+          .eu-aluno.on { border-color:#7c3aed; background:#f5f3ff; }
+          .eu-aluno b { display:block; font-size:.9rem; }
+          .eu-aluno small { display:block; color:var(--muted); font-size:.76rem; font-weight:600; margin-top:2px; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+          .eu-aluno .eu-n { margin-left:auto; flex-shrink:0; font-size:.72rem; font-weight:800; color:#5b21b6; background:#ede9fe; border-radius:99px; padding:2px 9px; }
+          .eu-ponto { width:10px; height:10px; border-radius:50%; background:#7c3aed; flex-shrink:0; }
+          .eu-ponto.vazio { background:transparent; }
+          .eu-qa { border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:10px; background:#fff; }
+          .eu-qa.nova { border-color:#a78bfa; background:#faf5ff; }
+          .eu-qa .eu-meta { display:flex; gap:8px; flex-wrap:wrap; align-items:center; font-size:.74rem; color:var(--muted); font-weight:700; margin-bottom:6px; }
+          .eu-qa .eu-nova { background:#7c3aed; color:#fff; border-radius:99px; padding:1px 8px; font-size:.66rem; font-weight:800; letter-spacing:.4px; }
+          .eu-qa .eu-p { font-weight:800; font-size:.92rem; line-height:1.4; }
+          .eu-qa .eu-r { margin-top:7px; padding:9px 11px; border-radius:10px; background:#f8fafc; border:1px solid #e2e8f0; font-size:.85rem; line-height:1.5; white-space:pre-wrap; }
+          .eu-qa .eu-fonte { margin-top:6px; font-size:.72rem; color:var(--muted); font-weight:600; }
+        </style>
+        <div class="eu-card" style="margin-bottom:12px;">
+          <h2>💡 EurekIA: o que os alunos perguntaram</h2>
+          <p class="eu-sub">Cada aluno que fez uma pergunta aparece na lista. Toque no nome para ver as perguntas e as respostas da EurekIA. A <strong style="color:#7c3aed;">bolinha roxa</strong> marca quem tem pergunta nova; ela some quando você abre o aluno.</p>
+          <span id="eu-msg" style="font-size:.8rem;color:var(--muted);"></span>
+        </div>
+        <div class="eu-grade">
+          <div class="eu-card"><div id="eu-lista"><div class="loading">Carregando...</div></div></div>
+          <div class="eu-card" id="eu-detalhe"><div class="eu-sub" style="margin:0;">Escolha um aluno na lista para ver as perguntas dele.</div></div>
         </div>
       </div>
 
@@ -5834,6 +5877,7 @@
           escolaAtual = btn.dataset.escola;
           localStorage.setItem('adminEscola', escolaAtual);
           await loadStudents();
+          euChecarBolinha();
           if (document.querySelector('.tab[data-tab="avaliacoes"]')?.classList.contains('active')) recarregarAvaliacoes();
           if (document.querySelector('.tab[data-tab="calendar"]')?.classList.contains('active')) loadCalendar();
           if (document.querySelector('.tab[data-tab="finance"]')?.classList.contains('active')) loadFinance();
@@ -5855,6 +5899,7 @@
           document.getElementById('admin-email-display').textContent = user.email;
           await loadStudents();
           loadExtras();
+          euChecarBolinha();
         } catch (e) {
           console.error('Acesso administrativo recusado:', e);
           adminUid = null;
@@ -5926,6 +5971,7 @@
         if (tab.dataset.tab === 'calendar') loadCalendar();
         if (tab.dataset.tab === 'finance') loadFinance();
         if (tab.dataset.tab === 'curso') carregarCurso();
+        if (tab.dataset.tab === 'eurekia') carregarEurekia();
       };
     });
 
@@ -5939,7 +5985,7 @@
     // Quem administra a escola vê a interface dela — inclusive o César, ao
     // trocar de escola no seletor do topo.
     const ABAS_POR_MODO = {
-      manual:    ['students', 'groups', 'calendar', 'finance', 'challenge', 'adesao', 'creditos', 'posaula', 'processos', 'publish', 'correct', 'vocab', 'extras', 'curso', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
+      manual:    ['students', 'groups', 'calendar', 'finance', 'challenge', 'adesao', 'creditos', 'posaula', 'processos', 'publish', 'correct', 'vocab', 'extras', 'curso', 'eurekia', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
       assistido: ['students', 'groups', 'calendar', 'finance', 'challenge', 'adesao', 'creditos', 'posaula', 'processos', 'publish', 'extras', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
     };
 
@@ -7886,6 +7932,64 @@
       const ini = document.getElementById(prefixo + '-un-ini').value;
       const atual = document.getElementById(prefixo + '-un-atual').value || ini;
       return { livro, unidadeInicial:ini, unidadeAtual:atual };
+    }
+
+    // ── Aba "EurekIA": perguntas dos alunos, por aluno. A função grava students/{uid}/duvidas e um resumo em
+    // schools/{escola}/eurekiaAlunos/{uid} (total, naoVistas, ultimaEm). Abrir o aluno zera `naoVistas` (a bolinha roxa). ──
+    let eurekiaLista = [];
+    let euAberto = null;
+    const euMd = s => esc(s).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/\*([^*]+)\*/g, '<i>$1</i>');
+    const euQuando = ts => { const d = ts && typeof ts.toDate === 'function' ? ts.toDate() : ts ? new Date(ts) : null; return d && !Number.isNaN(d.getTime()) ? d.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : ''; };
+    function euAtualizarBolinha() {
+      document.querySelector('.tab[data-tab="eurekia"]')?.classList.toggle('tem-bolinha', eurekiaLista.some(a => Number(a.naoVistas || 0) > 0));
+    }
+    // Só a bolinha: uma consulta pequena ao entrar no painel (e ao trocar de escola).
+    async function euChecarBolinha() {
+      try {
+        const snap = await getDocs(query(collection(db, 'schools', escolaAtual, 'eurekiaAlunos'), where('naoVistas', '>', 0)));
+        eurekiaLista = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        euAtualizarBolinha();
+      } catch (e) { console.warn('EurekIA: não consegui checar perguntas novas', e); }
+    }
+    async function carregarEurekia() {
+      const lista = document.getElementById('eu-lista');
+      try {
+        const snap = await getDocs(query(collection(db, 'schools', escolaAtual, 'eurekiaAlunos'), orderBy('ultimaEm', 'desc')));
+        eurekiaLista = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        euRenderLista(); euAtualizarBolinha();
+      } catch (e) { lista.innerHTML = `<div class="form-msg err" style="display:block">Não consegui carregar as perguntas: ${esc(e.message)}</div>`; }
+    }
+    function euRenderLista() {
+      const lista = document.getElementById('eu-lista');
+      if (!eurekiaLista.length) { lista.innerHTML = '<div class="eu-sub" style="margin:0;">Ainda ninguém perguntou nada à EurekIA. Quando um aluno perguntar, o nome dele aparece aqui.</div>'; return; }
+      lista.innerHTML = eurekiaLista.map(a => `<button type="button" class="eu-aluno ${euAberto === a.id ? 'on' : ''}" data-eu="${esc(a.id)}">
+        <span class="eu-ponto ${Number(a.naoVistas || 0) > 0 ? '' : 'vazio'}" title="${Number(a.naoVistas || 0) > 0 ? 'pergunta nova' : ''}"></span>
+        <span style="min-width:0;"><b>${esc(a.nome || 'Aluno')}</b><small>${esc(a.ultimaPergunta || '')}</small></span>
+        <span class="eu-n">${Number(a.total || 0)}</span></button>`).join('');
+      lista.querySelectorAll('[data-eu]').forEach(b => b.onclick = () => euAbrirAluno(b.dataset.eu));
+    }
+    async function euAbrirAluno(uid) {
+      euAberto = uid;
+      const resumo = eurekiaLista.find(a => a.id === uid) || {};
+      const painel = document.getElementById('eu-detalhe');
+      painel.innerHTML = '<div class="loading">Carregando...</div>';
+      euRenderLista();
+      try {
+        const snap = await getDocs(query(collection(db, 'students', uid, 'duvidas'), orderBy('criadoEm', 'desc')));
+        const visto = resumo.vistaEm && typeof resumo.vistaEm.toDate === 'function' ? resumo.vistaEm.toDate().getTime() : 0;
+        const itens = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        painel.innerHTML = `<h2>${esc(resumo.nome || 'Aluno')}</h2><p class="eu-sub">${itens.length} ${itens.length === 1 ? 'pergunta' : 'perguntas'}, da mais nova para a mais antiga.</p>` + itens.map(q => {
+          const t = q.criadoEm && typeof q.criadoEm.toDate === 'function' ? q.criadoEm.toDate().getTime() : 0;
+          const nova = t > visto;
+          return `<div class="eu-qa ${nova ? 'nova' : ''}"><div class="eu-meta">${nova ? '<span class="eu-nova">NOVA</span>' : ''}<span>${esc(euQuando(q.criadoEm))}</span>${q.contexto ? `<span>· durante: ${esc(q.contexto)}</span>` : ''}</div>
+            <div class="eu-p">${esc(q.pergunta || '')}</div><div class="eu-r">${euMd(q.resposta || '')}</div>
+            ${Array.isArray(q.aulas) && q.aulas.length ? `<div class="eu-fonte">Material usado: ${q.aulas.length} pós-aulas${q.semanaAtividades ? ` e as atividades da semana de ${esc(String(q.semanaAtividades).replace(/^\d{4}-(\d\d)-(\d\d).*$/, '$2/$1'))}` : ''}.</div>` : ''}</div>`;
+        }).join('');
+        if (Number(resumo.naoVistas || 0) > 0) {
+          await updateDoc(doc(db, 'schools', escolaAtual, 'eurekiaAlunos', uid), { naoVistas: 0, vistaEm: serverTimestamp() });
+          resumo.naoVistas = 0; resumo.vistaEm = { toDate: () => new Date() }; euRenderLista(); euAtualizarBolinha();
+        }
+      } catch (e) { painel.innerHTML = `<div class="form-msg err" style="display:block">Não consegui abrir as perguntas: ${esc(e.message)}</div>`; }
     }
 
     // ── Aba "Curso": revisar o livro (marcar só o que SAI), checklist, vídeos e lista completa ──

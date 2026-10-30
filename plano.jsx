@@ -472,9 +472,9 @@ function PlanoCamada({ titulo, sub, onClose, onAsk, children, rodape }) {
   );
 }
 
-function PlanoFolha({ onClose, children }) {
+function PlanoFolha({ onClose, children, z }) {
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 450, background: 'rgba(15,23,42,.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: z || 450, background: 'rgba(15,23,42,.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
       <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 480, maxHeight: '88%', overflowY: 'auto', background: '#fff', borderRadius: '24px 24px 0 0', padding: '18px 18px calc(20px + env(safe-area-inset-bottom, 0px))', animation: 'planoSobe .25s', boxShadow: '0 -12px 40px rgba(0,0,0,.25)' }}>
         <div style={{ width: 40, height: 4, borderRadius: 99, background: '#CBD5E1', margin: '0 auto 14px' }} />
         {children}
@@ -1050,8 +1050,14 @@ function EurekiaAvatar({ size = 54 }) {
   );
 }
 
-function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose }) {
-  const [texto, setTexto] = React.useState(''); const [msgs, setMsgs] = React.useState([]); const [pensando, setPensando] = React.useState(false);
+// A EurekIA em miniatura, para o cabeçalho das atividades (ao lado do X).
+function EurekiaMini({ onClick }) {
+  return <button onClick={onClick} aria-label="Perguntar à EurekIA" title="Perguntar à EurekIA" style={{ width: 34, height: 34, padding: 0, border: 0, borderRadius: '50%', background: 'none', cursor: 'pointer', flexShrink: 0, boxShadow: '0 3px 8px rgba(109,40,217,.35)' }}><EurekiaAvatar size={34} /></button>;
+}
+
+// `sugestao`: pergunta já escrita no campo (a da apresentação da EurekIA, "Experimentar agora").
+function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose, z, sugestao }) {
+  const [texto, setTexto] = React.useState(sugestao || ''); const [msgs, setMsgs] = React.useState([]); const [pensando, setPensando] = React.useState(false);
   const fimRef = React.useRef(null);
   const semIA = cfg.assistente === false;   // o professor desligou o assistente deste aluno (janela do plano no painel)
   React.useEffect(() => { if (fimRef.current) fimRef.current.scrollIntoView({ block: 'end' }); }, [msgs, pensando]);
@@ -1076,11 +1082,12 @@ function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose }) {
   const ultima = [...msgs].reverse().find(m => m.de === 'eu');
   const wa = PlanoWhatsLink(student, `Oi, César! Aqui é ${student.firstName || student.name || 'sua aluna'} (${cfg.nome}). ${contexto ? `Estou na tarefa “${contexto}”. ` : ''}${ultima ? `Minha dúvida: ${ultima.x}` : 'Tenho uma dúvida: '}`);
   return (
-    <PlanoFolha onClose={onClose}>
+    <PlanoFolha onClose={onClose} z={z}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><EurekiaAvatar size={40} /><div><div style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.1 }}>EurekIA</div><div style={{ fontSize: 11.5, fontWeight: 700, color: '#6D28D9' }}>Tem uma dúvida de inglês?</div></div></div>
       <div style={{ fontSize: 12.5, fontWeight: 700, color: '#64748B', margin: '2px 0 12px' }}>{contexto ? `Sobre: ${contexto}` : 'Pergunte sobre o que está estudando em inglês.'}</div>
       {semIA ? <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 16, padding: 14, margin: '0 0 12px', fontSize: 13.5, fontWeight: 600, color: '#475569', lineHeight: 1.5 }}>Para tirar dúvidas, fale direto com o César pelo WhatsApp. Ele responde assim que puder.</div> : <>
       <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 16, padding: 10, minHeight: 110, maxHeight: 280, overflowY: 'auto' }}>
+        {msgs.length === 0 && sugestao && <div style={{ fontSize: 13, fontWeight: 700, color: '#5B21B6', background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 12, padding: '9px 11px', margin: '0 0 8px', lineHeight: 1.45 }}>💡 Que tal começar por aqui? A pergunta já está escrita: toque em <b>Enviar</b> e veja o que a EurekIA sabe sobre os seus estudos.</div>}
         {msgs.length === 0 && <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B', padding: 6 }}>Escreva a sua dúvida de inglês abaixo. O assistente olha as suas últimas aulas e atividades para explicar, em português, com exemplos em inglês. Se precisar do César, toque em WhatsApp.</div>}
         {msgs.map((m, i) => <div key={i} style={{ display: 'flex', justifyContent: m.de === 'eu' ? 'flex-end' : 'flex-start', margin: '6px 0' }}><div style={{ maxWidth: '86%', padding: '9px 12px', borderRadius: 14, fontSize: 13.5, fontWeight: 600, lineHeight: 1.5, whiteSpace: 'pre-wrap', background: m.de === 'eu' ? '#7C3AED' : m.erro ? '#FEF2F2' : '#fff', color: m.de === 'eu' ? '#fff' : '#0F172A', border: m.de === 'eu' ? 0 : '1px solid #E2E8F0' }}>{m.de === 'ia' ? <PlanoMd x={m.x} /> : m.x}</div></div>)}
         {pensando && <div style={{ fontSize: 13, fontWeight: 700, color: '#64748B', padding: 6 }}>A EurekIA está pensando…</div>}
