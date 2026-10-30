@@ -7983,7 +7983,7 @@
           const nova = t > visto;
           return `<div class="eu-qa ${nova ? 'nova' : ''}"><div class="eu-meta">${nova ? '<span class="eu-nova">NOVA</span>' : ''}<span>${esc(euQuando(q.criadoEm))}</span>${q.contexto ? `<span>· durante: ${esc(q.contexto)}</span>` : ''}</div>
             <div class="eu-p">${esc(q.pergunta || '')}</div><div class="eu-r">${euMd(q.resposta || '')}</div>
-            ${Array.isArray(q.aulas) && q.aulas.length ? `<div class="eu-fonte">Material usado: ${q.aulas.length} pós-aulas${q.semanaAtividades ? ` e as atividades da semana de ${esc(String(q.semanaAtividades).replace(/^\d{4}-(\d\d)-(\d\d).*$/, '$2/$1'))}` : ''}.</div>` : ''}</div>`;
+            ${Array.isArray(q.aulas) && q.aulas.length ? `<div class="eu-fonte">Material usado: ${q.aulas.length} pós-aulas${q.semanaAtividades ? ` e as atividades da semana de ${esc(String(q.semanaAtividades).replace(/^\d{4}-(\d\d)-(\d\d).*$/, '$2/$1').toLowerCase().replace(/^semana de /, ''))}` : ''}.</div>` : ''}</div>`;
         }).join('');
         if (Number(resumo.naoVistas || 0) > 0) {
           await updateDoc(doc(db, 'schools', escolaAtual, 'eurekiaAlunos', uid), { naoVistas: 0, vistaEm: serverTimestamp() });
