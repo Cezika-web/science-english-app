@@ -143,3 +143,147 @@ export function contextoAtividades(atividades, pergunta, { orcamentoDinamico = 3
   }
   return { estatico: `Atividades da última semana (${semana}):\n${fixos.join('\n')}`, dinamico: escolhidos.join('\n'), semana };
 }
+
+/* ───────────────────────── Dados de estudo e de curso do aluno ─────────────────────────
+ * O aluno pode perguntar "qual a minha média de estudo?", "quanto está a minha adesão?", "em que unidade eu estou?".
+ * Duas fontes, ambas só do PRÓPRIO aluno:
+ *   - dadosEstudo: o resumo que o app já calcula e mostra na tela de Adesão (CzkAdesao.assistantSummary em adesao.js).
+ *     Vem do aplicativo, então é tratado como entrada não confiável: limpaDadosEstudo() só deixa passar números nos
+ *     limites e datas AAAA-MM-DD (nenhum texto livre chega ao prompt) e o servidor ainda confere a liberação.
+ *   - perfil/curso: lido do cadastro do aluno e das atividades no próprio servidor.
+ */
+const DIA_ISO = /^\d{4}-\d{2}-\d{2}$/;
+const PILARES = [
+  ['C', 'Constância (dias da semana em que estudou)'], ['At', 'Atividades (exercícios feitos, com tempo mínimo)'],
+  ['Pos', 'Pós-aula (tempo de leitura)'], ['Aula', 'Aulas (presença)'], ['Des', 'Desafio (partes feitas)'],
+];
+const DIAS_SEMANA = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'];
+const FAIXAS = { alta: 'Alta', media: 'Média', baixa: 'Baixa' };
+
+const dataBR = (iso) => (DIA_ISO.test(iso || '') ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : '');
+const diaMes = (iso) => (DIA_ISO.test(iso || '') ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : '');
+const vazio = (v) => v === null || v === undefined;
+const virgula = (v) => String(Math.round(v * 10) / 10).replace('.', ',');
+function fmMin(v) {
+  if (vazio(v)) return 'sem dado';
+  const m = Math.round(v);
+  return m >= 60 ? `${Math.floor(m / 60)}h${String(m % 60).padStart(2, '0')}min` : `${m} min`;
+}
+const media = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
+/** Texto vindo de cadastro: uma linha só, sem caracteres de controle, com tamanho máximo. */
+const textoCurto = (s, n = 60) => cortar(String(s == null ? '' : s).replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim(), n);
+
+/** Aceita só o formato que o app manda; qualquer outra coisa vira null. Nunca devolve texto livre. */
+export function limpaDadosEstudo(bruto) {
+  if (!bruto || typeof bruto !== 'object' || Array.isArray(bruto)) return null;
+  const n = (v, lo = 0, hi = 100000) => {
+    if (vazio(v) || v === '' || typeof v === 'boolean') return null;
+    const x = Number(v);
+    return Number.isFinite(x) && x >= lo && x <= hi ? Math.round(x * 10) / 10 : null;
+  };
+  const dia = (v) => (typeof v === 'string' && DIA_ISO.test(v) ? v : null);
+  const obj = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
+  const lista = (v, max) => (Array.isArray(v) ? v.slice(0, max) : []);
+  const porPilar = (o, hi) => Object.fromEntries(PILARES.map(([k]) => [k, n(obj(o)[k], 0, hi)]));
+  const atual = obj(bruto.atual); const horas = obj(bruto.horas); const pres = obj(bruto.presenca);
+  const des = obj(bruto.desafio); const metas = obj(bruto.metasAluno);
+  return {
+    status: bruto.status === 'ok' ? 'ok' : 'coletando',
+    indice: n(bruto.indice, 0, 100),
+    faixa: Object.hasOwn(FAIXAS, bruto.faixa) ? bruto.faixa : null,
+    tendencia: n(bruto.tendencia, -100, 100),
+    primeiraNota: dia(bruto.primeiraNota),
+    pilares: porPilar(bruto.pilares, 100), pesos: porPilar(bruto.pesos, 100),
+    semanas: lista(bruto.semanas, 3).map((w) => ({ de: dia(obj(w).de), nota: n(obj(w).nota, 0, 100), min: n(obj(w).min, 0, 10080), dias: n(obj(w).dias, 0, 7) })),
+    atual: bruto.atual ? {
+      de: dia(atual.de), min: n(atual.min, 0, 10080), dias: n(atual.dias, 0, 7), passados: n(atual.passados, 1, 7),
+      porDia: lista(atual.porDia, 7).map((v) => n(v, 0, 1440)),
+      metaDiaMin: n(atual.metaDiaMin, 0, 600), metaDias: n(atual.metaDias, 0, 7), bateram: n(atual.bateram, 0, 7),
+    } : null,
+    horas: bruto.horas ? {
+      durAula: n(horas.durAula, 0, 600), aulaMin: n(horas.aulaMin, 0, 1e6), aulaSemMin: n(horas.aulaSemMin, 0, 1e6), aulaMesMin: n(horas.aulaMesMin, 0, 1e6),
+      appMin: n(horas.appMin, 0, 1e6), appSemMin: n(horas.appSemMin, 0, 1e6), appMesMin: n(horas.appMesMin, 0, 1e6),
+    } : null,
+    mediaDiasAtivos: n(bruto.mediaDiasAtivos, 0, 7), mediaMinPos: n(bruto.mediaMinPos, 0, 600),
+    entrega: n(bruto.entrega, 0, 100), acertoUltima: n(bruto.acertoUltima, 0, 100),
+    presenca: bruto.presenca ? { prevista: n(pres.prevista, 0, 1000), presente: n(pres.presente, 0, 1000) } : null,
+    desafio: { ligado: des.ligado !== false, disponiveis: n(des.disponiveis, 0, 1000), feitas: n(des.feitas, 0, 1000) },
+    metasAluno: { diaMin: n(metas.diaMin, 0, 600), semH: n(metas.semH, 0, 200), mesH: n(metas.mesH, 0, 800) },
+  };
+}
+
+/**
+ * Bloco "DADOS DE ESTUDO" do prompt. `liberada`: o professor já liberou a Adesão (schools/{id}.adesao.liberadaEm <= hoje);
+ * antes disso nenhum número pode ser citado, porque o aluno também não os vê no app. `hoje`: AAAA-MM-DD (São Paulo).
+ */
+export function contextoDadosEstudo(bruto, { liberada, hoje }) {
+  const cab = `DADOS DE ESTUDO DO ALUNO (calculados pelo app, os mesmos da tela de Adesão dele; hoje é ${dataBR(hoje)})`;
+  if (!liberada) {
+    return `${cab}\nA Adesão (nota, semanas e tempo de estudo) ainda NÃO foi liberada para este aluno. Se ele perguntar por esses números, diga que eles aparecem no app quando o César liberar. Não cite nenhum número de estudo e não estime.`;
+  }
+  const d = limpaDadosEstudo(bruto);
+  if (!d) {
+    return `${cab}\nOs números de estudo não chegaram nesta pergunta. Se ele perguntar por eles, diga que não consegue vê-los agora e que ele pode conferir na aba Progresso do app. Não invente nenhum número.`;
+  }
+  const l = [cab];
+  const usadas = d.semanas.length;
+  if (d.status === 'ok' && !vazio(d.indice)) {
+    l.push(`Adesão: ${d.indice} de 100${d.faixa ? ` (faixa ${FAIXAS[d.faixa]})` : ''}. É a média das últimas ${usadas} semana(s) fechada(s) (segunda a domingo), com mais peso para a mais recente.`);
+    if (!vazio(d.tendencia)) l.push(`Tendência: ${d.tendencia > 0 ? '+' : ''}${virgula(d.tendencia)} ponto(s) da penúltima para a última semana fechada.`);
+    const pil = PILARES.filter(([k]) => !vazio(d.pilares[k])).map(([k, nome]) => `${nome} ${d.pilares[k]}% (peso ${vazio(d.pesos[k]) ? '?' : d.pesos[k]})`);
+    if (pil.length) l.push(`Pilares da nota (média das semanas usadas): ${pil.join('; ')}. Pilar sem dado (ex.: sem aula ou sem desafio na semana) não entra na conta e os pesos dos outros se redistribuem.`);
+  } else {
+    l.push(`Adesão: ainda sem nota. O app está juntando as primeiras semanas completas (segunda a domingo)${d.primeiraNota ? `; a primeira nota aparece em ${dataBR(d.primeiraNota)}` : ''}. Não invente nota.`);
+  }
+  d.semanas.forEach((w) => l.push(`- Semana de ${diaMes(w.de)}: nota ${vazio(w.nota) ? 'sem dado' : w.nota}, ${fmMin(w.min)} de estudo no app, ${vazio(w.dias) ? '?' : w.dias} dia(s) ativo(s).`));
+  const mins = d.semanas.map((w) => w.min).filter((v) => !vazio(v));
+  if (mins.length) {
+    const mSem = media(mins);
+    const dias = !vazio(d.mediaDiasAtivos) ? d.mediaDiasAtivos : media(d.semanas.map((w) => w.dias).filter((v) => !vazio(v)));
+    l.push(`Média de estudo no app (últimas ${mins.length} semana(s) fechada(s)): ${fmMin(mSem)} por semana, cerca de ${fmMin(mSem / 7)} por dia (somando os 7 dias)${vazio(dias) ? '' : `; em média ${virgula(dias)} dia(s) ativo(s) por semana`}.`);
+  }
+  const a = d.atual;
+  if (a && !vazio(a.min)) {
+    const porDia = a.porDia.slice(0, a.passados || 7).map((v, i) => `${DIAS_SEMANA[i]} ${vazio(v) ? '?' : Math.round(v)}`).join(', ');
+    l.push(`Esta semana (desde ${diaMes(a.de)}${a.passados ? `, ${a.passados} de 7 dias já passados` : ''}): ${fmMin(a.min)} de estudo no app, ${vazio(a.dias) ? '?' : a.dias} dia(s) ativo(s).`
+      + `${vazio(a.metaDiaMin) || vazio(a.metaDias) ? '' : ` Meta de estudo: ${a.metaDiaMin} min por dia em ${a.metaDias} dia(s) da semana; bateu a meta em ${vazio(a.bateram) ? '?' : a.bateram} dia(s).`}`
+      + `${porDia ? ` Minutos por dia: ${porDia}.` : ''}`);
+  }
+  const h = d.horas;
+  if (h && !vazio(h.appMin)) {
+    const soma = (x, y) => (vazio(x) || vazio(y) ? null : x + y);
+    l.push(`Horas de estudo (tempo das aulas, ${vazio(h.durAula) ? '?' : h.durAula} min por pós-aula, mais o tempo no app): esta semana ${fmMin(soma(h.aulaSemMin, h.appSemMin))}, este mês ${fmMin(soma(h.aulaMesMin, h.appMesMin))}, total desde que o app começou a medir ${fmMin(soma(h.aulaMin, h.appMin))} (${fmMin(h.appMin)} só no app).`);
+  }
+  const m = d.metasAluno;
+  const metas = [!vazio(m.diaMin) && `${m.diaMin} min por dia`, !vazio(m.semH) && `${virgula(m.semH)} h por semana`, !vazio(m.mesH) && `${virgula(m.mesH)} h por mês`].filter(Boolean);
+  if (metas.length) l.push(`Metas que o próprio aluno definiu no Perfil: ${metas.join(', ')}.`);
+  if (d.presenca && d.presenca.prevista > 0) l.push(`Presença nas aulas (semanas usadas): presente em ${d.presenca.presente ?? '?'} de ${d.presenca.prevista} aula(s) prevista(s).`);
+  if (!vazio(d.entrega)) l.push(`Atividades entregues (semanas usadas): ${d.entrega}% dos exercícios.`);
+  if (!vazio(d.acertoUltima)) l.push(`Acerto nas atividades da última semana corrigida: ${d.acertoUltima}%.`);
+  if (!vazio(d.mediaMinPos)) l.push(`Tempo médio de leitura por pós-aula: ${virgula(d.mediaMinPos)} min.`);
+  if (!d.desafio.ligado) l.push('Desafio da semana: desligado para este aluno.');
+  else if (!vazio(d.desafio.disponiveis) && d.desafio.disponiveis > 0) l.push(`Desafio da semana (semanas usadas): ${d.desafio.feitas ?? '?'} de ${d.desafio.disponiveis} parte(s) feita(s).`);
+  return l.join('\n');
+}
+
+/**
+ * Bloco "PERFIL E CURSO" do prompt, só com o que o app mostra ao aluno (nada de financeiro).
+ * aluno: documento students/{uid}; totalPosAulas: contagem de pós-aulas (ou null); atividades: as mais recentes.
+ */
+export function contextoPerfil(aluno, { totalPosAulas = null, atividades = [] } = {}) {
+  const l = ['PERFIL E CURSO DO ALUNO (do cadastro dele)'];
+  l.push(`Nível: ${textoCurto(aluno.level) || 'não informado'}.`);
+  if (DIA_ISO.test(aluno.inicioCurso || '')) l.push(`No curso desde ${dataBR(aluno.inicioCurso)}.`);
+  const aulas = textoCurto(aluno.diasAulas, 80);
+  if (aulas) l.push(`Aulas: ${aulas}${aluno.aulaHora ? ` (${textoCurto(aluno.aulaHora, 10)})` : ''}.`);
+  if (Number(aluno.metaAnual) > 0) l.push(`Meta de aulas no ano: ${Math.round(Number(aluno.metaAnual))}.`);
+  const plano = aluno.plano && typeof aluno.plano === 'object' && aluno.plano.ativo !== false ? aluno.plano : null;
+  if (plano) l.push(`Plano: ${textoCurto(plano.nome) || 'Science Lab'}${plano.unidadeRotulo ? `, unidade atual ${textoCurto(plano.unidadeRotulo, 30)}` : ''}.`);
+  if (Number.isFinite(totalPosAulas)) l.push(`Pós-aulas registradas no app: ${totalPosAulas} no total (não é o mesmo que aulas do ano: não calcule % da meta anual com isso).`);
+  if (atividades.length) {
+    const corrigidas = atividades.filter((a) => a.status === 'corrected').length;
+    const finalizadas = atividades.filter((a) => a.finalizada || a.status === 'corrected').length;
+    l.push(`Atividades (as ${atividades.length} mais recentes): ${finalizadas} finalizada(s), ${corrigidas} já corrigida(s), ${atividades.length - finalizadas} ainda em andamento.`);
+  }
+  return l.join('\n');
+}
