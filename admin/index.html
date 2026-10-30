@@ -1948,6 +1948,11 @@
         <p id="e-pagto-sem" style="display:none;margin:0 0 18px;font-size:.78rem;color:#64748b;">💳 Este aluno ainda não tem mensalidade cadastrada — configure em Financeiro → Configurar.</p>
 
         <div class="field">
+          <label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="e-assistente" checked /> Assistente de dúvidas (EurekIA) ligado</label>
+          <div id="e-assistente-dica" style="font-size:0.75rem;color:var(--muted);margin-top:4px;">Desmarque para esconder a EurekIA deste aluno. O limite é de 20 perguntas por mês.</div>
+        </div>
+
+        <div class="field">
           <label>Slug (usado no nome do arquivo de pós-aula)</label>
           <input type="text" id="e-slug" />
           <div style="font-size:0.75rem;color:var(--muted);margin-top:4px;">Muda sozinho ao editar o nome. Só ajuste se souber o que está fazendo.</div>
@@ -7718,6 +7723,14 @@
       document.getElementById('e-meta').value  = s.metaAnual || '';
       fillAula('e-dias-week', 'e-hora', [...adminLessonDays(s)], s.aulaHora, s.aulaHorarios, s.aulaFins, s.aulaDuracao);
       document.getElementById('e-inicio').value = s.inicioCurso || '';
+      // No plano Science Lab quem manda é plano.assistente (🧪 Editar plano): aqui só mostra o estado.
+      const emPlano = Boolean(s.plano && s.plano.ativo !== false);
+      const caixaIA = document.getElementById('e-assistente');
+      caixaIA.checked = emPlano ? s.plano.assistente !== false : s.assistente !== false;
+      caixaIA.disabled = emPlano;
+      document.getElementById('e-assistente-dica').textContent = emPlano
+        ? 'Este aluno está no Science Lab: ligue ou desligue em 🧪 Editar plano.'
+        : 'Desmarque para esconder a EurekIA deste aluno. O limite é de 20 perguntas por mês.';
       editCarregarPagamento(uid);
       document.getElementById('e-slug').value  = s.slug || toSlug(s.name || s.firstName || '');
       document.getElementById('e-photo-preview').src = editPhoto || '';
@@ -7772,6 +7785,9 @@
         const agendaMudou = adminLessonScheduleSignature(cadastroAtual) !== adminLessonScheduleSignature(novaAgenda);
         const inicioMudou = String(cadastroAtual?.inicioCurso || '') !== String(inicio || '');
         const inicioFuturo = Boolean(inicio && inicio > adminDateKey(new Date()));
+        // `assistente` só é gravado quando muda (e nunca no Science Lab, que usa plano.assistente).
+        const assistenteNovo = document.getElementById('e-assistente').checked;
+        const assistenteMudou = !document.getElementById('e-assistente').disabled && (cadastroAtual?.assistente !== false) !== assistenteNovo;
         await updateDoc(doc(db, 'students', uid), {
           name,
           firstName: name.split(' ')[0],
@@ -7788,6 +7804,7 @@
           ...mudancaDeGrade,
           inicioCurso: inicio || '',
           photo: editPhoto || '',
+          ...(assistenteMudou ? { assistente: assistenteNovo } : {}),
         });
         // Data de saída do ex-aluno mudou: fica no cadastro financeiro e manda na cobrança.
         if (editSaidaPerfil) {
