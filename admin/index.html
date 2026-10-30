@@ -333,6 +333,10 @@
     .pend-badge.late { background: #fee2e2; color: #b91c1c; }
     .pend-badge.today { background: #fef3c7; color: #92400e; }
     .pend-badge.tomorrow { background: #dbeafe; color: #1d4ed8; }
+    .pend-badge.soon { background: #e0e7ff; color: #4338ca; }
+    /* Pendência da TRILHA (Entrevista, Business, Viagem): roxo, para não se misturar com as das aulas normais. */
+    .pend-item.pend-trilha { background: #faf5ff; border-left: 4px solid #7c3aed; padding-left: 14px; }
+    .pend-chip-trilha { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; font-size: .68rem; font-weight: 800; vertical-align: middle; white-space: nowrap; }
     .pend-item .pend-body { flex: 1; min-width: 0; }
     .pend-item .pend-body strong { display: block; font-size: 0.95rem; }
     .pend-item .pend-body .pend-why { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
@@ -1175,7 +1179,7 @@
         <div style="margin-bottom:14px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
           <div>
             <h2 style="margin:0 0 5px;">🧭 Pendências dos alunos</h2>
-            <p style="font-size:0.85rem;color:var(--muted);margin:0;" id="pend-hoje-label">Só aparece quem precisa de pós-aula ou atividades até amanhã — ligado à agenda, então aula cancelada não conta.</p>
+            <p style="font-size:0.85rem;color:var(--muted);margin:0;" id="pend-hoje-label">Só aparece quem precisa de pós-aula ou atividades até amanhã — ligado à agenda, então aula cancelada não conta. As atividades de <strong style="color:#5b21b6;">trilha</strong> (roxo) aparecem assim que você envia um pós-aula de trilha, até você enviar as atividades dele.</p>
           </div>
           <div class="refresh-line">
             <span class="refresh-note" data-refresh-note></span>
@@ -1186,6 +1190,7 @@
           <span style="display:flex;align-items:center;gap:6px;"><i style="width:9px;height:9px;border-radius:50%;background:#b91c1c;display:inline-block;"></i> Atrasado</span>
           <span style="display:flex;align-items:center;gap:6px;"><i style="width:9px;height:9px;border-radius:50%;background:#92400e;display:inline-block;"></i> Enviar hoje</span>
           <span style="display:flex;align-items:center;gap:6px;"><i style="width:9px;height:9px;border-radius:50%;background:#1d4ed8;display:inline-block;"></i> Enviar amanhã</span>
+          <span style="display:flex;align-items:center;gap:6px;"><i style="width:9px;height:9px;border-radius:50%;background:#7c3aed;display:inline-block;"></i> <strong style="color:#5b21b6;">Roxo = aula de trilha</strong> (Entrevista, Business, Viagem)</span>
         </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start;">
           <div class="form-card" style="margin:0;padding:0;overflow:hidden;">
@@ -1488,6 +1493,7 @@
           <p style="font-size:0.85rem;color:var(--muted);margin-bottom:18px;">
             Cole o JSON gerado pela skill <strong>atividades-firestore</strong> e clique em Publicar.
             O aluno é identificado automaticamente pelo <code>studentName</code>/<code>uid</code> do JSON.
+            Atividades das aulas de <strong>trilha</strong> (Entrevista, Business, Viagem) trazem <code>"trilha":"entrevista"</code> no JSON e vão para a aba da trilha, nunca para a lista geral; a prévia mostra o destino.
           </p>
 
           <div class="field">
@@ -2003,7 +2009,7 @@
       <div class="modal-body">
         <input type="hidden" id="tr-uid" />
         <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 12px;font-size:0.8rem;color:#1e3a8a;margin-bottom:14px;line-height:1.5;">
-          Ao ativar, o aluno ganha um botão da trilha na aba <strong>Atividades</strong> do app e preenche um formulário. Cada <strong>tarefa</strong> da trilha é uma atividade extra (aba 🎧 Extras) com os campos <code>trilha</code>, <code>etapa</code> e <code>ordem</code> no JSON. A etapa aparece para o aluno assim que você enviar a primeira tarefa dela. As pós-aulas de trilha são marcadas pelo nome do arquivo: <code>pos-aula-<em>slug</em>-<strong>entrevista</strong>-MM-DD-AAAA.html</code>.
+          Ao ativar, o aluno ganha um botão da trilha na aba <strong>Atividades</strong> do app e preenche um formulário. Cada <strong>tarefa</strong> da trilha é uma atividade extra (aba 🎧 Extras) com os campos <code>trilha</code>, <code>etapa</code> e <code>ordem</code> no JSON. A etapa aparece para o aluno assim que você enviar a primeira tarefa dela. As pós-aulas de trilha são marcadas pelo nome do arquivo: <code>pos-aula-<em>slug</em>-<strong>entrevista</strong>-MM-DD-AAAA.html</code>. As <strong>atividades das aulas</strong> de trilha (as semanais, com correção) trazem <code>"trilha":"entrevista"</code> no JSON e ficam só na aba da trilha; se alguma cair no lugar errado, corrija em <em>Destino das aulas e atividades</em>, mais abaixo.
         </div>
         <div class="field"><label>Trilha deste aluno</label>
           <select id="tr-tipo">
@@ -8350,6 +8356,52 @@
         `Monte a etapa ___ como atividades extras em JSON, uma por tarefa (um objeto por vez, mesmo molde das extras: skill, level, title, source, instruction, responseType, content), acrescentando "trilha":"${tipo}", "etapa":N e "ordem":K (posição da tarefa dentro da etapa).`,
       ].join('\n');
     }
+    // Destino das aulas e atividades: rede de segurança. A pós-aula é da trilha pelo `trilha` do documento ou pela palavra no nome do
+    // arquivo (o app lê `trilha:'nenhuma'` como "lista geral", mesmo com a palavra no nome); a atividade, só pelo `trilha` do documento.
+    function trilhaDaPosaulaAdm(p) {
+      const direto = String(p.trilha || '').toLowerCase();
+      if (direto === 'nenhuma') return '';
+      if (TRILHAS_ADM[direto]) return direto;
+      const m = /^pos-aula-.+-(entrevista|business|viagem)-\d{1,2}-\d{1,2}-\d{4}(\.html)?$/i.exec(String(p.filename || p.id || ''));
+      return m ? m[1].toLowerCase() : '';
+    }
+    function trilhaDestinoHtml(tipo, T, recentes, titulo) {
+      const dataTxt = v => { try { const d = v && v.toDate ? v.toDate() : (v ? new Date(v) : null); return d && !isNaN(d) ? d.toLocaleDateString('pt-BR') : ''; } catch (_) { return ''; } };
+      const linha = (kind, item, atual, nome) => `<div class="tr-etapa"><span class="t" title="${esc(nome)}">${esc(nome.length > 58 ? nome.slice(0, 57) + '…' : nome)}<span style="display:block;font-size:.7rem;color:var(--muted);font-weight:600;">${esc(dataTxt(item.createdAt))}</span></span>`
+        + `<select class="tr-destino" data-kind="${kind}" data-id="${esc(item.id)}" style="max-width:150px;font-size:.78rem;padding:4px 6px;"><option value=""${atual ? '' : ' selected'}>Lista geral</option><option value="${tipo}"${atual === tipo ? ' selected' : ''}>${T.ic} ${T.nome}</option></select></div>`;
+      const posaulas = recentes.posaulas.map(p => linha('posaulas', p, trilhaDaPosaulaAdm(p), p.title || p.filename || p.id)).join('') || '<div style="font-size:.82rem;color:var(--muted);">Nenhuma pós-aula.</div>';
+      const atividades = recentes.activities.map(a => linha('activities', a, TRILHAS_ADM[a.trilha] && a.trilha === tipo ? tipo : '', (a.emoji || '📚') + ' ' + (a.title || 'Atividade') + (a.week ? ' · ' + a.week : ''))).join('') || '<div style="font-size:.82rem;color:var(--muted);">Nenhuma atividade.</div>';
+      return titulo('Destino das aulas e atividades (as 8 últimas de cada)')
+        + `<div style="font-size:.78rem;color:var(--muted);line-height:1.45;margin-bottom:4px;">“${T.nome}” leva para a aba ${T.nome} do app; “Lista geral” deixa na aba Atividades de sempre. A mudança vale na hora.</div>`
+        + titulo('Pós-aulas') + posaulas + titulo('Atividades') + atividades;
+    }
+    function trilhaLigarDestino(uid, tipo) {
+      document.querySelectorAll('#tr-corpo .tr-destino').forEach(sel => {
+        sel.onchange = async () => {
+          const kind = sel.dataset.kind, id = sel.dataset.id, valor = sel.value;
+          sel.disabled = true;
+          try {
+            const ref = doc(db, 'students', uid, kind, id);
+            let patch;
+            if (kind === 'activities') {
+              patch = { trilha: valor ? valor : deleteField() };
+            } else if (valor) {
+              patch = { trilha: valor };
+            } else {
+              // Lista geral: se o nome do arquivo tem a palavra da trilha, só apagar o campo não basta; marca 'nenhuma'.
+              const snap = await getDoc(ref);
+              patch = { trilha: trilhaDaPosaulaAdm({ ...snap.data(), trilha: '' }) ? 'nenhuma' : deleteField() };
+            }
+            await updateDoc(ref, patch);
+            showMsg('tr-msg', `✅ ${kind === 'activities' ? 'Atividade' : 'Pós-aula'} agora está em: ${valor ? TRILHAS_ADM[valor].nome : 'lista geral'}.`, 'ok');
+          } catch (e) {
+            showMsg('tr-msg', `Erro ao mudar o destino: ${e.message}`, 'err');
+            await trilhaCarregarCorpo(uid);
+          }
+          sel.disabled = false;
+        };
+      });
+    }
     async function abrirTrilhaModal(uid) {
       const s = allStudents.find(x => x.uid === uid);
       if (!s) return;
@@ -8367,14 +8419,20 @@
       const T = TRILHAS_ADM[tipo];
       if (!T) { corpo.innerHTML = ''; return; }
       corpo.innerHTML = '<div class="loading">Carregando...</div>';
-      let briefing = null, extras = [];
+      let briefing = null, extras = [], recentes = { posaulas: [], activities: [] };
       try {
-        const [bSnap, eSnap] = await Promise.all([
+        const [bSnap, eSnap, pSnap, aSnap] = await Promise.all([
           getDoc(doc(db, 'students', uid, 'trilha', 'briefing')).catch(() => null),
           getDocs(collection(db, 'students', uid, 'extras')).catch(() => ({ docs: [] })),
+          getDocs(query(collection(db, 'students', uid, 'posaulas'), orderBy('createdAt', 'desc'))).catch(() => ({ docs: [] })),
+          getDocs(query(collection(db, 'students', uid, 'activities'), orderBy('createdAt', 'desc'))).catch(() => ({ docs: [] })),
         ]);
         briefing = bSnap && bSnap.exists() ? bSnap.data() : null;
         extras = eSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(e => e.trilha === tipo);
+        recentes = {
+          posaulas: pSnap.docs.slice(0, 8).map(d => ({ id: d.id, ...d.data() })),
+          activities: aSnap.docs.slice(0, 8).map(d => ({ id: d.id, ...d.data() })),
+        };
       } catch (e) { corpo.innerHTML = `<div class="loading">Erro ao carregar: ${esc(e.message)}</div>`; return; }
       const resp = (briefing && briefing.respostas) || {};
       const enviado = briefing && briefing.atualizadoEm && briefing.atualizadoEm.toDate ? briefing.atualizadoEm.toDate().toLocaleDateString('pt-BR') : '';
@@ -8393,7 +8451,9 @@
       corpo.innerHTML = titulo(`Briefing${enviado ? ` · enviado em ${enviado}` : ''}`) + tabela
         + (briefing ? '<button class="btn-secondary" id="tr-copiar" type="button" style="margin-top:8px;">📋 Copiar briefing para o Claude</button>' : '')
         + titulo('Etapas (o aluno só vê a etapa que já tem tarefa enviada)') + etapas
-        + (soltas ? `<div style="font-size:.78rem;color:#92400e;margin-top:6px;">${soltas} tarefa(s) sem etapa válida (o aluno vê em "Outras tarefas da trilha").</div>` : '');
+        + (soltas ? `<div style="font-size:.78rem;color:#92400e;margin-top:6px;">${soltas} tarefa(s) sem etapa válida (o aluno vê em "Outras tarefas da trilha").</div>` : '')
+        + trilhaDestinoHtml(tipo, T, recentes, titulo);
+      trilhaLigarDestino(uid, tipo);
       const copiar = document.getElementById('tr-copiar');
       if (copiar) copiar.onclick = async () => {
         const texto = trilhaBriefingTexto(s, tipo, resp);
@@ -8509,6 +8569,7 @@
         if (!linha.pendEntradas) return;
         if (linha.plano && linha.plano.ativo !== false) { linha.posaulaPendente = null; linha.atividadesPendente = null; return; }   // plano: sem agenda semanal
         const novo = calcularPendencias(linha, { ...linha.pendEntradas, eventos: porAluno[linha.uid] || [], workingDays, hoje });
+        if (linha.pendEntradas.trilha) linha.atividadesTrilhaPendente = calcularPendenciaTrilha(linha, { ...linha.pendEntradas.trilha, workingDays, hoje });
         linha.posaulaPendente = novo.posaulaPendente;
         linha.atividadesPendente = novo.atividadesPendente;
         linha.diasSemAula = novo.diasSemAula;
@@ -8693,6 +8754,32 @@
       return { posaulaPendente, atividadesPendente, diasSemAula };
     }
 
+    // Pendência da TRILHA (roxa). O gatilho NÃO é a agenda: é o pós-aula de trilha enviado. Todo pós-aula de trilha mais novo que o último
+    // lote de atividades de trilha pede atividades. Vence como as normais (2 dias corridos depois da aula, rolando para o dia útil), mas
+    // aparece já no envio do pós-aula ("em breve" enquanto o prazo está longe). As atividades normais e as de trilha têm ciclos separados.
+    function calcularPendenciaTrilha(student, { posts, ultimaAtividadeTrilha, dispensadas, workingDays, hoje }) {
+      const tipo = student.trilha && student.trilha.tipo;
+      const T = TRILHAS_ADM[tipo];
+      if (!T) return null;
+      const disp = dispensadas || new Set();
+      const desde = calendarAddDays(hoje, -PEND_FALLBACK_DIAS);
+      const abertos = (posts || [])
+        .filter(p => p.ref && p.ref >= desde && (!ultimaAtividadeTrilha || (p.criada || p.ref) > ultimaAtividadeTrilha))
+        .sort((a, b) => a.ref - b.ref)
+        .filter(p => !disp.has(`trilha-atividades_${calendarDateKey(p.ref)}`));
+      if (!abertos.length) return null;
+      const primeiro = abertos[0];
+      const due = pendAtividadesDueDate(primeiro.ref, workingDays);
+      const status = pendDiaLabel(due, hoje) || { key: 'soon', text: `Enviar até ${PEND_DIAS_NOMES[due.getDay()]} (${pendFmtData(due)})` };
+      return {
+        tipo: 'trilha-atividades', trilha: tipo, botao: 'Atividades',
+        badge: status.key, texto: status.text,
+        detalhe: `Pós-aula de ${T.nome.toLowerCase()} de ${pendFmtData(primeiro.ref)} sem atividades da trilha`,
+        extra: (abertos.length > 1 ? `+ ${abertos.length - 1} pós-aula(s) de trilha mais novo(s) sem atividades · ` : '') + `Ao pedir ao Claude, escreva "atividades da trilha de ${T.nome.toLowerCase()}" para o JSON sair com "trilha".`,
+        refData: calendarDateKey(primeiro.ref),
+      };
+    }
+
     // Pendências de quem está no plano (Science Lab). Não dependem da agenda semanal:
     //  1) terminou atividade → corrigir; 2) aula do mês chegando / pós-aula e direção depois dela;
     //  3) liberar as atividades e os extras do mês (nenhuma enviada neste ciclo).
@@ -8734,11 +8821,12 @@
     }
 
     function renderPendencias(rows) {
-      const ORDEM = { late:0, today:1, tomorrow:2 };
+      const ORDEM = { late:0, today:1, tomorrow:2, soon:3 };
       const itensPosaula = [], itensAtividades = [], itensPlano = [];
       rows.forEach(s => {
         if (s.posaulaPendente) itensPosaula.push({ student:s, tipo:'posaula', ...s.posaulaPendente });
         if (s.atividadesPendente) itensAtividades.push({ student:s, tipo:'atividades', ...s.atividadesPendente });
+        if (s.atividadesTrilhaPendente) itensAtividades.push({ student:s, ...s.atividadesTrilhaPendente });   // roxa: aulas de trilha, ciclo próprio
         pendPlanoItens(s).forEach(it => itensPlano.push({ student:s, ...it }));
       });
       itensPosaula.sort((a, b) => ORDEM[a.badge] - ORDEM[b.badge]);
@@ -8748,16 +8836,18 @@
       const itemId = it => `${it.student.uid}-${it.tipo}-${it.refData}`;
       const motivosRapidos = it => it.tipo.startsWith('plano')
         ? ['Já combinei com o aluno', 'Aluno em pausa', 'Faço mais tarde']
+        : it.tipo === 'trilha-atividades'
+        ? ['Espero a próxima aula da trilha', 'Vou combinar direto com o aluno', 'Aluno afastado/de férias']
         : it.tipo === 'posaula'
         ? ['Vou gravar em outro dia', 'Aluno remarcou a aula', 'Aluno afastado/de férias']
         : ['Não finalizou o ciclo anterior', 'Vou combinar direto com o aluno', 'Aluno afastado/de férias'];
 
       const item = it => { const id = itemId(it); return `
-        <div class="pend-item">
+        <div class="pend-item${it.trilha ? ' pend-trilha' : ''}">
           <div style="display:flex;gap:10px;align-items:flex-start;width:100%;">
-            <span class="pend-badge ${it.badge}">${it.badge === 'late' ? 'ATRASADO' : it.badge === 'today' ? 'HOJE' : 'AMANHÃ'}</span>
+            <span class="pend-badge ${it.badge}">${it.badge === 'late' ? 'ATRASADO' : it.badge === 'today' ? 'HOJE' : it.badge === 'soon' ? 'EM BREVE' : 'AMANHÃ'}</span>
             <button class="pend-open pend-body" data-uid="${it.student.uid}" data-name="${esc(it.student.name || it.student.firstName || 'Aluno')}" type="button" style="border:0;background:none;padding:0;text-align:left;cursor:pointer;font-family:inherit;width:100%;">
-              <strong>${esc(it.student.name || it.student.firstName || 'Aluno')}</strong>
+              <strong>${esc(it.student.name || it.student.firstName || 'Aluno')}${it.trilha && TRILHAS_ADM[it.trilha] ? `<span class="pend-chip-trilha">${TRILHAS_ADM[it.trilha].ic} Trilha ${TRILHAS_ADM[it.trilha].nome}</span>` : ''}</strong>
               <div class="pend-why">${esc(it.texto)} — ${esc(it.detalhe)}</div>
               ${it.extra ? `<div class="pend-extra">${esc(it.extra)}</div>` : ''}
             </button>
@@ -8881,7 +8971,7 @@
       box.innerHTML = pendenciasDispensadasRecentes.length ? pendenciasDispensadasRecentes.map(d => `
         <div style="display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--border);font-size:0.8rem;flex-wrap:wrap;align-items:center;">
           <div>
-            <strong>${esc(d.nome)}</strong> — ${String(d.tipo).startsWith('plano') ? 'Science Lab' : d.tipo === 'posaula' ? 'Pós-aula' : 'Atividades'}
+            <strong>${esc(d.nome)}</strong> — ${String(d.tipo).startsWith('plano') ? 'Science Lab' : d.tipo === 'posaula' ? 'Pós-aula' : d.tipo === 'trilha-atividades' ? 'Atividades da trilha' : 'Atividades'}
             <div style="color:var(--muted);">"${esc(d.motivo)}" · dispensado ${pendFmtQuando(d.quando)}</div>
           </div>
           <button type="button" class="pend-undo" data-uid="${d.uid}" data-tipo="${d.tipo}" data-ref="${d.refData}" style="background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;font-size:0.78rem;">↺ Desfazer</button>
@@ -9178,10 +9268,21 @@
           if (Date.now() - quando.getTime() > 7 * 86400000) return;
           dispensadasRecentesCarregadas.push({ uid: s.uid, nome: s.name || s.firstName || 'Aluno', tipo: x.tipo, refData: x.refData, motivo: x.motivo || '', quando });
         });
+        // Trilha e aulas normais têm ciclos separados: o lote de atividades de trilha não "quita" a pendência das normais.
+        const tipoTrilha = s.trilha && s.trilha.tipo ? String(s.trilha.tipo).toLowerCase() : '';
+        const daTrilhaAtiv = a => !!tipoTrilha && String(a.trilha || '').toLowerCase() === tipoTrilha;
+        const ultimaAtivGeral = pendMidnight(dateOfAdm(activities.find(a => !daTrilhaAtiv(a))?.createdAt));
+        const semAtivGeral = adminActivityCounts(activities.filter(a => !daTrilhaAtiv(a))).semAtividades;   // "sem atividade em andamento" só conta as normais
+        const trilhaEntradas = tipoTrilha ? {
+          posts: posts.filter(p => trilhaDaPosaulaAdm(p) === tipoTrilha).map(p => ({ ref: pendMidnight(adminPostReferenceDate(p)), criada: dateOfAdm(p.createdAt) })),
+          ultimaAtividadeTrilha: dateOfAdm(activities.find(daTrilhaAtiv)?.createdAt),
+          dispensadas,
+        } : null;
         const { posaulaPendente, atividadesPendente, diasSemAula } = calcularPendencias(s, {
-          ultimaPosData, ultimaAulaData, semAtividades: activityCounts.semAtividades, ultimaAtividadeCriada: pendMidnight(dateOfAdm(activities[0]?.createdAt)),
+          ultimaPosData, ultimaAulaData, semAtividades: semAtivGeral, ultimaAtividadeCriada: ultimaAtivGeral,
           eventos: pendEventosPorAluno[s.uid] || [], workingDays: pendWorkingDays, hoje: pendHoje, dispensadas,
         });
+        const atividadesTrilhaPendente = trilhaEntradas ? calcularPendenciaTrilha(s, { ...trilhaEntradas, workingDays: pendWorkingDays, hoje: pendHoje }) : null;
         const emPlanoS = !!(s.plano && s.plano.ativo !== false);   // aluno do plano: pendências próprias (coluna Science Lab)
         const reviewReports = reviewSnap.docs.map(d => ({ id:d.id, ...d.data() }));
         const progress = adminProgressSummary(s, posts, activities);
@@ -9190,9 +9291,10 @@
           ...s, latestRead: isRead, latestTitle: latest?.title || null,
           ...activityCounts,
           posaulaPendente: emPlanoS ? null : posaulaPendente, atividadesPendente: emPlanoS ? null : atividadesPendente, diasSemAula,
+          atividadesTrilhaPendente,
           reviewReports, progress, adesaoIn,
-          pendEntradas: { ultimaPosData, ultimaAulaData, semAtividades: activityCounts.semAtividades,
-            ultimaAtividadeCriada: pendMidnight(dateOfAdm(activities[0]?.createdAt)), dispensadas },
+          pendEntradas: { ultimaPosData, ultimaAulaData, semAtividades: semAtivGeral,
+            ultimaAtividadeCriada: ultimaAtivGeral, dispensadas, trilha: trilhaEntradas },
         };
       }));
       pendLinhasAtuais = rows;
@@ -9392,7 +9494,7 @@
         return `<div class="posaula-item">
           <div style="display:flex;align-items:flex-start;gap:10px;">
             <div style="flex:1;">
-              <div class="p-title">${a.emoji || '📚'} ${esc(a.title || 'Atividade')}</div>
+              <div class="p-title">${a.emoji || '📚'} ${esc(a.title || 'Atividade')}${TRILHAS_ADM[a.trilha] ? `<span class="trilha-chip" style="background:${TRILHAS_ADM[a.trilha].bg};color:${TRILHAS_ADM[a.trilha].escuro};border-color:${TRILHAS_ADM[a.trilha].linha}">${TRILHAS_ADM[a.trilha].ic} ${TRILHAS_ADM[a.trilha].nome}</span>` : ''}</div>
               <div class="p-meta">${parts} parte(s)</div>
               <div class="p-status ${statusCls}">${status}</div>
             </div>
@@ -9680,11 +9782,23 @@
 
       const resolved = resolverAlunoDoJson(data);
       if (resolved.error) { showMsg('pub-msg', resolved.error, 'err'); return; }
+      // Atividades das aulas de trilha: o campo "trilha" manda a atividade para a aba da trilha (e só para ela).
+      const trilhaDestino = String(data.trilha || '').toLowerCase();
+      const nomeAluno = resolved.student.name || resolved.student.firstName;
+      if (data.trilha && !TRILHAS_ADM[trilhaDestino]) {
+        showMsg('pub-msg', 'Campo "trilha" deve ser entrevista, business ou viagem (ou ficar de fora, para a lista geral).', 'err'); return;
+      }
+      if (trilhaDestino && (!resolved.student.trilha || resolved.student.trilha.tipo !== trilhaDestino)) {
+        showMsg('pub-msg', `${nomeAluno} não tem a trilha ${TRILHAS_ADM[trilhaDestino].nome} ativada. Ative em ⋮ → Trilha antes de publicar; sem isso a atividade apareceria na lista geral.`, 'err'); return;
+      }
       parsedActivityJson = data;
       parsedActivityJson._resolvedUid = resolved.student.uid;
+      parsedActivityJson._trilha = trilhaDestino;
 
-      document.getElementById('pub-preview-student').textContent =
-        `Aluno: ${resolved.student.name || resolved.student.firstName}`;
+      const destinoHtml = trilhaDestino
+        ? `<span class="trilha-chip" style="margin-left:0;background:${TRILHAS_ADM[trilhaDestino].bg};color:${TRILHAS_ADM[trilhaDestino].escuro};border-color:${TRILHAS_ADM[trilhaDestino].linha}">Destino: ${TRILHAS_ADM[trilhaDestino].ic} aba ${TRILHAS_ADM[trilhaDestino].nome} (só na trilha)</span>`
+        : '<span class="trilha-chip" style="margin-left:0;background:#f1f5f9;color:#334155;border-color:#cbd5e1">Destino: aba Atividades geral</span>';
+      document.getElementById('pub-preview-student').innerHTML = `Aluno: ${esc(nomeAluno)} &nbsp; ${destinoHtml}`;
 
       const publication = activityPublicationMetadata(data.week);
       document.getElementById('pub-preview-list').innerHTML = data.activities.map(a => `
@@ -9714,6 +9828,7 @@
       try {
         const activitiesRef = collection(db, 'students', uid, 'activities');
         const { activities, week } = parsedActivityJson;
+        const trilhaDestino = parsedActivityJson._trilha || '';   // lida agora: o JSON é zerado depois de publicar
         if (activities.length > 500) throw new Error('Publique no máximo 500 atividades por lote.');
         // Recalcular no clique: a prévia pode ter sido aberta no dia anterior.
         const publication = activityPublicationMetadata(week);
@@ -9722,6 +9837,7 @@
         for (const act of activities) {
           batch.set(doc(activitiesRef), {
             ...publication,
+            ...(trilhaDestino ? { trilha: trilhaDestino } : {}),
             title:     act.title || '',
             emoji:     act.emoji || '📚',
             parts:     act.parts || [],
@@ -9737,7 +9853,7 @@
         document.getElementById('pub-preview').style.display = 'none';
         document.getElementById('pub-json').value = '';
         parsedActivityJson = null;
-        showMsg('pub-msg', `✅ ${activities.length} atividade(s) publicadas em ${publication.week}! O aluno já pode ver no app.`, 'ok');
+        showMsg('pub-msg', `✅ ${activities.length} atividade(s) publicadas em ${publication.week}! ${trilhaDestino ? `Foram para a aba ${TRILHAS_ADM[trilhaDestino].nome}, não para a lista geral.` : 'O aluno já pode ver no app.'}`, 'ok');
       } catch(e) {
         btn.textContent = '🚀 Publicar para o aluno';
         btn.disabled = false;

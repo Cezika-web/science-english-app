@@ -244,7 +244,7 @@ async function getFB() {
 // Falha de gravação (regra ainda não publicada, sem rede) nunca aparece para o aluno.
 const CzkUsage = (() => {
   // Versão do app que vai junto com o uso (para saber quem ainda roda versão velha). Mantenha igual ao CACHE do sw.js.
-  const APP_BUILD = 'v52';
+  const APP_BUILD = 'v53';
   const TICK = 1000, MIN_STEP = 200, FLUSH = 60000, NEW_VISIT = 30 * 60000;
   const BLIND_CAP = 10 * 60000, HOLD_CAP = 15 * 60000, MAX_FAILS = 5;
   const READ_MS = 180000;                 // maior pausa aceita na leitura do pós-aula (igual a LEITURA_SEG do adesao.js)
@@ -621,9 +621,15 @@ const TRILHAS = {
 };
 function postTrilha(post) {
   const direto = String((post && post.trilha) || '').toLowerCase();
+  if (direto === 'nenhuma') return '';   // o professor mandou esta aula para a lista geral (painel: ⋮ → Trilha → Destino), mesmo com a palavra no nome
   if (TRILHAS[direto]) return direto;
   const achou = /^pos-aula-.+-(entrevista|business|viagem)-\d{1,2}-\d{1,2}-\d{4}(\.html)?$/i.exec(String((post && (post.filename || post.id)) || ''));
   return achou ? achou[1].toLowerCase() : '';
+}
+// Atividades das aulas de trilha: o documento da atividade traz `trilha` (o JSON da skill/painel acrescenta). Elas moram só
+// na aba da trilha. Só saem da lista geral se a trilha DESSE tipo estiver ativada no aluno; sem isso continuam na geral, para nada sumir.
+function atividadeDaTrilha(act, tipoAluno) {
+  return !!tipoAluno && !!TRILHAS[tipoAluno] && String((act && act.trilha) || '').toLowerCase() === tipoAluno;
 }
 function TrilhaChip({ tipo, style }) {
   const t = TRILHAS[tipo];
@@ -4059,13 +4065,19 @@ function nextActivityStep(activities) {
   return { ...escolhido, hasProgress:temProgresso(escolhido.activity) };
 }
 
-function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOpenExtra, onOpenCorrecao, onOpenChallenge, challengeSimulation, challengeState, challengeEnabled = false, trilhaProps = null }) {
+function AulasTab({ activities, activitiesTrilha = [], onOpenActivity, onContinueActivity, extras, onOpenExtra, onOpenCorrecao, onOpenChallenge, challengeSimulation, challengeState, challengeEnabled = false, trilhaProps = null }) {
   const [sub, setSub] = useState('atividades');
   // Trilha (Entrevista, Business, Viagem): o professor ativa no painel e o aluno ganha um 3º botão aqui. Quem não tem trilha não vê nada novo.
   const trTipo = trilhaProps && trilhaProps.student && trilhaProps.student.trilha ? trilhaProps.student.trilha.tipo : '';
   const trInfo = TRILHAS[trTipo] && typeof TrilhaTab === 'function' ? TRILHAS[trTipo] : null;
+  // As atividades das aulas da trilha NÃO entram na lista geral: aparecem só na sub-tela "Atividades da trilha",
+  // que reaproveita a mesma lista e o mesmo histórico, alimentados por `activitiesTrilha`.
+  const [verAtivsTrilha, setVerAtivsTrilha] = useState(false);
+  const modoTrilha = !!trInfo && sub === 'trilha' && verAtivsTrilha;
+  const lista = modoTrilha ? activitiesTrilha : activities;
   const [openHist, setOpenHist] = useState({});
   const [openMonth, setOpenMonth] = useState({});
+  const chaveSemana = wk => (modoTrilha ? 'trilha|' : '') + wk;   // geral e trilha podem ter a mesma data: o estado aberto não se mistura
 
   const groupByWeek = (list) => {
     const map = {}, order = [];
@@ -4077,12 +4089,12 @@ function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOp
     return order.map(wk => ({ wk, acts: map[wk] }));
   };
 
-  const atuaisByWeek = React.useMemo(() => groupByWeek(activities.filter(a => a.status !== 'corrected')), [activities]);
-  const histByWeek   = React.useMemo(() => groupByWeek(activities.filter(a => a.status === 'corrected')), [activities]);
+  const atuaisByWeek = React.useMemo(() => groupByWeek(lista.filter(a => a.status !== 'corrected')), [lista]);
+  const histByWeek   = React.useMemo(() => groupByWeek(lista.filter(a => a.status === 'corrected')), [lista]);
   const temHistorico = histByWeek.length > 0;
   const temAtuais    = atuaisByWeek.length > 0;
 
-  const continuar = React.useMemo(() => nextActivityStep(activities), [activities]);
+  const continuar = React.useMemo(() => nextActivityStep(lista), [lista]);
 
   // Histórico: mês atual fica solto (semanas soltas); meses passados viram pasta.
   const histGroups = React.useMemo(() => {
@@ -4102,10 +4114,10 @@ function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOp
 
   // Renderiza um card de semana (accordion) — reusado solto e dentro da pasta do mês.
   const renderWeekCard = ({ wk, acts }) => {
-    const open = openHist[wk] === true;
+    const open = openHist[chaveSemana(wk)] === true;
     return (
       <div key={wk} style={{ marginBottom: 8 }}>
-        <button onClick={() => setOpenHist(o => ({ ...o, [wk]: !open }))} style={{
+        <button onClick={() => setOpenHist(o => ({ ...o, [chaveSemana(wk)]: !open }))} style={{
           width: '100%', background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(var(--brand-rgb),0.12)', borderRadius: 14,
           padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontFamily: 'inherit',
         }}>
@@ -4136,11 +4148,11 @@ function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOp
 
   // Renderiza a pasta de um mês passado, com as semanas dentro.
   const renderMonthFolder = (m) => {
-    const open = openMonth[m.key] === true;
+    const open = openMonth[chaveSemana(m.key)] === true;
     const totalCorr = m.weeks.reduce((n, w) => n + w.acts.length, 0);
     return (
       <div key={m.key} style={{ marginBottom: 8 }}>
-        <button onClick={() => setOpenMonth(o => ({ ...o, [m.key]: !open }))} style={{
+        <button onClick={() => setOpenMonth(o => ({ ...o, [chaveSemana(m.key)]: !open }))} style={{
           width: '100%', background: 'rgba(124,74,33,0.06)', border: '1px solid rgba(124,74,33,0.18)', borderRadius: 14,
           padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontFamily: 'inherit',
         }}>
@@ -4169,7 +4181,7 @@ function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOp
           // Bolinha âmbar enquanto a aluna ainda não contou sobre a vaga (briefing nulo = já carregou e não existe).
           const novo = ehTrilha && !ligado && trilhaProps.briefing === null;
           return (
-          <button key={s} onClick={() => setSub(s)} style={{
+          <button key={s} onClick={() => { setSub(s); setVerAtivsTrilha(false); }} style={{
             flex: 1, padding: '9px 0', borderRadius: 11, border: 'none', cursor: 'pointer', position: 'relative', whiteSpace: 'nowrap',
             background: ligado ? (ehTrilha ? trInfo.grad : 'linear-gradient(180deg,var(--brand-light),var(--brand))') : 'transparent',
             color: ligado ? '#fff' : (ehTrilha ? trInfo.dark : '#64748B'), fontWeight: ligado || ehTrilha ? 800 : 600, fontSize: 13,
@@ -4183,7 +4195,17 @@ function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOp
 
       {sub === 'atividades' && challengeEnabled && <ChallengeCarousel simulation={challengeSimulation} challengeState={challengeState} onOpen={onOpenChallenge} />}
 
-      {sub === 'atividades' && (
+      {modoTrilha && (
+        <React.Fragment>
+          <button onClick={() => setVerAtivsTrilha(false)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: trInfo.dark, fontWeight: 800, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit', padding: '2px 0 10px' }}>&#8249; Voltar à trilha</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+            <div style={{ width: 46, height: 46, borderRadius: 14, background: trInfo.bg, display: 'grid', placeItems: 'center', fontSize: 23, flexShrink: 0 }}>{trInfo.ic}</div>
+            <div><div style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', lineHeight: 1.2 }}>Atividades das aulas de {trInfo.nome.toLowerCase()}</div><div style={{ fontSize: 11.5, color: '#64748B', fontWeight: 700 }}>Só as atividades das aulas da trilha</div></div>
+          </div>
+        </React.Fragment>
+      )}
+
+      {(sub === 'atividades' || modoTrilha) && (
         <button type="button" disabled={!continuar} onClick={() => continuar && onContinueActivity(continuar.activity, continuar.part)} style={{
           width:'100%', boxSizing:'border-box', border:`1px solid ${continuar ? 'rgba(var(--brand-rgb),.22)' : '#D8CFC3'}`, borderRadius:14,
           padding:'9px 13px', marginBottom:16, background:continuar ? 'rgba(255,255,255,.72)' : '#EDE7DF',
@@ -4201,11 +4223,11 @@ function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOp
         </button>
       )}
 
-      {sub === 'atividades' && (activities.length === 0 ? (
+      {(sub === 'atividades' || modoTrilha) && (lista.length === 0 ? (
         <GlassCard style={{ padding: 32, textAlign: 'center' }}>
           <div style={{ fontSize: 36, marginBottom: 10 }}>&#9999;&#65039;</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 4 }}>Sem atividades ainda</div>
-          <div style={{ fontSize: 13, color: '#64748B' }}>O professor publicara em breve.</div>
+          <div style={{ fontSize: 13, color: '#64748B' }}>{modoTrilha ? `As atividades das aulas de ${trInfo.nome.toLowerCase()} aparecem aqui.` : 'O professor publicara em breve.'}</div>
         </GlassCard>
       ) : (
         <React.Fragment>
@@ -4237,7 +4259,7 @@ function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOp
       ))}
 
       {sub === 'extras' && <ExtrasSection extras={extras} onOpenExtra={onOpenExtra} />}
-      {sub === 'trilha' && trInfo && <TrilhaTab {...trilhaProps} tipo={trTipo} />}
+      {sub === 'trilha' && trInfo && !verAtivsTrilha && <TrilhaTab {...trilhaProps} activities={activitiesTrilha} onAbrirAtividades={() => setVerAtivsTrilha(true)} tipo={trTipo} />}
       <div style={{ height: 12 }} />
     </div>
   );
@@ -5699,6 +5721,11 @@ function App() {
     CzkUsage.setBucket({ area: usageArea, item: usageItem, blind: usageBlind });
   }, [usageArea, usageItem, usageBlind]);
   const adesao = useAdesaoData(student, posaulas, activities, tab, extras);   // meta de estudo e adesão (Início, Progresso e a página)
+  // Atividades das aulas da trilha ficam só na aba da trilha; as demais telas (Início, plano, confete) usam só a lista geral.
+  // Progresso e adesão continuam contando tudo, porque medem o estudo da aluna, não a lista.
+  const tipoTrilhaAluno = student?.trilha?.tipo || '';
+  const activitiesTrilha = React.useMemo(() => activities.filter(a => atividadeDaTrilha(a, tipoTrilhaAluno)), [activities, tipoTrilhaAluno]);
+  const activitiesGerais = React.useMemo(() => activities.filter(a => !atividadeDaTrilha(a, tipoTrilhaAluno)), [activities, tipoTrilhaAluno]);
   useEffect(() => { setAdesaoPage(null); }, [tab]);   // trocar de aba fecha a página de adesão
   const challengePreviewAccess = Boolean(student) && student?.challengeEnabled !== false;
   const combinedChallengeSimulation = {
@@ -5731,7 +5758,7 @@ function App() {
       return d && d.getFullYear() === currentYear;
     }).length;
     const metaAnual  = Number(student?.metaAnual) || 40;
-    const semanaAtivs = activities.filter(a => a.status !== 'corrected');
+    const semanaAtivs = activitiesGerais.filter(a => a.status !== 'corrected');
     const total       = semanaAtivs.length;
     const feitas      = semanaAtivs.filter(a => a.finalizada).length;
     const weekAtual   = semanaAtivs[0]?.week || '';
@@ -5746,7 +5773,7 @@ function App() {
       if (!localStorage.getItem(k)) { localStorage.setItem(k, '1'); fire = true; }
     }
     if (fire) setCelebrate(true);
-  }, [student, posaulas, activities]);
+  }, [student, posaulas, activitiesGerais]);
 
   // Conquistas ficam no documento do aluno: aparecem uma vez, inclusive se ele
   // trocar de celular. Uma falta zera a sequência; feriados nem entram na lista.
@@ -6459,17 +6486,17 @@ function App() {
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         {planoCfg ? (
-          <PlanoConteudo tab={planoTab} onTab={setPlanoTab} cfg={planoCfg} student={student} posaulas={posaulas} activities={activities}
+          <PlanoConteudo tab={planoTab} onTab={setPlanoTab} cfg={planoCfg} student={student} posaulas={posaulas} activities={activitiesGerais}
             onOpenPost={handleOpenPost} onAsk={perguntarAssistente}
             slots={{
-              atividades: <AulasTab activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={(challenge) => { setSelectedChallenge(challenge || null); setChallengeView('hub'); }} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} trilhaProps={trilhaProps} />,
+              atividades: <AulasTab activities={activitiesGerais} activitiesTrilha={activitiesTrilha} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={(challenge) => { setSelectedChallenge(challenge || null); setChallengeView('hub'); }} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} trilhaProps={trilhaProps} />,
               perfil: <PerfilTab student={student} mirror={mirror} onLogout={handleLogout} onPatchStudent={patchStudent} reviews={courseReviews} ownReview={ownCourseReview} onSaveReview={saveCourseReview} openReviewForm={reviewFormRequest} />,
             }} />
         ) : (<>
         {adesaoPage && <AdesaoPage adesao={adesao} student={student} startDay={adesaoPage.dia} onClose={() => setAdesaoPage(null)} onPerfil={() => { setAdesaoPage(null); setTab('perfil'); }}
           onGo={kind => { setAdesaoPage(null); if (kind === 'vocab') setTab('vocab'); else if (kind === 'aulas') setTab('aulas'); else if (posaulas[0]) handleOpenPost(posaulas[0]); else setTab('aulas'); }} />}
-        {!adesaoPage && tab === 'home'   && <HomeTab   student={student} posaulas={posaulas} activities={activities} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} adesao={adesao} onOpenAdesao={dia => setAdesaoPage({ dia })} />}
-        {!adesaoPage && tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={(challenge) => { setSelectedChallenge(challenge || null); setChallengeView('hub'); }} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} trilhaProps={trilhaProps} />}
+        {!adesaoPage && tab === 'home'   && <HomeTab   student={student} posaulas={posaulas} activities={activitiesGerais} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} adesao={adesao} onOpenAdesao={dia => setAdesaoPage({ dia })} />}
+        {!adesaoPage && tab === 'aulas'  && <AulasTab  activities={activitiesGerais} activitiesTrilha={activitiesTrilha} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={(challenge) => { setSelectedChallenge(challenge || null); setChallengeView('hub'); }} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} trilhaProps={trilhaProps} />}
         {!adesaoPage && tab === 'progresso' && <ProgressTab adesao={adesao} onOpenAdesao={dia => setAdesaoPage({ dia })} student={student} posaulas={posaulas} activities={activities} reviewReports={reviewReports} onOpenReview={openReviewResult} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} onOpenChallenge={() => { setSelectedChallenge(null); setChallengeView('hub'); }} />}
         {!adesaoPage && tab === 'vocab'  && <VocabTab vocab={vocab} onViewChange={setVocabView} />}
         {!adesaoPage && tab === 'perfil' && <PerfilTab student={student} mirror={mirror} onLogout={handleLogout} onPatchStudent={patchStudent} reviews={courseReviews} ownReview={ownCourseReview} onSaveReview={saveCourseReview} openReviewForm={reviewFormRequest} />}
