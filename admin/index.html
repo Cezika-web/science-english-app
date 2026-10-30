@@ -1072,6 +1072,7 @@
               <div class="calendar-legend-title">Calendários</div>
               <div class="calendar-legend-row"><span class="calendar-legend-dot" id="calendar-lesson-dot"></span> Aulas</div>
               <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#dc2626"></span> Horário disponível</div>
+              <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#7c3aed"></span> 🎯 Aula de trilha (marque na aula)</div>
               <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#8b5cf6"></span> Science Lab (1h no mês)</div>
               <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#ec4899"></span> Particular</div>
               <div class="calendar-legend-row"><span class="calendar-legend-dot" style="background:#64748b"></span> Horário bloqueado</div>
@@ -1179,7 +1180,7 @@
         <div style="margin-bottom:14px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
           <div>
             <h2 style="margin:0 0 5px;">🧭 Pendências dos alunos</h2>
-            <p style="font-size:0.85rem;color:var(--muted);margin:0;" id="pend-hoje-label">Só aparece quem precisa de pós-aula ou atividades até amanhã — ligado à agenda, então aula cancelada não conta. As atividades de <strong style="color:#5b21b6;">trilha</strong> (roxo) aparecem assim que você envia um pós-aula de trilha, até você enviar as atividades dele.</p>
+            <p style="font-size:0.85rem;color:var(--muted);margin:0;" id="pend-hoje-label">Só aparece quem precisa de pós-aula ou atividades até amanhã — ligado à agenda, então aula cancelada não conta. Aulas marcadas como <strong style="color:#5b21b6;">trilha</strong> na Agenda ficam em roxo: o pós-aula delas tem pendência própria, e as atividades de trilha aparecem assim que você envia um pós-aula de trilha, até você enviar as atividades dele.</p>
           </div>
           <div class="refresh-line">
             <span class="refresh-note" data-refresh-note></span>
@@ -2096,6 +2097,11 @@
           <label for="calendar-event-student">Aluno</label>
           <select id="calendar-event-student"><option value="">Selecione o aluno</option></select>
         </div>
+        <div class="field" id="calendar-trilha-field" style="display:none;">
+          <label for="calendar-event-trilha">Aula normal ou de trilha</label>
+          <select id="calendar-event-trilha"></select>
+          <small style="display:block;margin-top:5px;color:var(--muted);font-size:.72rem;line-height:1.4;">Aula de trilha aparece em roxo na agenda e a pendência do pós-aula dela fica na cor da trilha. O nome do pós-aula precisa ter a palavra da trilha (pos-aula-nome-<b>entrevista</b>-MM-DD-AAAA.html).</small>
+        </div>
         <div class="field" id="calendar-makeup-field" style="display:none;">
           <label for="calendar-event-makeup-for">Esta reposição compensa</label>
           <select id="calendar-event-makeup-for"><option value="">Escolha o aluno primeiro</option></select>
@@ -2169,6 +2175,9 @@
     <button class="calendar-pop-reposicao" id="calendar-pop-reposicao" type="button">🔄 Marcar reposição</button>
     <div class="calendar-pop-row" id="calendar-pop-student-row" style="display:none;grid-template-columns:1fr;">
       <select id="calendar-pop-student" aria-label="Aluno"><option value="">Selecione o aluno</option></select>
+    </div>
+    <div class="calendar-pop-row" id="calendar-pop-trilha-row" style="display:none;grid-template-columns:1fr;">
+      <select id="calendar-pop-trilha" aria-label="Aula normal ou de trilha"></select>
     </div>
     <div class="calendar-pop-row" id="calendar-pop-makeup-row" style="display:none;grid-template-columns:1fr;">
       <select id="calendar-pop-makeup-for" aria-label="Aula compensada"><option value="">Escolha o aluno primeiro</option></select>
@@ -2946,7 +2955,7 @@
           const first = memberEvents[0];
           const memberNames = memberEvents.map(item => item.studentName || 'Aluno');
           const virtual = { ...first, id:`__group-${group.id}-${key}-${first.startTime}`, groupVirtual:true,
-            groupId:group.id, groupName:group.name || memberNames.join(' e '),
+            groupId:group.id, groupName:group.name || memberNames.join(' e '), trilha:'',
             memberUids:memberEvents.map(item => item.studentUid), memberNames, memberEvents,
             studentUid:'', studentName:group.name || memberNames.join(' e '), title:`Aula · ${group.name || memberNames.join(' e ')}` };
           merged.push(virtual); calendarDisplayEvents.set(virtual.id, virtual);
@@ -2989,8 +2998,18 @@
     const CALENDAR_INTENSIDADE_BORDA = [20, 13.5, 9, 6, 4, 3];
     const calendarMistura = (faixa, tabela = CALENDAR_INTENSIDADE) => tabela[faixa] ?? tabela[tabela.length - 1];
 
+    // Aula de TRILHA (Entrevista, Business, Viagem): o compromisso leva `trilha`. Cor própria, o mesmo roxo das pendências de
+    // trilha, para a aula normal e a de trilha do mesmo aluno (ex.: terça é trilha; quarta e sexta são normais) não se confundirem.
+    const CALENDAR_COR_TRILHA = '#7c3aed';
+    // A trilha ativada no aluno (só aula de UM aluno tem trilha; dupla/turma não).
+    function calendarTrilhaDoAluno(uid) {
+      const aluno = allStudents.find(item => item.uid === uid);
+      const tipo = aluno && aluno.trilha && aluno.trilha.tipo;
+      return TRILHAS_ADM[tipo] ? tipo : '';
+    }
     function calendarEventColor(event) {
       if (event.color) return event.color; // cor escolhida à mão vence a do tipo
+      if (event.trilha) return CALENDAR_COR_TRILHA;
       // Roxo é do Science Lab (aula de 1h no mês); o Particular (a Sofia) é rosa.
       return event.type === 'available' ? '#dc2626' : event.type === 'personal' ? '#ec4899'
         : event.type === 'sciencelab' ? '#8b5cf6'
@@ -3011,7 +3030,12 @@
     // O tipo precisa ficar evidente no cartão mesmo quando o título salvo contém
     // apenas o nome (caso do "Vlad") ou veio de um registro antigo. Normalizar só
     // na exibição preserva o texto digitado pelo professor e corrige o histórico.
+    // Aula de trilha ganha o ícone da trilha antes do título (🎯 💼 ✈️), na grade e no mês.
     function calendarDisplayTitle(event = {}) {
+      const base = calendarDisplayTitleBase(event), trilha = event.trilha && TRILHAS_ADM[event.trilha];
+      return trilha ? `${trilha.ic} ${base}` : base;
+    }
+    function calendarDisplayTitleBase(event = {}) {
       const raw = String(event.title || '').trim();
       if (event.type !== 'reposicao' && event.type !== 'experimental') return raw || 'Compromisso';
       const label = event.type === 'reposicao' ? 'Reposição' : 'Experimental';
@@ -3065,6 +3089,18 @@
         select.innerHTML = opcoes;
         if ([...select.options].some(option => option.value === current)) select.value = current;
       });
+    }
+
+    // Seletor "Aula normal / Aula de trilha" (popover e modal). Só aparece para aula de UM aluno que tem trilha ativada; devolve o valor escolhido.
+    function calendarSyncTrilhaCampo(campoId, selectId, uidAluno, atual, exibir = 'block') {
+      const campo = document.getElementById(campoId), select = document.getElementById(selectId);
+      const tipo = calendarTrilhaDoAluno(uidAluno);
+      if (!tipo) { campo.style.display = 'none'; select.innerHTML = ''; return ''; }
+      const T = TRILHAS_ADM[tipo];
+      select.innerHTML = `<option value="">Aula normal</option><option value="${tipo}">${T.ic} Aula de trilha (${T.nome}) · fica roxa</option>`;
+      select.value = atual === tipo ? tipo : '';
+      campo.style.display = exibir;
+      return select.value;
     }
 
     function calendarFocusDay() { return calendarSelectedDay || calendarDateKey(new Date()); }
@@ -3254,7 +3290,7 @@
         : '';
       const labels = Array.from({ length:hours }, (_, index) => `<div class="calendar-hour-label">${calendarTime(startMinutes + index*60)}</div>`).join('');
       const faixasCanceladas = {}; // dia → horários cancelados (em minutos), para o arrasto saber que ali está livre
-      const calendarNomeCancelado = item => calendarDisplayTitle(item).replace(/^aula\s*[·:—-]\s*/i, '');
+      const calendarNomeCancelado = item => calendarDisplayTitleBase(item).replace(/^aula\s*[·:—-]\s*/i, '');
       const columns = days.map(date => {
         const key = calendarDateKey(date), work = calendarSettings.workingDays.includes(date.getDay());
         const doDia = calendarMergeGroups(calendarEvents.filter(event => calendarOccursOn(event,date)), date);
@@ -3996,7 +4032,8 @@
       document.getElementById('calendar-event-start').value = event.startTime || calendarSettings.dayStart || '08:00';
       document.getElementById('calendar-event-end').value = event.endTime || calendarTime(calendarMinutes(calendarSettings.dayStart || '08:00')+60);
       document.getElementById('calendar-event-repeat').value = ['daily','weekly','monthly','custom'].includes(event.repeat) ? event.repeat : 'none';
-      calendarModalDraft = { repeatDays:(event.repeatDays || []).map(Number) };
+      calendarModalDraft = { repeatDays:(event.repeatDays || []).map(Number), trilha:event.trilha || '' };
+      document.getElementById('calendar-event-trilha').innerHTML = '';   // refeito por calendarSyncEventForm com a marca do compromisso
       document.getElementById('calendar-event-repeat-until').value = event.repeatUntil || '';
       document.getElementById('calendar-event-notes').value = event.notes || '';
       document.getElementById('calendar-event-modal-title').textContent = editing ? 'Editar compromisso' : 'Novo compromisso';
@@ -4006,11 +4043,17 @@
       document.getElementById('calendar-event-modal').classList.add('open');
     }
 
-    let calendarModalDraft = { repeatDays:[] };
+    let calendarModalDraft = { repeatDays:[], trilha:'' };
 
     function calendarSyncEventForm() {
       const type = document.getElementById('calendar-event-type').value, repeat = document.getElementById('calendar-event-repeat').value;
       const comAluno = calendarTipoComAluno(type);
+      {
+        const seletor = document.getElementById('calendar-event-trilha');
+        const entidade = calendarEntity(document.getElementById('calendar-event-student').value);
+        const uid = (type === 'lesson' || type === 'reposicao') && entidade && entidade.kind === 'student' ? entidade.value : '';
+        calendarModalDraft.trilha = calendarSyncTrilhaCampo('calendar-trilha-field', 'calendar-event-trilha', uid, seletor.options.length ? seletor.value : (calendarModalDraft.trilha || ''));
+      }
       document.getElementById('calendar-student-field').style.display = comAluno ? 'block' : 'none';
       document.getElementById('calendar-makeup-field').style.display = type === 'reposicao' ? 'block' : 'none';
       // A pauta só faz sentido em aula de aluno, e só depois de escolher quem é.
@@ -4075,6 +4118,7 @@
         repeatDays:document.getElementById('calendar-event-repeat').value === 'custom' ? calendarModalDraft.repeatDays.map(Number) : [],
         repeatUntil:document.getElementById('calendar-event-repeat').value !== 'none' ? document.getElementById('calendar-event-repeat-until').value : '',
         makeupForDate:type === 'reposicao' ? document.getElementById('calendar-event-makeup-for').value : '',
+        trilha:(type === 'lesson' || type === 'reposicao') && entity?.kind === 'student' && calendarModalDraft.trilha && calendarModalDraft.trilha === calendarTrilhaDoAluno(entity.value) ? calendarModalDraft.trilha : '',
         notes:document.getElementById('calendar-event-notes').value.trim(), timezone:'America/Sao_Paulo', updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || ''
       };
       if (!event.date || !event.startTime || !event.endTime) return showMsg('calendar-event-msg','Preencha data, início e término.','err');
@@ -4139,7 +4183,9 @@
       calendarFillMakeupDates('calendar-event-makeup-for', document.getElementById('calendar-event-student').value, document.getElementById('calendar-event-date').value, '');
     };
     document.getElementById('calendar-event-repeat').onchange = calendarSyncEventForm;
+    document.getElementById('calendar-event-trilha').onchange = evento => { calendarModalDraft.trilha = evento.target.value; };
     document.getElementById('calendar-event-student').onchange = event => {
+      document.getElementById('calendar-event-trilha').innerHTML = ''; calendarModalDraft.trilha = '';   // outro aluno: a marca de trilha não vai junto
       const entity = calendarEntity(event.target.value), title = document.getElementById('calendar-event-title');
       const type = document.getElementById('calendar-event-type').value;
       if (entity && (!title.value || title.value.startsWith('Aula · ') || title.value.startsWith('Reposição · ') || title.value.startsWith('Science Lab · '))) title.value = `${type === 'reposicao' ? 'Reposição' : type === 'sciencelab' ? 'Science Lab' : 'Aula'} · ${entity.label}`;
@@ -4344,8 +4390,21 @@
       const campoRepeticao = document.getElementById('calendar-pop-repeat');
       campoRepeticao.disabled = TIPOS_SEM_REPETICAO.includes(calendarPopDraft.type);
       if (campoRepeticao.disabled) campoRepeticao.value = 'none';
+      calendarPopSyncTrilha();
       calendarSyncPopBriefing();
     }
+
+    // "Aula normal / Aula de trilha": só em aula ou reposição de UM aluno com trilha ativada. Sem isso a marca é limpa.
+    function calendarPopSyncTrilha() {
+      if (!calendarPopDraft) return;
+      const entidade = calendarEntity(document.getElementById('calendar-pop-student').value);
+      const aulaDeAluno = calendarPopDraft.type === 'lesson' || calendarPopDraft.type === 'reposicao';
+      const uid = aulaDeAluno && entidade && entidade.kind === 'student' ? entidade.value : '';
+      calendarPopDraft.trilha = calendarSyncTrilhaCampo('calendar-pop-trilha-row', 'calendar-pop-trilha', uid, calendarPopDraft.trilha || '', 'grid');
+    }
+    document.getElementById('calendar-pop-trilha').onchange = evento => {
+      if (calendarPopDraft) calendarPopDraft.trilha = evento.target.value;
+    };
 
     document.getElementById('calendar-pop-reposicao').onclick = () => {
       if (!calendarPopDraft) return;
@@ -4489,6 +4548,8 @@
         title:document.getElementById('calendar-pop-title').value.trim()
           || (entity ? `${calendarDefaultTitle(type)} · ${entity.label}` : calendarDefaultTitle(type)),
         date:calendarPopDraft.date, startTime, endTime, repeat, repeatDays, color:calendarPopDraft.color || '',
+        // Só vale para aula/reposição de um aluno que TEM essa trilha ativada; em qualquer outro caso grava vazio.
+        trilha:(type === 'lesson' || type === 'reposicao') && entity?.kind === 'student' && calendarPopDraft.trilha && calendarPopDraft.trilha === calendarTrilhaDoAluno(entity.value) ? calendarPopDraft.trilha : '',
         repeatUntil:repeat !== 'none' ? (calendarPopDraft.repeatUntil || '') : '',
         makeupForDate,
         notes:calendarPopDraft.notes || '', timezone:'America/Sao_Paulo',
@@ -4535,6 +4596,8 @@
     };
     document.getElementById('calendar-pop-student').onchange = event => {
       const entity = calendarEntity(event.target.value);
+      if (calendarPopDraft) calendarPopDraft.trilha = '';   // outro aluno: a marca de trilha não vai junto
+      calendarPopSyncTrilha();
       calendarSyncPopBriefing();
       if (calendarPopDraft?.type === 'reposicao' && entity) {
         const title = document.getElementById('calendar-pop-title');
@@ -4753,6 +4816,9 @@
         const plano = 'plano' in student ? student.plano : allStudents.find(item => item.uid === student.uid)?.plano;
         const events = plano?.ativo ? [] : studentLessonEvents(student);
         if (!events.length && !replace) continue;
+        // A marca de trilha mora no compromisso da agenda; regravar a grade a partir do cadastro não pode apagá-la.
+        // Guarda a marca de cada DIA DA SEMANA antes de apagar e devolve nas aulas novas do mesmo dia (se a trilha segue ativada).
+        const marcasDeTrilha = {};
         if (replace) {
           // Uma consulta só por aluno inclui tanto a série atual quanto a versão
           // legada sem `source`. Além de corrigir a mudança de dia, isso elimina
@@ -4764,6 +4830,10 @@
           const courseStartKey = adminDateKey(student.inicioCurso);
           const todayKey = adminDateKey(new Date());
           const previousDay = effectiveKey ? calendarDateKey(calendarAddDays(new Date(`${effectiveKey}T00:00:00`), -1)) : '';
+          antigas.docs.forEach(item => {
+            const old = item.data();
+            if (calendarEhAulaDoCadastro(old, student.uid) && old.trilha && old.date) marcasDeTrilha[new Date(`${old.date}T00:00:00`).getDay()] = old.trilha;
+          });
           await Promise.all(antigas.docs.filter(item => calendarEhAulaDoCadastro(item.data(), student.uid))
             .map(item => {
               const old = item.data();
@@ -4784,8 +4854,12 @@
               return deleteDoc(item.ref);
             }));
         }
-        await Promise.all(events.map(event => addDoc(collection(db,'schools',escolaAtual,'calendarEvents'),
-          { ...event, createdAt:serverTimestamp(), createdBy:auth.currentUser?.email || '', updatedAt:serverTimestamp() })));
+        const trilhaAtiva = calendarTrilhaDoAluno(student.uid);
+        await Promise.all(events.map(event => {
+          const marca = marcasDeTrilha[new Date(`${event.date}T00:00:00`).getDay()];
+          return addDoc(collection(db,'schools',escolaAtual,'calendarEvents'),
+            { ...event, ...(marca && marca === trilhaAtiva ? { trilha:marca } : {}), createdAt:serverTimestamp(), createdBy:auth.currentUser?.email || '', updatedAt:serverTimestamp() });
+        }));
         total += events.length;
       }
       return total;
@@ -8567,8 +8641,11 @@
       const workingDays = Array.isArray(calendarSettings.workingDays) ? calendarSettings.workingDays.map(Number) : [...CALENDAR_DEFAULTS.workingDays];
       pendLinhasAtuais.forEach(linha => {
         if (!linha.pendEntradas) return;
-        if (linha.plano && linha.plano.ativo !== false) { linha.posaulaPendente = null; linha.atividadesPendente = null; return; }   // plano: sem agenda semanal
-        const novo = calcularPendencias(linha, { ...linha.pendEntradas, eventos: porAluno[linha.uid] || [], workingDays, hoje });
+        if (linha.plano && linha.plano.ativo !== false) { linha.posaulaPendente = null; linha.posaulaTrilhaPendente = null; linha.atividadesPendente = null; return; }   // plano: sem agenda semanal
+        const todos = porAluno[linha.uid] || [], tipoT = linha.pendEntradas.tipoTrilha || '';
+        const deTrilha = tipoT ? todos.filter(ev => ev.trilha === tipoT) : [];
+        const novo = calcularPendencias(linha, { ...linha.pendEntradas, eventos: deTrilha.length ? todos.filter(ev => ev.trilha !== tipoT) : todos, temAgenda: todos.length > 0, workingDays, hoje });
+        linha.posaulaTrilhaPendente = calcularPosaulaTrilha(linha, { eventosTrilha: deTrilha, ultimaPosDataTrilha: linha.pendEntradas.ultimaPosDataTrilha, workingDays, hoje, dispensadas: linha.pendEntradas.dispensadas });
         if (linha.pendEntradas.trilha) linha.atividadesTrilhaPendente = calcularPendenciaTrilha(linha, { ...linha.pendEntradas.trilha, workingDays, hoje });
         linha.posaulaPendente = novo.posaulaPendente;
         linha.atividadesPendente = novo.atividadesPendente;
@@ -8682,12 +8759,45 @@
         .filter(c => c.status);
     }
 
+    // Pós-aula pendente de UMA série de aulas (as normais ou as de trilha): aulas reais da agenda, desde o último pós-aula daquela série,
+    // com prazo no próximo dia útil. `tipoDisp` é o prefixo da chave de dispensa ("posaula" ou "trilha-posaula").
+    function pendPosaulaDaSerie(eventos, ultimaPosData, workingDays, hoje, disp, tipoDisp) {
+      const inicioPosaula = ultimaPosData ? calendarAddDays(ultimaPosData, 1) : calendarAddDays(hoje, -PEND_FALLBACK_DIAS);
+      const semPosaula = pendOcorrenciasReais(eventos, inicioPosaula, hoje);
+      if (!semPosaula.length) return null;
+      const candidatos = pendCandidatos(semPosaula, pendPosaulaDueDate, workingDays, hoje)
+        .filter(c => !disp.has(`${tipoDisp}_${calendarDateKey(c.ref)}`));
+      if (!candidatos.length) return null;
+      const primeira = candidatos[0];
+      return {
+        badge: primeira.status.key, texto: primeira.status.text,
+        detalhe: `Aula${tipoDisp === 'posaula' ? '' : ' de trilha'} de ${PEND_DIAS_NOMES[primeira.ref.getDay()]} (${pendFmtData(primeira.ref)})`,
+        extra: candidatos.length > 1 ? `+ ${candidatos.length - 1} pós-aula(s) mais atrasada(s)` : '',
+        refData: calendarDateKey(primeira.ref),
+      };
+    }
+
+    // Pós-aula pendente das aulas marcadas como TRILHA na Agenda (roxa): só olha as aulas de trilha e só os pós-aulas de trilha.
+    function calcularPosaulaTrilha(student, { eventosTrilha, ultimaPosDataTrilha, workingDays, hoje, dispensadas }) {
+      const tipo = student.trilha && student.trilha.tipo;
+      const T = TRILHAS_ADM[tipo];
+      if (!T || !eventosTrilha || !eventosTrilha.length) return null;
+      const base = pendPosaulaDaSerie(eventosTrilha, ultimaPosDataTrilha, workingDays, hoje, dispensadas || new Set(), 'trilha-posaula');
+      if (!base) return null;
+      return {
+        ...base, tipo: 'trilha-posaula', trilha: tipo, botao: 'Pós-aula',
+        extra: (base.extra ? base.extra + ' · ' : '') + `O nome do arquivo precisa ter a palavra da trilha: pos-aula-nome-${tipo}-MM-DD-AAAA.html`,
+      };
+    }
+
     // `dispensadas` é um Set de chaves "tipo_YYYY-MM-DD" — pendências que o
     // César excluiu com motivo pra essa ocorrência específica. Uma nova
     // ocorrência (outra data) não é afetada pela dispensa antiga.
-    function calcularPendencias(student, { ultimaPosData, ultimaAulaData, semAtividades, ultimaAtividadeCriada, eventos, workingDays, hoje, dispensadas }) {
+    // `eventos` são só as aulas NORMAIS do aluno (as marcadas como trilha na Agenda têm pendência própria, roxa); `temAgenda` diz se ele
+    // tem alguma aula marcada (normal ou de trilha): aluno com agenda só de trilha não cai na regra antiga de "sem agenda".
+    function calcularPendencias(student, { ultimaPosData, ultimaAulaData, semAtividades, ultimaAtividadeCriada, eventos, workingDays, hoje, dispensadas, temAgenda }) {
       const disp = dispensadas || new Set();
-      if (!eventos.length) {
+      if (!(temAgenda === undefined ? eventos.length > 0 : temAgenda)) {
         // Regra antiga: sem agenda cadastrada (ex.: aluno só-atividades) —
         // pendente quando não há nenhuma atividade em andamento.
         const refHoje = calendarDateKey(hoje);
@@ -8702,22 +8812,7 @@
       const diasSemAula = ultimaAulaData && ultimaAulaData <= hoje
         ? Math.round((hoje - ultimaAulaData) / 86400000) : null;
 
-      let posaulaPendente = null;
-      const inicioPosaula = ultimaPosData ? calendarAddDays(ultimaPosData, 1) : calendarAddDays(hoje, -PEND_FALLBACK_DIAS);
-      const semPosaula = pendOcorrenciasReais(eventos, inicioPosaula, hoje);
-      if (semPosaula.length) {
-        const candidatos = pendCandidatos(semPosaula, pendPosaulaDueDate, workingDays, hoje)
-          .filter(c => !disp.has(`posaula_${calendarDateKey(c.ref)}`));
-        if (candidatos.length) {
-          const primeira = candidatos[0];
-          posaulaPendente = {
-            badge: primeira.status.key, texto: primeira.status.text,
-            detalhe: `Aula de ${PEND_DIAS_NOMES[primeira.ref.getDay()]} (${pendFmtData(primeira.ref)})`,
-            extra: candidatos.length > 1 ? `+ ${candidatos.length - 1} pós-aula(s) mais atrasada(s)` : '',
-            refData: calendarDateKey(primeira.ref),
-          };
-        }
-      }
+      const posaulaPendente = pendPosaulaDaSerie(eventos, ultimaPosData, workingDays, hoje, disp, 'posaula');
 
       // Sempre calcula, tenha ou não atividade em andamento: subir mais é
       // decisão do César a cada ciclo, não algo que o sistema decide sozinho
@@ -8825,6 +8920,7 @@
       const itensPosaula = [], itensAtividades = [], itensPlano = [];
       rows.forEach(s => {
         if (s.posaulaPendente) itensPosaula.push({ student:s, tipo:'posaula', ...s.posaulaPendente });
+        if (s.posaulaTrilhaPendente) itensPosaula.push({ student:s, ...s.posaulaTrilhaPendente });   // roxa: aula marcada como trilha na Agenda
         if (s.atividadesPendente) itensAtividades.push({ student:s, tipo:'atividades', ...s.atividadesPendente });
         if (s.atividadesTrilhaPendente) itensAtividades.push({ student:s, ...s.atividadesTrilhaPendente });   // roxa: aulas de trilha, ciclo próprio
         pendPlanoItens(s).forEach(it => itensPlano.push({ student:s, ...it }));
@@ -8838,6 +8934,8 @@
         ? ['Já combinei com o aluno', 'Aluno em pausa', 'Faço mais tarde']
         : it.tipo === 'trilha-atividades'
         ? ['Espero a próxima aula da trilha', 'Vou combinar direto com o aluno', 'Aluno afastado/de férias']
+        : it.tipo === 'trilha-posaula'
+        ? ['Vou gravar em outro dia', 'Aluno remarcou a aula de trilha', 'Aluno afastado/de férias']
         : it.tipo === 'posaula'
         ? ['Vou gravar em outro dia', 'Aluno remarcou a aula', 'Aluno afastado/de férias']
         : ['Não finalizou o ciclo anterior', 'Vou combinar direto com o aluno', 'Aluno afastado/de férias'];
@@ -8903,6 +9001,7 @@
           if (d === 'plano-corrigir') openDetail(btn.dataset.uid, btn.dataset.name);       // a ficha tem o botão de corrigir
           else if (d === 'plano-aula') abrirGeradorParaAluno(btn.dataset.uid, 'posaula');
           else if (d === 'plano-liberar') abrirGeradorParaAluno(btn.dataset.uid, 'atividades');
+          else if (d === 'trilha-posaula') abrirGeradorParaAluno(btn.dataset.uid, 'posaula');
           else abrirGeradorParaAluno(btn.dataset.uid, d);
         };
       });
@@ -8971,7 +9070,7 @@
       box.innerHTML = pendenciasDispensadasRecentes.length ? pendenciasDispensadasRecentes.map(d => `
         <div style="display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--border);font-size:0.8rem;flex-wrap:wrap;align-items:center;">
           <div>
-            <strong>${esc(d.nome)}</strong> — ${String(d.tipo).startsWith('plano') ? 'Science Lab' : d.tipo === 'posaula' ? 'Pós-aula' : d.tipo === 'trilha-atividades' ? 'Atividades da trilha' : 'Atividades'}
+            <strong>${esc(d.nome)}</strong> — ${String(d.tipo).startsWith('plano') ? 'Science Lab' : d.tipo === 'posaula' ? 'Pós-aula' : d.tipo === 'trilha-posaula' ? 'Pós-aula da trilha' : d.tipo === 'trilha-atividades' ? 'Atividades da trilha' : 'Atividades'}
             <div style="color:var(--muted);">"${esc(d.motivo)}" · dispensado ${pendFmtQuando(d.quando)}</div>
           </div>
           <button type="button" class="pend-undo" data-uid="${d.uid}" data-tipo="${d.tipo}" data-ref="${d.refData}" style="background:none;border:none;color:var(--accent);font-weight:700;cursor:pointer;font-size:0.78rem;">↺ Desfazer</button>
@@ -9258,7 +9357,15 @@
         const activityCounts = adminActivityCounts(activities);
         const ultimaAulaData = pendMidnight(posts.map(adminPostReferenceDate).filter(date => date && date <= pendHoje)
           .sort((a,b) => b-a)[0] || null);
-        const ultimaPosData = pendMidnight(dateOfAdm(latest?.classDate || latest?.createdAt || latest?.publishedAt));
+        // Aulas e pós-aulas de trilha e normais têm pendências separadas (a trilha só vale se o aluno a tem ativada).
+        const tipoTrilhaAluno = s.trilha && s.trilha.tipo && TRILHAS_ADM[s.trilha.tipo] ? s.trilha.tipo : '';
+        const ehPostTrilha = p => !!tipoTrilhaAluno && trilhaDaPosaulaAdm(p) === tipoTrilhaAluno;
+        const dataDoPost = p => pendMidnight(dateOfAdm(p?.classDate || p?.createdAt || p?.publishedAt));
+        const ultimaPosData = dataDoPost(posts.find(p => !ehPostTrilha(p)));
+        const ultimaPosDataTrilha = dataDoPost(posts.find(ehPostTrilha));
+        const eventosDoAluno = pendEventosPorAluno[s.uid] || [];
+        const eventosTrilha = tipoTrilhaAluno ? eventosDoAluno.filter(ev => ev.trilha === tipoTrilhaAluno) : [];
+        const eventosNormais = eventosTrilha.length ? eventosDoAluno.filter(ev => ev.trilha !== tipoTrilhaAluno) : eventosDoAluno;
         const dispensadas = new Set(dispSnap.docs.map(d => d.id));
         // Histórico persistente: dispensas dos últimos 7 dias voltam a aparecer
         // em "Dispensadas recentemente" mesmo depois de recarregar a página.
@@ -9280,8 +9387,9 @@
         } : null;
         const { posaulaPendente, atividadesPendente, diasSemAula } = calcularPendencias(s, {
           ultimaPosData, ultimaAulaData, semAtividades: semAtivGeral, ultimaAtividadeCriada: ultimaAtivGeral,
-          eventos: pendEventosPorAluno[s.uid] || [], workingDays: pendWorkingDays, hoje: pendHoje, dispensadas,
+          eventos: eventosNormais, temAgenda: eventosDoAluno.length > 0, workingDays: pendWorkingDays, hoje: pendHoje, dispensadas,
         });
+        const posaulaTrilhaPendente = calcularPosaulaTrilha(s, { eventosTrilha, ultimaPosDataTrilha, workingDays: pendWorkingDays, hoje: pendHoje, dispensadas });
         const atividadesTrilhaPendente = trilhaEntradas ? calcularPendenciaTrilha(s, { ...trilhaEntradas, workingDays: pendWorkingDays, hoje: pendHoje }) : null;
         const emPlanoS = !!(s.plano && s.plano.ativo !== false);   // aluno do plano: pendências próprias (coluna Science Lab)
         const reviewReports = reviewSnap.docs.map(d => ({ id:d.id, ...d.data() }));
@@ -9291,10 +9399,10 @@
           ...s, latestRead: isRead, latestTitle: latest?.title || null,
           ...activityCounts,
           posaulaPendente: emPlanoS ? null : posaulaPendente, atividadesPendente: emPlanoS ? null : atividadesPendente, diasSemAula,
-          atividadesTrilhaPendente,
+          atividadesTrilhaPendente, posaulaTrilhaPendente: emPlanoS ? null : posaulaTrilhaPendente,
           reviewReports, progress, adesaoIn,
           pendEntradas: { ultimaPosData, ultimaAulaData, semAtividades: semAtivGeral,
-            ultimaAtividadeCriada: ultimaAtivGeral, dispensadas, trilha: trilhaEntradas },
+            ultimaAtividadeCriada: ultimaAtivGeral, dispensadas, trilha: trilhaEntradas, ultimaPosDataTrilha, tipoTrilha: tipoTrilhaAluno },
         };
       }));
       pendLinhasAtuais = rows;
@@ -9913,7 +10021,7 @@
         <label class="act-select-row">
           <input type="radio" name="cor-act" value="${a.id}" />
           <div class="act-select-info">
-            <div class="act-select-title">${a.emoji || '📚'} ${esc(a.title || 'Atividade')}</div>
+            <div class="act-select-title">${a.emoji || '📚'} ${esc(a.title || 'Atividade')}${TRILHAS_ADM[a.trilha] ? `<span class="trilha-chip" style="background:${TRILHAS_ADM[a.trilha].bg};color:${TRILHAS_ADM[a.trilha].escuro};border-color:${TRILHAS_ADM[a.trilha].linha}">${TRILHAS_ADM[a.trilha].ic} Trilha ${TRILHAS_ADM[a.trilha].nome}</span>` : ''}</div>
             <div class="act-select-meta">Semana: ${esc(a.week || '—')} · Status: ${a.oralReviewPending ? '🎤 Áudio aguardando correção' : a.finalizada ? '📝 Aguardando correção' : '⏳ Não finalizada'}</div>
           </div>
         </label>`).join('');

@@ -161,6 +161,9 @@ def main():
         print(f"ATIVIDADE: {title}")
         if week:
             print(f"Semana: {week}")
+        trilha = s(fields.get("trilha"))
+        if trilha:   # atividade das aulas de trilha (Entrevista, Business, Viagem): não se mistura com as normais
+            print(f"Trilha: {trilha}")
         print(f"Estado: {estado}   |   doc_id: {doc['name'].split('/')[-1]}")
         print("=" * 66)
 
