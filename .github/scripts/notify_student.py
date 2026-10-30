@@ -17,6 +17,10 @@ from google.oauth2 import service_account
 import google.auth.transport.requests
 
 
+# Trilhas de aula: a palavra no fim do slug do arquivo marca a pós-aula (ver o app: TRILHAS no index.html).
+TRILHAS = ("entrevista", "business", "viagem")
+
+
 def parse_talk_time(filename):
     """Extrai percentuais/minutos do bloco padronizado de Talk Time."""
     try:
@@ -132,7 +136,15 @@ def main():
     slug = "-".join(parts[:-3])       # e.g. mateus-richter
     post_id = filename[:-5]
 
-    print(f"Slug: {slug} | Date: {date_str} | Post ID: {post_id}")
+    # Aula de trilha (Entrevista, Business, Viagem): a palavra vem no fim do slug,
+    # pos-aula-rebeca-entrevista-11-04-2026.html. O aluno continua sendo "rebeca" e o
+    # documento ganha `trilha`, que pinta a pós-aula de azul no app. O id (nome do
+    # arquivo) fica com a palavra, então duas aulas no mesmo dia não se sobrescrevem.
+    trilha = ""
+    if "-" in slug and slug.rsplit("-", 1)[1] in TRILHAS:
+        slug, trilha = slug.rsplit("-", 1)
+
+    print(f"Slug: {slug} | Date: {date_str} | Post ID: {post_id}" + (f" | Trilha: {trilha}" if trilha else ""))
     if class_date is None:
         print("⚠️  Data ilegível no nome do arquivo — usando a hora do envio.")
 
@@ -241,6 +253,8 @@ def main():
     }
     if topic:
         fields["topic"] = {"stringValue": topic}
+    if trilha:
+        fields["trilha"] = {"stringValue": trilha}
     if class_date:
         fields["classDate"] = {"timestampValue": created_at}
     talk_time = parse_talk_time(filename)

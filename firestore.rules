@@ -351,6 +351,21 @@ service cloud.firestore {
         allow delete: if managesStudent(uid);
       }
 
+      // Trilha (Entrevista, Business, Viagem): o aluno conta sobre a vaga/trabalho/viagem. Só o documento 'briefing',
+      // com campos fixos (as respostas ficam num mapa `respostas`); o professor lê, edita e apaga.
+      match /trilha/{docId} {
+        allow read: if isOwnStudent(uid) || managesStudent(uid);
+        allow create, update: if managesStudent(uid) || (
+          isOwnStudent(uid)
+          && docId == 'briefing'
+          && request.resource.data.keys().hasOnly(['tipo', 'respostas', 'criadoEm', 'atualizadoEm'])
+          && request.resource.data.tipo is string
+          && request.resource.data.respostas is map
+          && request.resource.data.respostas.size() <= 30
+        );
+        allow delete: if managesStudent(uid);
+      }
+
       match /posaulas/{postId} {
         allow read: if isOwnStudent(uid) || managesStudent(uid);
         allow create, delete: if managesStudent(uid);

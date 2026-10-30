@@ -172,6 +172,7 @@
 <script src="adesao.js"></script>
 <script type="text/babel" data-presets="react" src="challenge.jsx"></script>
 <script type="text/babel" data-presets="react" src="plano.jsx"></script>
+<script type="text/babel" data-presets="react" src="trilha.jsx"></script>
 <script type="text/babel" data-presets="react">
 const FB_CONFIG = {
   apiKey:            "AIzaSyDgDlLyU15p8wQ1YtCN8NebGes_oq3atU8",
@@ -242,7 +243,7 @@ async function getFB() {
 // Falha de gravação (regra ainda não publicada, sem rede) nunca aparece para o aluno.
 const CzkUsage = (() => {
   // Versão do app que vai junto com o uso (para saber quem ainda roda versão velha). Mantenha igual ao CACHE do sw.js.
-  const APP_BUILD = 'v49';
+  const APP_BUILD = 'v50';
   const TICK = 1000, MIN_STEP = 200, FLUSH = 60000, NEW_VISIT = 30 * 60000;
   const BLIND_CAP = 10 * 60000, HOLD_CAP = 15 * 60000, MAX_FAILS = 5;
   const READ_MS = 180000;                 // maior pausa aceita na leitura do pós-aula (igual a LEITURA_SEG do adesao.js)
@@ -607,6 +608,26 @@ function postTitle(post) {
 function PostTitleText({ post }) {
   const { head, topic } = postTitleParts(post);
   return <><span style={{ fontWeight: 800 }}>{head}</span>{topic ? ` – ${topic}` : ''}</>;
+}
+
+// Trilhas (Entrevista, Business, Viagem). Uma pós-aula pode ser "da trilha": vem do campo `trilha` do documento ou, para
+// o que já existe, da palavra no fim do nome do arquivo (pos-aula-rebeca-entrevista-11-04-2026.html). Aqui só as cores e o
+// rótulo, que valem em qualquer lista de pós-aulas; o formulário, as etapas e as tarefas moram no trilha.jsx.
+const TRILHAS = {
+  entrevista: { ic: '🎯', nome: 'Entrevista', rotulo: 'Aula para entrevista', tc: '#2563EB', bg: '#EFF6FF', line: '#BFDBFE', dark: '#1E3A8A', grad: 'linear-gradient(135deg,#3B82F6,#1D4ED8)' },
+  business:   { ic: '💼', nome: 'Business',   rotulo: 'Aula de business',     tc: '#4F46E5', bg: '#EEF2FF', line: '#C7D2FE', dark: '#312E81', grad: 'linear-gradient(135deg,#6366F1,#4338CA)' },
+  viagem:     { ic: '✈️', nome: 'Viagem',     rotulo: 'Aula para viagem',     tc: '#0D9488', bg: '#F0FDFA', line: '#99F6E4', dark: '#115E59', grad: 'linear-gradient(135deg,#14B8A6,#0F766E)' },
+};
+function postTrilha(post) {
+  const direto = String((post && post.trilha) || '').toLowerCase();
+  if (TRILHAS[direto]) return direto;
+  const achou = /^pos-aula-.+-(entrevista|business|viagem)-\d{1,2}-\d{1,2}-\d{4}(\.html)?$/i.exec(String((post && (post.filename || post.id)) || ''));
+  return achou ? achou[1].toLowerCase() : '';
+}
+function TrilhaChip({ tipo, style }) {
+  const t = TRILHAS[tipo];
+  if (!t) return null;
+  return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 9px', borderRadius: 999, background: '#fff', border: `1px solid ${t.line}`, color: t.dark, fontSize: 11.5, fontWeight: 800, lineHeight: 1.4, ...style }}>{t.ic} {t.rotulo}</span>;
 }
 
 function dateKey(value) {
@@ -2766,6 +2787,7 @@ function Celebration({ show, onDone }) {
 
 function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities, adesao, onOpenAdesao }) {
   const latest = posaulas[0] || null;
+  const trLatest = latest ? TRILHAS[postTrilha(latest)] : null;   // a última aula é da trilha? Então o cartão ganha a cor dela.
   const [openGroups, setOpenGroups] = useState({});
   const [btnPressed, setBtnPressed] = useState(false);
 
@@ -2822,14 +2844,17 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities, ad
         </button>
         {open && (
           <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {group.posts.map(p => (
+            {group.posts.map(p => {
+              const trTipo = postTrilha(p), tr = TRILHAS[trTipo];
+              return (
               <div key={p.id} onClick={() => onOpenPost(p)} style={{
-                background: 'rgba(255,255,255,0.55)', border: '1px solid rgba(var(--brand-rgb),0.1)',
+                background: tr ? tr.bg : 'rgba(255,255,255,0.55)', border: tr ? `1.5px solid ${tr.line}` : '1px solid rgba(var(--brand-rgb),0.1)',
                 borderRadius: 12, padding: '11px 14px',
                 display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer',
               }}>
-                <div style={{ width: 32, height: 32, borderRadius: 9, background: 'rgba(var(--brand-rgb),0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14 }}>&#128196;</div>
+                <div style={{ width: 32, height: 32, borderRadius: 9, background: tr ? tr.grad : 'rgba(var(--brand-rgb),0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 14 }}>{tr ? tr.ic : <>&#128196;</>}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
+                  {tr && <div style={{ marginBottom: 4 }}><TrilhaChip tipo={trTipo} /></div>}
                   {/* Data + tópico em até 2 linhas; o "Lido" desce para dar largura ao tópico. */}
                   <div style={{ fontSize: 13.5, fontWeight: 600, color: '#0F172A', lineHeight: 1.28, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', overflowWrap: 'anywhere' }}>
                     <PostTitleText post={p} />
@@ -2837,7 +2862,8 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities, ad
                   <div style={{ fontSize: 11.5, fontWeight: 700, marginTop: 1, color: p.readAt ? 'var(--brand)' : '#D97706' }}>{p.readAt ? '✓ Lido' : 'Não lido'}</div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -2863,7 +2889,9 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities, ad
         <GlassCard style={{ padding: 16, marginBottom: 12, position: 'relative', overflow: 'hidden' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14 }}>
             <div style={{ flex: 1 }}>
-              <Pill>POS-AULA DA SEMANA</Pill>
+              {trLatest
+                ? <Pill style={{ background: trLatest.bg, border: `1px solid ${trLatest.line}`, color: trLatest.dark }}>{trLatest.ic} {trLatest.rotulo.toUpperCase()}</Pill>
+                : <Pill>POS-AULA DA SEMANA</Pill>}
               <div style={{ fontSize: 20, fontWeight: 800, color: '#0F172A', marginTop: 12, lineHeight: 1.25, overflowWrap: 'anywhere' }}>
                 {postTitleParts(latest).head}
                 {/* O cartão é estreito (o ícone ocupa o lado): o tópico vai na linha de baixo, sem traço solto. */}
@@ -2874,7 +2902,7 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities, ad
                 <span style={{ fontSize: 12, fontWeight: 600, color: latest.readAt ? 'var(--brand)' : '#D97706' }}>{latest.readAt ? 'Lido em ' + fmtDate(latest.readAt) : 'Ainda nao lido'}</span>
               </div>
             </div>
-            <div style={{ width: 68, height: 68, borderRadius: 20, flexShrink: 0, background: 'linear-gradient(160deg,#A7F3D0,var(--brand))', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 24px rgba(var(--brand-rgb),0.3)', fontSize: 30 }}>&#128218;</div>
+            <div style={{ width: 68, height: 68, borderRadius: 20, flexShrink: 0, background: trLatest ? trLatest.grad : 'linear-gradient(160deg,#A7F3D0,var(--brand))', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: trLatest ? `0 10px 24px ${trLatest.tc}4D` : '0 10px 24px rgba(var(--brand-rgb),0.3)', fontSize: 30 }}>{trLatest ? trLatest.ic : <>&#128218;</>}</div>
           </div>
           <button
             onPointerDown={() => setBtnPressed(true)}
@@ -2885,8 +2913,8 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities, ad
               marginTop: 12, width: '100%', border: 'none', cursor: 'pointer',
               padding: '12px 20px', borderRadius: 16, color: '#fff',
               fontSize: 15, fontWeight: 800,
-              background: 'linear-gradient(180deg,#34D399,var(--brand-light))',
-              boxShadow: '0 8px 24px rgba(var(--brand-rgb),0.3)',
+              background: trLatest ? trLatest.grad : 'linear-gradient(180deg,#34D399,var(--brand-light))',
+              boxShadow: trLatest ? `0 8px 24px ${trLatest.tc}4D` : '0 8px 24px rgba(var(--brand-rgb),0.3)',
               transition: 'transform .15s ease',
               transform: btnPressed ? 'scale(0.98)' : 'scale(1)',
               fontFamily: 'inherit',
@@ -3476,7 +3504,8 @@ function ExtrasSection({ extras, onOpenExtra }) {
   const [soundLabOpen, setSoundLabOpen] = useState(false);
 
   // O aluno só vê extras não corrigidos (o histórico é do professor)
-  const pendentes = extras.filter(e => e.status !== 'corrected');
+  // As tarefas de uma trilha (campo `trilha`) vivem no botão da própria trilha, não aqui.
+  const pendentes = extras.filter(e => e.status !== 'corrected' && !e.trilha);
   const bySkill = (id) => pendentes.filter(e => e.skill === id);
 
   if (soundLabOpen) {
@@ -3842,12 +3871,18 @@ function OralExercisePanel({ exercise, saved = {}, readOnly = false, lockComplet
   );
 }
 
-function ExtraModal({ extra, onClose, onFinish, onSaveDraft, mirror }) {
+function ExtraModal({ extra, onClose, onFinish, onSaveDraft, mirror, posaulas, onReadPost }) {
   const contentRef = useRef(null);
   const valuesRef  = useRef({});
   const audioRef   = useRef({ blob: null, ext: null });
   const [stats, setStats]   = useState({ total: 0, filled: 0 });
   const [saving, setSaving] = useState(false);
+  // Tarefa de uma trilha (Entrevista, Business, Viagem): ganha o botão "Consultar pós-aula" só com as aulas da trilha.
+  const [peek, setPeek]     = useState(false);
+  const trTipo = extra && TRILHAS[extra.trilha] ? extra.trilha : '';
+  const trInfo = trTipo ? TRILHAS[trTipo] : null;
+  const posaulasTrilha = React.useMemo(() => (posaulas || []).filter(p => postTrilha(p) === trTipo), [posaulas, trTipo]);
+  useEffect(() => { setPeek(false); }, [extra]);
 
   const savedAudioUrl = extra?.respostas?.audioUrl || null;
   const rt        = extra?.responseType || (extra?.skill === 'speaking' ? 'audio' : 'text');
@@ -3916,7 +3951,7 @@ function ExtraModal({ extra, onClose, onFinish, onSaveDraft, mirror }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: '1px solid #F1F5F9', position: 'sticky', top: 0, background: 'white', zIndex: 1, flexShrink: 0, paddingTop: 'calc(14px + env(safe-area-inset-top, 0px))' }}>
           <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: '#F1F5F9', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', flexShrink: 0, fontFamily: 'inherit' }}>&#8249;</button>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 11, color: '#9A6438', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 1 }}>{skillInfo ? skillInfo.icon + ' ' + skillInfo.label : 'Extra'}</div>
+            <div style={{ fontSize: 11, color: '#9A6438', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 1 }}>{trInfo ? `${trInfo.ic} ${trInfo.nome}${extra.etapa ? ' · Etapa ' + extra.etapa : ''}` : (skillInfo ? skillInfo.icon + ' ' + skillInfo.label : 'Extra')}</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{extra?.title || 'Atividade'}</div>
           </div>
           {total > 0 && (
@@ -3926,6 +3961,13 @@ function ExtraModal({ extra, onClose, onFinish, onSaveDraft, mirror }) {
 
         <div style={{ flex: 1, overflowY: 'auto' }}>
           <div style={{ padding: '14px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {trInfo && (
+              <button onClick={() => setPeek(true)} style={{
+                alignSelf: 'flex-end', display: 'inline-flex', alignItems: 'center', gap: 6, background: trInfo.bg,
+                border: `1px solid ${trInfo.line}`, borderRadius: 999, padding: '6px 13px',
+                fontSize: 12, fontWeight: 800, color: trInfo.dark, cursor: 'pointer', fontFamily: 'inherit',
+              }}>&#128196; Consultar pós-aula</button>
+            )}
             {extra?.siteExplanation && (
               <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 14, padding: 14 }}>
                 <div style={{ fontSize: 11, fontWeight: 800, color: '#1D4ED8', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
@@ -3978,6 +4020,7 @@ function ExtraModal({ extra, onClose, onFinish, onSaveDraft, mirror }) {
             {saving ? 'Salvando...' : extra?.finalizada ? '✓ Salvar alteracoes' : 'Finalizei'}
           </button>
         </div>
+        {trInfo && <PosaulaPeek open={peek} activity={null} posaulas={posaulasTrilha} titulo={`Pós-aulas · ${trInfo.nome}`} onClose={() => setPeek(false)} onRead={onReadPost} />}
       </div>
     </div>
   );
@@ -4014,8 +4057,11 @@ function nextActivityStep(activities) {
   return { ...escolhido, hasProgress:temProgresso(escolhido.activity) };
 }
 
-function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOpenExtra, onOpenCorrecao, onOpenChallenge, challengeSimulation, challengeState, challengeEnabled = false }) {
+function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOpenExtra, onOpenCorrecao, onOpenChallenge, challengeSimulation, challengeState, challengeEnabled = false, trilhaProps = null }) {
   const [sub, setSub] = useState('atividades');
+  // Trilha (Entrevista, Business, Viagem): o professor ativa no painel e o aluno ganha um 3º botão aqui. Quem não tem trilha não vê nada novo.
+  const trTipo = trilhaProps && trilhaProps.student && trilhaProps.student.trilha ? trilhaProps.student.trilha.tipo : '';
+  const trInfo = TRILHAS[trTipo] && typeof TrilhaTab === 'function' ? TRILHAS[trTipo] : null;
   const [openHist, setOpenHist] = useState({});
   const [openMonth, setOpenMonth] = useState({});
 
@@ -4116,14 +4162,21 @@ function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOp
   return (
     <div className="scroll-area" style={{ padding: '16px 16px 8px', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', overflowX: 'hidden' }}>
       <div style={{ display: 'flex', background: 'rgba(255,255,255,0.6)', borderRadius: 14, padding: 4, marginBottom: 16, border: '1px solid rgba(var(--brand-rgb),0.12)' }}>
-        {['atividades', 'extras'].map(s => (
+        {['atividades', 'extras', ...(trInfo ? ['trilha'] : [])].map(s => {
+          const ehTrilha = s === 'trilha', ligado = sub === s;
+          // Bolinha âmbar enquanto a aluna ainda não contou sobre a vaga (briefing nulo = já carregou e não existe).
+          const novo = ehTrilha && !ligado && trilhaProps.briefing === null;
+          return (
           <button key={s} onClick={() => setSub(s)} style={{
-            flex: 1, padding: '9px 0', borderRadius: 11, border: 'none', cursor: 'pointer',
-            background: sub === s ? 'linear-gradient(180deg,var(--brand-light),var(--brand))' : 'transparent',
-            color: sub === s ? '#fff' : '#64748B', fontWeight: sub === s ? 800 : 600, fontSize: 13,
+            flex: 1, padding: '9px 0', borderRadius: 11, border: 'none', cursor: 'pointer', position: 'relative', whiteSpace: 'nowrap',
+            background: ligado ? (ehTrilha ? trInfo.grad : 'linear-gradient(180deg,var(--brand-light),var(--brand))') : 'transparent',
+            color: ligado ? '#fff' : (ehTrilha ? trInfo.dark : '#64748B'), fontWeight: ligado || ehTrilha ? 800 : 600, fontSize: 13,
             transition: 'background 0.2s, color 0.2s', fontFamily: 'inherit',
-          }}>{s === 'atividades' ? 'Atividades' : 'Extras'}</button>
-        ))}
+          }}>{s === 'atividades' ? 'Atividades' : s === 'extras' ? 'Extras' : `${trInfo.ic} ${trInfo.nome}`}
+            {novo && <span style={{ position: 'absolute', top: 5, right: 6, width: 9, height: 9, borderRadius: '50%', background: '#F59E0B', border: '2px solid #fff' }} />}
+          </button>
+          );
+        })}
       </div>
 
       {sub === 'atividades' && challengeEnabled && <ChallengeCarousel simulation={challengeSimulation} challengeState={challengeState} onOpen={onOpenChallenge} />}
@@ -4182,6 +4235,7 @@ function AulasTab({ activities, onOpenActivity, onContinueActivity, extras, onOp
       ))}
 
       {sub === 'extras' && <ExtrasSection extras={extras} onOpenExtra={onOpenExtra} />}
+      {sub === 'trilha' && trInfo && <TrilhaTab {...trilhaProps} tipo={trTipo} />}
       <div style={{ height: 12 }} />
     </div>
   );
@@ -5206,7 +5260,7 @@ function ActivityModal({ activity, onClose, onOpenPart }) {
 // Abre por CIMA da atividade: a parte continua montada, então nada do que o
 // aluno já digitou se perde. Atividades antigas não têm posaulaId/posaulaUrl —
 // nesse caso cai na lista de pós-aulas do aluno, nunca em erro.
-function PosaulaPeek({ open, activity, posaulas, onClose, onRead }) {
+function PosaulaPeek({ open, activity, posaulas, onClose, onRead, titulo }) {
   const lista = posaulas || [];
 
   const fontesRevisao = React.useMemo(() => {
@@ -5266,7 +5320,7 @@ function PosaulaPeek({ open, activity, posaulas, onClose, onRead }) {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 10.5, color: '#9A6438', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.5 }}>Consulta</div>
             <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {sel ? postTitle(sel) : (fontesRevisao.length ? 'Pós-aulas desta revisão' : 'Suas pós-aulas')}
+              {sel ? postTitle(sel) : (fontesRevisao.length ? 'Pós-aulas desta revisão' : (titulo || 'Suas pós-aulas'))}
             </div>
           </div>
           <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: '50%', border: 'none', background: '#F1F5F9', cursor: 'pointer', fontSize: 15, color: '#374151', fontFamily: 'inherit', flexShrink: 0 }}>&#x2715;</button>
@@ -5282,15 +5336,19 @@ function PosaulaPeek({ open, activity, posaulas, onClose, onRead }) {
               <div style={{ fontSize: 13, color: '#64748B', textAlign: 'center', padding: '30px 10px' }}>
                 Voce ainda nao tem pos-aulas por aqui.
               </div>
-            ) : listaConsulta.map(p => (
+            ) : listaConsulta.map(p => {
+              const trTipo = postTrilha(p), tr = TRILHAS[trTipo];
+              return (
               <button key={p.id} onClick={() => setSel(p)} style={{
-                display: 'block', width: '100%', textAlign: 'left', background: '#F8FAFC',
-                border: '1.5px solid #E2E8F0', borderRadius: 12, padding: 13, marginBottom: 8,
+                display: 'block', width: '100%', textAlign: 'left', background: tr ? tr.bg : '#F8FAFC',
+                border: `1.5px solid ${tr ? tr.line : '#E2E8F0'}`, borderRadius: 12, padding: 13, marginBottom: 8,
                 cursor: 'pointer', fontFamily: 'inherit', fontSize: 13.5, fontWeight: 600, color: '#0F172A',
               }}>
+                {tr && <div style={{ marginBottom: 5 }}><TrilhaChip tipo={trTipo} /></div>}
                 <PostTitleText post={p} />
               </button>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -5568,6 +5626,7 @@ function App() {
   const [activities, setActivities]     = useState([]);
   const [vocab, setVocab]               = useState([]);
   const [extras, setExtras]             = useState([]);
+  const [trilhaBriefing, setTrilhaBriefing] = useState(undefined);   // undefined = ainda não carregou; null = a aluna não preencheu
   const [reviewReports, setReviewReports] = useState([]);
   const [courseReviews, setCourseReviews] = useState([]);
   const [ownCourseReview, setOwnCourseReview] = useState(null);
@@ -5928,6 +5987,12 @@ function App() {
     const dadosAluno = snap.data();
     const { senha: _senhaLegada, ...dadosSeguros } = dadosAluno;
     setStudent({ ...dadosSeguros, uid });
+    // Só quem tem trilha ativada lê o briefing (os outros alunos não gastam essa leitura).
+    if (dadosSeguros.trilha && dadosSeguros.trilha.tipo) {
+      fb.getDoc(fb.doc(fb.db, 'students', uid, 'trilha', 'briefing'))
+        .then(s => setTrilhaBriefing(s.exists() ? s.data() : null))
+        .catch(() => setTrilhaBriefing(null));
+    }
     const dadosEscola = await aplicarTemaDaEscola(dadosSeguros.schoolId, fb);
     // Limite de "sem mexer" que o professor definiu para a adesão (padrão: 60 s).
     if (dadosEscola?.adesao?.cfg?.limiteSeg) CzkUsage.configure({ limitSec: dadosEscola.adesao.cfg.limiteSeg });
@@ -6301,6 +6366,21 @@ function App() {
   // Plano de R$100: o Caminho (plano.jsx) troca o miolo do app. Sem plano, planoCfg é null e nada muda.
   // O typeof protege todo mundo caso o plano.jsx não carregue.
   const planoCfg = typeof planoModo === 'function' ? planoModo(student, user, mirror) : null;
+
+  // Trilha (Entrevista, Business, Viagem): as respostas do formulário ficam em students/{uid}/trilha/briefing,
+  // num mapa `respostas`, que o professor lê no painel. No espelho (modo leitura) nada é gravado.
+  async function saveTrilhaBriefing(respostas) {
+    if (mirror || !user || !student?.trilha?.tipo) { showToast('👁 Modo espelho — somente leitura'); return false; }
+    const fb = await getFB();
+    const ref = fb.doc(fb.db, 'students', user.uid, 'trilha', 'briefing');
+    const payload = { tipo: student.trilha.tipo, respostas, atualizadoEm: fb.serverTimestamp() };
+    if (!trilhaBriefing) payload.criadoEm = fb.serverTimestamp();
+    try { await fb.setDoc(ref, payload, { merge: true }); }
+    catch (e) { showToast('Não consegui enviar agora. Tente de novo.'); return false; }
+    setTrilhaBriefing(atual => ({ ...(atual || {}), tipo: student.trilha.tipo, respostas, atualizadoEm: new Date() }));
+    return true;
+  }
+  const trilhaProps = { student, briefing: trilhaBriefing, onSaveBriefing: saveTrilhaBriefing, extras, posaulas, onOpenExtra: setOpenExtra, onReadPost: markPostRead, mirror };
   const perguntarAssistente = async (pergunta, contexto, anterior) => {
     const fb = await getFB();
     const r = await fb.httpsCallable(fb.functions, 'perguntarAssistente', { timeout: 60000 })({ pergunta, contexto, anterior: anterior || null });
@@ -6336,14 +6416,14 @@ function App() {
           <PlanoConteudo tab={planoTab} onTab={setPlanoTab} cfg={planoCfg} student={student} posaulas={posaulas} activities={activities}
             onOpenPost={handleOpenPost} onAsk={perguntarAssistente}
             slots={{
-              atividades: <AulasTab activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={(challenge) => { setSelectedChallenge(challenge || null); setChallengeView('hub'); }} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} />,
+              atividades: <AulasTab activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={(challenge) => { setSelectedChallenge(challenge || null); setChallengeView('hub'); }} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} trilhaProps={trilhaProps} />,
               perfil: <PerfilTab student={student} mirror={mirror} onLogout={handleLogout} onPatchStudent={patchStudent} reviews={courseReviews} ownReview={ownCourseReview} onSaveReview={saveCourseReview} openReviewForm={reviewFormRequest} />,
             }} />
         ) : (<>
         {adesaoPage && <AdesaoPage adesao={adesao} student={student} startDay={adesaoPage.dia} onClose={() => setAdesaoPage(null)} onPerfil={() => { setAdesaoPage(null); setTab('perfil'); }}
           onGo={kind => { setAdesaoPage(null); if (kind === 'vocab') setTab('vocab'); else if (kind === 'aulas') setTab('aulas'); else if (posaulas[0]) handleOpenPost(posaulas[0]); else setTab('aulas'); }} />}
         {!adesaoPage && tab === 'home'   && <HomeTab   student={student} posaulas={posaulas} activities={activities} onOpenPost={handleOpenPost} onGoActivities={handleGoActivities} adesao={adesao} onOpenAdesao={dia => setAdesaoPage({ dia })} />}
-        {!adesaoPage && tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={(challenge) => { setSelectedChallenge(challenge || null); setChallengeView('hub'); }} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} />}
+        {!adesaoPage && tab === 'aulas'  && <AulasTab  activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={(challenge) => { setSelectedChallenge(challenge || null); setChallengeView('hub'); }} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} trilhaProps={trilhaProps} />}
         {!adesaoPage && tab === 'progresso' && <ProgressTab adesao={adesao} onOpenAdesao={dia => setAdesaoPage({ dia })} student={student} posaulas={posaulas} activities={activities} reviewReports={reviewReports} onOpenReview={openReviewResult} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} onOpenChallenge={() => { setSelectedChallenge(null); setChallengeView('hub'); }} />}
         {!adesaoPage && tab === 'vocab'  && <VocabTab vocab={vocab} onViewChange={setVocabView} />}
         {!adesaoPage && tab === 'perfil' && <PerfilTab student={student} mirror={mirror} onLogout={handleLogout} onPatchStudent={patchStudent} reviews={courseReviews} ownReview={ownCourseReview} onSaveReview={saveCourseReview} openReviewForm={reviewFormRequest} />}
@@ -6434,7 +6514,7 @@ function App() {
 
       <ActivityModal activity={openActivity} onClose={handleCloseAll} onOpenPart={handleOpenPart} />
       <PartModal part={openPart} activity={openActivity} posaulas={posaulas} onBack={handleClosePart} onClose={handleCloseAll} onFinish={handleFinishPart} onSaveDraft={handleSaveDraftPart} onReadPost={markPostRead} mirror={mirror} />
-      <ExtraModal extra={openExtra} onClose={() => setOpenExtra(null)} onFinish={handleFinishExtra} onSaveDraft={handleSaveDraftExtra} mirror={mirror} />
+      <ExtraModal extra={openExtra} onClose={() => setOpenExtra(null)} onFinish={handleFinishExtra} onSaveDraft={handleSaveDraftExtra} mirror={mirror} posaulas={posaulas} onReadPost={markPostRead} />
       <CorrecaoModal data={openCorrecao} onClose={() => setOpenCorrecao(null)} />
 
       <AvisoModal aviso={avisos[0] || null} onConfirmar={confirmarAviso} />

@@ -263,6 +263,17 @@
     #tab-add:not([data-modo="lab"]) .add-so-lab { display: none !important; }
     .read-badge.plano { background: #ede9fe; color: #5b21b6; }
     .kebab-item.plano { background: #f5f3ff; color: #5b21b6; font-weight: 800; }
+    .kebab-item.trilha { background: #eff6ff; color: #1e3a8a; font-weight: 800; }
+    .trilha-chip { display: inline-block; margin-left: 8px; padding: 2px 9px; border-radius: 999px; font-size: .7rem; font-weight: 800; vertical-align: middle; border: 1px solid; white-space: nowrap; }
+    .tr-tabela { width: 100%; border-collapse: collapse; margin: 6px 0 4px; }
+    .tr-tabela td { padding: 6px 0; border-bottom: 1px solid #f1ebe1; font-size: .82rem; vertical-align: top; line-height: 1.4; }
+    .tr-tabela td:first-child { width: 120px; color: var(--muted); font-weight: 800; padding-right: 8px; }
+    .tr-etapa { display: flex; align-items: center; gap: 9px; padding: 7px 0; border-bottom: 1px solid #f1ebe1; font-size: .82rem; }
+    .tr-etapa .n { width: 22px; height: 22px; border-radius: 50%; background: #e2e8f0; display: grid; place-items: center; font-size: .7rem; font-weight: 800; flex-shrink: 0; }
+    .tr-etapa .t { flex: 1; min-width: 0; font-weight: 700; }
+    .tr-etapa .s { font-size: .7rem; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: #f1f5f9; color: #64748b; white-space: nowrap; }
+    .tr-etapa .s.on { background: #dbeafe; color: #1e40af; }
+    .tr-etapa .s.ok { background: #dcfce7; color: #166534; }
     .pend-card-plano { border: 1px solid #c4b5fd; }
     .pend-card-plano > h2 { color: #5b21b6; }
     .badge-stack { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
@@ -1930,6 +1941,33 @@
         <div class="field"><label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="pl-assistente" /> Assistente de dúvidas ligado (20 perguntas por mês)</label></div>
         <button class="btn-add" id="pl-save">Salvar</button>
         <div class="form-msg" id="pl-msg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trilha do aluno (Entrevista, Business, Viagem): ativar, ver o briefing que ele preencheu e acompanhar as etapas -->
+  <div class="modal-overlay" id="trilha-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="tr-titulo">🎯 Trilha</h2>
+        <button class="btn-close" id="tr-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="tr-uid" />
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 12px;font-size:0.8rem;color:#1e3a8a;margin-bottom:14px;line-height:1.5;">
+          Ao ativar, o aluno ganha um botão da trilha na aba <strong>Atividades</strong> do app e preenche um formulário. Cada <strong>tarefa</strong> da trilha é uma atividade extra (aba 🎧 Extras) com os campos <code>trilha</code>, <code>etapa</code> e <code>ordem</code> no JSON. A etapa aparece para o aluno assim que você enviar a primeira tarefa dela. As pós-aulas de trilha são marcadas pelo nome do arquivo: <code>pos-aula-<em>slug</em>-<strong>entrevista</strong>-MM-DD-AAAA.html</code>.
+        </div>
+        <div class="field"><label>Trilha deste aluno</label>
+          <select id="tr-tipo">
+            <option value="">Nenhuma</option>
+            <option value="entrevista">🎯 Entrevista</option>
+            <option value="business">💼 Business</option>
+            <option value="viagem">✈️ Viagem</option>
+          </select>
+        </div>
+        <button class="btn-add" id="tr-save">Salvar</button>
+        <div class="form-msg" id="tr-msg"></div>
+        <div id="tr-corpo"></div>
       </div>
     </div>
   </div>
@@ -6290,8 +6328,22 @@
         + `</span>`;
     }
 
+    // Trilhas (Entrevista, Business, Viagem): cores iguais às do app do aluno (TRILHAS no index.html) e as etapas do molde.
+    const TRILHAS_ADM = {
+      entrevista: { ic: '🎯', nome: 'Entrevista', bg: '#eff6ff', linha: '#bfdbfe', escuro: '#1e3a8a',
+        etapas: ['Conheça a vaga', 'Fale sobre você', 'As perguntas que vão cair', 'Situações da função', 'Entenda a pergunta', 'Suas perguntas para eles', 'Simulação da entrevista', 'Dia da entrevista'],
+        campos: [['local', 'Local'], ['tipoLugar', 'Tipo de lugar'], ['funcao', 'Função'], ['fazer', 'Vai fazer'], ['espera', 'Espera'], ['quando', 'Data da entrevista'], ['formato', 'Formato'], ['exp', 'Experiência'], ['medo', 'Preocupações'], ['vaga', 'Anúncio da vaga']] },
+      business: { ic: '💼', nome: 'Business', bg: '#eef2ff', linha: '#c7d2fe', escuro: '#312e81',
+        etapas: ['Sua função e sua empresa', 'Reuniões', 'E-mails e mensagens', 'Calls e telefone', 'Apresentações', 'Negociação e small talk', 'Simulação: um dia de trabalho'],
+        campos: [['empresa', 'Empresa'], ['area', 'Área / função'], ['situacoes', 'Situações'], ['com', 'Fala com'], ['trava', 'Maior trava'], ['dia', 'Um dia típico'], ['quando', 'Prazo']] },
+      viagem: { ic: '✈️', nome: 'Viagem', bg: '#f0fdfa', linha: '#99f6e4', escuro: '#115e59',
+        etapas: ['Seu roteiro', 'Aeroporto e imigração', 'Hotel e hospedagem', 'Restaurantes e cafés', 'Transporte', 'Compras e dinheiro', 'Saúde e emergências', 'Simulação: a viagem'],
+        campos: [['destino', 'Destino'], ['quando', 'Data da viagem'], ['com', 'Com quem'], ['situacoes', 'Situações'], ['medo', 'Preocupação'], ['roteiro', 'Roteiro']] },
+    };
+
     function studentRowHtml(s, archived) {
       const nm = esc(s.name || s.firstName || 'Aluno');
+      const trInfo = !archived && s.trilha && TRILHAS_ADM[s.trilha.tipo] ? TRILHAS_ADM[s.trilha.tipo] : null;
       const progress = s.progress || {};
       const attendance = progress.attendance || {};
       const exercise = progress.exercise || {};
@@ -6330,6 +6382,7 @@
         + `<button class="kebab-item" data-action="challenge" data-uid="${s.uid}" data-name="${nm}">🏆 Desafios do aluno</button>`
         + `<button class="kebab-item" data-action="edit" data-uid="${s.uid}" data-name="${nm}">✏️ Editar dados</button>`
         + `<button class="kebab-item" data-action="extras" data-uid="${s.uid}" data-name="${nm}">🎧 Atividades Extras</button>`
+        + (archived ? '' : `<button class="kebab-item trilha" data-action="trilha" data-uid="${s.uid}" data-name="${nm}">${trInfo ? `${trInfo.ic} Trilha (${trInfo.nome})` : '🎯 Ativar trilha'}</button>`)
         + (archived ? '' : emPlano
           ? `<button class="kebab-item plano" data-action="editar-plano" data-uid="${s.uid}" data-name="${nm}">🧪 Editar plano (${plNome})</button>`
             + `<button class="kebab-item" data-action="sem-plano" data-uid="${s.uid}" data-name="${nm}">↩ Voltar para aulas semanais</button>`
@@ -6345,7 +6398,7 @@
         <div class="student-row${archived ? ' student-row-ex' : ''}${emPlano ? ' student-row-plano' : ''}">
           ${avatar}
           <div class="student-info">
-            <div class="name">${nm}</div>
+            <div class="name">${nm}${trInfo ? `<span class="trilha-chip" style="background:${trInfo.bg};color:${trInfo.escuro};border-color:${trInfo.linha}">${trInfo.ic} ${trInfo.nome}</span>` : ''}</div>
             <div class="email">${esc(s.email || '')} · ${esc(s.level || '')}</div>
             ${s.slug ? `<div class="slug-line" title="slug: ${esc(s.slug)} → pos-aula-${esc(s.slug)}-MM-DD-AAAA.html">slug: <strong>${esc(s.slug)}</strong> &nbsp;→&nbsp; pos-aula-<strong>${esc(s.slug)}</strong>-MM-DD-AAAA.html</div>` : ''}
           </div>
@@ -6387,6 +6440,9 @@
             return;
           } else if (action === 'extras') {
             openStudentExtras(uid, name);
+            return;
+          } else if (action === 'trilha') {
+            abrirTrilhaModal(uid);
             return;
           } else if (action === 'mudar-plano' || action === 'editar-plano') {
             abrirPlanoModal(uid);
@@ -8151,6 +8207,113 @@
       }
     };
 
+    // ── Trilha do aluno (Entrevista, Business, Viagem) ──────────────────────────────────────────
+    // students/{uid}.trilha = { tipo, ativadaEm, ativadaPor } liga o botão no app. O briefing que o aluno preenche fica em
+    // students/{uid}/trilha/briefing ({ tipo, respostas }) e as tarefas são extras com `trilha`, `etapa` e `ordem`.
+    function trilhaFmtAdm(chave, valor) {
+      if (Array.isArray(valor)) return valor.join(', ');
+      if (chave === 'quando' && /^\d{4}-\d{2}-\d{2}$/.test(String(valor || ''))) return String(valor).split('-').reverse().join('/');
+      return String(valor || '');
+    }
+    function trilhaBriefingTexto(s, tipo, respostas) {
+      const T = TRILHAS_ADM[tipo];
+      const linhas = T.campos.map(([k, rot]) => `${rot}: ${trilhaFmtAdm(k, respostas[k]) || '(não informado)'}`);
+      return [
+        `Aluno: ${s.name || s.firstName || 'Aluno'} (${s.level || 'nível não informado'})`,
+        `Trilha: ${T.nome}`,
+        '',
+        ...linhas,
+        '',
+        `Etapas do molde (o número é o campo "etapa" do JSON): ${T.etapas.map((e, i) => `${i + 1}. ${e}`).join(' | ')}`,
+        '',
+        `Monte a etapa ___ como atividades extras em JSON, uma por tarefa (um objeto por vez, mesmo molde das extras: skill, level, title, source, instruction, responseType, content), acrescentando "trilha":"${tipo}", "etapa":N e "ordem":K (posição da tarefa dentro da etapa).`,
+      ].join('\n');
+    }
+    async function abrirTrilhaModal(uid) {
+      const s = allStudents.find(x => x.uid === uid);
+      if (!s) return;
+      document.getElementById('tr-uid').value = uid;
+      document.getElementById('tr-titulo').textContent = `🎯 Trilha de ${s.name || s.firstName || 'Aluno'}`;
+      document.getElementById('tr-tipo').value = (s.trilha && s.trilha.tipo) || '';
+      showMsg('tr-msg', '', 'info');
+      document.getElementById('trilha-modal').classList.add('open');
+      await trilhaCarregarCorpo(uid);
+    }
+    async function trilhaCarregarCorpo(uid) {
+      const corpo = document.getElementById('tr-corpo');
+      const s = allStudents.find(x => x.uid === uid);
+      const tipo = s && s.trilha && s.trilha.tipo;
+      const T = TRILHAS_ADM[tipo];
+      if (!T) { corpo.innerHTML = ''; return; }
+      corpo.innerHTML = '<div class="loading">Carregando...</div>';
+      let briefing = null, extras = [];
+      try {
+        const [bSnap, eSnap] = await Promise.all([
+          getDoc(doc(db, 'students', uid, 'trilha', 'briefing')).catch(() => null),
+          getDocs(collection(db, 'students', uid, 'extras')).catch(() => ({ docs: [] })),
+        ]);
+        briefing = bSnap && bSnap.exists() ? bSnap.data() : null;
+        extras = eSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(e => e.trilha === tipo);
+      } catch (e) { corpo.innerHTML = `<div class="loading">Erro ao carregar: ${esc(e.message)}</div>`; return; }
+      const resp = (briefing && briefing.respostas) || {};
+      const enviado = briefing && briefing.atualizadoEm && briefing.atualizadoEm.toDate ? briefing.atualizadoEm.toDate().toLocaleDateString('pt-BR') : '';
+      const titulo = t => `<div style="font-size:.72rem;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);margin:16px 0 6px;">${t}</div>`;
+      const tabela = briefing
+        ? `<table class="tr-tabela">${T.campos.map(([k, rot]) => `<tr><td>${rot}</td><td>${esc(trilhaFmtAdm(k, resp[k])) || '<span style="color:#94a3b8">(em branco)</span>'}</td></tr>`).join('')}</table>`
+        : '<div style="font-size:.85rem;color:var(--muted);">O aluno ainda não preencheu o formulário.</div>';
+      const etapas = T.etapas.map((nomeEtapa, i) => {
+        const lista = extras.filter(e => Number(e.etapa) === i + 1);
+        const feitas = lista.filter(e => e.finalizada || e.status === 'corrected').length;
+        const cls = !lista.length ? '' : feitas === lista.length ? 'ok' : 'on';
+        const txt = !lista.length ? 'Vazia (Em breve)' : `${feitas}/${lista.length} feitas`;
+        return `<div class="tr-etapa"><span class="n">${i + 1}</span><span class="t">${esc(nomeEtapa)}</span><span class="s ${cls}">${txt}</span></div>`;
+      }).join('');
+      const soltas = extras.filter(e => !(Number(e.etapa) >= 1 && Number(e.etapa) <= T.etapas.length)).length;
+      corpo.innerHTML = titulo(`Briefing${enviado ? ` · enviado em ${enviado}` : ''}`) + tabela
+        + (briefing ? '<button class="btn-secondary" id="tr-copiar" type="button" style="margin-top:8px;">📋 Copiar briefing para o Claude</button>' : '')
+        + titulo('Etapas (o aluno só vê a etapa que já tem tarefa enviada)') + etapas
+        + (soltas ? `<div style="font-size:.78rem;color:#92400e;margin-top:6px;">${soltas} tarefa(s) sem etapa válida (o aluno vê em "Outras tarefas da trilha").</div>` : '');
+      const copiar = document.getElementById('tr-copiar');
+      if (copiar) copiar.onclick = async () => {
+        const texto = trilhaBriefingTexto(s, tipo, resp);
+        try { await navigator.clipboard.writeText(texto); showMsg('tr-msg', '✅ Briefing copiado. É só colar na conversa com o Claude.', 'ok'); }
+        catch (e) { window.prompt('Copie o briefing (Ctrl+C):', texto); }
+      };
+    }
+    document.getElementById('tr-close').onclick = () => document.getElementById('trilha-modal').classList.remove('open');
+    document.getElementById('trilha-modal').onclick = e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); };
+    document.getElementById('tr-save').onclick = async () => {
+      const uid = document.getElementById('tr-uid').value;
+      const tipo = document.getElementById('tr-tipo').value;
+      const s = allStudents.find(x => x.uid === uid);
+      if (!s) return;
+      const nome = s.name || s.firstName || 'Aluno';
+      const btn = document.getElementById('tr-save');
+      try {
+        if (!tipo) {
+          if (!s.trilha) { showMsg('tr-msg', 'Este aluno não tem trilha ativada.', 'info'); return; }
+          if (!confirm(`Remover a trilha de ${nome}?\n\nO aluno deixa de ver o botão da trilha. O briefing e as tarefas já enviadas ficam guardados.`)) return;
+        }
+        btn.disabled = true;
+        if (!tipo) {
+          await updateDoc(doc(db, 'students', uid), { trilha: deleteField() });
+          delete s.trilha;
+        } else {
+          const atual = s.trilha || {};
+          const nova = { tipo, ativadaEm: atual.tipo === tipo && atual.ativadaEm ? atual.ativadaEm : serverTimestamp(), ativadaPor: auth.currentUser?.email || '' };
+          await updateDoc(doc(db, 'students', uid), { trilha: nova });
+          s.trilha = { ...nova, ativadaEm: atual.ativadaEm || new Date() };
+        }
+        btn.disabled = false;
+        showMsg('tr-msg', tipo ? `✅ Trilha ${TRILHAS_ADM[tipo].nome} ativada. ${nome} vê o botão na próxima vez que abrir o app.` : '✅ Trilha removida.', 'ok');
+        loadStudents();
+        await trilhaCarregarCorpo(uid);
+      } catch (e) {
+        btn.disabled = false;
+        showMsg('tr-msg', `Erro: ${e.message}`, 'err');
+      }
+    };
+
     function abrirGeradorParaAluno(uid, destino) {
       if (destino === 'posaula') {
         document.querySelector('.tab[data-tab="posaula"]')?.click();
@@ -9721,6 +9884,9 @@
       try { data = JSON.parse(raw); } catch(e) { showMsg('ex-msg', 'JSON inválido.', 'err'); return; }
       if (!data.skill || !SKILL_LABELS[data.skill]) { showMsg('ex-msg', 'Campo "skill" deve ser listening, speaking, reading ou writing.', 'err'); return; }
       if (!data.title) { showMsg('ex-msg', 'Campo "title" obrigatório.', 'err'); return; }
+      // Tarefa de uma trilha: "trilha" (entrevista | business | viagem), "etapa" (1, 2, 3...) e "ordem" dentro da etapa.
+      if (data.trilha && !TRILHAS_ADM[data.trilha]) { showMsg('ex-msg', 'Campo "trilha" deve ser entrevista, business ou viagem.', 'err'); return; }
+      if (data.trilha && !(Number(data.etapa) >= 1)) { showMsg('ex-msg', 'Tarefa de trilha precisa do campo "etapa" (1, 2, 3...).', 'err'); return; }
       parsedExtraJson = data;
       const nQ = countQuestions(data.content || '') || (Array.isArray(data.questions) ? data.questions.length : 0);
       const url = data.activityUrl || data.link || '';
@@ -9728,7 +9894,7 @@
       document.getElementById('ex-preview-body').innerHTML = `
         <div class="prev-act">
           <div class="prev-act-head">${SKILL_LABELS[data.skill]} — ${esc(data.title)}</div>
-          <div class="prev-act-sub">Faixa: ${esc(data.level || 'Todos')} · Resposta: ${esc(rt)}${data.source ? ` · ${esc(data.source)}` : ''}${url ? ` · <a href="${esc(url)}" target="_blank">link direto</a>` : ''}</div>
+          <div class="prev-act-sub">Faixa: ${esc(data.level || 'Todos')} · Resposta: ${esc(rt)}${data.source ? ` · ${esc(data.source)}` : ''}${url ? ` · <a href="${esc(url)}" target="_blank">link direto</a>` : ''}${data.trilha ? ` · <strong>${TRILHAS_ADM[data.trilha].ic} Trilha ${TRILHAS_ADM[data.trilha].nome}, etapa ${Number(data.etapa)}${data.ordem ? `, tarefa ${Number(data.ordem)}` : ''}</strong>` : ''}</div>
           ${data.siteExplanation ? `<div style="font-size:0.82rem;margin-bottom:6px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px;"><strong>Como funciona:</strong> ${esc(data.siteExplanation)}</div>` : ''}
           ${(data.instruction || data.intro) ? `<div style="font-size:0.85rem;margin-bottom:8px;"><strong>Instrução:</strong> ${esc(data.instruction || data.intro)}</div>` : ''}
           <div class="prev-part-body">${sanitizeActivityHtml(data.content || '<em>Sem questões ainda (só link' + (rt !== 'text' ? ' + áudio' : '') + ')</em>')}</div>
@@ -9758,6 +9924,7 @@
           responseType: parsedExtraJson.responseType || (parsedExtraJson.skill === 'speaking' ? 'audio' : 'text'),
           questions: Array.isArray(parsedExtraJson.questions) ? parsedExtraJson.questions : [],
           content: parsedExtraJson.content || '',
+          ...(parsedExtraJson.trilha ? { trilha: parsedExtraJson.trilha, etapa: Number(parsedExtraJson.etapa), ordem: Number(parsedExtraJson.ordem) || 0 } : {}),
           assigned: {},
           createdAt: serverTimestamp(),
         });
@@ -9800,6 +9967,7 @@
             responseType: lib.responseType || (lib.skill === 'speaking' ? 'audio' : 'text'),
             questions: Array.isArray(lib.questions) ? lib.questions : [],
             content: lib.content || '',
+            ...(lib.trilha ? { trilha: lib.trilha, etapa: Number(lib.etapa) || 0, ordem: Number(lib.ordem) || 0 } : {}),
             status: 'pending', finalizada: false,
             assignedAt: serverTimestamp(),
           });
