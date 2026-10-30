@@ -463,7 +463,7 @@ function PlanoCamada({ titulo, sub, onClose, onAsk, children, rodape }) {
             <div style={{ fontSize: 15.5, fontWeight: 800, color: '#0F172A', lineHeight: 1.15 }}>{titulo}</div>
             {sub && <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B' }}>{sub}</div>}
           </div>
-          {onAsk && <button onClick={onAsk} style={{ border: 0, background: '#F5F3FF', color: '#5B21B6', borderRadius: 12, padding: '8px 11px', fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer' }}>💬 Dúvida?</button>}
+          {onAsk && <button onClick={onAsk} style={{ border: 0, background: '#F5F3FF', color: '#5B21B6', borderRadius: 12, padding: '8px 11px', fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer' }}>💡 EurekIA</button>}
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 18px' }}>{children}</div>
         {rodape && <div style={{ padding: '10px 16px calc(12px + env(safe-area-inset-bottom, 0px))', background: '#fff', borderTop: '1px solid rgba(var(--brand-rgb),.12)', flexShrink: 0 }}>{rodape}</div>}
@@ -948,7 +948,7 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk }) {
           </div>
           <button style={btn} aria-label="Página anterior" disabled={pdf <= 15} onClick={() => setPdf(p => p - 1)}>‹</button>
           <button style={btn} aria-label="Próxima página" disabled={pdf >= 177} onClick={() => setPdf(p => p + 1)}>›</button>
-          {onAsk && <button onClick={onAsk} aria-label="Dúvida" style={{ ...btn, width: 'auto', padding: '0 9px', fontSize: 15 }}>💬</button>}
+          {onAsk && <button onClick={onAsk} aria-label="EurekIA" style={{ ...btn, width: 'auto', padding: '0 9px', fontSize: 15 }}>💡</button>}
         </div>
         <PlanoLeitor curso={cursoId} pdf={pdf} />
         {total === 0
@@ -1029,6 +1029,27 @@ function PlanoAulaFolha({ aula, student, cfg, onClose }) {
   );
 }
 
+// A EurekIA: a cientista que tira as dúvidas de inglês (jaleco, óculos redondos e a lâmpada do "eureka!").
+function EurekiaAvatar({ size = 54 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" style={{ display: 'block' }}>
+      <circle cx="32" cy="32" r="32" fill="#6D28D9" />
+      <path d="M13 64 Q14 49 32 47 Q50 49 51 64 Z" fill="#fff" />
+      <path d="M32 47 L32 64" stroke="#C4B5FD" strokeWidth="1.5" />
+      <circle cx="32" cy="34" r="15" fill="#FDE2C8" />
+      <path d="M16 31 Q16 15 32 14 Q48 15 48 31 Q41 23 32 23 Q23 23 16 31 Z" fill="#E5E7EB" />
+      <circle cx="26" cy="36" r="6" fill="#fff" stroke="#1F2937" strokeWidth="1.8" />
+      <circle cx="38" cy="36" r="6" fill="#fff" stroke="#1F2937" strokeWidth="1.8" />
+      <line x1="32" y1="36" x2="32" y2="36" stroke="#1F2937" strokeWidth="1.8" />
+      <circle cx="26" cy="37" r="2" fill="#1F2937" /><circle cx="38" cy="37" r="2" fill="#1F2937" />
+      <path d="M27 44 Q32 49 37 44" fill="none" stroke="#9A3412" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="52" cy="13" r="7.5" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.5" />
+      <path d="M49.5 20 L54.5 20" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" />
+      <path d="M50 12 Q52 9 54 12" fill="none" stroke="#F59E0B" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose }) {
   const [texto, setTexto] = React.useState(''); const [msgs, setMsgs] = React.useState([]); const [pensando, setPensando] = React.useState(false);
   const fimRef = React.useRef(null);
@@ -1056,13 +1077,13 @@ function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose }) {
   const wa = PlanoWhatsLink(student, `Oi, César! Aqui é ${student.firstName || student.name || 'sua aluna'} (${cfg.nome}). ${contexto ? `Estou na tarefa “${contexto}”. ` : ''}${ultima ? `Minha dúvida: ${ultima.x}` : 'Tenho uma dúvida: '}`);
   return (
     <PlanoFolha onClose={onClose}>
-      <div style={{ fontSize: 18, fontWeight: 800 }}>💬 Tem uma dúvida?</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><EurekiaAvatar size={40} /><div><div style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.1 }}>EurekIA</div><div style={{ fontSize: 11.5, fontWeight: 700, color: '#6D28D9' }}>Tem uma dúvida de inglês?</div></div></div>
       <div style={{ fontSize: 12.5, fontWeight: 700, color: '#64748B', margin: '2px 0 12px' }}>{contexto ? `Sobre: ${contexto}` : 'Pergunte sobre o que está estudando em inglês.'}</div>
       {semIA ? <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 16, padding: 14, margin: '0 0 12px', fontSize: 13.5, fontWeight: 600, color: '#475569', lineHeight: 1.5 }}>Para tirar dúvidas, fale direto com o César pelo WhatsApp. Ele responde assim que puder.</div> : <>
       <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 16, padding: 10, minHeight: 110, maxHeight: 280, overflowY: 'auto' }}>
         {msgs.length === 0 && <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B', padding: 6 }}>Escreva a sua dúvida de inglês abaixo. O assistente olha as suas últimas aulas e atividades para explicar, em português, com exemplos em inglês. Se precisar do César, toque em WhatsApp.</div>}
         {msgs.map((m, i) => <div key={i} style={{ display: 'flex', justifyContent: m.de === 'eu' ? 'flex-end' : 'flex-start', margin: '6px 0' }}><div style={{ maxWidth: '86%', padding: '9px 12px', borderRadius: 14, fontSize: 13.5, fontWeight: 600, lineHeight: 1.5, whiteSpace: 'pre-wrap', background: m.de === 'eu' ? '#7C3AED' : m.erro ? '#FEF2F2' : '#fff', color: m.de === 'eu' ? '#fff' : '#0F172A', border: m.de === 'eu' ? 0 : '1px solid #E2E8F0' }}>{m.de === 'ia' ? <PlanoMd x={m.x} /> : m.x}</div></div>)}
-        {pensando && <div style={{ fontSize: 13, fontWeight: 700, color: '#64748B', padding: 6 }}>Pensando…</div>}
+        {pensando && <div style={{ fontSize: 13, fontWeight: 700, color: '#64748B', padding: 6 }}>A EurekIA está pensando…</div>}
         <div ref={fimRef} />
       </div>
       <div style={{ display: 'flex', gap: 8, margin: '10px 0' }}>
@@ -1153,7 +1174,7 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
       </>}
 
       {!tarefa && !aula && !duvida && tab !== 'perfil' &&
-        <button onClick={() => setDuvida({ contexto: '' })} aria-label="Tirar dúvida" style={{ position: 'fixed', bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))', right: 'max(16px, calc(50vw - 224px))', zIndex: 300, width: 54, height: 54, borderRadius: '50%', border: 0, background: 'linear-gradient(150deg,#8B5CF6,#6D28D9)', color: '#fff', fontSize: 24, boxShadow: '0 10px 24px rgba(109,40,217,.4)', cursor: 'pointer' }}>💬</button>}
+        <button onClick={() => setDuvida({ contexto: '' })} aria-label="Perguntar à EurekIA" style={{ position: 'fixed', bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))', right: 'max(16px, calc(50vw - 224px))', zIndex: 300, width: 54, height: 54, borderRadius: '50%', border: 0, padding: 0, background: 'none', boxShadow: '0 10px 24px rgba(109,40,217,.4)', cursor: 'pointer' }}><EurekiaAvatar size={54} /></button>}
 
       {tarefa && tarefa.tipo === 'livro' && (tarefa.pdf
         ? <PlanoTarefaPagina t={tarefa} cursoId={cfg.cursoId} onFeita={f} onClose={fechar} onAsk={perguntar} />
