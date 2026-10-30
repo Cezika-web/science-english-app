@@ -33,7 +33,7 @@ const handlerEnd = admin.indexOf('    // ── APLICAR CORREÇÃO', handlerStar
 assert(handlerStart >= 0 && handlerEnd > handlerStart);
 const handler = admin.slice(handlerStart, handlerEnd);
 
-async function publish({ fail = false, emptyUid = false, count = 2 } = {}) {
+async function publish({ fail = false, emptyUid = false, count = 2, trilha = '' } = {}) {
   const elements = new Map();
   const element = id => {
     if (!elements.has(id)) elements.set(id, { value: id === 'pub-student' && !emptyUid ? 'student-1' : '', style: {}, disabled: false });
@@ -41,7 +41,8 @@ async function publish({ fail = false, emptyUid = false, count = 2 } = {}) {
   };
   const writes = [], messages = [];
   let commits = 0, dateCalls = 0;
-  const payload = { week: '24 DE AGOSTO 2026', activities: Array.from({ length: count }, (_, i) => ({
+  // O painel resolve o aluno ao verificar o JSON (_resolvedUid) e a trilha de destino (_trilha); aqui entram já resolvidos.
+  const payload = { week: '24 DE AGOSTO 2026', _resolvedUid: emptyUid ? '' : 'student-1', _trilha: trilha, activities: Array.from({ length: count }, (_, i) => ({
     title: `New ${i}`, parts: [{ id: 'part-1', content: '<ol><li>Test _______</li></ol>' }],
     // Imported data must never override publication or completion metadata.
     createdAt: 'old', week: 'old', status: 'corrected', respostas: { 'part-1': { e0: 'answer' } },
@@ -51,6 +52,7 @@ async function publish({ fail = false, emptyUid = false, count = 2 } = {}) {
     collection: (_db, ...segments) => segments.join('/'),
     doc: collection => `${collection}/new-${writes.length}`,
     serverTimestamp: () => 'SERVER_TIMESTAMP',
+    TRILHAS_ADM: { entrevista: { nome: 'Entrevista' } },
     activityPublicationMetadata: source => { dateCalls++; return metadata(source, '2026-09-02T15:00:00Z'); },
     writeBatch: () => ({ set: (ref, data) => writes.push({ ref, data }), commit: async () => {
       commits++; if (fail) throw new Error('Simulated failure');
@@ -98,6 +100,13 @@ async function publish({ fail = false, emptyUid = false, count = 2 } = {}) {
   assert.equal(failed.sandbox.parsedActivityJson, failed.payload);
   assert.equal(failed.element('btn-publish').disabled, false);
   assert.equal(failed.messages[0][2], 'err');
+  // Atividades das aulas de trilha: o campo `trilha` vai no documento (e só nele); sem trilha, o campo nem existe.
+  assert(success.writes.every(w => !('trilha' in w.data)));
+  const daTrilha = await publish({ trilha: 'entrevista' });
+  assert.equal(daTrilha.commits, 1);
+  assert.equal(daTrilha.writes.length, 2);
+  for (const { data } of daTrilha.writes) assert.equal(data.trilha, 'entrevista');
+  assert(daTrilha.messages[0][1].includes('aba Entrevista'));
   const noStudent = await publish({ emptyUid: true });
   assert.equal(noStudent.commits, 0);
   const oversized = await publish({ count: 501 });
@@ -118,5 +127,8 @@ async function publish({ fail = false, emptyUid = false, count = 2 } = {}) {
   assert.equal(grouped[1].wk, '24 DE AGOSTO 2026');
   assert.equal(JSON.stringify(old), before);
   assert(admin.includes('Referência da aula no JSON:'));
+  // A separação no app: o AulasTab alimenta a MESMA lista com as atividades da trilha, e a geral não recebe nenhuma.
+  assert(app.includes('const lista = modoTrilha ? activitiesTrilha : activities;'));
+  assert(app.includes('activities={activitiesGerais} activitiesTrilha={activitiesTrilha}'));
   console.log('PASS: publication date, São Paulo midnight, atomic upload, original reference, failure recovery and grouping without changing old progress.');
 })().catch(error => { console.error(error); process.exitCode = 1; });
