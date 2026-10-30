@@ -244,7 +244,7 @@ async function getFB() {
 // Falha de gravação (regra ainda não publicada, sem rede) nunca aparece para o aluno.
 const CzkUsage = (() => {
   // Versão do app que vai junto com o uso (para saber quem ainda roda versão velha). Mantenha igual ao CACHE do sw.js.
-  const APP_BUILD = 'v52';
+  const APP_BUILD = 'v53';
   const TICK = 1000, MIN_STEP = 200, FLUSH = 60000, NEW_VISIT = 30 * 60000;
   const BLIND_CAP = 10 * 60000, HOLD_CAP = 15 * 60000, MAX_FAILS = 5;
   const READ_MS = 180000;                 // maior pausa aceita na leitura do pós-aula (igual a LEITURA_SEG do adesao.js)
@@ -6460,7 +6460,7 @@ function App() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         {planoCfg ? (
           <PlanoConteudo tab={planoTab} onTab={setPlanoTab} cfg={planoCfg} student={student} posaulas={posaulas} activities={activities}
-            onOpenPost={handleOpenPost} onAsk={perguntarAssistente}
+            onOpenPost={handleOpenPost} onAsk={perguntarAssistente} mirror={mirror}
             slots={{
               atividades: <AulasTab activities={activities} onOpenActivity={handleOpenActivity} onContinueActivity={handleContinueActivity} extras={extras} onOpenExtra={setOpenExtra} onOpenCorrecao={(wk, acts) => setOpenCorrecao({ wk, acts })} onOpenChallenge={(challenge) => { setSelectedChallenge(challenge || null); setChallengeView('hub'); }} challengeSimulation={combinedChallengeSimulation} challengeState={challengeState} challengeEnabled={challengePreviewAccess} trilhaProps={trilhaProps} />,
               perfil: <PerfilTab student={student} mirror={mirror} onLogout={handleLogout} onPatchStudent={patchStudent} reviews={courseReviews} ownReview={ownCourseReview} onSaveReview={saveCourseReview} openReviewForm={reviewFormRequest} />,

@@ -1145,7 +1145,7 @@ function PlanoAulasLista({ posaulas, onOpenPost }) {
 }
 
 /* ───────── o conteúdo do plano (troca o miolo do app) ───────── */
-function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slots, onOpenPost, onAsk }) {
+function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slots, onOpenPost, onAsk, mirror }) {
   const uid = student.uid || 'x';
   const [feitas, marcar, zerar] = usePlanoFeitas(uid, !cfg.previa);
   const chaveBV = `plano-boasvindas-v1-${uid}`;
@@ -1166,7 +1166,9 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
   };
   const concluir = (id, extra) => { marcar(id); if (extra) marcar(extra); setTarefa(null); avisar(extra ? '🏅 Selo conquistado!' : '✅ Tarefa concluída!'); };
   const fechar = () => setTarefa(null);
-  const perguntar = () => setDuvida({ contexto: tarefa ? tarefa.titulo : '' });
+  // No espelho (o professor olhando o app do aluno) a EurekIA aparece, mas só avisa: a pergunta iria para a conta do professor.
+  const avisarEspelho = () => avisar('👁 Modo espelho — somente leitura');
+  const perguntar = () => { if (mirror) { avisarEspelho(); return; } setDuvida({ contexto: tarefa ? tarefa.titulo : '' }); };
   const f = () => concluir(tarefa.id);
 
   return (
@@ -1181,7 +1183,7 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
       </>}
 
       {!tarefa && !aula && !duvida && tab !== 'perfil' &&
-        <button onClick={() => setDuvida({ contexto: '' })} aria-label="Perguntar à EurekIA" style={{ position: 'fixed', bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))', right: 'max(16px, calc(50vw - 224px))', zIndex: 300, width: 54, height: 54, borderRadius: '50%', border: 0, padding: 0, background: 'none', boxShadow: '0 10px 24px rgba(109,40,217,.4)', cursor: 'pointer' }}><EurekiaAvatar size={54} /></button>}
+        <button onClick={() => (mirror ? avisarEspelho() : setDuvida({ contexto: '' }))} aria-label="Perguntar à EurekIA" style={{ position: 'fixed', bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))', right: 'max(16px, calc(50vw - 224px))', zIndex: 300, width: 54, height: 54, borderRadius: '50%', border: 0, padding: 0, background: 'none', boxShadow: '0 10px 24px rgba(109,40,217,.4)', cursor: 'pointer' }}><EurekiaAvatar size={54} /></button>}
 
       {tarefa && tarefa.tipo === 'livro' && (tarefa.pdf
         ? <PlanoTarefaPagina t={tarefa} cursoId={cfg.cursoId} onFeita={f} onClose={fechar} onAsk={perguntar} />
