@@ -1040,9 +1040,14 @@ function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose }) {
     try {
       let r;
       if (cfg.previa || !onAsk) { await new Promise(res => setTimeout(res, 900)); r = { resposta: 'Boa pergunta! Depois de **do/does/don’t/doesn’t** o verbo principal fica sempre na forma base: *Does she work?* (e não *Does she works?*).\n\n(Resposta de exemplo — o assistente de verdade ainda não está ligado.)' }; }
-      else r = await onAsk(pergunta, contexto);
+      else {
+        // A conversa segue: manda a última pergunta e resposta para a IA entender um "e no passado?".
+        const ultimaIA = [...msgs].reverse().find(m => m.de === 'ia' && !m.erro);
+        r = await onAsk(pergunta, contexto, ultima && ultimaIA ? { pergunta: ultima.x, resposta: ultimaIA.x } : null);
+      }
       // O servidor conta as perguntas do mês e a aluna não vê contador: só este aviso ao chegar no limite.
       if (r && r.limite) setMsgs(m => [...m, { de: 'ia', x: 'Suas perguntas chegaram ao limite mensal. Se precisar, fale com o César pelo WhatsApp.', erro: true }]);
+      else if (r && r.foraDoAssunto) setMsgs(m => [...m, { de: 'ia', x: r.resposta }]);
       else setMsgs(m => [...m, { de: 'ia', x: r.resposta }]);
     } catch (e) { setMsgs(m => [...m, { de: 'ia', x: 'Não consegui responder agora. Pergunte direto ao César no WhatsApp, ele responde assim que puder.', erro: true }]); }
     setPensando(false);
@@ -1052,10 +1057,10 @@ function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose }) {
   return (
     <PlanoFolha onClose={onClose}>
       <div style={{ fontSize: 18, fontWeight: 800 }}>💬 Tem uma dúvida?</div>
-      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#64748B', margin: '2px 0 12px' }}>{contexto ? `Sobre: ${contexto}` : 'Pergunte sobre o que está estudando.'}</div>
+      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#64748B', margin: '2px 0 12px' }}>{contexto ? `Sobre: ${contexto}` : 'Pergunte sobre o que está estudando em inglês.'}</div>
       {semIA ? <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 16, padding: 14, margin: '0 0 12px', fontSize: 13.5, fontWeight: 600, color: '#475569', lineHeight: 1.5 }}>Para tirar dúvidas, fale direto com o César pelo WhatsApp. Ele responde assim que puder.</div> : <>
       <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 16, padding: 10, minHeight: 110, maxHeight: 280, overflowY: 'auto' }}>
-        {msgs.length === 0 && <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B', padding: 6 }}>Escreva a sua dúvida abaixo. O assistente responde em poucas palavras, em português, com um exemplo em inglês. Se precisar do César, toque em WhatsApp.</div>}
+        {msgs.length === 0 && <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B', padding: 6 }}>Escreva a sua dúvida de inglês abaixo. O assistente olha as suas últimas aulas e atividades para explicar, em português, com exemplos em inglês. Se precisar do César, toque em WhatsApp.</div>}
         {msgs.map((m, i) => <div key={i} style={{ display: 'flex', justifyContent: m.de === 'eu' ? 'flex-end' : 'flex-start', margin: '6px 0' }}><div style={{ maxWidth: '86%', padding: '9px 12px', borderRadius: 14, fontSize: 13.5, fontWeight: 600, lineHeight: 1.5, whiteSpace: 'pre-wrap', background: m.de === 'eu' ? '#7C3AED' : m.erro ? '#FEF2F2' : '#fff', color: m.de === 'eu' ? '#fff' : '#0F172A', border: m.de === 'eu' ? 0 : '1px solid #E2E8F0' }}>{m.de === 'ia' ? <PlanoMd x={m.x} /> : m.x}</div></div>)}
         {pensando && <div style={{ fontSize: 13, fontWeight: 700, color: '#64748B', padding: 6 }}>Pensando…</div>}
         <div ref={fimRef} />
