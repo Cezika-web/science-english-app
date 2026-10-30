@@ -432,6 +432,41 @@
     KEYS.filter(function (k) { return c.pm[k] != null && c.pm[k] >= .9; }).forEach(function (k) { t.push({ t: '✅ ' + GOOD[k], c: 'ok' }); });
     return t.slice(0, 5);
   }
+  // Resumo enxuto do resultado de compute() para a EurekIA (assistente de dúvidas) responder "qual a minha adesão?",
+  // "quanto estudei?". Só números e códigos fixos, nunca texto livre: o servidor põe isto no prompt (e ainda o limpa
+  // em functions/assistente.js). Só mande quando o aluno já pode ver a Adesão (liberada pelo professor).
+  function assistantSummary(c) {
+    if (!c || !c.cfg) return null;
+    var fin = function (v) { return v != null && isFinite(v); };
+    var r1 = function (v) { return fin(v) ? Math.round(v * 10) / 10 : null; };
+    var p100 = function (v) { return fin(v) ? Math.round(v * 100) : null; };
+    var pil = {}, pesos = {};
+    KEYS.forEach(function (k) { pil[k] = p100(c.pm && c.pm[k]); pesos[k] = c.cfg.w[k]; });
+    var cur = c.cur, h = c.hours;
+    return {
+      status: c.status === 'ok' ? 'ok' : 'coletando',
+      indice: fin(c.index) ? c.index : null,
+      faixa: c.band ? c.band.k : null,
+      tendencia: fin(c.trend) ? c.trend : null,
+      primeiraNota: c.firstNota || null,
+      pilares: pil, pesos: pesos,
+      semanas: (c.used || []).map(function (w) { return { de: dayKey(w.start), nota: w.total, min: r1(w.weekMin), dias: w.activeDays }; }),
+      atual: cur ? {
+        de: dayKey(cur.start), min: r1(cur.weekMin), dias: cur.activeDays, passados: cur.elapsed,
+        porDia: cur.days.map(r1),
+        metaDiaMin: cur.goal.metaDiaMin, metaDias: cur.goal.metaDias, bateram: cur.goal.hits
+      } : null,
+      horas: h ? {
+        durAula: h.dur, aulaMin: h.aulas.min, aulaSemMin: h.aulas.minSem, aulaMesMin: h.aulas.minMes,
+        appMin: r1(h.app.total), appSemMin: r1(h.app.sem), appMesMin: r1(h.app.mes)
+      } : null,
+      mediaDiasAtivos: r1(c.avgDays), mediaMinPos: r1(c.avgPos),
+      entrega: p100(c.entrega), acertoUltima: fin(c.accLast) ? c.accLast : null,
+      presenca: fin(c.aulasPrev) ? { prevista: c.aulasPrev, presente: c.aulasPres } : null,
+      desafio: { ligado: c.desEnabled !== false, disponiveis: fin(c.desDisp) ? c.desDisp : null, feitas: fin(c.desFeitas) ? c.desFeitas : null },
+      metasAluno: c.metas ? { diaMin: c.metas.diaMin, semH: c.metas.semH, mesH: c.metas.mesH } : null
+    };
+  }
   // Média de minutos por dia da semana, nas semanas usadas e na atual (só dias já passados).
   function wdStats(c) {
     var ws = c.used.concat([c.cur]);
@@ -1560,7 +1595,7 @@
     goalHomeHtml: goalHomeHtml, goalProgressHtml: goalProgressHtml, pageHtml: pageHtml, pageClick: pageClick, evoBodyHtml: evoBodyHtml,
     todayOf: todayOf, goalDaysTxt: goalDaysTxt, metasOf: metasOf, fhm: fhm, hoursHtml: hoursHtml, fmtTimer: fmtTimer, timerTone: timerTone, dayStatus: dayStatus, dayDetailHtml: dayDetailHtml, calendarHtml: calendarHtml, weekStripHtml: weekStripHtml, goalMsg: goalMsg,
     cfgOf: cfgOf, compute: compute, band: band, effWeight: effWeight, combine: combine, itemKey: itemKey,
-    tagsOf: tagsOf, diagOf: diagOf, suggestComment: suggestComment, studentChips: studentChips,
+    tagsOf: tagsOf, diagOf: diagOf, suggestComment: suggestComment, studentChips: studentChips, assistantSummary: assistantSummary,
     wdStats: wdStats, changes: changes, advice: advice, sDayText: sDayText,
     statsOk: statsOk, bandStats: bandStats,
     studentHtml: studentHtml, lineChartHtml: lineChartHtml, toggleDetails: toggleDetails, studentCss: function () { return STUDENT_CSS; },
