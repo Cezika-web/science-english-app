@@ -240,7 +240,7 @@ function TrilhaTarefaLinha({ tr, e, onClick }) {
 }
 
 /* ───────── a aba ───────── */
-function TrilhaTab({ tipo, briefing, onSaveBriefing, extras, posaulas, onOpenExtra, onReadPost }) {
+function TrilhaTab({ tipo, briefing, onSaveBriefing, extras, posaulas, activities, onAbrirAtividades, onOpenExtra, onReadPost }) {
   const tr = TRILHAS[tipo], conf = TRILHA_CONF[tipo];
   const [tela, setTela] = React.useState('');      // '' = automática | 'form' | 'etapa'
   const [etapa, setEtapa] = React.useState(0);
@@ -276,6 +276,27 @@ function TrilhaTab({ tipo, briefing, onSaveBriefing, extras, posaulas, onOpenExt
   );
   const consulta = <PosaulaPeek open={peek} activity={null} posaulas={aulas} titulo={`Pós-aulas · ${tr.nome}`} onClose={() => setPeek(false)} onRead={onReadPost} />;
 
+  // Atividades das AULAS da trilha (as semanais, com correção): ficam só aqui, nunca na lista geral. As tarefas do caminho (extras) são outra coisa.
+  const ativs = activities || [];
+  const aFazer = ativs.filter(a => a.status !== 'corrected' && !a.finalizada).length;
+  const aguardando = ativs.filter(a => a.status !== 'corrected' && a.finalizada).length;
+  const corrigidas = ativs.filter(a => a.status === 'corrected').length;
+  const resumoAtivs = [aFazer && `${aFazer} pendente${aFazer !== 1 ? 's' : ''}`, aguardando && `${aguardando} aguardando correção`, corrigidas && `${corrigidas} corrigida${corrigidas !== 1 ? 's' : ''}`].filter(Boolean).join(' · ');
+  const cartaoAtivs = (
+    <button onClick={() => onAbrirAtividades && onAbrirAtividades()} disabled={ativs.length === 0 || !onAbrirAtividades} style={{
+      display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', fontFamily: 'inherit', cursor: ativs.length ? 'pointer' : 'default',
+      background: tr.bg, border: `1.5px solid ${aFazer ? tr.tc : tr.line}`, borderRadius: 15, padding: '10px 13px', marginBottom: 10, opacity: ativs.length ? 1 : 0.7,
+    }}>
+      <span style={{ width: 32, height: 32, borderRadius: 10, background: '#fff', display: 'grid', placeItems: 'center', fontSize: 15 }}>&#9999;&#65039;</span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <b style={{ display: 'block', fontSize: 13, fontWeight: 800, color: tr.dark }}>Atividades das aulas de {tr.nome.toLowerCase()}</b>
+        <small style={{ fontSize: 10.8, color: '#64748B', fontWeight: 700 }}>{ativs.length ? resumoAtivs : 'As atividades das aulas de ' + tr.nome.toLowerCase() + ' aparecem aqui'}</small>
+      </span>
+      {aFazer > 0 && <span style={{ fontSize: 11.5, fontWeight: 800, padding: '3px 9px', borderRadius: 999, flexShrink: 0, background: 'rgba(245,158,11,0.14)', color: '#92400E' }}>{aFazer}</span>}
+      {ativs.length > 0 && <span style={{ fontSize: 18, color: '#94A3B8' }}>›</span>}
+    </button>
+  );
+
   // 1) Formulário (primeira vez ou "Editar o que contei").
   if (tela === 'form') {
     return <TrilhaForm tr={tr} conf={conf} inicial={respostas} onVoltar={() => setTela('')} onEnviar={onSaveBriefing} />;
@@ -297,6 +318,7 @@ function TrilhaTab({ tipo, briefing, onSaveBriefing, extras, posaulas, onOpenExt
           </div>
         ))}
         {botaoConsulta}
+        {cartaoAtivs}
         <button onClick={() => setTela('form')} style={{ width: '100%', border: 'none', borderRadius: 15, padding: 14, marginTop: 4, background: tr.grad, color: '#fff', fontWeight: 800, fontSize: 14, fontFamily: 'inherit', cursor: 'pointer', boxShadow: '0 8px 18px rgba(0,0,0,.14)' }}>
           Começar: conte sobre {conf.comecar}
         </button>
@@ -315,6 +337,7 @@ function TrilhaTab({ tipo, briefing, onSaveBriefing, extras, posaulas, onOpenExt
           <div style={{ fontSize: 13, color: '#64748B', fontWeight: 700, lineHeight: 1.5 }}>O professor está montando o seu material. Você recebe um aviso quando a primeira etapa estiver no ar.</div>
         </div>
         {botaoConsulta}
+        {cartaoAtivs}
         <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: '#9A6438', margin: '12px 2px 4px' }}>O que você contou</div>
         <TrilhaResumo tipo={tipo} conf={conf} respostas={respostas} />
         <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: '#9A6438', margin: '12px 2px 8px' }}>O que vem por aí</div>
@@ -379,6 +402,7 @@ function TrilhaTab({ tipo, briefing, onSaveBriefing, extras, posaulas, onOpenExt
         </button>
       )}
       {botaoConsulta}
+      {cartaoAtivs}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase', color: tr.dark, margin: '14px 2px 8px' }}>
         <span>Seu caminho</span><small style={{ color: '#64748B', letterSpacing: 0, textTransform: 'none', fontWeight: 700 }}>feito pelo professor para você</small>
