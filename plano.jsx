@@ -463,7 +463,7 @@ function PlanoCamada({ titulo, sub, onClose, onAsk, children, rodape }) {
             <div style={{ fontSize: 15.5, fontWeight: 800, color: '#0F172A', lineHeight: 1.15 }}>{titulo}</div>
             {sub && <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B' }}>{sub}</div>}
           </div>
-          {onAsk && <button onClick={onAsk} style={{ border: 0, background: '#F5F3FF', color: '#5B21B6', borderRadius: 12, padding: '8px 11px', fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer' }}>💡 EurekIA</button>}
+          {onAsk && <button onClick={onAsk} style={{ border: 0, background: '#F5F3FF', color: '#5B21B6', borderRadius: 12, padding: '8px 11px', fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer' }}>💡 Dr. EurekIA</button>}
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 18px' }}>{children}</div>
         {rodape && <div style={{ padding: '10px 16px calc(12px + env(safe-area-inset-bottom, 0px))', background: '#fff', borderTop: '1px solid rgba(var(--brand-rgb),.12)', flexShrink: 0 }}>{rodape}</div>}
@@ -948,7 +948,7 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk }) {
           </div>
           <button style={btn} aria-label="Página anterior" disabled={pdf <= 15} onClick={() => setPdf(p => p - 1)}>‹</button>
           <button style={btn} aria-label="Próxima página" disabled={pdf >= 177} onClick={() => setPdf(p => p + 1)}>›</button>
-          {onAsk && <button onClick={onAsk} aria-label="EurekIA" style={{ ...btn, width: 'auto', padding: '0 9px', fontSize: 15 }}>💡</button>}
+          {onAsk && <button onClick={onAsk} aria-label="Dr. EurekIA" style={{ ...btn, width: 'auto', padding: '0 9px', fontSize: 15 }}>💡</button>}
         </div>
         <PlanoLeitor curso={cursoId} pdf={pdf} />
         {total === 0
@@ -1029,48 +1029,87 @@ function PlanoAulaFolha({ aula, student, cfg, onClose }) {
   );
 }
 
-// A EurekIA: a cientista que tira as dúvidas de inglês (jaleco, óculos redondos e a lâmpada do "eureka!").
+// O Dr. EurekIA: cientista de jaleco, óculos de proteção na testa e balão de ensaio. O desenho é um texto SVG (e não JSX)
+// para as bolinhas dos exercícios, que o index.html monta direto no DOM, usarem exatamente o mesmo. Abaixo de 44 px saem
+// o balão, o bolso e os brilhos, para o rosto continuar nítido nas bolinhas pequenas.
+let EUREKIA_SEQ = 0;
+function eurekiaBrilho(x, y, s) {
+  return `<path d="M${x} ${y - s} l${s * .28} ${s * .72} ${s * .72} ${s * .28} -${s * .72} ${s * .28} -${s * .28} ${s * .72} -${s * .28} -${s * .72} -${s * .72} -${s * .28} ${s * .72} -${s * .28}z" fill="#FDE047"/>`;
+}
+function eurekiaSvg(size) {
+  const grande = size >= 44, N = '#1E1B4B', id = 'eu' + (EUREKIA_SEQ++);
+  let s = '';
+  if (grande) s += eurekiaBrilho(52, 12, 5) + eurekiaBrilho(10, 24, 3.4);
+  s += `<path d="M28 40 H36 V50 H28Z" fill="#E8A877"/>`;
+  s += `<path d="M7 67 C7 53 16 47.5 27 46.5 L37 46.5 C48 47.5 57 53 57 67Z" fill="#fff" stroke="${N}" stroke-width="2" stroke-linejoin="round"/>`;
+  s += `<path d="M27 46.8 L32 58 L37 46.8Z" fill="#FBBF24"/>`;
+  s += `<path d="M26.6 46.4 L31.2 59 L23.4 54.2 L20.4 48.6Z" fill="#fff" stroke="${N}" stroke-width="1.6" stroke-linejoin="round"/>`;
+  s += `<path d="M37.4 46.4 L32.8 59 L40.6 54.2 L43.6 48.6Z" fill="#fff" stroke="${N}" stroke-width="1.6" stroke-linejoin="round"/>`;
+  if (grande) {
+    s += `<rect x="42" y="56" width="8" height="8" rx="1.3" fill="#fff" stroke="${N}" stroke-width="1.4"/>`;
+    s += `<path d="M44.2 56 V52.6" stroke="#EF4444" stroke-width="1.8" stroke-linecap="round"/><path d="M47.4 56 V51.8" stroke="#3B82F6" stroke-width="1.8" stroke-linecap="round"/>`;
+  }
+  s += `<circle cx="19.4" cy="32.5" r="2.8" fill="#F2B98C" stroke="${N}" stroke-width="1.6"/><circle cx="44.6" cy="32.5" r="2.8" fill="#F2B98C" stroke="${N}" stroke-width="1.6"/>`;
+  s += `<ellipse cx="32" cy="31.6" rx="12.8" ry="13.7" fill="#F7C59F" stroke="${N}" stroke-width="1.9"/>`;
+  s += `<path d="M19 30.5 C15.8 21 19.6 12.2 28 10.8 C31 7.4 38.4 8.2 40.4 10.8 C48.2 12.4 50.6 22 45 30.5 C44.2 25.8 41.6 22.8 37.6 22 C34 23.2 30 23.2 26.4 22 C22.4 22.8 19.8 25.8 19 30.5Z" fill="#4A2C17" stroke="${N}" stroke-width="1.9" stroke-linejoin="round"/>`;
+  s += `<path d="M26.6 13.4 Q31 11.2 35.6 12.4" stroke="#8A5530" stroke-width="1.5" fill="none" stroke-linecap="round"/>`;
+  s += `<path d="M18.6 20.8 Q32 15.8 45.4 20.8" stroke="${N}" stroke-width="6.2" fill="none"/><path d="M18.6 20.8 Q32 15.8 45.4 20.8" stroke="#F97316" stroke-width="3.8" fill="none"/>`;
+  s += `<circle cx="26.2" cy="19.8" r="5.4" fill="#A5F3FC" stroke="${N}" stroke-width="1.9"/><circle cx="37.8" cy="19.8" r="5.4" fill="#A5F3FC" stroke="${N}" stroke-width="1.9"/>`;
+  s += `<path d="M23.4 17.8 Q24.8 16.4 26.8 16.4" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M35 17.8 Q36.4 16.4 38.4 16.4" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/>`;
+  s += `<circle cx="27.4" cy="31.8" r="1.9" fill="${N}"/><circle cx="36.6" cy="31.8" r="1.9" fill="${N}"/><circle cx="28" cy="31.1" r=".6" fill="#fff"/><circle cx="37.2" cy="31.1" r=".6" fill="#fff"/>`;
+  s += `<path d="M24.4 28.2 Q27.4 26.6 30 27.8" stroke="#4A2C17" stroke-width="1.4" fill="none" stroke-linecap="round"/><path d="M33.6 27.8 Q36.2 26.6 39.6 28.2" stroke="#4A2C17" stroke-width="1.4" fill="none" stroke-linecap="round"/>`;
+  s += `<circle cx="24" cy="36.2" r="2.3" fill="#F87171" opacity=".38"/><circle cx="40" cy="36.2" r="2.3" fill="#F87171" opacity=".38"/>`;
+  s += `<path d="M26.6 38.4 Q32 45.4 37.4 38.4Z" fill="#9F1239" stroke="${N}" stroke-width="1.4" stroke-linejoin="round"/><path d="M27.8 38.9 Q32 40.6 36.2 38.9 L35.8 40.1 Q32 41.6 28.2 40.1Z" fill="#fff"/>`;
+  if (grande) {
+    s += `<path d="M10.6 42 L10.6 48 L5 58 Q3.8 61 7 61 L19 61 Q22.2 61 21 58 L15.4 48 L15.4 42Z" fill="#ECFEFF" stroke="${N}" stroke-width="1.7" stroke-linejoin="round"/>`;
+    s += `<path d="M7.2 54.2 L18.8 54.2 L21 58.2 Q22 60.2 19 60.2 L7 60.2 Q4 60.2 5 58.2Z" fill="#A3E635"/>`;
+    s += `<circle cx="10.5" cy="57" r="1.1" fill="#fff"/><circle cx="14.5" cy="58.2" r=".9" fill="#fff"/><circle cx="13.2" cy="51" r="1" fill="#A3E635" stroke="${N}" stroke-width=".6"/>`;
+    s += `<path d="M9.6 41.6 H16.4" stroke="${N}" stroke-width="2.2" stroke-linecap="round"/>`;
+  }
+  return `<svg width="${size}" height="${size}" viewBox="0 0 64 64" aria-hidden="true" style="display:block"><defs><clipPath id="c${id}"><circle cx="32" cy="32" r="32"/></clipPath><radialGradient id="g${id}" cx="35%" cy="22%" r="90%"><stop offset="0" stop-color="#8B5CF6"/><stop offset="1" stop-color="#5B21B6"/></radialGradient></defs><circle cx="32" cy="32" r="32" fill="url(#g${id})"/><g clip-path="url(#c${id})">${s}</g></svg>`;
+}
 function EurekiaAvatar({ size = 54 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" style={{ display: 'block' }}>
-      <circle cx="32" cy="32" r="32" fill="#6D28D9" />
-      <path d="M13 64 Q14 49 32 47 Q50 49 51 64 Z" fill="#fff" />
-      <path d="M32 47 L32 64" stroke="#C4B5FD" strokeWidth="1.5" />
-      <circle cx="32" cy="34" r="15" fill="#FDE2C8" />
-      <path d="M16 31 Q16 15 32 14 Q48 15 48 31 Q41 23 32 23 Q23 23 16 31 Z" fill="#E5E7EB" />
-      <circle cx="26" cy="36" r="6" fill="#fff" stroke="#1F2937" strokeWidth="1.8" />
-      <circle cx="38" cy="36" r="6" fill="#fff" stroke="#1F2937" strokeWidth="1.8" />
-      <line x1="32" y1="36" x2="32" y2="36" stroke="#1F2937" strokeWidth="1.8" />
-      <circle cx="26" cy="37" r="2" fill="#1F2937" /><circle cx="38" cy="37" r="2" fill="#1F2937" />
-      <path d="M27 44 Q32 49 37 44" fill="none" stroke="#9A3412" strokeWidth="1.8" strokeLinecap="round" />
-      <circle cx="52" cy="13" r="7.5" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.5" />
-      <path d="M49.5 20 L54.5 20" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" />
-      <path d="M50 12 Q52 9 54 12" fill="none" stroke="#F59E0B" strokeWidth="1.2" strokeLinecap="round" />
-    </svg>
-  );
+  const html = React.useMemo(() => eurekiaSvg(size), [size]);
+  return <span aria-hidden="true" style={{ display: 'block', width: size, height: size, lineHeight: 0 }} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-// A EurekIA em miniatura, para o cabeçalho das atividades (ao lado do X).
+// O Dr. EurekIA em miniatura, para o cabeçalho das atividades (ao lado do X).
 function EurekiaMini({ onClick }) {
-  return <button onClick={onClick} aria-label="Perguntar à EurekIA" title="Perguntar à EurekIA" style={{ width: 34, height: 34, padding: 0, border: 0, borderRadius: '50%', background: 'none', cursor: 'pointer', flexShrink: 0, boxShadow: '0 3px 8px rgba(109,40,217,.35)' }}><EurekiaAvatar size={34} /></button>;
+  return <button onClick={onClick} aria-label="Perguntar ao Dr. EurekIA" title="Perguntar ao Dr. EurekIA" style={{ width: 34, height: 34, padding: 0, border: 0, borderRadius: '50%', background: 'none', cursor: 'pointer', flexShrink: 0, boxShadow: '0 3px 8px rgba(109,40,217,.35)' }}><EurekiaAvatar size={34} /></button>;
 }
 
-// `sugestao`: pergunta já escrita no campo (a da apresentação da EurekIA, "Experimentar agora").
-function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose, z, sugestao }) {
+// A pergunta que vai para a IA quando o aluno toca na bolinha de um exercício: o que ele escreveu + o enunciado + o
+// pedido de explicar sem dar a resposta. O servidor corta a pergunta em 400 caracteres, então tudo é medido aqui.
+function PlanoCorta(s, n) {
+  s = String(s || '').replace(/\s+/g, ' ').trim();
+  return s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s;
+}
+function PlanoPerguntaDoExercicio(texto, ex) {
+  const fim = ' Explique o que ele pede e como pensar, mas NÃO dê a resposta.';
+  const enun = ex.enunciado && ex.enunciado !== ex.item ? PlanoCorta(ex.enunciado, 110) : '';
+  const cab = `${PlanoCorta(texto, 120)}${enun ? ` Enunciado: “${enun}”` : ''} Exercício: “`;
+  return `${cab}${PlanoCorta(ex.item, Math.max(40, 398 - cab.length - 1 - fim.length))}”${fim}`;
+}
+
+// `sugestao`: pergunta já escrita no campo (a da apresentação do Dr. EurekIA, "Experimentar agora").
+// `exercicio`: {enunciado, item} da bolinha de um exercício; vai junto na 1ª pergunta e aparece num cartão acima da conversa.
+function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose, z, sugestao, exercicio }) {
   const [texto, setTexto] = React.useState(sugestao || ''); const [msgs, setMsgs] = React.useState([]); const [pensando, setPensando] = React.useState(false);
   const fimRef = React.useRef(null);
   const semIA = cfg.assistente === false;   // o professor desligou o assistente deste aluno (janela do plano no painel)
   React.useEffect(() => { if (fimRef.current) fimRef.current.scrollIntoView({ block: 'end' }); }, [msgs, pensando]);
   const enviar = async () => {
     const pergunta = texto.trim(); if (!pergunta || pensando) return;
-    setMsgs(m => [...m, { de: 'eu', x: pergunta }]); setTexto(''); setPensando(true);
+    // Na 1ª pergunta de um exercício o enunciado vai junto; o aluno só vê o que escreveu (o cartão acima mostra o exercício).
+    const enviada = exercicio && msgs.length === 0 ? PlanoPerguntaDoExercicio(pergunta, exercicio) : pergunta;
+    setMsgs(m => [...m, { de: 'eu', x: pergunta, enviada }]); setTexto(''); setPensando(true);
     try {
       let r;
       if (cfg.previa || !onAsk) { await new Promise(res => setTimeout(res, 900)); r = cfg.espelho ? { resposta: 'Você está no **espelho**: é assim que a EurekIA aparece para o aluno. Aqui ela não responde de verdade e a pergunta não é gravada.' } : { resposta: 'Boa pergunta! Depois de **do/does/don’t/doesn’t** o verbo principal fica sempre na forma base: *Does she work?* (e não *Does she works?*).\n\n(Resposta de exemplo — o assistente de verdade ainda não está ligado.)' }; }
       else {
         // A conversa segue: manda a última pergunta e resposta para a IA entender um "e no passado?".
         const ultimaIA = [...msgs].reverse().find(m => m.de === 'ia' && !m.erro);
-        r = await onAsk(pergunta, contexto, ultima && ultimaIA ? { pergunta: ultima.x, resposta: ultimaIA.x } : null);
+        r = await onAsk(enviada, contexto, ultima && ultimaIA ? { pergunta: ultima.enviada || ultima.x, resposta: ultimaIA.x } : null);
       }
       // O servidor conta as perguntas do mês e a aluna não vê contador: só este aviso ao chegar no limite.
       if (r && r.limite) setMsgs(m => [...m, { de: 'ia', x: 'Suas perguntas chegaram ao limite mensal. Se precisar, fale com o César pelo WhatsApp.', erro: true }]);
@@ -1083,14 +1122,16 @@ function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose, z, sugestao })
   const wa = PlanoWhatsLink(student, `Oi, César! Aqui é ${student.firstName || student.name || 'sua aluna'} (${cfg.nome}). ${contexto ? `Estou na tarefa “${contexto}”. ` : ''}${ultima ? `Minha dúvida: ${ultima.x}` : 'Tenho uma dúvida: '}`);
   return (
     <PlanoFolha onClose={onClose} z={z}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><EurekiaAvatar size={40} /><div><div style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.1 }}>EurekIA</div><div style={{ fontSize: 11.5, fontWeight: 700, color: '#6D28D9' }}>Tem uma dúvida de inglês?</div></div></div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><EurekiaAvatar size={40} /><div><div style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.1 }}>Dr. EurekIA</div><div style={{ fontSize: 11.5, fontWeight: 700, color: '#6D28D9' }}>Tem uma dúvida de inglês?</div></div></div>
       <div style={{ fontSize: 12.5, fontWeight: 700, color: '#64748B', margin: '2px 0 12px' }}>{contexto ? `Sobre: ${contexto}` : 'Pergunte sobre o que está estudando em inglês.'}</div>
       {semIA ? <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 16, padding: 14, margin: '0 0 12px', fontSize: 13.5, fontWeight: 600, color: '#475569', lineHeight: 1.5 }}>Para tirar dúvidas, fale direto com o César pelo WhatsApp. Ele responde assim que puder.</div> : <>
       <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 16, padding: 10, minHeight: 110, maxHeight: 280, overflowY: 'auto' }}>
-        {msgs.length === 0 && sugestao && <div style={{ fontSize: 13, fontWeight: 700, color: '#5B21B6', background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 12, padding: '9px 11px', margin: '0 0 8px', lineHeight: 1.45 }}>💡 Que tal começar por aqui? A pergunta já está escrita: toque em <b>Enviar</b> e veja o que a EurekIA sabe sobre os seus estudos.</div>}
-        {msgs.length === 0 && <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B', padding: 6 }}>Escreva a sua dúvida de inglês abaixo. O assistente olha as suas últimas aulas e atividades para explicar, em português, com exemplos em inglês. Se precisar do César, toque em WhatsApp.</div>}
+        {exercicio && <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 12, padding: '9px 11px', margin: '0 0 8px', fontSize: 12.5, lineHeight: 1.45, color: '#4C1D95', fontWeight: 600, overflowWrap: 'anywhere' }}><div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .4, textTransform: 'uppercase', color: '#6D28D9', marginBottom: 2 }}>Exercício</div>{exercicio.enunciado && exercicio.item !== exercicio.enunciado && <div style={{ color: '#64748B', marginBottom: 3 }}>{PlanoCorta(exercicio.enunciado, 160)}</div>}<div>{PlanoCorta(exercicio.item, 220)}</div></div>}
+        {msgs.length === 0 && exercicio && <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B', padding: 6 }}>A pergunta já está escrita: toque em <b>Enviar</b> e o Dr. EurekIA explica o que o exercício pede, <b>sem entregar a resposta</b>.</div>}
+        {msgs.length === 0 && sugestao && !exercicio && <div style={{ fontSize: 13, fontWeight: 700, color: '#5B21B6', background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 12, padding: '9px 11px', margin: '0 0 8px', lineHeight: 1.45 }}>💡 Que tal começar por aqui? A pergunta já está escrita: toque em <b>Enviar</b> e veja o que o Dr. EurekIA sabe sobre os seus estudos.</div>}
+        {msgs.length === 0 && !exercicio && <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B', padding: 6 }}>Escreva a sua dúvida de inglês abaixo. O assistente olha as suas últimas aulas e atividades para explicar, em português, com exemplos em inglês. Se precisar do César, toque em WhatsApp.</div>}
         {msgs.map((m, i) => <div key={i} style={{ display: 'flex', justifyContent: m.de === 'eu' ? 'flex-end' : 'flex-start', margin: '6px 0' }}><div style={{ maxWidth: '86%', padding: '9px 12px', borderRadius: 14, fontSize: 13.5, fontWeight: 600, lineHeight: 1.5, whiteSpace: 'pre-wrap', background: m.de === 'eu' ? '#7C3AED' : m.erro ? '#FEF2F2' : '#fff', color: m.de === 'eu' ? '#fff' : '#0F172A', border: m.de === 'eu' ? 0 : '1px solid #E2E8F0' }}>{m.de === 'ia' ? <PlanoMd x={m.x} /> : m.x}</div></div>)}
-        {pensando && <div style={{ fontSize: 13, fontWeight: 700, color: '#64748B', padding: 6 }}>A EurekIA está pensando…</div>}
+        {pensando && <div style={{ fontSize: 13, fontWeight: 700, color: '#64748B', padding: 6 }}>O Dr. EurekIA está pensando…</div>}
         <div ref={fimRef} />
       </div>
       <div style={{ display: 'flex', gap: 8, margin: '10px 0' }}>
@@ -1183,7 +1224,7 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
       </>}
 
       {!tarefa && !aula && !duvida && tab !== 'perfil' &&
-        <button onClick={() => (mirror ? avisarEspelho() : setDuvida({ contexto: '' }))} aria-label="Perguntar à EurekIA" style={{ position: 'fixed', bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))', right: 'max(16px, calc(50vw - 224px))', zIndex: 300, width: 54, height: 54, borderRadius: '50%', border: 0, padding: 0, background: 'none', boxShadow: '0 10px 24px rgba(109,40,217,.4)', cursor: 'pointer' }}><EurekiaAvatar size={54} /></button>}
+        <button onClick={() => (mirror ? avisarEspelho() : setDuvida({ contexto: '' }))} aria-label="Perguntar ao Dr. EurekIA" style={{ position: 'fixed', bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))', right: 'max(16px, calc(50vw - 224px))', zIndex: 300, width: 54, height: 54, borderRadius: '50%', border: 0, padding: 0, background: 'none', boxShadow: '0 10px 24px rgba(109,40,217,.4)', cursor: 'pointer' }}><EurekiaAvatar size={54} /></button>}
 
       {tarefa && tarefa.tipo === 'livro' && (tarefa.pdf
         ? <PlanoTarefaPagina t={tarefa} cursoId={cfg.cursoId} onFeita={f} onClose={fechar} onAsk={perguntar} />

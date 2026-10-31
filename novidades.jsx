@@ -73,35 +73,35 @@ function NovidadePassos({ passos, rotuloFim = 'Entendi', rotuloExtra, onFim, onE
 }
 
 /* ───────── EurekIA ───────── */
-// A pergunta que já vai escrita na EurekIA quando o aluno toca em "Experimentar agora".
-const NOV_PERGUNTA_INICIAL = 'EurekIA, o que eu estou aprendendo?';
+// A pergunta que já vai escrita no Dr. EurekIA quando o aluno toca em "Experimentar agora".
+const NOV_PERGUNTA_INICIAL = 'Dr. EurekIA, o que eu estou aprendendo?';
 function NovidadeEurekIA({ onFim, onExperimentar }) {
   const passos = [
     {
-      fundo: 'linear-gradient(150deg,#7C3AED,#4C1D95)', ilu: <EurekiaAvatar size={108} />, titulo: 'Conheça a EurekIA!',
-      texto: <>Uma novidade no app: a <b>EurekIA</b>, uma inteligência artificial que tira as suas <b>dúvidas de inglês</b> aqui dentro, na hora em que você está estudando e fazendo as atividades.</>,
+      fundo: 'linear-gradient(150deg,#7C3AED,#4C1D95)', ilu: <EurekiaAvatar size={108} />, titulo: 'Conheça o Dr. EurekIA!',
+      texto: <>Uma novidade no app: o <b>Dr. EurekIA</b>, um cientista de inteligência artificial que tira as suas <b>dúvidas de inglês</b> aqui dentro, na hora em que você está estudando e fazendo as atividades.</>,
     },
     {
-      fundo: 'linear-gradient(150deg,#6366F1,#4338CA)', ilu: '📚', titulo: 'Ela conhece os SEUS estudos',
-      texto: <>A EurekIA foi pensada para <b>você</b>: ela olha as suas <b>últimas pós-aulas</b> e as <b>atividades da última semana</b>. Se o assunto já foi explicado numa aula, ela lembra <b>como foi explicado</b>, mostra mais exemplos e, se você já respondeu um exercício parecido, mostra a sua resposta.</>,
+      fundo: 'linear-gradient(150deg,#6366F1,#4338CA)', ilu: '📚', titulo: 'Ele conhece os SEUS estudos',
+      texto: <>O Dr. EurekIA foi pensado para <b>você</b>: ele olha as suas <b>últimas pós-aulas</b> e as <b>atividades da última semana</b>. Se o assunto já foi explicado numa aula, ele lembra <b>como foi explicado</b>, mostra mais exemplos e, se você já respondeu um exercício parecido, mostra a sua resposta.</>,
       extra: <div className="nov-chat"><small>EXEMPLO</small>
         <div className="nov-bolha eu">Quando eu uso does?</div>
         <div className="nov-bolha ia">No pós-aula de 21/10 você viu que <b>does</b> vai com he, she e it. Exemplo: <i>Does she work?</i> Na atividade de do/does, você respondeu <i>does</i> para <i>What does he do?</i>.</div></div>,
     },
     {
-      fundo: 'linear-gradient(150deg,#0D9488,#115E59)', ilu: '🎯', titulo: 'O que ela faz (e o que não faz)',
+      fundo: 'linear-gradient(150deg,#0D9488,#115E59)', ilu: '🎯', titulo: 'O que ele faz (e o que não faz)',
       texto: <div className="nov-lista">
         <div><span>✅</span><div><b>Dúvidas das suas atividades e aulas:</b> gramática, palavras, pronúncia e tradução do que você está estudando.</div></div>
-        <div><span>🧠</span><div><b>Ensina, não entrega:</b> nos exercícios ela explica a regra e dá exemplos, mas a resposta é sua.</div></div>
-        <div className="x"><span>🚫</span><div><b>Só o seu inglês:</b> ela foi feita para as suas atividades, então sobre outros assuntos ela não responde.</div></div>
+        <div><span>🧠</span><div><b>Ensina, não entrega:</b> nos exercícios ele explica a regra e dá exemplos, mas a resposta é sua.</div></div>
+        <div className="x"><span>🚫</span><div><b>Só o seu inglês:</b> ele foi feito para as suas atividades, então sobre outros assuntos ele não responde.</div></div>
         <div><span>⚠️</span><div><b>Pode errar.</b> Na dúvida, fale com o César no WhatsApp.</div></div>
       </div>,
     },
     {
       fundo: 'linear-gradient(150deg,#8B5CF6,#6D28D9)', ilu: '👆', titulo: 'Como usar',
-      texto: <>Toque no <b>botão roxo com a cientista</b>, no canto da tela, e escreva a sua dúvida. E <b>quando você está fazendo uma atividade</b>, ela aparece pequenininha no topo, ao lado do ✕: é só tocar e perguntar, sem sair do exercício.</>,
+      texto: <>Toque no <b>botão roxo com o Dr. EurekIA</b>, no canto da tela, e escreva a sua dúvida. E <b>quando você está fazendo uma atividade</b>, ele aparece em <b>cada exercício</b>, numa bolinha roxa: com dificuldade? É só tocar nela e ele explica o que o exercício pede, sem entregar a resposta.</>,
       extra: onExperimentar ? <div className="nov-chat"><small>QUE TAL COMEÇAR POR AQUI?</small>
-        <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.45, color: '#334155', margin: '0 2px 6px' }}>Pergunte à EurekIA <b>o que você está aprendendo</b> ultimamente. Deixei a pergunta pronta: toque em <b>Experimentar agora</b> e depois em <b>Enviar</b>.</div>
+        <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.45, color: '#334155', margin: '0 2px 6px' }}>Pergunte ao Dr. EurekIA <b>o que você está aprendendo</b> ultimamente. Deixei a pergunta pronta: toque em <b>Experimentar agora</b> e depois em <b>Enviar</b>.</div>
         <div className="nov-bolha eu">{NOV_PERGUNTA_INICIAL}</div></div> : null,
     },
   ];

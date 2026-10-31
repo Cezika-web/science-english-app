@@ -900,7 +900,7 @@
           <button class="tab" data-tab="vocab"><span class="ic">📖</span><span class="lb">Vocabulário</span></button>
           <button class="tab" data-tab="extras"><span class="ic">🎧</span><span class="lb">Extras</span></button>
           <button class="tab" data-tab="curso"><span class="ic">📘</span><span class="lb">Curso</span></button>
-          <button class="tab" data-tab="eurekia"><span class="ic">💡</span><span class="lb">EurekIA</span><span class="nova-bolinha" aria-hidden="true"></span></button>
+          <button class="tab" data-tab="eurekia"><span class="ic">💡</span><span class="lb">Dr. EurekIA</span><span class="nova-bolinha" aria-hidden="true"></span></button>
         </div>
 
         <div class="side-group">
@@ -1630,8 +1630,8 @@
           .eu-qa .eu-fonte { margin-top:6px; font-size:.72rem; color:var(--muted); font-weight:600; }
         </style>
         <div class="eu-card" style="margin-bottom:12px;">
-          <h2>💡 EurekIA: o que os alunos perguntaram</h2>
-          <p class="eu-sub">Cada aluno que fez uma pergunta aparece na lista. Toque no nome para ver as perguntas e as respostas da EurekIA. A <strong style="color:#7c3aed;">bolinha roxa</strong> marca quem tem pergunta nova; ela some quando você abre o aluno.</p>
+          <h2>💡 Dr. EurekIA: o que os alunos perguntaram</h2>
+          <p class="eu-sub">Cada aluno que fez uma pergunta aparece na lista. Toque no nome para ver as perguntas e as respostas do Dr. EurekIA. A <strong style="color:#7c3aed;">bolinha roxa</strong> marca quem tem pergunta nova; ela some quando você abre o aluno.</p>
           <span id="eu-msg" style="font-size:.8rem;color:var(--muted);"></span>
         </div>
         <div class="eu-grade">
@@ -1955,8 +1955,8 @@
         <p id="e-pagto-sem" style="display:none;margin:0 0 18px;font-size:.78rem;color:#64748b;">💳 Este aluno ainda não tem mensalidade cadastrada — configure em Financeiro → Configurar.</p>
 
         <div class="field">
-          <label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="e-assistente" checked /> Assistente de dúvidas (EurekIA) ligado</label>
-          <div id="e-assistente-dica" style="font-size:0.75rem;color:var(--muted);margin-top:4px;">Desmarque para esconder a EurekIA deste aluno. O limite é de 20 perguntas por mês.</div>
+          <label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="e-assistente" checked /> Assistente de dúvidas (Dr. EurekIA) ligado</label>
+          <div id="e-assistente-dica" style="font-size:0.75rem;color:var(--muted);margin-top:4px;">Desmarque para esconder o Dr. EurekIA deste aluno. O limite é de 20 perguntas por mês.</div>
         </div>
 
         <div class="field">
@@ -7810,7 +7810,7 @@
       caixaIA.disabled = emPlano;
       document.getElementById('e-assistente-dica').textContent = emPlano
         ? 'Este aluno está no Science Lab: ligue ou desligue em 🧪 Editar plano.'
-        : 'Desmarque para esconder a EurekIA deste aluno. O limite é de 20 perguntas por mês.';
+        : 'Desmarque para esconder o Dr. EurekIA deste aluno. O limite é de 20 perguntas por mês.';
       editCarregarPagamento(uid);
       document.getElementById('e-slug').value  = s.slug || toSlug(s.name || s.firstName || '');
       document.getElementById('e-photo-preview').src = editPhoto || '';
@@ -8058,7 +8058,7 @@
     }
     function euRenderLista() {
       const lista = document.getElementById('eu-lista');
-      if (!eurekiaLista.length) { lista.innerHTML = '<div class="eu-sub" style="margin:0;">Ainda ninguém perguntou nada à EurekIA. Quando um aluno perguntar, o nome dele aparece aqui.</div>'; return; }
+      if (!eurekiaLista.length) { lista.innerHTML = '<div class="eu-sub" style="margin:0;">Ainda ninguém perguntou nada ao Dr. EurekIA. Quando um aluno perguntar, o nome dele aparece aqui.</div>'; return; }
       lista.innerHTML = eurekiaLista.map(a => `<button type="button" class="eu-aluno ${euAberto === a.id ? 'on' : ''}" data-eu="${esc(a.id)}">
         <span class="eu-ponto ${Number(a.naoVistas || 0) > 0 ? '' : 'vazio'}" title="${Number(a.naoVistas || 0) > 0 ? 'pergunta nova' : ''}"></span>
         <span style="min-width:0;"><b>${esc(a.nome || 'Aluno')}</b><small>${esc(a.ultimaPergunta || '')}</small></span>

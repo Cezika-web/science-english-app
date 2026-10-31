@@ -158,6 +158,24 @@
       cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none;
     }
     .ex-match-chip.dragging { box-shadow: 0 10px 24px rgba(0,0,0,0.22); opacity: 0.95; }
+
+    /* ── Dr. EurekIA em cada exercício: a bolinha roxa de dúvida (montada por addExerciseAsk) ── */
+    .ex-ask { position: absolute; right: 0; top: 0; width: 30px; height: 30px; padding: 0; border: 2px solid #fff; border-radius: 50%; background: none; cursor: pointer; line-height: 0; box-shadow: 0 3px 9px rgba(109,40,217,0.45); transition: transform .12s; }
+    .ex-ask:active { transform: scale(0.92); }
+    .ex-ask.dica { animation: exaskpulse 1.8s 3; }
+    @keyframes exaskpulse {
+      0%   { box-shadow: 0 3px 9px rgba(109,40,217,0.45), 0 0 0 0 rgba(124,58,237,0.5); }
+      70%  { box-shadow: 0 3px 9px rgba(109,40,217,0.45), 0 0 0 10px rgba(124,58,237,0); }
+      100% { box-shadow: 0 3px 9px rgba(109,40,217,0.45), 0 0 0 0 rgba(124,58,237,0); }
+    }
+    .ex-root li.ask-inline { position: relative; padding-right: 40px; }
+    .ex-root li.ask-stem { position: relative; }
+    .ex-root li.ask-stem > .ex-stem { padding-right: 40px; }
+    .ex-match.ask-match { position: relative; }
+    .ex-match.ask-match .ex-match-rows { padding-right: 40px; }
+    .ex-root p.ask-write { position: relative; }
+    .ex-root p.ask-write .ex-textarea { padding-right: 46px; }
+    .ex-root p.ask-write > .ex-ask { right: 8px; top: 12px; }
     @media (max-width: 380px) {
       .ex-root { padding-left: 12px !important; padding-right: 12px !important; }
       .ex-match-row { align-items: stretch; flex-direction: column; gap: 6px; }
@@ -244,7 +262,7 @@ async function getFB() {
 // Falha de gravação (regra ainda não publicada, sem rede) nunca aparece para o aluno.
 const CzkUsage = (() => {
   // Versão do app que vai junto com o uso (para saber quem ainda roda versão velha). Mantenha igual ao CACHE do sw.js.
-  const APP_BUILD = 'v55';
+  const APP_BUILD = 'v56';
   const TICK = 1000, MIN_STEP = 200, FLUSH = 60000, NEW_VISIT = 30 * 60000;
   const BLIND_CAP = 10 * 60000, HOLD_CAP = 15 * 60000, MAX_FAILS = 5;
   const READ_MS = 180000;                 // maior pausa aceita na leitura do pós-aula (igual a LEITURA_SEG do adesao.js)
@@ -1068,6 +1086,63 @@ function processExercises(root, ctx) {
       const keys = blanks.map(() => genKey());
       if (ctx.build) buildInlineInputs(p, keys, ctx);
     }
+  });
+}
+
+// ── Dr. EurekIA em cada exercício ──
+// Uma bolinha por questão (item da lista com lacuna ou múltipla escolha), uma por bloco de Arrastar e uma por caixa de
+// escrita. Ao tocar, onAsk recebe {enunciado, item} e a folha do Dr. EurekIA abre com "Estou com dificuldade nesse
+// exercício." já escrito. Chamada depois do processExercises, quando os campos já existem. O item sai com a lacuna
+// vazia ("____") e as opções "a) b) c)": nunca com o que o aluno já respondeu.
+function exercicioTextoDoItem(el) {
+  const c = el.cloneNode(true);
+  c.querySelectorAll('.ex-ask').forEach(x => x.remove());
+  c.querySelectorAll('.ex-input').forEach(x => x.replaceWith('____'));
+  c.querySelectorAll('.ex-opts').forEach(o => {
+    const ops = [...o.querySelectorAll('.ex-opt')].map(b => ((b.querySelector('.ex-letter') || {}).textContent || '').toLowerCase() + ') ' + ((b.lastElementChild || {}).textContent || ''));
+    o.replaceWith(' ' + ops.join(' '));
+  });
+  return (c.textContent || '').replace(/\s+/g, ' ').trim();
+}
+// O enunciado são os <p> logo antes da lista ou do bloco (instrução e, quando há, o quadro de palavras).
+function exercicioEnunciado(bloco) {
+  const partes = [];
+  let el = bloco ? bloco.previousElementSibling : null;
+  while (el && partes.length < 2) {
+    if (el.tagName !== 'P' || el.querySelector('.ex-textarea, .ex-input, .ex-opt')) break;
+    const tx = (el.textContent || '').replace(/\s+/g, ' ').trim();
+    if (tx) partes.unshift(tx);
+    el = el.previousElementSibling;
+  }
+  return partes.join(' ');
+}
+function addExerciseAsk(root, onAsk) {
+  if (!onAsk || typeof eurekiaSvg !== 'function') return;
+  let dicaVista = false;
+  try { dicaVista = !!localStorage.getItem('czk-ex-ask-dica'); } catch (e) {}
+  let primeira = true;
+  const poe = (alvo, classe, dados) => {
+    alvo.classList.add(classe);
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'ex-ask';
+    b.setAttribute('aria-label', 'Estou com dificuldade nesse exercício'); b.title = 'Dúvida neste exercício: pergunte ao Dr. EurekIA';
+    b.innerHTML = eurekiaSvg(26);
+    b.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); onAsk(dados()); });
+    if (primeira && !dicaVista) { b.classList.add('dica'); try { localStorage.setItem('czk-ex-ask-dica', '1'); } catch (e) {} }
+    primeira = false;
+    alvo.appendChild(b);
+  };
+  root.querySelectorAll('li').forEach(li => {
+    if (li.closest('.ex-match') || li.querySelector('li') || !li.querySelector('.ex-input, .ex-opts')) return;
+    poe(li, li.querySelector('.ex-opts') ? 'ask-stem' : 'ask-inline', () => ({ enunciado: exercicioEnunciado(li.parentElement), item: exercicioTextoDoItem(li) }));
+  });
+  root.querySelectorAll('.ex-match').forEach(m => poe(m, 'ask-match', () => ({
+    enunciado: exercicioEnunciado(m),
+    item: 'Arrastar a tradução em inglês de: ' + [...m.querySelectorAll('.ex-match-left')].map(x => x.textContent.trim()).join(', '),
+  })));
+  root.querySelectorAll('p').forEach(p => {
+    if (!p.querySelector('.ex-textarea') || p.closest('li')) return;
+    poe(p, 'ask-write', () => { const e = exercicioEnunciado(p); return { enunciado: e, item: e || 'Escrever a resposta no campo de texto.' }; });
   });
 }
 
@@ -3930,6 +4005,7 @@ function ExtraModal({ extra, onClose, onFinish, onSaveDraft, mirror, posaulas, o
     const ctx = { build: true, saved, values, onChange: () => { touched = true; recount(); }, keyc: { n: 0 } };
     processExercises(container, ctx);
     recount();
+    addExerciseAsk(container, onAsk);
     return () => { clearTimeout(draftTimer); flushDraft(); };
   }, [extra]);
 
@@ -5435,6 +5511,7 @@ function PartModal({ part, activity, posaulas, onBack, onClose, onFinish, onSave
     if (isCorrected && activity?.correcao && activity.correcao[partId]) {
       applyCorrection(container, activity.correcao[partId]);
     }
+    if (!isCorrected) addExerciseAsk(container, onAsk);   // depois de corrigida, a tela é só de leitura: sem bolinhas
     return () => { clearTimeout(draftTimer); flushDraft(); };
   }, [part]);
 
@@ -5668,6 +5745,7 @@ function App() {
   const [tab, setTab]                   = useState('home');
   const [planoTab, setPlanoTab]         = useState('caminho');   // aba do Caminho (só para quem está no plano — ver plano.jsx)
   const [duvidaGeral, setDuvidaGeral]   = useState(false);   // EurekIA (assistente de dúvidas) aberta
+  const [exercicioDuvida, setExercicioDuvida] = useState(null);  // {enunciado, item} do exercício cuja bolinha foi tocada
   const [perguntaPronta, setPerguntaPronta] = useState('');  // pergunta já escrita ao abrir pela apresentação ("Experimentar agora")
   const [novidadesFechadas, setNovidadesFechadas] = useState({});   // apresentações de novidade já fechadas nesta sessão
   const introForcada = useRef(new URLSearchParams(window.location.search).get('intro') || '').current;   // ?intro=eurekia ou ?intro=adesao: só para ver
@@ -6412,7 +6490,8 @@ function App() {
     && !(student?.plano && student.plano.assistente === false)
     && (!student?.schoolId || student.schoolId === 'science-english' || student.escolaAssistente === true);
   const assistenteLiberado = !mirror && assistenteDoAluno;
-  const abrirAssistente = () => setDuvidaGeral(true);   // no espelho abre só para ver: a folha usa resposta de exemplo (cfg.previa)
+  // Chamada de três jeitos: botão/miniatura (recebe o clique, sem exercício) ou bolinha de exercício (recebe {enunciado, item}).
+  const abrirAssistente = (ex) => { setExercicioDuvida(ex && typeof ex.item === 'string' ? ex : null); setDuvidaGeral(true); };   // no espelho abre só para ver: a folha usa resposta de exemplo (cfg.previa)
   const emAtividade = !!(openActivity || openPart || openExtra || readerPost);   // aqui ela também fica à mão, por cima da atividade
   const assistenteBloqueado = !!(adesaoPage || openCorrecao || challengeView);   // no desafio e na correção, não
   // Nas telas principais: botão flutuante. Dentro das atividades ela vem no cabeçalho (ao lado do X), sem cobrir nada.
@@ -6424,7 +6503,7 @@ function App() {
   // só para ver (resposta de exemplo, nada é enviado nem gravado).
   const folhaEurekia = assistenteDoAluno && duvidaGeral && <>
     <style>{PLANO_CSS}</style>
-    <PlanoPerguntar z={1000} cfg={{ ...(planoCfg || { nome: 'Science English', previa: false }), assistente: true, ...(mirror ? { previa: true, espelho: true } : {}) }} student={student} contexto={contextoAssistente} sugestao={perguntaPronta} onAsk={perguntarAssistente} onClose={() => { setDuvidaGeral(false); setPerguntaPronta(''); }} />
+    <PlanoPerguntar z={1000} cfg={{ ...(planoCfg || { nome: 'Science English', previa: false }), assistente: true, ...(mirror ? { previa: true, espelho: true } : {}) }} student={student} contexto={contextoAssistente} sugestao={exercicioDuvida ? 'Estou com dificuldade nesse exercício.' : perguntaPronta} exercicio={exercicioDuvida} onAsk={perguntarAssistente} onClose={() => { setDuvidaGeral(false); setPerguntaPronta(''); setExercicioDuvida(null); }} />
   </>;
 
   if (readerPost) {
@@ -6516,7 +6595,7 @@ function App() {
       <StudyTimer adesao={adesao} student={student} usageArea={usageArea} mirror={mirror} />
 
       {mostraBotaoIA &&
-        <button onClick={abrirAssistente} aria-label="Perguntar à EurekIA" style={{ position: 'fixed', bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))', right: 'max(16px, calc(50vw - 224px))', zIndex: 300, width: 54, height: 54, borderRadius: '50%', border: 0, padding: 0, background: 'none', boxShadow: '0 10px 24px rgba(109,40,217,.4)', cursor: 'pointer' }}><EurekiaAvatar size={54} /></button>}
+        <button onClick={abrirAssistente} aria-label="Perguntar ao Dr. EurekIA" style={{ position: 'fixed', bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))', right: 'max(16px, calc(50vw - 224px))', zIndex: 300, width: 54, height: 54, borderRadius: '50%', border: 0, padding: 0, background: 'none', boxShadow: '0 10px 24px rgba(109,40,217,.4)', cursor: 'pointer' }}><EurekiaAvatar size={54} /></button>}
       {folhaEurekia}
       {novidadeAtual === 'eurekia' && <NovidadeEurekIA onFim={() => fecharNovidade('eurekia')}
         onExperimentar={assistenteLiberado ? () => { fecharNovidade('eurekia'); setPerguntaPronta(NOV_PERGUNTA_INICIAL); setDuvidaGeral(true); } : null} />}
