@@ -1066,7 +1066,7 @@ function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose, z, sugestao })
     setMsgs(m => [...m, { de: 'eu', x: pergunta }]); setTexto(''); setPensando(true);
     try {
       let r;
-      if (cfg.previa || !onAsk) { await new Promise(res => setTimeout(res, 900)); r = { resposta: 'Boa pergunta! Depois de **do/does/don’t/doesn’t** o verbo principal fica sempre na forma base: *Does she work?* (e não *Does she works?*).\n\n(Resposta de exemplo — o assistente de verdade ainda não está ligado.)' }; }
+      if (cfg.previa || !onAsk) { await new Promise(res => setTimeout(res, 900)); r = cfg.espelho ? { resposta: 'Você está no **espelho**: é assim que a EurekIA aparece para o aluno. Aqui ela não responde de verdade e a pergunta não é gravada.' } : { resposta: 'Boa pergunta! Depois de **do/does/don’t/doesn’t** o verbo principal fica sempre na forma base: *Does she work?* (e não *Does she works?*).\n\n(Resposta de exemplo — o assistente de verdade ainda não está ligado.)' }; }
       else {
         // A conversa segue: manda a última pergunta e resposta para a IA entender um "e no passado?".
         const ultimaIA = [...msgs].reverse().find(m => m.de === 'ia' && !m.erro);

@@ -244,7 +244,7 @@ async function getFB() {
 // Falha de gravação (regra ainda não publicada, sem rede) nunca aparece para o aluno.
 const CzkUsage = (() => {
   // Versão do app que vai junto com o uso (para saber quem ainda roda versão velha). Mantenha igual ao CACHE do sw.js.
-  const APP_BUILD = 'v54';
+  const APP_BUILD = 'v55';
   const TICK = 1000, MIN_STEP = 200, FLUSH = 60000, NEW_VISIT = 30 * 60000;
   const BLIND_CAP = 10 * 60000, HOLD_CAP = 15 * 60000, MAX_FAILS = 5;
   const READ_MS = 180000;                 // maior pausa aceita na leitura do pós-aula (igual a LEITURA_SEG do adesao.js)
@@ -5602,12 +5602,13 @@ function CourseReviewPrompt({ open, onReview, onLater }) {
   );
 }
 
-function ReaderView({ post, onBack }) {
+function ReaderView({ post, onBack, onAsk }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ background: 'linear-gradient(180deg,var(--brand),var(--brand-dark))', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
         <button onClick={onBack} style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'inherit' }}>&#8249;</button>
         <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', flex: 1, minWidth: 0, lineHeight: 1.25, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', overflowWrap: 'anywhere' }}>{postTitle(post)}</div>
+        {onAsk && <EurekiaMini onClick={onAsk} />}
       </div>
       {/* Pos-aulas antigas vem por URL; as geradas no admin vem no proprio doc. */}
       {post?.html
@@ -6285,29 +6286,6 @@ function App() {
   if (!user)   return <LoginScreen />;
   if (!student) return <BootErrorScreen erro={bootError} onRetry={recarregar} onLogout={handleLogout} />;
 
-  if (readerPost) {
-    return (
-      <>
-      <ReaderView post={readerPost} onBack={async () => {
-        setReaderPost(null);
-        // No espelho, o logado é o admin: ler de user.uid traz zero pós-aula e
-        // limpava a tela ao voltar do leitor (só o F5 trazia de volta).
-        const uid = mirror ? mirrorUid.current : user.uid;
-        const fb = await getFB();
-        try {
-          const snaps = await fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'posaulas'), fb.orderBy('createdAt','desc')));
-          setPosaulas(await hydrateLegacyTalkTimes(snaps.docs.map(d => ({ id: d.id, ...d.data() }))));
-        } catch (e) {
-          // Recarregar a lista é só para atualizar o "lido": se falhar, fica o
-          // que já estava na tela — nunca esvazia.
-          console.error('Pós-aulas ao voltar do leitor:', e);
-        }
-      }} />
-      <StudyTimer adesao={adesao} student={student} usageArea={usageArea} mirror={mirror} />
-      </>
-    );
-  }
-
   const handleOpenPost     = (post) => { getFB().then(fb => openPost(post, fb, mirror ? mirrorUid.current : user.uid)); };
   const handleOpenActivity = (act)  => setOpenActivity(act);
   const handleContinueActivity = (act, part) => {
@@ -6434,14 +6412,45 @@ function App() {
     && !(student?.plano && student.plano.assistente === false)
     && (!student?.schoolId || student.schoolId === 'science-english' || student.escolaAssistente === true);
   const assistenteLiberado = !mirror && assistenteDoAluno;
-  const abrirAssistente = () => { if (mirror) { showToast('👁 Modo espelho — somente leitura'); return; } setDuvidaGeral(true); };
+  const abrirAssistente = () => setDuvidaGeral(true);   // no espelho abre só para ver: a folha usa resposta de exemplo (cfg.previa)
   const emAtividade = !!(openActivity || openPart || openExtra || readerPost);   // aqui ela também fica à mão, por cima da atividade
   const assistenteBloqueado = !!(adesaoPage || openCorrecao || challengeView);   // no desafio e na correção, não
   // Nas telas principais: botão flutuante. Dentro das atividades ela vem no cabeçalho (ao lado do X), sem cobrir nada.
   const mostraBotaoIA = assistenteDoAluno && !assistenteBloqueado && !duvidaGeral && !emAtividade && !planoCfg && tab !== 'perfil';
   const contextoAssistente = openPart ? [openActivity?.title, openPart.title].filter(Boolean).join(' — ')
     : openActivity ? (openActivity.title || '') : openExtra ? (openExtra.title || 'Atividade extra')
-    : readerPost ? `Pós-aula: ${postTitle(readerPost)}` : '';
+    : readerPost ? postTitle(readerPost) : '';
+  // A folha da EurekIA: a mesma na tela principal e no leitor de pós-aula. No espelho o logado é o admin, então ela abre
+  // só para ver (resposta de exemplo, nada é enviado nem gravado).
+  const folhaEurekia = assistenteDoAluno && duvidaGeral && <>
+    <style>{PLANO_CSS}</style>
+    <PlanoPerguntar z={1000} cfg={{ ...(planoCfg || { nome: 'Science English', previa: false }), assistente: true, ...(mirror ? { previa: true, espelho: true } : {}) }} student={student} contexto={contextoAssistente} sugestao={perguntaPronta} onAsk={perguntarAssistente} onClose={() => { setDuvidaGeral(false); setPerguntaPronta(''); }} />
+  </>;
+
+  if (readerPost) {
+    return (
+      <>
+      <ReaderView post={readerPost} onAsk={assistenteDoAluno ? abrirAssistente : null} onBack={async () => {
+        setReaderPost(null);
+        // No espelho, o logado é o admin: ler de user.uid traz zero pós-aula e
+        // limpava a tela ao voltar do leitor (só o F5 trazia de volta).
+        const uid = mirror ? mirrorUid.current : user.uid;
+        const fb = await getFB();
+        try {
+          const snaps = await fb.getDocs(fb.query(fb.collection(fb.db, 'students', uid, 'posaulas'), fb.orderBy('createdAt','desc')));
+          setPosaulas(await hydrateLegacyTalkTimes(snaps.docs.map(d => ({ id: d.id, ...d.data() }))));
+        } catch (e) {
+          // Recarregar a lista é só para atualizar o "lido": se falhar, fica o
+          // que já estava na tela — nunca esvazia.
+          console.error('Pós-aulas ao voltar do leitor:', e);
+        }
+      }} />
+      <StudyTimer adesao={adesao} student={student} usageArea={usageArea} mirror={mirror} />
+      {folhaEurekia}
+      </>
+    );
+  }
+
 
   // Apresentações de novidade (novidades.jsx): uma vez por aluno, uma de cada vez, nunca por cima de outro aviso.
   // EurekIA: na próxima abertura. Adesão: só depois que o professor liberar (schools/{escola}.adesao.liberadaEm).
@@ -6508,10 +6517,7 @@ function App() {
 
       {mostraBotaoIA &&
         <button onClick={abrirAssistente} aria-label="Perguntar à EurekIA" style={{ position: 'fixed', bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))', right: 'max(16px, calc(50vw - 224px))', zIndex: 300, width: 54, height: 54, borderRadius: '50%', border: 0, padding: 0, background: 'none', boxShadow: '0 10px 24px rgba(109,40,217,.4)', cursor: 'pointer' }}><EurekiaAvatar size={54} /></button>}
-      {assistenteLiberado && duvidaGeral && <>
-        <style>{PLANO_CSS}</style>
-        <PlanoPerguntar z={1000} cfg={planoCfg ? { ...planoCfg, assistente: true } : { nome: 'Science English', assistente: true, previa: false }} student={student} contexto={contextoAssistente} sugestao={perguntaPronta} onAsk={perguntarAssistente} onClose={() => { setDuvidaGeral(false); setPerguntaPronta(''); }} />
-      </>}
+      {folhaEurekia}
       {novidadeAtual === 'eurekia' && <NovidadeEurekIA onFim={() => fecharNovidade('eurekia')}
         onExperimentar={assistenteLiberado ? () => { fecharNovidade('eurekia'); setPerguntaPronta(NOV_PERGUNTA_INICIAL); setDuvidaGeral(true); } : null} />}
       {novidadeAtual === 'adesao' && <NovidadeAdesao AD={adesao.AD} result={adesao.result} student={student} onFim={() => fecharNovidade('adesao')}
