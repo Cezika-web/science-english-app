@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Vitor Pereira — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+header{flex-wrap:wrap;} h2{font-size:1.15rem;color:#14532D;} h3{font-size:1rem;} p,li{line-height:1.6;} li+li{margin-top:6px;} .vocab{box-sizing:border-box;} @media(max-width:480px){.wrap{padding:16px 10px;}.card{min-width:0;}.vocab{min-width:0;}.actions{width:100%;}.btn{justify-content:center;}.talk-table th,.talk-table td{padding:8px 6px;}} @media print{.wrap{padding:0}.card{max-width:none;border:0;box-shadow:none}.actions,.vocab-say{display:none}body{background:white}section{break-inside:avoid}}</style></head><body><div class="wrap"><article class="card" role="main"><header><div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><span class="badge">PÓS-AULA</span><h1>Preferências, preposições e ordem de nascimento</h1></div><div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Vitor Pereira<br><strong>Data:</strong> 10/30/2026 &nbsp;•&nbsp; Aula em dupla com Karlla Raissa</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header><main><section class="panel"><p style="margin:0;font-weight:600;color:#14532D;"><em>Revisamos como combinar verbos e preposições e aplicamos essas estruturas em uma leitura sobre irmãos, ordem de nascimento e personalidade.</em></p></section><section><h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2><div class="outline-card"><p>A aula começou com a realização e a correção do desafio no app. A revisão retomou perguntas com <strong>do/does</strong>, o verbo <strong>to be</strong>, concordância na terceira pessoa e a escolha da forma do segundo verbo. O foco foi entender os blocos das frases, em vez de colocar <em>-ing</em> automaticamente depois de qualquer <em>to</em>.</p><p><strong>Want, enjoy e like:</strong> usamos <strong>want to + forma base</strong> (<em>I want to relax</em>), <strong>enjoy + -ing</strong> (<em>I enjoy relaxing</em>) e <strong>like + -ing / to + forma base</strong> (<em>I like watching / I like to watch</em>). Com <em>he</em>, quem recebe o <em>-s</em> é o verbo principal: <strong>He loves playing</strong> ou <strong>He loves to play</strong>. Depois de <em>does</em>, o verbo principal volta à forma base.</p><p><strong>Preposição + atividade:</strong> revisamos <em>object to</em>, <em>be opposed to</em>, <em>look forward to</em>, <em>apologize for</em>, <em>believe in</em>, <em>be afraid of</em> e <em>be crazy about</em>. Quando uma atividade completa a preposição, ela fica com <strong>-ing</strong>. O <em>to</em> de <strong>object to working</strong> pertence à expressão; em <strong>want to work</strong>, ele introduz o infinitivo.</p><p><strong>Coisa ou ação depois da preposição:</strong> contrastamos <em>I am excited about my trip</em> com <em>I am excited about eating Japanese food</em>. <em>My trip</em> é um substantivo; <em>eating</em> é uma atividade. Também praticamos <em>I am crazy about reading books</em>. A expressão <strong>crazy about</strong> indica gostar muito de algo, não ficar irritado com isso.</p><p>Na prática oral, os dois responderam sobre o fim de semana: dormir, assistir a filmes, relaxar, trabalhar, fazer tarefas domésticas e visitar amigos. Reforçamos <strong>do the chores</strong>, a diferença entre <strong>wait</strong> (esperar) e <strong>stay</strong> (ficar), e o uso de <strong>be afraid of</strong> para “ter medo de”. O pronome <strong>I</strong> se escreve sempre com letra maiúscula.</p><p><strong>Leitura — ordem de nascimento e personalidade:</strong> a turma iniciou o texto sobre três irmãs, Gracie, Emily e Violet, em uma entrevista com a mãe. Antes da leitura, estudamos <em>first-born child, middle child, youngest child, only child</em> e a pergunta <strong>Does birth order determine personality?</strong> O texto apresenta uma teoria sobre a posição entre os irmãos; a conversa também considerou a influência da criação dos pais. Essas ideias foram tratadas como tema de interpretação e discussão.</p><p>Nos trechos lidos, o primogênito era associado a sucesso e respeito às regras; o filho do meio, a dificuldades e quebra de regras; o caçula, a criatividade e humor. Gracie foi descrita como alguém que trabalha bastante e segue as regras, mas também tende a ser autocrítica. Emily aparece como uma criança popular que sente ciúmes das irmãs e percebe que elas recebem mais atenção. A leitura avançou até essa parte de Emily; o restante ficou para a continuidade.</p><p><strong>Expressões e leitura em voz alta:</strong> aprendemos <em>siblings</em> (irmãos e irmãs), <em>likely</em> (com chance de), <em>predictable</em> (previsível), <em>play by the rules</em> (seguir as regras) e <em>a ton of</em> (um monte de). Vimos <strong>though</strong> no fim da frase com sentido de contraste e <strong>did + forma base</strong> para dar ênfase no passado: <em>We did give her the message</em>. A pronúncia de <em>children, rules, development, predictable</em> e <em>succeed</em> foi trabalhada durante a leitura. César destacou a melhora da leitura dos dois, especialmente a de Vitor.</p><p style="padding:12px;background:#F7FDF9;border-radius:8px;">Vitor, seu foco é separar <strong>be</strong> de <strong>do/does</strong>, manter a forma base depois de <em>does</em> e ganhar segurança na leitura. César destacou sua evolução na leitura em voz alta.</p></div></section><section><h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2><div class="outline-card"><p style="color:var(--muted);font-size:.9rem;">Frases trabalhadas e lidas em aula, com a escrita em inglês normalizada para revisão.</p><ul><li><strong>I am afraid of dogs.</strong> → Tenho medo de cachorros.</li><li><strong>I like watching. / I like to watch.</strong> → Eu gosto de assistir.</li><li><strong>I am excited about my trip.</strong> → Estou animada com a minha viagem.</li><li><strong>I am excited about eating Japanese food.</strong> → Estou animada para comer comida japonesa.</li><li><strong>I am crazy about reading books.</strong> → Adoro ler livros.</li><li><strong>Does your sister like cooking?</strong> → Sua irmã gosta de cozinhar?</li><li><strong>I enjoy sleeping and watching movies.</strong> → Gosto de dormir e de assistir a filmes.</li><li><strong>I enjoy relaxing on the weekend.</strong> → Gosto de relaxar no fim de semana.</li><li><strong>I don’t like working and doing chores.</strong> → Não gosto de trabalhar nem de fazer tarefas domésticas.</li><li><strong>I want to relax.</strong> → Quero relaxar.</li><li><strong>I want to visit friends.</strong> → Quero visitar amigos.</li><li><strong>I look forward to seeing you.</strong> → Aguardo com expectativa o momento de ver você.</li><li><strong>Does birth order determine personality?</strong> → A ordem de nascimento determina a personalidade?</li><li><strong>She tends to be a bit self-critical, though.</strong> → Ela tende a ser um pouco autocrítica, porém.</li><li><strong>We did give her the message.</strong> → Nós realmente passamos essa mensagem para ela.</li></ul></div></section><section><h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3>siblings</h3><button type="button" class="vocab-say" data-czk-say="siblings" aria-label="Ouvir a pronúncia de siblings" aria-pressed="false" title="Ouvir siblings">&#128266;</button></div><p><em>irmãos e irmãs</em><br>Palavra que inclui irmãos e irmãs sem especificar o gênero.<br><strong>How many siblings do you have?</strong><br>Quantos irmãos e irmãs você tem?</p></div><div class="vocab green"><div class="vocab-head"><h3>birth order</h3><button type="button" class="vocab-say" data-czk-say="birth order" aria-label="Ouvir a pronúncia de birth order" aria-pressed="false" title="Ouvir birth order">&#128266;</button></div><p><em>ordem de nascimento</em><br>A posição de uma pessoa entre os filhos de uma família.<br><strong>Does birth order determine personality?</strong><br>A ordem de nascimento determina a personalidade?</p></div><div class="vocab yellow"><div class="vocab-head"><h3>play by the rules</h3><button type="button" class="vocab-say" data-czk-say="play by the rules" aria-label="Ouvir a pronúncia de play by the rules" aria-pressed="false" title="Ouvir play by the rules">&#128266;</button></div><p><em>seguir as regras</em><br>Expressão para agir de acordo com as regras; não traduza palavra por palavra.<br><strong>She works hard and plays by the rules.</strong><br>Ela trabalha bastante e segue as regras.</p></div></div></section><section><h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2><div class="outline-card"><h3>Formas verbais e blocos com preposição</h3><ul><li><strong>want to + verbo</strong> — querer fazer algo</li><li><strong>enjoy + -ing</strong> — gostar de fazer algo</li><li><strong>like / love + -ing ou to + verbo</strong> — gostar / adorar fazer algo</li><li><strong>decide to + verbo</strong> — decidir fazer algo</li><li><strong>object to + -ing</strong> — opor-se a uma atividade</li><li><strong>be opposed to + -ing</strong> — ser contrário a uma atividade</li><li><strong>look forward to + -ing</strong> — aguardar uma atividade com expectativa</li><li><strong>apologize for + -ing</strong> — pedir desculpas por fazer algo</li><li><strong>believe in + -ing</strong> — acreditar em fazer algo</li><li><strong>be afraid of</strong> — ter medo de</li><li><strong>be excited about</strong> — estar animado com</li><li><strong>be crazy about</strong> — gostar muito de</li><li><strong>insist on + -ing</strong> — insistir em fazer algo</li></ul><h3>Rotina, lazer e ações</h3><ul><li><strong>chores / do the chores</strong> — tarefas domésticas / fazer as tarefas domésticas</li><li><strong>share the chores</strong> — dividir as tarefas domésticas</li><li><strong>wait / stay</strong> — esperar / ficar</li><li><strong>relax / sleep</strong> — relaxar / dormir</li><li><strong>watch movies</strong> — assistir a filmes</li><li><strong>visit friends</strong> — visitar amigos</li><li><strong>read books</strong> — ler livros</li><li><strong>eat Japanese food</strong> — comer comida japonesa</li><li><strong>trip / holidays</strong> — viagem / férias ou feriados, conforme o contexto</li><li><strong>win games</strong> — ganhar jogos</li><li><strong>wear flip-flops</strong> — usar chinelos</li></ul><h3>Família e ordem de nascimento</h3><ul><li><strong>birth / birth order</strong> — nascimento / ordem de nascimento</li><li><strong>siblings</strong> — irmãos e irmãs</li><li><strong>first-born child / oldest child</strong> — primogênito / filho mais velho</li><li><strong>middle child</strong> — filho do meio</li><li><strong>youngest child</strong> — filho mais novo / caçula</li><li><strong>only child</strong> — filho único</li><li><strong>children</strong> — crianças / filhos; plural de child</li><li><strong>daughter</strong> — filha</li><li><strong>parents</strong> — pais</li><li><strong>get more attention</strong> — receber mais atenção</li></ul><h3>Personalidade e interpretação do texto</h3><ul><li><strong>determine / affect</strong> — determinar / afetar</li><li><strong>personality</strong> — personalidade</li><li><strong>successful / succeed</strong> — bem-sucedido / ter sucesso</li><li><strong>follow the rules / play by the rules</strong> — seguir as regras</li><li><strong>break the rules</strong> — quebrar / desrespeitar as regras</li><li><strong>by the book</strong> — de acordo com as regras / à risca</li><li><strong>creative / funny</strong> — criativo / engraçado</li><li><strong>self-critical</strong> — autocrítico</li><li><strong>popular</strong> — popular</li><li><strong>be jealous of</strong> — ter ciúmes de</li><li><strong>predictable / pattern</strong> — previsível / padrão</li><li><strong>development</strong> — desenvolvimento</li><li><strong>theory / psychologist / interview</strong> — teoria / psicólogo(a) / entrevista</li><li><strong>likely / more likely to</strong> — provável / com mais chance de</li><li><strong>tend to</strong> — tender a</li><li><strong>a bit</strong> — um pouco</li><li><strong>though</strong> — porém / no entanto; pode vir ao final</li><li><strong>push someone to succeed</strong> — pressionar / incentivar alguém a ter sucesso</li><li><strong>a ton of</strong> — um monte de / muito(a)</li><li><strong>take → took</strong> — levar → levou; passado irregular</li><li><strong>give → gave / did give</strong> — dar → deu / realmente deu (com ênfase)</li></ul></div></section><section><h2 style="margin-bottom:8px;">🚨 Correções importantes</h2><div class="outline-card"><p style="color:var(--muted);font-size:.9rem;">Os pares abaixo recuperam os pontos corrigidos na conversa e no desafio. As formas foram normalizadas para estudo, pois a transcrição automática distorce algumas palavras em inglês.</p><div style="margin:0 0 20px;"><h3>Ter medo usa be</h3><p style="color:#c53030;">❌ Do you afraid of dogs?</p><p style="color:#276749;">✅ <strong>Are you afraid of dogs?</strong></p><p><strong>Afraid</strong> é adjetivo. A pergunta usa o verbo <strong>to be</strong>, não <em>do</em> nem <em>have</em>. Compare: <em>I am afraid of dogs</em> e <em>Are you afraid of dogs?</em></p></div><div style="margin:0 0 20px;"><h3>Enjoy já é o verbo principal</h3><p style="color:#c53030;">❌ I am enjoy relaxing.</p><p style="color:#276749;">✅ <strong>I enjoy relaxing.</strong></p><p>Para dizer “eu gosto de relaxar”, use <strong>I enjoy</strong>, sem <em>am</em>. A atividade depois de <em>enjoy</em> fica <strong>relaxing</strong>.</p></div><div style="margin:0 0 20px;"><h3>Depois de does, use a forma base</h3><p style="color:#c53030;">❌ Does she works at the hospital?</p><p style="color:#276749;">✅ <strong>Does she work at the hospital?</strong></p><p>A correção do desafio retomou a conjugação indevida depois do auxiliar. O <em>-s</em> já está representado em <strong>does</strong>. Compare com a afirmativa <strong>She works at the hospital</strong>.</p></div><div style="margin:0 0 20px;"><h3>Pronúncia na leitura: rules e succeed</h3><p style="color:#c53030;">❌ rules com som extra no meio; succeed sem a vogal longa final</p><p style="color:#276749;">✅ <strong>rules: /ruːlz/ · succeed: /səkˈsiːd/</strong></p><p>Em <em>rules</em>, evite acrescentar uma vogal entre <em>l</em> e <em>s</em>. Em <em>succeed</em>, destaque a segunda sílaba e alongue /iː/. Treine também <strong>de-VEL-op-ment</strong> e <strong>pre-DICT-a-ble</strong>.</p></div><div style="margin:0 0 20px;"><h3>To pode ter dois papéis</h3><p style="color:#c53030;">❌ I object to work. / I look forward to see you.</p><p style="color:#276749;">✅ <strong>I object to working. / I look forward to seeing you.</strong></p><p>Nessas expressões, <em>to</em> é preposição e pertence ao bloco anterior. Se vier uma ação depois dele, use <strong>-ing</strong>. Compare com <strong>I want to work</strong>, em que <em>to work</em> é infinitivo.</p></div><div style="margin:0 0 20px;"><h3>Concordância e forma do segundo verbo</h3><p style="color:#c53030;">❌ He love play.</p><p style="color:#276749;">✅ <strong>He loves playing. / He loves to play.</strong></p><p>O verbo principal concorda com <em>he</em>: <strong>loves</strong>. O próximo verbo segue o padrão de <em>love</em>. Com <em>want</em>, use <em>to + forma base</em>; com <em>enjoy</em>, use <em>-ing</em>.</p></div><div style="margin:0 0 20px;"><h3>Depois de preposição, a atividade fica com -ing</h3><p style="color:#c53030;">❌ apologized for be late</p><p style="color:#276749;">✅ <strong>apologized for being late</strong></p><p>O bloco é <strong>apologize for</strong>. Para dizer “por estar atrasado”, o verbo <em>be</em> passa a <strong>being</strong>. Não acrescente outro <em>to</em>.</p></div></div></section><section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/EatP4kGHY-o" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section><section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead><tbody><tr class="row-teacher"><td class="talk-label">César (Professor)</td><td class="talk-percent">63%</td><td class="talk-time">~30 min 29 s</td></tr><tr class="row-student"><td class="talk-label">Vitor e Karlla (dupla)</td><td class="talk-percent">37%</td><td class="talk-time">~17 min 39 s</td></tr></tbody></table><p style="color:var(--muted);font-size:.88rem;">Estimativa pelas durações das legendas com fala, sem os intervalos de silêncio. As falas dos dois alunos aparecem no mesmo login; por isso, o total da dupla não foi dividido individualmente. Os tempos não equivalem à duração total da aula.</p></section><section><h2 style="margin-bottom:8px;">📝 Homework</h2><div class="homework"><p>📌 <strong>Revisão e pendências:</strong></p><ul><li><strong>Prioridade combinada em aula:</strong> concluir as atividades que já estavam pendentes no app. César disse que não acrescentaria atividades novas para você naquele momento.</li><li>Leia este pós-aula <strong>2 a 3 vezes durante a semana</strong>. Na revisão, compare <em>Are you afraid of dogs?</em>, <em>Does she work at the hospital?</em> e <em>I enjoy relaxing</em>.</li><li>Como apoio à leitura, retome na gravação seu trecho a partir de aproximadamente <strong>45:15</strong>. Leia junto, com atenção a <em>rules, development, predictable</em> e <em>succeed</em>.</li></ul></div></section></main><footer><p>© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer></article></div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>
