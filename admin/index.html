@@ -1694,6 +1694,12 @@
           .cr-video input { flex:1; min-width:180px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:.82rem; }
           .cr-ver { flex-shrink:0; align-self:center; font-size:.72rem; font-weight:800; padding:4px 9px; border-radius:8px; border:1px solid #ddd6fe; background:#f5f3ff; color:#5b21b6; cursor:pointer; white-space:nowrap; }
           .cr-ver:hover { background:#ede9fe; }
+          .cr-opc { display:flex; gap:9px; align-items:flex-start; border:1.5px solid #e2e8f0; border-radius:11px; padding:9px 11px; margin-bottom:7px; cursor:pointer; font-size:.84rem; background:#fff; }
+          .cr-opc.on { border-color:#7c3aed; background:#f5f3ff; } .cr-opc small { display:block; font-size:.74rem; color:var(--muted); font-weight:600; margin-top:2px; line-height:1.35; } .cr-opc input { margin-top:3px; }
+          .cr-resumo-e { border:1px solid #bae6fd; background:#f0f9ff; border-radius:11px; padding:9px 12px; font-size:.78rem; line-height:1.45; max-height:240px; overflow:auto; color:#0c4a6e; margin-bottom:6px; } .cr-resumo-e p { margin:0 0 7px; }
+          .cr-resumo-t { font-size:.68rem; font-weight:800; letter-spacing:.4px; color:#0369a1; margin-bottom:6px; }
+          .cr-aviso-e { background:#fffbeb; border:1px solid #fde68a; color:#78350f; border-radius:10px; padding:8px 11px; font-size:.8rem; font-weight:700; margin-bottom:8px; }
+          .cr-pt.expl { border-color:#38bdf8; background:#e0f2fe; } .cr-pt.expl.ok { background:#dcfce7; border-color:#86efac; } .cr-pt.expl.out { background:#fee2e2; border-color:#fca5a5; }
           .cr-previa { position:fixed; inset:0; z-index:5000; background:rgba(15,23,42,.64); display:none; align-items:center; justify-content:center; padding:10px; }
           .cr-previa-caixa { background:#fff; border-radius:18px; width:min(430px,100%); max-height:100%; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,.45); }
           .cr-pv-topo { display:flex; gap:8px; align-items:center; padding:10px 12px; border-bottom:1px solid var(--border); }
@@ -8254,17 +8260,61 @@
       try { img.src = await crUrl(crPdf); img.onclick = () => window.open(img.src, '_blank'); }
       catch (e) { img.alt = 'Não consegui abrir a página: ' + e.message; }
     }
+    // A explicação 💡 de gramática é presa à atividade da página: sai se foi tirada, se a atividade saiu ou se a página ficou sem exercícios.
+    const crDaPagina = (un, t) => (un.tarefas || []).filter(x => x.tipo === 'explicacao' && x.para === t.id);
+    function crExplFora(un, t) {
+      const oc = new Set(un.ocultos || []); if (oc.has(t.id)) return true;
+      const p = (un.tarefas || []).find(x => x.id === t.para);
+      return !!p && (oc.has(p.id) || ((p.exercicios || []).length > 0 && p.exercicios.every(e => oc.has(e.id))));
+    }
+    function crEstadoPagina(un, t) {   // 'tudo' | 'sem-expl' | 'so-livro' | 'nada' (só para páginas que têm explicação)
+      const oc = new Set(un.ocultos || []), exs = t.exercicios || [], es = crDaPagina(un, t);
+      if (oc.has(t.id)) return 'nada';
+      if (exs.length && exs.every(e => oc.has(e.id))) return 'so-livro';
+      if (es.length && es.every(x => oc.has(x.id))) return 'sem-expl';
+      return 'tudo';
+    }
+    function crAplicaOpcao(t, op) {
+      const un = crUn, oc = new Set(un.ocultos || []), exIds = (t.exercicios || []).map(e => e.id), eIds = crDaPagina(un, t).map(x => x.id), era = crEstadoPagina(un, t);
+      if (op === 'tudo') { oc.delete(t.id); eIds.forEach(i => oc.delete(i)); if (era === 'so-livro') exIds.forEach(i => oc.delete(i)); }
+      else if (op === 'sem-expl') { oc.delete(t.id); eIds.forEach(i => oc.add(i)); if (era === 'so-livro') exIds.forEach(i => oc.delete(i)); }
+      else if (op === 'so-livro') { oc.delete(t.id); exIds.forEach(i => oc.add(i)); eIds.forEach(i => oc.delete(i)); }
+      else if (op === 'nada') { oc.add(t.id); }
+      un.ocultos = [...oc]; crMarcarRevisada(t.id); crAgendarSalvar(); crRenderMapa(); crRenderDireita();
+    }
+    const crPlano = s => esc(String(s || '').replace(/\*\*/g, '').replace(/\*/g, '').replace(/\n/g, ' / '));
+    function crResumoBlocos(t) {
+      return (t.blocos || []).map(b => {
+        const tit = b.t ? `<b>${crPlano(b.t)}</b><br>` : '';
+        if (b.k === 'texto' || b.k === 'dica') return `<p>${tit}${crPlano(b.x)}</p>`;
+        if (b.k === 'formula') return `<p>${tit}${crPlano(b.f)}<br>${crPlano(b.x)}</p>`;
+        if (b.k === 'linhas') return `<p>${tit}${(b.itens || []).map(l => `${crPlano(l.w)} · ${crPlano(l.en)} — ${crPlano(l.pt)}`).join('<br>')}</p>`;
+        if (b.k === 'duas') return `<p>${tit}${crPlano(b.a.t)}: ${crPlano(b.a.x)}<br>${crPlano(b.b.t)}: ${crPlano(b.b.x)}</p>`;
+        if (b.k === 'contr') return `<p>${tit}${(b.itens || []).map(crPlano).join(' · ')}</p>`;
+        if (b.k === 'erros') return `<p>${tit}${(b.itens || []).map(e => `❌ ${crPlano(e.no)} → ✅ ${crPlano(e.ok)}${e.nota ? ' (' + crPlano(e.nota) + ')' : ''}`).join('<br>')}</p>`;
+        return '';
+      }).join('');
+    }
     function crRenderMapa() {
       const un = crUn, oc = new Set(un.ocultos || []), rev = new Set(un.revisadas || []);
       document.getElementById('cr-mapa').innerHTML = un.tarefas.map((x, i) => {
         const opc = crEhOpcional(x);
-        return `<button type="button" class="cr-pt ${i === crPasso ? 'at' : ''} ${rev.has(x.id) ? 'ok' : ''} ${!opc && oc.has(x.id) ? 'out' : ''} ${opc ? 'opc' : ''}" data-i="${i}" title="${esc(x.titulo)}">${i + 1}</button>`;
+        return `<button type="button" class="cr-pt ${i === crPasso ? 'at' : ''} ${rev.has(x.id) ? 'ok' : ''} ${!opc && (oc.has(x.id) || (x.tipo === 'explicacao' && crExplFora(un, x))) ? 'out' : ''} ${opc ? 'opc' : ''} ${x.tipo === 'explicacao' ? 'expl' : ''}" data-i="${i}" title="${esc(x.titulo)}">${x.tipo === 'explicacao' ? '💡' : i + 1}</button>`;
       }).join('');
       document.querySelectorAll('#cr-mapa [data-i]').forEach(b => b.onclick = () => crIr(Number(b.dataset.i)));
     }
     function crRenderDireita() {
       const un = crUn, t = un.tarefas[crPasso], oc = new Set(un.ocultos || []), opc = crEhOpcional(t);
-      const fora = oc.has(t.id);
+      const isE = t.tipo === 'explicacao';
+      const fora = isE ? crExplFora(un, t) : oc.has(t.id);
+      const expls = t.tipo === 'livro' ? crDaPagina(un, t) : [], estado = expls.length ? crEstadoPagina(un, t) : '';
+      const OP = [['tudo', 'Manter tudo', '💡 explicação + ✏️ exercícios'], ['sem-expl', '🗑 Tirar só a explicação', 'o assunto já foi explicado em outra página; ficam os exercícios'],
+        ['so-livro', '📖 Deixar só a página do livro, para ler', 'tira os exercícios e, junto, a explicação; a página fica com “Já li a página ✓”'], ['nada', '🗑 Tirar a página inteira', 'sem explicação, sem exercícios e sem a página do livro']];
+      const opcoes = expls.length ? `<div style="font-size:.76rem;color:var(--muted);margin:2px 0 6px;font-weight:700;">ESTA PÁGINA TEM EXPLICAÇÃO 💡 — ${expls.map(x => esc(x.titulo)).join(' · ')}. O QUE FAZER?</div>`
+        + OP.map(([v, a, b]) => `<label class="cr-opc ${estado === v ? 'on' : ''}"><input type="radio" name="cr-op" data-opcao="${v}" ${estado === v ? 'checked' : ''}><span><b>${a}</b><small>${b}</small></span></label>`).join('') : '';
+      const corpoE = isE ? `<label class="cr-tirar ${oc.has(t.id) ? 'on' : ''}"><input type="checkbox" data-tarefa="${esc(t.id)}" ${oc.has(t.id) ? 'checked' : ''}> 🗑 TIRAR só esta explicação (o assunto já foi explicado em outra página)</label>`
+        + (fora && !oc.has(t.id) ? '<div class="cr-aviso-e">Esta explicação está saindo junto, porque a atividade da página foi tirada (ou ficou sem exercícios).</div>' : '')
+        + `<div class="cr-resumo-e"><div class="cr-resumo-t">O QUE O ALUNO LÊ (resumo; a prévia 👁 mostra tudo)</div>${crResumoBlocos(t)}</div>` : '';
       const exs = (t.exercicios || []).map(e => {
         const off = oc.has(e.id) || (!opc && fora);
         return `<label class="cr-ex ${off ? 'off' : ''}"><input type="checkbox" data-ex="${esc(e.id)}" ${oc.has(e.id) ? 'checked' : ''}>
@@ -8275,16 +8325,17 @@
         <h3>${esc(t.ic || '')} ${esc(t.titulo)}</h3>
         <div class="meta">${esc(t.grupo || '')} · ${esc(t.sub || '')}</div>
         <button type="button" class="cr-btn pri" data-previa-tarefa="1" style="margin:0 0 10px;">👁 Ver como o aluno vê esta tarefa${exs ? ' (com os exercícios)' : ''}</button>
-        ${opc
+        ${isE ? corpoE : expls.length ? opcoes : opc
           ? `<label class="cr-tirar lig ${fora ? '' : 'on'}"><input type="checkbox" data-tarefa="${esc(t.id)}" data-lig="1" ${fora ? '' : 'checked'}> Ligar no app (esta vem DESLIGADA)</label>`
           : `<label class="cr-tirar ${fora ? 'on' : ''}"><input type="checkbox" data-tarefa="${esc(t.id)}" ${fora ? 'checked' : ''}> 🗑 TIRAR esta tarefa inteira do app</label>`}
-        ${exs ? `<div style="font-size:.76rem;color:var(--muted);margin:2px 0 6px;font-weight:700;">EXERCÍCIOS DESTA PÁGINA — marque só os que quer tirar</div>${exs}` : ''}
+        ${exs ? `<div style="font-size:.76rem;color:var(--muted);margin:10px 0 6px;font-weight:700;">${isE ? 'MINI-EXERCÍCIOS DA EXPLICAÇÃO' : 'EXERCÍCIOS DESTA PÁGINA'} — marque só os que quer tirar</div>${exs}` : ''}
         <div style="font-size:.76rem;color:var(--muted);margin:10px 0 2px;font-weight:700;">O QUE VOCÊ QUERIA NO LUGAR? (opcional, é para eu criar as novas)</div>
         <textarea class="cr-nota" data-nota="${esc(t.id)}" placeholder="Ex.: mais exercícios de ouvir; trocar por conversa sobre o trabalho; mais fácil...">${esc((un.notas || {})[t.id] || '')}</textarea>`;
     }
     document.getElementById('cr-passo').addEventListener('change', e => {
       const cx = e.target; if (cx.tagName !== 'INPUT') return;
       const un = crUn, t = un.tarefas[crPasso], oc = new Set(un.ocultos || []);
+      if (cx.dataset.opcao) { crAplicaOpcao(t, cx.dataset.opcao); return; }
       const id = cx.dataset.tarefa || cx.dataset.ex; if (!id) return;
       if (cx.dataset.lig === '1') { if (cx.checked) oc.delete(id); else oc.add(id); }
       else { if (cx.checked) oc.add(id); else oc.delete(id); }

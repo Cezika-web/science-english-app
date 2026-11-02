@@ -286,6 +286,7 @@ function usePlanoFeitas(uid, nuvem) {
 
 const PLANO_CSS = `
 @keyframes planoPulso { 0%,100% { box-shadow: 0 0 0 0 rgba(124,58,237,.45); } 50% { box-shadow: 0 0 0 14px rgba(124,58,237,0); } }
+@keyframes planoPulsoAz { 0%,100% { box-shadow: 0 6px 0 #075985, 0 0 0 0 rgba(14,165,233,.5); } 50% { box-shadow: 0 6px 0 #075985, 0 0 0 14px rgba(14,165,233,0); } }
 @keyframes planoSobe { from { transform: translateY(100%); } to { transform: translateY(0); } }
 @keyframes planoSurge { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 .plano-btn { display:block; width:100%; border:0; border-radius:16px; padding:14px 16px; color:#fff; font-weight:800; font-size:15px; font-family:inherit; cursor:pointer;
@@ -400,13 +401,15 @@ function PlanoNo({ it, onTarefa, onAula }) {
   }
 
   const t = it.t; const e = it.estado;
+  const expl = t.tipo === 'explicacao';   // nó azul 💡: explicação de gramática que vem antes dos exercícios da página
+  const COR = expl ? '#0EA5E9' : PLANO_COR;
   const estilo = e === 'feita' ? { background: 'linear-gradient(150deg,#22C55E,#15803D)', color: '#fff', boxShadow: '0 6px 0 #166534' }
-    : e === 'atual' ? { background: 'linear-gradient(150deg,#8B5CF6,#6D28D9)', color: '#fff', boxShadow: '0 6px 0 #4C1D95', animation: 'planoPulso 1.8s infinite' }
-    : e === 'aberta' ? { background: '#fff', color: '#0F172A', border: `3px solid ${PLANO_COR}`, boxShadow: '0 6px 0 #DDD6FE' }
+    : e === 'atual' ? (expl ? { background: 'linear-gradient(150deg,#38BDF8,#0284C7)', color: '#fff', boxShadow: '0 6px 0 #075985', animation: 'planoPulsoAz 1.8s infinite' } : { background: 'linear-gradient(150deg,#8B5CF6,#6D28D9)', color: '#fff', boxShadow: '0 6px 0 #4C1D95', animation: 'planoPulso 1.8s infinite' })
+    : e === 'aberta' ? { background: '#fff', color: '#0F172A', border: `3px solid ${COR}`, boxShadow: `0 6px 0 ${expl ? '#BAE6FD' : '#DDD6FE'}` }
     : { background: '#E2E8F0', color: '#94A3B8', boxShadow: '0 6px 0 #CBD5E1' };
   return <>
-    {e === 'atual' && <div style={{ position: 'absolute', top: it.y - it.r - 36, left: `${(it.x / W) * 100}%`, transform: 'translateX(-50%)', background: '#fff', border: `2px solid ${PLANO_COR}`, color: '#5B21B6', borderRadius: 12, padding: '4px 12px', fontSize: 11.5, fontWeight: 800, letterSpacing: .5, whiteSpace: 'nowrap', boxShadow: '0 4px 10px rgba(124,58,237,.18)' }}>
-      COMEÇAR<span style={{ position: 'absolute', left: '50%', bottom: -7, width: 10, height: 10, background: '#fff', borderRight: `2px solid ${PLANO_COR}`, borderBottom: `2px solid ${PLANO_COR}`, transform: 'translateX(-50%) rotate(45deg)' }} /></div>}
+    {e === 'atual' && <div style={{ position: 'absolute', top: it.y - it.r - 36, left: `${(it.x / W) * 100}%`, transform: 'translateX(-50%)', background: '#fff', border: `2px solid ${COR}`, color: expl ? '#075985' : '#5B21B6', borderRadius: 12, padding: '4px 12px', fontSize: 11.5, fontWeight: 800, letterSpacing: .5, whiteSpace: 'nowrap', boxShadow: '0 4px 10px rgba(124,58,237,.18)' }}>
+      COMEÇAR<span style={{ position: 'absolute', left: '50%', bottom: -7, width: 10, height: 10, background: '#fff', borderRight: `2px solid ${COR}`, borderBottom: `2px solid ${COR}`, transform: 'translateX(-50%) rotate(45deg)' }} /></div>}
     <button data-atual={e === 'atual' ? '1' : undefined} onClick={() => onTarefa(t, e)} style={{ ...nodeBase, borderRadius: '50%', fontSize: 26, ...estilo }} aria-label={t.titulo}>
       {e === 'feita' ? '✓' : e === 'trancada' ? '🔒' : t.ic}
     </button>
@@ -982,6 +985,75 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm }) {
   );
 }
 
+/* ───────── explicação de gramática: o quadro do livro + o que ele quer dizer, em português + mini-exercícios ───────── */
+// Mostra só um pedaço da página do livro (o quadro de GRAMMAR): a imagem da página já está no Storage, aqui só se recorta na tela.
+// `quadro` = {x0,x1,y0,y1} em fração da página (largura 396,67 × altura 522,08 pontos do PDF).
+function PlanoQuadroLivro({ curso, pdf, quadro, largura }) {
+  const [url, setUrl] = React.useState(''); const [erro, setErro] = React.useState(false);
+  React.useEffect(() => {
+    let vivo = true; setUrl(''); setErro(false);
+    PlanoUrlPagina(curso, pdf).then(u => { if (vivo) setUrl(u); }).catch(() => { if (vivo) setErro(true); });
+    return () => { vivo = false; };
+  }, [curso, pdf]);
+  const lw = quadro.x1 - quadro.x0, lh = quadro.y1 - quadro.y0;
+  return (
+    <div style={{ position: 'relative', width: largura || '100%', overflow: 'hidden', background: '#fff', borderRadius: 8, paddingBottom: `${((lh * 1.3162) / lw) * 100}%` }}>
+      {url && <img src={url} alt="Quadro de gramática do livro" draggable="false" style={{ position: 'absolute', maxWidth: 'none', width: `${100 / lw}%`, left: `${-(quadro.x0 / lw) * 100}%`, top: `${-(quadro.y0 / lh) * 100}%` }} />}
+      {!url && <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', padding: 12, textAlign: 'center', fontWeight: 800, fontSize: 13, color: erro ? '#B91C1C' : '#94A3B8' }}>{erro ? 'Não consegui abrir o quadro agora.' : 'Abrindo o quadro…'}</div>}
+    </div>
+  );
+}
+
+function PlanoBloco({ b }) {
+  const tit = b.t ? <div style={{ fontSize: 15, fontWeight: 800, margin: '22px 0 8px', color: '#0F172A' }}><PlanoMd x={b.t} /></div> : null;
+  const caixa = { background: '#fff', border: '1px solid #E2E8F0', borderRadius: 14, padding: '10px 12px', marginBottom: 8 };
+  if (b.k === 'texto') return <>{tit}<div style={{ ...caixa, fontSize: 14, fontWeight: 600, lineHeight: 1.55, color: '#334155' }}><PlanoMd x={b.x} /></div></>;
+  if (b.k === 'dica') return <>{tit}<div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 14, padding: '10px 12px', fontSize: 14, fontWeight: 700, lineHeight: 1.55, color: '#78350F' }}><PlanoMd x={b.x} /></div></>;
+  if (b.k === 'formula') return <>{tit}<div style={{ background: 'linear-gradient(150deg,#ECFEFF,#E0F2FE)', border: '1.5px solid #7DD3FC', borderRadius: 16, padding: 13, textAlign: 'center' }}>
+    <div style={{ fontSize: 16, fontWeight: 800, color: '#075985', lineHeight: 1.45 }}><PlanoMd x={b.f} /></div>
+    {b.x && <div style={{ marginTop: 8, fontSize: 13, fontWeight: 700, color: '#0C4A6E', lineHeight: 1.5 }}><PlanoMd x={b.x} /></div>}</div></>;
+  if (b.k === 'linhas') return <>{tit}{(b.itens || []).map((l, i) => <div key={i} style={caixa}>
+    <span style={{ display: 'inline-block', fontWeight: 800, fontSize: 13, color: '#fff', background: PLANO_COR, borderRadius: 8, padding: '1px 9px', marginRight: 6 }}>{l.w}</span>
+    <span style={{ fontWeight: 800, fontSize: 13.5 }}>{l.s}</span>
+    <div style={{ fontWeight: 800, fontSize: 14, marginTop: 6 }}><PlanoMd x={l.en} /></div>
+    <div style={{ fontSize: 13, color: '#475569', fontWeight: 600, marginTop: 1 }}><PlanoMd x={l.pt} /></div>
+    {l.re && <div style={{ fontSize: 12.5, color: '#64748B', fontWeight: 700, marginTop: 3 }}>Resposta: <PlanoMd x={l.re} /></div>}</div>)}</>;
+  if (b.k === 'duas') return <>{tit}<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>{[b.a, b.b].map((c, i) => <div key={i} style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 14, padding: '11px 12px', fontSize: 13, fontWeight: 700, lineHeight: 1.5, color: '#1E3A8A' }}>
+    <div style={{ fontWeight: 800, marginBottom: 4 }}><PlanoMd x={c.t} /></div><div style={{ whiteSpace: 'pre-line' }}><PlanoMd x={c.x} /></div></div>)}</div></>;
+  if (b.k === 'contr') return <>{tit}<div style={{ ...caixa, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 12px', padding: '11px 13px', fontSize: 13, fontWeight: 700 }}>{(b.itens || []).map((c, i) => { const [a, ...r] = String(c).split(' = '); return <span key={i}><b style={{ color: PLANO_COR }}>{a}</b>{r.length ? ` = ${r.join(' = ')}` : ''}</span>; })}</div></>;
+  if (b.k === 'erros') return <>{tit}{(b.itens || []).map((e, i) => <div key={i} style={{ display: 'grid', gap: 6, marginBottom: 8 }}>
+    <div style={{ background: '#FEF2F2', color: '#7F1D1D', borderRadius: 12, padding: '9px 12px', fontSize: 13.5, fontWeight: 700 }}>❌ <PlanoMd x={e.no} /></div>
+    <div style={{ background: '#F0FDF4', color: '#14532D', borderRadius: 12, padding: '9px 12px', fontSize: 13.5, fontWeight: 700 }}>✅ <PlanoMd x={e.ok} />{e.nota ? <div style={{ fontSize: 12, fontWeight: 600, marginTop: 2 }}><PlanoMd x={e.nota} /></div> : null}</div></div>)}</>;
+  return null;
+}
+
+// Tarefa "Explicação": nó azul 💡 do Caminho, antes dos exercícios da mesma página. Não tem nota: "Já estudei" conclui.
+function PlanoTarefaExplicacao({ t, cursoId, onFeita, onClose, onAsk }) {
+  const [zoom, setZoom] = React.useState(false); const [res, setRes] = React.useState({});
+  const exs = t.exercicios || []; const feitos = Object.keys(res).length; const acertos = Object.values(res).filter(Boolean).length;
+  return (
+    <PlanoCamada titulo={t.titulo} sub={`Connectivity 1 · página ${t.pagina} · gramática`} onClose={onClose} onAsk={onAsk}
+      rodape={<><button className="plano-btn" style={{ background: 'linear-gradient(180deg,#38BDF8,#0284C7)', boxShadow: '0 8px 18px rgba(2,132,199,.3)' }} onClick={onFeita}>Já estudei ✓</button>
+        <div style={{ textAlign: 'center', fontSize: 11.5, fontWeight: 700, color: '#64748B', marginTop: 7 }}>Você pode voltar aqui quando quiser, antes ou depois dos exercícios.</div></>}>
+      <div style={{ fontSize: 15, fontWeight: 800, margin: '2px 0 8px' }}>📖 O quadro do livro <span style={{ color: '#64748B', fontWeight: 700, fontSize: 12 }}>(toque para ampliar)</span></div>
+      <div onClick={() => setZoom(true)} style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 16, padding: 8, cursor: 'zoom-in' }}>
+        <PlanoQuadroLivro curso={cursoId} pdf={t.pdf} quadro={t.quadro} />
+        <div style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#64748B', marginTop: 6 }}>Connectivity 1 · p. {t.pagina}</div>
+      </div>
+      {(t.blocos || []).map((b, i) => <PlanoBloco key={i} b={b} />)}
+      {exs.length > 0 && <>
+        <div style={{ fontSize: 15, fontWeight: 800, margin: '22px 0 8px' }}>🎯 Treine rápido <span style={{ color: '#64748B', fontWeight: 700, fontSize: 12 }}>({exs.length} perguntinhas)</span></div>
+        {exs.map(ex => <div key={ex.id} style={{ background: '#fff', border: '2px solid #DDD6FE', borderRadius: 18, padding: 13, marginBottom: 10 }}>
+          <PlanoExercicio ex={ex} onFim={ok => setRes(r => (r[ex.id] !== undefined ? r : { ...r, [ex.id]: ok }))} /></div>)}
+        {feitos === exs.length && <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 14, padding: '11px 13px', fontSize: 13.5, fontWeight: 700, color: '#14532D' }}>🎉 <b>{acertos} de {exs.length}</b> certas. {acertos === exs.length ? 'Já pode ir para os exercícios da página!' : 'Releia o quadro acima e depois vá para os exercícios.'}</div>}
+      </>}
+      {zoom && <div onClick={() => setZoom(false)} style={{ position: 'fixed', inset: 0, zIndex: 900, background: 'rgba(15,23,42,.92)', overflow: 'auto', padding: '56px 10px 24px' }}>
+        <button onClick={() => setZoom(false)} style={{ position: 'fixed', top: 12, right: 14, border: 0, borderRadius: 99, background: '#fff', padding: '8px 15px', fontFamily: 'inherit', fontWeight: 800, cursor: 'pointer' }}>✕ Fechar</button>
+        <div style={{ width: '230%', maxWidth: 1100 }}><PlanoQuadroLivro curso={cursoId} pdf={t.pdf} quadro={t.quadro} /></div></div>}
+    </PlanoCamada>
+  );
+}
+
 function PlanoTarefaExtra({ t, unidade, onAbrirExtras, onFeita, onClose, onAsk }) {
   return (
     <PlanoCamada titulo={t.titulo} sub={t.sub} onClose={onClose} onAsk={onAsk}
@@ -1230,6 +1302,7 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
       {tarefa && tarefa.tipo === 'livro' && (tarefa.pdf
         ? <PlanoTarefaPagina t={tarefa} cursoId={cfg.cursoId} onFeita={f} onClose={fechar} onAsk={perguntar} />
         : <PlanoTarefaLivro t={tarefa} unidade={u} onFeita={f} onClose={fechar} onAsk={perguntar} />)}
+      {tarefa && tarefa.tipo === 'explicacao' && <PlanoTarefaExplicacao t={tarefa} cursoId={cfg.cursoId} onFeita={f} onClose={fechar} onAsk={perguntar} />}
       {tarefa && tarefa.tipo === 'revisao' && <PlanoCamada titulo={tarefa.titulo} sub={tarefa.sub} onClose={fechar}><div style={{ background: '#fff', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: '#64748B' }}>📝 Esta revisão ainda está sendo montada.</div></PlanoCamada>}
       {tarefa && tarefa.tipo === 'posaula' && <PlanoTarefaPosaula t={tarefa} unidade={u} posaulas={posaulas} onOpenPost={onOpenPost} onFeita={f} onClose={fechar} onAsk={perguntar} />}
       {tarefa && tarefa.tipo === 'estudo' && <PlanoEstudo estudo={u.estudos[tarefa.ref]} unidade={u} posaulas={posaulas} onOpenPost={onOpenPost} onFeita={f} onClose={fechar} onAsk={perguntar} />}
@@ -1266,7 +1339,11 @@ function PlanoCfgDoCurso(cfg, indice, un, ref, setSel) {
   // O Firestore guarda pares como {a, b} (não aceita lista dentro de lista); o resto do app usa [a, b].
   const par = p => (Array.isArray(p) ? p : [p.a, p.b]);
   const exercicio = e => (e.t === 'match' ? { ...e, pares: (e.pares || []).map(par) } : e);
-  const tarefas = (un.tarefas || []).filter(t => !oc.has(t.id))
+  // A explicação de gramática é presa à atividade da página: sai junto se a tarefa foi tirada ou ficou sem nenhum exercício
+  // (aí a página fica só para ler). Também some se o professor tirou só a explicação.
+  const porId = {}; (un.tarefas || []).forEach(t => { porId[t.id] = t; });
+  const paiVivo = id => { const p = porId[id]; return !p || (!oc.has(id) && (!(p.exercicios || []).length || p.exercicios.some(e => !oc.has(e.id)))); };
+  const tarefas = (un.tarefas || []).filter(t => !oc.has(t.id) && (t.tipo !== 'explicacao' || paiVivo(t.para)))
     .map(t => {
       const n = t.exercicios ? { ...t, exercicios: t.exercicios.filter(e => !oc.has(e.id)).map(exercicio) } : { ...t };
       if (t.tipo === 'jogo' && t.formato === 'memoria' && t.jogo) n.jogo = t.jogo.map(par);
@@ -1349,6 +1426,7 @@ function PlanoPreviaCurso({ user }) {
         {tarefa.tipo === 'livro' && (tarefa.pdf
           ? <PlanoTarefaPagina t={tarefa} cursoId={cursoId} onFeita={f} onClose={fechar} abrirEm={abrirEm} />
           : <PlanoTarefaLivro t={tarefa} unidade={u} onFeita={f} onClose={fechar} />)}
+        {tarefa.tipo === 'explicacao' && <PlanoTarefaExplicacao t={tarefa} cursoId={cursoId} onFeita={f} onClose={fechar} />}
         {tarefa.tipo === 'revisao' && <PlanoCamada titulo={tarefa.titulo} sub={tarefa.sub} onClose={fechar}><div style={{ background: '#fff', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: '#64748B' }}>📝 Esta revisão ainda está sendo montada.</div></PlanoCamada>}
         {tarefa.tipo === 'vocab' && <PlanoVocab vocab={u.vocab[tarefa.ref]} titulo={tarefa.titulo} onFeita={f} onClose={fechar} />}
         {tarefa.tipo === 'jogo' && <PlanoTarefaJogo t={tarefa} unidade={u} onFeita={f} onClose={fechar} />}
