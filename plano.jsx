@@ -929,10 +929,11 @@ function PlanoExercicio({ ex, onFim }) {
 }
 
 // Tarefa "Livro": a página do livro em cima, os exercícios dela numa gaveta embaixo.
-function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk }) {
+// `abrirEm` (só a prévia do painel): já abre a gaveta neste exercício, em vez de começar com ela fechada.
+function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm }) {
   const exs = t.exercicios || []; const total = exs.length;
-  const [pdf, setPdf] = React.useState(t.pdf); const [i, setI] = React.useState(0); const [res, setRes] = React.useState([]);
-  const [aberta, setAberta] = React.useState(false); const [respondeu, setRespondeu] = React.useState(false);
+  const [pdf, setPdf] = React.useState(t.pdf); const [i, setI] = React.useState(abrirEm >= 0 && abrirEm < total ? abrirEm : 0); const [res, setRes] = React.useState([]);
+  const [aberta, setAberta] = React.useState(abrirEm >= 0 && abrirEm < total); const [respondeu, setRespondeu] = React.useState(false);
   const acabou = total > 0 && i >= total; const acertos = res.filter(r => r === true).length;
   const respondidos = res.filter(r => r !== undefined).length;
   const onFim = ok => { setRes(r => { const n = [...r]; if (n[i] === undefined) n[i] = ok; return n; }); setRespondeu(true); };
@@ -1305,4 +1306,57 @@ function PlanoConteudoCurso(props) {
 // Quem tem plano.livro vê o curso (livro no app); os demais continuam com o pacote da Unit 4.
 function PlanoConteudo(props) {
   return props.cfg && props.cfg.cursoRef ? <PlanoConteudoCurso {...props} /> : <PlanoConteudoBase {...props} />;
+}
+
+/* ───────── prévia do curso no painel (aba Curso): a tarefa do livro como o aluno a vê ─────────
+ * index.html?previacurso=u05&tarefa=ID[&ex=EXERCICIO_ID][&ocultos=1]  (só o professor; nada é gravado)
+ * É o mesmo código do aluno (PlanoTarefaPagina, PlanoVocab, jogos, vídeo, mini-teste), só que sem o Caminho em volta.
+ * Sem `ocultos=1` aparece TUDO (também o que ele marcou para tirar); com `ocultos=1`, os exercícios tirados somem do fluxo. */
+function PlanoPreviaCurso({ user }) {
+  const q = React.useMemo(() => new URLSearchParams(window.location.search), []);
+  const cursoId = q.get('curso') || 'connectivity-1'; const unId = q.get('previacurso'); const tarefaId = q.get('tarefa'); const exId = q.get('ex'); const semOcultos = q.get('ocultos') === '1';
+  const admin = PLANO_ADMINS.includes(String((user && user.email) || '').toLowerCase());
+  const [dados, setDados] = React.useState(null); const [erro, setErro] = React.useState(''); const [vez, setVez] = React.useState(0); const [aviso, setAviso] = React.useState('');
+  React.useEffect(() => {
+    if (!admin) return undefined;
+    let vivo = true;
+    Promise.all([PlanoCarregarDoc(cursoId, ['cursos', cursoId]), PlanoCarregarDoc(`${cursoId}/${unId}`, ['cursos', cursoId, 'unidades', unId])])
+      .then(([indice, un]) => { if (!vivo) return; if (!un) setErro('Esta unidade não existe.'); else setDados({ indice, un: { ...un, id: unId } }); })
+      .catch(() => { if (vivo) setErro('Não consegui carregar a unidade agora.'); });
+    return () => { vivo = false; };
+  }, [admin, cursoId, unId]);
+  const tela = (x, cor) => <div style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', padding: 24, textAlign: 'center', background: '#F6F1EA', fontWeight: 700, color: cor || '#64748B' }}><style>{PLANO_CSS}</style>{x}</div>;
+  if (!admin) return tela('Esta prévia é só para o professor.', '#B91C1C');
+  if (erro) return tela(erro, '#B91C1C');
+  if (!dados) return tela('Abrindo a prévia…');
+  // Monta como o Caminho monta, mas SEM esconder nada (ocultos: []), para a prévia mostrar também o que ele está pensando em tirar.
+  const cfg = PlanoCfgDoCurso({ previa: true, aulas: [] }, dados.indice, { ...dados.un, ocultos: [] }, { id: cursoId, inicial: unId, atual: '' }, () => {});
+  const oc = new Set(dados.un.ocultos || []);
+  const bruta = cfg.pacotes[0].tarefas.find(x => x.id === tarefaId);
+  if (!bruta) return tela('Esta tarefa não aparece para o aluno (ela não tem conteúdo).');
+  const tarefa = semOcultos && bruta.exercicios ? { ...bruta, exercicios: bruta.exercicios.filter(e => !oc.has(e.id)) } : bruta;
+  const u = cfg.unidade;
+  const k = exId && tarefa.exercicios ? tarefa.exercicios.findIndex(e => e.id === exId) : -1;
+  const abrirEm = exId ? Math.max(0, k) : undefined;
+  const recomeca = x => { setAviso(x); setTimeout(() => setAviso(''), 2200); setVez(v => v + 1); };
+  const fechar = () => recomeca('↺ Prévia reiniciada');
+  const f = () => recomeca('✅ Concluída (na prévia nada é gravado)');
+  return (
+    <React.Fragment>
+      <style>{PLANO_CSS}</style>
+      <div style={{ position: 'fixed', inset: 0, background: '#F6F1EA' }} />
+      <React.Fragment key={vez}>
+        {tarefa.tipo === 'livro' && (tarefa.pdf
+          ? <PlanoTarefaPagina t={tarefa} cursoId={cursoId} onFeita={f} onClose={fechar} abrirEm={abrirEm} />
+          : <PlanoTarefaLivro t={tarefa} unidade={u} onFeita={f} onClose={fechar} />)}
+        {tarefa.tipo === 'revisao' && <PlanoCamada titulo={tarefa.titulo} sub={tarefa.sub} onClose={fechar}><div style={{ background: '#fff', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: '#64748B' }}>📝 Esta revisão ainda está sendo montada.</div></PlanoCamada>}
+        {tarefa.tipo === 'vocab' && <PlanoVocab vocab={u.vocab[tarefa.ref]} titulo={tarefa.titulo} onFeita={f} onClose={fechar} />}
+        {tarefa.tipo === 'jogo' && <PlanoTarefaJogo t={tarefa} unidade={u} onFeita={f} onClose={fechar} />}
+        {tarefa.tipo === 'video' && <PlanoTarefaVideo t={tarefa} onFeita={f} onClose={fechar} />}
+        {tarefa.tipo === 'extra' && <PlanoTarefaExtra t={tarefa} unidade={u} onAbrirExtras={fechar} onFeita={f} onClose={fechar} />}
+        {tarefa.tipo === 'teste' && <PlanoTarefaTeste t={tarefa} unidade={u} onFeita={f} onClose={fechar} />}
+      </React.Fragment>
+      {aviso && <div style={{ position: 'fixed', left: '50%', bottom: 'calc(40px + env(safe-area-inset-bottom, 0px))', transform: 'translateX(-50%)', background: '#0F172A', color: '#fff', padding: '10px 18px', borderRadius: 12, fontSize: 13.5, fontWeight: 700, zIndex: 700, whiteSpace: 'nowrap', animation: 'planoSurge .2s' }}>{aviso}</div>}
+    </React.Fragment>
+  );
 }

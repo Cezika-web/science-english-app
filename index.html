@@ -262,7 +262,7 @@ async function getFB() {
 // Falha de gravação (regra ainda não publicada, sem rede) nunca aparece para o aluno.
 const CzkUsage = (() => {
   // Versão do app que vai junto com o uso (para saber quem ainda roda versão velha). Mantenha igual ao CACHE do sw.js.
-  const APP_BUILD = 'v56';
+  const APP_BUILD = 'v57';
   const TICK = 1000, MIN_STEP = 200, FLUSH = 60000, NEW_VISIT = 30 * 60000;
   const BLIND_CAP = 10 * 60000, HOLD_CAP = 15 * 60000, MAX_FAILS = 5;
   const READ_MS = 180000;                 // maior pausa aceita na leitura do pós-aula (igual a LEITURA_SEG do adesao.js)
@@ -5748,6 +5748,7 @@ function App() {
   const [exercicioDuvida, setExercicioDuvida] = useState(null);  // {enunciado, item} do exercício cuja bolinha foi tocada
   const [perguntaPronta, setPerguntaPronta] = useState('');  // pergunta já escrita ao abrir pela apresentação ("Experimentar agora")
   const [novidadesFechadas, setNovidadesFechadas] = useState({});   // apresentações de novidade já fechadas nesta sessão
+  const previaCurso = useRef(new URLSearchParams(window.location.search).get('previacurso') || '').current;   // ?previacurso=u05&tarefa=ID: prévia aberta pela aba Curso do painel
   const introForcada = useRef(new URLSearchParams(window.location.search).get('intro') || '').current;   // ?intro=eurekia ou ?intro=adesao: só para ver
   const [adesaoPage, setAdesaoPage]     = useState(null);   // página de adesão aberta: { dia }
   const [vocabView, setVocabView]       = useState(null);   // seção aberta em Vocabulário (palavras, verbos, chunks) — só para o tempo de estudo
@@ -6362,6 +6363,8 @@ function App() {
 
   if (loading) return <LoadingScreen />;
   if (!user)   return <LoginScreen />;
+  // Prévia do curso aberta pelo painel (aba Curso): só a tarefa pedida, como o aluno a vê. Só vale para o professor; nada é gravado.
+  if (previaCurso && typeof PlanoPreviaCurso === 'function') return <PlanoPreviaCurso user={user} />;
   if (!student) return <BootErrorScreen erro={bootError} onRetry={recarregar} onLogout={handleLogout} />;
 
   const handleOpenPost     = (post) => { getFB().then(fb => openPost(post, fb, mirror ? mirrorUid.current : user.uid)); };

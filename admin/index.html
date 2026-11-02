@@ -1692,6 +1692,19 @@
           .cr-rodape { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:12px; }
           .cr-video { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:6px 0; padding:8px 10px; border-radius:10px; background:#f8fafc; border:1px solid var(--border); font-size:.82rem; }
           .cr-video input { flex:1; min-width:180px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:.82rem; }
+          .cr-ver { flex-shrink:0; align-self:center; font-size:.72rem; font-weight:800; padding:4px 9px; border-radius:8px; border:1px solid #ddd6fe; background:#f5f3ff; color:#5b21b6; cursor:pointer; white-space:nowrap; }
+          .cr-ver:hover { background:#ede9fe; }
+          .cr-previa { position:fixed; inset:0; z-index:5000; background:rgba(15,23,42,.64); display:none; align-items:center; justify-content:center; padding:10px; }
+          .cr-previa-caixa { background:#fff; border-radius:18px; width:min(430px,100%); max-height:100%; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,.45); }
+          .cr-pv-topo { display:flex; gap:8px; align-items:center; padding:10px 12px; border-bottom:1px solid var(--border); }
+          .cr-pv-topo strong { flex:1; min-width:0; font-size:.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+          .cr-pv-topo small { display:block; font-weight:600; color:var(--muted); font-size:.72rem; }
+          .cr-pv-tela { background:#1f2937; padding:8px; }
+          .cr-pv-tela iframe { display:block; width:100%; height:min(720px, calc(100vh - 230px)); min-height:420px; border:0; border-radius:12px; background:#F6F1EA; }
+          .cr-pv-nav { display:flex; gap:8px; align-items:center; padding:9px 12px 4px; }
+          .cr-pv-nav span { flex:1; text-align:center; font-size:.78rem; font-weight:700; color:#475569; }
+          .cr-pv-rod { padding:4px 12px 10px; font-size:.76rem; color:var(--muted); display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+          .cr-pv-rod label { display:flex; gap:6px; align-items:center; cursor:pointer; }
         </style>
 
         <div class="cr-card">
@@ -1742,6 +1755,26 @@
           <h2>🎬 Vídeos <small style="font-weight:600;color:var(--muted);">(depois da revisão: só os que ficaram)</small></h2>
           <p class="cr-sub">Cada unidade tem 3 vagas de vídeo. Suba no YouTube como “não listado”, cole o link e a tarefa liga sozinha no app.</p>
           <div id="cr-videos"><div class="loading">Carregando...</div></div>
+        </div>
+
+        <!-- Prévia: a tarefa ou o exercício como o aluno vê (o mesmo código do app, num quadro do tamanho de um celular) -->
+        <div class="cr-previa" id="cr-previa" role="dialog" aria-modal="true" aria-label="Como o aluno vê">
+          <div class="cr-previa-caixa">
+            <div class="cr-pv-topo">
+              <strong><span id="cr-pv-tit"></span><small>Assim o aluno vê, no celular dele (nada é gravado)</small></strong>
+              <button type="button" class="cr-btn" id="cr-pv-x" aria-label="Fechar a prévia">✕ Fechar</button>
+            </div>
+            <div class="cr-pv-tela"><iframe id="cr-pv-frame" title="Como o aluno vê" allow="autoplay; encrypted-media; fullscreen"></iframe></div>
+            <div class="cr-pv-nav" id="cr-pv-nav">
+              <button type="button" class="cr-btn" id="cr-pv-ant">‹ Anterior</button>
+              <span id="cr-pv-pos"></span>
+              <button type="button" class="cr-btn" id="cr-pv-prox">Próximo ›</button>
+            </div>
+            <div class="cr-pv-rod">
+              <label><input type="checkbox" id="cr-pv-oc"> Já sem o que eu marquei para tirar</label>
+              <a href="#" id="cr-pv-aba" target="_blank" rel="noopener">Abrir em outra aba ↗</a>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -8235,11 +8268,13 @@
       const exs = (t.exercicios || []).map(e => {
         const off = oc.has(e.id) || (!opc && fora);
         return `<label class="cr-ex ${off ? 'off' : ''}"><input type="checkbox" data-ex="${esc(e.id)}" ${oc.has(e.id) ? 'checked' : ''}>
-          <span class="cr-tipo">${CR_ROTULO[e.t] || e.t}</span><span class="tx">${crLinha(e.q)}<span class="resp">${crResposta(e)}</span></span></label>`;
+          <span class="cr-tipo">${CR_ROTULO[e.t] || e.t}</span><span class="tx">${crLinha(e.q)}<span class="resp">${crResposta(e)}</span></span>
+          <button type="button" class="cr-ver" data-previa-ex="${esc(e.id)}" title="Ver este exercício como o aluno vê">👁 Ver</button></label>`;
       }).join('');
       document.getElementById('cr-passo').innerHTML = `
         <h3>${esc(t.ic || '')} ${esc(t.titulo)}</h3>
         <div class="meta">${esc(t.grupo || '')} · ${esc(t.sub || '')}</div>
+        <button type="button" class="cr-btn pri" data-previa-tarefa="1" style="margin:0 0 10px;">👁 Ver como o aluno vê esta tarefa${exs ? ' (com os exercícios)' : ''}</button>
         ${opc
           ? `<label class="cr-tirar lig ${fora ? '' : 'on'}"><input type="checkbox" data-tarefa="${esc(t.id)}" data-lig="1" ${fora ? '' : 'checked'}> Ligar no app (esta vem DESLIGADA)</label>`
           : `<label class="cr-tirar ${fora ? 'on' : ''}"><input type="checkbox" data-tarefa="${esc(t.id)}" ${fora ? 'checked' : ''}> 🗑 TIRAR esta tarefa inteira do app</label>`}
@@ -8256,6 +8291,45 @@
       un.ocultos = [...oc];
       crMarcarRevisada(t.id); crAgendarSalvar(); crRenderMapa(); crRenderDireita();
     });
+    // Prévia (👁): o app do aluno de verdade, num quadro de celular. `ex` abre direto naquele exercício; sem ele, começa pela página.
+    let crPv = { tarefa: '', exs: [], idx: -1 };
+    function crPreviaUrl() {
+      const p = new URLSearchParams({ previacurso: crUn.id, tarefa: crPv.tarefa, v: String(Date.now()) });
+      if (crPv.idx >= 0 && crPv.exs[crPv.idx]) p.set('ex', crPv.exs[crPv.idx].id);
+      if (document.getElementById('cr-pv-oc').checked) p.set('ocultos', '1');
+      return `../index.html?${p.toString()}`;
+    }
+    function crPreviaMostrar() {
+      const t = crUn.tarefas.find(x => x.id === crPv.tarefa), exs = crPv.exs, i = crPv.idx, oc = new Set(crUn.ocultos || []);
+      document.getElementById('cr-pv-tit').textContent = `${t.ic || ''} ${t.titulo}`;
+      const tirado = i >= 0 && oc.has(exs[i].id);
+      document.getElementById('cr-pv-pos').textContent = !exs.length ? 'Esta tarefa não tem exercícios' : i < 0 ? 'Começo da tarefa' : `Exercício ${i + 1} de ${exs.length}${tirado ? ' · marcado para TIRAR' : ''}`;
+      document.getElementById('cr-pv-nav').style.display = exs.length ? 'flex' : 'none';
+      document.getElementById('cr-pv-ant').disabled = i < 0;
+      document.getElementById('cr-pv-prox').disabled = i >= exs.length - 1;
+      const url = crPreviaUrl();
+      document.getElementById('cr-pv-frame').src = url;
+      document.getElementById('cr-pv-aba').href = url;
+    }
+    function crPreviaAbrir(tarefaId, exId) {
+      const t = crUn.tarefas.find(x => x.id === tarefaId); if (!t) return;
+      const exs = t.exercicios || [];
+      crPv = { tarefa: tarefaId, exs, idx: exId ? exs.findIndex(e => e.id === exId) : -1 };
+      document.getElementById('cr-previa').style.display = 'flex';
+      crPreviaMostrar();
+    }
+    function crPreviaFechar() { document.getElementById('cr-previa').style.display = 'none'; document.getElementById('cr-pv-frame').src = 'about:blank'; }
+    document.getElementById('cr-passo').addEventListener('click', e => {
+      const ex = e.target.closest && e.target.closest('[data-previa-ex]');
+      if (ex) { e.preventDefault(); e.stopPropagation(); crPreviaAbrir(crUn.tarefas[crPasso].id, ex.dataset.previaEx); return; }
+      if (e.target.closest && e.target.closest('[data-previa-tarefa]')) crPreviaAbrir(crUn.tarefas[crPasso].id, '');
+    });
+    document.getElementById('cr-pv-x').onclick = crPreviaFechar;
+    document.getElementById('cr-previa').addEventListener('click', e => { if (e.target.id === 'cr-previa') crPreviaFechar(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('cr-previa').style.display === 'flex') crPreviaFechar(); });
+    document.getElementById('cr-pv-ant').onclick = () => { crPv.idx = Math.max(-1, crPv.idx - 1); crPreviaMostrar(); };
+    document.getElementById('cr-pv-prox').onclick = () => { crPv.idx = Math.min(crPv.exs.length - 1, crPv.idx + 1); crPreviaMostrar(); };
+    document.getElementById('cr-pv-oc').onchange = crPreviaMostrar;
     document.getElementById('cr-passo').addEventListener('input', e => {
       if (!e.target.dataset || !e.target.dataset.nota) return;
       const un = crUn; un.notas = { ...(un.notas || {}), [e.target.dataset.nota]: e.target.value };
