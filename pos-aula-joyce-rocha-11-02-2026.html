@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pós-Aula — Joyce Rocha — 11/02/2026 — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+*{box-sizing:border-box;} body{color:#374151;line-height:1.6;} h2{font-size:1.15rem;color:#0f1724;line-height:1.35;} h3{font-size:1rem;} p{margin:0 0 12px;} p:last-child{margin-bottom:0;} li+li{margin-top:8px;} ul,ol{padding-left:22px;} .title-row{display:flex;gap:10px;align-items:center;} .badge{flex-shrink:0;} header>div:first-child{min-width:0;} .actions{flex-shrink:0;} .actions .btn{font-size:.8rem;text-align:center;} .vocab{min-width:190px;} .rule-table{width:100%;border-collapse:collapse;font-size:.9rem;} .rule-table th,.rule-table td{padding:9px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top;} .rule-table th{background:#F0FDF4;color:#14532D;} .correction+.correction{margin-top:16px;padding-top:14px;border-top:1px solid var(--border);} .wrong{color:#b91c1c;margin:4px 0;} .right{color:#166534;margin:4px 0;} .note{color:var(--muted);font-size:.87rem;} @media(max-width:720px){.wrap{padding:20px 12px;}header{flex-direction:column;}.title-row{align-items:flex-start;}.actions{width:100%;}.actions .btn{width:100%;justify-content:center;}.vocab{min-width:0;width:100%;}.rule-table{font-size:.81rem;}.rule-table th,.rule-table td{padding:7px 5px;}.talk-table{font-size:.8rem;}.talk-table th,.talk-table td{padding:7px 6px;}.speaking{padding:12px;}} @media print{html,body{height:auto;background:#fff;}.wrap{padding:0;display:block;}.card{max-width:none;border:none;box-shadow:none;padding:0;}.actions,.vocab-say{display:none;}.vocab,.correction,table{break-inside:avoid;}a{color:inherit;}}
+</style></head><body><div class="wrap"><article class="card" role="main"><header><div><div class="title-row"><span class="badge">PÓS-AULA</span><h1>Unidade 1: soletração, profissões e contrações na escuta</h1></div><div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluna:</strong> Joyce Rocha &nbsp;•&nbsp; <strong>Data:</strong> 11/02/2026</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header><main><section class="panel"><p style="margin:0;font-weight:600;color:#14532D;"><em>Joyce, nesta aula você fechou a Unidade 1 unindo alfabeto, profissões, verbo to be e respostas curtas. O maior treino foi reconhecer na escuta o inglês que você já conhece no papel, com contrações e palavras ligadas na fala.</em></p></section><section><h2>📘 Resumo da Aula</h2><div class="outline-card">
+<p>Começamos revisando suas atividades: César destacou o bom desempenho recente e o áudio em que você perguntou <strong>Do you like coffee?</strong> Você comentou uma dificuldade anterior com a escrita de <strong>coffee</strong>, e aproveitamos para revisar também a pronúncia. A ideia foi ouvir a palavra inteira, sem cortar a vogal final nem acrescentar uma sílaba extra depois dela.</p>
+<p>Retomamos três combinações de verbos que já apareceram: <strong>want to + verbo</strong>, <strong>enjoy + verbo com -ing</strong> e <strong>like to + verbo / like + -ing</strong>. Também diferenciamos <strong>want</strong> (querer), <strong>went</strong> (passado de go: foi a algum lugar) e <strong>was</strong> (passado de be com I/he/she/it: era/estava). O passado regular de want é <strong>wanted</strong>. Foi uma revisão breve; o foco principal continuou sendo a Unidade 1.</p>
+<p>No primeiro exercício de escuta, você procurou <strong>nomes, sobrenomes e profissões</strong> em quatro conversas. As informações não vinham sempre na mesma ordem: por isso, era preciso identificar o que estava sendo soletrado antes de preencher. Repetimos trechos menores e separamos as letras já reconhecidas das que ainda faltavam. Apareceram, entre outros exemplos, <strong>Marcus Shepherd</strong>, <strong>Jeffrey</strong> e <strong>Amy</strong>. Treinamos especialmente diferenças entre <strong>A, E, I e Y</strong>, além de <strong>B/P, O, R e W</strong>.</p>
+<p>Depois praticamos perguntas sobre profissões e respostas curtas. Com uma pessoa, usamos <strong>is</strong> e, quando necessário, <strong>a/an</strong>: <strong>Is Mary a pilot?</strong> Com mais de uma, usamos <strong>are</strong>, profissão no plural e sem a/an: <strong>Are they doctors?</strong> Você também observou que <strong>you</strong> pode significar “você” ou “vocês”; o contexto define se a profissão vem no singular ou no plural.</p>
+<table class="rule-table"><thead><tr><th>Pergunta</th><th>Resposta afirmativa</th><th>Resposta negativa</th></tr></thead><tbody><tr><td>Are you a pilot?</td><td>Yes, I am.</td><td>No, I'm not.</td></tr><tr><td>Is she an artist?</td><td>Yes, she is.</td><td>No, she isn't.</td></tr><tr><td>Are they doctors?</td><td>Yes, they are.</td><td>No, they aren't.</td></tr></tbody></table>
+<p style="margin-top:12px;">No vídeo de revisão, um apresentador confundia profissões e nomes, e as outras pessoas o corrigiam. Você acompanhou a situação geral e identificou informações mesmo sem entender cada palavra. Retomamos a pergunta <strong>How do you spell that?</strong>, útil para pedir a soletração, e o contraste entre <strong>Black</strong> e <strong>Blake</strong> que apareceu na apresentação.</p>
+<p>O ponto mais desafiador foi reconhecer <strong>I am → I'm</strong> e <strong>you are → you're</strong> na fala rápida. Em <strong>I'm Andy</strong>, os sons podem ficar ligados; em <strong>You're not a manager</strong>, a contração e a ligação entre <strong>not</strong> e <strong>a</strong> dificultam perceber cada palavra isoladamente. A escrita continua a mesma: a fala natural pode reduzir sons, mas isso não muda a estrutura nem elimina o sentido negativo. Também comparamos <strong>you're / your</strong> e <strong>they're / their</strong>, que podem soar iguais em muitos sotaques, mas têm funções diferentes.</p>
+<p>Por fim, revisamos <strong>manager</strong> (gerente), <strong>chef</strong> (chef de cozinha) e <strong>boss</strong> (chefe no trabalho). Você avaliou a dificuldade da escuta em <strong>7/10</strong>; César ressaltou que a compreensão melhora com exposição e repetição. O desafio final não pôde ser iniciado por um problema no app e ficou para fazer quando o acesso for liberado, com correção prevista para a próxima aula.</p>
+</div></section><section><h2>💬 Frases usadas em aula</h2><div class="outline-card"><p class="note">Frases do treino e dos diálogos da aula, com a escrita normalizada. Nas profissões, o português pode omitir o artigo que aparece em inglês.</p><ul><li><strong>Do you like coffee?</strong><br>Você gosta de café?</li><li><strong>I like to play.</strong><br>Eu gosto de jogar/brincar.</li><li><strong>I was an engineer.</strong><br>Eu era engenheiro/a.</li><li><strong>What’s your occupation?</strong><br>Qual é a sua profissão?</li><li><strong>I’m a pilot.</strong><br>Eu sou piloto.</li><li><strong>How do you spell that?</strong><br>Como você soletra isso?</li><li><strong>Is Mary a pilot?</strong><br>Mary é piloto?</li><li><strong>Are they musicians?</strong><br>Eles/Elas são músicos/as?</li><li><strong>Yes, they are.</strong><br>Sim, são.</li><li><strong>No, she is not.</strong><br>Não, ela não é.</li><li><strong>I’m Andy.</strong><br>Eu sou Andy.</li><li><strong>You’re not a manager.</strong><br>Você não é gerente.</li><li><strong>You’re a chef.</strong><br>Você é chef de cozinha.</li><li><strong>Excuse me.</strong><br>Com licença. / Desculpe, ao chamar a atenção de alguém.</li></ul></div></section><section><h2>⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3>occupation</h3><button type="button" class="vocab-say" data-czk-say="occupation" aria-label="Ouvir a pronúncia de occupation" aria-pressed="false" title="Ouvir occupation">&#128266;</button></div><p><em>profissão; ocupação</em><br><small>Palavra usada para perguntar o que uma pessoa faz profissionalmente.<br><strong>What’s your occupation?</strong><br>Qual é a sua profissão?</small></p></div><div class="vocab green"><div class="vocab-head"><h3>spell</h3><button type="button" class="vocab-say" data-czk-say="spell" aria-label="Ouvir a pronúncia de spell" aria-pressed="false" title="Ouvir spell">&#128266;</button></div><p><em>soletrar</em><br><small>Dizer, em ordem, as letras de uma palavra ou nome.<br><strong>How do you spell that?</strong><br>Como você soletra isso?</small></p></div><div class="vocab yellow"><div class="vocab-head"><h3>chef</h3><button type="button" class="vocab-say" data-czk-say="chef" aria-label="Ouvir a pronúncia de chef" aria-pressed="false" title="Ouvir chef">&#128266;</button></div><p><em>chef de cozinha</em><br><small>Profissional responsável pela cozinha; não significa qualquer chefe no trabalho.<br><strong>You’re a chef.</strong><br>Você é chef de cozinha.</small></p></div></div></section><section><h2>📚 Vocabulário completo da aula</h2><div class="outline-card"><h3>Profissões e trabalho</h3><ul><li><strong>occupation</strong> — profissão; ocupação</li><li><strong>pilot</strong> — piloto; mesma palavra para homem ou mulher</li><li><strong>doctor</strong> — médico/a</li><li><strong>teacher / English teacher</strong> — professor/a / professor/a de inglês</li><li><strong>engineer</strong> — engenheiro/a</li><li><strong>writer</strong> — escritor/a</li><li><strong>singer</strong> — cantor/a</li><li><strong>musician</strong> — músico/a</li><li><strong>athlete</strong> — atleta</li><li><strong>artist</strong> — artista</li><li><strong>actor</strong> — ator; também usado como termo geral para quem atua</li><li><strong>scientist</strong> — cientista</li><li><strong>manager</strong> — gerente</li><li><strong>chef</strong> — chef de cozinha</li><li><strong>cook</strong> — cozinheiro/a; também é o verbo cozinhar</li><li><strong>boss</strong> — chefe no trabalho</li></ul><h3>Identificação e soletração</h3><ul><li><strong>name / first name</strong> — nome / primeiro nome</li><li><strong>surname / last name</strong> — sobrenome</li><li><strong>spell</strong> — soletrar</li><li><strong>letter / alphabet</strong> — letra / alfabeto</li><li><strong>Mr. / Ms.</strong> — formas de tratamento: Sr. / Sra., sem especificar estado civil em Ms.</li><li><strong>A / E / I / Y</strong> — nomes das letras: /eɪ/ /iː/ /aɪ/ /waɪ/</li><li><strong>B / P</strong> — nomes das letras: /biː/ /piː/</li><li><strong>O / R / W</strong> — nomes das letras no inglês americano: /oʊ/ /ɑr/ /ˈdʌbəljuː/</li></ul><h3>Cumprimentos e expressões</h3><ul><li><strong>good morning / good afternoon</strong> — bom dia / boa tarde</li><li><strong>How are you?</strong> — Como você está?</li><li><strong>This is…</strong> — Este/Esta é…; para apresentar alguém</li><li><strong>Excuse me.</strong> — Com licença. / Desculpe.</li><li><strong>Sorry.</strong> — Desculpe.</li><li><strong>Thank you.</strong> — Obrigado/a.</li><li><strong>That’s right.</strong> — Isso mesmo. / Está correto.</li><li><strong>break</strong> — pausa; intervalo</li><li><strong>Any questions?</strong> — Alguma pergunta?</li></ul><h3>Verbos, contrações e preferências</h3><ul><li><strong>am / is / are</strong> — formas de be: ser/estar</li><li><strong>I’m / you’re / they’re</strong> — I am / you are / they are</li><li><strong>isn’t / aren’t</strong> — is not / are not</li><li><strong>your / their</strong> — seu/sua ou de vocês / deles/delas</li><li><strong>a / an</strong> — um/uma; usados com substantivo contável singular</li><li><strong>like / want / enjoy</strong> — gostar / querer / apreciar ou gostar de</li><li><strong>play</strong> — jogar; brincar; tocar instrumento, conforme o contexto</li><li><strong>was / went / wanted</strong> — era ou estava / foi a algum lugar / quis ou queria, conforme o contexto</li><li><strong>coffee</strong> — café; escrita: C-O-F-F-E-E</li><li><strong>car</strong> — carro; your car = seu carro</li><li><strong>this week / next week</strong> — esta semana / semana que vem</li></ul></div></section><section><h2>🚨 Correções importantes</h2><div class="outline-card"><p class="note">Ajustes feitos no treino e pontos retomados na revisão. Os modelos abaixo organizam as formas trabalhadas; não são citações literais de todas as suas respostas.</p>
+<div class="correction"><p><strong>1. A profissão no plural fica sem a/an</strong></p><p class="wrong">❌ Are they a doctors?</p><p class="right">✅ <strong>Are they doctors?</strong></p><p>No treino com duas pessoas, o artigo estava sobrando. A/an indica uma pessoa ou coisa e não acompanha o plural. Compare: <strong>Is she a doctor?</strong> × <strong>Are they doctors?</strong></p></div>
+<div class="correction"><p><strong>2. Na resposta curta afirmativa, não contraia o to be final</strong></p><p class="wrong">❌ Yes, I'm. / Yes, they're.</p><p class="right">✅ <strong>Yes, I am. / Yes, they are.</strong></p><p>Essa regra foi retomada na correção das atividades. Em respostas curtas afirmativas terminadas em to be, mantenha a forma completa. Nas negativas, pode haver contração: <strong>No, I'm not.</strong> e <strong>No, they aren't.</strong></p></div>
+<div class="correction"><p><strong>3. Diferenciar as letras que você ouve</strong></p><p class="wrong">❌ Identificar P quando a letra soletrada é B; trocar A por E na anotação.</p><p class="right">✅ <strong>B = /biː/, P = /piː/; A = /eɪ/, E = /iː/.</strong></p><p>No exercício dos nomes, você ajustou letras depois de ouvir novamente. Em <strong>Amy</strong>, a sequência é <strong>A-M-Y</strong>. Na dúvida, anote apenas as letras confirmadas e ouça o trecho curto mais uma vez, sem completar pelo som do português.</p></div>
+<div class="correction"><p><strong>4. Não perder a negativa no áudio</strong></p><p class="wrong">❌ Interpretar “You're not a manager” como “Você é gerente”.</p><p class="right">✅ <strong>You're not a manager. = Você não é gerente.</strong></p><p>Na escuta e na repetição, o objetivo foi recuperar <strong>not</strong> mesmo com os sons ligados. Compare a intenção: <strong>You're a manager</strong> afirma; <strong>You're not a manager</strong> nega. A contração you're significa you are nas duas.</p></div>
+<div class="correction"><p><strong>5. O artigo muda a informação</strong></p><p class="wrong">❌ Traduzir “You're not a manager” como “Você não é a gerente”.</p><p class="right">✅ <strong>Você não é gerente. / Você não é uma gerente.</strong></p><p>A frase do vídeo tem <strong>a</strong>, não <strong>the</strong>. A tradução “a gerente” aponta para uma pessoa específica e corresponde a outra informação.</p></div>
+<div class="panel" style="margin-top:16px;"><p><strong>💡 Lembretes de escrita, vocabulário e pronúncia</strong></p><ul><li><strong>Coffee:</strong> C-O-F-F-E-E, com dois f e dois e. Você identificou a dificuldade em uma atividade anterior. Na pronúncia, mantenha a vogal final da palavra; não transforme coffee em cough, que é outra palavra.</li><li><strong>Chef ≠ boss:</strong> chef é chef de cozinha; para chefe no trabalho, use boss. Manager significa gerente. Você reconheceu “chefe de cozinha” ao retomar esse trecho.</li><li><strong>You're ≠ your:</strong> you're = you are; your indica posse, como em your car. Do mesmo modo, they're = they are e their indica posse. A semelhança de som não torna as grafias intercambiáveis.</li><li><strong>Are:</strong> evite acrescentar um “i” no final. Em you're, a palavra faz parte da contração, com pronúncia que varia conforme o sotaque.</li><li><strong>Próxima aula:</strong> a despedida foi para esta semana, não para a semana seguinte. Compare <em>this week</em> e <em>next week</em>.</li></ul></div></div></section><section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/qoly-sdzK7M" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section><section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead><tbody><tr class="row-teacher"><td class="talk-label">César (Professor)</td><td class="talk-percent">79%</td><td class="talk-time">30 min 31 s</td></tr><tr class="row-student"><td class="talk-label">Joyce Rocha</td><td class="talk-percent">21%</td><td class="talk-time">7 min 54 s</td></tr></tbody></table><p class="note" style="margin-top:10px;">Estimativa pelos intervalos de fala da transcrição, incluindo falas em português. Os percentuais consideram apenas professor e aluna. Áudios/vídeo compartilhados, cerca de 7 min 40 s, e pausas ficam fora desse cálculo.</p></section><section><h2>📝 Homework</h2><div class="homework"><p><strong>📌 Para consolidar a Unidade 1</strong></p><ul><li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana.</li><li><strong>Orientação da aula:</strong> faça o desafio quando o acesso no app estiver disponível. Ele não pôde ser aberto nesta aula; César ficou de verificar o problema e avisar. A correção ficou prevista para a próxima aula, na quinta-feira.</li><li>Revise os tópicos anunciados para o desafio: <strong>alfabeto, respostas curtas, to be, profissões e singular/plural</strong>.</li><li><strong>Prática sugerida:</strong> soletre <em>coffee</em>, <em>Amy</em> e seu próprio nome em voz alta. Depois confira as letras sem olhar a resposta durante a primeira tentativa.</li><li><strong>Escuta sugerida:</strong> reveja pequenos trechos da gravação com <em>I'm a pilot</em>, <em>I'm Andy</em> e <em>You're not a manager</em>. Ouça, pause e repita; procure reconhecer a contração em vez de esperar todas as palavras separadas.</li><li>Continue ouvindo vídeos curtos em inglês que despertem seu interesse. Primeiro tente captar a situação geral; depois escolha uma expressão que conseguiu reconhecer.</li></ul><p class="note">Na próxima unidade, o trabalho com possessivos, como your e their, será aprofundado. Nesta aula eles apareceram como uma primeira comparação com as contrações.</p></div></section></main><footer>© 2025 CZK English • czkenglish@gmail.com</footer></article></div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>
