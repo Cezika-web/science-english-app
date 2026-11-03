@@ -1977,6 +1977,16 @@
         </div>
         <div class="field" id="e-hora-por-dia" style="display:none;"><label>Horário de cada dia</label><div class="hora-dias" id="e-hora-dias"></div></div>
         <div class="field"><label>Data de início das aulas</label><input type="date" id="e-inicio" /></div>
+        <div class="field" id="e-grade-field" style="display:none;">
+          <label for="e-grade-desde">A nova grade começa em</label>
+          <input type="date" id="e-grade-desde" />
+          <small style="display:block;margin-top:4px;color:var(--muted);font-size:.72rem;line-height:1.45;">Você mudou os dias da semana. Deixe em branco para valer a partir de hoje, ou escolha o dia em que a nova aula começa (ex.: a 3ª aula da semana só começa dia 10). Até lá, a grade de antes continua na agenda e na presença. A data de início das aulas acima não muda.</small>
+        </div>
+        <div class="field" id="e-trilha-aula-box" style="display:none;">
+          <label id="e-trilha-aula-label">Aula de trilha</label>
+          <div class="dias-week" id="e-trilha-aula-dias"></div>
+          <small id="e-trilha-aula-dica" style="display:block;margin-top:5px;color:var(--muted);font-size:.72rem;line-height:1.45;"></small>
+        </div>
 
         <div id="e-pagto-box" style="display:none;margin-bottom:18px;padding-top:14px;border-top:1px solid var(--border);">
           <div style="font-size:.8rem;font-weight:900;color:#334155;margin-bottom:8px;">💳 Pagamento</div>
@@ -2494,7 +2504,11 @@
       if (previousDays.join(',') === normalizedNext.join(',')) return {};
       const keepToday = adminLessonKeepsToday(previousDays, normalizedNext, nextStart || student?.inicioCurso);
       const effectiveStart = adminLessonEffectiveStart(nextStart || student?.inicioCurso, keepToday);
-      const lastOldDay = adminDateKey(adminAddDays(new Date(), keepToday ? 0 : -1));
+      // Grade nova que começa no futuro: a antiga continua valendo até a véspera dela (senão
+      // ficava um buraco sem grade nenhuma entre hoje e o começo da nova).
+      const lastOldDay = effectiveStart > adminDateKey(new Date())
+        ? adminDateKey(adminAddDays(new Date(`${effectiveStart}T00:00:00`), -1))
+        : adminDateKey(adminAddDays(new Date(), keepToday ? 0 : -1));
       const history = Array.isArray(student?.aulaDiasHistorico) ? [...student.aulaDiasHistorico] : [];
       const previousFrom = String(student?.aulaDiasDesde || student?.inicioCurso || fallbackFrom || '');
       if (previousDays.length && /^\d{4}-\d{2}-\d{2}$/.test(previousFrom) && previousFrom <= lastOldDay) {
@@ -4846,6 +4860,8 @@
       return null;
     }
 
+    // `student.aulaTrilha` (opcional, só vem do "Editar dados"): {diaDaSemana: tipoDeTrilha}. Quando vem, ele manda nas marcas
+    // das aulas novas; quando não vem, vale o que já estava marcado na agenda naquele dia da semana.
     async function syncStudentLessons(students, replace = true) {
       let total = 0;
       for (const student of students) {
@@ -4894,8 +4910,10 @@
             }));
         }
         const trilhaAtiva = calendarTrilhaDoAluno(student.uid);
+        const marcasDoCadastro = student.aulaTrilha && typeof student.aulaTrilha === 'object' ? student.aulaTrilha : null;
         await Promise.all(events.map(event => {
-          const marca = marcasDeTrilha[new Date(`${event.date}T00:00:00`).getDay()];
+          const diaDaSemana = new Date(`${event.date}T00:00:00`).getDay();
+          const marca = marcasDoCadastro ? (marcasDoCadastro[diaDaSemana] || marcasDoCadastro[String(diaDaSemana)]) : marcasDeTrilha[diaDaSemana];
           return addDoc(collection(db,'schools',escolaAtual,'calendarEvents'),
             { ...event, ...(marca && marca === trilhaAtiva ? { trilha:marca } : {}), createdAt:serverTimestamp(), createdBy:auth.currentUser?.email || '', updatedAt:serverTimestamp() });
         }));
@@ -7874,6 +7892,74 @@
     }
     document.getElementById('e-pagto-data').addEventListener('input', editDicaPagamento);
 
+    // ── NOVA GRADE E AULA DE TRILHA NO "EDITAR DADOS" ──────────────────────
+    // O campo da data da nova grade só aparece quando os dias da semana marcados são outros que os do cadastro.
+    function editGradeSync() {
+      const aluno = allStudents.find(item => item.uid === document.getElementById('e-uid').value);
+      const antes = [...adminLessonDays(aluno || {})].sort((a, b) => a - b).join(',');
+      const agora = aulaDiasSelecionados('e-dias-week').join(',');
+      const mudou = Boolean(aluno) && antes !== agora;
+      document.getElementById('e-grade-field').style.display = mudou ? 'block' : 'none';
+      if (!mudou) document.getElementById('e-grade-desde').value = '';
+      return mudou;
+    }
+
+    // Quais aulas da semana são da trilha do aluno (ficam roxas na agenda). Só existe para quem tem trilha ativada e dá aula sozinho.
+    // O que já está marcado vem da própria agenda (as séries do cadastro com `trilha`), que é onde a marca mora.
+    let editTrilhaPronta = false, editTrilhaDias = new Set(), editTrilhaInicial = '';
+    const DIAS_ABREV = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    function editTrilhaRender() {
+      const uid = document.getElementById('e-uid').value, aluno = allStudents.find(item => item.uid === uid);
+      const caixa = document.getElementById('e-trilha-aula-box'), lista = document.getElementById('e-trilha-aula-dias');
+      const dica = document.getElementById('e-trilha-aula-dica'), rotulo = document.getElementById('e-trilha-aula-label');
+      if (!aluno || aluno.groupId || (aluno.plano && aluno.plano.ativo)) { caixa.style.display = 'none'; return; }
+      caixa.style.display = 'block';
+      const tipo = calendarTrilhaDoAluno(uid), T = TRILHAS_ADM[tipo];
+      if (!T) {
+        rotulo.textContent = '🎯 Aula de trilha';
+        lista.innerHTML = '';
+        dica.textContent = 'Para marcar uma aula como de trilha (Entrevista, Business ou Viagem), ative a trilha deste aluno no ⋮ da lista de alunos.';
+        return;
+      }
+      rotulo.textContent = `${T.ic} Qual aula é de ${T.nome.toLowerCase()}?`;
+      const dias = aulaDiasSelecionados('e-dias-week');
+      lista.innerHTML = dias.length
+        ? dias.map(dia => `<label><input type="checkbox" data-d="${dia}"${editTrilhaDias.has(dia) ? ' checked' : ''}>${DIAS_ABREV[dia]}</label>`).join('')
+        : '<span style="font-size:.8rem;color:var(--muted);">Marque os dias da aula acima.</span>';
+      lista.querySelectorAll('input').forEach(caixaDia => caixaDia.onchange = () => {
+        const dia = Number(caixaDia.dataset.d);
+        if (caixaDia.checked) editTrilhaDias.add(dia); else editTrilhaDias.delete(dia);
+      });
+      dica.textContent = 'A aula marcada fica roxa na agenda. Sem marcar nenhuma, todas as aulas são normais.';
+    }
+    async function editTrilhaCarregar(uid) {
+      editTrilhaPronta = false; editTrilhaDias = new Set(); editTrilhaInicial = '';
+      editTrilhaRender();
+      const tipo = calendarTrilhaDoAluno(uid);
+      if (!tipo) return;
+      const hoje = adminDateKey(new Date()), dias = new Set();
+      try {
+        const snap = await getDocs(query(collection(db, 'schools', escolaAtual, 'calendarEvents'), where('studentUid', '==', uid)));
+        snap.docs.forEach(item => {
+          const evento = item.data();
+          if (calendarEhAulaDoCadastro(evento, uid) && evento.trilha === tipo && evento.date && (!evento.repeatUntil || evento.repeatUntil >= hoje))
+            dias.add(new Date(`${evento.date}T00:00:00`).getDay());
+        });
+      } catch (erro) { console.warn('Marcas de trilha:', erro); return; }
+      if (document.getElementById('e-uid').value !== uid) return;   // fechou e abriu outro aluno
+      editTrilhaDias = dias;
+      editTrilhaInicial = [...dias].sort((a, b) => a - b).join(',');
+      editTrilhaPronta = true;
+      editTrilhaRender();
+    }
+    // null = não mexe nas marcas (sem trilha, em grupo, ou ainda não carregou); senão {dia: tipo} dos dias marcados.
+    function editTrilhaLer() {
+      const tipo = calendarTrilhaDoAluno(document.getElementById('e-uid').value);
+      if (!tipo || !editTrilhaPronta || document.getElementById('e-trilha-aula-box').style.display === 'none') return null;
+      return Object.fromEntries(aulaDiasSelecionados('e-dias-week').filter(dia => editTrilhaDias.has(dia)).map(dia => [dia, tipo]));
+    }
+    document.querySelectorAll('#e-dias-week input').forEach(caixa => caixa.addEventListener('change', () => { editGradeSync(); editTrilhaRender(); }));
+
     function openEditStudent(uid) {
       const s = allStudents.find(x => x.uid === uid);
       if (!s) return;
@@ -7886,6 +7972,9 @@
       document.getElementById('e-meta').value  = s.metaAnual || '';
       fillAula('e-dias-week', 'e-hora', [...adminLessonDays(s)], s.aulaHora, s.aulaHorarios, s.aulaFins, s.aulaDuracao);
       document.getElementById('e-inicio').value = s.inicioCurso || '';
+      document.getElementById('e-grade-desde').value = '';
+      editGradeSync();
+      editTrilhaCarregar(uid);
       // No plano Science Lab quem manda é plano.assistente (🧪 Editar plano): aqui só mostra o estado.
       const emPlano = Boolean(s.plano && s.plano.ativo !== false);
       const caixaIA = document.getElementById('e-assistente');
@@ -7941,8 +8030,19 @@
       btn.disabled = true; btn.textContent = 'Salvando...';
       try {
         const cadastroAtual = allStudents.find(student => student.uid === uid);
-        const mudancaDeGrade = adminLessonChangePatch(cadastroAtual, aula.aulaDias, inicio,
+        // Data em que a nova grade (outros dias da semana) começa; vazio = hoje.
+        const gradeDesde = editGradeSync() ? document.getElementById('e-grade-desde').value : '';
+        if (gradeDesde && gradeDesde < adminDateKey(new Date())) {
+          btn.disabled = false; btn.textContent = 'Salvar alterações';
+          showMsg('e-msg', 'A nova grade não pode começar numa data que já passou.', 'err'); return;
+        }
+        const mudancaDeGrade = adminLessonChangePatch(cadastroAtual, aula.aulaDias, gradeDesde || inicio,
           await adminInicioDaGradeAntiga(uid, cadastroAtual, aula.aulaDias));
+        // Grade que já foi marcada para começar mais adiante continua começando lá, mesmo que o salvar de agora mexa só noutra coisa.
+        const gradeGuardada = String(cadastroAtual?.aulaDiasDesde || '');
+        const gradeFutura = gradeGuardada > adminDateKey(new Date()) ? gradeGuardada : '';
+        const marcasDeTrilha = editTrilhaLer();
+        const trilhaMudou = Boolean(marcasDeTrilha) && Object.keys(marcasDeTrilha).map(Number).sort((a, b) => a - b).join(',') !== editTrilhaInicial;
         const novaAgenda = { aulaDias:aula.aulaDias, aulaHora:aula.aulaHora, aulaHorarios:aula.aulaHorarios,
           aulaFins:aula.aulaFins, aulaDuracao:aula.aulaDuracao };
         const agendaMudou = adminLessonScheduleSignature(cadastroAtual) !== adminLessonScheduleSignature(novaAgenda);
@@ -7984,9 +8084,10 @@
         }
         // Mudou dia ou hora aqui, a agenda tem que acompanhar. Antes isso só
         // acontecia no botão "Preencher com as aulas dos alunos", que saiu.
-        if (agendaMudou || inicioMudou || inicioFuturo) {
+        if (agendaMudou || inicioMudou || inicioFuturo || trilhaMudou) {
           await syncStudentLessons([{ uid, name, firstName:name.split(' ')[0], ...novaAgenda,
-            inicioCurso:inicio, aulaDiasDesde:mudancaDeGrade.aulaDiasDesde || adminLessonEffectiveStart(inicio) }]);
+            ...(marcasDeTrilha ? { aulaTrilha:marcasDeTrilha } : {}),
+            inicioCurso:inicio, aulaDiasDesde:mudancaDeGrade.aulaDiasDesde || gradeFutura || adminLessonEffectiveStart(inicio) }]);
         }
         btn.disabled = false; btn.textContent = 'Salvar alterações';
         document.getElementById('edit-modal').classList.remove('open');
