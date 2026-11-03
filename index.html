@@ -262,7 +262,7 @@ async function getFB() {
 // Falha de gravação (regra ainda não publicada, sem rede) nunca aparece para o aluno.
 const CzkUsage = (() => {
   // Versão do app que vai junto com o uso (para saber quem ainda roda versão velha). Mantenha igual ao CACHE do sw.js.
-  const APP_BUILD = 'v60';
+  const APP_BUILD = 'v61';
   const TICK = 1000, MIN_STEP = 200, FLUSH = 60000, NEW_VISIT = 30 * 60000;
   const BLIND_CAP = 10 * 60000, HOLD_CAP = 15 * 60000, MAX_FAILS = 5;
   const READ_MS = 180000;                 // maior pausa aceita na leitura do pós-aula (igual a LEITURA_SEG do adesao.js)
@@ -6451,7 +6451,9 @@ function App() {
       const updated = { ...openActivity, respostas, partsDone: newDone, conclusao, finalizada: allDone,
         ...(completingOralAfterCorrection ? { oralReviewPending:true, oralSubmittedAt:new Date() } : {}) };
       setActivities(prev => prev.map(a => a.id === actId ? updated : a));
-      setOpenActivity(updated);
+      // O envio (sobretudo o áudio) pode demorar: se o aluno já fechou ou abriu OUTRA atividade enquanto isso,
+      // não devolve esta para a frente da tela. Antes, a Parte 1 de uma atividade era gravada em outra.
+      setOpenActivity(cur => (cur && cur.id === actId ? updated : cur));
     } catch(e) { showToast('Erro ao salvar: ' + e.message); return; }
     showToast(allDone ? 'Parte salva! Atividade completa 🎉' : 'Parte salva!');
   }
