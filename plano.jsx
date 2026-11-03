@@ -420,7 +420,7 @@ function PlanoNo({ it, onTarefa, onAula }) {
   </>;
 }
 
-function PlanoCaminho({ cfg, feitas, ativOk, onTarefa, onAula, onComoFunciona }) {
+function PlanoCaminho({ cfg, feitas, ativOk, onTarefa, onAula, onComoFunciona, onGramatica }) {
   const ref = React.useRef(null);
   const L = React.useMemo(() => PlanoLayout(cfg, feitas, ativOk), [cfg, feitas, ativOk]);
   const tarefas = cfg.pacotes.filter(p => !p.futuro).flatMap(p => p.tarefas);
@@ -443,6 +443,7 @@ function PlanoCaminho({ cfg, feitas, ativOk, onTarefa, onAula, onComoFunciona })
       {cfg.unidadesLista && cfg.unidadesLista.length > 1 && <div style={{ display: 'flex', gap: 7, justifyContent: 'center', flexWrap: 'wrap', marginTop: 10 }}>
         {cfg.unidadesLista.map(u => { const on = u.id === cfg.unidade.id; return <button key={u.id} onClick={() => cfg.onUnidade && cfg.onUnidade(u.id)} style={{ border: `1.5px solid ${on ? '#6D28D9' : '#DDD6FE'}`, background: on ? '#6D28D9' : '#fff', color: on ? '#fff' : '#5B21B6', borderRadius: 99, padding: '5px 13px', fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer' }}>Unit {u.n}</button>; })}
       </div>}
+      {onGramatica && <button onClick={onGramatica} style={{ display: 'block', margin: '12px auto 0', background: '#E0F2FE', border: '1.5px solid #7DD3FC', color: '#075985', borderRadius: 99, padding: '7px 17px', fontWeight: 800, fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer' }}>📘 Gramática: todas as explicações</button>}
       <button onClick={onComoFunciona} style={{ display: 'block', margin: '10px auto 0', background: 'none', border: 0, color: '#5B21B6', fontWeight: 800, fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Como funciona o caminho</button>
       <div style={{ position: 'relative', width: '100%', maxWidth: 340, margin: '6px auto 0', height: L.altura }}>
         <svg viewBox={`0 0 340 ${L.altura}`} preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible' }}>
@@ -1258,6 +1259,44 @@ function PlanoAulasLista({ posaulas, onOpenPost }) {
   );
 }
 
+/* ───────── Gramática: todas as explicações das unidades já liberadas, num lugar só (caderno de consulta) ───────── */
+function PlanoGramaticaLista({ cfg, feitas, onAbrir, onClose }) {
+  const [itens, setItens] = React.useState(null); const [erro, setErro] = React.useState(false);
+  React.useEffect(() => {
+    let vivo = true; setItens(null); setErro(false);
+    const un = cfg.unidadesLista || [];
+    Promise.all([PlanoCarregarDoc(cfg.cursoId, ['cursos', cfg.cursoId]), ...un.map(x => PlanoCarregarDoc(`${cfg.cursoId}/${x.id}`, ['cursos', cfg.cursoId, 'unidades', x.id]))])
+      .then(([indice, ...docs]) => {
+        if (!vivo) return;
+        // Cada unidade passa pelo mesmo filtro do Caminho (tarefa tirada, só a explicação tirada, página sem exercícios).
+        setItens(un.map((x, k) => (docs[k] ? { u: x, tarefas: PlanoCfgDoCurso(cfg, indice, { ...docs[k], id: x.id }, cfg.cursoRef, () => {}).pacotes[0].tarefas.filter(t => t.tipo === 'explicacao') } : null)).filter(x => x && x.tarefas.length));
+      }).catch(() => { if (vivo) setErro(true); });
+    return () => { vivo = false; };
+  }, [cfg.cursoId, cfg.unidadesLista]);
+  const msg = (x, cor) => <div style={{ background: '#fff', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: cor || '#64748B' }}>{x}</div>;
+  return (
+    <PlanoCamada titulo="📘 Gramática" sub="Todas as explicações das unidades liberadas" onClose={onClose}>
+      {erro ? msg('Não consegui abrir agora. Confira a internet e tente de novo.', '#B91C1C')
+        : !itens ? msg('Abrindo…')
+        : !itens.length ? msg('Ainda não há explicações nas unidades liberadas.')
+        : <>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#475569', lineHeight: 1.5, margin: '0 2px 4px' }}>Toque numa explicação para estudar de novo, quando quiser: antes da aula ou quando travar numa atividade.</div>
+          {itens.map(({ u: x, tarefas }) => <div key={x.id}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .7, color: '#0369A1', margin: '18px 2px 7px' }}>UNIT {x.n} · {String(x.titulo).toUpperCase()}</div>
+            {tarefas.map(t => <button key={t.id} onClick={() => onAbrir(t)} style={{ display: 'flex', alignItems: 'center', gap: 11, width: '100%', textAlign: 'left', background: '#fff', border: '1px solid #E2E8F0', borderRadius: 16, padding: '11px 13px', marginBottom: 8, fontFamily: 'inherit', cursor: 'pointer' }}>
+              <span style={{ width: 40, height: 40, flexShrink: 0, borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: 20, color: '#fff', background: feitas[t.id] ? 'linear-gradient(150deg,#22C55E,#15803D)' : 'linear-gradient(150deg,#38BDF8,#0284C7)' }}>{feitas[t.id] ? '✓' : '💡'}</span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 14, fontWeight: 800, color: '#0F172A', lineHeight: 1.25 }}>{String(t.titulo).replace(/^Explicação:\s*/, '')}</span>
+                <span style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: '#64748B', marginTop: 2 }}>{t.sub} · livro p. {t.pagina}</span>
+              </span>
+              <span style={{ color: '#94A3B8', fontSize: 18, fontWeight: 800 }}>›</span>
+            </button>)}
+          </div>)}
+        </>}
+    </PlanoCamada>
+  );
+}
+
 /* ───────── o conteúdo do plano (troca o miolo do app) ───────── */
 function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slots, onOpenPost, onAsk, mirror }) {
   const uid = student.uid || 'x';
@@ -1267,6 +1306,7 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
   const [tarefa, setTarefa] = React.useState(null);
   const [aula, setAula] = React.useState(null);
   const [duvida, setDuvida] = React.useState(null);
+  const [gram, setGram] = React.useState(false);   // lista "Gramática" aberta
   const [aviso, setAviso] = React.useState('');
   const nome = student.firstName || String(student.name || '').split(' ')[0] || 'Olá';
   const ativOk = activities.length > 0 && activities.every(a => a.finalizada || a.status === 'corrected');
@@ -1288,7 +1328,7 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
   return (
     <>
       <style>{PLANO_CSS}</style>
-      {tab === 'caminho' && <PlanoCaminho cfg={cfg} feitas={feitas} ativOk={ativOk} onTarefa={abrirTarefa} onAula={setAula} onComoFunciona={() => setBv(true)} />}
+      {tab === 'caminho' && <PlanoCaminho cfg={cfg} feitas={feitas} ativOk={ativOk} onTarefa={abrirTarefa} onAula={setAula} onComoFunciona={() => setBv(true)} onGramatica={cfg.cursoId ? () => setGram(true) : null} />}
       {tab === 'atividades' && slots.atividades}
       {tab === 'aulas' && <PlanoAulasLista posaulas={posaulas} onOpenPost={onOpenPost} />}
       {tab === 'perfil' && <>
@@ -1296,9 +1336,10 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
         {cfg.previa && <div style={{ padding: '0 16px 20px' }}><button className="plano-btn sec" onClick={() => { zerar(); try { localStorage.removeItem(chaveBV); } catch (e) {} setBv(true); }}>↺ Reiniciar a prévia do plano</button></div>}
       </>}
 
-      {!tarefa && !aula && !duvida && tab !== 'perfil' &&
+      {!tarefa && !aula && !duvida && !gram && tab !== 'perfil' &&
         <button onClick={() => (mirror ? avisarEspelho() : setDuvida({ contexto: '' }))} aria-label="Perguntar ao Dr. EurekIA" style={{ position: 'fixed', bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))', right: 'max(16px, calc(50vw - 224px))', zIndex: 300, width: 54, height: 54, borderRadius: '50%', border: 0, padding: 0, background: 'none', boxShadow: '0 10px 24px rgba(109,40,217,.4)', cursor: 'pointer' }}><EurekiaAvatar size={54} /></button>}
 
+      {gram && <PlanoGramaticaLista cfg={cfg} feitas={feitas} onAbrir={setTarefa} onClose={() => setGram(false)} />}
       {tarefa && tarefa.tipo === 'livro' && (tarefa.pdf
         ? <PlanoTarefaPagina t={tarefa} cursoId={cfg.cursoId} onFeita={f} onClose={fechar} onAsk={perguntar} />
         : <PlanoTarefaLivro t={tarefa} unidade={u} onFeita={f} onClose={fechar} onAsk={perguntar} />)}
