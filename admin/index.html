@@ -2274,7 +2274,7 @@
         <div class="field"><label for="finance-profile-student">Aluno</label><select id="finance-profile-student"><option value="">Selecione</option></select></div>
         <div class="field"><label for="finance-profile-cycle">Como esse aluno paga</label><select id="finance-profile-cycle"><option value="monthly">Uma vez por mês</option><option value="biweekly">Quinzenal — duas vezes por mês</option><option value="annual">Anual — paga o ano inteiro de uma vez</option></select></div>
         <div class="calendar-form-grid">
-          <div class="field"><label for="finance-profile-amount" id="finance-profile-amount-label">Valor mensal (R$)</label><input id="finance-profile-amount" type="number" min="0" step="0.01" placeholder="350,00"></div>
+          <div class="field"><label for="finance-profile-amount" id="finance-profile-amount-label">Valor mensal (R$)</label><input id="finance-profile-amount" type="number" min="0" step="0.01" placeholder="350,00"><small id="finance-profile-valor-dica" style="display:block;margin-top:4px;color:#64748b;font-size:.7rem;line-height:1.4;"></small></div>
           <div class="field"><label for="finance-profile-due" id="finance-profile-due-label">Data do pagamento</label><input id="finance-profile-due" type="date"><small id="finance-profile-due-dica" style="display:block;margin-top:4px;color:#64748b;font-size:.7rem;line-height:1.4;"></small></div>
         </div>
         <div class="field" id="finance-profile-due2-field" style="display:none;margin-top:14px;"><label for="finance-profile-due2">Vencimento da 2ª quinzena</label><input id="finance-profile-due2" type="number" min="1" max="31" placeholder="20"></div>
@@ -5199,6 +5199,39 @@
       return `${month}-${String(Math.min(ultimo,Math.max(1,dia))).padStart(2,'0')}`;
     }
 
+    // ── VALOR DA MENSALIDADE ───────────────────────────────────────────────
+    // O valor também muda com o tempo (a Rebeca passou de 2 para 3 aulas por
+    // semana) e o que já passou não pode mudar junto. O cadastro financeiro guarda
+    // só o valor de agora em `monthlyCents` e, em `valoresAnteriores:
+    // [{ate:'AAAA-MM', cents}]`, os valores que já foram trocados (valiam até esse
+    // mês, inclusive). Quem mexe só em monthlyCents continua mexendo só no período
+    // atual. Sem lista (cadastros antigos) vale monthlyCents em todos os meses.
+    function financeMensalidadeDoMes(profile,month) {
+      if(profile.cycle==='annual') return Number(profile.monthlyCents||0);
+      const lista=(Array.isArray(profile.valoresAnteriores)?profile.valoresAnteriores:[]).filter(item=>item&&item.ate&&Number(item.cents)>0)
+        .sort((a,b)=>String(a.ate).localeCompare(String(b.ate)));
+      const vigente=lista.find(item=>month<=item.ate);
+      return Number(vigente?vigente.cents:profile.monthlyCents||0);
+    }
+
+    // Novo valor mensal, valendo do mês `desde` (AAAA-MM) em diante. Devolve o que
+    // gravar além do monthlyCents, ou null se nada muda. O valor de antes fica
+    // guardado até o mês anterior ao da mudança. Mexer de novo no mesmo mês da
+    // última mudança é só corrigir o valor de agora: não cria período novo.
+    function financePatchMensalidade(profile,novoCents,desde) {
+      if(!profile||!(novoCents>0)||!(Number(profile.monthlyCents)>0)) return null;
+      // Vinha do anual: o valor de antes era um equivalente mensal, não histórico.
+      if(profile.cycle==='annual') return {valoresAnteriores:[]};
+      if(Number(profile.monthlyCents)===novoCents) return null;
+      const lista=(Array.isArray(profile.valoresAnteriores)?profile.valoresAnteriores:[]).filter(item=>item&&item.ate&&Number(item.cents)>0)
+        .map(item=>({ate:String(item.ate),cents:Number(item.cents)})).sort((a,b)=>a.ate.localeCompare(b.ate));
+      const chaveMes=indice=>`${Math.floor(indice/12)}-${String(indice%12+1).padStart(2,'0')}`;
+      const periodoAtualComecaEm=lista.length?chaveMes(financeMonthIndex(lista[lista.length-1].ate)+1):'';
+      if(periodoAtualComecaEm&&desde<=periodoAtualComecaEm) return {valoresAnteriores:lista};
+      lista.push({ate:chaveMes(financeMonthIndex(desde)-1),cents:Number(profile.monthlyCents)});
+      return {valoresAnteriores:lista};
+    }
+
     // Quem paga quinzenal tem duas etapas dentro do mês (part 1 e 2). Quem paga
     // mensal tem uma só (part 0), que aceita qualquer mensalidade daquele mês.
     function financeProfilePartsBase(profile,month) {
@@ -5206,7 +5239,7 @@
       if(profile.cycle!=='annual'&&financeBeforeStart(profile,month)) return [];
       const venc=financeVencimentoDoMes(profile,month);
       if(profile.cycle!=='annual'&&venc.antes) return [];
-      const total=Number(profile.monthlyCents||0);
+      const total=financeMensalidadeDoMes(profile,month);
       const {year,monthNumber}=financeMonthBounds(month),lastDay=new Date(year,monthNumber,0).getDate();
       const dayKey=day=>`${month}-${String(Math.min(lastDay,Math.max(1,Number(day)||1))).padStart(2,'0')}`;
       if(profile.cycle==='annual') {
@@ -5547,11 +5580,12 @@
       const linhaAluno=(student,profile,ex)=> {
         const method={pix:'PIX',card:'Cartão',cash:'Dinheiro',transfer:'Transferência',other:'Outro'}[profile.paymentMethod]||'';
         const parts=financeProfileParts(profile,month),biweekly=profile.cycle==='biweekly',anual=profile.cycle==='annual';
+        const valorMes=financeMensalidadeDoMes(profile,month);
         const valueCell=anual
           ? `<strong>${financeMoney(profile.annualCents||0)}</strong><small style="color:#94a3b8"> /ano</small><br><small style="color:#94a3b8">≈ ${financeMoney(profile.monthlyCents)}/mês</small>`
           : biweekly
-            ? `<strong>${financeMoney(profile.monthlyCents)}</strong><br><small style="color:#94a3b8">2× ${financeMoney(Math.round(profile.monthlyCents/2))}</small>`
-            : `<strong>${financeMoney(profile.monthlyCents)}</strong>`;
+            ? `<strong>${financeMoney(valorMes)}</strong><br><small style="color:#94a3b8">2× ${financeMoney(Math.round(valorMes/2))}</small>`
+            : `<strong>${financeMoney(valorMes)}</strong>`;
         const dueCell=anual
           ? `${(profile.annualMonth?new Date(`${profile.annualMonth}-01T00:00:00`).toLocaleDateString('pt-BR',{month:'long'}):'—')}<br><small style="color:#94a3b8">dia ${Number(profile.dueDay||10)}</small>`
           : parts.map(part=>`Dia ${Number(part.dueKey.slice(-2))}`).join('<br>')||'—';
@@ -5603,7 +5637,7 @@
           &&!financeIsPlanned(tx)&&financeCountsInMonth(tx,month)).reduce((sum,tx)=>sum+Number(tx.amountCents||0),0);
         if(recebido<=0) return '';
         const anual=profile?.cycle==='annual',quinzenal=profile?.cycle==='biweekly';
-        const esperado=profile?Number(anual?profile.annualCents||0:profile.monthlyCents||0):0;
+        const esperado=profile?Number(anual?profile.annualCents||0:financeMensalidadeDoMes(profile,month)):0;
         const nota=esperado>0&&recebido<esperado
           ? (Math.abs(recebido*2-esperado)<=1?(anual?'só pagou metade do ano':'só pagou meia mensalidade'):`pagou parcial · ${financeMoney(recebido)} de ${financeMoney(esperado)}`)
           : '';
@@ -5759,6 +5793,14 @@
       document.getElementById('finance-profile-annual-field').style.display=annual?'block':'none';
       const hint=document.getElementById('finance-profile-hint'),valor=Number(document.getElementById('finance-profile-amount').value)||0;
       hint.style.display=biweekly||annual?'block':'none';
+      // Valor novo vale do mês de hoje em diante; o passado não muda.
+      const perfilDoValor=financeProfiles.find(item=>item.studentUid===document.getElementById('finance-profile-student').value);
+      const mesDaMudanca=financeTodayKey().slice(0,7),mudanca=annual?null:financePatchMensalidade(perfilDoValor,Math.round(valor*100),mesDaMudanca);
+      const mesTexto=mes=>new Date(Number(mes.slice(0,4)),Number(mes.slice(5,7))-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+      const novoPeriodo=mudanca&&mudanca.valoresAnteriores.length>(perfilDoValor.valoresAnteriores||[]).length?mudanca.valoresAnteriores[mudanca.valoresAnteriores.length-1]:null;
+      document.getElementById('finance-profile-valor-dica').textContent=novoPeriodo
+        ?`Vale a partir de ${mesTexto(mesDaMudanca)}. Até ${mesTexto(novoPeriodo.ate)} continua ${financeMoney(novoPeriodo.cents)}.`
+        :mudanca&&mudanca.valoresAnteriores.length?'Corrige o valor que já está valendo; os meses anteriores não mudam.':'';
       if(biweekly) hint.textContent=valor
         ? `O mês fica com duas etapas de ${financeMoney(Math.round(valor*100/2))} cada. Você dá o "ok" em uma quinzena por vez.`
         : 'O mês fica com duas etapas de metade do valor cada. Você dá o "ok" em uma quinzena por vez.';
@@ -5794,9 +5836,11 @@
       // Data do pagamento mudou: entra na lista de vencimentos (vale dali em diante).
       const perfilAtual=financeProfiles.find(item=>item.studentUid===uid);
       const vencPatch=cycle==='annual'||!perfilAtual?null:financePatchVencimento(perfilAtual,dataPag,dueDay2,cycle);
+      // Valor mensal mudou: vale do mês de hoje em diante; os meses que já passaram ficam como estavam.
+      const valorPatch=cycle==='annual'?null:financePatchMensalidade(perfilAtual,monthlyCents,financeTodayKey().slice(0,7));
       const button=document.getElementById('finance-profile-save'); button.disabled=true;
       try {
-        await setDoc(doc(db,'schools',escolaAtual,'financeStudents',uid),{studentUid:uid,studentName:student.name||student.firstName||'',monthlyCents,annualCents,annualMonth:cycle==='annual'?annualMonth:null,...(vencPatch||{dueDay,dueDay2:cycle==='biweekly'?dueDay2:null}),cycle,paymentMethod:document.getElementById('finance-profile-method').value,active:document.getElementById('finance-profile-active').checked,avisarAtraso:document.getElementById('finance-profile-notify').checked,updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.email||''},{merge:true});
+        await setDoc(doc(db,'schools',escolaAtual,'financeStudents',uid),{studentUid:uid,studentName:student.name||student.firstName||'',monthlyCents,annualCents,annualMonth:cycle==='annual'?annualMonth:null,...(vencPatch||{dueDay,dueDay2:cycle==='biweekly'?dueDay2:null}),...(valorPatch||{}),cycle,paymentMethod:document.getElementById('finance-profile-method').value,active:document.getElementById('finance-profile-active').checked,avisarAtraso:document.getElementById('finance-profile-notify').checked,updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.email||''},{merge:true});
         if(ajusteAnual) await Promise.all(ajusteAnual.map(tx=>setDoc(doc(db,'schools',escolaAtual,'financeTransactions',tx.id),{amountCents:annualCents,updatedAt:serverTimestamp()},{merge:true})));
         document.getElementById('finance-profile-modal').classList.remove('open'); await loadFinance();
       } catch(error) { showMsg('finance-profile-msg',`Erro ao salvar: ${error.message}`,'err'); } finally { button.disabled=false; }
@@ -11544,11 +11588,17 @@ Salvar assim mesmo?`)) return;
           }
         }
         if (total) {
-          await Promise.all(members.map(student => setDoc(doc(db, 'schools', escolaAtual, 'financeStudents', student.uid), {
-            studentUid:student.uid, studentName:student.name || student.firstName || '',
-            monthlyCents:partes.get(student.uid) || 0, active:true, groupId, groupName:name,
-            updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || '',
-          }, { merge:true })));
+          await Promise.all(members.map(async student => {
+            const refFinanceiro = doc(db, 'schools', escolaAtual, 'financeStudents', student.uid);
+            // O valor do rateio vale do mês de hoje em diante; o histórico guarda o de antes.
+            const atual = await getDoc(refFinanceiro);
+            const valorPatch = atual.exists() ? financePatchMensalidade(atual.data(), partes.get(student.uid) || 0, financeTodayKey().slice(0, 7)) : null;
+            await setDoc(refFinanceiro, {
+              studentUid:student.uid, studentName:student.name || student.firstName || '',
+              monthlyCents:partes.get(student.uid) || 0, active:true, groupId, groupName:name,
+              updatedAt:serverTimestamp(), updatedBy:auth.currentUser?.email || '', ...(valorPatch || {}),
+            }, { merge:true });
+          }));
           noFinanceiro = members.length;
         }
         resetGroupForm();
