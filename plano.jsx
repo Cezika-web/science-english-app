@@ -915,6 +915,7 @@ function PlanoAudiosPagina({ audios }) {
           {audios.map((x, i) => { const on = tocando === i; return <button key={x.caminho} onClick={() => tocar(i)} disabled={!urls[x.caminho]} style={{ flex: 1, borderRadius: 11, padding: '6px 2px', fontWeight: 800, fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer', border: `2px solid ${on || sel === i ? '#6D28D9' : '#DDD6FE'}`, background: on ? '#6D28D9' : '#fff', color: on ? '#fff' : '#5B21B6', opacity: urls[x.caminho] ? 1 : .55 }}>
             {on ? '⏸' : '▶'} {audios.length > 1 ? `Áudio ${i + 1}` : 'Ouvir'}<br /><span style={{ fontWeight: 700, fontSize: 11, opacity: .85 }}>{x.dur ? PlanoTempo(x.dur) : ' '}</span></button>; })}
         </div>
+        {a && a.titulo && <div style={{ marginTop: 7, fontSize: 13, fontWeight: 800, color: '#0F172A' }}>🎧 {audios.length > 1 ? `Áudio ${sel + 1}: ` : ''}{a.titulo}</div>}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 11.5, fontWeight: 800, color: '#5B21B6' }}>
           <span>{PlanoTempo(pos)}</span>
           <div onClick={ir} style={{ flex: 1, height: 14, display: 'flex', alignItems: 'center', cursor: 'pointer' }}><div style={{ width: '100%', height: 7, borderRadius: 9, background: '#EDE9FE', overflow: 'hidden' }}><div style={{ width: `${total ? Math.min(100, pos / total * 100) : 0}%`, height: '100%', background: '#7C3AED' }} /></div></div>

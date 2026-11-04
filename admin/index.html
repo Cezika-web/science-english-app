@@ -8635,7 +8635,7 @@
     }
     function crChipAudio(a, acao) {
       return `<span class="cr-aud"><button type="button" class="cr-aud-play" data-cr-play="${esc(a.caminho)}" title="ouvir">▶</button>
-        <span class="cr-aud-nome" title="${esc(a.nome)}">${esc(a.nome)}</span>${a.dur ? `<span class="cr-aud-dur">${crTempo(a.dur)}</span>` : ''}${acao || ''}</span>`;
+        <span class="cr-aud-nome" title="${esc(a.nome)}${a.titulo ? ' — ' + esc(a.titulo) : ''}">${esc(a.titulo || a.nome)}</span>${a.dur ? `<span class="cr-aud-dur">${crTempo(a.dur)}</span>` : ''}${acao || ''}</span>`;
     }
     function crLinhaVideo(uid, v, aviso) {
       return `<div class="cr-vid">🎬 <span class="cr-vid-rot">${esc(v.titulo)}${crEhVideoFinal(v) ? ' <em>· resumo da aluna, nunca tem texto do que é dito</em>' : ' <em>· a aluna escreve o que entendeu; depois o texto do vídeo é liberado</em>'}</span>
