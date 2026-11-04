@@ -1087,9 +1087,79 @@ function PlanoExercicio({ ex, onFim }) {
   );
 }
 
+/* ───────── Prévia do Dr. EurekIA ao abrir a página do livro ─────────
+ * Campo opcional `previa` da tarefa "livro" (cursos/connectivity-1/unidades/uNN, tarefas[]), gravado no banco pelo professor:
+ *   { topicos: ['2 a 5 itens curtos, em português, com termos em inglês'], fazer: 'o que a aluna deve fazer (1 a 3 frases)', intro: 'abertura, 1 frase (opcional)' }
+ * Sem `previa` (ou sem tópicos e sem "fazer") nada aparece e nada muda. Com ela: um cartão com o Dr. EurekIA na 1ª vez que a aluna
+ * abre a tarefa, e o botão "💡 Prévia" no topo da página para rever. O texto também vai para a IA (PlanoPreviaTexto) como o
+ * objetivo da página. O texto do professor aceita **negrito** e *itálico* (PlanoMd). */
+const PLANO_PERGUNTA_PREVIA = 'O que eu vou aprender nesta página?';
+const PLANO_PREVIA_IA_MAX = 700;   // o servidor corta no mesmo tamanho (PREVIA_MAX em functions/assistente.js)
+function PlanoPreviaNormaliza(p) {
+  if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
+  const txt = x => (typeof x === 'string' ? x.replace(/\s+/g, ' ').trim() : '');
+  const topicos = (Array.isArray(p.topicos) ? p.topicos : []).map(txt).filter(Boolean).slice(0, 6);
+  const fazer = txt(p.fazer);
+  return topicos.length || fazer ? { intro: txt(p.intro), topicos, fazer } : null;
+}
+// A prévia como UMA string para a IA (intro + tópicos + o que fazer), no máximo 700 caracteres. A intro é só abertura: se o
+// total estourar, ela sai primeiro. '' quando a tarefa não tem prévia (aí o servidor não muda nada).
+function PlanoPreviaTexto(t) {
+  const p = t ? PlanoPreviaNormaliza(t.previa) : null; if (!p) return '';
+  const ponto = s => (/[.!?…:;]$/.test(s) ? s : s + '.');
+  const pag = Number.isFinite(t.pdf) ? `Connectivity 1, página ${t.pdf - 14} do livro. ` : '';
+  const intro = p.intro ? ponto(p.intro) + ' ' : '';
+  const resto = (p.topicos.length ? `Tópicos da página: ${p.topicos.map(x => x.replace(/[.;]+$/, '')).join('; ')}. ` : '') + (p.fazer ? `O que fazer: ${ponto(p.fazer)}` : '');
+  const com = (pag + intro + resto).replace(/\*/g, '');
+  return PlanoCorta(com.length <= PLANO_PREVIA_IA_MAX ? com : (pag + resto).replace(/\*/g, ''), PLANO_PREVIA_IA_MAX);
+}
+function PlanoPreviaFolha({ previa, onEntendi, onPerguntar }) {
+  const rotulo = { fontSize: 11, fontWeight: 800, letterSpacing: .7, color: '#6D28D9', margin: '0 2px 6px' };
+  return (
+    <div role="dialog" aria-modal="true" aria-label="Prévia da página, com o Dr. EurekIA" style={{ position: 'absolute', inset: 0, zIndex: 20, background: 'rgba(15,23,42,.64)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
+      <div style={{ width: '100%', maxWidth: 410, maxHeight: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff', borderRadius: 26, boxShadow: '0 24px 60px rgba(0,0,0,.4)', animation: 'planoSurge .25s' }}>
+        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: 'linear-gradient(150deg,#7C3AED,#4C1D95)', color: '#fff' }}>
+          <EurekiaAvatar size={64} />
+          <div><div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .7, opacity: .8 }}>ANTES DE COMEÇAR</div><div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.15 }}>Dr. EurekIA</div></div>
+        </div>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 18px 6px' }}>
+          {previa.intro && <div style={{ fontSize: 14.5, fontWeight: 700, lineHeight: 1.5, color: '#0F172A', margin: '0 0 12px' }}><PlanoMd x={previa.intro} /></div>}
+          {previa.topicos.length > 0 && <>
+            <div style={rotulo}>NESTA PÁGINA</div>
+            <div style={{ display: 'grid', gap: 7, margin: '0 0 12px' }}>
+              {previa.topicos.map((x, i) => <div key={i} style={{ display: 'flex', gap: 9, alignItems: 'flex-start', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 14, padding: '9px 12px', fontSize: 13.5, fontWeight: 600, lineHeight: 1.45, color: '#334155' }}>
+                <span style={{ color: '#7C3AED', fontWeight: 800 }}>•</span><span style={{ minWidth: 0, overflowWrap: 'anywhere' }}><PlanoMd x={x} /></span></div>)}
+            </div>
+          </>}
+          {previa.fazer && <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 14, padding: '10px 12px', margin: '0 0 12px' }}>
+            <div style={{ ...rotulo, margin: '0 0 3px' }}>O QUE FAZER</div>
+            <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.5, color: '#3B0764' }}><PlanoMd x={previa.fazer} /></div>
+          </div>}
+          <div style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, color: '#5B21B6', margin: '0 2px 8px' }}>Qualquer dúvida é só falar comigo. 🙂</div>
+        </div>
+        <div style={{ flexShrink: 0, padding: '10px 18px calc(18px + env(safe-area-inset-bottom, 0px))' }}>
+          <button className="plano-btn violeta" onClick={onEntendi}>Entendi, vamos lá</button>
+          {onPerguntar && <button className="plano-btn sec" style={{ marginTop: 8 }} onClick={onPerguntar}>💬 Perguntar ao Dr. EurekIA</button>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Tarefa "Livro": a página do livro em cima, os exercícios dela numa gaveta embaixo.
 // `abrirEm` (só a prévia do painel): já abre a gaveta neste exercício, em vez de começar com ela fechada.
-function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm }) {
+// `uid` + `semGravar`: a prévia do Dr. EurekIA aparece na 1ª abertura de cada tarefa por aluna (localStorage); com `semGravar`
+// (prévia do painel e espelho) ela aparece sempre e nada é gravado.
+function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, semGravar }) {
+  const prev = React.useMemo(() => PlanoPreviaNormaliza(t.previa), [t.previa]);
+  const chavePrev = `plano-previa-v1-${uid || 'x'}-${t.id}`;
+  const [verPrev, setVerPrev] = React.useState(() => {
+    if (!prev || abrirEm !== undefined) return false;   // abrirEm: o professor foi direto a um exercício, a prévia só atrapalharia
+    if (semGravar) return true;
+    try { return !localStorage.getItem(chavePrev); } catch (e) { return true; }
+  });
+  const fecharPrev = () => { if (!semGravar) { try { localStorage.setItem(chavePrev, '1'); } catch (e) {} } setVerPrev(false); };
+  const perguntarPrev = () => { fecharPrev(); if (onAsk) onAsk(PLANO_PERGUNTA_PREVIA); };
   const exs = t.exercicios || []; const total = exs.length;
   const [pdf, setPdf] = React.useState(t.pdf); const [i, setI] = React.useState(abrirEm >= 0 && abrirEm < total ? abrirEm : 0); const [res, setRes] = React.useState([]);
   const [aberta, setAberta] = React.useState(abrirEm >= 0 && abrirEm < total); const [respondeu, setRespondeu] = React.useState(false);
@@ -1108,7 +1178,8 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm }) {
           </div>
           <button style={btn} aria-label="Página anterior" disabled={pdf <= 15} onClick={() => setPdf(p => p - 1)}>‹</button>
           <button style={btn} aria-label="Próxima página" disabled={pdf >= 177} onClick={() => setPdf(p => p + 1)}>›</button>
-          {onAsk && <button onClick={onAsk} aria-label="Dr. EurekIA" style={{ ...btn, width: 'auto', padding: '0 9px', fontSize: 15 }}>💡</button>}
+          {prev && pdf === t.pdf && <button onClick={() => setVerPrev(true)} aria-label="Rever a prévia desta página" style={{ ...btn, width: 'auto', padding: '0 8px', fontSize: 12, whiteSpace: 'nowrap' }}>💡 Prévia</button>}
+          {onAsk && <button onClick={() => onAsk()} aria-label="Dr. EurekIA" style={{ ...btn, width: 'auto', padding: '0 9px', fontSize: 15 }}>💡</button>}
         </div>
         {(t.audios || []).length > 0 && pdf === t.pdf && <PlanoAudiosPagina audios={t.audios} />}
         <PlanoLeitor curso={cursoId} pdf={pdf} cobrir={pdf === t.pdf ? t.cobrir : null} />
@@ -1138,6 +1209,7 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm }) {
             </div>}
           </div>}
       </div>
+      {prev && verPrev && <PlanoPreviaFolha previa={prev} onEntendi={fecharPrev} onPerguntar={onAsk ? perguntarPrev : null} />}
     </div>
   );
 }
@@ -1323,7 +1395,8 @@ function PlanoPerguntaDoExercicio(texto, ex) {
 
 // `sugestao`: pergunta já escrita no campo (a da apresentação do Dr. EurekIA, "Experimentar agora").
 // `exercicio`: {enunciado, item} da bolinha de um exercício; vai junto na 1ª pergunta e aparece num cartão acima da conversa.
-function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose, z, sugestao, exercicio }) {
+// `previa`: a prévia da página do livro como texto (PlanoPreviaTexto); vai junto em TODAS as perguntas, para a IA saber o objetivo da página.
+function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose, z, sugestao, exercicio, previa }) {
   const [texto, setTexto] = React.useState(sugestao || ''); const [msgs, setMsgs] = React.useState([]); const [pensando, setPensando] = React.useState(false);
   const fimRef = React.useRef(null);
   const semIA = cfg.assistente === false;   // o professor desligou o assistente deste aluno (janela do plano no painel)
@@ -1339,7 +1412,7 @@ function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose, z, sugestao, e
       else {
         // A conversa segue: manda a última pergunta e resposta para a IA entender um "e no passado?".
         const ultimaIA = [...msgs].reverse().find(m => m.de === 'ia' && !m.erro);
-        r = await onAsk(enviada, contexto, ultima && ultimaIA ? { pergunta: ultima.enviada || ultima.x, resposta: ultimaIA.x } : null);
+        r = await onAsk(enviada, contexto, ultima && ultimaIA ? { pergunta: ultima.enviada || ultima.x, resposta: ultimaIA.x } : null, previa || '');
       }
       // O servidor conta as perguntas do mês e a aluna não vê contador: só este aviso ao chegar no limite.
       if (r && r.limite) setMsgs(m => [...m, { de: 'ia', x: 'Suas perguntas chegaram ao limite mensal. Se precisar, fale com o César pelo WhatsApp.', erro: true }]);
@@ -1358,7 +1431,7 @@ function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose, z, sugestao, e
       <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 16, padding: 10, minHeight: 110, maxHeight: 280, overflowY: 'auto' }}>
         {exercicio && <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 12, padding: '9px 11px', margin: '0 0 8px', fontSize: 12.5, lineHeight: 1.45, color: '#4C1D95', fontWeight: 600, overflowWrap: 'anywhere' }}><div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .4, textTransform: 'uppercase', color: '#6D28D9', marginBottom: 2 }}>Exercício</div>{exercicio.enunciado && exercicio.item !== exercicio.enunciado && <div style={{ color: '#64748B', marginBottom: 3 }}>{PlanoCorta(exercicio.enunciado, 160)}</div>}<div>{PlanoCorta(exercicio.item, 220)}</div></div>}
         {msgs.length === 0 && exercicio && <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B', padding: 6 }}>A pergunta já está escrita: toque em <b>Enviar</b> e o Dr. EurekIA explica o que o exercício pede, <b>sem entregar a resposta</b>.</div>}
-        {msgs.length === 0 && sugestao && !exercicio && <div style={{ fontSize: 13, fontWeight: 700, color: '#5B21B6', background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 12, padding: '9px 11px', margin: '0 0 8px', lineHeight: 1.45 }}>💡 Que tal começar por aqui? A pergunta já está escrita: toque em <b>Enviar</b> e veja o que o Dr. EurekIA sabe sobre os seus estudos.</div>}
+        {msgs.length === 0 && sugestao && !exercicio && <div style={{ fontSize: 13, fontWeight: 700, color: '#5B21B6', background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 12, padding: '9px 11px', margin: '0 0 8px', lineHeight: 1.45 }}>{previa ? <>💡 A pergunta já está escrita: toque em <b>Enviar</b> e o Dr. EurekIA explica o que você vai aprender nesta página.</> : <>💡 Que tal começar por aqui? A pergunta já está escrita: toque em <b>Enviar</b> e veja o que o Dr. EurekIA sabe sobre os seus estudos.</>}</div>}
         {msgs.length === 0 && !exercicio && <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B', padding: 6 }}>Escreva a sua dúvida de inglês abaixo. O assistente olha as suas últimas aulas e atividades para explicar, em português, com exemplos em inglês. Se precisar do César, toque em WhatsApp.</div>}
         {msgs.map((m, i) => <div key={i} style={{ display: 'flex', justifyContent: m.de === 'eu' ? 'flex-end' : 'flex-start', margin: '6px 0' }}><div style={{ maxWidth: '86%', padding: '9px 12px', borderRadius: 14, fontSize: 13.5, fontWeight: 600, lineHeight: 1.5, whiteSpace: 'pre-wrap', background: m.de === 'eu' ? '#7C3AED' : m.erro ? '#FEF2F2' : '#fff', color: m.de === 'eu' ? '#fff' : '#0F172A', border: m.de === 'eu' ? 0 : '1px solid #E2E8F0' }}>{m.de === 'ia' ? <PlanoMd x={m.x} /> : m.x}</div></div>)}
         {pensando && <div style={{ fontSize: 13, fontWeight: 700, color: '#64748B', padding: 6 }}>O Dr. EurekIA está pensando…</div>}
@@ -1478,7 +1551,9 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
   const fechar = () => setTarefa(null);
   // No espelho (o professor olhando o app do aluno) a EurekIA aparece, mas só avisa: a pergunta iria para a conta do professor.
   const avisarEspelho = () => avisar('👁 Modo espelho — somente leitura');
-  const perguntar = () => { if (mirror) { avisarEspelho(); return; } setDuvida({ contexto: tarefa ? tarefa.titulo : '' }); };
+  // `sugestao`: pergunta já escrita (a da prévia da página). O texto da prévia da tarefa aberta vai SEMPRE junto, pelo botão que for
+  // (o 💡 do cabeçalho também), para a IA saber em que página ela está. O typeof protege dos botões que passam o clique (onClick={onAsk}).
+  const perguntar = sugestao => { if (mirror) { avisarEspelho(); return; } setDuvida({ contexto: tarefa ? tarefa.titulo : '', previa: PlanoPreviaTexto(tarefa), sugestao: typeof sugestao === 'string' ? sugestao : '' }); };
   const f = () => concluir(tarefa.id);
   const enviarResumo = texto => { marcar('resumo:' + tarefa.id, { texto, em: new Date().toISOString() }); if (PlanoVideoFinal(tarefa)) concluir(tarefa.id); };   // vídeo com texto: só grava a resposta e libera o texto; ela conclui depois
 
@@ -1498,7 +1573,7 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
 
       {gram && <PlanoGramaticaLista cfg={cfg} feitas={feitas} onAbrir={setTarefa} onClose={() => setGram(false)} />}
       {tarefa && tarefa.tipo === 'livro' && (tarefa.pdf
-        ? <PlanoTarefaPagina t={tarefa} cursoId={cfg.cursoId} onFeita={f} onClose={fechar} onAsk={perguntar} />
+        ? <PlanoTarefaPagina t={tarefa} cursoId={cfg.cursoId} uid={uid} semGravar={!!(cfg.previa || mirror)} onFeita={f} onClose={fechar} onAsk={perguntar} />
         : <PlanoTarefaLivro t={tarefa} unidade={u} onFeita={f} onClose={fechar} onAsk={perguntar} />)}
       {tarefa && tarefa.tipo === 'explicacao' && <PlanoTarefaExplicacao t={tarefa} cursoId={cfg.cursoId} onFeita={f} onClose={fechar} onAsk={perguntar} />}
       {tarefa && tarefa.tipo === 'revisao' && <PlanoCamada titulo={tarefa.titulo} sub={tarefa.sub} onClose={fechar}><div style={{ background: '#fff', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: '#64748B' }}>📝 Esta revisão ainda está sendo montada.</div></PlanoCamada>}
@@ -1510,7 +1585,7 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
       {tarefa && tarefa.tipo === 'extra' && <PlanoTarefaExtra t={tarefa} unidade={u} onAbrirExtras={() => { fechar(); onTab('atividades'); }} onFeita={f} onClose={fechar} onAsk={perguntar} />}
       {tarefa && tarefa.tipo === 'teste' && <PlanoTarefaTeste t={tarefa} unidade={u} onFeita={() => concluir(tarefa.id, 'selo:' + u.id)} onClose={fechar} onAsk={perguntar} />}
       {aula && <PlanoAulaFolha aula={aula} student={student} cfg={cfg} onClose={() => setAula(null)} />}
-      {duvida && <PlanoPerguntar cfg={cfg} student={student} contexto={duvida.contexto} onAsk={cfg.previa ? null : onAsk} onClose={() => setDuvida(null)} />}
+      {duvida && <PlanoPerguntar cfg={cfg} student={student} contexto={duvida.contexto} previa={duvida.previa} sugestao={duvida.sugestao || undefined} onAsk={cfg.previa ? null : onAsk} onClose={() => setDuvida(null)} />}
       {bv && <PlanoBoasVindas cfg={cfg} nome={nome} onFim={() => { try { localStorage.setItem(chaveBV, '1'); } catch (e) {} setBv(false); }} />}
       {aviso && <div style={{ position: 'fixed', left: '50%', bottom: 'calc(150px + env(safe-area-inset-bottom, 0px))', transform: 'translateX(-50%)', background: '#0F172A', color: '#fff', padding: '10px 18px', borderRadius: 12, fontSize: 13.5, fontWeight: 700, zIndex: 700, whiteSpace: 'nowrap', animation: 'planoSurge .2s' }}>{aviso}</div>}
     </>
@@ -1624,7 +1699,7 @@ function PlanoPreviaCurso({ user }) {
       <div style={{ position: 'fixed', inset: 0, background: '#F6F1EA' }} />
       <React.Fragment key={vez}>
         {tarefa.tipo === 'livro' && (tarefa.pdf
-          ? <PlanoTarefaPagina t={tarefa} cursoId={cursoId} onFeita={f} onClose={fechar} abrirEm={abrirEm} />
+          ? <PlanoTarefaPagina t={tarefa} cursoId={cursoId} semGravar onFeita={f} onClose={fechar} abrirEm={abrirEm} />
           : <PlanoTarefaLivro t={tarefa} unidade={u} onFeita={f} onClose={fechar} />)}
         {tarefa.tipo === 'explicacao' && <PlanoTarefaExplicacao t={tarefa} cursoId={cursoId} onFeita={f} onClose={fechar} />}
         {tarefa.tipo === 'revisao' && <PlanoCamada titulo={tarefa.titulo} sub={tarefa.sub} onClose={fechar}><div style={{ background: '#fff', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: '#64748B' }}>📝 Esta revisão ainda está sendo montada.</div></PlanoCamada>}

@@ -262,7 +262,7 @@ async function getFB() {
 // Falha de gravação (regra ainda não publicada, sem rede) nunca aparece para o aluno.
 const CzkUsage = (() => {
   // Versão do app que vai junto com o uso (para saber quem ainda roda versão velha). Mantenha igual ao CACHE do sw.js.
-  const APP_BUILD = 'v68';
+  const APP_BUILD = 'v69';
   const TICK = 1000, MIN_STEP = 200, FLUSH = 60000, NEW_VISIT = 30 * 60000;
   const BLIND_CAP = 10 * 60000, HOLD_CAP = 15 * 60000, MAX_FAILS = 5;
   const READ_MS = 180000;                 // maior pausa aceita na leitura do pós-aula (igual a LEITURA_SEG do adesao.js)
@@ -6481,13 +6481,15 @@ function App() {
     return true;
   }
   const trilhaProps = { student, briefing: trilhaBriefing, onSaveBriefing: saveTrilhaBriefing, extras, posaulas, onOpenExtra: setOpenExtra, onReadPost: markPostRead, mirror, abrirForm: trilhaAbrirForm, onFormAberto: () => setTrilhaAbrirForm(false) };
-  const perguntarAssistente = async (pergunta, contexto, anterior) => {
+  // `previa` (4º argumento, opcional): o texto da prévia da página do livro em que ele está (plano.jsx, PlanoPreviaTexto), para a IA
+  // saber o objetivo da página. Sem prévia não vai campo nenhum e a chamada fica como era.
+  const perguntarAssistente = async (pergunta, contexto, anterior, previa) => {
     const fb = await getFB();
     // Os mesmos números da tela de Adesão, para a EurekIA responder "qual a minha média?" e "quanto está a minha adesão?".
     // Só vai se o aluno já puder ver a Adesão (o servidor confere a liberação de novo).
     const dadosEstudo = !mirror && adesao.visivel && adesao.liberado && adesao.result && typeof adesao.AD?.assistantSummary === 'function'
       ? adesao.AD.assistantSummary(adesao.result) : null;
-    const r = await fb.httpsCallable(fb.functions, 'perguntarAssistente', { timeout: 60000 })({ pergunta, contexto, anterior: anterior || null, dadosEstudo });
+    const r = await fb.httpsCallable(fb.functions, 'perguntarAssistente', { timeout: 60000 })({ pergunta, contexto, anterior: anterior || null, dadosEstudo, ...(previa ? { previa } : {}) });
     return r.data;
   };
   // EurekIA, o assistente de dúvidas de inglês, para TODOS os alunos (no Caminho do Science Lab, além do botão
