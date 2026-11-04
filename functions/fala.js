@@ -61,23 +61,48 @@ export function dicaPara(partes) {
 }
 
 // ───────── a conferência da palavra ─────────
-// `resposta` = JSON do Speech-to-Text. Retorna: { ok, ouvi, conf, motivo, partes, dica }
+// `resposta` = JSON do Speech-to-Text. Retorna: { ok, ouvi, conf, minimo, palavras, motivo, partes, dica }
 //   motivo: 'ok' | 'silencio' | 'diferente' (ouviu outra palavra) | 'pouco-claro' (ouviu a palavra, mas sem clareza)
+//   palavras: [{ t, c }] = cada palavra ouvida e a confiança do serviço (c = null se o serviço não informou); serve para o professor calibrar.
+// A confiança da frase é a MENOR entre as palavras que carregam sentido: "an", "the", "to"... são palavrinhas curtas que o serviço quase
+// sempre reconhece com menos certeza, e não podem reprovar a aluna que falou "appetizer" direito.
+const PALAVRAS_DE_LIGACAO = new Set(['a', 'an', 'the', 'to', 'of', 'in', 'on', 'at', 'and', 'or', 'for', 'my', 'your']);
+const arred2 = n => Math.round(n * 100) / 100;
 export function interpretaPalavra(resposta, alvo, minimo = CONFIANCA_MINIMA) {
   const resultados = (resposta && resposta.results) || [];
   const alts = resultados.map(r => (r.alternatives || [])[0]).filter(Boolean);
   const ouvi = alts.map(a => String(a.transcript || '').trim()).join(' ').trim();
   const palavras = alts.flatMap(a => a.words || []);
   const confs = palavras.map(w => (typeof w.confidence === 'number' ? w.confidence : null)).filter(c => c !== null);
-  const conf = confs.length ? Math.min(...confs) : (alts.length && typeof alts[0].confidence === 'number' ? Math.min(...alts.map(a => a.confidence)) : null);
+  const confGeral = confs.length ? Math.min(...confs) : (alts.length && typeof alts[0].confidence === 'number' ? Math.min(...alts.map(a => a.confidence)) : null);
   const alvoTokens = alvo.split(' ').filter(Boolean), ouvidoTokens = normaliza(ouvi).split(' ').filter(Boolean);
-  if (!ouvidoTokens.length) return { ok: false, ouvi: '', conf: null, motivo: 'silencio', partes: partesDaPalavra(alvo, ''), dica: 'Não consegui ouvir nada. Fale mais perto do microfone, num lugar sem barulho.' };
-  const igual = alvoTokens.length === ouvidoTokens.length && alvoTokens.every((t, i) => t === ouvidoTokens[i]);
+  if (!ouvidoTokens.length) return { ok: false, ouvi: '', conf: null, minimo, palavras: [], motivo: 'silencio', partes: partesDaPalavra(alvo, ''), dica: 'Não consegui ouvir nada. Fale mais perto do microfone, num lugar sem barulho.' };
+  // confiança de cada palavra ouvida (só quando o serviço devolveu uma por palavra, na mesma ordem do texto)
+  const alinhado = palavras.length === ouvidoTokens.length && palavras.every(w => normaliza(w.word) === '' || normaliza(w.word).split(' ').length === 1);
+  const porPalavra = ouvidoTokens.map((t, k) => ({ t, c: alinhado && typeof palavras[k].confidence === 'number' ? arred2(palavras[k].confidence) : null }));
+  const igual = alvoTokens.length === ouvidoTokens.length && alvoTokens.every((t, k) => t === ouvidoTokens[k]);
   // letras: cada palavra do alvo comparada com a que foi ouvida na mesma posição
-  const partes = alvoTokens.flatMap((t, i) => { const p = partesDaPalavra(t, ouvidoTokens[i] || ''); return i ? [{ t: ' ', ok: true }, ...p] : p; });
-  if (!igual) return { ok: false, ouvi, conf, motivo: 'diferente', partes, dica: dicaPara(partes) };
-  if (conf !== null && conf < minimo) return { ok: false, ouvi, conf, motivo: 'pouco-claro', partes: [{ t: alvo, ok: false }], dica: 'Entendi a palavra, mas sem clareza. Fale mais devagar e pronuncie cada som.' };
-  return { ok: true, ouvi, conf, motivo: 'ok', partes: [{ t: alvo, ok: true }], dica: '' };
+  const partes = alvoTokens.flatMap((t, k) => { const q = partesDaPalavra(t, ouvidoTokens[k] || ''); return k ? [{ t: ' ', ok: true }, ...q] : q; });
+  if (!igual) return { ok: false, ouvi, conf: confGeral, minimo, palavras: porPalavra, motivo: 'diferente', partes, dica: dicaPara(partes) };
+  // palavras que contam: as de sentido (se a frase só tiver palavrinhas, todas contam)
+  let contam = alvoTokens.map((t, k) => k).filter(k => !PALAVRAS_DE_LIGACAO.has(alvoTokens[k]));
+  if (!contam.length) contam = alvoTokens.map((t, k) => k);
+  const comNota = contam.filter(k => porPalavra[k].c !== null);
+  const conf = comNota.length ? Math.min(...comNota.map(k => porPalavra[k].c)) : confGeral;
+  if (conf !== null && conf < minimo) {
+    const fracas = comNota.length ? comNota.filter(k => porPalavra[k].c < minimo) : [];
+    const marcadas = new Set(fracas);
+    // mostra QUAIS palavras ficaram sem clareza (e não a frase toda); sem nota por palavra, marca a frase inteira
+    const partesClareza = fracas.length
+      ? alvoTokens.flatMap((t, k) => { const q = { t, ok: !marcadas.has(k) }; return k ? [{ t: ' ', ok: true }, q] : [q]; })
+      : [{ t: alvo, ok: false }];
+    const quais = fracas.length ? fracas.map(k => `“${alvoTokens[k]}”`) : [];
+    const dica = quais.length === 1 ? `Entendi “${ouvi}”, mas ${quais[0]} não saiu com clareza. Fale mais devagar e pronuncie cada som.`
+      : quais.length > 1 ? `Entendi “${ouvi}”, mas ${quais.join(' e ')} não saíram com clareza. Fale mais devagar e pronuncie cada som.`
+      : 'Entendi a palavra, mas sem clareza. Fale mais devagar e pronuncie cada som.';
+    return { ok: false, ouvi, conf, minimo, palavras: porPalavra, motivo: 'pouco-claro', partes: partesClareza, dica };
+  }
+  return { ok: true, ouvi, conf, minimo, palavras: porPalavra, motivo: 'ok', partes: [{ t: alvo, ok: true }], dica: '' };
 }
 
 // ───────── a gravação livre (falar 30 s) ─────────
