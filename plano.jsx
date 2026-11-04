@@ -1553,19 +1553,22 @@ function PlanoTarefaExplicacao({ t, cursoId, onFeita, onClose, onAsk }) {
     <PlanoCamada titulo={t.titulo} sub={`Connectivity 1 · página ${t.pagina} · gramática`} onClose={onClose} onAsk={onAsk}
       rodape={<><button className="plano-btn" style={{ background: 'linear-gradient(180deg,#38BDF8,#0284C7)', boxShadow: '0 8px 18px rgba(2,132,199,.3)' }} onClick={onFeita}>Já estudei ✓</button>
         <div style={{ textAlign: 'center', fontSize: 11.5, fontWeight: 700, color: '#64748B', marginTop: 7 }}>Você pode voltar aqui quando quiser, antes ou depois dos exercícios.</div></>}>
-      <div style={{ fontSize: 15, fontWeight: 800, margin: '2px 0 8px' }}>📖 O quadro do livro <span style={{ color: '#64748B', fontWeight: 700, fontSize: 12 }}>(toque para ampliar)</span></div>
-      <div onClick={() => setZoom(true)} style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 16, padding: 8, cursor: 'zoom-in' }}>
-        <PlanoQuadroLivro curso={cursoId} pdf={t.pdf} quadro={t.quadro} />
-        <div style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#64748B', marginTop: 6 }}>Connectivity 1 · p. {t.pagina}</div>
-      </div>
+      {t.quadro && <>
+        <div style={{ fontSize: 15, fontWeight: 800, margin: '2px 0 8px' }}>📖 O quadro do livro <span style={{ color: '#64748B', fontWeight: 700, fontSize: 12 }}>(toque para ampliar)</span></div>
+        <div onClick={() => setZoom(true)} style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 16, padding: 8, cursor: 'zoom-in' }}>
+          <PlanoQuadroLivro curso={cursoId} pdf={t.pdf} quadro={t.quadro} />
+          <div style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#64748B', marginTop: 6 }}>Connectivity 1 · p. {t.pagina}</div>
+        </div>
+      </>}
+      {!t.quadro && <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 14, padding: '10px 13px', fontSize: 13, fontWeight: 700, color: '#4C1D95', lineHeight: 1.5 }}>📖 Esta explicação é da página <b>{t.pagina}</b> do Grammar Expander. A página inteira vem logo depois no Caminho, para você ler e praticar.</div>}
       {(t.blocos || []).map((b, i) => <PlanoBloco key={i} b={b} />)}
       {exs.length > 0 && <>
         <div style={{ fontSize: 15, fontWeight: 800, margin: '22px 0 8px' }}>🎯 Treine rápido <span style={{ color: '#64748B', fontWeight: 700, fontSize: 12 }}>({exs.length} perguntinhas)</span></div>
         {exs.map(ex => <div key={ex.id} style={{ background: '#fff', border: '2px solid #DDD6FE', borderRadius: 18, padding: 13, marginBottom: 10 }}>
           <PlanoExercicio ex={ex} onFim={ok => setRes(r => (r[ex.id] !== undefined ? r : { ...r, [ex.id]: ok }))} /></div>)}
-        {feitos === exs.length && <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 14, padding: '11px 13px', fontSize: 13.5, fontWeight: 700, color: '#14532D' }}>🎉 <b>{acertos} de {exs.length}</b> certas. {acertos === exs.length ? 'Já pode ir para os exercícios da página!' : 'Releia o quadro acima e depois vá para os exercícios.'}</div>}
+        {feitos === exs.length && <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 14, padding: '11px 13px', fontSize: 13.5, fontWeight: 700, color: '#14532D' }}>🎉 <b>{acertos} de {exs.length}</b> certas. {acertos === exs.length ? (t.quadro ? 'Já pode ir para os exercícios da página!' : 'Já pode ir para a página do livro!') : (t.quadro ? 'Releia o quadro acima e depois vá para os exercícios.' : 'Releia a explicação acima e depois vá para a página do livro.')}</div>}
       </>}
-      {zoom && <div onClick={() => setZoom(false)} style={{ position: 'fixed', inset: 0, zIndex: 900, background: 'rgba(15,23,42,.92)', overflow: 'auto', padding: '56px 10px 24px' }}>
+      {zoom && t.quadro && <div onClick={() => setZoom(false)} style={{ position: 'fixed', inset: 0, zIndex: 900, background: 'rgba(15,23,42,.92)', overflow: 'auto', padding: '56px 10px 24px' }}>
         <button onClick={() => setZoom(false)} style={{ position: 'fixed', top: 12, right: 14, border: 0, borderRadius: 99, background: '#fff', padding: '8px 15px', fontFamily: 'inherit', fontWeight: 800, cursor: 'pointer' }}>✕ Fechar</button>
         <div style={{ width: '230%', maxWidth: 1100 }}><PlanoQuadroLivro curso={cursoId} pdf={t.pdf} quadro={t.quadro} /></div></div>}
     </PlanoCamada>
