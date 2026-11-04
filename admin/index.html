@@ -8497,7 +8497,7 @@
     // ── Aba "Curso": revisar o livro (marcar só o que SAI), checklist, vídeos e lista completa ──
     // Regra da tela: marcado = TIRAR do app. Só as tarefas "opcionais" (vídeo, revisão e extras do livro) vêm desligadas
     // e aí a marca é ao contrário (LIGAR). Tudo vai para `ocultos` da unidade; `revisadas` e `notas` guardam o andamento.
-    const CR_ROTULO = { mc:'escolher', vf:'V ou F', gap:'digitar', match:'ligar', order:'montar', ouvir:'ouvir', ditado:'ditado', speak:'falar' };
+    const CR_ROTULO = { conv:'conversa', mc:'escolher', vf:'V ou F', gap:'digitar', match:'ligar', order:'montar', ouvir:'ouvir', ditado:'ditado', speak:'falar' };
     const crUrls = {};
     let crUn = null, crPasso = 0, crTimer = null, crPdf = 0;
     const crEhOpcional = t => t.tipo === 'video' || t.tipo === 'revisao' || !!t.extra;
@@ -8505,6 +8505,7 @@
     function crResposta(e) {
       if (e.t === 'mc' || e.t === 'ouvir') return (e.o || []).map((o, k) => k === e.c ? `<b>✓ ${esc(o)}</b>` : esc(o)).join(' · ');
       if (e.t === 'vf') return `<b>${e.c ? 'Verdadeiro' : 'Falso'}</b>`;
+      if (e.t === 'conv') { let k = -1; return (e.linhas || []).map(l => esc(l).replace(/____/g, () => `<b>${esc(String((e.a || [])[++k] || '').split('|')[0])}</b>`)).join('<br>'); }
       if (e.t === 'gap' || e.t === 'ditado') return `<b>${esc((e.a || []).join(' / '))}</b>`;
       if (e.t === 'match') return (e.pares || []).map(p => esc(Array.isArray(p) ? `${p[0]} = ${p[1]}` : `${p.a} = ${p.b}`)).join(' · ');
       if (e.t === 'order') return `<b>${esc((e.w || []).join(' '))}</b>`;
