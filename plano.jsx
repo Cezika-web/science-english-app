@@ -621,12 +621,10 @@ function PlanoVocabCartas({ vocab, titulo, onFeita, onClose, onAsk }) {
 
 /* ───────── fala gravada: vocabulário "ouvir e falar" e exercício de falar ─────────
  * Só vale com as chaves do livro ligadas no painel (cursos/{id}: vocabPronuncia e gravarFalas). Desligadas, nada muda.
- * Cada fala vira a chave "fala:ID" em feitas = {audio, dur, em, enunciado, unidade, tarefa, ex?, palavra?}. O áudio vai para o Storage
- * (extras/{uid}/falas-{unidade}/{arquivo}) e a função avaliarFala completa transcricao / ouvi / ok no mesmo objeto.
+ * Cada fala é um documento em students/{uid}/falas/{ID} = {audio, dur, em, enunciado, unidade, tarefa, ex?, palavra?}. O áudio vai para o Storage
+ * (extras/{uid}/falas-{unidade}/{arquivo}) e a função avaliarFala completa transcricao / ouvi / ok / conf no mesmo documento.
  * Na prévia do painel e no espelho (fala.teste) nada é gravado: o vocabulário só confere (a função não guarda nada) e o exercício só marca como feito. */
 const PlanoFalaCtx = React.createContext(null);
-// A regra do Firestore aceita até 1500 chaves em feitas; perto disso paramos de criar "fala:" para nunca travar o progresso da aluna (o áudio ainda sobe).
-const PLANO_FALA_MAX_CHAVES = 1450;
 
 // Mesma regra de functions/fala.js (palavraAlvo): "citizen (cidadão)" → "citizen", "single/unmarried" → "single".
 function PlanoPalavraAlvo(s) {
@@ -721,28 +719,31 @@ function PlanoGravadorCurto({ rotulo, onGravou, maxMs = 4000 }) {
   );
 }
 
-// Sobe o áudio e cria a chave "fala:ID". Nunca lança erro: devolve true se o áudio foi guardado.
-async function PlanoGuardarFala(fala, { chave, blob, ext, dur, meta }) {
-  let caminho = '';
+// Cada fala é UM documento em students/{uid}/falas/{chave} (não cabe no doc "feitas": limite de 1500 chaves e 1 MB por aluna).
+// 1) PlanoCriarFala cria o registro (a aluna só cria; a função avaliarFala completa a transcrição/conferência depois);
+// 2) PlanoSubirFala sobe o áudio e preenche o caminho. A ordem importa: a função só pode escrever DEPOIS de a aluna criar o registro.
+// Nenhuma das duas lança erro: devolvem true se deu certo.
+async function PlanoCriarFala(fala, { chave, dur, meta }) {
+  try {
+    const fb = await getFB();
+    const reg = { audio: '', em: new Date().toISOString(), unidade: fala.unidade || '', tarefa: fala.tarefaId || '', ...meta };
+    if (dur) reg.dur = Math.round(dur * 10) / 10;
+    Object.keys(reg).forEach(k => { if (reg[k] === undefined || reg[k] === null) delete reg[k]; });   // o Firestore recusa campo undefined
+    reg.enunciado = String(reg.enunciado || '').slice(0, 160);
+    await fb.setDoc(fb.doc(fb.db, 'students', fala.uid, 'falas', chave), reg);
+    return true;
+  } catch (e) { console.warn('fala: não consegui registrar a gravação', e); return false; }
+}
+async function PlanoSubirFala(fala, { chave, blob, ext }) {
   try {
     const fb = await getFB();
     const unidade = String(fala.unidade || 'x').replace(/[^A-Za-z0-9_-]/g, '') || 'x';
     const path = `extras/${fala.uid}/falas-${unidade}/${chave}.${ext || 'webm'}`;
-    const sref = fb.storageRef(fb.storage, path);
-    await fb.uploadBytes(sref, blob, { contentType: blob.type || 'audio/webm' });
-    caminho = path;
-  } catch (e) { console.warn('fala: não consegui subir o áudio', e); }
-  try {
-    if (Object.keys(fala.feitas || {}).length < PLANO_FALA_MAX_CHAVES) {
-      const reg = { audio: caminho, em: new Date().toISOString(), unidade: fala.unidade || '', tarefa: fala.tarefaId || '', ...meta };
-      if (dur) reg.dur = Math.round(dur * 10) / 10;
-      // o Firestore recusa campo undefined
-      Object.keys(reg).forEach(k => { if (reg[k] === undefined || reg[k] === null) delete reg[k]; });
-      reg.enunciado = String(reg.enunciado || '').slice(0, 160);
-      fala.marcar('fala:' + chave, reg);
-    }
-  } catch (e) { console.warn('fala: não consegui registrar a gravação', e); }
-  return !!caminho;
+    await fb.uploadBytes(fb.storageRef(fb.storage, path), blob, { contentType: blob.type || 'audio/webm' });
+    try { await fb.updateDoc(fb.doc(fb.db, 'students', fala.uid, 'falas', chave), { audio: path }); }
+    catch (e) { console.warn('fala: o áudio subiu, mas não consegui registrar o caminho', e); }
+    return true;
+  } catch (e) { console.warn('fala: não consegui subir o áudio', e); return false; }
 }
 
 // Chama a função avaliarFala. `dados` = { modo, palavra?, wav, chave }.
@@ -782,7 +783,8 @@ function PlanoVocabFalar({ vocab, titulo, onFeita, onClose, onAsk, fala }) {
     setEnviando(true); setRes(null); setAvisoAudio('');
     const chave = PlanoNovaChave();
     const wav = await PlanoParaWav(blob).catch(() => null);
-    const guardar = fala.teste ? Promise.resolve(true) : PlanoGuardarFala(fala, { chave, blob, ext, dur: wav && wav.dur, meta: { enunciado: `Vocabulário: fale “${en}”`, palavra: alvo } });
+    if (!fala.teste) await PlanoCriarFala(fala, { chave, dur: wav && wav.dur, meta: { enunciado: `Vocabulário: fale “${en}”`, palavra: alvo } });
+    const guardar = fala.teste ? Promise.resolve(true) : PlanoSubirFala(fala, { chave, blob, ext });
     guardar.then(ok => { if (!ok && vivo.current) setAvisoAudio('⚠️ Não consegui guardar o áudio desta tentativa. Confira a internet.'); });
     let r;
     if (!wav) r = { falha: 'Não consegui preparar o áudio neste aparelho. Você pode seguir.' };
@@ -868,7 +870,8 @@ function PlanoFalaGravar({ ex, fala, feito, onFeito }) {
     if (fala.teste) { setFase('feito'); onFeito(); return; }
     const chave = PlanoNovaChave();
     const wav = await PlanoParaWav(grav.blob).catch(() => null);
-    const guardar = PlanoGuardarFala(fala, { chave, blob: grav.blob, ext: grav.ext, dur: wav && wav.dur, meta: { enunciado: ex.q, ex: ex.id } });
+    await PlanoCriarFala(fala, { chave, dur: wav && wav.dur, meta: { enunciado: ex.q, ex: ex.id } });
+    const guardar = PlanoSubirFala(fala, { chave, blob: grav.blob, ext: grav.ext });
     let r = null; let msg = '';
     const avaliar = wav ? PlanoAvaliar(fala, { modo: 'livre', wav: wav.base64, chave }).then(x => { r = x; }).catch(e => { msg = PlanoMsgErroFala(e); }) : Promise.resolve();
     const fim = await PlanoEsperar(Promise.all([guardar, avaliar]), 25000);

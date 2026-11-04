@@ -2476,7 +2476,7 @@ export const perguntarAssistente = onCall(
 /* ───────── Fala do aluno no curso: conferência da palavra do vocabulário e transcrição das gravações livres ─────────
  * O app manda o áudio já em WAV 16 kHz mono (base64). A função chama o Google Cloud Speech-to-Text (v1) com a conta de
  * serviço do próprio projeto (token do servidor de metadados: nada de chave, nenhum pacote novo) e grava o resultado em
- * students/{uid}/planoProgresso/feitas → feitas["fala:{chave}"], o mesmo objeto que o app já criou com o áudio guardado.
+ * students/{uid}/falas/{chave}, o mesmo documento que o app já criou (a aluna cria; só a função completa a conferência).
  * A API "Cloud Speech-to-Text" precisa estar LIGADA no projeto; se não estiver, o aluno recebe um aviso claro e segue.
  * Cota: LIMITE_DIA tentativas por aluno por dia, contadas em students/{uid}/planoProgresso/quotaFala (o aluno não escreve ali).
  * `teste: true` (só o professor, na prévia do painel): confere, mas não gasta cota e não grava nada.
@@ -2519,10 +2519,7 @@ export const avaliarFala = onCall(
           ? { modo, palavra: alvo, ouvi: r.ouvi, ok: r.ok, conf: r.conf, motivo: r.motivo }
           : { modo, transcricao: r.texto, conf: r.conf };
         try {
-          await db.doc(`students/${uid}/planoProgresso/feitas`).set({
-            feitas: { [`fala:${chave}`]: { ...registro, avaliadoEm: new Date().toISOString() } },
-            atualizadoEm: FieldValue.serverTimestamp(),
-          }, { merge: true });
+          await db.doc(`students/${uid}/falas/${chave}`).set({ ...registro, avaliadoEm: new Date().toISOString() }, { merge: true });
         } catch (e) { console.error('avaliarFala: não consegui gravar o resultado:', e); }   // o aluno ainda vê o resultado na tela
       }
       return r;

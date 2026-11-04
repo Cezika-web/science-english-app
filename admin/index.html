@@ -2437,7 +2437,7 @@
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import { getFirestore, collection, getDocs, getDoc, doc, setDoc, addDoc, updateDoc, deleteDoc,
-             query, orderBy, serverTimestamp, where, deleteField, writeBatch }
+             query, orderBy, limit, serverTimestamp, where, deleteField, writeBatch }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { getFunctions, httpsCallable }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
@@ -8384,7 +8384,7 @@
     }
 
     // ── Aba "Falas": toda fala em inglês do curso, gravada e transcrita ──
-    // O app grava, em students/{uid}/planoProgresso/feitas, uma chave "fala:ID" por fala = {audio (caminho no Storage), dur, em, enunciado,
+    // O app grava um documento por fala em students/{uid}/falas/{ID} = {audio (caminho no Storage), dur, em, enunciado,
     // unidade, tarefa, ex?, palavra?}; a função avaliarFala completa transcricao (fala livre) ou ouvi/ok/motivo (palavra). "visto" é gravado aqui.
     let faDados = [];
     let faLimite = 60;
@@ -8399,10 +8399,8 @@
       const achados = [];
       await Promise.all(alunas.map(async s => {
         try {
-          const sn = await getDoc(doc(db, 'students', s.uid, 'planoProgresso', 'feitas')); if (!sn.exists()) return;
-          const f = sn.data().feitas || {};
-          Object.keys(f).filter(k => k.startsWith('fala:') && f[k] && typeof f[k] === 'object')
-            .forEach(k => achados.push({ ...f[k], uid:s.uid, aluna:s.name || s.firstName || 'Aluna', chave:k }));
+          const sn = await getDocs(query(collection(db, 'students', s.uid, 'falas'), orderBy('em', 'desc'), limit(150)));   // as 150 mais novas de cada aluna
+          sn.docs.forEach(d => achados.push({ ...d.data(), uid:s.uid, aluna:s.name || s.firstName || 'Aluna', chave:d.id }));
         } catch (e) { console.warn('Falas: não consegui ler', s.uid, e); }
       }));
       achados.sort((a, b) => faData(b).localeCompare(faData(a)));
@@ -8477,13 +8475,16 @@
       caixa.querySelectorAll('[data-fa-visto]').forEach(b => b.onclick = () => { const [uid, chave] = b.dataset.faVisto.split('|'); faMarcarVistas([{ uid, chave }]); });
       document.getElementById('fa-mais')?.addEventListener('click', () => { faLimite += 60; faRender(); });
     }
-    // Grava visto:true nas falas (um setDoc por aluna) e atualiza a lista e a bolinha.
+    // Grava visto:true em cada fala (em lotes) e atualiza a lista e a bolinha.
     async function faMarcarVistas(itens) {
       const msg = document.getElementById('fa-msg'); msg.textContent = 'Salvando...';
-      const agora = new Date().toISOString(); const porAluna = {};
-      itens.forEach(i => { (porAluna[i.uid] = porAluna[i.uid] || {})[i.chave] = { visto:true, vistoEm:agora }; });
+      const agora = new Date().toISOString();
       try {
-        await Promise.all(Object.keys(porAluna).map(uid => setDoc(doc(db, 'students', uid, 'planoProgresso', 'feitas'), { feitas: porAluna[uid] }, { merge:true })));
+        for (let k = 0; k < itens.length; k += 400) {
+          const lote = writeBatch(db);
+          itens.slice(k, k + 400).forEach(i => lote.update(doc(db, 'students', i.uid, 'falas', i.chave), { visto:true, vistoEm:agora }));
+          await lote.commit();
+        }
         itens.forEach(i => { const r = faDados.find(x => x.uid === i.uid && x.chave === i.chave); if (r) { r.visto = true; r.vistoEm = agora; } });
         msg.textContent = ''; faAtualizarBolinha(); faRender();
       } catch (e) { msg.textContent = '❌ Não consegui salvar: ' + e.message; }

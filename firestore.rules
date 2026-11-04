@@ -345,6 +345,31 @@ service cloud.firestore {
         || (isOwnStudent(uid) && studentProfileUpdateIsSafe());
       allow delete: if managesStudent(uid);
 
+      // Falas gravadas no curso (vocabulário "ouvir e falar" e exercícios de falar): UM documento por gravação, fora do doc "feitas"
+      // (que tem teto de 1500 chaves e 1 MB). A aluna só CRIA o próprio registro (campos fixos) e depois só preenche o caminho do áudio, uma vez;
+      // a conferência/transcrição é escrita pela função avaliarFala (Admin SDK); o professor lê, marca "visto" e apaga.
+      match /falas/{falaId} {
+        allow read: if isOwnStudent(uid) || managesStudent(uid);
+        allow create: if isOwnStudent(uid)
+          && request.resource.data.keys().hasOnly(['audio', 'em', 'unidade', 'tarefa', 'enunciado', 'dur', 'ex', 'palavra'])
+          && request.resource.data.keys().hasAll(['em', 'tarefa'])
+          && request.resource.data.em is string && request.resource.data.em.size() <= 40
+          && request.resource.data.tarefa is string && request.resource.data.tarefa.size() <= 80
+          && request.resource.data.audio is string && request.resource.data.audio == ''
+          && (!('enunciado' in request.resource.data) || (request.resource.data.enunciado is string && request.resource.data.enunciado.size() <= 200))
+          && (!('palavra' in request.resource.data) || (request.resource.data.palavra is string && request.resource.data.palavra.size() <= 80))
+          && (!('unidade' in request.resource.data) || (request.resource.data.unidade is string && request.resource.data.unidade.size() <= 20))
+          && (!('ex' in request.resource.data) || (request.resource.data.ex is string && request.resource.data.ex.size() <= 80));
+        allow update: if (isOwnStudent(uid)
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['audio'])
+              && resource.data.audio == ''
+              && request.resource.data.audio is string
+              && request.resource.data.audio.matches('extras/' + uid + '/.*'))
+          || (managesStudent(uid)
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['visto', 'vistoEm']));
+        allow delete: if managesStudent(uid);
+      }
+
       // EurekIA: perguntas e respostas do aluno. A função grava; só o professor lê (o aluno nunca vê o histórico dos outros).
       match /duvidas/{duvidaId} {
         allow read: if managesStudent(uid);
