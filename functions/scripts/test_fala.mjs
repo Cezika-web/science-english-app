@@ -53,4 +53,27 @@ assert.equal(duracaoWav('AAAA'), null);
 
 // 11) o pedido não leva "dicas" que deixariam o reconhecimento bonzinho
 const c = corpoSpeech('AAAA', 'palavra'); assert.equal(c.config.speechContexts, undefined); assert.equal(c.config.enableWordConfidence, true);
+// 12) frase com palavrinha ("an appetizer"): a confiança baixa de "an" NÃO reprova (caso real do professor, 04/11/2026); a da palavra de sentido, sim
+const porPalavra = (transcript, notas) => ({ results: [{ alternatives: [{ transcript, confidence: 0.8, words: transcript.split(' ').map((w, k) => ({ word: w, confidence: notas[k] })) }] }] });
+r = interpretaPalavra(porPalavra('an appetizer', [0.52, 0.91]), palavraAlvo('an appetizer'));
+assert.equal(r.ok, true, '"an" com nota baixa não reprova'); assert.equal(r.conf, 0.91); assert.equal(r.minimo, 0.8);
+assert.deepEqual(r.palavras, [{ t: 'an', c: 0.52 }, { t: 'appetizer', c: 0.91 }], 'devolve a nota de cada palavra para o professor calibrar');
+r = interpretaPalavra(porPalavra('an appetizer', [0.9, 0.61]), palavraAlvo('an appetizer'));
+assert.equal(r.ok, false); assert.equal(r.motivo, 'pouco-claro'); assert.equal(r.conf, 0.61);
+assert.deepEqual(r.partes.filter(x => !x.ok).map(x => x.t), ['appetizer'], 'marca só a palavra sem clareza, não a frase toda');
+assert.deepEqual(r.partes.filter(x => x.ok && x.t !== ' ').map(x => x.t), ['an']);
+assert.match(r.dica, /appetizer/); assert.match(r.dica, /an appetizer/);
+// duas palavras de sentido: reprova a que ficou fraca e só ela
+r = interpretaPalavra(porPalavra('marital status', [0.95, 0.5]), palavraAlvo('marital status'));
+assert.equal(r.motivo, 'pouco-claro'); assert.deepEqual(r.partes.filter(x => !x.ok).map(x => x.t), ['status']);
+// só palavrinhas ("the"): elas contam, senão nunca reprovaria nada
+r = interpretaPalavra(porPalavra('the', [0.4]), 'the'); assert.equal(r.motivo, 'pouco-claro');
+// o serviço sem nota por palavra: cai na nota geral e marca a frase inteira
+r = interpretaPalavra({ results: [{ alternatives: [{ transcript: 'an appetizer', confidence: 0.6 }] }] }, 'an appetizer');
+assert.equal(r.motivo, 'pouco-claro'); assert.equal(r.conf, 0.6); assert.deepEqual(r.palavras, [{ t: 'an', c: null }, { t: 'appetizer', c: null }]);
+assert.deepEqual(r.partes, [{ t: 'an appetizer', ok: false }]);
+// o professor baixou a exigência: 0,6 aceita a palavra de nota 0,61
+r = interpretaPalavra(porPalavra('an appetizer', [0.9, 0.61]), palavraAlvo('an appetizer'), 0.6); assert.equal(r.ok, true);
+// outra palavra (th→t) continua marcando letras e devolve as notas
+r = interpretaPalavra(porPalavra('tink', [0.9]), 'think'); assert.equal(r.motivo, 'diferente'); assert.deepEqual(r.palavras, [{ t: 'tink', c: 0.9 }]);
 console.log('fala: todos os testes passaram');

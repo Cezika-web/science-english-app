@@ -766,6 +766,14 @@ function PlanoPalavraComErros({ partes }) {
   return <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: .5, wordBreak: 'break-word' }}>{(partes || []).map((p, k) => <span key={k} style={p.ok ? { color: '#15803D' } : { color: '#DC2626', textDecoration: 'underline wavy #DC2626', textUnderlineOffset: 5 }}>{p.t}</span>)}</span>;
 }
 
+// Só no teste do professor (?planoteste=1&falar=1): mostra a confiança que o serviço de voz deu a cada palavra, para calibrar a exigência.
+function PlanoNotaTeste({ res, teste }) {
+  if (!teste || !res || res.falha) return null;
+  const f = n => (typeof n === 'number' ? String(Math.round(n * 100) / 100).replace('.', ',') : '—');
+  const pal = Array.isArray(res.palavras) && res.palavras.length ? res.palavras.map(p => `${p.t} ${f(p.c)}`).join(' · ') : '';
+  return <div style={{ marginTop: 8, fontSize: 11.5, fontWeight: 700, color: '#64748B', textAlign: 'center', overflowWrap: 'anywhere' }}>🔬 Teste do professor · confiança {f(res.conf)} (mínimo {f(typeof res.minimo === 'number' ? res.minimo : 0.8)}){pal ? ` · ${pal}` : ''}</div>;
+}
+
 // Vocabulário (modo "ouvir e falar"): a aluna ouve a palavra, grava, e o app confere. Cada tentativa é guardada.
 function PlanoVocabFalar({ vocab, titulo, onFeita, onClose, onAsk, fala }) {
   const [fila, setFila] = React.useState(() => vocab.map((_, k) => k)); const [pos, setPos] = React.useState(0);
@@ -830,13 +838,14 @@ function PlanoVocabFalar({ vocab, titulo, onFeita, onClose, onAsk, fala }) {
       </div>
 
       {enviando && <div style={caixa('#334155', '#F8FAFC', '#E2E8F0')}>⏳ Conferindo a sua pronúncia…</div>}
-      {res && res.ok === true && <div style={caixa('#14532D', '#F0FDF4', '#BBF7D0')}>✅ Muito bem! Eu ouvi “{res.ouvi}”.</div>}
+      {res && res.ok === true && <div style={caixa('#14532D', '#F0FDF4', '#BBF7D0')}>✅ Muito bem! Eu ouvi “{res.ouvi}”.<PlanoNotaTeste res={res} teste={fala.teste} /></div>}
       {res && res.falha && <div style={caixa('#78350F', '#FFFBEB', '#FDE68A')}>⚠️ {res.falha}</div>}
       {res && res.ok === false && !res.falha && <div style={{ ...caixa('#7F1D1D', '#FEF2F2', '#FECACA'), textAlign: 'center' }}>
         <div>❌ Eu ouvi: <b>“{res.ouvi || 'nada'}”</b></div>
         <div style={{ margin: '8px 0 4px' }}><PlanoPalavraComErros partes={res.partes} /></div>
-        <div style={{ fontSize: 11.5, fontWeight: 700, color: '#991B1B' }}>As letras em vermelho saíram diferentes.</div>
+        <div style={{ fontSize: 11.5, fontWeight: 700, color: '#991B1B' }}>{res.motivo === 'pouco-claro' ? 'Eu entendi a palavra, mas o que está em vermelho não saiu com clareza.' : 'As letras em vermelho saíram diferentes.'}</div>
         {res.dica && <div style={{ marginTop: 8, fontWeight: 700, color: '#7F1D1D' }}>💡 {res.dica}</div>}
+        <PlanoNotaTeste res={res} teste={fala.teste} />
         <button className="plano-btn sec" style={{ marginTop: 10, padding: '9px 14px', fontSize: 14 }} onClick={() => PlanoFalar(en)}>🔊 Ouvir de novo</button>
       </div>}
       {avisoAudio && <div style={{ ...caixa('#78350F', '#FFFBEB', '#FDE68A'), fontSize: 12.5 }}>{avisoAudio}</div>}
