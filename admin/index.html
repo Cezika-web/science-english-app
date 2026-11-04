@@ -1717,6 +1717,18 @@
           .cr-resumo-aluna { border:1px solid #e2e8f0; border-radius:12px; padding:10px 13px; margin-bottom:8px; background:#fff; font-size:.86rem; line-height:1.5; }
           .cr-resumo-aluna b { color:#5b21b6; } .cr-resumo-aluna small { color:var(--muted); font-weight:600; }
           .cr-resumo-aluna p { margin:6px 0 0; white-space:pre-wrap; }
+          .cr-bloco { border:1.5px solid #e2e8f0; border-radius:13px; padding:10px 12px; margin-bottom:10px; background:#fff; }
+          .cr-bloco.off { background:#fef2f2; border-color:#fca5a5; }
+          .cr-bloco.hl { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.15); }
+          .cr-bloco-t { display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:.9rem; margin:6px 0 2px; }
+          .cr-bloco-i { font-size:.78rem; color:#475569; line-height:1.4; margin-bottom:6px; }
+          .cr-bloco-n { font-size:.78rem; color:#64748b; background:#f8fafc; border-radius:9px; padding:7px 10px; line-height:1.4; }
+          .cr-chip { font-size:.68rem; font-weight:800; padding:2px 8px; border-radius:99px; } .cr-chip.ok { background:#dcfce7; color:#166534; } .cr-chip.falta { background:#fef3c7; color:#92400e; } .cr-chip.na { background:#f1f5f9; color:#475569; }
+          .cr-bloco.off .cr-ex { opacity:.55; cursor:default; }
+          .cr-pagina .cr-imgbox { position:relative; line-height:0; }
+          .cr-reg { position:absolute; left:0; right:0; border-top:2px solid; border-bottom:2px solid; pointer-events:none; box-sizing:border-box; }
+          .cr-reg b { position:absolute; left:3px; top:1px; font-size:10px; line-height:1.2; color:#fff; padding:1px 5px; border-radius:5px; }
+          .cr-reg.fora { background:rgba(220,38,38,.38); } .cr-reg.fora::after { content:'TIRADO'; position:absolute; right:6px; top:2px; font-size:11px; font-weight:800; color:#fff; background:#b91c1c; padding:1px 7px; border-radius:6px; line-height:1.3; }
           .cr-ver { flex-shrink:0; align-self:center; font-size:.72rem; font-weight:800; padding:4px 9px; border-radius:8px; border:1px solid #ddd6fe; background:#f5f3ff; color:#5b21b6; cursor:pointer; white-space:nowrap; }
           .cr-ver:hover { background:#ede9fe; }
           .cr-opc { display:flex; gap:9px; align-items:flex-start; border:1.5px solid #e2e8f0; border-radius:11px; padding:9px 11px; margin-bottom:7px; cursor:pointer; font-size:.84rem; background:#fff; }
@@ -8428,9 +8440,9 @@
       const esq = document.getElementById('cr-esquerda');
       if (t.pdf) {
         crPdf = t.pdf;
-        esq.innerHTML = `<div class="cr-pagina"><img id="cr-img" alt="Página do livro"><div class="cr-pgnav"><button type="button" data-pg="-1">‹</button><span id="cr-pgnum"></span><button type="button" data-pg="1">›</button></div></div>`;
+        esq.innerHTML = `<div class="cr-pagina"><div class="cr-imgbox"><img id="cr-img" alt="Página do livro" style="width:100%"><div id="cr-regs"></div></div><div class="cr-pgnav"><button type="button" data-pg="-1">‹</button><span id="cr-pgnum"></span><button type="button" data-pg="1">›</button></div></div>`;
         crMostrarPagina();
-        esq.querySelectorAll('[data-pg]').forEach(b => b.onclick = () => { crPdf = Math.min(177, Math.max(15, crPdf + Number(b.dataset.pg))); crMostrarPagina(); });
+        esq.querySelectorAll('[data-pg]').forEach(b => b.onclick = () => { crPdf = Math.min(177, Math.max(15, crPdf + Number(b.dataset.pg))); crMostrarPagina(); crDesenhaRegioes(); });
       } else {
         const pals = t.tipo === 'vocab' ? (un.vocab || {})[t.ref] : null;
         const lista = pals ? '<br><br>' + pals.map(p => esc(Array.isArray(p) ? `${p[0]} — ${p[1]}` : `${p.a} — ${p.b}`)).join('<br>') : '';
@@ -8439,6 +8451,15 @@
         esq.innerHTML = `<div class="cr-vazio"><div style="font-size:2rem;">${esc(t.ic || '')}</div><strong>${esc(t.titulo)}</strong><br>${esc(texto)}${lista}</div>`;
       }
       crRenderDireita();
+    }
+    // Desenha por cima da página os exercícios do livro desta tarefa: tirado = vermelho; o bloco sob o mouse = destacado.
+    const CR_COR = ['#2563eb', '#16a34a', '#9333ea', '#ea580c', '#0891b2', '#be185d', '#65a30d', '#7c3aed'];
+    function crDesenhaRegioes(destaque) {
+      const box = document.getElementById('cr-regs'); if (!box) return;
+      const un = crUn, t = un && un.tarefas[crPasso]; const regs = t && t.pdf === crPdf ? (t.regioes || []) : [];
+      const oc = new Set((un && un.ocultos) || []);
+      box.innerHTML = regs.map((r, i) => { const fora = oc.has(`${t.id}:${r.id}`); const c = CR_COR[i % CR_COR.length];
+        return `<div class="cr-reg ${fora ? 'fora' : ''}" style="top:${r.y0 * 100}%;height:${(r.y1 - r.y0) * 100}%;border-color:${destaque === r.id ? '#facc15' : c};${destaque === r.id ? 'border-width:4px;' : ''}"><b style="background:${c}">${r.secao === 2 ? '🟧 ' : ''}${esc(r.letra)} · ${esc(r.titulo)}</b></div>`; }).join('');
     }
     async function crMostrarPagina() {
       const img = document.getElementById('cr-img'), num = document.getElementById('cr-pgnum'); if (!img) return;
@@ -8501,12 +8522,29 @@
       const corpoE = isE ? `<label class="cr-tirar ${oc.has(t.id) ? 'on' : ''}"><input type="checkbox" data-tarefa="${esc(t.id)}" ${oc.has(t.id) ? 'checked' : ''}> 🗑 TIRAR só esta explicação (o assunto já foi explicado em outra página)</label>`
         + (fora && !oc.has(t.id) ? '<div class="cr-aviso-e">Esta explicação está saindo junto, porque a atividade da página foi tirada (ou ficou sem exercícios).</div>' : '')
         + `<div class="cr-resumo-e"><div class="cr-resumo-t">O QUE O ALUNO LÊ (resumo; a prévia 👁 mostra tudo)</div>${crResumoBlocos(t)}</div>` : '';
-      const exs = (t.exercicios || []).map(e => {
-        const off = oc.has(e.id) || (!opc && fora);
-        return `<label class="cr-ex ${off ? 'off' : ''}"><input type="checkbox" data-ex="${esc(e.id)}" ${oc.has(e.id) ? 'checked' : ''}>
+      const linhaEx = (e, comCaixa, off) => `<label class="cr-ex ${off ? 'off' : ''}">${comCaixa ? `<input type="checkbox" data-ex="${esc(e.id)}" ${oc.has(e.id) ? 'checked' : ''}>` : ''}
           <span class="cr-tipo">${CR_ROTULO[e.t] || e.t}</span><span class="tx">${crLinha(e.q)}<span class="resp">${crResposta(e)}</span></span>
           <button type="button" class="cr-ver" data-previa-ex="${esc(e.id)}" title="Ver este exercício como o aluno vê">👁 Ver</button></label>`;
-      }).join('');
+      // Páginas com os exercícios do livro mapeados: cada exercício do livro (A, B, C…) é um BLOCO inteiro, tirado de uma vez (nunca item solto).
+      const regs = t.tipo === 'livro' ? (t.regioes || []) : [];
+      const COBRE = { vocab: 'É o vocabulário da lição: o app tem o cartão de vocabulário. Na página aparece normal.', gramatica: 'É o quadro de gramática: a explicação 💡 tem o assunto. Na página aparece normal.', leitura: 'É um texto para ler: aparece só na página.', nada: 'Sem versão no app: aparece só na página. Se tirar, essa parte da página fica coberta para a aluna.' };
+      const blocosHtml = regs.length ? regs.map(r => {
+        const its = (t.exercicios || []).filter(e => e.bk === r.id), chave = `${t.id}:${r.id}`, tirado = oc.has(chave) || (!opc && fora);
+        const cheio = !r.itens || (r.app || 0) >= r.itens;
+        const chip = its.length ? (cheio ? `<span class="cr-chip ok">✅ completo${r.itens ? ` (${r.app} de ${r.itens})` : ''}</span>` : `<span class="cr-chip falta">⚠️ faltam ${r.itens - (r.app || 0)} (app ${r.app || 0} de ${r.itens})</span>`)
+          : (r.itens && r.cobre === 'nada' ? `<span class="cr-chip falta">⚠️ sem versão no app (${r.itens} itens no livro)</span>` : `<span class="cr-chip na">${r.cobre === 'vocab' ? 'vocabulário' : r.cobre === 'gramatica' ? 'gramática' : r.cobre === 'leitura' ? 'leitura' : 'só na página'}</span>`);
+        const parcial = !oc.has(chave) && its.some(e => oc.has(e.id));
+        return `<div class="cr-bloco ${tirado ? 'off' : ''}" data-reg="${esc(r.id)}">
+          <label class="cr-tirar ${tirado ? 'on' : ''}" style="margin-bottom:4px;"><input type="checkbox" data-bloco="${esc(r.id)}" ${oc.has(chave) ? 'checked' : ''}> 🗑 TIRAR este exercício do app</label>
+          <div class="cr-bloco-t"><b>${r.secao === 2 ? '🟧 ' : ''}${esc(r.letra)} · ${esc(r.titulo)}</b> ${chip}</div>
+          <div class="cr-bloco-i">${esc(r.instr || '')}</div>
+          ${parcial ? '<div class="cr-aviso-e">Tinha itens soltos tirados antes. Marque “tirar” e desmarque para refazer o bloco inteiro.</div>' : ''}
+          ${its.length ? its.map(e => linhaEx(e, false, tirado)).join('') : `<div class="cr-bloco-n">${esc(COBRE[r.cobre] || COBRE.nada)}</div>`}</div>`;
+      }).join('') : '';
+      const soltosEx = (t.exercicios || []).filter(e => !regs.length || !regs.some(r => r.id === e.bk));
+      const exs = regs.length
+        ? blocosHtml + (soltosEx.length ? `<div style="font-size:.76rem;color:var(--muted);margin:10px 0 6px;font-weight:700;">EXTRAS DO APP (não são um exercício do livro): cada um pode ser tirado</div>${soltosEx.map(e => linhaEx(e, true, oc.has(e.id) || (!opc && fora))).join('')}` : '')
+        : (t.exercicios || []).map(e => linhaEx(e, true, oc.has(e.id) || (!opc && fora))).join('');
       const vids = t.tipo === 'livro' ? (un.tarefas || []).filter(v => v.tipo === 'video' && (crPaginaDoVideo(un, un.n, v) || {}).id === t.id) : [];
       const caixaVideo = vids.map(v => `<div class="cr-aviso-e" style="background:#f0f9ff;border-color:#bae6fd;color:#0c4a6e;font-weight:600;">🎬 Esta página tem um vídeo: <b>${esc(v.titulo)}</b> (${oc.has(v.id) ? 'desligado' : 'ligado'}).
           <b>Quer só o vídeo?</b> Tire a página (ou deixe só os exercícios que quiser) e ligue o vídeo: ele continua no Caminho, sem a página.
@@ -8520,10 +8558,15 @@
         ${isE ? corpoE : expls.length ? opcoes : opc
           ? `<label class="cr-tirar lig ${fora ? '' : 'on'}"><input type="checkbox" data-tarefa="${esc(t.id)}" data-lig="1" ${fora ? '' : 'checked'}> Ligar no app (esta vem DESLIGADA)</label>`
           : `<label class="cr-tirar ${fora ? 'on' : ''}"><input type="checkbox" data-tarefa="${esc(t.id)}" ${fora ? 'checked' : ''}> 🗑 TIRAR esta tarefa inteira do app</label>`}
-        ${exs ? `<div style="font-size:.76rem;color:var(--muted);margin:10px 0 6px;font-weight:700;">${isE ? 'MINI-EXERCÍCIOS DA EXPLICAÇÃO' : 'EXERCÍCIOS DESTA PÁGINA'} — marque só os que quer tirar</div>${exs}` : ''}
+        ${exs ? `<div style="font-size:.76rem;color:var(--muted);margin:10px 0 6px;font-weight:700;">${isE ? 'MINI-EXERCÍCIOS DA EXPLICAÇÃO' : regs.length ? 'EXERCÍCIOS DO LIVRO NESTA PÁGINA — marque o exercício INTEIRO que quer tirar' : 'EXERCÍCIOS DESTA PÁGINA — marque só os que quer tirar'}</div>${exs}` : ''}
         <div style="font-size:.76rem;color:var(--muted);margin:10px 0 2px;font-weight:700;">O QUE VOCÊ QUERIA NO LUGAR? (opcional, é para eu criar as novas)</div>
         <textarea class="cr-nota" data-nota="${esc(t.id)}" placeholder="Ex.: mais exercícios de ouvir; trocar por conversa sobre o trabalho; mais fácil...">${esc((un.notas || {})[t.id] || '')}</textarea>`;
+      crDesenhaRegioes();
     }
+    document.getElementById('cr-passo').addEventListener('mouseover', e => {
+      const b = e.target.closest && e.target.closest('[data-reg]'); crDesenhaRegioes(b ? b.dataset.reg : undefined);
+      document.querySelectorAll('#cr-passo .cr-bloco').forEach(x => x.classList.toggle('hl', !!b && x === b));
+    });
     document.getElementById('cr-passo').addEventListener('click', e => {
       const b = e.target.closest && e.target.closest('[data-ir-passo]'); if (!b) return;
       const i = crUn.tarefas.findIndex(x => x.id === b.dataset.irPasso); if (i >= 0) crIr(i);
@@ -8532,6 +8575,11 @@
       const cx = e.target; if (cx.tagName !== 'INPUT') return;
       const un = crUn, t = un.tarefas[crPasso], oc = new Set(un.ocultos || []);
       if (cx.dataset.opcao) { crAplicaOpcao(t, cx.dataset.opcao); return; }
+      if (cx.dataset.bloco) {   // exercício do livro inteiro: tira (ou devolve) todos os itens dele e a região da página
+        const r = (t.regioes || []).find(x => x.id === cx.dataset.bloco); if (!r) return;
+        [`${t.id}:${r.id}`, ...(t.exercicios || []).filter(e => e.bk === r.id).map(e => e.id)].forEach(i => { cx.checked ? oc.add(i) : oc.delete(i); });
+        un.ocultos = [...oc]; crMarcarRevisada(t.id); crAgendarSalvar(); crRenderMapa(); crRenderDireita(); return;
+      }
       const id = cx.dataset.tarefa || cx.dataset.ex; if (!id) return;
       if (cx.dataset.lig === '1') { if (cx.checked) oc.delete(id); else oc.add(id); }
       else { if (cx.checked) oc.add(id); else oc.delete(id); }

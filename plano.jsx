@@ -937,7 +937,7 @@ function PlanoAudiosPagina({ audios }) {
 }
 
 // A página aparece inteira (largura da tela); dois toques, pinça, roda do mouse ou +/− aproximam; arrastar anda na página.
-function PlanoLeitor({ curso, pdf }) {
+function PlanoLeitor({ curso, pdf, cobrir }) {
   const caixa = React.useRef(null); const img = React.useRef(null);
   const V = React.useRef({ s: 1, x: 0, y: 0, w: 0, h: 0, fit: 1 });
   const ptr = React.useRef(new Map()); const pinca = React.useRef(null); const toque = React.useRef({ t: 0, x: 0, y: 0, mov: 0 });
@@ -997,8 +997,11 @@ function PlanoLeitor({ curso, pdf }) {
   return (
     <div ref={caixa} onPointerDown={desce} onPointerMove={mexe} onPointerUp={sobe} onPointerCancel={sobe}
       style={{ position: 'relative', flex: 1, minHeight: 90, overflow: 'hidden', background: '#3B3F4A', touchAction: 'none', cursor: 'grab' }}>
-      {url && <img ref={img} src={url} alt="Página do livro" draggable="false" onLoad={e => { V.current.w = e.target.naturalWidth; V.current.h = e.target.naturalHeight; e.target.style.width = V.current.w + 'px'; e.target.style.height = V.current.h + 'px'; ajustar(); }}
-        style={{ position: 'absolute', left: 0, top: 0, transformOrigin: '0 0', userSelect: 'none', WebkitUserDrag: 'none', maxWidth: 'none', willChange: 'transform' }} />}
+      {url && <div ref={img} style={{ position: 'absolute', left: 0, top: 0, transformOrigin: '0 0', willChange: 'transform' }}>
+        <img src={url} alt="Página do livro" draggable="false" onLoad={e => { V.current.w = e.target.naturalWidth; V.current.h = e.target.naturalHeight; e.target.style.width = V.current.w + 'px'; e.target.style.height = V.current.h + 'px'; if (img.current) { img.current.style.width = V.current.w + 'px'; img.current.style.height = V.current.h + 'px'; } ajustar(); }}
+          style={{ display: 'block', userSelect: 'none', WebkitUserDrag: 'none', maxWidth: 'none' }} />
+        {(cobrir || []).map((c, k) => <div key={k} style={{ position: 'absolute', left: 0, right: 0, top: `${c.y0 * 100}%`, height: `${(c.y1 - c.y0) * 100}%`, background: '#F1EDE6', boxShadow: 'inset 0 0 0 3px #E2DCD2', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: '#94A3B8', fontWeight: 800, fontSize: 30, padding: 40, boxSizing: 'border-box' }}>Este exercício do livro não faz parte do seu curso.</div>)}
+      </div>}
       {!url && !erro && <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: '#CBD5E1', fontWeight: 800, fontSize: 14 }}>Abrindo a página…</div>}
       {erro && <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: '#FECACA', fontWeight: 800, fontSize: 14, textAlign: 'center', padding: 24 }}>Não consegui abrir a página agora. Confira a internet e tente de novo.</div>}
       <div data-zoomctl="1" style={{ position: 'absolute', right: 8, top: 8, display: 'flex', flexDirection: 'column', gap: 6, zIndex: 2 }}>
@@ -1091,7 +1094,7 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm }) {
           {onAsk && <button onClick={onAsk} aria-label="Dr. EurekIA" style={{ ...btn, width: 'auto', padding: '0 9px', fontSize: 15 }}>💡</button>}
         </div>
         {(t.audios || []).length > 0 && pdf === t.pdf && <PlanoAudiosPagina audios={t.audios} />}
-        <PlanoLeitor curso={cursoId} pdf={pdf} />
+        <PlanoLeitor curso={cursoId} pdf={pdf} cobrir={pdf === t.pdf ? t.cobrir : null} />
         {total === 0
           ? <div style={{ padding: '10px 14px calc(12px + env(safe-area-inset-bottom, 0px))', background: '#fff', borderTop: '1px solid rgba(var(--brand-rgb),.12)', flexShrink: 0 }}>
             <button className="plano-btn violeta" onClick={onFeita}>Já li a página ✓</button></div>
@@ -1525,6 +1528,8 @@ function PlanoCfgDoCurso(cfg, indice, un, ref, setSel) {
     .map(t => {
       const n = t.exercicios ? { ...t, exercicios: t.exercicios.filter(e => !oc.has(e.id)).map(exercicio) } : { ...t };
       if (t.tipo === 'jogo' && t.formato === 'memoria' && t.jogo) n.jogo = t.jogo.map(par);
+      // exercícios do livro tirados no painel (chave "tarefa:bloco" em ocultos): a região sai da imagem da página
+      if (t.regioes) n.cobrir = t.regioes.filter(r => oc.has(`${t.id}:${r.id}`)).map(r => ({ y0: r.y0, y1: r.y1 }));
       return n;
     })
     .filter(t => !(t.tipo === 'teste' && !(t.perguntas && t.perguntas.length)));
@@ -1589,7 +1594,7 @@ function PlanoPreviaCurso({ user }) {
   const oc = new Set(dados.un.ocultos || []);
   const bruta = cfg.pacotes[0].tarefas.find(x => x.id === tarefaId);
   if (!bruta) return tela('Esta tarefa não aparece para o aluno (ela não tem conteúdo).');
-  const tarefa = semOcultos && bruta.exercicios ? { ...bruta, exercicios: bruta.exercicios.filter(e => !oc.has(e.id)) } : bruta;
+  const tarefa = semOcultos && bruta.exercicios ? { ...bruta, exercicios: bruta.exercicios.filter(e => !oc.has(e.id)), cobrir: (bruta.regioes || []).filter(r => oc.has(`${bruta.id}:${r.id}`)).map(r => ({ y0: r.y0, y1: r.y1 })) } : bruta;
   const u = cfg.unidade;
   const k = exId && tarefa.exercicios ? tarefa.exercicios.findIndex(e => e.id === exId) : -1;
   const abrirEm = exId ? Math.max(0, k) : undefined;
