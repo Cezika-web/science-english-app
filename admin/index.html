@@ -8749,12 +8749,23 @@
       const caixaVideo = vids.map(v => `<div class="cr-aviso-e" style="background:#f0f9ff;border-color:#bae6fd;color:#0c4a6e;font-weight:600;">🎬 Esta página tem um vídeo: <b>${esc(v.titulo)}</b> (${oc.has(v.id) ? 'desligado' : 'ligado'}).
           <b>Quer só o vídeo?</b> Tire a página (ou deixe só os exercícios que quiser) e ligue o vídeo: ele continua no Caminho, sem a página.
           <button type="button" class="cr-btn" data-ir-passo="${esc(v.id)}" style="margin-left:4px;padding:3px 10px;font-size:.74rem;">Ir ao vídeo</button></div>`).join('');
+      // Prévia do Dr. EurekIA (campo `previa` da tarefa do livro: { intro?, topicos[], fazer }): só leitura, é o que o aluno ou a aluna vê ao abrir a página.
+      const pv = t.tipo === 'livro' && t.previa && typeof t.previa === 'object' ? t.previa : null;
+      const pvTop = pv && Array.isArray(pv.topicos) ? pv.topicos.filter(x => typeof x === 'string' && x.trim()) : [];
+      const pvFazer = pv && typeof pv.fazer === 'string' ? pv.fazer.trim() : '';
+      const caixaPrevia = t.tipo !== 'livro' ? '' : (pvTop.length || pvFazer)
+        ? `<div class="cr-resumo-e" style="margin:0 0 10px;background:#f5f3ff;border-color:#ddd6fe;color:#3b0764;"><div class="cr-resumo-t" style="color:#6d28d9;">📣 Prévia do Dr. EurekIA (o que o aluno ou a aluna lê ao abrir esta página)</div>
+          ${typeof pv.intro === 'string' && pv.intro.trim() ? `<p>${crPlano(pv.intro.trim())}</p>` : ''}
+          ${pvTop.length ? `<ul style="margin:0 0 7px;padding-left:18px;">${pvTop.map(x => `<li>${crPlano(x.trim())}</li>`).join('')}</ul>` : ''}
+          ${pvFazer ? `<p><b>O que fazer:</b> ${crPlano(pvFazer)}</p>` : ''}
+          <p style="margin:0;opacity:.8;">Qualquer dúvida é só falar comigo.</p></div>`
+        : '<div style="font-size:.74rem;color:var(--muted);font-weight:700;margin:0 0 8px;">📣 ainda sem prévia do Dr. EurekIA</div>';
       const semLink = t.tipo === 'video' && !oc.has(t.id) && !t.youtube ? '<div class="cr-aviso-e">⚠️ Este vídeo está ligado, mas ainda sem link: a aluna vê “Vídeo em breve”. Cole o link no cartão “Vídeos e áudios”, lá embaixo.</div>' : '';
       document.getElementById('cr-passo').innerHTML = `
         <h3>${esc(t.ic || '')} ${esc(t.titulo)}</h3>
         <div class="meta">${esc(t.grupo || '')} · ${esc(t.sub || '')}</div>
         <button type="button" class="cr-btn pri" data-previa-tarefa="1" style="margin:0 0 10px;">👁 Ver como o aluno vê esta tarefa${exs ? ' (com os exercícios)' : ''}</button>
-        ${caixaVideo}${semLink}
+        ${caixaPrevia}${caixaVideo}${semLink}
         ${isE ? corpoE : expls.length ? opcoes : opc
           ? `<label class="cr-tirar lig ${fora ? '' : 'on'}"><input type="checkbox" data-tarefa="${esc(t.id)}" data-lig="1" ${fora ? '' : 'checked'}> Ligar no app (esta vem DESLIGADA)</label>`
           : `<label class="cr-tirar ${fora ? 'on' : ''}"><input type="checkbox" data-tarefa="${esc(t.id)}" ${fora ? 'checked' : ''}> 🗑 TIRAR esta tarefa inteira do app</label>`}
