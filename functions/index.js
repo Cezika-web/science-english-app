@@ -11,6 +11,7 @@ import { createChallengeFunctions } from './challenge.js';
 import { createCobrancaFunctions } from './cobranca.js';
 import { activityPublicationMetadata } from './activity-publication.js';
 import { contextoPosAulas, contextoAtividades, contextoDadosEstudo, contextoPerfil, blocoPagina } from './assistente.js';
+import { LIMITE_DIA, ErroFala, validarPedido, exigencia, diaSP, proximaCota, criarFonteDeToken, conferirFala } from './fala.js';
 
 initializeApp();
 const db = getFirestore();
@@ -2319,7 +2320,7 @@ COMO RESPONDER (em português, tom simpático e direto, no máximo uns 170 palav
 3. Dê mais 1 ou 2 exemplos novos, curtos, no nível dele.
 Se a dúvida for sobre um exercício que ele está fazendo agora (veja "Tarefa que ele está fazendo"), NÃO entregue a resposta pronta: explique a regra, mostre um exemplo parecido com outras palavras e deixe que ele responda. Só confirme se a resposta DELE está certa depois que ele a disser.
 Se a mensagem começar com "Estou com dificuldade nesse exercício" (o aluno tocou na bolinha do exercício), primeiro diga em 1 ou 2 frases o que o exercício pede, com as palavras do enunciado que veio junto; depois explique a regra ou o raciocínio com um exemplo parecido, sem usar as palavras do exercício; nunca diga a resposta e termine convidando-o a tentar.
-Se aparecer a linha "PÁGINA DO LIVRO EM QUE ELE ESTÁ AGORA", ele está numa página do livro e o texto entre « » diz o que se aprende ali e o que ele deve fazer (o app já mostrou isso a ele numa prévia antes dos exercícios). Use esse objetivo quando ele perguntar o que vai aprender ou fazer "nesta página" (isso é sobre a página, NÃO use a regra do resumo das aulas recentes aqui), quando disser que não entendeu o texto, a página ou o que é para fazer, e para escolher exemplos que combinem com o assunto da página. Explique o objetivo com as suas palavras, em poucas frases, sem repetir a prévia inteira, e ajude com a palavra ou o trecho em que ele travou. Mesmo assim, nunca entregue a resposta de um exercício da página. Não mencione a linha nem os símbolos « ». Se a pergunta for de outro assunto, ignore a linha.
+Se aparecer a linha "PÁGINA DO LIVRO EM QUE O ALUNO/A ALUNA ESTÁ AGORA", o aluno ou a aluna está numa página do livro e o texto entre « » diz o que se aprende ali e o que fazer (o app já mostrou isso numa prévia antes dos exercícios). Use esse objetivo quando perguntar o que vai aprender ou fazer "nesta página" (isso é sobre a página, NÃO use a regra do resumo das aulas recentes aqui), quando disser que não entendeu o texto, a página ou o que é para fazer, e para escolher exemplos que combinem com o assunto da página. Explique o objetivo com as suas palavras, em poucas frases, sem repetir a prévia inteira, e ajude com a palavra ou o trecho em que travou. Mesmo assim, nunca entregue a resposta de um exercício da página. Não mencione a linha nem os símbolos « ». Se a pergunta for de outro assunto, ignore a linha.
 Se ele perguntar o que está aprendendo ou estudando ultimamente (ou pedir um resumo das aulas recentes), responda com 3 a 5 assuntos curtos tirados do MATERIAL, cada um com a data do pós-aula e um exemplo em inglês que apareceu lá, sem entregar resposta de atividade; termine convidando-o a perguntar sobre qualquer um deles. Se o material estiver vazio, diga que ainda não há aulas registradas.
 Cite só o que está de fato no material: nunca invente o que o pós-aula disse nem o que o aluno respondeu. Se o material não tiver nada sobre o assunto, responda pelo seu conhecimento e diga que isso não apareceu nas últimas aulas.
 Se não tiver certeza, diga para perguntar ao César. Nunca invente regra.
@@ -2472,6 +2473,73 @@ export const perguntarAssistente = onCall(
       await usoRef.set({ perguntas: FieldValue.increment(-1) }, { merge: true });
       console.error('Assistente: falha ao responder:', erro);
       throw new HttpsError('internal', 'Não consegui responder agora.');
+    }
+  }
+);
+
+/* ───────── Fala do aluno no curso: conferência da palavra do vocabulário e transcrição das gravações livres ─────────
+ * O app manda o áudio já em WAV 16 kHz mono (base64). A função chama o Google Cloud Speech-to-Text (v1) com a conta de
+ * serviço do próprio projeto (token do servidor de metadados: nada de chave, nenhum pacote novo) e grava o resultado em
+ * students/{uid}/falas/{chave}, o mesmo documento que o app já criou (a aluna cria; só a função completa a conferência).
+ * A API "Cloud Speech-to-Text" precisa estar LIGADA no projeto; se não estiver, o aluno recebe um aviso claro e segue.
+ * Cota: LIMITE_DIA tentativas por aluno por dia, contadas em students/{uid}/planoProgresso/quotaFala (o aluno não escreve ali).
+ * `teste: true` (só o professor, na prévia do painel): confere, mas não gasta cota e não grava nada.
+ */
+const fonteDeTokenFala = criarFonteDeToken((...args) => fetch(...args));
+
+export const avaliarFala = onCall(
+  { ...OPCOES_PADRAO, timeoutSeconds: 60, memory: '256MiB' },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
+    const pedido = validarPedido(request.data);
+    if (pedido.erro) throw new HttpsError('invalid-argument', pedido.erro);
+    const { modo, chave, wav, alvo, curso, teste } = pedido.valor;
+    const professor = ADMIN_EMAILS.includes(request.auth?.token?.email);
+    if (teste && !professor) throw new HttpsError('permission-denied', 'O modo de teste é só do professor.');
+
+    // Cota do dia, contada ANTES da chamada numa transação (duas abas abertas não furam o limite).
+    const cotaRef = db.doc(`students/${uid}/planoProgresso/quotaFala`);
+    if (!teste) {
+      const dia = diaSP();
+      const liberado = await db.runTransaction(async (tx) => {
+        const snap = await tx.get(cotaRef);
+        const prox = proximaCota(snap.exists ? snap.data() : null, dia, LIMITE_DIA);
+        if (prox.liberado) tx.set(cotaRef, { dia: prox.dia, n: prox.n, atualizadoEm: FieldValue.serverTimestamp() });
+        return prox.liberado;
+      });
+      if (!liberado) throw new HttpsError('resource-exhausted', 'Você já usou todas as conferências de fala de hoje. Amanhã tem mais!');
+    }
+
+    try {
+      let minimo = exigencia(undefined);
+      if (modo === 'palavra' && curso) {
+        try { const c = await db.doc(`cursos/${curso}`).get(); if (c.exists) minimo = exigencia(c.data().pronunciaMin); }
+        catch (e) { console.warn('avaliarFala: não li a exigência do curso, usando o padrão:', e?.message); }
+      }
+      const r = await conferirFala((...args) => fetch(...args), fonteDeTokenFala, { modo, alvo, wav, minimo });
+      if (!teste) {
+        const registro = modo === 'palavra'
+          ? { modo, palavra: alvo, ouvi: r.ouvi, ok: r.ok, conf: r.conf, motivo: r.motivo }
+          : { modo, transcricao: r.texto, conf: r.conf };
+        try {
+          await db.doc(`students/${uid}/falas/${chave}`).set({ ...registro, avaliadoEm: new Date().toISOString() }, { merge: true });
+        } catch (e) { console.error('avaliarFala: não consegui gravar o resultado:', e); }   // o aluno ainda vê o resultado na tela
+      }
+      return r;
+    } catch (erro) {
+      // Falha nossa ou do Google não pode gastar a conferência do aluno.
+      if (!teste) await cotaRef.set({ n: FieldValue.increment(-1) }, { merge: true }).catch(() => {});
+      if (erro instanceof ErroFala) {
+        console.error(`avaliarFala [${erro.tipo}]:`, erro.detalhe || erro.message);
+        const detalhe = professor ? erro.detalhe : undefined;   // o professor vê o motivo técnico; o aluno só a frase clara
+        if (erro.tipo === 'desligada') throw new HttpsError('failed-precondition', 'A conferência de fala ainda não foi ligada.', detalhe);
+        if (erro.tipo === 'limite') throw new HttpsError('resource-exhausted', erro.message, detalhe);
+        if (erro.tipo === 'audio') throw new HttpsError('invalid-argument', erro.message, detalhe);
+        throw new HttpsError('unavailable', erro.message, detalhe);
+      }
+      console.error('avaliarFala: falha inesperada:', erro);
+      throw new HttpsError('internal', 'Não consegui conferir a fala agora.');
     }
   }
 );
