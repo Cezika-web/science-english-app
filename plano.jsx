@@ -1014,16 +1014,16 @@ function PlanoLeitor({ curso, pdf, cobrir }) {
   );
 }
 
-const PLANO_ROTULO_EX = { mc: 'Escolher', vf: 'Verdadeiro ou falso', gap: 'Digitar', match: 'Ligar', order: 'Montar a frase', ouvir: 'Ouvir e escolher', ditado: 'Ouvir e escrever', speak: 'Falar' };
+const PLANO_ROTULO_EX = { conv: 'Completar a conversa', mc: 'Escolher', vf: 'Verdadeiro ou falso', gap: 'Digitar', match: 'Ligar', order: 'Montar a frase', ouvir: 'Ouvir e escolher', ditado: 'Ouvir e escrever', speak: 'Falar' };
 
 // Um exercício por vez. Avisa o resultado uma única vez (onFim) e mostra a correção.
 function PlanoExercicio({ ex, onFim }) {
   const [fim, setFim] = React.useState(null); const [sel, setSel] = React.useState(null); const [txt, setTxt] = React.useState('');
   const [montada, setMontada] = React.useState([]); const [ligados, setLigados] = React.useState({}); const [selE, setSelE] = React.useState(null);
-  const [erros, setErros] = React.useState(0); const [piscar, setPiscar] = React.useState(null);
+  const [erros, setErros] = React.useState(0); const [piscar, setPiscar] = React.useState(null); const [resp, setResp] = React.useState({});
   const banco = React.useMemo(() => ex.t === 'order' ? PlanoEmbaralhar(ex.w.map((w, k) => ({ w, k }))) : [], [ex]);
   const dir = React.useMemo(() => ex.pares ? PlanoEmbaralhar(ex.pares.map((p, k) => ({ x: p[1], k }))) : [], [ex]);
-  const certaTxt = ex.t === 'mc' || ex.t === 'ouvir' ? ex.o[ex.c] : ex.t === 'vf' ? (ex.c ? 'Verdadeiro' : 'Falso') : ex.t === 'order' ? ex.w.join(' ') : (ex.a || [''])[0];
+  const certaTxt = ex.t === 'mc' || ex.t === 'ouvir' ? ex.o[ex.c] : ex.t === 'vf' ? (ex.c ? 'Verdadeiro' : 'Falso') : ex.t === 'order' ? ex.w.join(' ') : ex.t === 'conv' ? (ex.a || []).map(x => String(x).split('|')[0]).join(' · ') : (ex.a || [''])[0];
   const fechar = (ok, extra) => { if (fim) return; setFim({ ok, extra }); onFim(ok); };
   const confere = valor => fechar((ex.a || []).map(PlanoNormResp).includes(PlanoNormResp(valor)));
   const opcoes = (ex.t === 'mc' || ex.t === 'ouvir') && ex.o.map((o, k) => <button key={k} disabled={!!fim} onClick={() => { setSel(k); fechar(k === ex.c); }} className={`plano-opt ${fim ? (k === ex.c ? 'ok' : k === sel ? 'no' : '') : ''}`}>{o}</button>);
@@ -1049,6 +1049,23 @@ function PlanoExercicio({ ex, onFim }) {
       else { setErros(n => n + 1); setPiscar(c.k); setTimeout(() => setPiscar(null), 450); }
     }} className={`plano-opt ${ligados[c.k] ? 'ok' : piscar === c.k ? 'no' : ''}`}>{c.x}</button>)}</div>
   </div>;
+  // Conversa com várias lacunas (`linhas` com ____; `a` = uma resposta por lacuna, alternativas separadas por |)
+  const conv = ex.t === 'conv' && (() => {
+    let n = -1; const vazias = (ex.a || []).some((_, k) => !String(resp[k] || '').trim());
+    const certo = k => String((ex.a || [])[k] || '').split('|').map(PlanoNormResp).includes(PlanoNormResp(resp[k] || ''));
+    return <div style={{ marginTop: 8 }}>
+      <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 14, padding: '10px 12px' }}>
+        {(ex.linhas || []).map((l, i) => <div key={i} style={{ fontSize: 15, fontWeight: 700, lineHeight: 2.1, color: '#0F172A' }}>
+          {String(l).split('____').map((p, j, tudo) => { const k = j < tudo.length - 1 ? ++n : -1;
+            return <React.Fragment key={j}>{p}{k >= 0 && <span style={{ display: 'inline-block', verticalAlign: 'baseline' }}>
+              <input value={resp[k] || ''} disabled={!!fim} onChange={e => setResp(r => ({ ...r, [k]: e.target.value }))} autoCapitalize="none" autoCorrect="off" spellCheck={false}
+                style={{ width: Math.max(70, 11 * Math.max(...String((ex.a || [])[k] || '').split('|').map(x => x.length)) + 22), maxWidth: '100%', margin: '0 3px', border: 0, borderBottom: `2.5px solid ${!fim ? '#A78BFA' : certo(k) ? '#22C55E' : '#F87171'}`, background: !fim ? '#F5F3FF' : certo(k) ? '#F0FDF4' : '#FEF2F2', borderRadius: 6, padding: '3px 5px', fontSize: 15, fontWeight: 800, fontFamily: 'inherit', outline: 'none', textAlign: 'center' }} />
+              {fim && !certo(k) && <span style={{ fontSize: 11.5, fontWeight: 800, color: '#15803D', marginLeft: 2 }}>✓ {String((ex.a || [])[k]).split('|')[0]}</span>}</span>}</React.Fragment>; })}
+        </div>)}
+      </div>
+      {!fim && <button className="plano-btn" style={{ marginTop: 9 }} disabled={vazias} onClick={() => fechar((ex.a || []).every((_, k) => certo(k)))}>Conferir</button>}
+    </div>;
+  })();
   const fala = ex.t === 'speak' && <div style={{ marginTop: 6 }}>
     {ex.dica && <div style={{ fontSize: 13, fontWeight: 700, color: '#64748B', lineHeight: 1.45, marginBottom: 10 }}>{ex.dica}</div>}
     {!fim && <button className="plano-btn violeta" onClick={() => fechar(true)}>🎤 Já falei em voz alta ✓</button>}
@@ -1062,7 +1079,7 @@ function PlanoExercicio({ ex, onFim }) {
         <button className="plano-btn sec" style={{ width: 'auto', padding: '9px 14px', fontSize: 14 }} onClick={() => PlanoFalar(ex.fala, .6)}>🐢 Devagar</button>
       </div>}
       {ex.t === 'vf' && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 7 }}>{[[true, 'Verdadeiro'], [false, 'Falso']].map(([v, l]) => <button key={l} disabled={!!fim} onClick={() => { setSel(v); fechar(v === ex.c); }} className={`plano-opt ${fim ? (v === ex.c ? 'ok' : v === sel ? 'no' : '') : ''}`} style={{ textAlign: 'center', marginTop: 0 }}>{l}</button>)}</div>}
-      {opcoes}{caixaTxt}{ordem}{ligar}{fala}
+      {opcoes}{caixaTxt}{ordem}{ligar}{conv}{fala}
       {fim && ex.t !== 'speak' && ex.t !== 'match' && <div style={{ marginTop: 11, padding: '10px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, background: fim.ok ? '#F0FDF4' : '#FEF2F2', color: fim.ok ? '#14532D' : '#7F1D1D', border: `1px solid ${fim.ok ? '#BBF7D0' : '#FECACA'}` }}>
         {fim.ok ? '✔ Isso!' : `✘ A resposta certa é: ${certaTxt}`}{ex.exp ? <div style={{ fontWeight: 600, marginTop: 3 }}>{ex.exp}</div> : null}</div>}
       {fim && ex.t === 'match' && <div style={{ marginTop: 11, padding: '10px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, background: fim.ok ? '#F0FDF4' : '#FFFBEB', color: fim.ok ? '#14532D' : '#78350F', border: `1px solid ${fim.ok ? '#BBF7D0' : '#FDE68A'}` }}>{fim.ok ? '✔ ' : ''}{fim.extra}</div>}
@@ -1526,7 +1543,7 @@ function PlanoCfgDoCurso(cfg, indice, un, ref, setSel) {
   const paiVivo = id => { const p = porId[id]; return !p || (!oc.has(id) && (!(p.exercicios || []).length || p.exercicios.some(e => !oc.has(e.id)))); };
   const tarefas = (un.tarefas || []).filter(t => !oc.has(t.id) && (t.tipo !== 'explicacao' || paiVivo(t.para)))
     .map(t => {
-      const n = t.exercicios ? { ...t, exercicios: t.exercicios.filter(e => !oc.has(e.id)).map(exercicio) } : { ...t };
+      const n = t.exercicios ? { ...t, exercicios: t.exercicios.filter(e => !oc.has(e.id) && !(e.bk && oc.has(`${t.id}:${e.bk}`))).map(exercicio) } : { ...t };   // item de um exercício do livro tirado também sai (mesmo se foi acrescentado depois)
       if (t.tipo === 'jogo' && t.formato === 'memoria' && t.jogo) n.jogo = t.jogo.map(par);
       // exercícios do livro tirados no painel (chave "tarefa:bloco" em ocultos): a região sai da imagem da página
       if (t.regioes) n.cobrir = t.regioes.filter(r => oc.has(`${t.id}:${r.id}`)).map(r => ({ y0: r.y0, y1: r.y1 }));
@@ -1594,7 +1611,7 @@ function PlanoPreviaCurso({ user }) {
   const oc = new Set(dados.un.ocultos || []);
   const bruta = cfg.pacotes[0].tarefas.find(x => x.id === tarefaId);
   if (!bruta) return tela('Esta tarefa não aparece para o aluno (ela não tem conteúdo).');
-  const tarefa = semOcultos && bruta.exercicios ? { ...bruta, exercicios: bruta.exercicios.filter(e => !oc.has(e.id)), cobrir: (bruta.regioes || []).filter(r => oc.has(`${bruta.id}:${r.id}`)).map(r => ({ y0: r.y0, y1: r.y1 })) } : bruta;
+  const tarefa = semOcultos && bruta.exercicios ? { ...bruta, exercicios: bruta.exercicios.filter(e => !oc.has(e.id) && !(e.bk && oc.has(`${bruta.id}:${e.bk}`))), cobrir: (bruta.regioes || []).filter(r => oc.has(`${bruta.id}:${r.id}`)).map(r => ({ y0: r.y0, y1: r.y1 })) } : bruta;
   const u = cfg.unidade;
   const k = exId && tarefa.exercicios ? tarefa.exercicios.findIndex(e => e.id === exId) : -1;
   const abrirEm = exId ? Math.max(0, k) : undefined;
