@@ -8528,12 +8528,12 @@
           <button type="button" class="cr-ver" data-previa-ex="${esc(e.id)}" title="Ver este exercício como o aluno vê">👁 Ver</button></label>`;
       // Páginas com os exercícios do livro mapeados: cada exercício do livro (A, B, C…) é um BLOCO inteiro, tirado de uma vez (nunca item solto).
       const regs = t.tipo === 'livro' ? (t.regioes || []) : [];
-      const COBRE = { vocab: 'É o vocabulário da lição: o app tem o cartão de vocabulário. Na página aparece normal.', gramatica: 'É o quadro de gramática: a explicação 💡 tem o assunto. Na página aparece normal.', leitura: 'É um texto para ler: aparece só na página.', nada: 'Sem versão no app: aparece só na página. Se tirar, essa parte da página fica coberta para a aluna.' };
+      const COBRE = { vocab: 'São as palavras da lição: o app tem os cartões de vocabulário (ouvir e falar).', gramatica: 'É o quadro de gramática: o assunto vai para a explicação 💡 do app.', leitura: 'É o texto do livro (a página mostra de onde ele vem): a aluna lê e responde nos exercícios do app.', nada: '🆕 Ainda não tem exercício no app. Se você DEIXAR este exercício, eu crio um igual aos outros (tudo que está no livro passa para o app, a aluna responde no app). Se TIRAR, essa parte da página fica coberta para a aluna.' };
       const blocosHtml = regs.length ? regs.map(r => {
         const its = (t.exercicios || []).filter(e => e.bk === r.id), chave = `${t.id}:${r.id}`, tirado = oc.has(chave) || (!opc && fora);
         const cheio = !r.itens || (r.app || 0) >= r.itens;
         const chip = its.length ? (cheio ? `<span class="cr-chip ok">✅ completo${r.itens ? ` (${r.app} de ${r.itens})` : ''}</span>` : `<span class="cr-chip falta">⚠️ faltam ${r.itens - (r.app || 0)} (app ${r.app || 0} de ${r.itens})</span>`)
-          : (r.itens && r.cobre === 'nada' ? `<span class="cr-chip falta">⚠️ sem versão no app (${r.itens} itens no livro)</span>` : `<span class="cr-chip na">${r.cobre === 'vocab' ? 'vocabulário' : r.cobre === 'gramatica' ? 'gramática' : r.cobre === 'leitura' ? 'leitura' : 'só na página'}</span>`);
+          : (r.cobre === 'nada' ? `<span class="cr-chip falta">🆕 a criar no app se você deixar${r.itens ? ` (${r.itens} itens no livro)` : ''}</span>` : `<span class="cr-chip na">${r.cobre === 'vocab' ? 'vocabulário' : r.cobre === 'gramatica' ? 'gramática' : 'texto do livro'}</span>`);
         const parcial = !oc.has(chave) && its.some(e => oc.has(e.id));
         return `<div class="cr-bloco ${tirado ? 'off' : ''}" data-reg="${esc(r.id)}">
           <label class="cr-tirar ${tirado ? 'on' : ''}" style="margin-bottom:4px;"><input type="checkbox" data-bloco="${esc(r.id)}" ${oc.has(chave) ? 'checked' : ''}> 🗑 TIRAR este exercício do app</label>
