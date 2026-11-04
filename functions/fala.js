@@ -96,3 +96,90 @@ export function duracaoWav(base64) {
   if (canais !== 1 || taxa !== 16000 || bits !== 16) return null;
   return (b.length - 44) / (taxa * 2);
 }
+
+// ───────── exigência por livro (cursos/{id}.pronunciaMin) ─────────
+// O professor muda pelo painel (0,5 a 0,95). Ausente ou inválido: o padrão. Fora da faixa: encosta no limite mais próximo.
+export function exigencia(valor) {
+  const n = typeof valor === 'string' ? Number(valor.replace(',', '.')) : Number(valor);
+  if (valor === null || valor === undefined || valor === '' || !Number.isFinite(n)) return CONFIANCA_MINIMA;
+  return Math.min(0.95, Math.max(0.5, n));
+}
+
+// ───────── cota por aluno por dia (o contador mora em students/{uid}/planoProgresso/quotaFala) ─────────
+export const diaSP = (data = new Date()) => data.toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+export function proximaCota(atual, dia, limite = LIMITE_DIA) {
+  const n = atual && atual.dia === dia ? Number(atual.n) || 0 : 0;
+  return n >= limite ? { liberado: false, dia, n } : { liberado: true, dia, n: n + 1 };
+}
+
+// ───────── o pedido que o app manda ─────────
+export const DURACAO_MAX = { palavra: 6, livre: 62 };   // segundos (a fala livre do app para em 30 s; sobra margem)
+const MAX_BASE64 = 3000000;                              // ~62 s de WAV 16 kHz mono em base64 é ~2,6 MB
+export function validarPedido(dados) {
+  const d = dados && typeof dados === 'object' ? dados : {};
+  const modo = d.modo === 'palavra' || d.modo === 'livre' ? d.modo : '';
+  if (!modo) return { erro: 'Faltou dizer se é uma palavra ou uma fala livre.' };
+  const chave = String(d.chave || '');
+  if (!/^[A-Za-z0-9_-]{6,60}$/.test(chave)) return { erro: 'Identificador da gravação inválido.' };
+  const wav = typeof d.wav === 'string' ? d.wav : '';
+  if (!wav) return { erro: 'Faltou o áudio.' };
+  if (wav.length > MAX_BASE64) return { erro: 'O áudio é grande demais.' };
+  const duracao = duracaoWav(wav);
+  if (duracao === null) return { erro: 'O áudio precisa ser WAV de 16 kHz, mono, 16 bits.' };
+  if (duracao > DURACAO_MAX[modo]) return { erro: modo === 'palavra' ? 'Grave só a palavra (no máximo 6 segundos).' : 'A gravação passou do tempo máximo.' };
+  let alvo = '';
+  if (modo === 'palavra') {
+    alvo = palavraAlvo(String(d.palavra || '').slice(0, 120));
+    if (!alvo) return { erro: 'Faltou a palavra a conferir.' };
+  }
+  const curso = d.curso === undefined || d.curso === null || d.curso === '' ? '' : String(d.curso);
+  if (curso && !/^[a-z0-9][a-z0-9-]{0,39}$/.test(curso)) return { erro: 'Curso inválido.' };
+  return { valor: { modo, chave, wav, alvo, curso, duracao, teste: d.teste === true } };
+}
+
+// ───────── a chamada HTTP ao serviço de voz (o `fetch` vem por parâmetro, para testar com respostas simuladas) ─────────
+export const URL_TOKEN = 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token';
+export const URL_SPEECH = 'https://speech.googleapis.com/v1/speech:recognize';
+
+// tipo: 'desligada' (API não ligada / sem permissão) | 'limite' (cota do Google) | 'audio' (áudio recusado) | 'servico' (rede ou erro do Google)
+export class ErroFala extends Error {
+  constructor(tipo, mensagem, detalhe = '') { super(mensagem); this.name = 'ErroFala'; this.tipo = tipo; this.detalhe = String(detalhe || ''); }
+}
+
+// Token da conta de serviço da própria função, pelo servidor de metadados (sem chave para guardar). Fica em cache até perto de vencer.
+export function criarFonteDeToken(fetchFn, agora = () => Date.now()) {
+  let guardado = null;
+  return async function token() {
+    if (guardado && guardado.vence > agora()) return guardado.valor;
+    let r;
+    try { r = await fetchFn(URL_TOKEN, { headers: { 'Metadata-Flavor': 'Google' } }); }
+    catch (e) { throw new ErroFala('servico', 'Não consegui a credencial do projeto.', e && e.message); }
+    if (!r.ok) throw new ErroFala('servico', 'Não consegui a credencial do projeto.', `metadados HTTP ${r.status}`);
+    let j = null; try { j = await r.json(); } catch (e) { /* cai no teste abaixo */ }
+    if (!j || !j.access_token) throw new ErroFala('servico', 'Não consegui a credencial do projeto.', 'resposta sem access_token');
+    guardado = { valor: j.access_token, vence: agora() + Math.max(0, (Number(j.expires_in) || 0) - 60) * 1000 };
+    return guardado.valor;
+  };
+}
+
+export async function chamarSpeech(fetchFn, token, wavBase64, modo) {
+  let r;
+  try {
+    r = await fetchFn(URL_SPEECH, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(corpoSpeech(wavBase64, modo)) });
+  } catch (e) { throw new ErroFala('servico', 'Não consegui falar com o serviço de voz.', e && e.message); }
+  let j = null; try { j = JSON.parse(await r.text()); } catch (e) { /* corpo vazio ou não-JSON */ }
+  if (r.ok) return j || {};
+  const erro = (j && j.error) || {};
+  const razao = ((erro.details || []).map(d => d && d.reason).find(Boolean)) || '';
+  const detalhe = `HTTP ${r.status} ${erro.status || ''} ${razao} ${erro.message || ''}`.replace(/\s+/g, ' ').trim();
+  if (r.status === 403 || erro.status === 'PERMISSION_DENIED' || razao === 'SERVICE_DISABLED') throw new ErroFala('desligada', 'A conferência de fala ainda não foi ligada.', detalhe);
+  if (r.status === 429 || erro.status === 'RESOURCE_EXHAUSTED') throw new ErroFala('limite', 'O serviço de voz está ocupado. Tente de novo daqui a pouco.', detalhe);
+  if (r.status === 400) throw new ErroFala('audio', 'O serviço de voz não aceitou esse áudio.', detalhe);
+  throw new ErroFala('servico', 'O serviço de voz não respondeu direito.', detalhe);
+}
+
+// Junta tudo: chama o serviço e interpreta. Palavra → { ok, ouvi, conf, motivo, partes, dica }; livre → { texto, conf }.
+export async function conferirFala(fetchFn, fonteDeToken, { modo, alvo, wav, minimo }) {
+  const resposta = await chamarSpeech(fetchFn, await fonteDeToken(), wav, modo);
+  return modo === 'palavra' ? interpretaPalavra(resposta, alvo, minimo) : interpretaLivre(resposta);
+}
