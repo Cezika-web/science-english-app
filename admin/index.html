@@ -8619,7 +8619,8 @@
     function crVideosDaUnidade(un, n) {
       const oc = new Set(un.ocultos || []);
       const lista = (un.tarefas || []).filter(t => t.tipo === 'video').map(v => ({ v, pag: crPaginaDoVideo(un, n, v) }));
-      return { vagas: lista.filter(x => x.pag && !oc.has(x.pag.id)), orfaos: lista.filter(x => (!x.pag || oc.has(x.pag.id)) && x.v.youtube) };
+      const naPagina = x => !!(x.pag && !oc.has(x.pag.id));   // a página dele ficou no curso
+      return { vagas: lista.filter(x => naPagina(x) || crEhVideoFinal(x.v)), naPagina, orfaos: lista.filter(x => !naPagina(x) && !crEhVideoFinal(x.v) && x.v.youtube) };
     }
     function crChipAudio(a, acao) {
       return `<span class="cr-aud"><button type="button" class="cr-aud-play" data-cr-play="${esc(a.caminho)}" title="ouvir">▶</button>
@@ -8634,15 +8635,17 @@
     function crMidiaUnidade(u) {
       const un = cursoUnidades[u.id]; if (!un) return '';
       const oc = new Set(un.ocultos || []);
-      const paginas = crPaginasQueFicaram(un); const { vagas, orfaos } = crVideosDaUnidade(un, u.n);
+      const paginas = crPaginasQueFicaram(un); const { vagas, naPagina, orfaos } = crVideosDaUnidade(un, u.n);
+      const st = crStats(un); const revisada = st.total > 0 && st.revisadas >= st.total;
+      const finais = vagas.filter(x => !naPagina(x));   // vídeo do fim da unidade quando a página dele (a última) foi tirada
       const soltos = un.audiosSoltos || [];
       const comAudio = paginas.filter(p => (p.audios || []).length).length;
       const comLink = vagas.filter(x => x.v.youtube).length;
-      const tiradas = (un.tarefas || []).filter(t => t.tipo === 'livro' && oc.has(t.id)).map(t => String(t.titulo || '').split(':')[0]);
+      const tiradas = (un.tarefas || []).filter(t => t.tipo === 'livro' && oc.has(t.id)).map(t => String(t.titulo || '').split(':')[0] + ((t.audios || []).length ? ` (⚠️ tem ${(t.audios || []).length} áudio guardado)` : ''));
       const opcoes = paginas.map(p => `<option value="${esc(p.id)}">${esc(p.titulo)}</option>`).join('');
       const linhas = paginas.map(t => {
         const aud = t.audios || [];
-        const vid = vagas.filter(x => x.pag.id === t.id).map(x => crLinhaVideo(u.id, x.v)).join('');
+        const vid = vagas.filter(x => naPagina(x) && x.pag.id === t.id).map(x => crLinhaVideo(u.id, x.v)).join('');
         return `<div class="cr-video cr-pag" style="display:block;">
           <div class="cr-pag-linha"><strong class="cr-pag-tit">📖 ${esc(t.titulo)}</strong>
             <div class="cr-pag-meio">${aud.map((a, i) => crChipAudio(a, `<button type="button" class="cr-aud-x" data-cr-tira="${esc(u.id)}|${esc(t.id)}|${i}" title="tirar desta página (o arquivo volta para a lista “sem página”)">✕</button>`)).join('') || '<span class="cr-sem">sem áudio</span>'}
@@ -8654,12 +8657,14 @@
           <button type="button" class="cr-btn pri" data-cr-poe="${esc(u.id)}|${i}" disabled>Colocar na página</button>
           <button type="button" class="cr-btn" data-cr-apaga="${esc(u.id)}|${i}" title="apagar este arquivo">🗑</button></div>`).join('')}</div>` : '';
       return `<details class="cr-un-linha" style="display:block;" data-cr-un="${esc(u.id)}" ${crMidiaAberta.has(u.id) ? 'open' : ''}>
-        <summary style="cursor:pointer;font-weight:700;">Unit ${u.n} · ${esc(u.titulo)} <small style="color:var(--muted);font-weight:600;">· ${paginas.length} páginas ficaram · 🔊 ${comAudio} com áudio · 🎬 ${comLink}/${vagas.length} com vídeo</small></summary>
+        <summary style="cursor:pointer;font-weight:700;">Unit ${u.n} · ${esc(u.titulo)} <small style="color:var(--muted);font-weight:600;">· ${paginas.length} páginas ficaram · 🔊 ${comAudio} com áudio · 🎬 ${comLink}/${vagas.length} com vídeo · ${revisada ? '✅ revisão concluída' : `⏳ revisão ${st.revisadas}/${st.total}`}</small></summary>
+        ${revisada ? '' : '<div class="cr-aviso-e" style="margin:8px 0 0;">⏳ A revisão desta unidade ainda não terminou: pode aparecer aqui página que você ainda vai tirar. Espere os ✅ para subir os arquivos.</div>'}
         <div class="cr-drop" data-cr-drop="${esc(u.id)}"><div class="cr-drop-t">⬆️ Solte aqui os áudios da Unit ${u.n} (.mp3, pode ser vários de uma vez)</div>
           <div class="cr-drop-s">Depois escolha a página de cada um. Ou, na linha da página, use “＋ áudio”.</div>
           <label class="cr-btn pri" style="cursor:pointer;">Escolher arquivos<input type="file" accept="audio/*,.mp3,.m4a" multiple hidden data-cr-add="${esc(u.id)}|"></label>
           <div class="cr-drop-msg" id="cr-msg-${esc(u.id)}"></div></div>
         ${caixaSoltos}${linhas || '<div class="cr-sem" style="padding:6px 2px;">Nenhuma página ficou nesta unidade.</div>'}
+        ${finais.map(x => `<div class="cr-video cr-pag" style="display:block;"><div class="cr-pag-linha"><strong class="cr-pag-tit">🎬 Fim da unidade</strong></div>${crLinhaVideo(u.id, x.v)}</div>`).join('')}
         ${orfaos.length ? `<div class="cr-aviso-e" style="margin-top:8px;">Vídeo ligado de página que você tirou — se não quer mais, apague o link e salve:${orfaos.map(x => crLinhaVideo(u.id, x.v)).join('')}</div>` : ''}
         ${tiradas.length ? `<div style="font-size:.78rem;color:#92400e;background:#fef3c7;border-radius:9px;padding:7px 11px;margin-top:8px;">🙈 Escondidas porque você tirou (${tiradas.length}): ${tiradas.map(esc).join(' · ')}</div>` : ''}
       </details>`;
