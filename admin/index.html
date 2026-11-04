@@ -1794,8 +1794,8 @@
         </div>
 
         <div class="cr-card">
-          <h2>✍️ Resumos do vídeo de fim de unidade <small style="font-weight:600;color:var(--muted);">(o que as alunas escreveram)</small></h2>
-          <p class="cr-sub">Cada aluna do curso que enviou um resumo aparece aqui, com o texto e a data.</p>
+          <h2>✍️ O que as alunas entenderam dos vídeos <small style="font-weight:600;color:var(--muted);">(respostas)</small></h2>
+          <p class="cr-sub">Cada resposta aparece com o nome da aluna, o vídeo, a data e o texto. No vídeo do fim da unidade é o resumo; nos outros, o que ela entendeu antes de o texto do vídeo ser liberado.</p>
           <div class="cr-rev-topo" style="margin:0 0 8px;"><button type="button" class="cr-btn" id="cr-resumos-carregar">↻ Ver os resumos</button></div>
           <div id="cr-resumos"></div>
         </div>
@@ -8626,7 +8626,7 @@
         <span class="cr-aud-nome" title="${esc(a.nome)}">${esc(a.nome)}</span>${a.dur ? `<span class="cr-aud-dur">${crTempo(a.dur)}</span>` : ''}${acao || ''}</span>`;
     }
     function crLinhaVideo(uid, v, aviso) {
-      return `<div class="cr-vid">🎬 <span class="cr-vid-rot">${esc(v.titulo)}${crEhVideoFinal(v) ? ' <em>· a aluna escreve um resumo (sem texto do que é dito)</em>' : ''}</span>
+      return `<div class="cr-vid">🎬 <span class="cr-vid-rot">${esc(v.titulo)}${crEhVideoFinal(v) ? ' <em>· resumo da aluna, nunca tem texto do que é dito</em>' : ' <em>· a aluna escreve o que entendeu; depois o texto do vídeo é liberado</em>'}</span>
         <input type="text" id="cr-yt-${esc(v.id)}" placeholder="Link do vídeo no YouTube (não listado)" value="${esc(v.youtube || '')}">
         <button type="button" class="cr-btn pri" data-cr-yt="${esc(uid)}|${esc(v.id)}">Salvar</button>
         <span class="cr-vid-st ${v.youtube ? 'on' : ''}">${v.youtube ? 'ligado' : 'sem link: fica escondido'}</span>${aviso || ''}</div>`;
@@ -8785,8 +8785,9 @@
       achados.sort((a, b) => String(b.em).localeCompare(String(a.em)));
       box.innerHTML = achados.length ? achados.map(r => {
         const un = (String(r.id).match(/^u(\d+)/) || [])[1];
+        const tar = (cursoUnidades['u' + String(un).padStart(2, '0')] || {}).tarefas || []; const rotulo = (tar.find(t => t.id === r.id) || {}).titulo || r.id;
         const dt = r.em ? new Date(r.em) : null; const quando = dt && !isNaN(dt) ? dt.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
-        return `<div class="cr-resumo-aluna"><b>${esc(r.aluna)}</b> <small>· Unit ${Number(un) || '?'}${quando ? ' · ' + quando : ''}</small><p>${esc(r.texto)}</p></div>`;
+        return `<div class="cr-resumo-aluna"><b>${esc(r.aluna)}</b> <small>· Unit ${Number(un) || '?'} · ${esc(rotulo)}${quando ? ' · ' + quando : ''}</small><p>${esc(r.texto)}</p></div>`;
       }).join('') : '<div class="cr-vazio">Nenhuma aluna enviou resumo ainda.</div>';
     }
     document.getElementById('cr-resumos-carregar').onclick = () => crCarregarResumos();

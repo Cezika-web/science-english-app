@@ -755,53 +755,98 @@ function PlanoCarregarYT() {
 
 // O vídeo toca DENTRO do app (YouTube "não listado" incorporado, sem abrir o YouTube). Campos da tarefa:
 //   youtube: link ou ID · inicio / fim (segundos, opcionais, para fatiar um vídeo longo em várias tarefas) · url: link externo.
-function PlanoVideoFinal(t) { return /-video-3$/.test(String((t && t.id) || '')); }   // o vídeo do fim da unidade (Connect TV): sem texto, a aluna escreve um resumo
-const PLANO_RESUMO_MIN = 15;   // palavras
+//   segs: [{a, b, t}] (início, fim e frase do que é dito) ou transcricao: texto corrido — o texto do vídeo.
+// Como a aluna usa:
+//   · vídeo com texto: começa SEM o texto; ela assiste quantas vezes quiser e escreve o que entendeu (qualquer coisa vale, até "não entendi");
+//     ao enviar, o texto do vídeo é liberado (com a frase falada em negrito, acompanhando o vídeo).
+//   · vídeo do fim da unidade (id termina em -video-3, o Connect TV): nunca tem texto; ela escreve um resumo do que entendeu.
+//   · vídeo sem texto ainda: só "Já assisti".
+// A resposta fica em feitas['resumo:ID'] = {texto, em}; o professor lê no painel (aba Curso).
+function PlanoVideoFinal(t) { return /-video-3$/.test(String((t && t.id) || '')); }
+const PLANO_RESUMO_MIN = 1;   // palavras: qualquer resposta vale
+const PlanoPalavras = s => (String(s || '').trim() ? String(s).trim().split(/\s+/).length : 0);
+
+// As frases de um texto falado (áudio ou vídeo): a que está sendo dita fica em negrito e, quando ela termina, o destaque desce para a próxima.
+// Tocar numa frase leva o som para ela (onIr). `ligado` = já começou a tocar.
+function PlanoLinhasTexto({ segs, pos, ligado, onIr }) {
+  const caixa = React.useRef(null);
+  let ativa = -1; if (ligado) segs.forEach((g, k) => { if (pos >= g.a - 0.05) ativa = k; });   // a última que já começou: não "apaga" entre uma frase e outra
+  React.useEffect(() => { const c = caixa.current; const el = c && c.querySelector('[data-ativa="1"]'); if (el) c.scrollTop = Math.max(0, el.offsetTop - 30); }, [ativa]);
+  return (
+    <div ref={caixa} style={{ maxHeight: 150, overflowY: 'auto', position: 'relative', background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 11, padding: '6px 10px', fontSize: 14, lineHeight: 1.5, color: '#0C4A6E' }}>
+      {segs.map((g, k) => <div key={k} data-ativa={k === ativa ? '1' : '0'} onClick={() => onIr && onIr(g.a)} style={{ padding: '2px 4px', margin: '1px 0', cursor: onIr ? 'pointer' : 'default', fontWeight: k === ativa ? 800 : 500, color: k === ativa ? '#0F172A' : '#0C4A6E', background: k === ativa ? '#FEF08A' : 'transparent', borderRadius: 6 }}>{g.t}</div>)}
+    </div>
+  );
+}
+
 function PlanoTarefaVideo({ t, onFeita, onResumo, resumoAnterior, onClose, onAsk }) {
   const id = PlanoYoutubeId(t.youtube || t.youtubeId); const url = t.url;
   const final = PlanoVideoFinal(t);
-  const [resumo, setResumo] = React.useState(resumoAnterior || ''); const [lerTexto, setLerTexto] = React.useState(false);
-  const palavras = resumo.trim() ? resumo.trim().split(/\s+/).length : 0; const pronto = palavras >= PLANO_RESUMO_MIN;
-  const textoVideo = !final && (t.transcricao || (t.segs && t.segs.map(g => g.t).join(' ')) || '');
-  const caixa = React.useRef(null);
+  const segsVideo = (!final && t.segs && t.segs.length) ? t.segs : null;
+  const textoVideo = final ? '' : (segsVideo ? segsVideo.map(g => g.t).join(' ') : (t.transcricao || ''));
+  const temTexto = !!textoVideo;                 // este vídeo tem texto para liberar depois da resposta
+  const pedeResposta = final || temTexto;
+  const [resumo, setResumo] = React.useState(resumoAnterior || ''); const [enviou, setEnviou] = React.useState(false);
+  const liberado = !final && temTexto && (!!resumoAnterior || enviou);   // já respondeu: o texto aparece
+  const palavras = PlanoPalavras(resumo); const pronto = palavras >= PLANO_RESUMO_MIN;
+  const caixa = React.useRef(null); const jogador = React.useRef(null); const relogio = React.useRef(null);
   const [terminou, setTerminou] = React.useState(false); const [semApi, setSemApi] = React.useState(false);
+  const [pos, setPos] = React.useState(0); const [tocou, setTocou] = React.useState(false);
+  const sincroniza = React.useRef(false); sincroniza.current = !!(liberado && segsVideo);
   React.useEffect(() => {
     if (!id || !caixa.current) return undefined;
     let player = null; let vivo = true;
+    const le = () => { try { if (sincroniza.current && jogador.current) setPos(jogador.current.getCurrentTime()); } catch (e) {} };
     PlanoCarregarYT().then(YT => {
       if (!vivo || !caixa.current) return;
       const alvo = document.createElement('div'); caixa.current.appendChild(alvo);
       player = new YT.Player(alvo, {
         videoId: id, width: '100%', height: '100%',
-        playerVars: { rel: 0, playsinline: 1, modestbranding: 1, iv_load_policy: 3, fs: 1, hl: 'pt-BR', start: t.inicio || 0, ...(t.fim ? { end: t.fim } : {}) },
-        events: { onStateChange: e => { if (e.data === 0 && vivo) setTerminou(true); } },
+        playerVars: { rel: 0, playsinline: 1, modestbranding: 1, iv_load_policy: 3, fs: 1, hl: 'pt-BR', cc_load_policy: 0, start: t.inicio || 0, ...(t.fim ? { end: t.fim } : {}) },
+        events: { onStateChange: e => {
+          if (e.data === 0 && vivo) setTerminou(true);
+          clearInterval(relogio.current);
+          if (e.data === 1) { if (vivo) setTocou(true); relogio.current = setInterval(le, 300); } else le();   // tocando: confere o tempo a cada 0,3 s
+        } },
       });
+      jogador.current = player;
     }).catch(() => { if (vivo) setSemApi(true); });   // sem a API o vídeo ainda toca (iframe simples), só não detecta o fim
-    return () => { vivo = false; try { if (player && player.destroy) player.destroy(); } catch (e) {} };
+    return () => { vivo = false; clearInterval(relogio.current); jogador.current = null; try { if (player && player.destroy) player.destroy(); } catch (e) {} };
   }, [id, t.inicio, t.fim]);
+  const irPara = tempo => { try { if (jogador.current) { jogador.current.seekTo(tempo, true); jogador.current.playVideo(); setPos(tempo); } } catch (e) {} };
+  const enviar = () => {
+    const x = resumo.trim();
+    if (onResumo) onResumo(x); else if (final) onFeita();
+    if (!final) setEnviou(true);   // vídeo com texto: não fecha, libera o texto aqui mesmo
+  };
   const moldura = { position: 'relative', paddingTop: '56.25%', borderRadius: 18, overflow: 'hidden', background: '#0F172A', boxShadow: '0 12px 30px rgba(15,23,42,.2)' };
+  const botao = (pedeResposta && !liberado)
+    ? <button className="plano-btn" disabled={!pronto} onClick={enviar}>{pronto ? (final ? 'Enviar o resumo ✓' : 'Enviar o que entendi ✓') : 'Escreva o que você entendeu'}</button>
+    : <button className="plano-btn" onClick={onFeita}>{terminou || liberado ? 'Concluir tarefa ✓' : 'Já assisti ✓'}</button>;
   return (
-    <PlanoCamada titulo={t.titulo} sub={t.sub} onClose={onClose} onAsk={onAsk}
-      rodape={final
-        ? <button className="plano-btn" disabled={!pronto} onClick={() => (onResumo ? onResumo(resumo.trim()) : onFeita())}>{pronto ? 'Enviar o resumo ✓' : `Escreva pelo menos ${PLANO_RESUMO_MIN} palavras (${palavras})`}</button>
-        : <button className="plano-btn" onClick={onFeita}>{terminou ? 'Concluir tarefa ✓' : 'Já assisti ✓'}</button>}>
+    <PlanoCamada titulo={t.titulo} sub={t.sub} onClose={onClose} onAsk={onAsk} rodape={botao}>
       {id ? (semApi
         ? <div style={moldura}><iframe title={t.titulo} src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?rel=0&modestbranding=1&playsinline=1`} allow="encrypted-media; picture-in-picture; fullscreen" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }} /></div>
         : <div style={moldura}><div ref={caixa} style={{ position: 'absolute', inset: 0 }} /></div>)
         : url ? <a href={url} target="_blank" rel="noopener noreferrer" className="plano-btn violeta" style={{ textDecoration: 'none', textAlign: 'center' }}>▶ Abrir o vídeo</a>
         : <div style={{ background: '#fff', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: '#64748B' }}>🎬 Vídeo em breve.</div>}
-      {terminou && <div style={{ marginTop: 12, padding: '10px 13px', borderRadius: 14, background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#14532D', fontWeight: 800, fontSize: 13.5 }}>🎉 Vídeo terminado! Toque em “Concluir tarefa”.</div>}
+      {terminou && !pedeResposta && <div style={{ marginTop: 12, padding: '10px 13px', borderRadius: 14, background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#14532D', fontWeight: 800, fontSize: 13.5 }}>🎉 Vídeo terminado! Toque em “Concluir tarefa”.</div>}
       {t.oQue && <div style={{ fontSize: 13.5, fontWeight: 700, color: '#475569', lineHeight: 1.5, marginTop: 12 }}>{t.oQue}</div>}
-      {textoVideo && <div style={{ marginTop: 12 }}>
-        <button onClick={() => setLerTexto(v => !v)} style={{ border: 0, background: 'none', color: '#0369A1', fontWeight: 800, fontSize: 13, fontFamily: 'inherit', cursor: 'pointer', padding: 0 }}>{lerTexto ? '▼ Esconder o texto' : '📄 Ler o que é dito no vídeo'}</button>
-        {lerTexto && <div style={{ marginTop: 6, background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 12, padding: '10px 12px', fontSize: 14.5, lineHeight: 1.6, color: '#0C4A6E', whiteSpace: 'pre-wrap' }}>{textoVideo}</div>}
+      {pedeResposta && !liberado && <div style={{ marginTop: 14, background: '#fff', borderRadius: 16, padding: '12px 13px', border: '1.5px solid #DDD6FE' }}>
+        <div style={{ fontWeight: 800, fontSize: 14.5, color: '#0F172A' }}>{final ? '✍️ Escreva um resumo do que você entendeu' : '✍️ O que você entendeu?'}</div>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: '#64748B', margin: '3px 0 8px', lineHeight: 1.4 }}>{final
+          ? 'Assista quantas vezes precisar. Aqui não tem texto do que é dito: escreva, em inglês e com as suas palavras, o que você entendeu.'
+          : 'Assista quantas vezes precisar, sem texto. Escreva do jeito que der, mesmo que seja pouco ou “não entendi o suficiente”. Depois de enviar, o texto do vídeo aparece.'}</div>
+        <textarea value={resumo} onChange={e => setResumo(e.target.value)} placeholder={final ? 'In this video…' : 'I understood…'} rows={final ? 5 : 4} style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid #CBD5E1', borderRadius: 12, padding: '10px 12px', fontSize: 15, fontFamily: 'inherit', lineHeight: 1.5, resize: 'vertical' }} />
+        <div style={{ fontSize: 11.5, fontWeight: 800, color: pronto ? '#15803D' : '#94A3B8', marginTop: 4 }}>{palavras} palavra{palavras === 1 ? '' : 's'}{pronto ? ' ✓' : ''}</div>
+        {final && resumoAnterior && <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B', marginTop: 4 }}>Você já enviou um resumo. Se mudar o texto e enviar de novo, o professor vê a versão nova.</div>}
       </div>}
-      {final && <div style={{ marginTop: 14, background: '#fff', borderRadius: 16, padding: '12px 13px', border: '1.5px solid #DDD6FE' }}>
-        <div style={{ fontWeight: 800, fontSize: 14.5, color: '#0F172A' }}>✍️ Escreva um resumo do que você entendeu</div>
-        <div style={{ fontSize: 12.5, fontWeight: 700, color: '#64748B', margin: '3px 0 8px', lineHeight: 1.4 }}>Assista quantas vezes precisar. Aqui não tem texto do que é dito: escreva, em inglês e com as suas palavras, o que você entendeu.</div>
-        <textarea value={resumo} onChange={e => setResumo(e.target.value)} placeholder="In this video…" rows={5} style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid #CBD5E1', borderRadius: 12, padding: '10px 12px', fontSize: 15, fontFamily: 'inherit', lineHeight: 1.5, resize: 'vertical' }} />
-        <div style={{ fontSize: 11.5, fontWeight: 800, color: pronto ? '#15803D' : '#94A3B8', marginTop: 4 }}>{palavras} palavra{palavras === 1 ? '' : 's'}{pronto ? ' ✓' : ` · mínimo ${PLANO_RESUMO_MIN}`}</div>
-        {resumoAnterior && <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B', marginTop: 4 }}>Você já enviou um resumo. Se mudar o texto e enviar de novo, o professor vê a versão nova.</div>}
+      {liberado && <div style={{ marginTop: 14 }}>
+        {enviou && <div style={{ marginBottom: 10, padding: '10px 13px', borderRadius: 14, background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#14532D', fontWeight: 800, fontSize: 13.5 }}>✅ Resposta enviada! Agora o texto do vídeo está liberado: assista de novo lendo.</div>}
+        <div style={{ fontWeight: 800, fontSize: 14, color: '#0369A1', marginBottom: 6 }}>📄 O que é dito no vídeo</div>
+        {segsVideo
+          ? <PlanoLinhasTexto segs={segsVideo} pos={pos} ligado={tocou && pos > 0} onIr={jogador.current ? irPara : null} />
+          : <div style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 12, padding: '10px 12px', fontSize: 14.5, lineHeight: 1.6, color: '#0C4A6E', whiteSpace: 'pre-wrap' }}>{textoVideo}</div>}
       </div>}
     </PlanoCamada>
   );
@@ -840,7 +885,7 @@ function PlanoAudiosPagina({ audios }) {
   const [tocando, setTocando] = React.useState(-1); const [sel, setSel] = React.useState(0);
   const [pos, setPos] = React.useState(0); const [durs, setDurs] = React.useState({});
   const [lento, setLento] = React.useState(false); const [texto, setTexto] = React.useState(false); const [aberta, setAberta] = React.useState(true);
-  const els = React.useRef([]); const linhaAtiva = React.useRef(null);
+  const els = React.useRef([]);
   // Os endereços já vêm prontos antes do toque: o iPhone só deixa tocar dentro do próprio toque do dedo.
   React.useEffect(() => {
     let vivo = true; setErro(false);
@@ -858,8 +903,6 @@ function PlanoAudiosPagina({ audios }) {
   };
   const ir = ev => { const el = els.current[sel]; if (!el || !el.duration) return; const r = ev.currentTarget.getBoundingClientRect(); el.currentTime = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width)) * el.duration; setPos(el.currentTime); };
   const a = audios[sel] || audios[0]; const segs = (a && a.segs) || []; const temTexto = audios.some(x => x.segs && x.segs.length);
-  const ativa = (tocando >= 0 || pos > 0) ? segs.findIndex(g => pos >= g.a && pos < g.b + 0.3) : -1;   // só destaca depois de começar a ouvir
-  React.useEffect(() => { const el = linhaAtiva.current; if (el && el.parentNode) el.parentNode.scrollTop = Math.max(0, el.offsetTop - el.parentNode.offsetTop - 30); }, [ativa, texto]);
   const total = durs[sel] || (a && a.dur) || 0;
   return (
     <div style={{ flexShrink: 0, margin: '8px 10px 0', background: '#fff', borderRadius: 16, boxShadow: '0 4px 14px rgba(15,23,42,.14)', padding: '9px 11px 10px', border: '1px solid #EDE9FE' }}>
@@ -879,9 +922,9 @@ function PlanoAudiosPagina({ audios }) {
           <button onClick={() => setLento(v => !v)} style={{ border: `1.5px solid ${lento ? '#6D28D9' : '#DDD6FE'}`, background: lento ? '#6D28D9' : '#fff', color: lento ? '#fff' : '#6D28D9', borderRadius: 99, padding: '2px 9px', fontWeight: 800, fontSize: 11.5, fontFamily: 'inherit', cursor: 'pointer' }}>🐢 devagar</button>
         </div>
         {temTexto && <button onClick={() => setTexto(v => !v)} style={{ marginTop: 8, border: 0, background: 'none', color: '#0369A1', fontWeight: 800, fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer', padding: 0 }}>{texto ? '▼ Esconder o texto' : '📄 Ler o que está sendo dito'}</button>}
-        {temTexto && texto && <div style={{ marginTop: 6, maxHeight: 150, overflowY: 'auto', position: 'relative', background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 11, padding: '6px 10px', fontSize: 14, lineHeight: 1.5, color: '#0C4A6E' }}>
-          {segs.length ? segs.map((g, k) => <div key={k} ref={k === ativa ? linhaAtiva : null} style={{ padding: '2px 0', fontWeight: k === ativa ? 800 : 600, color: k === ativa ? '#0F172A' : '#0C4A6E', background: k === ativa ? '#FEF08A' : 'transparent', borderRadius: 6 }}>{g.t}</div>) : <div style={{ color: '#64748B' }}>Este áudio ainda não tem texto.</div>}
-        </div>}
+        {temTexto && texto && (segs.length
+          ? <div style={{ marginTop: 6 }}><PlanoLinhasTexto segs={segs} pos={pos} ligado={tocando >= 0 || pos > 0} onIr={tempo => { const el = els.current[sel]; if (el) { el.currentTime = tempo; setPos(tempo); } }} /></div>
+          : <div style={{ marginTop: 6, color: '#64748B', fontSize: 13 }}>Este áudio ainda não tem texto.</div>)}
         {erro && <div style={{ marginTop: 6, fontSize: 12, fontWeight: 700, color: '#B91C1C' }}>Não consegui abrir o áudio agora. Confira a internet e tente de novo.</div>}
       </>}
       {audios.map((x, i) => urls[x.caminho] ? <audio key={x.caminho} ref={e => { els.current[i] = e; }} src={urls[x.caminho]} preload="metadata"
@@ -1416,7 +1459,7 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
   const avisarEspelho = () => avisar('👁 Modo espelho — somente leitura');
   const perguntar = () => { if (mirror) { avisarEspelho(); return; } setDuvida({ contexto: tarefa ? tarefa.titulo : '' }); };
   const f = () => concluir(tarefa.id);
-  const enviarResumo = texto => { marcar('resumo:' + tarefa.id, { texto, em: new Date().toISOString() }); concluir(tarefa.id); };
+  const enviarResumo = texto => { marcar('resumo:' + tarefa.id, { texto, em: new Date().toISOString() }); if (PlanoVideoFinal(tarefa)) concluir(tarefa.id); };   // vídeo com texto: só grava a resposta e libera o texto; ela conclui depois
 
   return (
     <>
