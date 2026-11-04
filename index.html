@@ -262,7 +262,7 @@ async function getFB() {
 // Falha de gravação (regra ainda não publicada, sem rede) nunca aparece para o aluno.
 const CzkUsage = (() => {
   // Versão do app que vai junto com o uso (para saber quem ainda roda versão velha). Mantenha igual ao CACHE do sw.js.
-  const APP_BUILD = 'v62';
+  const APP_BUILD = 'v63';
   const TICK = 1000, MIN_STEP = 200, FLUSH = 60000, NEW_VISIT = 30 * 60000;
   const BLIND_CAP = 10 * 60000, HOLD_CAP = 15 * 60000, MAX_FAILS = 5;
   const READ_MS = 180000;                 // maior pausa aceita na leitura do pós-aula (igual a LEITURA_SEG do adesao.js)
@@ -3782,8 +3782,9 @@ function CorrecaoModal({ data, onClose }) {
 }
 
 // ── Gravador de áudio (Speaking) — grava no navegador e entrega o Blob ──
-function AudioRecorder({ existingUrl, readOnly, onBlob, maxSeconds = 30 }) {
-  const maxSecs = Math.max(1, Math.min(30, Number(maxSeconds) || 30));
+function AudioRecorder({ existingUrl, readOnly, onBlob, maxSeconds, teto = 30 }) {
+  // `teto`: 30 s para as atividades em geral; as tarefas de trilha (Entrevista, Business, Viagem) passam 60.
+  const maxSecs = Math.max(1, Math.min(teto, Number(maxSeconds) || teto));
   const [state, setState] = useState(existingUrl ? 'recorded' : 'idle'); // idle | recording | recorded
   const [url, setUrl]     = useState(existingUrl || null);
   const [secs, setSecs]   = useState(0);
@@ -4081,6 +4082,7 @@ function ExtraModal({ extra, onClose, onFinish, onSaveDraft, mirror, posaulas, o
                 key={extra?.id || 'rec'}
                 existingUrl={savedAudioUrl}
                 readOnly={mirror}
+                teto={trInfo ? 60 : 30}
                 onBlob={(blob, ext) => { audioRef.current = { blob, ext }; setHasAudio(!!blob); }}
               />
             </div>

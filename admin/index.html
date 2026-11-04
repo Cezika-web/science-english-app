@@ -6600,7 +6600,10 @@
     // Trilhas (Entrevista, Business, Viagem): cores iguais às do app do aluno (TRILHAS no index.html) e as etapas do molde.
     const TRILHAS_ADM = {
       entrevista: { ic: '🎯', nome: 'Entrevista', bg: '#eff6ff', linha: '#bfdbfe', escuro: '#1e3a8a',
-        etapas: ['Conheça a vaga', 'Fale sobre você', 'As perguntas que vão cair', 'Situações da função', 'Entenda a pergunta', 'Suas perguntas para eles', 'Simulação da entrevista', 'Dia da entrevista'],
+        etapas: ['Conheça a vaga', 'Fale sobre você', 'As perguntas que vão cair', 'Por que você?', 'Disponibilidade, turnos e documentos', 'Valores do cuidado', 'Situações da função', 'Entenda a pergunta e ganhe tempo', 'Suas perguntas para eles', 'Conte uma situação real', 'Simulação da entrevista', 'Dia da entrevista'],
+        foco: ['1) Manter a calma: a calma é o que faz a aluna conseguir se comunicar em inglês.',
+          '2) Falar devagar: treinar a fala lenta; só acontece se ela mantiver a calma.',
+          '3) Responder só o que foi perguntado, em duas partes: (a) entender a pergunta, para não responder outra coisa por falta de entendimento; (b) não acrescentar informação — responder o que foi perguntado e parar; se a pergunta é de sim ou não, a resposta é sim ou não.'],
         campos: [['local', 'Local'], ['tipoLugar', 'Tipo de lugar'], ['funcao', 'Função'], ['fazer', 'Vai fazer'], ['espera', 'Espera'], ['quando', 'Data da entrevista'], ['formato', 'Formato'], ['exp', 'Experiência'], ['medo', 'Preocupações'], ['vaga', 'Anúncio da vaga']] },
       business: { ic: '💼', nome: 'Business', bg: '#eef2ff', linha: '#c7d2fe', escuro: '#312e81',
         etapas: ['Sua função e sua empresa', 'Reuniões', 'E-mails e mensagens', 'Calls e telefone', 'Apresentações', 'Negociação e small talk', 'Simulação: um dia de trabalho'],
@@ -8900,7 +8903,8 @@
         '',
         `Etapas do molde (o número é o campo "etapa" do JSON): ${T.etapas.map((e, i) => `${i + 1}. ${e}`).join(' | ')}`,
         '',
-        `Monte a etapa ___ como atividades extras em JSON, uma por tarefa (um objeto por vez, mesmo molde das extras: skill, level, title, source, instruction, responseType, content), acrescentando "trilha":"${tipo}", "etapa":N e "ordem":K (posição da tarefa dentro da etapa).`,
+        ...(T.foco ? ['Foco do treino (vale para TODAS as tarefas: cada tarefa deve reforçar pelo menos um destes pontos, e as instruções e exemplos devem dar o modelo de resposta curta, calma e sem informação a mais):', ...T.foco.map(f => `- ${f}`), ''] : []),
+        `Monte a etapa ___ como atividades extras em JSON, uma por tarefa (um objeto por vez, mesmo molde das extras: skill, level, title, source, instruction, responseType, content), acrescentando "trilha":"${tipo}", "etapa":N e "ordem":K (posição da tarefa dentro da etapa). A gravação de áudio das tarefas de trilha vai até 60 s (nas demais atividades o limite é 30 s).`,
       ].join('\n');
     }
     // Destino das aulas e atividades: rede de segurança. A pós-aula é da trilha pelo `trilha` do documento ou pela palavra no nome do

@@ -30,13 +30,30 @@ const TRILHA_CONF = {
     ],
     sub: r => [r.funcao, trilhaCurto(r.local)].filter(Boolean).join(' · '),
     cdRot: 'Entrevista',
+    // O foco de TODAS as tarefas (decisão do professor, 04/11/2026): calma → falar devagar → responder só o que foi perguntado.
+    foco: {
+      titulo: 'O foco do seu treino',
+      intro: 'Em todas as etapas vamos treinar 3 coisas:',
+      itens: [
+        { ic: '🧘', curto: 'Calma', t: 'Manter a calma', d: 'A calma é o que faz você conseguir se comunicar em inglês. Respire e vá sem pressa: com a cabeça tranquila, as palavras aparecem.' },
+        { ic: '🐢', curto: 'Falar devagar', t: 'Falar devagar', d: 'Falar devagar também se treina. E só acontece com calma: sem pressa, cada palavra sai mais clara.' },
+        { ic: '🎯', curto: 'Só o que foi perguntado', t: 'Responder só o que foi perguntado', d: 'São duas partes:', sub: [
+          ['👂', 'Entender a pergunta', 'Para não responder outra coisa só porque não entendeu.'],
+          ['✂️', 'Não acrescentar informação', 'Responda o que foi perguntado e pare. Se a pergunta é de sim ou não, a resposta é sim ou não.'],
+        ] },
+      ],
+    },
     etapas: [
       { ic: '🧭', n: 'Conheça a vaga', d: 'Vocabulário da função e do lugar' },
       { ic: '🗣', n: 'Fale sobre você', d: '“Tell me about yourself”, em blocos' },
       { ic: '❓', n: 'As perguntas que vão cair', d: 'As perguntas clássicas, feitas para a sua vaga' },
+      { ic: '⭐', n: 'Por que você?', d: 'Motivação, pontos fortes e “Why this job?”' },
+      { ic: '🗓', n: 'Disponibilidade, turnos e documentos', d: '“Can you work nights?”, “When can you start?”' },
+      { ic: '💙', n: 'Valores do cuidado', d: 'Dignidade, privacidade e segurança' },
       { ic: '🏥', n: 'Situações da função', d: '“O que você faria se…?”' },
-      { ic: '👂', n: 'Entenda a pergunta', d: 'Ouvir o entrevistador, vários sotaques' },
+      { ic: '👂', n: 'Entenda a pergunta e ganhe tempo', d: 'Pedir para repetir e “Let me think…”' },
       { ic: '🙋', n: 'Suas perguntas para eles', d: '“Do you have any questions for us?”' },
+      { ic: '📖', n: 'Conte uma situação real', d: '“Tell me about a time…”, em passos curtos' },
       { ic: '🎬', n: 'Simulação da entrevista', d: 'Tudo junto, com gravação' },
       { ic: '🍀', n: 'Dia da entrevista', d: 'Colinha com frases de segurança' },
     ],
@@ -199,6 +216,41 @@ function TrilhaResumo({ tipo, conf, respostas }) {
   );
 }
 
+function TrilhaFoco({ tr, foco, aberto }) {
+  const [open, setOpen] = React.useState(aberto !== false);
+  return (
+    <div style={{ background: '#fff', border: `1.5px solid ${tr.line}`, borderRadius: 18, padding: '12px 14px', margin: '12px 0' }}>
+      <button onClick={() => setOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: 0, fontFamily: 'inherit', cursor: 'pointer' }}>
+        <span style={{ width: 34, height: 34, borderRadius: 11, background: tr.bg, display: 'grid', placeItems: 'center', fontSize: 17, flexShrink: 0 }}>📌</span>
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <b style={{ display: 'block', fontSize: 13.5, fontWeight: 800, color: '#0F172A' }}>{foco.titulo}</b>
+          <small style={{ display: 'block', fontSize: 11.3, color: '#64748B', fontWeight: 700, marginTop: 1, lineHeight: 1.35 }}>{open ? foco.intro : foco.itens.map(i => `${i.ic} ${i.curto}`).join(' · ')}</small>
+        </span>
+        <span style={{ fontSize: 18, color: '#94A3B8', transform: open ? 'rotate(90deg)' : 'none' }}>›</span>
+      </button>
+      {open && (
+        <div style={{ marginTop: 10 }}>
+          {foco.itens.map((it, i) => (
+            <div key={i} style={{ display: 'flex', gap: 11, padding: '10px 0', borderTop: `1px solid ${tr.line}` }}>
+              <span style={{ width: 34, height: 34, borderRadius: 11, background: tr.bg, display: 'grid', placeItems: 'center', fontSize: 17, flexShrink: 0 }}>{it.ic}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <b style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#0F172A' }}>{i + 1}. {it.t}</b>
+                <small style={{ display: 'block', fontSize: 11.8, color: '#475569', fontWeight: 700, lineHeight: 1.45, marginTop: 2 }}>{it.d}</small>
+                {it.sub && it.sub.map((s, j) => (
+                  <div key={j} style={{ display: 'flex', gap: 8, marginTop: 7, padding: '7px 9px', background: tr.bg, borderRadius: 11 }}>
+                    <span style={{ fontSize: 15, flexShrink: 0 }}>{s[0]}</span>
+                    <span style={{ minWidth: 0 }}><b style={{ display: 'block', fontSize: 12.2, fontWeight: 800, color: tr.dark }}>{String.fromCharCode(97 + j)}) {s[1]}</b><small style={{ display: 'block', fontSize: 11.4, color: '#475569', fontWeight: 700, lineHeight: 1.4 }}>{s[2]}</small></span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TrilhaNo({ tr, e, st, qtd, feitas, onClick }) {
   const feita = st === 'feita', atual = st === 'atual', vazio = st === 'vazio';
   return (
@@ -317,6 +369,7 @@ function TrilhaTab({ tipo, briefing, onSaveBriefing, extras, posaulas, activitie
             <div><b style={{ fontSize: 13.2, fontWeight: 800, display: 'block' }}>{i + 1}. {c[1]}</b><small style={{ fontSize: 11.6, color: '#64748B', fontWeight: 700, lineHeight: 1.4, display: 'block', marginTop: 1 }}>{c[2]}</small></div>
           </div>
         ))}
+        {conf.foco && <TrilhaFoco tr={tr} foco={conf.foco} />}
         {botaoConsulta}
         {cartaoAtivs}
         <button onClick={() => setTela('form')} style={{ width: '100%', border: 'none', borderRadius: 15, padding: 14, marginTop: 4, background: tr.grad, color: '#fff', fontWeight: 800, fontSize: 14, fontFamily: 'inherit', cursor: 'pointer', boxShadow: '0 8px 18px rgba(0,0,0,.14)' }}>
@@ -340,8 +393,9 @@ function TrilhaTab({ tipo, briefing, onSaveBriefing, extras, posaulas, activitie
         {cartaoAtivs}
         <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: '#9A6438', margin: '12px 2px 4px' }}>O que você contou</div>
         <TrilhaResumo tipo={tipo} conf={conf} respostas={respostas} />
+        {conf.foco && <TrilhaFoco tr={tr} foco={conf.foco} />}
         <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: '#9A6438', margin: '12px 2px 8px' }}>O que vem por aí</div>
-        {conf.etapas.slice(0, 4).map((e, i) => <TrilhaNo key={i} tr={tr} e={e} st="vazio" qtd={0} feitas={0} onClick={() => {}} />)}
+        {conf.etapas.map((e, i) => <TrilhaNo key={i} tr={tr} e={e} st="vazio" qtd={0} feitas={0} onClick={() => {}} />)}
         <button onClick={() => setTela('form')} style={{ width: '100%', borderRadius: 15, padding: 13, marginTop: 4, background: '#fff', color: tr.dark, border: `1.5px solid ${tr.line}`, fontWeight: 800, fontSize: 14, fontFamily: 'inherit', cursor: 'pointer' }}>Editar o que contei</button>
         {consulta}
       </div>
@@ -403,6 +457,7 @@ function TrilhaTab({ tipo, briefing, onSaveBriefing, extras, posaulas, activitie
       )}
       {botaoConsulta}
       {cartaoAtivs}
+      {conf.foco && <TrilhaFoco tr={tr} foco={conf.foco} aberto={false} />}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase', color: tr.dark, margin: '14px 2px 8px' }}>
         <span>Seu caminho</span><small style={{ color: '#64748B', letterSpacing: 0, textTransform: 'none', fontWeight: 700 }}>feito pelo professor para você</small>
