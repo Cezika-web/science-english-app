@@ -11,6 +11,7 @@ import { createChallengeFunctions } from './challenge.js';
 import { createCobrancaFunctions } from './cobranca.js';
 import { activityPublicationMetadata } from './activity-publication.js';
 import { contextoPosAulas, contextoAtividades, contextoDadosEstudo, contextoPerfil } from './assistente.js';
+import { LIMITE_DIA, ErroFala, validarPedido, exigencia, diaSP, proximaCota, criarFonteDeToken, conferirFala } from './fala.js';
 
 initializeApp();
 const db = getFirestore();
@@ -2468,6 +2469,73 @@ export const perguntarAssistente = onCall(
       await usoRef.set({ perguntas: FieldValue.increment(-1) }, { merge: true });
       console.error('Assistente: falha ao responder:', erro);
       throw new HttpsError('internal', 'Não consegui responder agora.');
+    }
+  }
+);
+
+/* ───────── Fala do aluno no curso: conferência da palavra do vocabulário e transcrição das gravações livres ─────────
+ * O app manda o áudio já em WAV 16 kHz mono (base64). A função chama o Google Cloud Speech-to-Text (v1) com a conta de
+ * serviço do próprio projeto (token do servidor de metadados: nada de chave, nenhum pacote novo) e grava o resultado em
+ * students/{uid}/falas/{chave}, o mesmo documento que o app já criou (a aluna cria; só a função completa a conferência).
+ * A API "Cloud Speech-to-Text" precisa estar LIGADA no projeto; se não estiver, o aluno recebe um aviso claro e segue.
+ * Cota: LIMITE_DIA tentativas por aluno por dia, contadas em students/{uid}/planoProgresso/quotaFala (o aluno não escreve ali).
+ * `teste: true` (só o professor, na prévia do painel): confere, mas não gasta cota e não grava nada.
+ */
+const fonteDeTokenFala = criarFonteDeToken((...args) => fetch(...args));
+
+export const avaliarFala = onCall(
+  { ...OPCOES_PADRAO, timeoutSeconds: 60, memory: '256MiB' },
+  async (request) => {
+    const uid = request.auth?.uid;
+    if (!uid) throw new HttpsError('unauthenticated', 'Faça login para continuar.');
+    const pedido = validarPedido(request.data);
+    if (pedido.erro) throw new HttpsError('invalid-argument', pedido.erro);
+    const { modo, chave, wav, alvo, curso, teste } = pedido.valor;
+    const professor = ADMIN_EMAILS.includes(request.auth?.token?.email);
+    if (teste && !professor) throw new HttpsError('permission-denied', 'O modo de teste é só do professor.');
+
+    // Cota do dia, contada ANTES da chamada numa transação (duas abas abertas não furam o limite).
+    const cotaRef = db.doc(`students/${uid}/planoProgresso/quotaFala`);
+    if (!teste) {
+      const dia = diaSP();
+      const liberado = await db.runTransaction(async (tx) => {
+        const snap = await tx.get(cotaRef);
+        const prox = proximaCota(snap.exists ? snap.data() : null, dia, LIMITE_DIA);
+        if (prox.liberado) tx.set(cotaRef, { dia: prox.dia, n: prox.n, atualizadoEm: FieldValue.serverTimestamp() });
+        return prox.liberado;
+      });
+      if (!liberado) throw new HttpsError('resource-exhausted', 'Você já usou todas as conferências de fala de hoje. Amanhã tem mais!');
+    }
+
+    try {
+      let minimo = exigencia(undefined);
+      if (modo === 'palavra' && curso) {
+        try { const c = await db.doc(`cursos/${curso}`).get(); if (c.exists) minimo = exigencia(c.data().pronunciaMin); }
+        catch (e) { console.warn('avaliarFala: não li a exigência do curso, usando o padrão:', e?.message); }
+      }
+      const r = await conferirFala((...args) => fetch(...args), fonteDeTokenFala, { modo, alvo, wav, minimo });
+      if (!teste) {
+        const registro = modo === 'palavra'
+          ? { modo, palavra: alvo, ouvi: r.ouvi, ok: r.ok, conf: r.conf, motivo: r.motivo }
+          : { modo, transcricao: r.texto, conf: r.conf };
+        try {
+          await db.doc(`students/${uid}/falas/${chave}`).set({ ...registro, avaliadoEm: new Date().toISOString() }, { merge: true });
+        } catch (e) { console.error('avaliarFala: não consegui gravar o resultado:', e); }   // o aluno ainda vê o resultado na tela
+      }
+      return r;
+    } catch (erro) {
+      // Falha nossa ou do Google não pode gastar a conferência do aluno.
+      if (!teste) await cotaRef.set({ n: FieldValue.increment(-1) }, { merge: true }).catch(() => {});
+      if (erro instanceof ErroFala) {
+        console.error(`avaliarFala [${erro.tipo}]:`, erro.detalhe || erro.message);
+        const detalhe = professor ? erro.detalhe : undefined;   // o professor vê o motivo técnico; o aluno só a frase clara
+        if (erro.tipo === 'desligada') throw new HttpsError('failed-precondition', 'A conferência de fala ainda não foi ligada.', detalhe);
+        if (erro.tipo === 'limite') throw new HttpsError('resource-exhausted', erro.message, detalhe);
+        if (erro.tipo === 'audio') throw new HttpsError('invalid-argument', erro.message, detalhe);
+        throw new HttpsError('unavailable', erro.message, detalhe);
+      }
+      console.error('avaliarFala: falha inesperada:', erro);
+      throw new HttpsError('internal', 'Não consegui conferir a fala agora.');
     }
   }
 );

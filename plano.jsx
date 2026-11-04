@@ -203,7 +203,7 @@ function planoModo(student, user, mirror) {
   const q = new URLSearchParams(window.location.search);
   const teste = q.get('planoteste') === '1';
   // ?planoteste=1&curso=u04 (admin): prévia do Caminho do curso (livro no app) nessa unidade, sem gravar nada.
-  if (teste && admin) return { ...PLANO_PREVIA, previa: true, cursoRef: q.get('curso') ? { id: 'connectivity-1', inicial: q.get('inicial') || q.get('curso'), atual: q.get('curso') } : null };
+  if (teste && admin) return { ...PLANO_PREVIA, previa: true, forcaFala: q.get('falar') === '1', cursoRef: q.get('curso') ? { id: 'connectivity-1', inicial: q.get('inicial') || q.get('curso'), atual: q.get('curso') } : null };
   const p = student.plano;
   // Com plano.livro (ex.: 'connectivity-1') o Caminho vem do curso no Firestore; sem ele, o pacote antigo da Unit 4.
   if (p && p.ativo !== false) return { ...PLANO_PREVIA, ...(typeof p === 'object' ? p : {}), previa: false, cursoRef: p.livro ? { id: p.livro, inicial: p.unidadeInicial || p.unidadeAtual, atual: p.unidadeAtual || p.unidadeInicial } : null };
@@ -599,7 +599,7 @@ function PlanoEstudo({ estudo, unidade, posaulas, onOpenPost, onFeita, onClose, 
 
 /* ───────── vocabulário ───────── */
 function PlanoFalar(texto, taxa) { try { if ('speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(texto); u.lang = 'en-US'; u.rate = taxa || .9; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } } catch (e) {} }
-function PlanoVocab({ vocab, titulo, onFeita, onClose, onAsk }) {
+function PlanoVocabCartas({ vocab, titulo, onFeita, onClose, onAsk }) {
   const [i, setI] = React.useState(0); const [vira, setVira] = React.useState(false);
   const [en, pt] = vocab[i]; const ultimo = i === vocab.length - 1;
   return (
@@ -616,6 +616,286 @@ function PlanoVocab({ vocab, titulo, onFeita, onClose, onAsk }) {
         </div>
       </button>
     </PlanoCamada>
+  );
+}
+
+/* ───────── fala gravada: vocabulário "ouvir e falar" e exercício de falar ─────────
+ * Só vale com as chaves do livro ligadas no painel (cursos/{id}: vocabPronuncia e gravarFalas). Desligadas, nada muda.
+ * Cada fala é um documento em students/{uid}/falas/{ID} = {audio, dur, em, enunciado, unidade, tarefa, ex?, palavra?}. O áudio vai para o Storage
+ * (extras/{uid}/falas-{unidade}/{arquivo}) e a função avaliarFala completa transcricao / ouvi / ok / conf no mesmo documento.
+ * Na prévia do painel e no espelho (fala.teste) nada é gravado: o vocabulário só confere (a função não guarda nada) e o exercício só marca como feito. */
+const PlanoFalaCtx = React.createContext(null);
+
+// Mesma regra de functions/fala.js (palavraAlvo): "citizen (cidadão)" → "citizen", "single/unmarried" → "single".
+function PlanoPalavraAlvo(s) {
+  return PlanoNorm(String(s || '').replace(/\([^)]*\)/g, ' ').split(/[\/;,]/)[0]).replace(/[’‘`]/g, "'").replace(/[^a-z0-9' ]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function PlanoNovaChave() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+function PlanoUsoGravando(liga) {
+  try { if (typeof CzkUsage !== 'undefined') { if (liga) CzkUsage.hold('gravando'); else CzkUsage.release('gravando'); } } catch (e) {}
+}
+
+// Áudio gravado (webm/mp4) → WAV PCM 16 kHz mono em base64, que é o que a função manda ao Speech-to-Text.
+// A reamostragem é feita aqui, por média de janelas: OfflineAudioContext com sampleRate falha no iOS.
+function PlanoLerBytes(blob) {
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error || new Error('leitura')); r.readAsArrayBuffer(blob); });
+}
+function PlanoDecodificar(ctx, bytes) {
+  return new Promise((res, rej) => { const p = ctx.decodeAudioData(bytes, res, rej); if (p && typeof p.then === 'function') p.then(res, rej); });
+}
+// `canais` = lista de Float32Array (um por canal) na taxa `taxa`. Devolve Int16Array mono a 16 kHz.
+function PlanoPcm16k(canais, taxa) {
+  const n = canais.length ? canais[0].length : 0; const razao = taxa / 16000;
+  const mono = new Float32Array(n);
+  canais.forEach(d => { for (let i = 0; i < n; i++) mono[i] += d[i] / canais.length; });
+  const saida = Math.max(1, Math.floor(n / razao)); const pcm = new Int16Array(saida);
+  for (let j = 0; j < saida; j++) {
+    const i0 = Math.floor(j * razao); const i1 = Math.min(n, Math.max(i0 + 1, Math.ceil((j + 1) * razao)));
+    let soma = 0; for (let i = i0; i < i1; i++) soma += mono[i];
+    const v = Math.max(-1, Math.min(1, soma / Math.max(1, i1 - i0)));
+    pcm[j] = Math.round(v < 0 ? v * 32768 : v * 32767);
+  }
+  return pcm;
+}
+function PlanoMontarWav(pcm) {
+  const dv = new DataView(new ArrayBuffer(44 + pcm.length * 2));
+  const txt = (o, s) => { for (let k = 0; k < s.length; k++) dv.setUint8(o + k, s.charCodeAt(k)); };
+  txt(0, 'RIFF'); dv.setUint32(4, 36 + pcm.length * 2, true); txt(8, 'WAVE'); txt(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+  dv.setUint32(24, 16000, true); dv.setUint32(28, 32000, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true); txt(36, 'data'); dv.setUint32(40, pcm.length * 2, true);
+  for (let j = 0; j < pcm.length; j++) dv.setInt16(44 + j * 2, pcm[j], true);
+  const bytes = new Uint8Array(dv.buffer); let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return { base64: btoa(bin), dur: pcm.length / 16000 };
+}
+async function PlanoParaWav(blob) {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) throw new Error('sem AudioContext');
+  const ctx = new Ctx();
+  try {
+    const audio = await PlanoDecodificar(ctx, await PlanoLerBytes(blob));
+    const canais = []; for (let c = 0; c < audio.numberOfChannels; c++) canais.push(audio.getChannelData(c));
+    return PlanoMontarWav(PlanoPcm16k(canais, audio.sampleRate));
+  } finally { try { Promise.resolve(ctx.close()).catch(() => {}); } catch (e) {} }
+}
+
+// Gravador curto da palavra: toque para gravar, toque para parar, ou para sozinho em ~4 s. Entrega (blob, extensão).
+function PlanoGravadorCurto({ rotulo, onGravou, maxMs = 4000 }) {
+  const [gravando, setGravando] = React.useState(false); const [erro, setErro] = React.useState('');
+  const mr = React.useRef(null); const fluxo = React.useRef(null); const partes = React.useRef([]); const timer = React.useRef(null); const volta = React.useRef(onGravou);
+  volta.current = onGravou;
+  const soltar = () => { clearTimeout(timer.current); try { if (fluxo.current) fluxo.current.getTracks().forEach(t => t.stop()); } catch (e) {} fluxo.current = null; PlanoUsoGravando(false); };
+  React.useEffect(() => () => { const g = mr.current; if (g && g.state !== 'inactive') { g.onstop = null; try { g.stop(); } catch (e) {} } soltar(); }, []);
+  const parar = () => { clearTimeout(timer.current); try { if (mr.current && mr.current.state !== 'inactive') mr.current.stop(); } catch (e) {} };
+  const comecar = async () => {
+    setErro('');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) { setErro('Seu navegador não suporta gravação. No iPhone, abra pelo app na tela inicial.'); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); fluxo.current = stream;
+      const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/aac'].find(m => MediaRecorder.isTypeSupported(m)) || '';
+      const g = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined); partes.current = [];
+      g.ondataavailable = e => { if (e.data && e.data.size) partes.current.push(e.data); };
+      g.onstop = () => {
+        const tipo = g.mimeType || mime || 'audio/webm'; const blob = new Blob(partes.current, { type: tipo });
+        soltar(); setGravando(false);
+        if (!blob.size) { setErro('A gravação ficou vazia. Confira se o microfone está liberado e tente de novo.'); return; }
+        if (volta.current) volta.current(blob, /mp4|aac/.test(tipo) ? 'm4a' : 'webm');
+      };
+      g.start(); mr.current = g; setGravando(true); PlanoUsoGravando(true);
+      timer.current = setTimeout(parar, maxMs);
+    } catch (e) {
+      soltar();
+      const nome = e && e.name;
+      setErro(nome === 'NotAllowedError' || nome === 'SecurityError' ? 'O microfone está bloqueado. Abra as permissões deste app/site, permita o microfone e tente novamente.'
+        : nome === 'NotFoundError' ? 'Nenhum microfone foi encontrado neste aparelho.'
+          : nome === 'NotReadableError' || nome === 'AbortError' ? 'O microfone está sendo usado por outro aplicativo. Feche-o e tente novamente.'
+            : 'Não foi possível iniciar a gravação. Reabra o app e confira a permissão do microfone.');
+    }
+  };
+  return (
+    <div>
+      <button className="plano-btn violeta" onClick={gravando ? parar : comecar} style={gravando ? { background: 'linear-gradient(180deg,#EF4444,#DC2626)', boxShadow: '0 8px 20px rgba(220,38,38,.3)' } : undefined}>{gravando ? '⏹ Parar (para sozinho em 4 s)' : rotulo}</button>
+      {erro && <div style={{ fontSize: 12.5, color: '#DC2626', marginTop: 8, fontWeight: 700, lineHeight: 1.4 }}>{erro}</div>}
+    </div>
+  );
+}
+
+// Cada fala é UM documento em students/{uid}/falas/{chave} (não cabe no doc "feitas": limite de 1500 chaves e 1 MB por aluna).
+// 1) PlanoCriarFala cria o registro (a aluna só cria; a função avaliarFala completa a transcrição/conferência depois);
+// 2) PlanoSubirFala sobe o áudio e preenche o caminho. A ordem importa: a função só pode escrever DEPOIS de a aluna criar o registro.
+// Nenhuma das duas lança erro: devolvem true se deu certo.
+async function PlanoCriarFala(fala, { chave, dur, meta }) {
+  try {
+    const fb = await getFB();
+    const reg = { audio: '', em: new Date().toISOString(), unidade: fala.unidade || '', tarefa: fala.tarefaId || '', ...meta };
+    if (dur) reg.dur = Math.round(dur * 10) / 10;
+    Object.keys(reg).forEach(k => { if (reg[k] === undefined || reg[k] === null) delete reg[k]; });   // o Firestore recusa campo undefined
+    reg.enunciado = String(reg.enunciado || '').slice(0, 160);
+    await fb.setDoc(fb.doc(fb.db, 'students', fala.uid, 'falas', chave), reg);
+    return true;
+  } catch (e) { console.warn('fala: não consegui registrar a gravação', e); return false; }
+}
+async function PlanoSubirFala(fala, { chave, blob, ext }) {
+  try {
+    const fb = await getFB();
+    const unidade = String(fala.unidade || 'x').replace(/[^A-Za-z0-9_-]/g, '') || 'x';
+    const path = `extras/${fala.uid}/falas-${unidade}/${chave}.${ext || 'webm'}`;
+    await fb.uploadBytes(fb.storageRef(fb.storage, path), blob, { contentType: blob.type || 'audio/webm' });
+    try { await fb.updateDoc(fb.doc(fb.db, 'students', fala.uid, 'falas', chave), { audio: path }); }
+    catch (e) { console.warn('fala: o áudio subiu, mas não consegui registrar o caminho', e); }
+    return true;
+  } catch (e) { console.warn('fala: não consegui subir o áudio', e); return false; }
+}
+
+// Chama a função avaliarFala. `dados` = { modo, palavra?, wav, chave }.
+async function PlanoAvaliar(fala, dados) {
+  const fb = await getFB();
+  const chamar = fb.httpsCallable(fb.functions, 'avaliarFala', { timeout: 30000 });
+  const r = await chamar({ ...dados, ...(fala.curso ? { curso: fala.curso } : {}), ...(fala.teste ? { teste: true } : {}) });
+  return (r && r.data) || {};
+}
+function PlanoMsgErroFala(e) {
+  const c = String((e && e.code) || '');
+  if (c === 'functions/resource-exhausted' && e.message) return e.message;
+  if (c === 'functions/failed-precondition' || c === 'functions/not-found') return 'A conferência de fala ainda não está ligada. Você pode seguir.';
+  return 'Não consegui conferir agora (confira a internet). Você pode seguir.';
+}
+function PlanoEsperar(p, ms) { return Promise.race([p, new Promise(res => setTimeout(() => res('tempo'), ms))]); }
+
+// A palavra com as letras que saíram diferentes em vermelho. `partes` = [{t, ok}] vindo da função.
+function PlanoPalavraComErros({ partes }) {
+  return <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: .5, wordBreak: 'break-word' }}>{(partes || []).map((p, k) => <span key={k} style={p.ok ? { color: '#15803D' } : { color: '#DC2626', textDecoration: 'underline wavy #DC2626', textUnderlineOffset: 5 }}>{p.t}</span>)}</span>;
+}
+
+// Vocabulário (modo "ouvir e falar"): a aluna ouve a palavra, grava, e o app confere. Cada tentativa é guardada.
+function PlanoVocabFalar({ vocab, titulo, onFeita, onClose, onAsk, fala }) {
+  const [fila, setFila] = React.useState(() => vocab.map((_, k) => k)); const [pos, setPos] = React.useState(0);
+  const [res, setRes] = React.useState(null); const [enviando, setEnviando] = React.useState(false); const [erros, setErros] = React.useState(0);
+  const [recolocadas, setRecolocadas] = React.useState({}); const [avisoAudio, setAvisoAudio] = React.useState('');
+  // final[k]: 'ok' | 'fraca' (seguiu sem acertar) | 'sem' (a conferência não respondeu); errosTotal[k]: tentativas erradas
+  const final = React.useRef({}); const errosTotal = React.useRef({});
+  const vivo = React.useRef(true); React.useEffect(() => { vivo.current = true; return () => { vivo.current = false; }; }, []);
+  const idx = fila[pos]; const [en, pt] = vocab[idx]; const alvo = PlanoPalavraAlvo(en); const ultimo = pos === fila.length - 1;
+  const liberado = !!res && (res.ok === true || !!res.falha);
+  const podeSeguir = !!res && res.ok !== true && !res.falha && erros >= 3;
+  const podeRecolocar = !recolocadas[idx] && !ultimo;
+
+  const tentar = async (blob, ext) => {
+    setEnviando(true); setRes(null); setAvisoAudio('');
+    const chave = PlanoNovaChave();
+    const wav = await PlanoParaWav(blob).catch(() => null);
+    if (!fala.teste) await PlanoCriarFala(fala, { chave, dur: wav && wav.dur, meta: { enunciado: `Vocabulário: fale “${en}”`, palavra: alvo } });
+    const guardar = fala.teste ? Promise.resolve(true) : PlanoSubirFala(fala, { chave, blob, ext });
+    guardar.then(ok => { if (!ok && vivo.current) setAvisoAudio('⚠️ Não consegui guardar o áudio desta tentativa. Confira a internet.'); });
+    let r;
+    if (!wav) r = { falha: 'Não consegui preparar o áudio neste aparelho. Você pode seguir.' };
+    else { try { r = await PlanoAvaliar(fala, { modo: 'palavra', palavra: alvo, wav: wav.base64, chave }); } catch (e) { r = { falha: PlanoMsgErroFala(e) }; } }
+    if (!vivo.current) return;
+    if (!r.falha && typeof r.ok !== 'boolean') r = { falha: PlanoMsgErroFala(null) };
+    if (r.falha) { if (final.current[idx] !== 'ok') final.current[idx] = 'sem'; }
+    else if (r.ok === true) final.current[idx] = 'ok';
+    else { errosTotal.current[idx] = (errosTotal.current[idx] || 0) + 1; setErros(n => n + 1); }
+    setRes(r); setEnviando(false);
+  };
+
+  const concluir = () => {
+    if (!fala.teste) {
+      let ok = 0, sem = 0; const fracas = [];
+      vocab.forEach(([e], k) => {
+        const f = final.current[k];
+        if (f === 'ok') ok++; else if (f === 'sem') sem++;
+        if (f === 'fraca' || (f === 'ok' && (errosTotal.current[k] || 0) >= 2)) fracas.push(PlanoPalavraAlvo(e));
+      });
+      fala.marcar('pron:' + fala.tarefaId, { ok, total: vocab.length, fracas, ...(sem ? { sem } : {}), em: new Date().toISOString() });
+    }
+    onFeita();
+  };
+  const avancar = pular => {
+    if (pular && final.current[idx] !== 'ok') {
+      final.current[idx] = 'fraca';
+      if (podeRecolocar) { setFila(f => [...f, idx]); setRecolocadas(r => ({ ...r, [idx]: true })); }
+    }
+    if (ultimo) { concluir(); return; }
+    setPos(p => p + 1); setRes(null); setErros(0); setAvisoAudio('');
+  };
+
+  const caixa = (cor, fundo, borda) => ({ marginTop: 12, padding: '12px 14px', borderRadius: 16, fontSize: 14, fontWeight: 700, lineHeight: 1.5, color: cor, background: fundo, border: `1px solid ${borda}` });
+  return (
+    <PlanoCamada titulo={titulo || 'Vocabulário'} sub={`${pos + 1} de ${fila.length} · ouça e fale`} onClose={onClose} onAsk={onAsk}
+      rodape={<button className="plano-btn" disabled={!liberado || enviando} onClick={() => avancar(false)}>{ultimo ? 'Concluir ✓' : 'Próxima ›'}</button>}>
+      <div style={{ background: '#fff', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 22, boxShadow: '0 12px 30px rgba(15,23,42,.08)', padding: '22px 16px', textAlign: 'center' }}>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .7, color: '#64748B' }}>OUÇA E FALE EM INGLÊS</div>
+        <div style={{ fontSize: 36, fontWeight: 800, marginTop: 10, color: '#0F172A', lineHeight: 1.15, wordBreak: 'break-word' }}>{en}</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#64748B', marginTop: 5 }}>{pt}</div>
+        <button className="plano-btn sec" style={{ display: 'inline-block', width: 'auto', margin: '14px auto 0', padding: '9px 20px', fontSize: 15 }} onClick={() => PlanoFalar(en)}>🔊 Ouvir</button>
+      </div>
+
+      {enviando && <div style={caixa('#334155', '#F8FAFC', '#E2E8F0')}>⏳ Conferindo a sua pronúncia…</div>}
+      {res && res.ok === true && <div style={caixa('#14532D', '#F0FDF4', '#BBF7D0')}>✅ Muito bem! Eu ouvi “{res.ouvi}”.</div>}
+      {res && res.falha && <div style={caixa('#78350F', '#FFFBEB', '#FDE68A')}>⚠️ {res.falha}</div>}
+      {res && res.ok === false && !res.falha && <div style={{ ...caixa('#7F1D1D', '#FEF2F2', '#FECACA'), textAlign: 'center' }}>
+        <div>❌ Eu ouvi: <b>“{res.ouvi || 'nada'}”</b></div>
+        <div style={{ margin: '8px 0 4px' }}><PlanoPalavraComErros partes={res.partes} /></div>
+        <div style={{ fontSize: 11.5, fontWeight: 700, color: '#991B1B' }}>As letras em vermelho saíram diferentes.</div>
+        {res.dica && <div style={{ marginTop: 8, fontWeight: 700, color: '#7F1D1D' }}>💡 {res.dica}</div>}
+        <button className="plano-btn sec" style={{ marginTop: 10, padding: '9px 14px', fontSize: 14 }} onClick={() => PlanoFalar(en)}>🔊 Ouvir de novo</button>
+      </div>}
+      {avisoAudio && <div style={{ ...caixa('#78350F', '#FFFBEB', '#FDE68A'), fontSize: 12.5 }}>{avisoAudio}</div>}
+
+      {!(res && res.ok === true) && !enviando && <div style={{ marginTop: 14 }}>
+        <PlanoGravadorCurto rotulo={res ? '🎤 Tentar de novo' : '🎤 Gravar'} onGravou={tentar} />
+        {podeSeguir && <button className="plano-btn sec" style={{ marginTop: 10 }} onClick={() => avancar(true)}>{podeRecolocar ? 'Seguir (volta no fim)' : 'Seguir assim mesmo'}</button>}
+      </div>}
+    </PlanoCamada>
+  );
+}
+
+// Com a chave "vocabPronuncia" do livro ligada, o vocabulário é "ouvir e falar"; desligada, são as cartas de sempre.
+function PlanoVocab(props) {
+  const fala = React.useContext(PlanoFalaCtx);
+  return fala && fala.vocab ? <PlanoVocabFalar {...props} fala={fala} /> : <PlanoVocabCartas {...props} />;
+}
+
+// Exercício de falar: com "gravarFalas" ligada, grava de verdade (até 30 s), guarda o áudio e transcreve. Desligada, o botão de sempre.
+function PlanoFalaExercicio({ ex, feito, onFeito }) {
+  const fala = React.useContext(PlanoFalaCtx);
+  if (!fala || !fala.falas || typeof AudioRecorder !== 'function') return feito ? null : <button className="plano-btn violeta" onClick={onFeito}>🎤 Já falei em voz alta ✓</button>;
+  return <PlanoFalaGravar ex={ex} fala={fala} feito={feito} onFeito={onFeito} />;
+}
+function PlanoFalaGravar({ ex, fala, feito, onFeito }) {
+  const [grav, setGrav] = React.useState(null); const [fase, setFase] = React.useState('gravar');
+  const [texto, setTexto] = React.useState(''); const [aviso, setAviso] = React.useState('');
+  const enviar = async () => {
+    if (!grav || fase !== 'gravar') return;
+    setFase('enviando');
+    if (fala.teste) { setFase('feito'); onFeito(); return; }
+    const chave = PlanoNovaChave();
+    const wav = await PlanoParaWav(grav.blob).catch(() => null);
+    await PlanoCriarFala(fala, { chave, dur: wav && wav.dur, meta: { enunciado: ex.q, ex: ex.id } });
+    const guardar = PlanoSubirFala(fala, { chave, blob: grav.blob, ext: grav.ext });
+    let r = null; let msg = '';
+    const avaliar = wav ? PlanoAvaliar(fala, { modo: 'livre', wav: wav.base64, chave }).then(x => { r = x; }).catch(e => { msg = PlanoMsgErroFala(e); }) : Promise.resolve();
+    const fim = await PlanoEsperar(Promise.all([guardar, avaliar]), 25000);
+    const guardou = fim === 'tempo' ? null : fim[0];
+    if (fim === 'tempo') msg = 'A internet está lenta: a gravação continua sendo enviada. Não feche o app ainda.';
+    else if (!guardou) msg = 'Não consegui guardar o áudio. Confira a internet e fale de novo mais tarde.';
+    else if (!wav) msg = 'A gravação foi enviada, mas não consegui transcrever neste aparelho.';
+    const dito = r && r.texto ? String(r.texto) : '';
+    setTexto(dito);
+    setAviso(msg || (r && !dito ? 'Não consegui ouvir palavras na gravação, mas ela foi enviada para o professor.' : ''));
+    setFase('feito'); onFeito();
+  };
+  if (fase === 'feito' || feito) return (
+    <div style={{ marginTop: 11, padding: '10px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, background: '#F0FDF4', color: '#14532D', border: '1px solid #BBF7D0' }}>
+      {fala.teste ? '✔ Prévia: nada foi gravado.' : '✔ Gravação enviada para o professor.'}
+      {texto && <div style={{ fontWeight: 600, marginTop: 4 }}>Você disse: “{texto}”</div>}
+      {aviso && <div style={{ fontWeight: 600, marginTop: 4, color: '#78350F' }}>{aviso}</div>}
+    </div>
+  );
+  return (
+    <div>
+      <AudioRecorder maxSeconds={30} onBlob={(blob, ext) => setGrav(blob ? { blob, ext } : null)} />
+      <button className="plano-btn violeta" style={{ marginTop: 10 }} disabled={!grav || fase === 'enviando'} onClick={enviar}>{fase === 'enviando' ? 'Enviando…' : 'Enviar gravação ✓'}</button>
+    </div>
   );
 }
 
@@ -1068,7 +1348,7 @@ function PlanoExercicio({ ex, onFim }) {
   })();
   const fala = ex.t === 'speak' && <div style={{ marginTop: 6 }}>
     {ex.dica && <div style={{ fontSize: 13, fontWeight: 700, color: '#64748B', lineHeight: 1.45, marginBottom: 10 }}>{ex.dica}</div>}
-    {!fim && <button className="plano-btn violeta" onClick={() => fechar(true)}>🎤 Já falei em voz alta ✓</button>}
+    <PlanoFalaExercicio ex={ex} feito={!!fim} onFeito={() => fechar(true)} />
   </div>;
   return (
     <div>
@@ -1468,6 +1748,11 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
   const ativOk = activities.length > 0 && activities.every(a => a.finalizada || a.status === 'corrected');
   const avisar = x => { setAviso(x); setTimeout(() => setAviso(''), 2200); };
   const u = cfg.unidade;
+  // Contexto da fala gravada (vocabulário e exercício de falar). Chaves vindas do livro (cursos/{id}); `teste` = prévia do painel ou espelho: nada é gravado.
+  const falaCtx = React.useMemo(() => ({
+    vocab: !!(cfg.vocabPronuncia || cfg.forcaFala), falas: !!(cfg.gravarFalas || cfg.forcaFala), teste: !!cfg.previa || !!mirror,
+    uid, marcar, feitas, curso: cfg.cursoId || '', unidade: (cfg.unidade && cfg.unidade.id) || '', tarefaId: tarefa ? tarefa.id : '',
+  }), [cfg, mirror, uid, marcar, feitas, tarefa]);
 
   const abrirTarefa = (t, estado) => {
     if (estado === 'trancada') { const prox = cfg.aulas.find(a => !a.feita); avisar(`🔒 Libera depois da aula${prox ? ' de ' + PlanoDataCurta(prox.data) : ''}.`); return; }
@@ -1483,7 +1768,7 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
   const enviarResumo = texto => { marcar('resumo:' + tarefa.id, { texto, em: new Date().toISOString() }); if (PlanoVideoFinal(tarefa)) concluir(tarefa.id); };   // vídeo com texto: só grava a resposta e libera o texto; ela conclui depois
 
   return (
-    <>
+    <PlanoFalaCtx.Provider value={falaCtx}>
       <style>{PLANO_CSS}</style>
       {tab === 'caminho' && <PlanoCaminho cfg={cfg} feitas={feitas} ativOk={ativOk} onTarefa={abrirTarefa} onAula={setAula} onComoFunciona={() => setBv(true)} onGramatica={cfg.cursoId ? () => setGram(true) : null} />}
       {tab === 'atividades' && slots.atividades}
@@ -1513,7 +1798,7 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
       {duvida && <PlanoPerguntar cfg={cfg} student={student} contexto={duvida.contexto} onAsk={cfg.previa ? null : onAsk} onClose={() => setDuvida(null)} />}
       {bv && <PlanoBoasVindas cfg={cfg} nome={nome} onFim={() => { try { localStorage.setItem(chaveBV, '1'); } catch (e) {} setBv(false); }} />}
       {aviso && <div style={{ position: 'fixed', left: '50%', bottom: 'calc(150px + env(safe-area-inset-bottom, 0px))', transform: 'translateX(-50%)', background: '#0F172A', color: '#fff', padding: '10px 18px', borderRadius: 12, fontSize: 13.5, fontWeight: 700, zIndex: 700, whiteSpace: 'nowrap', animation: 'planoSurge .2s' }}>{aviso}</div>}
-    </>
+    </PlanoFalaCtx.Provider>
   );
 }
 
@@ -1557,7 +1842,9 @@ function PlanoCfgDoCurso(cfg, indice, un, ref, setSel) {
   const prox = ((indice && indice.unidades) || []).find(u => u.n === un.n + 1 && u.pronta);
   const pacotes = [{ aula: a0, titulo: `Unit ${un.n} · ${un.titulo}`, tarefas }];
   if (prox && un.id === ref.atual) pacotes.push({ aula: a1, futuro: true, titulo: `Unit ${prox.n} · ${prox.titulo}`, tarefas: [{ id: 'f1', ic: '📖', titulo: 'Livro' }, { id: 'f2', ic: '🔤', titulo: 'Vocabulário' }, { id: 'f3', ic: '🃏', titulo: 'Jogo' }, { id: 'f4', ic: '🏁', titulo: 'Mini-teste' }] });
-  return { ...cfg, unidade, pacotes, cursoId: ref.id, unidadesLista: lista, onUnidade: setSel };
+  // Chaves de fala do livro (sempre desligadas quando ausentes): vocabPronuncia, gravarFalas e a exigência pronunciaMin (a função é quem aplica).
+  const fala = { vocabPronuncia: !!(indice && indice.vocabPronuncia), gravarFalas: !!(indice && indice.gravarFalas), pronunciaMin: indice && typeof indice.pronunciaMin === 'number' ? indice.pronunciaMin : null };
+  return { ...cfg, unidade, pacotes, cursoId: ref.id, unidadesLista: lista, onUnidade: setSel, ...fala };
 }
 
 function PlanoConteudoCurso(props) {
@@ -1607,7 +1894,7 @@ function PlanoPreviaCurso({ user }) {
   if (erro) return tela(erro, '#B91C1C');
   if (!dados) return tela('Abrindo a prévia…');
   // Monta como o Caminho monta, mas SEM esconder nada (ocultos: []), para a prévia mostrar também o que ele está pensando em tirar.
-  const cfg = PlanoCfgDoCurso({ previa: true, aulas: [] }, dados.indice, { ...dados.un, ocultos: [] }, { id: cursoId, inicial: unId, atual: '' }, () => {});
+  const cfg = PlanoCfgDoCurso({ previa: true, aulas: [], forcaFala: q.get('falar') === '1' }, dados.indice, { ...dados.un, ocultos: [] }, { id: cursoId, inicial: unId, atual: '' }, () => {});
   const oc = new Set(dados.un.ocultos || []);
   const bruta = cfg.pacotes[0].tarefas.find(x => x.id === tarefaId);
   if (!bruta) return tela('Esta tarefa não aparece para o aluno (ela não tem conteúdo).');
@@ -1618,8 +1905,9 @@ function PlanoPreviaCurso({ user }) {
   const recomeca = x => { setAviso(x); setTimeout(() => setAviso(''), 2200); setVez(v => v + 1); };
   const fechar = () => recomeca('↺ Prévia reiniciada');
   const f = () => recomeca('✅ Concluída (na prévia nada é gravado)');
+  const falaCtx = { vocab: !!(cfg.vocabPronuncia || cfg.forcaFala), falas: !!(cfg.gravarFalas || cfg.forcaFala), teste: true, uid: 'previa', marcar: () => {}, feitas: {}, curso: cursoId, unidade: unId, tarefaId: tarefa.id };
   return (
-    <React.Fragment>
+    <PlanoFalaCtx.Provider value={falaCtx}>
       <style>{PLANO_CSS}</style>
       <div style={{ position: 'fixed', inset: 0, background: '#F6F1EA' }} />
       <React.Fragment key={vez}>
@@ -1635,6 +1923,6 @@ function PlanoPreviaCurso({ user }) {
         {tarefa.tipo === 'teste' && <PlanoTarefaTeste t={tarefa} unidade={u} onFeita={f} onClose={fechar} />}
       </React.Fragment>
       {aviso && <div style={{ position: 'fixed', left: '50%', bottom: 'calc(40px + env(safe-area-inset-bottom, 0px))', transform: 'translateX(-50%)', background: '#0F172A', color: '#fff', padding: '10px 18px', borderRadius: 12, fontSize: 13.5, fontWeight: 700, zIndex: 700, whiteSpace: 'nowrap', animation: 'planoSurge .2s' }}>{aviso}</div>}
-    </React.Fragment>
+    </PlanoFalaCtx.Provider>
   );
 }
