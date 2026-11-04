@@ -39,6 +39,15 @@ service firebase.storage {
       allow write: if false;
     }
 
+    // Áudios do livro (mp3 que o professor sobe pela aba Curso do painel): quem está logado ouve; só o professor envia e apaga.
+    match /livros/{livro}/audio/{unidade}/{arquivo} {
+      allow read: if signedIn();
+      allow create, update: if isAdmin()
+        && request.resource.size < 40 * 1024 * 1024
+        && request.resource.contentType.matches('audio/.*');
+      allow delete: if isAdmin();
+    }
+
     // Qualquer caminho não previsto fica fechado.
     match /{allPaths=**} {
       allow read, write: if false;

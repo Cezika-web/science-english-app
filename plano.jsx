@@ -263,7 +263,7 @@ function usePlanoFeitas(uid, nuvem) {
       const uniao = dono ? { ...local, ...remoto } : { ...remoto };   // espelho: só o que está na conta
       if (dono) {
         try { localStorage.setItem(chave, JSON.stringify(uniao)); } catch (e) {}
-        const faltando = {}; Object.keys(local).forEach(k => { if (!remoto[k]) faltando[k] = true; });
+        const faltando = {}; Object.keys(local).forEach(k => { if (!remoto[k]) faltando[k] = local[k]; });
         if (Object.keys(faltando).length) fb.setDoc(ref, { feitas: faltando, atualizadoEm: fb.serverTimestamp() }, { merge: true }).catch(() => {});
         conta.current = { fb, ref };
       }
@@ -271,12 +271,13 @@ function usePlanoFeitas(uid, nuvem) {
     }).catch(() => {});   // sem rede ou sem permissão: segue só com o aparelho
     return () => { vivo = false; };
   }, [uid, nuvem, chave]);
-  const marcar = React.useCallback((id) => {
+  // `valor` é `true` na maioria; o resumo do vídeo de fim de unidade guarda {texto, em} (chave "resumo:ID") e pode ser reenviado.
+  const marcar = React.useCallback((id, valor = true) => {
     setFeitas(atual => {
-      if (atual[id]) return atual;
-      const novo = { ...atual, [id]: true };
+      if (valor === true && atual[id]) return atual;
+      const novo = { ...atual, [id]: valor };
       try { localStorage.setItem(chave, JSON.stringify(novo)); } catch (e) {}
-      if (conta.current) conta.current.fb.setDoc(conta.current.ref, { feitas: { [id]: true }, atualizadoEm: conta.current.fb.serverTimestamp() }, { merge: true }).catch(() => {});
+      if (conta.current) conta.current.fb.setDoc(conta.current.ref, { feitas: { [id]: valor }, atualizadoEm: conta.current.fb.serverTimestamp() }, { merge: true }).catch(() => {});
       return novo;
     });
   }, [chave]);
@@ -754,8 +755,14 @@ function PlanoCarregarYT() {
 
 // O vídeo toca DENTRO do app (YouTube "não listado" incorporado, sem abrir o YouTube). Campos da tarefa:
 //   youtube: link ou ID · inicio / fim (segundos, opcionais, para fatiar um vídeo longo em várias tarefas) · url: link externo.
-function PlanoTarefaVideo({ t, onFeita, onClose, onAsk }) {
+function PlanoVideoFinal(t) { return /-video-3$/.test(String((t && t.id) || '')); }   // o vídeo do fim da unidade (Connect TV): sem texto, a aluna escreve um resumo
+const PLANO_RESUMO_MIN = 15;   // palavras
+function PlanoTarefaVideo({ t, onFeita, onResumo, resumoAnterior, onClose, onAsk }) {
   const id = PlanoYoutubeId(t.youtube || t.youtubeId); const url = t.url;
+  const final = PlanoVideoFinal(t);
+  const [resumo, setResumo] = React.useState(resumoAnterior || ''); const [lerTexto, setLerTexto] = React.useState(false);
+  const palavras = resumo.trim() ? resumo.trim().split(/\s+/).length : 0; const pronto = palavras >= PLANO_RESUMO_MIN;
+  const textoVideo = !final && (t.transcricao || (t.segs && t.segs.map(g => g.t).join(' ')) || '');
   const caixa = React.useRef(null);
   const [terminou, setTerminou] = React.useState(false); const [semApi, setSemApi] = React.useState(false);
   React.useEffect(() => {
@@ -775,7 +782,9 @@ function PlanoTarefaVideo({ t, onFeita, onClose, onAsk }) {
   const moldura = { position: 'relative', paddingTop: '56.25%', borderRadius: 18, overflow: 'hidden', background: '#0F172A', boxShadow: '0 12px 30px rgba(15,23,42,.2)' };
   return (
     <PlanoCamada titulo={t.titulo} sub={t.sub} onClose={onClose} onAsk={onAsk}
-      rodape={<button className="plano-btn" onClick={onFeita}>{terminou ? 'Concluir tarefa ✓' : 'Já assisti ✓'}</button>}>
+      rodape={final
+        ? <button className="plano-btn" disabled={!pronto} onClick={() => (onResumo ? onResumo(resumo.trim()) : onFeita())}>{pronto ? 'Enviar o resumo ✓' : `Escreva pelo menos ${PLANO_RESUMO_MIN} palavras (${palavras})`}</button>
+        : <button className="plano-btn" onClick={onFeita}>{terminou ? 'Concluir tarefa ✓' : 'Já assisti ✓'}</button>}>
       {id ? (semApi
         ? <div style={moldura}><iframe title={t.titulo} src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?rel=0&modestbranding=1&playsinline=1`} allow="encrypted-media; picture-in-picture; fullscreen" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }} /></div>
         : <div style={moldura}><div ref={caixa} style={{ position: 'absolute', inset: 0 }} /></div>)
@@ -783,6 +792,17 @@ function PlanoTarefaVideo({ t, onFeita, onClose, onAsk }) {
         : <div style={{ background: '#fff', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: '#64748B' }}>🎬 Vídeo em breve.</div>}
       {terminou && <div style={{ marginTop: 12, padding: '10px 13px', borderRadius: 14, background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#14532D', fontWeight: 800, fontSize: 13.5 }}>🎉 Vídeo terminado! Toque em “Concluir tarefa”.</div>}
       {t.oQue && <div style={{ fontSize: 13.5, fontWeight: 700, color: '#475569', lineHeight: 1.5, marginTop: 12 }}>{t.oQue}</div>}
+      {textoVideo && <div style={{ marginTop: 12 }}>
+        <button onClick={() => setLerTexto(v => !v)} style={{ border: 0, background: 'none', color: '#0369A1', fontWeight: 800, fontSize: 13, fontFamily: 'inherit', cursor: 'pointer', padding: 0 }}>{lerTexto ? '▼ Esconder o texto' : '📄 Ler o que é dito no vídeo'}</button>
+        {lerTexto && <div style={{ marginTop: 6, background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 12, padding: '10px 12px', fontSize: 14.5, lineHeight: 1.6, color: '#0C4A6E', whiteSpace: 'pre-wrap' }}>{textoVideo}</div>}
+      </div>}
+      {final && <div style={{ marginTop: 14, background: '#fff', borderRadius: 16, padding: '12px 13px', border: '1.5px solid #DDD6FE' }}>
+        <div style={{ fontWeight: 800, fontSize: 14.5, color: '#0F172A' }}>✍️ Escreva um resumo do que você entendeu</div>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: '#64748B', margin: '3px 0 8px', lineHeight: 1.4 }}>Assista quantas vezes precisar. Aqui não tem texto do que é dito: escreva, em inglês e com as suas palavras, o que você entendeu.</div>
+        <textarea value={resumo} onChange={e => setResumo(e.target.value)} placeholder="In this video…" rows={5} style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid #CBD5E1', borderRadius: 12, padding: '10px 12px', fontSize: 15, fontFamily: 'inherit', lineHeight: 1.5, resize: 'vertical' }} />
+        <div style={{ fontSize: 11.5, fontWeight: 800, color: pronto ? '#15803D' : '#94A3B8', marginTop: 4 }}>{palavras} palavra{palavras === 1 ? '' : 's'}{pronto ? ' ✓' : ` · mínimo ${PLANO_RESUMO_MIN}`}</div>
+        {resumoAnterior && <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B', marginTop: 4 }}>Você já enviou um resumo. Se mudar o texto e enviar de novo, o professor vê a versão nova.</div>}
+      </div>}
     </PlanoCamada>
   );
 }
@@ -799,6 +819,77 @@ function PlanoUrlPagina(curso, pdf) {
       .catch(e => { delete PLANO_IMG[caminho]; throw e; });
   }
   return PLANO_IMG[caminho];
+}
+
+/* ───────── áudios do livro (mp3 que o professor sobe pelo painel): tocam em cima da página ───────── */
+// Ficam em livros/{curso}/audio/{unidade}/. Cada áudio pode trazer `segs` = [{a, b, t}] (início, fim em segundos e a frase):
+// aí a aluna pode ler o que está sendo dito, com a frase atual em destaque.
+const PLANO_AUDIO_URL = {};
+function PlanoUrlAudio(caminho) {
+  if (!PLANO_AUDIO_URL[caminho]) {
+    PLANO_AUDIO_URL[caminho] = (typeof getFB === 'function' ? getFB() : Promise.reject(new Error('sem firebase')))
+      .then(fb => fb.getDownloadURL(fb.storageRef(fb.storage, caminho)))
+      .catch(e => { delete PLANO_AUDIO_URL[caminho]; throw e; });
+  }
+  return PLANO_AUDIO_URL[caminho];
+}
+function PlanoTempo(s) { s = Math.max(0, Math.round(Number(s) || 0)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
+function PlanoAudiosPagina({ audios }) {
+  const chave = audios.map(a => a.caminho).join('|');
+  const [urls, setUrls] = React.useState({}); const [erro, setErro] = React.useState(false);
+  const [tocando, setTocando] = React.useState(-1); const [sel, setSel] = React.useState(0);
+  const [pos, setPos] = React.useState(0); const [durs, setDurs] = React.useState({});
+  const [lento, setLento] = React.useState(false); const [texto, setTexto] = React.useState(false); const [aberta, setAberta] = React.useState(true);
+  const els = React.useRef([]); const linhaAtiva = React.useRef(null);
+  // Os endereços já vêm prontos antes do toque: o iPhone só deixa tocar dentro do próprio toque do dedo.
+  React.useEffect(() => {
+    let vivo = true; setErro(false);
+    Promise.all(audios.map(a => PlanoUrlAudio(a.caminho).then(u => [a.caminho, u]))).then(ps => { if (vivo) setUrls(Object.fromEntries(ps)); }).catch(() => { if (vivo) setErro(true); });
+    return () => { vivo = false; els.current.forEach(e => { try { e && e.pause(); } catch (x) {} }); };
+  }, [chave]);
+  React.useEffect(() => { els.current.forEach(e => { if (e) e.playbackRate = lento ? 0.75 : 1; }); }, [lento, urls]);
+  const tocar = i => {
+    const el = els.current[i]; if (!el) return;
+    setSel(i); setPos(el.currentTime);
+    if (!el.paused) { el.pause(); return; }
+    els.current.forEach((e, k) => { if (e && k !== i) { try { e.pause(); } catch (x) {} } });
+    el.playbackRate = lento ? 0.75 : 1;
+    const p = el.play(); if (p && p.catch) p.catch(() => setErro(true));
+  };
+  const ir = ev => { const el = els.current[sel]; if (!el || !el.duration) return; const r = ev.currentTarget.getBoundingClientRect(); el.currentTime = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width)) * el.duration; setPos(el.currentTime); };
+  const a = audios[sel] || audios[0]; const segs = (a && a.segs) || []; const temTexto = audios.some(x => x.segs && x.segs.length);
+  const ativa = (tocando >= 0 || pos > 0) ? segs.findIndex(g => pos >= g.a && pos < g.b + 0.3) : -1;   // só destaca depois de começar a ouvir
+  React.useEffect(() => { const el = linhaAtiva.current; if (el && el.parentNode) el.parentNode.scrollTop = Math.max(0, el.offsetTop - el.parentNode.offsetTop - 30); }, [ativa, texto]);
+  const total = durs[sel] || (a && a.dur) || 0;
+  return (
+    <div style={{ flexShrink: 0, margin: '8px 10px 0', background: '#fff', borderRadius: 16, boxShadow: '0 4px 14px rgba(15,23,42,.14)', padding: '9px 11px 10px', border: '1px solid #EDE9FE' }}>
+      <button onClick={() => setAberta(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', border: 0, background: 'none', padding: 0, fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>
+        <span style={{ fontSize: 17 }}>🔊</span><b style={{ fontSize: 13.5, color: '#0F172A', flex: 1 }}>{audios.length > 1 ? 'Áudios desta página' : 'Áudio desta página'}</b>
+        <span style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B' }}>{aberta ? 'toque para ouvir' : '▼'}</span>
+      </button>
+      {aberta && <>
+        <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+          {audios.map((x, i) => { const on = tocando === i; return <button key={x.caminho} onClick={() => tocar(i)} disabled={!urls[x.caminho]} style={{ flex: 1, borderRadius: 11, padding: '6px 2px', fontWeight: 800, fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer', border: `2px solid ${on || sel === i ? '#6D28D9' : '#DDD6FE'}`, background: on ? '#6D28D9' : '#fff', color: on ? '#fff' : '#5B21B6', opacity: urls[x.caminho] ? 1 : .55 }}>
+            {on ? '⏸' : '▶'} {audios.length > 1 ? `Áudio ${i + 1}` : 'Ouvir'}<br /><span style={{ fontWeight: 700, fontSize: 11, opacity: .85 }}>{x.dur ? PlanoTempo(x.dur) : ' '}</span></button>; })}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 11.5, fontWeight: 800, color: '#5B21B6' }}>
+          <span>{PlanoTempo(pos)}</span>
+          <div onClick={ir} style={{ flex: 1, height: 14, display: 'flex', alignItems: 'center', cursor: 'pointer' }}><div style={{ width: '100%', height: 7, borderRadius: 9, background: '#EDE9FE', overflow: 'hidden' }}><div style={{ width: `${total ? Math.min(100, pos / total * 100) : 0}%`, height: '100%', background: '#7C3AED' }} /></div></div>
+          <span>{total ? PlanoTempo(total) : '–:––'}</span>
+          <button onClick={() => setLento(v => !v)} style={{ border: `1.5px solid ${lento ? '#6D28D9' : '#DDD6FE'}`, background: lento ? '#6D28D9' : '#fff', color: lento ? '#fff' : '#6D28D9', borderRadius: 99, padding: '2px 9px', fontWeight: 800, fontSize: 11.5, fontFamily: 'inherit', cursor: 'pointer' }}>🐢 devagar</button>
+        </div>
+        {temTexto && <button onClick={() => setTexto(v => !v)} style={{ marginTop: 8, border: 0, background: 'none', color: '#0369A1', fontWeight: 800, fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer', padding: 0 }}>{texto ? '▼ Esconder o texto' : '📄 Ler o que está sendo dito'}</button>}
+        {temTexto && texto && <div style={{ marginTop: 6, maxHeight: 150, overflowY: 'auto', position: 'relative', background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 11, padding: '6px 10px', fontSize: 14, lineHeight: 1.5, color: '#0C4A6E' }}>
+          {segs.length ? segs.map((g, k) => <div key={k} ref={k === ativa ? linhaAtiva : null} style={{ padding: '2px 0', fontWeight: k === ativa ? 800 : 600, color: k === ativa ? '#0F172A' : '#0C4A6E', background: k === ativa ? '#FEF08A' : 'transparent', borderRadius: 6 }}>{g.t}</div>) : <div style={{ color: '#64748B' }}>Este áudio ainda não tem texto.</div>}
+        </div>}
+        {erro && <div style={{ marginTop: 6, fontSize: 12, fontWeight: 700, color: '#B91C1C' }}>Não consegui abrir o áudio agora. Confira a internet e tente de novo.</div>}
+      </>}
+      {audios.map((x, i) => urls[x.caminho] ? <audio key={x.caminho} ref={e => { els.current[i] = e; }} src={urls[x.caminho]} preload="metadata"
+        onPlay={() => { setTocando(i); setSel(i); }} onPause={() => setTocando(c => (c === i ? -1 : c))} onEnded={() => setTocando(c => (c === i ? -1 : c))}
+        onTimeUpdate={e => { if (!e.currentTarget.paused) setPos(e.currentTarget.currentTime); }}
+        onLoadedMetadata={e => { const d = e.currentTarget.duration || 0; setDurs(m => ({ ...m, [i]: d })); }} /> : null)}
+    </div>
+  );
 }
 
 // A página aparece inteira (largura da tela); dois toques, pinça, roda do mouse ou +/− aproximam; arrastar anda na página.
@@ -955,6 +1046,7 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm }) {
           <button style={btn} aria-label="Próxima página" disabled={pdf >= 177} onClick={() => setPdf(p => p + 1)}>›</button>
           {onAsk && <button onClick={onAsk} aria-label="Dr. EurekIA" style={{ ...btn, width: 'auto', padding: '0 9px', fontSize: 15 }}>💡</button>}
         </div>
+        {(t.audios || []).length > 0 && pdf === t.pdf && <PlanoAudiosPagina audios={t.audios} />}
         <PlanoLeitor curso={cursoId} pdf={pdf} />
         {total === 0
           ? <div style={{ padding: '10px 14px calc(12px + env(safe-area-inset-bottom, 0px))', background: '#fff', borderTop: '1px solid rgba(var(--brand-rgb),.12)', flexShrink: 0 }}>
@@ -1324,6 +1416,7 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
   const avisarEspelho = () => avisar('👁 Modo espelho — somente leitura');
   const perguntar = () => { if (mirror) { avisarEspelho(); return; } setDuvida({ contexto: tarefa ? tarefa.titulo : '' }); };
   const f = () => concluir(tarefa.id);
+  const enviarResumo = texto => { marcar('resumo:' + tarefa.id, { texto, em: new Date().toISOString() }); concluir(tarefa.id); };
 
   return (
     <>
@@ -1349,7 +1442,7 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
       {tarefa && tarefa.tipo === 'estudo' && <PlanoEstudo estudo={u.estudos[tarefa.ref]} unidade={u} posaulas={posaulas} onOpenPost={onOpenPost} onFeita={f} onClose={fechar} onAsk={perguntar} />}
       {tarefa && tarefa.tipo === 'vocab' && <PlanoVocab vocab={u.vocab[tarefa.ref]} titulo={tarefa.titulo} onFeita={f} onClose={fechar} onAsk={perguntar} />}
       {tarefa && tarefa.tipo === 'jogo' && <PlanoTarefaJogo t={tarefa} unidade={u} onFeita={f} onClose={fechar} onAsk={perguntar} />}
-      {tarefa && tarefa.tipo === 'video' && <PlanoTarefaVideo t={tarefa} onFeita={f} onClose={fechar} onAsk={perguntar} />}
+      {tarefa && tarefa.tipo === 'video' && <PlanoTarefaVideo t={tarefa} onFeita={f} onResumo={enviarResumo} resumoAnterior={feitas['resumo:' + tarefa.id] && feitas['resumo:' + tarefa.id].texto} onClose={fechar} onAsk={perguntar} />}
       {tarefa && tarefa.tipo === 'extra' && <PlanoTarefaExtra t={tarefa} unidade={u} onAbrirExtras={() => { fechar(); onTab('atividades'); }} onFeita={f} onClose={fechar} onAsk={perguntar} />}
       {tarefa && tarefa.tipo === 'teste' && <PlanoTarefaTeste t={tarefa} unidade={u} onFeita={() => concluir(tarefa.id, 'selo:' + u.id)} onClose={fechar} onAsk={perguntar} />}
       {aula && <PlanoAulaFolha aula={aula} student={student} cfg={cfg} onClose={() => setAula(null)} />}

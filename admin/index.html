@@ -1692,6 +1692,31 @@
           .cr-rodape { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:12px; }
           .cr-video { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:6px 0; padding:8px 10px; border-radius:10px; background:#f8fafc; border:1px solid var(--border); font-size:.82rem; }
           .cr-video input { flex:1; min-width:180px; padding:7px 10px; border:1px solid var(--border); border-radius:8px; font-size:.82rem; }
+          .cr-pag-linha { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+          .cr-pag-tit { min-width:250px; flex:0 1 330px; font-size:.84rem; }
+          .cr-pag-meio { flex:1; display:flex; gap:7px; flex-wrap:wrap; align-items:center; min-width:240px; }
+          .cr-sem { color:#94a3b8; font-size:.76rem; }
+          .cr-mais { padding:4px 10px; font-size:.74rem; cursor:pointer; }
+          .cr-aud { display:inline-flex; align-items:center; gap:6px; background:#fff; border:1px solid #ddd6fe; border-radius:99px; padding:3px 9px 3px 4px; font-size:.76rem; font-weight:700; color:#5b21b6; max-width:100%; }
+          .cr-aud-play { width:22px; height:22px; border-radius:50%; border:0; background:#7c3aed; color:#fff; font-size:.62rem; cursor:pointer; padding:0; flex-shrink:0; }
+          .cr-aud-nome { color:#475569; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:260px; }
+          .cr-aud-dur { color:#7c3aed; }
+          .cr-aud-x { border:0; background:none; color:#dc2626; font-weight:800; cursor:pointer; padding:0 2px; }
+          .cr-vid { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:7px; padding-top:7px; border-top:1px dashed #e2e8f0; font-size:.8rem; }
+          .cr-vid-rot { font-weight:700; min-width:200px; } .cr-vid-rot em { font-weight:600; color:#b45309; font-style:normal; }
+          .cr-vid input { flex:1; min-width:200px; padding:6px 9px; border:1px solid #cbd5e1; border-radius:8px; font-size:.78rem; }
+          .cr-vid-st { font-size:.74rem; color:#94a3b8; font-weight:700; } .cr-vid-st.on { color:#16a34a; }
+          .cr-drop { margin:10px 0; padding:13px; border:2px dashed #c4b5fd; border-radius:12px; background:#faf5ff; text-align:center; }
+          .cr-drop.sobre { background:#ede9fe; border-color:#7c3aed; }
+          .cr-drop-t { font-weight:800; color:#5b21b6; font-size:.88rem; } .cr-drop-s { font-size:.76rem; color:#6b7280; margin:3px 0 8px; }
+          .cr-drop-msg { font-size:.8rem; color:#475569; font-weight:700; margin-top:7px; }
+          .cr-soltos { background:#fffbeb; border:1px solid #fde68a; border-radius:11px; padding:9px 12px; margin-bottom:8px; }
+          .cr-soltos-t { font-size:.78rem; font-weight:800; color:#78350f; margin-bottom:6px; }
+          .cr-solto { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:6px; }
+          .cr-solto select { padding:6px 8px; border:1px solid #cbd5e1; border-radius:8px; font-size:.78rem; max-width:300px; }
+          .cr-resumo-aluna { border:1px solid #e2e8f0; border-radius:12px; padding:10px 13px; margin-bottom:8px; background:#fff; font-size:.86rem; line-height:1.5; }
+          .cr-resumo-aluna b { color:#5b21b6; } .cr-resumo-aluna small { color:var(--muted); font-weight:600; }
+          .cr-resumo-aluna p { margin:6px 0 0; white-space:pre-wrap; }
           .cr-ver { flex-shrink:0; align-self:center; font-size:.72rem; font-weight:800; padding:4px 9px; border-radius:8px; border:1px solid #ddd6fe; background:#f5f3ff; color:#5b21b6; cursor:pointer; white-space:nowrap; }
           .cr-ver:hover { background:#ede9fe; }
           .cr-opc { display:flex; gap:9px; align-items:flex-start; border:1.5px solid #e2e8f0; border-radius:11px; padding:9px 11px; margin-bottom:7px; cursor:pointer; font-size:.84rem; background:#fff; }
@@ -1758,9 +1783,21 @@
         </div>
 
         <div class="cr-card">
-          <h2>🎬 Vídeos <small style="font-weight:600;color:var(--muted);">(depois da revisão: só os que ficaram)</small></h2>
-          <p class="cr-sub">Cada unidade tem 3 vagas de vídeo. Suba no YouTube como “não listado”, cole o link e a tarefa liga sozinha no app.</p>
+          <h2>🎧 Vídeos e áudios <small style="font-weight:600;color:var(--muted);">(só o que ficou no curso)</small></h2>
+          <p class="cr-sub">
+            Aqui aparece <strong>só o que você deixou na revisão</strong>; o que você tirou não aparece e não precisa de áudio nem de vídeo.
+            Você coloca cada arquivo na página dele: use <strong>＋ áudio</strong> na linha da página, ou solte vários de uma vez na unidade e escolha a página de cada um.
+            Vídeo: suba no YouTube como “não listado” e cole o link na linha da página.
+            O <strong>vídeo do fim da unidade</strong> é diferente: a aluna assiste quantas vezes quiser e escreve um resumo do que entendeu (sem texto do que é dito).
+          </p>
           <div id="cr-videos"><div class="loading">Carregando...</div></div>
+        </div>
+
+        <div class="cr-card">
+          <h2>✍️ Resumos do vídeo de fim de unidade <small style="font-weight:600;color:var(--muted);">(o que as alunas escreveram)</small></h2>
+          <p class="cr-sub">Cada aluna do curso que enviou um resumo aparece aqui, com o texto e a data.</p>
+          <div class="cr-rev-topo" style="margin:0 0 8px;"><button type="button" class="cr-btn" id="cr-resumos-carregar">↻ Ver os resumos</button></div>
+          <div id="cr-resumos"></div>
         </div>
 
         <!-- Prévia: a tarefa ou o exercício como o aluno vê (o mesmo código do app, num quadro do tamanho de um celular) -->
@@ -2339,7 +2376,7 @@
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
     import { getMessaging, getToken, isSupported }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
-    import { getStorage, ref as storageRef, getDownloadURL }
+    import { getStorage, ref as storageRef, getDownloadURL, uploadBytes, deleteObject }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
     import { arrayUnion, arrayRemove }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -8310,7 +8347,7 @@
       try {
         const ind = await cursoCarregarIndice(true);
         await Promise.all((ind.unidades || []).filter(u => u.pronta).map(u => cursoCarregarUnidade(u.id, true)));
-        crRenderChecklist(ind); crRenderResumo(ind); crRenderVideos(ind);
+        crRenderChecklist(ind); crRenderResumo(ind); crRenderMidia(ind);
         if (crUn && cursoUnidades[crUn.id]) { crUn = cursoUnidades[crUn.id]; crRenderPasso(); }
       } catch (e) { resumo.innerHTML = `<div class="form-msg err" style="display:block">Não consegui carregar o curso: ${esc(e.message)}</div>`; }
     }
@@ -8319,17 +8356,18 @@
     function crItensChecklist(ind) {
       const unidades = (ind.unidades || []).filter(u => u.pronta).map(u => cursoUnidades[u.id]).filter(Boolean);
       const revisadas = unidades.filter(un => { const s = crStats(un); return s.total && s.revisadas >= s.total; }).length;
-      const videos = unidades.flatMap(un => (un.tarefas || []).filter(t => t.tipo === 'video'));
-      const comLink = videos.filter(v => v.youtube).length;
+      const vagas = (ind.unidades || []).filter(u => u.pronta).flatMap(u => cursoUnidades[u.id] ? crVideosDaUnidade(cursoUnidades[u.id], u.n).vagas : []);
+      const comLink = vagas.filter(x => x.v.youtube).length;
+      const arquivos = unidades.reduce((n, un) => n + (un.audiosSoltos || []).length + (un.tarefas || []).reduce((m, t) => m + (t.audios || []).length, 0), 0);
       return [
         { id:'rev', quem:'voce', estrela:true, t:'Revisar o livro, unidade por unidade, e marcar só o que SAI', nota:`${revisadas}/${unidades.length} unidades revisadas` },
         { id:'novas', quem:'eu', estrela:true, t:'Criar atividades novas no lugar do que saiu (com as suas observações de cada página)' },
         { id:'ligar', quem:'voce', estrela:true, t:'Ligar a Fátima: ⋮ → Editar plano → Connectivity 1 → escolher a unidade (Unit 4 ou 5) e salvar' },
         { id:'espelho', quem:'voce', estrela:true, t:'Conferir no espelho da Fátima: o Caminho, as páginas do livro e o progresso aparecendo' },
         { id:'dinheiro', quem:'voce', estrela:true, t:'Financeiro: mensalidade de R$ 100 da Fátima (ainda é manual)' },
-        { id:'audio1', quem:'voce', t:'Áudios: baixar só os das páginas que ficaram e me mandar uma unidade de teste' },
-        { id:'audio2', quem:'eu', t:'Áudios: transcrever automaticamente, montar o player com o texto acompanhando e testar com você' },
-        { id:'video', quem:'voce', t:'Vídeos: subir no YouTube (não listado) só os que ficaram e colar o link aqui embaixo', nota:`${comLink}/${videos.length} vagas com link` },
+        { id:'audio1', quem:'voce', t:'Áudios: subir os .mp3 só das páginas que ficaram (cartão “Vídeos e áudios”, aqui embaixo) e colocar cada um na sua página', nota:`${arquivos} arquivos enviados` },
+        { id:'audio2', quem:'eu', t:'Áudios e vídeos dentro das unidades: transcrever o que é dito e ligar o texto na página (o vídeo do fim da unidade fica sem texto)' },
+        { id:'video', quem:'voce', t:'Vídeos: subir no YouTube (não listado) só os que ficaram e colar o link na linha da página', nota:`${comLink}/${vagas.length} vagas com link` },
         { id:'wb1', quem:'voce', t:'Workbook: me mandar o PDF' },
         { id:'wb2', quem:'voce', t:'Workbook: marcar só o que SAI (mesma tela de revisão)' },
         { id:'wb3', quem:'eu', t:'Montar as revisões de cada unidade com o workbook' },
@@ -8542,7 +8580,7 @@
       try {
         await updateDoc(doc(db, 'cursos', CURSO_ID, 'unidades', un.id), { ocultos: un.ocultos || [], revisadas: un.revisadas || [], notas: un.notas || {}, atualizadoEm: serverTimestamp() });
         sel.style.color = '#16a34a'; sel.textContent = '✅ salvo';
-        crRenderResumo(cursoIndice); crRenderChecklist(cursoIndice);
+        crRenderResumo(cursoIndice); crRenderChecklist(cursoIndice); crRenderMidia(cursoIndice);
       } catch (e) { sel.style.color = '#dc2626'; sel.textContent = '❌ ' + e.message; }
     }
     function crIr(i) {
@@ -8559,19 +8597,164 @@
     document.getElementById('cr-anterior').onclick = () => crIr(crPasso - 1);
     document.getElementById('cr-fechar-rev').onclick = async () => { if (crTimer) await crSalvarAgora(); document.getElementById('cr-revisor').style.display = 'none'; };
 
-    // Vídeos: 3 vagas por unidade
-    function crRenderVideos(ind) {
-      const box = document.getElementById('cr-videos');
-      box.innerHTML = (ind.unidades || []).filter(u => u.pronta).map(u => {
-        const un = cursoUnidades[u.id]; if (!un) return '';
-        const videos = (un.tarefas || []).filter(t => t.tipo === 'video'); const n = videos.filter(v => v.youtube).length;
-        return `<details class="cr-un-linha" style="display:block;"><summary style="cursor:pointer;font-weight:700;">Unit ${u.n} · ${esc(u.titulo)} <small style="color:var(--muted);font-weight:600;">· ${n}/${videos.length} com link</small></summary>
-          ${videos.map(v => `<div class="cr-video">🎬 <strong>${esc(v.titulo)}</strong>
-            <input type="text" id="cr-yt-${esc(v.id)}" placeholder="Link do vídeo no YouTube (não listado)" value="${esc(v.youtube || '')}">
-            <button type="button" class="cr-btn pri" data-cr-yt="${esc(u.id)}|${esc(v.id)}">Salvar</button>
-            <span style="color:var(--muted);font-size:.76rem;">${v.youtube ? 'ligado' : 'sem link: fica escondido'}</span></div>`).join('')}</details>`;
+    // ── Vídeos e áudios: só o que ficou no curso. O professor coloca cada arquivo na página dele. ──
+    // Dados (no documento da unidade): tarefa "livro" → `audios: [{nome, caminho, dur, segs?}]`; tarefa "video" → `youtube`;
+    // `audiosSoltos` = arquivos já enviados que ainda não foram para nenhuma página. Os mp3 ficam em livros/connectivity-1/audio/uNN/.
+    const crNat = (a, b) => String(a.nome).localeCompare(String(b.nome), undefined, { numeric: true });
+    const crTempo = s => { s = Math.round(Number(s) || 0); return s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : ''; };
+    const crMidiaAberta = new Set(['u01']);   // unidades abertas (a tela é redesenhada a cada mudança)
+    let crAudioAtual = null;
+    const crEhVideoFinal = v => /-video-3$/.test(String(v.id));   // o Connect TV, no fim da unidade
+    function crPararAudio() { if (crAudioAtual) { try { crAudioAtual.el.pause(); } catch (e) {} crAudioAtual = null; } }
+    function crPaginasQueFicaram(un) { const oc = new Set(un.ocultos || []); return (un.tarefas || []).filter(t => t.tipo === 'livro' && !oc.has(t.id)); }
+    // Página do livro a que cada vaga de vídeo pertence: p. 5 e p. 7 (os "Watch the video") e a última da unidade (o Connect TV).
+    function crPaginaDoVideo(un, n, v) {
+      const m = String(v.titulo || '').match(/p\.\s*(\d+)/);
+      const pg = m ? Number(m[1]) : 12 * n;
+      return (un.tarefas || []).find(t => t.tipo === 'livro' && Number(t.pagina) === pg) || null;
+    }
+    function crVideosDaUnidade(un, n) {
+      const oc = new Set(un.ocultos || []);
+      const lista = (un.tarefas || []).filter(t => t.tipo === 'video').map(v => ({ v, pag: crPaginaDoVideo(un, n, v) }));
+      return { vagas: lista.filter(x => x.pag && !oc.has(x.pag.id)), orfaos: lista.filter(x => (!x.pag || oc.has(x.pag.id)) && x.v.youtube) };
+    }
+    function crChipAudio(a, acao) {
+      return `<span class="cr-aud"><button type="button" class="cr-aud-play" data-cr-play="${esc(a.caminho)}" title="ouvir">▶</button>
+        <span class="cr-aud-nome" title="${esc(a.nome)}">${esc(a.nome)}</span>${a.dur ? `<span class="cr-aud-dur">${crTempo(a.dur)}</span>` : ''}${acao || ''}</span>`;
+    }
+    function crLinhaVideo(uid, v, aviso) {
+      return `<div class="cr-vid">🎬 <span class="cr-vid-rot">${esc(v.titulo)}${crEhVideoFinal(v) ? ' <em>· a aluna escreve um resumo (sem texto do que é dito)</em>' : ''}</span>
+        <input type="text" id="cr-yt-${esc(v.id)}" placeholder="Link do vídeo no YouTube (não listado)" value="${esc(v.youtube || '')}">
+        <button type="button" class="cr-btn pri" data-cr-yt="${esc(uid)}|${esc(v.id)}">Salvar</button>
+        <span class="cr-vid-st ${v.youtube ? 'on' : ''}">${v.youtube ? 'ligado' : 'sem link: fica escondido'}</span>${aviso || ''}</div>`;
+    }
+    function crMidiaUnidade(u) {
+      const un = cursoUnidades[u.id]; if (!un) return '';
+      const oc = new Set(un.ocultos || []);
+      const paginas = crPaginasQueFicaram(un); const { vagas, orfaos } = crVideosDaUnidade(un, u.n);
+      const soltos = un.audiosSoltos || [];
+      const comAudio = paginas.filter(p => (p.audios || []).length).length;
+      const comLink = vagas.filter(x => x.v.youtube).length;
+      const tiradas = (un.tarefas || []).filter(t => t.tipo === 'livro' && oc.has(t.id)).map(t => String(t.titulo || '').split(':')[0]);
+      const opcoes = paginas.map(p => `<option value="${esc(p.id)}">${esc(p.titulo)}</option>`).join('');
+      const linhas = paginas.map(t => {
+        const aud = t.audios || [];
+        const vid = vagas.filter(x => x.pag.id === t.id).map(x => crLinhaVideo(u.id, x.v)).join('');
+        return `<div class="cr-video cr-pag" style="display:block;">
+          <div class="cr-pag-linha"><strong class="cr-pag-tit">📖 ${esc(t.titulo)}</strong>
+            <div class="cr-pag-meio">${aud.map((a, i) => crChipAudio(a, `<button type="button" class="cr-aud-x" data-cr-tira="${esc(u.id)}|${esc(t.id)}|${i}" title="tirar desta página (o arquivo volta para a lista “sem página”)">✕</button>`)).join('') || '<span class="cr-sem">sem áudio</span>'}
+              <label class="cr-btn cr-mais">＋ áudio<input type="file" accept="audio/*,.mp3,.m4a" multiple hidden data-cr-add="${esc(u.id)}|${esc(t.id)}"></label></div></div>${vid}</div>`;
       }).join('');
+      const caixaSoltos = soltos.length ? `<div class="cr-soltos"><div class="cr-soltos-t">📥 Áudios que subiram e ainda estão sem página (${soltos.length})</div>
+        ${soltos.map((a, i) => `<div class="cr-solto">${crChipAudio(a)}
+          <select data-cr-onde="${esc(u.id)}|${i}"><option value="">— escolha a página —</option>${opcoes}</select>
+          <button type="button" class="cr-btn pri" data-cr-poe="${esc(u.id)}|${i}" disabled>Colocar na página</button>
+          <button type="button" class="cr-btn" data-cr-apaga="${esc(u.id)}|${i}" title="apagar este arquivo">🗑</button></div>`).join('')}</div>` : '';
+      return `<details class="cr-un-linha" style="display:block;" data-cr-un="${esc(u.id)}" ${crMidiaAberta.has(u.id) ? 'open' : ''}>
+        <summary style="cursor:pointer;font-weight:700;">Unit ${u.n} · ${esc(u.titulo)} <small style="color:var(--muted);font-weight:600;">· ${paginas.length} páginas ficaram · 🔊 ${comAudio} com áudio · 🎬 ${comLink}/${vagas.length} com vídeo</small></summary>
+        <div class="cr-drop" data-cr-drop="${esc(u.id)}"><div class="cr-drop-t">⬆️ Solte aqui os áudios da Unit ${u.n} (.mp3, pode ser vários de uma vez)</div>
+          <div class="cr-drop-s">Depois escolha a página de cada um. Ou, na linha da página, use “＋ áudio”.</div>
+          <label class="cr-btn pri" style="cursor:pointer;">Escolher arquivos<input type="file" accept="audio/*,.mp3,.m4a" multiple hidden data-cr-add="${esc(u.id)}|"></label>
+          <div class="cr-drop-msg" id="cr-msg-${esc(u.id)}"></div></div>
+        ${caixaSoltos}${linhas || '<div class="cr-sem" style="padding:6px 2px;">Nenhuma página ficou nesta unidade.</div>'}
+        ${orfaos.length ? `<div class="cr-aviso-e" style="margin-top:8px;">Vídeo ligado de página que você tirou — se não quer mais, apague o link e salve:${orfaos.map(x => crLinhaVideo(u.id, x.v)).join('')}</div>` : ''}
+        ${tiradas.length ? `<div style="font-size:.78rem;color:#92400e;background:#fef3c7;border-radius:9px;padding:7px 11px;margin-top:8px;">🙈 Escondidas porque você tirou (${tiradas.length}): ${tiradas.map(esc).join(' · ')}</div>` : ''}
+      </details>`;
+    }
+    function crRenderMidia(ind) {
+      const box = document.getElementById('cr-videos'); crPararAudio();
+      box.innerHTML = (ind.unidades || []).filter(u => u.pronta).map(crMidiaUnidade).join('');
+      box.querySelectorAll('details[data-cr-un]').forEach(d => d.addEventListener('toggle', () => { d.open ? crMidiaAberta.add(d.dataset.crUn) : crMidiaAberta.delete(d.dataset.crUn); }));
       box.querySelectorAll('[data-cr-yt]').forEach(b => b.onclick = () => { const [uid, id] = b.dataset.crYt.split('|'); crSalvarVideo(uid, id); });
+      box.querySelectorAll('[data-cr-play]').forEach(b => b.onclick = () => crTocar(b.dataset.crPlay, b));
+      box.querySelectorAll('input[data-cr-add]').forEach(inp => inp.onchange = () => { const [uid, pag] = inp.dataset.crAdd.split('|'); const fs = [...inp.files]; inp.value = ''; crEnviarAudios(uid, fs, pag); });
+      box.querySelectorAll('[data-cr-drop]').forEach(z => {
+        z.ondragover = e => { e.preventDefault(); z.classList.add('sobre'); };
+        z.ondragleave = () => z.classList.remove('sobre');
+        z.ondrop = e => { e.preventDefault(); z.classList.remove('sobre'); crEnviarAudios(z.dataset.crDrop, [...e.dataTransfer.files], ''); };
+      });
+      box.querySelectorAll('[data-cr-onde]').forEach(sel => sel.onchange = () => { const b = box.querySelector(`[data-cr-poe="${sel.dataset.crOnde}"]`); if (b) b.disabled = !sel.value; });
+      box.querySelectorAll('[data-cr-poe]').forEach(b => b.onclick = () => { const sel = box.querySelector(`[data-cr-onde="${b.dataset.crPoe}"]`); const [uid, i] = b.dataset.crPoe.split('|'); if (sel && sel.value) crColocarNaPagina(uid, Number(i), sel.value); });
+      box.querySelectorAll('[data-cr-tira]').forEach(b => b.onclick = () => { const [uid, pag, i] = b.dataset.crTira.split('|'); crTirarDaPagina(uid, pag, Number(i)); });
+      box.querySelectorAll('[data-cr-apaga]').forEach(b => b.onclick = () => { const [uid, i] = b.dataset.crApaga.split('|'); crApagarSolto(uid, Number(i)); });
+    }
+    async function crTocar(caminho, btn) {
+      if (crAudioAtual && crAudioAtual.caminho === caminho) { const el = crAudioAtual.el; el.paused ? el.play() : el.pause(); return; }
+      crPararAudio(); document.querySelectorAll('.cr-aud-play').forEach(b => { b.textContent = '▶'; });
+      try {
+        const el = new Audio(await getDownloadURL(storageRef(storage, caminho)));
+        crAudioAtual = { caminho, el };
+        el.onplay = () => { btn.textContent = '⏸'; }; el.onpause = el.onended = () => { btn.textContent = '▶'; };
+        await el.play();
+      } catch (e) { btn.textContent = '▶'; alert('Não consegui tocar este áudio: ' + e.message); }
+    }
+    function crDuracao(file) {
+      return new Promise(res => {
+        const a = new Audio(); const u = URL.createObjectURL(file); let feito = false;
+        const fim = d => { if (feito) return; feito = true; URL.revokeObjectURL(u); res(d); };
+        a.preload = 'metadata'; a.onloadedmetadata = () => fim(isFinite(a.duration) ? Math.round(a.duration) : 0); a.onerror = () => fim(0); a.src = u; setTimeout(() => fim(0), 8000);
+      });
+    }
+    // Grava os campos da unidade e atualiza a cópia da tela (a mesma que a revisão usa).
+    async function crGravarMidia(uid, campos) {
+      const un = cursoUnidades[uid];
+      await updateDoc(doc(db, 'cursos', CURSO_ID, 'unidades', uid), { ...campos, atualizadoEm: serverTimestamp() });
+      Object.assign(un, campos); if (crUn && crUn.id === uid) crUn = un;
+    }
+    // Tira o arquivo de onde estiver (solto ou em alguma página) e devolve o que sobrou + a entrada antiga (para não perder o texto do áudio).
+    function crSemArquivo(un, caminho) {
+      let antiga = null;
+      const tarefas = (un.tarefas || []).map(t => {
+        if (!(t.audios || []).some(a => a.caminho === caminho)) return t;
+        antiga = t.audios.find(a => a.caminho === caminho);
+        const aud = t.audios.filter(a => a.caminho !== caminho); const { audios, ...resto } = t;
+        return aud.length ? { ...t, audios: aud } : resto;
+      });
+      const soltos = (un.audiosSoltos || []).filter(a => { if (a.caminho === caminho) { antiga = antiga || a; return false; } return true; });
+      return { tarefas, soltos, antiga };
+    }
+    const crComAudio = (tarefas, pagId, entrada) => tarefas.map(t => t.id === pagId ? { ...t, audios: [...(t.audios || []), entrada].sort(crNat) } : t);
+
+    async function crEnviarAudios(uid, files, paginaId) {
+      const msg = document.getElementById('cr-msg-' + uid); const fala = t => { const m = document.getElementById('cr-msg-' + uid); if (m) m.textContent = t; };
+      const lista = files.filter(f => /^audio\//.test(f.type) || /\.(mp3|m4a|wav|ogg|aac)$/i.test(f.name)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+      if (!lista.length) { alert('Nenhum arquivo de áudio nessa seleção (use .mp3).'); return; }
+      let ok = 0; const erros = [];
+      for (const [k, f] of lista.entries()) {
+        fala(`Enviando ${k + 1} de ${lista.length}: ${f.name}…`);
+        try {
+          const caminho = `livros/${CURSO_ID}/audio/${uid}/${f.name.replace(/[^\w.\-]+/g, '_')}`;
+          const dur = await crDuracao(f);
+          await uploadBytes(storageRef(storage, caminho), f, { contentType: /^audio\//.test(f.type) ? f.type : 'audio/mpeg' });
+          const un = cursoUnidades[uid];
+          const { tarefas, soltos, antiga } = crSemArquivo(un, caminho);
+          const entrada = { ...(antiga || {}), nome: f.name, caminho, dur };
+          if (paginaId) await crGravarMidia(uid, { tarefas: crComAudio(tarefas, paginaId, entrada), audiosSoltos: soltos });
+          else await crGravarMidia(uid, { tarefas, audiosSoltos: [...soltos, entrada].sort(crNat) });
+          ok++;
+        } catch (e) { erros.push(`${f.name}: ${e.code === 'storage/unauthorized' ? 'o Storage ainda não liberou o envio de áudio (falta rodar o deploy das regras do Storage)' : (e.code || e.message)}`); }
+      }
+      crRenderMidia(cursoIndice); crRenderChecklist(cursoIndice);
+      const m2 = document.getElementById('cr-msg-' + uid);
+      if (m2) m2.textContent = erros.length ? `⚠️ ${ok} enviado(s); não consegui: ${erros.join(' · ')}` : `✅ ${ok} áudio(s) enviado(s).`;
+    }
+    async function crColocarNaPagina(uid, i, pagId) {
+      const un = cursoUnidades[uid]; const soltos = [...(un.audiosSoltos || [])]; const [a] = soltos.splice(i, 1); if (!a) return;
+      try { await crGravarMidia(uid, { tarefas: crComAudio(un.tarefas, pagId, a), audiosSoltos: soltos }); crRenderMidia(cursoIndice); crRenderChecklist(cursoIndice); }
+      catch (e) { alert('Não consegui salvar: ' + e.message); }
+    }
+    async function crTirarDaPagina(uid, pagId, i) {
+      const un = cursoUnidades[uid]; const t = (un.tarefas || []).find(x => x.id === pagId); const a = t && (t.audios || [])[i]; if (!a) return;
+      const { tarefas, soltos } = crSemArquivo(un, a.caminho);
+      try { await crGravarMidia(uid, { tarefas, audiosSoltos: [...soltos, a].sort(crNat) }); crRenderMidia(cursoIndice); crRenderChecklist(cursoIndice); }
+      catch (e) { alert('Não consegui salvar: ' + e.message); }
+    }
+    async function crApagarSolto(uid, i) {
+      const un = cursoUnidades[uid]; const a = (un.audiosSoltos || [])[i]; if (!a) return;
+      if (!confirm(`Apagar o arquivo “${a.nome}”? Ele sai do armazenamento e não volta.`)) return;
+      try { await deleteObject(storageRef(storage, a.caminho)); } catch (e) { if (e.code !== 'storage/object-not-found') { alert('Não consegui apagar o arquivo: ' + e.message); return; } }
+      try { await crGravarMidia(uid, { audiosSoltos: (un.audiosSoltos || []).filter((_, k) => k !== i) }); crRenderMidia(cursoIndice); crRenderChecklist(cursoIndice); }
+      catch (e) { alert('Não consegui salvar: ' + e.message); }
     }
     async function crSalvarVideo(uid, id) {
       const un = cursoUnidades[uid]; const link = document.getElementById('cr-yt-' + id).value.trim();
@@ -8579,11 +8762,31 @@
       const oc = new Set(un.ocultos || []);
       if (link) oc.delete(id); else oc.add(id);
       try {
-        await updateDoc(doc(db, 'cursos', CURSO_ID, 'unidades', uid), { tarefas, ocultos: [...oc], atualizadoEm: serverTimestamp() });
-        un.tarefas = tarefas; un.ocultos = [...oc]; if (crUn && crUn.id === uid) { crUn = un; }
-        crRenderVideos(cursoIndice); crRenderChecklist(cursoIndice);
+        await crGravarMidia(uid, { tarefas, ocultos: [...oc] });
+        crRenderMidia(cursoIndice); crRenderChecklist(cursoIndice);
       } catch (e) { alert('Não consegui salvar o vídeo: ' + e.message); }
     }
+
+    // Resumos que as alunas escreveram no vídeo de fim de unidade (ficam em students/{uid}/planoProgresso/feitas, chave "resumo:ID da tarefa").
+    async function crCarregarResumos() {
+      const box = document.getElementById('cr-resumos'); box.innerHTML = '<div class="loading">Procurando...</div>';
+      const alunas = (typeof allStudents !== 'undefined' ? allStudents : []).filter(s => s.plano && s.plano.livro);
+      const achados = [];
+      await Promise.all(alunas.map(async s => {
+        try {
+          const sn = await getDoc(doc(db, 'students', s.uid, 'planoProgresso', 'feitas')); if (!sn.exists()) return;
+          const f = sn.data().feitas || {};
+          Object.keys(f).filter(k => k.startsWith('resumo:') && f[k] && f[k].texto).forEach(k => achados.push({ aluna: s.name || s.firstName || s.uid, id: k.slice(7), texto: f[k].texto, em: typeof f[k].em === 'string' ? f[k].em : '' }));
+        } catch (e) { console.warn('resumos', s.uid, e); }
+      }));
+      achados.sort((a, b) => String(b.em).localeCompare(String(a.em)));
+      box.innerHTML = achados.length ? achados.map(r => {
+        const un = (String(r.id).match(/^u(\d+)/) || [])[1];
+        const dt = r.em ? new Date(r.em) : null; const quando = dt && !isNaN(dt) ? dt.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
+        return `<div class="cr-resumo-aluna"><b>${esc(r.aluna)}</b> <small>· Unit ${Number(un) || '?'}${quando ? ' · ' + quando : ''}</small><p>${esc(r.texto)}</p></div>`;
+      }).join('') : '<div class="cr-vazio">Nenhuma aluna enviou resumo ainda.</div>';
+    }
+    document.getElementById('cr-resumos-carregar').onclick = () => crCarregarResumos();
 
     document.getElementById('cr-recarregar').onclick = () => carregarCurso();
     document.getElementById('cr-baixar').onclick = async () => {
