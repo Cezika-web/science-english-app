@@ -901,6 +901,7 @@
           <button class="tab" data-tab="extras"><span class="ic">🎧</span><span class="lb">Extras</span></button>
           <button class="tab" data-tab="curso"><span class="ic">📘</span><span class="lb">Curso</span></button>
           <button class="tab" data-tab="eurekia"><span class="ic">💡</span><span class="lb">Dr. EurekIA</span><span class="nova-bolinha" aria-hidden="true"></span></button>
+          <button class="tab" data-tab="falas"><span class="ic">🎙️</span><span class="lb">Falas</span><span class="nova-bolinha" aria-hidden="true"></span></button>
         </div>
 
         <div class="side-group">
@@ -1640,6 +1641,48 @@
         </div>
       </div>
 
+      <!-- FALAS — toda fala em inglês do curso (vocabulário e exercícios de falar), gravada e transcrita, para ouvir com o aluno na aula -->
+      <div class="tab-panel" id="tab-falas">
+        <style>
+          .fa-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px 16px; }
+          .fa-card h2 { font-size:1rem; margin:0 0 4px; }
+          .fa-sub { font-size:.82rem; color:var(--muted); margin:0 0 10px; line-height:1.5; }
+          .fa-filtros { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+          .fa-filtros select { padding:7px 9px; border:1px solid var(--border); border-radius:9px; font:inherit; font-size:.82rem; max-width:230px; }
+          .fa-filtros label { display:flex; gap:6px; align-items:center; font-size:.82rem; font-weight:600; cursor:pointer; }
+          .fa-btn { font-size:.8rem; padding:7px 13px; border-radius:9px; border:1px solid var(--border); background:#fff; cursor:pointer; font-weight:700; }
+          .fa-btn:disabled { opacity:.45; cursor:default; }
+          .fa-linha { background:#fff; border:1px solid var(--border); border-radius:12px; padding:11px 13px; margin-top:10px; }
+          .fa-linha.nova { border-color:#a78bfa; background:#faf5ff; }
+          .fa-meta { display:flex; gap:8px; flex-wrap:wrap; align-items:center; font-size:.74rem; color:var(--muted); font-weight:700; margin-bottom:5px; }
+          .fa-meta b { color:#5b21b6; font-size:.82rem; }
+          .fa-chip { font-size:.64rem; font-weight:800; letter-spacing:.3px; padding:1px 8px; border-radius:99px; background:#ede9fe; color:#5b21b6; }
+          .fa-chip.nova { background:#7c3aed; color:#fff; }
+          .fa-enun { font-size:.88rem; font-weight:700; line-height:1.4; }
+          .fa-pal { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:6px; font-size:.9rem; }
+          .fa-pal .alvo { font-size:1.05rem; font-weight:800; }
+          .fa-pal .ok { color:#15803d; font-weight:800; } .fa-pal .no { color:#dc2626; font-weight:800; } .fa-pal .esp { color:#b45309; font-weight:700; }
+          .fa-trans { margin-top:6px; padding:8px 10px; border-radius:10px; background:#f8fafc; border:1px solid #e2e8f0; font-size:.86rem; line-height:1.5; white-space:pre-wrap; }
+          .fa-trans.vazia { color:var(--muted); font-style:italic; }
+          .fa-acoes { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px; }
+          .fa-acoes audio { height:34px; flex:1; min-width:200px; max-width:420px; }
+          .fa-sem-audio { font-size:.78rem; color:#b45309; font-weight:700; }
+        </style>
+        <div class="fa-card" style="margin-bottom:12px;">
+          <h2>🎙️ Falas: o que as alunas falaram em inglês</h2>
+          <p class="fa-sub">Tudo o que a aluna fala em inglês no curso fica aqui, com o áudio e a transcrição (as tentativas do vocabulário também), da mais nova para a mais antiga. Aperte <strong>▶ Ouvir</strong> para escutar com a aluna na aula. A <strong style="color:#7c3aed;">bolinha roxa</strong> na aba marca o que você ainda não viu. Só aparecem alunas com o curso no app (⋮ → Editar plano → Connectivity 1) e com as caixas de fala ligadas na aba Curso.</p>
+          <div class="fa-filtros">
+            <select id="fa-aluno" aria-label="Filtrar por aluna"><option value="">Todas as alunas</option></select>
+            <select id="fa-unidade" aria-label="Filtrar por unidade"><option value="">Todas as unidades</option></select>
+            <label><input type="checkbox" id="fa-so-novas"> só o que ainda não vi</label>
+            <button type="button" class="fa-btn" id="fa-recarregar">↻ Recarregar</button>
+            <button type="button" class="fa-btn" id="fa-visto-todas">✓ Marcar tudo isto como visto</button>
+            <span id="fa-msg" style="font-size:.8rem;color:var(--muted);"></span>
+          </div>
+        </div>
+        <div id="fa-lista"><div class="loading">Carregando...</div></div>
+      </div>
+
       <!-- CURSO — o livro (Connectivity) dentro do app: revisar o que fica, checklist, vídeos -->
       <div class="tab-panel" id="tab-curso">
         <style>
@@ -1760,6 +1803,18 @@
             <button type="button" class="cr-btn" id="cr-baixar">📄 Baixar a lista completa (.txt)</button>
             <button type="button" class="cr-btn" id="cr-recarregar">↻ Recarregar</button>
             <span id="cr-msg" style="font-size:.8rem;color:var(--muted);"></span>
+          </div>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid #f1f5f9;">
+            <div style="font-weight:800;font-size:.88rem;margin-bottom:2px;">🎙️ Fala das alunas neste livro <small style="font-weight:600;color:var(--muted);">(vale para todas as alunas do Connectivity 1; desligado por padrão)</small></div>
+            <label class="cr-opc" style="margin:6px 0 0;"><input type="checkbox" id="cr-vocab-pron"><span>🎤 Vocabulário: a aluna grava e o app confere a pronúncia<small>A aluna ouve a palavra, grava, e o app confere de forma bem exigente (outra palavra nunca vale) e mostra onde errou. O jogo da memória não muda.</small></span></label>
+            <label class="cr-opc" style="margin:6px 0 0;"><input type="checkbox" id="cr-gravar-falas"><span>🎙️ Toda fala é gravada e transcrita<small>Os exercícios de falar passam a gravar de verdade (até 30 s). O áudio e a transcrição ficam na aba Falas.</small></span></label>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:.84rem;">
+              <label for="cr-pron-min" style="font-weight:700;">Exigência da pronúncia</label>
+              <input type="number" id="cr-pron-min" min="0.5" max="0.95" step="0.05" placeholder="0.80" style="width:84px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font:inherit;">
+              <span style="color:var(--muted);font-size:.76rem;">de 0,50 a 0,95 (padrão 0,80). Mais alto = mais exigente com a clareza da palavra.</span>
+              <span id="cr-fala-msg" style="font-size:.78rem;font-weight:700;"></span>
+            </div>
+            <div style="margin-top:6px;font-size:.76rem;color:var(--muted);line-height:1.5;">Antes de ligar, teste com a sua voz (logado como professor): <code>index.html?planoteste=1&amp;curso=u05&amp;falar=1</code>. Para valer, a API “Cloud Speech-to-Text” precisa estar ligada no projeto e a função <code>avaliarFala</code> publicada.</div>
           </div>
         </div>
 
@@ -6113,6 +6168,7 @@
           localStorage.setItem('adminEscola', escolaAtual);
           await loadStudents();
           euChecarBolinha();
+          faChecarBolinha();
           if (document.querySelector('.tab[data-tab="avaliacoes"]')?.classList.contains('active')) recarregarAvaliacoes();
           if (document.querySelector('.tab[data-tab="calendar"]')?.classList.contains('active')) loadCalendar();
           if (document.querySelector('.tab[data-tab="finance"]')?.classList.contains('active')) loadFinance();
@@ -6135,6 +6191,7 @@
           await loadStudents();
           loadExtras();
           euChecarBolinha();
+          faChecarBolinha();
         } catch (e) {
           console.error('Acesso administrativo recusado:', e);
           adminUid = null;
@@ -6207,6 +6264,7 @@
         if (tab.dataset.tab === 'finance') loadFinance();
         if (tab.dataset.tab === 'curso') carregarCurso();
         if (tab.dataset.tab === 'eurekia') carregarEurekia();
+        if (tab.dataset.tab === 'falas') carregarFalas();
       };
     });
 
@@ -6220,7 +6278,7 @@
     // Quem administra a escola vê a interface dela — inclusive o César, ao
     // trocar de escola no seletor do topo.
     const ABAS_POR_MODO = {
-      manual:    ['students', 'groups', 'calendar', 'finance', 'challenge', 'adesao', 'creditos', 'posaula', 'processos', 'publish', 'correct', 'vocab', 'extras', 'curso', 'eurekia', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
+      manual:    ['students', 'groups', 'calendar', 'finance', 'challenge', 'adesao', 'creditos', 'posaula', 'processos', 'publish', 'correct', 'vocab', 'extras', 'curso', 'eurekia', 'falas', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
       assistido: ['students', 'groups', 'calendar', 'finance', 'challenge', 'adesao', 'creditos', 'posaula', 'processos', 'publish', 'extras', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
     };
 
@@ -8325,6 +8383,117 @@
       } catch (e) { painel.innerHTML = `<div class="form-msg err" style="display:block">Não consegui abrir as perguntas: ${esc(e.message)}</div>`; }
     }
 
+    // ── Aba "Falas": toda fala em inglês do curso, gravada e transcrita ──
+    // O app grava, em students/{uid}/planoProgresso/feitas, uma chave "fala:ID" por fala = {audio (caminho no Storage), dur, em, enunciado,
+    // unidade, tarefa, ex?, palavra?}; a função avaliarFala completa transcricao (fala livre) ou ouvi/ok/motivo (palavra). "visto" é gravado aqui.
+    let faDados = [];
+    let faLimite = 60;
+    const faQuando = iso => { const d = iso ? new Date(iso) : null; return d && !Number.isNaN(d.getTime()) ? d.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : ''; };
+    const faUnidade = u => { const n = parseInt(String(u || '').replace(/\D/g, ''), 10); return n ? 'Unit ' + n : (u || ''); };
+    const faData = r => String(r.em || r.avaliadoEm || '');
+    function faAtualizarBolinha() {
+      document.querySelector('.tab[data-tab="falas"]')?.classList.toggle('tem-bolinha', faDados.some(r => !r.visto));
+    }
+    async function faCarregarDados() {
+      const alunas = allStudents.filter(s => s.plano && s.plano.livro && !s.archived);
+      const achados = [];
+      await Promise.all(alunas.map(async s => {
+        try {
+          const sn = await getDoc(doc(db, 'students', s.uid, 'planoProgresso', 'feitas')); if (!sn.exists()) return;
+          const f = sn.data().feitas || {};
+          Object.keys(f).filter(k => k.startsWith('fala:') && f[k] && typeof f[k] === 'object')
+            .forEach(k => achados.push({ ...f[k], uid:s.uid, aluna:s.name || s.firstName || 'Aluna', chave:k }));
+        } catch (e) { console.warn('Falas: não consegui ler', s.uid, e); }
+      }));
+      achados.sort((a, b) => faData(b).localeCompare(faData(a)));
+      faDados = achados;
+      faAtualizarBolinha();
+    }
+    // Só a bolinha (ao entrar no painel e ao trocar de escola); se a aba estiver aberta, redesenha.
+    async function faChecarBolinha() {
+      try {
+        await faCarregarDados();
+        if (document.getElementById('tab-falas')?.classList.contains('active')) { faPreencherFiltros(); faRender(); }
+      } catch (e) { console.warn('Falas: não consegui checar falas novas', e); }
+    }
+    async function carregarFalas() {
+      const msg = document.getElementById('fa-msg');
+      document.getElementById('fa-lista').innerHTML = '<div class="loading">Carregando...</div>';
+      try { await faCarregarDados(); faLimite = 60; faPreencherFiltros(); faRender(); msg.textContent = ''; }
+      catch (e) { document.getElementById('fa-lista').innerHTML = `<div class="form-msg err" style="display:block">Não consegui carregar as falas: ${esc(e.message)}</div>`; }
+    }
+    function faPreencherFiltros() {
+      const selA = document.getElementById('fa-aluno'), selU = document.getElementById('fa-unidade');
+      const a0 = selA.value, u0 = selU.value;
+      const alunas = allStudents.filter(s => s.plano && s.plano.livro && !s.archived).sort((x, y) => String(x.name || x.firstName || '').localeCompare(String(y.name || y.firstName || ''), 'pt-BR'));
+      selA.innerHTML = '<option value="">Todas as alunas</option>' + alunas.map(s => `<option value="${esc(s.uid)}">${esc(s.name || s.firstName || 'Aluna')}</option>`).join('');
+      const unidades = [...new Set(faDados.map(r => r.unidade).filter(Boolean))].sort();
+      selU.innerHTML = '<option value="">Todas as unidades</option>' + unidades.map(u => `<option value="${esc(u)}">${esc(faUnidade(u))}</option>`).join('');
+      if ([...selA.options].some(o => o.value === a0)) selA.value = a0;
+      if ([...selU.options].some(o => o.value === u0)) selU.value = u0;
+    }
+    function faFiltradas() {
+      const al = document.getElementById('fa-aluno').value, un = document.getElementById('fa-unidade').value, soNovas = document.getElementById('fa-so-novas').checked;
+      return faDados.filter(r => (!al || r.uid === al) && (!un || r.unidade === un) && (!soNovas || !r.visto));
+    }
+    function faResultado(r) {
+      if (r.palavra !== undefined || r.modo === 'palavra') {
+        const alvo = `<span class="alvo">${esc(r.palavra || '')}</span>`;
+        if (r.ok === true) return `<div class="fa-pal">${alvo}<span class="ok">✅ certo</span>${r.ouvi ? `<span>ouvi “${esc(r.ouvi)}”</span>` : ''}</div>`;
+        if (r.ok === false) {
+          const porque = r.motivo === 'pouco-claro' ? ' (a palavra veio sem clareza)' : r.motivo === 'silencio' ? ' (não ouvi nada)' : '';
+          return `<div class="fa-pal">${alvo}<span class="no">❌ errou</span><span>ouvi “${esc(r.ouvi || '')}”${porque}</span></div>`;
+        }
+        return `<div class="fa-pal">${alvo}<span class="esp">⏳ sem conferência (a função não respondeu)</span></div>`;
+      }
+      if (typeof r.transcricao === 'string') return r.transcricao.trim() ? `<div class="fa-trans">📝 ${esc(r.transcricao)}</div>` : '<div class="fa-trans vazia">📝 O serviço não entendeu palavras nesta gravação. Ouça o áudio.</div>';
+      return '<div class="fa-trans vazia">📝 Sem transcrição (a função não respondeu).</div>';
+    }
+    function faRender() {
+      const caixa = document.getElementById('fa-lista');
+      const todas = faFiltradas(), lista = todas.slice(0, faLimite);
+      if (!todas.length) {
+        caixa.innerHTML = `<div class="fa-card"><div class="fa-sub" style="margin:0;">${faDados.length ? 'Nenhuma fala com esse filtro.' : 'Ainda não há falas gravadas. Depois de ligar as caixas na aba Curso, tudo o que as alunas falarem aparece aqui.'}</div></div>`;
+        document.getElementById('fa-visto-todas').disabled = true; return;
+      }
+      document.getElementById('fa-visto-todas').disabled = !todas.some(r => !r.visto);
+      caixa.innerHTML = lista.map(r => `<div class="fa-linha ${r.visto ? '' : 'nova'}">
+          <div class="fa-meta">${r.visto ? '' : '<span class="fa-chip nova">NOVA</span>'}<b>${esc(r.aluna)}</b><span>${esc(faUnidade(r.unidade))}</span><span>${esc(faQuando(faData(r)))}</span>
+            <span class="fa-chip">${r.palavra !== undefined || r.modo === 'palavra' ? 'vocabulário' : 'falar'}</span>${r.dur ? `<span>${Number(r.dur).toFixed(1).replace('.', ',')} s</span>` : ''}</div>
+          <div class="fa-enun">${esc(r.enunciado || '')}</div>
+          ${faResultado(r)}
+          <div class="fa-acoes">${r.audio ? `<button type="button" class="fa-btn" data-fa-ouvir="${esc(r.audio)}">▶ Ouvir</button>` : '<span class="fa-sem-audio">⚠️ o áudio não foi enviado (sem internet na hora)</span>'}
+            ${r.visto ? '<span style="font-size:.76rem;color:var(--muted);font-weight:700;">✓ visto</span>' : `<button type="button" class="fa-btn" data-fa-visto="${esc(r.uid)}|${esc(r.chave)}">✓ Visto</button>`}</div>
+        </div>`).join('') + (todas.length > lista.length ? `<div style="text-align:center;margin:12px 0;"><button type="button" class="fa-btn" id="fa-mais">Mostrar mais (${todas.length - lista.length})</button></div>` : '');
+      caixa.querySelectorAll('[data-fa-ouvir]').forEach(b => b.onclick = async () => {
+        const rotulo = b.textContent; b.disabled = true; b.textContent = 'Abrindo…';
+        try {
+          const a = document.createElement('audio'); a.controls = true; a.src = await getDownloadURL(storageRef(storage, b.dataset.faOuvir));
+          // gravação do navegador (webm) vem sem duração: força o player a descobrir o fim, como no app
+          a.addEventListener('loadedmetadata', () => { if (!Number.isFinite(a.duration)) { a.currentTime = 1e101; a.addEventListener('timeupdate', () => { a.currentTime = 0; }, { once:true }); } });
+          b.replaceWith(a); a.play().catch(() => {});
+        } catch (e) { b.disabled = false; b.textContent = rotulo; document.getElementById('fa-msg').textContent = '❌ Não consegui abrir o áudio: ' + e.message; }
+      });
+      caixa.querySelectorAll('[data-fa-visto]').forEach(b => b.onclick = () => { const [uid, chave] = b.dataset.faVisto.split('|'); faMarcarVistas([{ uid, chave }]); });
+      document.getElementById('fa-mais')?.addEventListener('click', () => { faLimite += 60; faRender(); });
+    }
+    // Grava visto:true nas falas (um setDoc por aluna) e atualiza a lista e a bolinha.
+    async function faMarcarVistas(itens) {
+      const msg = document.getElementById('fa-msg'); msg.textContent = 'Salvando...';
+      const agora = new Date().toISOString(); const porAluna = {};
+      itens.forEach(i => { (porAluna[i.uid] = porAluna[i.uid] || {})[i.chave] = { visto:true, vistoEm:agora }; });
+      try {
+        await Promise.all(Object.keys(porAluna).map(uid => setDoc(doc(db, 'students', uid, 'planoProgresso', 'feitas'), { feitas: porAluna[uid] }, { merge:true })));
+        itens.forEach(i => { const r = faDados.find(x => x.uid === i.uid && x.chave === i.chave); if (r) { r.visto = true; r.vistoEm = agora; } });
+        msg.textContent = ''; faAtualizarBolinha(); faRender();
+      } catch (e) { msg.textContent = '❌ Não consegui salvar: ' + e.message; }
+    }
+    document.getElementById('fa-aluno').onchange = () => { faLimite = 60; faRender(); };
+    document.getElementById('fa-unidade').onchange = () => { faLimite = 60; faRender(); };
+    document.getElementById('fa-so-novas').onchange = () => { faLimite = 60; faRender(); };
+    document.getElementById('fa-recarregar').onclick = () => carregarFalas();
+    document.getElementById('fa-visto-todas').onclick = () => { const itens = faFiltradas().filter(r => !r.visto).map(r => ({ uid:r.uid, chave:r.chave })); if (itens.length) faMarcarVistas(itens); };
+
     // ── Aba "Curso": revisar o livro (marcar só o que SAI), checklist, vídeos e lista completa ──
     // Regra da tela: marcado = TIRAR do app. Só as tarefas "opcionais" (vídeo, revisão e extras do livro) vêm desligadas
     // e aí a marca é ao contrário (LIGAR). Tudo vai para `ocultos` da unidade; `revisadas` e `notas` guardam o andamento.
@@ -8362,10 +8531,39 @@
       try {
         const ind = await cursoCarregarIndice(true);
         await Promise.all((ind.unidades || []).filter(u => u.pronta).map(u => cursoCarregarUnidade(u.id, true)));
-        crRenderChecklist(ind); crRenderResumo(ind); crRenderMidia(ind);
+        crRenderChecklist(ind); crRenderResumo(ind); crRenderMidia(ind); crRenderFala(ind);
         if (crUn && cursoUnidades[crUn.id]) { crUn = cursoUnidades[crUn.id]; crRenderPasso(); }
       } catch (e) { resumo.innerHTML = `<div class="form-msg err" style="display:block">Não consegui carregar o curso: ${esc(e.message)}</div>`; }
     }
+
+    // Chaves de fala do livro (cursos/connectivity-1): vocabPronuncia, gravarFalas e pronunciaMin. Ausentes = desligado / padrão 0,8.
+    function crRenderFala(ind) {
+      document.getElementById('cr-vocab-pron').checked = !!ind.vocabPronuncia;
+      document.getElementById('cr-gravar-falas').checked = !!ind.gravarFalas;
+      document.getElementById('cr-pron-min').value = typeof ind.pronunciaMin === 'number' ? ind.pronunciaMin : '';
+    }
+    async function crSalvarFala(campos, msgOk) {
+      const msg = document.getElementById('cr-fala-msg');
+      try {
+        await updateDoc(doc(db, 'cursos', CURSO_ID), campos);
+        Object.keys(campos).forEach(k => { if (cursoIndice) { if (campos[k] === undefined) delete cursoIndice[k]; else cursoIndice[k] = campos[k]; } });
+        msg.style.color = '#16a34a'; msg.textContent = '✅ ' + msgOk;
+      } catch (e) { msg.style.color = '#dc2626'; msg.textContent = '❌ Não consegui salvar: ' + e.message; throw e; }
+    }
+    [['cr-vocab-pron', 'vocabPronuncia', 'Vocabulário com pronúncia'], ['cr-gravar-falas', 'gravarFalas', 'Gravação das falas']].forEach(([id, campo, nome]) => {
+      document.getElementById(id).onchange = async ev => {
+        const cx = ev.target;
+        try { await crSalvarFala({ [campo]: cx.checked }, `${nome} ${cx.checked ? 'ligado' : 'desligado'}. Vale na próxima vez que a aluna abrir o app.`); }
+        catch (e) { cx.checked = !cx.checked; }
+      };
+    });
+    document.getElementById('cr-pron-min').onchange = async ev => {
+      const c = ev.target, bruto = String(c.value).replace(',', '.').trim(), msg = document.getElementById('cr-fala-msg');
+      if (!bruto) { try { await crSalvarFala({ pronunciaMin: deleteField() }, 'Exigência voltou ao padrão (0,80).'); if (cursoIndice) delete cursoIndice.pronunciaMin; } catch (e) {} return; }
+      const n = Number(bruto);
+      if (!Number.isFinite(n) || n < 0.5 || n > 0.95) { msg.style.color = '#dc2626'; msg.textContent = '❌ Use um valor de 0,50 a 0,95.'; c.value = typeof cursoIndice?.pronunciaMin === 'number' ? cursoIndice.pronunciaMin : ''; return; }
+      try { await crSalvarFala({ pronunciaMin: n }, `Exigência ${String(n).replace('.', ',')} salva.`); } catch (e) {}
+    };
 
     // Checklist (os itens manuais ficam salvos em cursos/connectivity-1.checklist)
     function crItensChecklist(ind) {
