@@ -292,11 +292,13 @@ function TrilhaTarefaLinha({ tr, e, onClick }) {
 }
 
 /* ───────── a aba ───────── */
-function TrilhaTab({ tipo, briefing, onSaveBriefing, extras, posaulas, activities, onAbrirAtividades, onOpenExtra, onReadPost }) {
+function TrilhaTab({ tipo, briefing, onSaveBriefing, extras, posaulas, activities, onAbrirAtividades, onOpenExtra, onReadPost, abrirForm, onFormAberto }) {
   const tr = TRILHAS[tipo], conf = TRILHA_CONF[tipo];
   const [tela, setTela] = React.useState('');      // '' = automática | 'form' | 'etapa'
   const [etapa, setEtapa] = React.useState(0);
   const [peek, setPeek] = React.useState(false);
+  // "Responder agora" da apresentação (novidades.jsx): cai direto no formulário, uma vez.
+  React.useEffect(() => { if (abrirForm) { if (!briefing) setTela('form'); if (onFormAberto) onFormAberto(); } }, [abrirForm]);
 
   const minhas = React.useMemo(() => (extras || []).filter(e => e.trilha === tipo), [extras, tipo]);
   const aulas = React.useMemo(() => (posaulas || []).filter(p => postTrilha(p) === tipo), [posaulas, tipo]);

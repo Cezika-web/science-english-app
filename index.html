@@ -262,7 +262,7 @@ async function getFB() {
 // Falha de gravação (regra ainda não publicada, sem rede) nunca aparece para o aluno.
 const CzkUsage = (() => {
   // Versão do app que vai junto com o uso (para saber quem ainda roda versão velha). Mantenha igual ao CACHE do sw.js.
-  const APP_BUILD = 'v64';
+  const APP_BUILD = 'v65';
   const TICK = 1000, MIN_STEP = 200, FLUSH = 60000, NEW_VISIT = 30 * 60000;
   const BLIND_CAP = 10 * 60000, HOLD_CAP = 15 * 60000, MAX_FAILS = 5;
   const READ_MS = 180000;                 // maior pausa aceita na leitura do pós-aula (igual a LEITURA_SEG do adesao.js)
@@ -4151,6 +4151,8 @@ function AulasTab({ activities, activitiesTrilha = [], onOpenActivity, onContinu
   // As atividades das aulas da trilha NÃO entram na lista geral: aparecem só na sub-tela "Atividades da trilha",
   // que reaproveita a mesma lista e o mesmo histórico, alimentados por `activitiesTrilha`.
   const [verAtivsTrilha, setVerAtivsTrilha] = useState(false);
+  const pedidoAbrirTrilha = !!(trilhaProps && trilhaProps.abrirForm);
+  useEffect(() => { if (pedidoAbrirTrilha && trInfo) { setSub('trilha'); setVerAtivsTrilha(false); } }, [pedidoAbrirTrilha, !!trInfo]);
   const modoTrilha = !!trInfo && sub === 'trilha' && verAtivsTrilha;
   const lista = modoTrilha ? activitiesTrilha : activities;
   const [openHist, setOpenHist] = useState({});
@@ -5733,6 +5735,7 @@ function App() {
   const [vocab, setVocab]               = useState([]);
   const [extras, setExtras]             = useState([]);
   const [trilhaBriefing, setTrilhaBriefing] = useState(undefined);   // undefined = ainda não carregou; null = a aluna não preencheu
+  const [trilhaAbrirForm, setTrilhaAbrirForm] = useState(false);     // "Responder agora" da apresentação da trilha: abre a aba e já cai no formulário
   const [reviewReports, setReviewReports] = useState([]);
   const [courseReviews, setCourseReviews] = useState([]);
   const [ownCourseReview, setOwnCourseReview] = useState(null);
@@ -6477,7 +6480,7 @@ function App() {
     setTrilhaBriefing(atual => ({ ...(atual || {}), tipo: student.trilha.tipo, respostas, atualizadoEm: new Date() }));
     return true;
   }
-  const trilhaProps = { student, briefing: trilhaBriefing, onSaveBriefing: saveTrilhaBriefing, extras, posaulas, onOpenExtra: setOpenExtra, onReadPost: markPostRead, mirror };
+  const trilhaProps = { student, briefing: trilhaBriefing, onSaveBriefing: saveTrilhaBriefing, extras, posaulas, onOpenExtra: setOpenExtra, onReadPost: markPostRead, mirror, abrirForm: trilhaAbrirForm, onFormAberto: () => setTrilhaAbrirForm(false) };
   const perguntarAssistente = async (pergunta, contexto, anterior) => {
     const fb = await getFB();
     // Os mesmos números da tela de Adesão, para a EurekIA responder "qual a minha média?" e "quanto está a minha adesão?".
@@ -6549,12 +6552,17 @@ function App() {
     || openActivity || openPart || openExtra || openCorrecao || readerPost || duvidaGeral || (!mirror && student?.avisoCobranca?.ativo && !avisoCobrancaFechado));
   const novidadeAtual = (() => {
     if (typeof NovidadePassos !== 'function' || !student?.uid || outrosAvisos) return null;
+    const tipoTrilha = student?.trilha?.tipo || '', chaveTrilha = `trilha-${tipoTrilha}`;
+    const trilhaPronta = !!(TRILHAS[tipoTrilha] && typeof NovidadeTrilha === 'function' && typeof TrilhaTab === 'function');
     if (introForcada) {
+      if (introForcada === 'trilha' && trilhaPronta && !novidadesFechadas[chaveTrilha]) return 'trilha';
       if (introForcada === 'eurekia' && !novidadesFechadas.eurekia) return 'eurekia';
       if (introForcada === 'adesao' && !novidadesFechadas.adesao && adesao.result) return 'adesao';
       return null;
     }
     if (mirror) return null;
+    // Trilha recém-ativada: só aparece enquanto a aluna ainda não preencheu o formulário (briefing null) e uma vez por aparelho.
+    if (trilhaPronta && trilhaBriefing === null && !novidadesFechadas[chaveTrilha] && !novidadeVista(chaveTrilha)) return 'trilha';
     if (assistenteLiberado && !novidadesFechadas.eurekia && !novidadeVista('eurekia')) return 'eurekia';
     if (adesao.visivel && adesao.liberado && adesao.result && !novidadesFechadas.adesao && !novidadeVista('adesao')) return 'adesao';
     return null;
@@ -6604,6 +6612,8 @@ function App() {
       {mostraBotaoIA &&
         <button onClick={abrirAssistente} aria-label="Perguntar ao Dr. EurekIA" style={{ position: 'fixed', bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))', right: 'max(16px, calc(50vw - 224px))', zIndex: 300, width: 54, height: 54, borderRadius: '50%', border: 0, padding: 0, background: 'none', boxShadow: '0 10px 24px rgba(109,40,217,.4)', cursor: 'pointer' }}><EurekiaAvatar size={54} /></button>}
       {folhaEurekia}
+      {novidadeAtual === 'trilha' && <NovidadeTrilha tipo={student.trilha.tipo} onFim={() => fecharNovidade(`trilha-${student.trilha.tipo}`)}
+        onComecar={() => { fecharNovidade(`trilha-${student.trilha.tipo}`); setTab('aulas'); setTrilhaAbrirForm(true); }} />}
       {novidadeAtual === 'eurekia' && <NovidadeEurekIA onFim={() => fecharNovidade('eurekia')}
         onExperimentar={assistenteLiberado ? () => { fecharNovidade('eurekia'); setPerguntaPronta(NOV_PERGUNTA_INICIAL); setDuvidaGeral(true); } : null} />}
       {novidadeAtual === 'adesao' && <NovidadeAdesao AD={adesao.AD} result={adesao.result} student={student} onFim={() => fecharNovidade('adesao')}

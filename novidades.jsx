@@ -109,6 +109,47 @@ function NovidadeEurekIA({ onFim, onExperimentar }) {
     onFim={(como) => { if (como === 'fim' && onExperimentar) onExperimentar(); else onFim(como); }} />;
 }
 
+/* ───────── Trilha (Entrevista, Business, Viagem) ───────── */
+// Abre sozinha uma vez, quando o professor ativa a trilha e a aluna ainda não contou nada. Os textos vêm do TRILHA_CONF (trilha.jsx),
+// os mesmos da tela da trilha; o último passo leva direto ao formulário.
+function NovidadeTrilha({ tipo, onFim, onComecar }) {
+  const tr = TRILHAS[tipo], conf = TRILHA_CONF[tipo];
+  if (!tr || !conf) return null;
+  const foco = conf.foco;
+  const passos = [
+    {
+      fundo: tr.grad, ilu: tr.ic, titulo: conf.titulo,
+      texto: <>Uma novidade no app: um <b>caminho só seu</b>, feito pelo professor. {conf.intro}</>,
+    },
+    {
+      fundo: tr.grad, ilu: '🧭', titulo: 'Como funciona',
+      texto: <div className="nov-lista">
+        {conf.como.map((c, i) => <div key={i}><span>{c[0]}</span><div><b>{i + 1}. {c[1]}.</b> {c[2]}</div></div>)}
+      </div>,
+    },
+    foco ? {
+      fundo: 'linear-gradient(150deg,#0D9488,#115E59)', ilu: '📌', titulo: foco.titulo,
+      texto: <><div style={{ marginBottom: 8 }}>{foco.intro}</div><div className="nov-lista">
+        {foco.itens.map((it, i) => <div key={i}><span>{it.ic}</span><div><b>{i + 1}. {it.t}.</b> {it.d}
+          {it.sub && it.sub.map((s, j) => <div key={j} style={{ marginTop: 6 }}>{s[0]} <b>{String.fromCharCode(97 + j)}) {s[1]}:</b> {s[2]}</div>)}</div></div>)}
+      </div></>,
+    } : null,
+    {
+      fundo: 'linear-gradient(150deg,#6366F1,#4338CA)', ilu: '🗺', titulo: `O seu caminho: ${conf.etapas.length} etapas`,
+      texto: <>O professor vai <b>liberando uma etapa de cada vez</b>, conforme você avança e as aulas acontecem. As que ainda não abriram aparecem como <b>EM BREVE</b>. Em cada etapa há tarefas de <b>ler, ouvir, falar e escrever</b>, e nas de falar você grava a sua voz por <b>até 1 minuto</b>.</>,
+      extra: <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+        {conf.etapas.map((e, i) => <span key={i} style={{ fontSize: 11.5, fontWeight: 700, color: tr.dark, background: tr.bg, border: `1px solid ${tr.line}`, borderRadius: 99, padding: '4px 9px' }}>{i + 1}. {e.n}</span>)}
+      </div>,
+    },
+    {
+      fundo: tr.grad, ilu: '📝', titulo: `Primeiro passo: conte sobre ${conf.comecar}`,
+      texto: <>São <b>{conf.campos.length} perguntas rápidas</b>, que levam uns <b>3 minutos</b>. Só você sabe as respostas, e é com elas que o professor monta <b>o material feito para você</b>, não um material genérico. Responda com calma: quanto mais você contar, melhor fica o seu caminho.</>,
+    },
+  ].filter(Boolean);
+  return <NovidadePassos passos={passos} rotuloFim="Responder agora" rotuloExtra="Depois" onExtra={() => onFim('fim')}
+    onFim={(como) => { if (como === 'fim') onComecar(); else onFim(como); }} />;
+}
+
 /* ───────── Adesão ───────── */
 const novFm = (m) => (m < 1 ? `${Math.round(m * 60)} s` : `${(Math.round(m * 10) / 10).toString().replace('.', ',')} min`);
 const novDdmm = (k) => `${String(k).slice(8, 10)}/${String(k).slice(5, 7)}`;
