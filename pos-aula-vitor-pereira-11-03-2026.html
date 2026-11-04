@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Vitor Pereira — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+</style></head><body>
+<div class="wrap"><article class="card" role="main"><header><div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="badge">PÓS-AULA</span><h1>Dois verbos juntos: enjoys, wants e likes</h1></div><div class="meta" style="margin-top:8px"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Vitor Pereira<br><strong>Data:</strong> 11/03/2026 &nbsp;•&nbsp; Aula presencial em dupla</div></div><div class="actions"><button type="button" class="btn" data-czk-action="print">Imprimir / Salvar PDF</button></div></header>
+<main><section><div class="panel"><p style="margin:0"><em>Vitor, você teve vários acertos importantes nos desafios e nas atividades. Nesta aula presencial com Karlla, reforçamos o -s do primeiro verbo, enjoy / want / like e o uso de be para idade e medo, com prática nos jogos.</em></p></div></section><section><h2>📘 Resumo da Aula</h2><div class="outline-card">
+<p>Começamos retomando os desafios. Os dois tiveram um bom desempenho, com vários acertos em estruturas já estudadas. A revisão se concentrou em uma atenção dupla: <strong>conjugar o primeiro verbo</strong> e <strong>escolher a forma do segundo</strong>. Na afirmativa do presente simples, he, she e it pedem o -s: <strong>she enjoys, he wants, she likes</strong>.</p>
+<p>Quando dois verbos aparecem juntos, o primeiro orienta a forma do segundo. Praticamos <strong>enjoy + verbo-ing</strong> (She enjoys reading), <strong>want + to + verbo</strong> (She wants to read) e as duas possibilidades com <strong>like</strong>: She likes reading / She likes to read. Não misturamos as duas formas: <em>likes to reading</em> não funciona.</p>
+<div class="panel"><p style="margin:0"><strong>Checklist da frase:</strong> 1. Quem é o sujeito? → 2. O primeiro verbo precisa de -s? → 3. O segundo vai com -ing ou com to? <br><strong>She enjoys reading. / She wants to read. / She likes reading. / She likes to read.</strong></p></div>
+<p>Depois, trabalhamos a <strong>estrutura das três perguntas do Fermi</strong>. A primeira trouxe <strong>are 100 years old or older</strong>: em inglês, idade é expressa com <strong>be</strong>, como em I am 30 years old. A segunda trouxe <strong>are sold worldwide</strong>, retomando <strong>sell → sold → sold</strong> e worldwide. Na frase do jogo, sold é o particípio: <strong>are sold = são vendidos</strong>; no passado simples, sold também significa vendeu/venderam, conforme o sujeito.</p>
+<p>Revisamos ainda <strong>be afraid of</strong>: I am afraid, you are afraid, he/she is afraid. Em português dizemos “ter medo”, mas em inglês usamos be. No jogo Grammar Replay, voltamos a praticar be, do/does, enjoy, want e as combinações com -ing; o esquecimento da conjugação do primeiro verbo reapareceu na prática em dupla e foi retomado.</p>
+<p>Fechamos recuperando o vocabulário da aula anterior: <strong>only child, middle child, youngest, oldest</strong> e, com destaque, <strong>worldwide</strong>, conectado à pergunta dos iPhones.</p>
+<h3>Seu retorno individual</h3><h3>Seu desafio da semana de 2 de novembro</h3><p><strong>440/500 pontos: três respostas totalmente corretas e duas com crédito parcial.</strong> Você acertou <strong>being</strong> em “She apologizes for being late”, identificou corretamente que “Does she works at the hospital?” está errada e escolheu <strong>making</strong> em “He enjoys making new friends”. Isso mostra reconhecimento das estruturas.</p><p>Na tradução “She like to watch movies”, <strong>to watch já estava correto</strong>; faltou apenas likes. Na frase sobre medo, você usou <strong>is ... of</strong>, um bom começo para o bloco be afraid of; precisou ajustar o pronome e a escrita de afraid.</p><h3>Seus acertos nas atividades recentes</h3><ul><li><strong>Review — Blocks, Verbs &amp; Prepositions: 29/30.</strong> Você fez 15/15 na primeira parte, escolhendo entre -ing, to + verbo e forma base.</li><li><strong>Object to &amp; Look forward to: 23/27.</strong> Suas frases próprias foram avaliadas como corretas e naturais. O foco da revisão é distinguir want to wait de object to waiting.</li><li><strong>Movies &amp; Family: 25/27.</strong> Compreensão do texto perfeita e traduções muito boas; os dois ajustes foram de singular e ortografia.</li></ul><p><strong>Próximo passo:</strong> levar os acertos dos exercícios de reconhecimento para a frase escrita inteira. Antes de terminar, confira sujeito, primeiro verbo e segundo verbo.</p></div></section><section><h2>💬 Frases usadas em aula</h2><div class="outline-card">
+<h3>Fermi — perguntas, exemplos e explicações</h3>
+<ol>
+<li><strong lang="en">How many people alive today are 100 years old or older?</strong><p>Quantas pessoas vivas hoje têm 100 anos ou mais?</p><p><strong>Estrutura:</strong> how many acompanha people, que é plural e contável. <strong>Are</strong> é o verbo be no plural; usamos be para idade, em vez de traduzir literalmente o “ter” do português. <strong>Alive today</strong> = vivas hoje; <strong>or older</strong> = ou mais velhas.</p><p><strong>Exemplo de revisão:</strong> <span lang="en">How old is your brother?</span> → Quantos anos seu irmão tem? Usamos is, sem do/does, porque a pergunta é com be.</p></li>
+<li><strong lang="en">How many iPhones are sold worldwide in 100 seconds?</strong><p>Quantos iPhones são vendidos no mundo todo em 100 segundos?</p><p><strong>Estrutura:</strong> how many acompanha iPhones. <strong>Are sold</strong> significa “são vendidos”: are é o auxiliar be e sold é o particípio de sell. Os iPhones recebem a ação de ser vendidos. <strong>Worldwide</strong> = no mundo todo; <strong>in 100 seconds</strong> = em 100 segundos.</p><p><strong>Exemplo de revisão:</strong> <span lang="en">These books are sold worldwide.</span> → Estes livros são vendidos no mundo todo. Memorize: sell → sold → sold.</p></li>
+<li><strong lang="en">How much money is in a 100 kg (220 lb) stack of $100 bills?</strong><p>Quanto dinheiro há em uma pilha de 100 kg (220 libras) de notas de 100 dólares?</p><p><strong>Estrutura:</strong> usamos <strong>how much money</strong> porque money não é contável em inglês. Money combina com <strong>is</strong>, no singular. Aqui, be indica onde o dinheiro está. <strong>A stack</strong> = uma pilha; <strong>bills</strong> = notas de dinheiro.</p><p><strong>Exemplo de revisão:</strong> <span lang="en">How much money is in the box?</span> → Quanto dinheiro há na caixa? Compare com <span lang="en">How many bills are in the box?</span> → Quantas notas há na caixa? Bills é contável e plural.</p></li>
+</ol>
+<p><strong>Compare com o outro jogo:</strong> <span lang="en">Are you afraid of dogs?</span> usa be com afraid. <span lang="en">Does your sister like cooking?</span> usa o auxiliar does e mantém like na forma base. Escolha a estrutura a partir da frase completa.</p>
+
+<h3>Modelos para retomar as estruturas da aula</h3>
+<p style="color:var(--muted)">Frases de revisão reconstruídas a partir do relato do professor e do material do jogo; não são uma transcrição literal.</p>
+<ul>
+<li><strong lang="en">My sister enjoys reading books.</strong> → Minha irmã gosta de ler livros.</li>
+<li><strong lang="en">My brother wants to relax this weekend.</strong> → Meu irmão quer relaxar neste fim de semana.</li>
+<li><strong lang="en">She likes watching movies. / She likes to watch movies.</strong> → Ela gosta de assistir a filmes. As duas formas são corretas.</li>
+<li><strong lang="en">Does your sister like cooking?</strong> → Sua irmã gosta de cozinhar? Com does, like fica sem -s.</li>
+<li><strong lang="en">I am 30 years old.</strong> → Tenho 30 anos. Exemplo de estrutura, sem referência à idade dos alunos.</li>
+<li><strong lang="en">I am afraid of spiders. / Are you afraid of dogs?</strong> → Tenho medo de aranhas. / Você tem medo de cachorros?</li>
+<li><strong lang="en">My sister enjoys reading books, but she wants to watch a movie with all our friends this weekend.</strong> → Minha irmã gosta de ler livros, mas quer assistir a um filme com todos os nossos amigos neste fim de semana. Modelo da rodada escrita do jogo.</li>
+</ul>
+</div></section><section><h2>⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3>worldwide</h3><button type="button" class="vocab-say" data-czk-say="worldwide" aria-label="Ouvir a pronúncia de worldwide" aria-pressed="false" title="Ouvir worldwide">&#128266;</button></div><p><em>no mundo todo; mundialmente</em><br>Indica alcance global.<br><strong lang="en">iPhones are sold worldwide.</strong><br><small>iPhones são vendidos no mundo todo.</small></p></div><div class="vocab green"><div class="vocab-head"><h3>sold</h3><button type="button" class="vocab-say" data-czk-say="sold" aria-label="Ouvir a pronúncia de sold" aria-pressed="false" title="Ouvir sold">&#128266;</button></div><p><em>vendeu / venderam; vendido(s)</em><br>É o passado e o particípio de sell (vender).<br><strong lang="en">How many iPhones are sold worldwide?</strong><br><small>Quantos iPhones são vendidos no mundo todo?</small></p></div><div class="vocab yellow"><div class="vocab-head"><h3>afraid</h3><button type="button" class="vocab-say" data-czk-say="afraid" aria-label="Ouvir a pronúncia de afraid" aria-pressed="false" title="Ouvir afraid">&#128266;</button></div><p><em>com medo</em><br>Use be afraid of para dizer ter medo de algo.<br><strong lang="en">I am afraid of spiders.</strong><br><small>Tenho medo de aranhas.</small></p></div></div></section><section><h2>📚 Vocabulário completo da aula</h2><div class="outline-card">
+<h3 style="margin-top:0">Preferências e ações</h3><ul>
+<li><strong>enjoy / enjoys + -ing</strong> — gostar de; apreciar uma atividade: enjoys reading.</li>
+<li><strong>want / wants + to + verbo</strong> — querer: wants to relax.</li>
+<li><strong>like / likes + -ing ou to + verbo</strong> — gostar de: likes watching / likes to watch.</li>
+<li><strong>object to + -ing</strong> — opor-se a: objects to working.</li>
+<li><strong>look forward to + -ing</strong> — aguardar com expectativa: look forward to seeing.</li>
+</ul><h3>Fermi: quantidades, idade e vendas</h3><ul>
+<li><strong>worldwide</strong> — no mundo todo; mundialmente.</li>
+<li><strong>sell → sold → sold</strong> — vender → passado → particípio; are sold = são vendidos.</li>
+<li><strong>alive / today</strong> — vivo(a) / hoje.</li>
+<li><strong>100 years old or older</strong> — com 100 anos ou mais.</li>
+<li><strong>How many...?</strong> — Quantos/quantas...? Para itens contáveis: people, iPhones.</li>
+<li><strong>How much money...?</strong> — Quanto dinheiro...?</li>
+<li><strong>a stack / bills / seconds</strong> — uma pilha / notas de dinheiro / segundos.</li>
+</ul><h3>Família: revisão da aula anterior</h3><ul>
+<li><strong>only child</strong> — filho(a) único(a): She is an only child.</li>
+<li><strong>middle child</strong> — filho(a) do meio: He is the middle child.</li>
+<li><strong>youngest</strong> — o(a) mais novo(a): She is the youngest.</li>
+<li><strong>oldest</strong> — o(a) mais velho(a): He is the oldest.</li>
+<li><strong>siblings / birth order</strong> — irmãos e irmãs / ordem de nascimento.</li>
+</ul><h3>Medo</h3><ul><li><strong>be afraid of</strong> — ter medo de: I am afraid of spiders.</li><li><strong>spiders / dogs</strong> — aranhas / cachorros.</li></ul>
+</div></section><section><h2>🚨 Correções importantes</h2><div class="outline-card"><p><strong>Respostas reais do seu desafio e das atividades corrigidas.</strong> As frases das lacunas foram recompostas abaixo para facilitar a leitura.</p><div style="margin-bottom:20px"><p><strong>1. Desafio: o segundo verbo estava certo; faltou o -s no primeiro</strong></p><p style="color:#c53030">❌ She like to watch movies</p><p style="color:#276749">✅ <strong>She likes to watch movies. / She likes watching movies.</strong></p><p>Com she, use likes. A forma to watch da sua resposta é aceita; não é preciso trocá-la por watching.</p></div><div style="margin-bottom:20px"><p><strong>2. Desafio: pronome e escrita de afraid</strong></p><p style="color:#c53030">❌ She is afroid of spiders</p><p style="color:#276749">✅ <strong>He is afraid of spiders.</strong></p><p>O enunciado dizia “Ele”, portanto he. Afraid se escreve com ai. Você já usou is e of: preserve esse bloco.</p></div><div style="margin-bottom:20px"><p><strong>3. Atividade: want pede to</strong></p><p style="color:#c53030">❌ They want leave early.</p><p style="color:#276749">✅ <strong>They want to leave early.</strong></p><p>No exercício, você completou com leave. A resposta precisava ser to leave. Compare: want to wait / object to waiting; o to tem papéis diferentes.</p></div><div style="margin-bottom:20px"><p><strong>4. Outros ajustes das atividades</strong></p><p style="color:#c53030">❌ The movies we saw yesterday was very funny. / atention</p><p style="color:#276749">✅ <strong>The movie we saw yesterday was very funny. / attention</strong></p><p>A frase do exercício fala de um filme específico e usa was, no singular. Attention tem dois t. Ao reordenar, também confira waiting (esperar) versus watching (assistir): você usou a estrutura certa, mas trocou a palavra.</p></div><div style="margin-bottom:20px"><p><strong>5. Conversa informal</strong></p><p style="color:#c53030">❌ What&#x27;s up? — Yes, I do.</p><p style="color:#276749">✅ <strong>What&#x27;s up? — Not much.</strong></p><p>What’s up? é um cumprimento como “E aí?”. Not much significa “Nada demais”. Você acertou a gramática dos outros itens dessa revisão.</p></div><h3>Reforço da aula em dupla — exemplos de revisão</h3><div style="margin-bottom:20px"><p><strong>Primeiro verbo + segundo verbo</strong></p><p style="color:#c53030">❌ She enjoy to read. / He want playing.</p><p style="color:#276749">✅ <strong>She enjoys reading. / He wants to play.</strong></p><p>Com he/she/it na afirmativa, conjugue o primeiro: enjoys / wants / likes. Depois use a forma pedida: enjoy + -ing, want + to + verbo. São modelos de revisão, não novas respostas atribuídas a você.</p></div><div style="margin-bottom:20px"><p><strong>Idade e medo usam be</strong></p><p style="color:#c53030">❌ I have 30 years. / I have afraid of spiders.</p><p style="color:#276749">✅ <strong>I am 30 years old. / I am afraid of spiders.</strong></p><p>Esses são exemplos para revisão: em inglês, be expressa idade e aparece em be afraid of. Perguntas: How old are you? / Are you afraid of spiders?</p></div><p class="panel"><strong>Atenção ao verbo sell:</strong> sell → <strong>sold</strong> → sold. Na pergunta do Fermi, <strong>are sold</strong> significa “são vendidos”.</p></div></section><section><h2>🗣️ Tempo de Fala</h2><div class="speaking"><p style="margin:0"><strong>Não mensurado.</strong> A aula foi presencial e não teve gravação. O relato permite registrar a participação dos dois nos desafios e jogos, mas não estimar percentuais de fala com segurança.</div></section><section><h2>📝 Homework</h2><div class="homework"><p><strong>Prática sugerida para consolidar a aula:</strong></p><ol><li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana e ouça as três palavras-chave.</li><li>Escreva três frases com she: uma com <strong>enjoys + -ing</strong>, outra com <strong>wants to + verbo</strong> e outra com <strong>likes</strong>. Reescreva a última usando a outra possibilidade correta.</li><li>Reescreva suas duas frases do desafio: “Ela gosta de assistir filmes” e “Ele tem medo de aranhas”. Confira likes, he e afraid.</li><li>Crie uma frase com sua idade, uma com be afraid of e uma com worldwide. Revise também only child, middle child, youngest e oldest.</li><li>Retome o jogo da aula e leia as frases corretas em voz alta, conferindo o primeiro e o segundo verbo.</li></ol><p><a class="btn" href="https://vitor-karlla-grammar-replay-novembro.cmo-sep.chatgpt.site" target="_blank" rel="noopener noreferrer">🎮 Revisar o jogo da aula</a></p></div></section></main><footer><p>© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer></article></div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>

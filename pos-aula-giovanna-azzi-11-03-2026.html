@@ -1,0 +1,232 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Giovanna Azzi — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+</style></head><body><div class="wrap"><article class="card" role="main"><header><div><div style="display:flex;gap:10px;align-items:center;"><span class="badge">PÓS-AULA</span><h1>Inglês com Homem-Aranha: tempos verbais e listening</h1></div><div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluna:</strong> Giovanna Azzi &nbsp;•&nbsp; <strong>Data:</strong> 11/03/2026</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header><main><section class="panel"><p style="margin:0;font-weight:600;color:#14532D;"><em>Giovanna, nesta aula você usou o universo do Homem-Aranha para criar frases e praticar listening. O foco foi perceber como pequenas mudanças no verbo mudam o tempo da ação e ampliar o vocabulário para entender as cenas.</em></p></section><section><h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2><div class="outline-card">
+<p><strong>Revisão do desafio:</strong> retomamos a conjugação com <em>he / she / it</em> no presente simples, o uso do presente contínuo e a negativa com <em>would</em>. Você lembrou que não precisamos acrescentar <em>do / does</em> para negar com esse modal. Também revisamos o pedido educado <strong>“I’d like an orange juice”</strong>: <em>I’d</em> significa <em>I would</em> nesse contexto, enquanto <em>I’ll</em> significa <em>I will</em> e aponta para o futuro.</p>
+<p><strong>Produção de frases:</strong> antes do novo vídeo, você escreveu três sentenças com o vocabulário das cenas anteriores. Retomamos <em>get away from everything</em> (escapar de tudo / se afastar dos problemas), <em>argue about</em> (discutir sobre), <em>view</em> (vista), <em>probably</em> (provavelmente), <em>both</em> (ambos) e <em>to forget</em> (para esquecer). Na frase sobre a vista dos prédios, trabalhamos <strong>has</strong> para um sujeito singular e <strong>more beautiful</strong> para “mais bonito”. Também apareceu <em>handsome</em>, usado para descrever uma pessoa como bonita ou atraente; para a paisagem, a escolha era <em>beautiful</em>.</p>
+<p><strong>A mesma ideia em três tempos:</strong> com a frase sobre Peter se afastar dos problemas, comparamos <strong>Peter is getting away</strong> (está escapando), <strong>Peter gets away</strong> (escapa) e <strong>Peter got away</strong> (escapou). No contínuo, a estrutura é sujeito + <em>am / is / are</em> + verbo com <em>-ing</em>; em <em>getting</em>, dobramos o <em>t</em>. No presente simples afirmativo, Peter equivale a <em>he</em>, por isso usamos <em>gets</em>. No passado, o verbo irregular <em>get</em> vira <em>got</em>.</p>
+<p><strong>Listening com os três Homens-Aranha:</strong> assistimos à cena em que eles dividem responsabilidades para lidar com os vilões. Voltamos a trechos específicos para compreender a conversa sobre o amigo de Peter, a expressão <em>heartbreaking</em>, os <em>web cartridges</em> e a distração dos personagens. O trabalho foi combinar o que você ouvia com o contexto e a linguagem corporal, sem depender apenas de palavras isoladas.</p>
+<p style="margin-bottom:0;"><strong>Para consolidar:</strong> você chegou ao sentido de <em>heartbreaking</em> como algo muito triste e de <em>sidetracked</em> como estar distraído ou desviar do assunto principal. O próximo passo é usar essas expressões em frases próprias e escolher o tempo verbal de acordo com a ideia que quer comunicar.</p></div></section><section><h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2><div class="outline-card">
+<p style="color:var(--muted);">Frases e estruturas trabalhadas na explicação, nas correções e nos trechos do filme, com a escrita em inglês organizada para revisão.</p>
+<ul>
+<li><strong>I’d like an orange juice.</strong> → Eu gostaria de um suco de laranja.</li>
+<li><strong>I will like it.</strong> → Eu vou gostar disso. <em>Will like</em> tem sentido de futuro.</li>
+<li><strong>I would not watch TV.</strong> → Eu não assistiria à TV.</li>
+<li><strong>Get away from everything.</strong> → Escapar de tudo / se afastar de tudo.</li>
+<li><strong>Probably, Peter is getting away to forget his problems.</strong> → Provavelmente, Peter está se afastando para esquecer os problemas dele.</li>
+<li><strong>Probably, Peter gets away to forget his problems.</strong> → Provavelmente, Peter se afasta para esquecer os problemas dele.</li>
+<li><strong>Probably, Peter got away to forget his problems.</strong> → Provavelmente, Peter se afastou para esquecer os problemas dele.</li>
+<li><strong>We’re all he has left.</strong> → Nós somos tudo o que resta para ele.</li>
+<li><strong>After he tried to kill me.</strong> → Depois que ele tentou me matar.</li>
+<li><strong>Heartbreaking.</strong> → De partir o coração.</li>
+</ul></div></section><section><h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3>get away</h3><button type="button" class="vocab-say" data-czk-say="get away" aria-label="Ouvir a pronúncia de get away" aria-pressed="false" title="Ouvir get away">&#128266;</button></div><p><em>escapar; se afastar</em><br>Sair de um lugar ou se afastar de uma situação. Na cena, a ideia era escapar dos problemas.</p><p><strong>Exemplo de revisão:</strong> I need to get away from everything.<br><small>Preciso me afastar de tudo.</small></p></div><div class="vocab green"><div class="vocab-head"><h3>heartbreaking</h3><button type="button" class="vocab-say" data-czk-say="heartbreaking" aria-label="Ouvir a pronúncia de heartbreaking" aria-pressed="false" title="Ouvir heartbreaking">&#128266;</button></div><p><em>de partir o coração</em><br>Descreve algo que causa muita tristeza. Une heart (coração) à ideia de breaking (partindo).</p><p><strong>Exemplo de revisão:</strong> That story is heartbreaking.<br><small>Essa história é de partir o coração.</small></p></div><div class="vocab yellow"><div class="vocab-head"><h3>sidetracked</h3><button type="button" class="vocab-say" data-czk-say="sidetracked" aria-label="Ouvir a pronúncia de sidetracked" aria-pressed="false" title="Ouvir sidetracked">&#128266;</button></div><p><em>distraído; desviado do foco</em><br>Usado quando alguém perde o foco ou sai do assunto principal.</p><p><strong>Exemplo de revisão:</strong> We got sidetracked during the conversation.<br><small>Nós nos distraímos durante a conversa.</small></p></div></div></section><section><h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2><div class="outline-card">
+<h3 style="margin-top:0;">Conversas e lugares</h3><ul>
+<li><strong>argue about</strong> — discutir sobre; pode envolver discordância. Para uma conversa neutra sobre um assunto, também existe <em>discuss</em>.</li>
+<li><strong>view</strong> — vista, paisagem vista de um lugar.</li>
+<li><strong>beautiful / more beautiful</strong> — bonito(a) / mais bonito(a).</li>
+<li><strong>handsome</strong> — bonito, atraente; muito usado para homens.</li>
+<li><strong>funnier / worse</strong> — mais engraçado / pior; comparativos retomados na aula.</li>
+<li><strong>get away / get away from everything</strong> — escapar, se afastar / escapar de tudo.</li>
+</ul><h3>Ideias, referências e ações</h3><ul>
+<li><strong>probably</strong> — provavelmente.</li><li><strong>both</strong> — ambos, os dois / as duas.</li>
+<li><strong>his</strong> — dele; em <em>his problems</em>, “os problemas dele”.</li>
+<li><strong>forget / to forget</strong> — esquecer / para esquecer, no contexto da frase.</li>
+<li><strong>forgive</strong> — perdoar; foi contrastado com <em>forget</em> na correção da pronúncia.</li>
+<li><strong>left</strong> — restante; em <em>all he has left</em>, “tudo o que resta para ele”.</li>
+<li><strong>I’d like / I’ll like</strong> — eu gostaria / eu vou gostar.</li>
+<li><strong>get → gets → getting → got</strong> — forma base → presente com he/she/it → forma com -ing → passado.</li>
+</ul><h3>Vocabulário das cenas</h3><ul>
+<li><strong>heart / heartbreaking</strong> — coração / de partir o coração.</li>
+<li><strong>arms</strong> — braços; no contexto de alguém morrer nos braços de outra pessoa.</li>
+<li><strong>after / before</strong> — depois de / antes de.</li>
+<li><strong>try to / tried to</strong> — tentar / tentou.</li><li><strong>kill</strong> — matar.</li>
+<li><strong>web</strong> — teia.</li><li><strong>cartridge / web cartridge</strong> — cartucho / cartucho de teia.</li>
+<li><strong>sidetracked / distracted</strong> — desviado do foco / distraído.</li>
+</ul></div></section><section><h2 style="margin-bottom:8px;">🚨 Correções importantes</h2><div class="outline-card">
+<p><strong>1. Pedido educado: I’d × I’ll</strong><br>❌ <em>I’ll like an orange juice.</em> (para dizer “eu gostaria”)<br>✅ <strong>I’d like an orange juice.</strong><br><em>I’d = I would</em> aqui: “eu gostaria”. <em>I’ll = I will</em>: “eu vou”. A troca da contração muda o sentido.</p>
+<p><strong>2. Sujeito singular pede has</strong><br>❌ <em>What place have…?</em><br>✅ <strong>What place has…?</strong><br>Na frase criada sobre a vista, o sujeito era um lugar só. No presente simples afirmativo, <em>have</em> vira <em>has</em> com um sujeito equivalente a <em>it</em>.</p>
+<p><strong>3. “Mais bonito”: more beautiful</strong><br>❌ Acrescentar <em>-er</em> a <em>beautiful</em>.<br>✅ <strong>more beautiful</strong><br>Com esse adjetivo, usamos <em>more</em> antes da palavra. Para “a vista mais bonita” entre várias, a forma é <strong>the most beautiful view</strong>.</p>
+<p><strong>4. Ação em andamento: is getting</strong><br>❌ <em>Peter is get away…</em><br>✅ <strong>Peter is getting away…</strong><br>Para dizer “Peter está escapando”, precisamos de <em>is + getting</em>. O <em>t</em> de <em>get</em> dobra antes de <em>-ing</em>. Não use <em>is + get</em> para formar o contínuo.</p>
+<p><strong>5. Rotina e passado têm formas diferentes</strong><br>✅ <strong>Peter gets away.</strong> → Peter se afasta / escapa.<br>✅ <strong>Peter got away.</strong> → Peter se afastou / escapou.<br>A dúvida na aula foi ligar cada forma ao significado. <em>Gets</em> é presente simples; <em>got</em> é passado simples. Essas frases não contêm <em>is</em>, portanto não significam “está escapando”.</p>
+<p><strong>6. Forget × forgive</strong><br>❌ Usar <em>forgive</em> quando a ideia é “esquecer”.<br>✅ <strong>to forget his problems</strong> → para esquecer os problemas dele.<br><em>Forgive</em> significa “perdoar”. Na leitura, cuide do som e da escrita de <em>forget</em>.</p>
+<p style="margin-bottom:0;"><strong>7. Compreensão: after he tried to…</strong><br>❌ Entender <em>after</em> como “antes” ou omitir a ideia de tentativa.<br>✅ <strong>after he tried to kill me</strong> → depois que ele tentou me matar.<br><em>After</em> é “depois”; <em>before</em> é “antes”. <em>Tried to</em> traz o sentido de “tentou”.</p>
+</div></section><section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/LZ7eboENLMI" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section><section class="speaking"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Participante</th><th>Participação estimada</th><th>Tempo aproximado</th></tr></thead><tbody><tr class="row-teacher"><td class="talk-label">Professor</td><td class="talk-percent">64%</td><td class="talk-time">19 min</td></tr><tr class="row-student"><td class="talk-label">Giovanna</td><td class="talk-percent">36%</td><td class="talk-time">11 min</td></tr></tbody></table><p style="color:var(--muted);font-size:0.88rem;margin-bottom:0;">Estimativa pelos intervalos de fala identificados na transcrição, em português e inglês. Exclui o áudio dos vídeos, as pausas e o tempo de escrita; não representa a duração total da aula.</p></section><section><h2 style="margin-bottom:8px;">📝 Homework</h2><div class="homework">
+<p style="margin-top:0;"><strong>Combinado para quinta-feira, 5 de novembro:</strong></p>
+<ol><li><strong>Fazer as atividades do app até quinta-feira</strong> e ler este pós-aula, conforme combinado no encerramento.</li>
+<li><strong>Criar uma frase própria com “sidetracked”</strong> para a próxima aula. Pense em uma situação em que você se distraiu ou saiu do assunto. Apoio: <em>I got sidetracked when…</em> → “Eu me distraí quando…”. Complete com uma ideia sua.</li></ol>
+<p style="margin-bottom:0;">💡 <strong>Sugestão de revisão:</strong> leia em voz alta as três frases com <em>is getting / gets / got</em> e diga qual significa “está escapando”, “escapa” e “escapou”. Ao rever a cena, tente reconhecer <em>heartbreaking</em>, <em>web cartridge</em> e <em>sidetracked</em>.</p>
+</div></section></main><footer>© 2025 CZK English • czkenglish@gmail.com</footer></article></div><script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script></body></html>
