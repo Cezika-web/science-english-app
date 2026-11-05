@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Rebeca — CZK English</title>
+  <style>
+:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+body{color:#374151;line-height:1.55}
+h2{font-size:1.12rem;color:#0f1724;margin:0 0 8px}
+h3{font-size:1rem}
+.outline-card > :first-child{margin-top:0}
+.outline-card > :last-child,.homework > :last-child{margin-bottom:0}
+li + li{margin-top:4px}
+.correction{padding:10px 0;border-bottom:1px solid var(--border)}
+.correction:first-child{padding-top:0}
+.correction:last-child{padding-bottom:0;border-bottom:0}
+.correction p{margin:4px 0}
+@media(max-width:540px){header,header>div:first-child>div:first-child{flex-wrap:wrap}.wrap{padding:20px 12px}.vocab{min-width:0}.talk-table th,.talk-table td{padding:6px;font-size:0.82rem}}
+@media print{html,body{height:auto;background:#fff}.wrap{display:block;padding:0;min-height:0}.card{max-width:none;width:auto;box-shadow:none;border:0;padding:0}.actions,.vocab-say{display:none}.vocab,.correction,.speaking,.homework{break-inside:avoid}h2,h3{break-after:avoid}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Adjetivos e comparações em inglês</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluna:</strong> Rebeca &nbsp;•&nbsp;
+            <strong>Data:</strong> 11/04/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+        <section class="panel">
+          <p style="margin:0;font-weight:600;color:#14532D;"><em>Rebeca, nesta aula você aprendeu a descrever pessoas e a comparar características em inglês. Revisamos <span lang="en">do/does</span>, praticamos <span lang="en">get + adjetivo</span> e vimos como montar comparações com <span lang="en">-er</span>, <span lang="en">more</span>, <span lang="en">less</span> e <span lang="en">than</span>.</em></p>
+        </section>
+
+        <section>
+          <h2>📘 Resumo da Aula</h2>
+          <div class="outline-card">
+            <p><strong>Conversa inicial e revisão.</strong> Você leu um trecho do e-mail de uma empresa de cuidados domiciliares e encontrou <span lang="en">set up an interview</span>, que significa marcar uma entrevista. Na revisão das atividades, vimos <span lang="en">He watches TV every day</span>. Na negativa, <span lang="en">He doesn’t watch TV every day</span>, o auxiliar já indica a terceira pessoa. Você também acertou a diferença entre <span lang="en">Yes, I do</span> e <span lang="en">Yes, I am</span>.</p>
+            <p><strong>Descrever pessoas e mudanças.</strong> Você praticou adjetivos como <span lang="en">athletic</span>, <span lang="en">friendly</span>, <span lang="en">quiet</span>, <span lang="en">funny</span> e <span lang="en">hardworking</span>. Com <span lang="en">be</span>, descrevemos uma característica ou um estado, como em <span lang="en">She is quiet</span>. Com <span lang="en">get</span>, mostramos uma mudança, como em <span lang="en">She got quiet</span>. Também vimos que <span lang="en">pretty</span> pode significar “bonita” em <span lang="en">a pretty photo</span> e “bem” em <span lang="en">pretty funny</span>.</p>
+            <p><strong>Como formar o comparativo.</strong> O final da palavra ajuda a decidir o que muda na escrita.</p>
+            <ul>
+              <li>Adjetivos curtos geralmente recebem <strong>-er</strong>, como <span lang="en">tall → taller</span> e <span lang="en">young → younger</span>. Se já terminam em <strong>e</strong>, acrescente só <strong>r</strong>, como em <span lang="en">large → larger</span> e <span lang="en">cute → cuter</span>.</li>
+              <li>Em exemplos de duas sílabas terminados em consoante + <strong>y</strong>, troque o <strong>y</strong> por <strong>i</strong> e acrescente <strong>-er</strong>. Foi o que fizemos em <span lang="en">funny → funnier</span> e <span lang="en">pretty → prettier</span>.</li>
+              <li>Em palavras curtas como <span lang="en">big</span> e <span lang="en">sad</span>, com vogal curta seguida de uma consoante final, dobre a última letra antes de <strong>-er</strong>. Assim surgem <span lang="en">bigger</span> e <span lang="en">sadder</span>. Você viu a mesma ideia com <span lang="en">get → getting</span>, em que o sufixo é <strong>-ing</strong>.</li>
+              <li>Com adjetivos como <span lang="en">outgoing</span>, <span lang="en">hardworking</span> e <span lang="en">athletic</span>, use <strong>more</strong> ou <strong>less</strong> para dizer “mais” ou “menos”. Memorize as formas irregulares <span lang="en">good → better</span> e <span lang="en">bad → worse</span>.</li>
+            </ul>
+            <p><strong>Como completar a comparação.</strong> Use <span lang="en">than</span> ao mencionar o outro lado da comparação. Em <span lang="en">My English is better than my sister’s</span>, <span lang="en">my sister’s</span> significa “o inglês da minha irmã”. O contexto permite deixar <span lang="en">English</span> implícito. Já em <span lang="en">Who’s quieter?</span>, <span lang="en">who’s</span> é a contração de <span lang="en">who is</span>. <span lang="en">Quiet</span> tem duas sílabas e costuma formar o comparativo <span lang="en">quieter</span>.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2>💬 Frases usadas em aula</h2>
+          <div class="outline-card">
+            <ul>
+              <li><strong lang="en">I will read for you.</strong> — Vou ler para você.</li>
+              <li><strong lang="en">I am very friendly.</strong> — Sou muito amigável.</li>
+              <li><strong lang="en">Who’s quieter?</strong> — Quem é mais quieto?</li>
+              <li><strong lang="en">But she is more outgoing.</strong> — Mas ela é mais extrovertida.</li>
+              <li><strong lang="en">My English is better than my sister’s.</strong> — Meu inglês é melhor que o da minha irmã.</li>
+              <li><strong lang="en">See you on Friday.</strong> — Até sexta.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2>⭐ Vocabulário-chave</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <div class="vocab-head">
+                <h3 lang="en">quieter</h3>
+                <button type="button" class="vocab-say" data-czk-say="quieter"
+                        aria-label="Ouvir a pronúncia de quieter" aria-pressed="false"
+                        title="Ouvir quieter">&#128266;</button>
+              </div>
+              <p><em>mais quieto, mais calado</em><br><small>Comparativo de <span lang="en">quiet</span>. <span lang="en">The library is quieter than the café.</span> A biblioteca é mais silenciosa que o café.</small></p>
+            </div>
+            <div class="vocab green">
+              <div class="vocab-head">
+                <h3 lang="en">outgoing</h3>
+                <button type="button" class="vocab-say" data-czk-say="outgoing"
+                        aria-label="Ouvir a pronúncia de outgoing" aria-pressed="false"
+                        title="Ouvir outgoing">&#128266;</button>
+              </div>
+              <p><em>extrovertido, sociável</em><br><small>Descreve quem se enturma com facilidade. <span lang="en">She is more outgoing than I am.</span> Ela é mais extrovertida do que eu.</small></p>
+            </div>
+            <div class="vocab yellow">
+              <div class="vocab-head">
+                <h3 lang="en">hardworking</h3>
+                <button type="button" class="vocab-say" data-czk-say="hardworking"
+                        aria-label="Ouvir a pronúncia de hardworking" aria-pressed="false"
+                        title="Ouvir hardworking">&#128266;</button>
+              </div>
+              <p><em>trabalhador, dedicado</em><br><small>Descreve alguém que se esforça. <span lang="en">My sister is very hardworking.</span> Minha irmã é muito dedicada.</small></p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2>📚 Vocabulário completo da aula</h2>
+          <div class="outline-card">
+            <h3>Características pessoais</h3>
+            <ul>
+              <li><strong lang="en">intelligent</strong> — inteligente</li>
+              <li><strong lang="en">athlete / athletic</strong> — atleta / atlético</li>
+              <li><strong lang="en">friendly / quiet</strong> — amigável / quieto, calado</li>
+              <li><strong lang="en">shy / outgoing</strong> — tímido / extrovertido, sociável</li>
+              <li><strong lang="en">introvert / extrovert</strong> — pessoa introvertida / extrovertida. Uma pessoa introvertida também pode ser segura em situações sociais.</li>
+              <li><strong lang="en">fun / funny</strong> — diversão ou divertido, conforme o uso / engraçado</li>
+              <li><strong lang="en">hard work / hardworking</strong> — trabalho árduo / trabalhador, dedicado</li>
+              <li><strong lang="en">pretty / beautiful / handsome / cute</strong> — bonito, gracioso / muito bonito / bonito, especialmente em elogios a homens / fofo</li>
+            </ul>
+            <h3>Comparações e intensidade</h3>
+            <ul>
+              <li><strong lang="en">tall / young / old</strong> — alto / jovem / velho, mais velho em <span lang="en">older</span></li>
+              <li><strong lang="en">large / big / sad</strong> — grande / grande / triste</li>
+              <li><strong lang="en">good → better / bad → worse</strong> — bom → melhor / ruim → pior</li>
+              <li><strong lang="en">more / less / than</strong> — mais / menos / que, do que</li>
+              <li><strong lang="en">pretty funny / definitely</strong> — bem engraçado / com certeza</li>
+            </ul>
+            <h3>Conversa e leitura</h3>
+            <ul>
+              <li><strong lang="en">company / home care</strong> — empresa / cuidados domiciliares</li>
+              <li><strong lang="en">news / receive / follow up</strong> — notícia(s) / receber / retomar um contato ou assunto</li>
+              <li><strong lang="en">set up an interview / scary</strong> — marcar uma entrevista / assustador</li>
+              <li><strong lang="en">go → went / call → called</strong> — ir → foi, fui / ligar → ligou, liguei</li>
+              <li><strong lang="en">get mad / get quiet / get hungry</strong> — ficar bravo / ficar quieto / ficar com fome</li>
+              <li><strong lang="en">discuss / argue / fight</strong> — conversar sobre ou debater / discutir ou argumentar / brigar</li>
+              <li><strong lang="en">cousin / nephew / niece</strong> — primo ou prima / sobrinho / sobrinha</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2>🚨 Correções importantes</h2>
+          <div class="outline-card">
+            <div class="correction">
+              <p><strong>1. Contar uma novidade</strong></p>
+              <p style="color:#b91c1c;">❌ <span lang="en">I have one news.</span></p>
+              <p style="color:#166534;">✅ <strong lang="en">I have some news.</strong></p>
+              <p><span lang="en">News</span> é incontável. Se quiser destacar uma única notícia, diga <span lang="en">I have a piece of news</span>.</p>
+            </div>
+            <div class="correction">
+              <p><strong>2. Usar <span lang="en">be</span> na negativa</strong></p>
+              <p style="color:#b91c1c;">❌ <span lang="en">I no very quiet.</span></p>
+              <p style="color:#166534;">✅ <strong lang="en">I’m not very quiet.</strong></p>
+              <p>Para negar uma descrição com <span lang="en">be</span>, coloque <span lang="en">not</span> depois do verbo.</p>
+            </div>
+            <div class="correction">
+              <p><strong>3. Escolher a terminação de <span lang="en">get</span></strong></p>
+              <p style="color:#b91c1c;">❌ <span lang="en">getter</span></p>
+              <p style="color:#166534;">✅ <strong lang="en">getting angry</strong></p>
+              <p>Para dizer “ficando bravo”, use <span lang="en">get + -ing</span> e dobre o <strong>t</strong>. O <strong>-er</strong> apareceu nos comparativos como <span lang="en">sadder</span>.</p>
+            </div>
+            <div class="correction">
+              <p><strong>4. Reconhecer o possessivo na comparação</strong></p>
+              <p style="color:#b91c1c;">❌ <span lang="pt-BR">Meu inglês é melhor que o das minhas irmãs.</span></p>
+              <p style="color:#166534;">✅ <strong lang="pt-BR">Meu inglês é melhor que o da minha irmã.</strong></p>
+              <p>Em <span lang="en">my sister’s</span>, <span lang="en">sister</span> está no singular e o apóstrofo marca a posse. Em <span lang="en">my sisters’</span>, o apóstrofo vem depois do <strong>s</strong> do plural.</p>
+            </div>
+            <div class="correction">
+              <p><strong>5. Distinguir <span lang="en">athletic</span> e <span lang="en">cousins</span></strong></p>
+              <p style="color:#b91c1c;">❌ <span lang="pt-BR">Sou menos atleta que meus sobrinhos.</span></p>
+              <p style="color:#166534;">✅ <strong lang="pt-BR">Sou menos atlética que meus primos.</strong></p>
+              <p><span lang="en">Athletic</span> descreve uma característica. <span lang="en">Cousins</span> significa “primos” ou “primas”.</p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div class="ie-badge">
+            <span class="ie-flag" aria-hidden="true"><span style="background:#169b62;"></span><span style="background:#ffffff;"></span><span style="background:#ff883e;"></span></span>
+            <span class="ie-shamrock">☘️</span>
+            <h2 class="ie-title" style="margin:0;">Como se diz na Irlanda</h2>
+          </div>
+          <div class="outline-card">
+            <p style="margin:0 0 12px 0;color:var(--muted);font-size:0.9rem;">Rebeca, aqui vão duas formas que você pode ouvir em conversas do dia a dia na Irlanda.</p>
+            <div style="border-radius:10px;border:2px solid #c9f3dc;background:#f5fff6;padding:14px;margin-bottom:12px;">
+              <span class="expr-tag">Howya?</span>
+              <p style="margin:0 0 4px 0;color:var(--muted);font-size:0.85rem;">Como apareceu na aula</p>
+              <p style="margin:0 0 10px 0;font-size:0.95rem;color:#374151;">"<span lang="en">Hello!</span>"</p>
+              <p style="margin:0 0 4px 0;color:var(--muted);font-size:0.85rem;">Como pode soar na Irlanda</p>
+              <p style="margin:0 0 10px 0;font-size:1rem;font-weight:700;color:#14532D;">"<span lang="en">Howya?</span> <span style="font-weight:400;color:var(--muted);">(Oi!)</span>"</p>
+              <p style="margin:0 0 10px 0;font-size:0.92rem;color:#374151;">💡 Saudação informal que vem de <span lang="en">How are you?</span>. Ao cruzar com um vizinho ou colega, pode funcionar como um simples “oi”.</p>
+              <p style="margin:0 0 3px 0;color:var(--muted);font-size:0.85rem;">Outro exemplo</p>
+              <p style="margin:0;font-size:0.93rem;color:#374151;">"<span lang="en">Howya, Emma?</span>" <span style="color:var(--muted);">— Oi, Emma!</span></p>
+            </div>
+            <div style="border-radius:10px;border:2px solid #fde68a;background:#fffdf0;padding:14px;margin-bottom:12px;">
+              <span class="expr-tag" style="background:#92400e;">so no fim da frase</span>
+              <p style="margin:0 0 4px 0;color:var(--muted);font-size:0.85rem;">Como apareceu na aula</p>
+              <p style="margin:0 0 10px 0;font-size:0.95rem;color:#374151;">"<span lang="en">See you on Friday.</span>"</p>
+              <p style="margin:0 0 4px 0;color:var(--muted);font-size:0.85rem;">Como pode soar na Irlanda</p>
+              <p style="margin:0 0 10px 0;font-size:1rem;font-weight:700;color:#14532D;">"<span lang="en">See you on Friday, so.</span> <span style="font-weight:400;color:var(--muted);">(Até sexta, então.)</span>"</p>
+              <p style="margin:0 0 10px 0;font-size:0.92rem;color:#374151;">💡 No fim da frase, <span lang="en">so</span> pode soar como “então” ao confirmar um combinado ou encerrar uma conversa informal.</p>
+              <p style="margin:0 0 3px 0;color:var(--muted);font-size:0.85rem;">Outro exemplo</p>
+              <p style="margin:0;font-size:0.93rem;color:#374151;">"<span lang="en">I’ll call you later, so.</span>" <span style="color:var(--muted);">— Então te ligo mais tarde.</span></p>
+            </div>
+            <p style="margin:0;font-size:0.8rem;color:var(--muted);">Referências de uso: <a href="https://studyinireland.ie/en/a-short-guide-to-english-as-spoken-in-ireland/">ISI Dublin</a> · <a href="https://core.ac.uk/download/pdf/38997656.pdf">Links &amp; Letters</a>.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Gravação da aula</h2>
+          <div class="media-row">
+            <a class="media-btn" href="https://youtu.be/uqfVWLhhk9A" target="_blank" rel="noopener noreferrer" role="button"
+               style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">
+              🎥 Assistir gravação
+            </a>
+          </div>
+        </section>
+
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>Tempo de Fala (Talk Time)</h2>
+          <table class="talk-table">
+            <thead>
+              <tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr>
+            </thead>
+            <tbody>
+              <tr class="row-teacher">
+                <td><span class="talk-label">César (Professor)</span></td>
+                <td><span class="talk-percent">74%</span></td>
+                <td class="talk-time">≈ 34 min 25 s</td>
+              </tr>
+              <tr class="row-student">
+                <td><span class="talk-label">Rebeca</span></td>
+                <td><span class="talk-percent">26%</span></td>
+                <td class="talk-time">≈ 12 min 18 s</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin:8px 0 0;color:var(--muted);font-size:0.82rem;">Estimativa pela duração das falas legendadas.</p>
+        </section>
+
+        <section>
+          <h2>📝 Homework</h2>
+          <div class="homework">
+            <ul>
+              <li>Releia o pós-aula antes da próxima aula, na sexta. Dê atenção às formas <span lang="en">funnier</span>, <span lang="en">bigger</span>, <span lang="en">better</span> e <span lang="en">worse</span>.</li>
+              <li>Para fixar, diga em voz alta quatro comparações sobre pessoas, lugares ou coisas. Faça uma com <strong>-er</strong>, uma com <strong>more</strong>, uma com <strong>less</strong> e uma com <strong>better</strong> ou <strong>worse</strong>. Use <strong>than</strong> ao mencionar o segundo elemento.</li>
+              <li>Abra o histórico no app e confira os dois pós-aulas pendentes que vimos no fim da aula.</li>
+            </ul>
+          </div>
+        </section>
+
+      </main>
+
+      <footer>
+        <p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">
+          © 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com
+        </p>
+      </footer>
+
+    </article>
+  </div>
+
+  <!-- ÁUDIO DAS PALAVRAS-CHAVE — uma única função para o pós-aula inteiro.
+       Aberto direto: fala aqui mesmo. Dentro do app: pede ao app e quem fala é ele
+       (o app remove este script e injeta o próprio, então nada daqui roda por lá). -->
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body>
+</html>

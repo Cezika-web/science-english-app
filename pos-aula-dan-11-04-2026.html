@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Dan — CZK English</title>
+  <style>
+:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+.intro{margin:0;color:#14532D;font-style:italic}
+.study-note{color:var(--muted);font-size:0.9rem}
+.corrections li{margin:0 0 14px}
+.corrections p{margin:3px 0}
+.before{color:#a12222}
+.after{color:#166534}
+.homework ol{margin:0;padding-left:22px}
+.homework li+li{margin-top:8px}
+@media print{
+  html,body{height:auto;background:#fff}
+  .wrap{display:block;padding:0}
+  .card{border:0;box-shadow:none;max-width:none;padding:0}
+  .actions,.vocab-say{display:none}
+  h2,h3{break-after:avoid}
+  .vocab,.speaking,.corrections li{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Profissões, contrações de to be e apresentações</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Dan &nbsp;•&nbsp;
+            <strong>Data:</strong> 11/04/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+
+        <section class="panel">
+          <p class="intro">Dan, você revisou como falar de profissões com <em>am</em>, <em>is</em> e <em>are</em>, praticou as contrações na escrita e na fala e usou <em>This is…</em> para apresentar alguém.</p>
+        </section>
+
+        <section>
+          <h2>📘 Resumo da Aula</h2>
+          <div class="outline-card">
+            <p><strong>Profissões no singular e no plural.</strong> Na correção das atividades, você ligou os sujeitos às formas de <em>to be</em>. O ponto a reforçar foi o que vem depois do verbo. Para uma pessoa, use <em>a/an</em> antes da profissão, como em <em>Gary is a teacher</em> e <em>I’m an actor</em>. Para várias pessoas, use o substantivo no plural, como em <em>We are students</em>. Escolha <em>a</em> ou <em>an</em> pelo primeiro som da palavra. Em <em>an hour</em>, por exemplo, o <em>h</em> é mudo. Ao falar de Gary, comece pelo nome. Já em <em>the students</em>, <em>the</em> corresponde a “os” ou “as”.</p>
+            <p><strong>Da ação para a profissão.</strong> <em>Play → player</em> e <em>drive → driver</em> ligam a ação à pessoa que a pratica. Você também recuperou <em>singer</em> para “cantor(a)” e diferenciou de <em>musician</em>, que tem um sentido mais amplo.</p>
+            <p><strong>Negativa e contrações.</strong> Na forma completa, <em>not</em> vem depois de <em>am</em>, <em>is</em> ou <em>are</em>. Nos exercícios, você contraiu o sujeito com o verbo ou juntou <em>is/are</em> com <em>not</em>. O apóstrofo marca a letra omitida. Escreva cada contração como uma palavra e mantenha um espaço antes do artigo.</p>
+            <ul>
+              <li><strong><span lang="en">I am not → I’m not</span></strong>. Para <em>I</em>, esta é a forma contraída trabalhada.</li>
+              <li><strong><span lang="en">He is not → He’s not / He isn’t</span></strong>. A mesma lógica vale para <em>she</em>.</li>
+              <li><strong><span lang="en">You are not → You’re not / You aren’t</span></strong>. <em>You</em> pode ser “você” ou “vocês”.</li>
+            </ul>
+            <p><strong>Escuta e apresentação.</strong> Você praticou a ligação entre palavras em <em>She’s a student</em>, <em>I’m an actor</em> e <em>He’s an artist</em>. Para apresentar alguém, usamos <em>This is…</em>. No diálogo, a apresentação da Eva foi seguida de <em>She’s an engineer</em>. A demonstração de uma conversa com um falante do Egito mostrou como cumprimentar alguém e perguntar de onde a pessoa é e que horas são por lá.</p>
+            <p><strong>Revisão do desafio.</strong> Retomamos <em>at home</em> (“em casa”), a diferença entre <em>house</em> e <em>home</em> e o uso de <em>Good night</em> na despedida. Revisitamos <em>knee</em> e o <em>k</em> mudo de <em>knife</em> e <em>know</em>.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2>💬 Frases usadas em aula</h2>
+          <div class="outline-card">
+            <p class="study-note">Frases praticadas na aula, com a grafia em inglês revisada.</p>
+            <ul>
+              <li><strong lang="en">Gary is a teacher.</strong> <span>→ Gary é professor.</span></li>
+              <li><strong lang="en">She’s a musician.</strong> <span>→ Ela é musicista.</span></li>
+              <li><strong lang="en">I’m an actor.</strong> <span>→ Eu sou ator.</span></li>
+              <li><strong lang="en">He’s not a manager. / He isn’t a manager.</strong> <span>→ Ele não é gerente.</span></li>
+              <li><strong lang="en">She’s not a scientist. / She isn’t a scientist.</strong> <span>→ Ela não é cientista.</span></li>
+              <li><strong lang="en">You’re not a pilot. / You aren’t a pilot.</strong> <span>→ Você não é piloto.</span></li>
+              <li><strong lang="en">He’s an artist.</strong> <span>→ Ele é artista.</span></li>
+              <li><strong lang="en">This is Eva. She’s an engineer.</strong> <span>→ Esta é a Eva. Ela é engenheira.</span></li>
+              <li><strong lang="en">How are you?</strong> <span>→ Como você está?</span></li>
+              <li><strong lang="en">See you next week.</strong> <span>→ Até a semana que vem.</span></li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2>⭐ Vocabulário-chave</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+  <div class="vocab-head">
+    <h3 lang="en">engineer</h3>
+    <button type="button" class="vocab-say" data-czk-say="engineer"
+            aria-label="Ouvir a pronúncia de engineer" aria-pressed="false"
+            title="Ouvir engineer">&#128266;</button>
+  </div>
+  <p><em>(pt) engenheiro(a)</em><br><small>Pessoa que trabalha com engenharia. A sílaba forte é a última, /nɪr/ no inglês americano. <em lang="en">She’s an engineer.</em></small></p>
+</div>
+<div class="vocab green">
+  <div class="vocab-head">
+    <h3 lang="en">manager</h3>
+    <button type="button" class="vocab-say" data-czk-say="manager"
+            aria-label="Ouvir a pronúncia de manager" aria-pressed="false"
+            title="Ouvir manager">&#128266;</button>
+  </div>
+  <p><em>(pt) gerente</em><br><small>Pessoa que gerencia uma equipe ou um negócio. Compare com o verbo <em>manage</em> (gerenciar). <em lang="en">He isn’t a manager.</em></small></p>
+</div>
+<div class="vocab yellow">
+  <div class="vocab-head">
+    <h3 lang="en">at home</h3>
+    <button type="button" class="vocab-say" data-czk-say="at home"
+            aria-label="Ouvir a pronúncia de at home" aria-pressed="false"
+            title="Ouvir at home">&#128266;</button>
+  </div>
+  <p><em>(pt) em casa</em><br><small>Expressão usada para dizer que alguém está em casa. <em lang="en">We’re at home.</em></small></p>
+</div>
+          </div>
+        </section>
+
+        <section>
+          <h2>📚 Vocabulário completo da aula</h2>
+          <div class="outline-card">
+            <h3>Profissões e pessoas</h3>
+            <ul><li><strong lang="en">a teacher</strong> → professor(a)</li><li><strong lang="en">a student</strong> → estudante</li><li><strong lang="en">a doctor</strong> → médico(a)</li><li><strong lang="en">a chef</strong> → chef de cozinha</li><li><strong lang="en">a pilot</strong> → piloto</li><li><strong lang="en">a driver</strong> → motorista</li><li><strong lang="en">a player</strong> → jogador(a)</li><li><strong lang="en">a writer</strong> → escritor(a)</li><li><strong lang="en">a manager</strong> → gerente</li><li><strong lang="en">a singer</strong> → cantor(a)</li><li><strong lang="en">a musician</strong> → músico(a) ou musicista</li><li><strong lang="en">a scientist</strong> → cientista</li><li><strong lang="en">an engineer</strong> → engenheiro(a)</li><li><strong lang="en">an artist</strong> → artista</li><li><strong lang="en">an actor</strong> → ator</li></ul>
+            <h3>Verbos e palavras da revisão</h3>
+            <ul><li><strong lang="en">play</strong> → jogar ou tocar</li><li><strong lang="en">drive</strong> → dirigir</li><li><strong lang="en">write</strong> → escrever</li><li><strong lang="en">manage</strong> → gerenciar</li><li><strong lang="en">sing</strong> → cantar</li><li><strong lang="en">to greet</strong> → cumprimentar</li><li><strong lang="en">house</strong> → casa, no sentido de construção</li><li><strong lang="en">home</strong> → lar</li><li><strong lang="en">at home</strong> → em casa</li><li><strong lang="en">an hour</strong> → uma hora</li><li><strong lang="en">knee</strong> → joelho</li><li><strong lang="en">knife</strong> → faca</li><li><strong lang="en">know</strong> → saber ou conhecer</li></ul>
+            <h3>Expressões para conversar</h3>
+            <ul><li><strong lang="en">This is…</strong> → Este é… / Esta é…</li><li><strong lang="en">Where are you from?</strong> → De onde você é?</li><li><strong lang="en">What time is it?</strong> → Que horas são?</li><li><strong lang="en">How’s it going?</strong> → Como vão as coisas?</li><li><strong lang="en">Good evening</strong> → boa noite ao cumprimentar</li><li><strong lang="en">Good night</strong> → boa noite ao se despedir ou antes de dormir</li><li><strong lang="en">Goodbye</strong> → tchau</li></ul>
+          </div>
+        </section>
+
+        <section>
+          <h2>🚨 Correções importantes</h2>
+          <div class="outline-card">
+            <p class="study-note">Os exemplos abaixo reconstroem os pontos corrigidos nos exercícios.</p>
+            <ol class="corrections">
+              <li>
+                <strong>Artigo antes da profissão</strong>
+                <p class="before">❌ <span lang="en">I am pilot.</span></p>
+                <p class="after">✅ <strong lang="en">I am a pilot.</strong></p>
+                <p>Use <em>a</em> antes de <em>pilot</em>. Com som inicial de vogal, use <em>an</em>, como em <em>I’m an actor</em>.</p>
+              </li>
+              <li>
+                <strong>A forma de <em>to be</em> com <em>she</em></strong>
+                <p class="before">❌ <span lang="en">She are a doctor.</span></p>
+                <p class="after">✅ <strong lang="en">She is a doctor.</strong></p>
+                <p>Com <em>she</em>, use <em>is</em>. A contração é <em>She’s a doctor</em>.</p>
+              </li>
+              <li>
+                <strong>Verbo repetido na contração</strong>
+                <p class="before">❌ <span lang="en">She’s is a musician.</span></p>
+                <p class="after">✅ <strong lang="en">She’s a musician.</strong></p>
+                <p>O <em>’s</em> já representa <em>is</em> nesta frase.</p>
+              </li>
+              <li>
+                <strong>Profissões e papéis no plural</strong>
+                <p class="before">❌ <span lang="en">We are a student.</span></p>
+                <p class="after">✅ <strong lang="en">We are students.</strong></p>
+                <p>Ao falar de várias pessoas, use <em>students</em>. O mesmo vale para <em>doctors</em>.</p>
+              </li>
+              <li>
+                <strong>A expressão para dizer “em casa”</strong>
+                <p class="before">❌ <span lang="en">We are…</span> <span>(resposta incompleta)</span></p>
+                <p class="after">✅ <strong lang="en">We are at home.</strong></p>
+                <p><em>At home</em> foi a expressão trabalhada. <em>We are home</em> também é possível em inglês, por exemplo, ao anunciar que chegamos em casa.</p>
+              </li>
+              <li>
+                <strong>Negativa com profissão</strong>
+                <p class="before">❌ <span lang="en">He is not chef.</span></p>
+                <p class="after">✅ <strong lang="en">He is not a chef.</strong></p>
+                <p><em>Not</em> vem depois de <em>is</em>. O artigo <em>a</em> continua antes de <em>chef</em>.</p>
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2>
+          <div class="media-row">
+            <a class="media-btn" href="https://youtu.be/K7yy97cS0fo" target="_blank" rel="noopener noreferrer" role="button"
+               style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">
+              🎥 Assistir gravação
+            </a>
+          </div>
+        </section>
+
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>🗣️ Tempo de Fala</h2>
+          <table class="talk-table">
+            <thead><tr><th scope="col">Quem falou</th><th scope="col">Porcentagem</th><th scope="col">Duração aproximada</th></tr></thead>
+            <tbody>
+              <tr class="row-teacher"><td class="talk-label">César</td><td class="talk-percent">76%</td><td class="talk-time">33 min 27 s</td></tr>
+              <tr class="row-student"><td class="talk-label">Dan</td><td class="talk-percent">24%</td><td class="talk-time">10 min 37 s</td></tr>
+            </tbody>
+          </table>
+          <p class="study-note">Estimativa pela duração das legendas atribuídas a cada participante, em inglês e português, excluindo os intervalos sem legenda e o áudio compartilhado.</p>
+        </section>
+
+        <section>
+          <h2>📝 Homework</h2>
+          <div class="homework">
+            <ol>
+              <li><strong>Na quinta, revise o pós-aula e retome as pendências.</strong> Leia este material antes da segunda parte do desafio semanal.</li>
+              <li><strong>Pratique as três formas.</strong> Escreva <em>He is not a manager</em> e <em>You are not a pilot</em> nas duas formas contraídas. Leia as três versões de cada frase em voz alta. Depois, transforme <em>I am not an actor</em> em <em>I’m not an actor</em>.</li>
+              <li><strong>Use o app durante a semana.</strong> Faça as três atividades previstas e passe uma vez por dia em <em>Meu Vocabulário</em> para ler e ouvir as palavras.</li>
+              <li><strong>Pratique uma apresentação.</strong> Apresente alguém com <em>This is…</em> e depois diga a profissão da pessoa com <em>He’s…</em> ou <em>She’s…</em>. Escolha <em>a</em> ou <em>an</em> pelo som da palavra seguinte.</li>
+            </ol>
+          </div>
+        </section>
+
+      </main>
+
+      <footer>
+        <p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">
+          © 2025 CZK English • czkenglish@gmail.com
+        </p>
+      </footer>
+
+    </article>
+  </div>
+
+  <!-- ÁUDIO DAS PALAVRAS-CHAVE — uma única função para o pós-aula inteiro.
+       Aberto direto: fala aqui mesmo. Dentro do app: pede ao app e quem fala é ele
+       (o app remove este script e injeta o próprio, então nada daqui roda por lá). -->
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body>
+</html>

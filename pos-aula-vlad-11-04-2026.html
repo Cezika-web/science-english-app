@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Vlad — CZK English</title>
+  <style>
+:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Presente simples, infinitivo e verbos em -ing</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Vlad &nbsp;•&nbsp;
+            <strong>Data:</strong> 11/04/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+
+        <!-- PAINEL INTRO: resumo rápido da aula em 1-2 linhas -->
+        <section class="panel">
+          <p style="margin:0;font-weight:600;color:#14532D;font-style:italic;">Vlad, nesta aula você revisou quando o verbo ganha <em>-s</em> no presente simples e praticou como escolher entre <em>to + verbo</em> e <em>verbo + -ing</em>. A correção das atividades também trouxe exemplos de pronúncia, pronomes e ordem das palavras.</p>
+        </section>
+
+        <!-- RESUMO DETALHADO DA AULA -->
+        <section>
+          <h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 8px 0;">Depois de conversar sobre jogos e sobre o apoio do Dr. EurekIA no app, vocês retomaram as respostas das atividades. O primeiro contraste foi entre <em>like to swim / like swimming</em>, <em>enjoy playing</em> e <em>want to go</em>. Com <em>like</em>, as duas formas são possíveis nesse exemplo. Com <em>enjoy</em>, use <em>-ing</em> quando vier outro verbo. Com <em>want</em> e <em>need</em>, pratique <em>to + verbo</em>. Vocês também reconheceram as formas informais <em>wanna</em>, <em>gonna</em> e <em>lemme</em>.</p>
+            <p style="margin:0 0 8px 0;">O próximo passo foi aprender expressões inteiras. Em <em>object to speaking</em> e <em>look forward to playing</em>, <em>to</em> é preposição e o verbo seguinte fica em <em>-ing</em>. A mesma lógica aparece em <em>crazy about cooking</em> e <em>bored with watching TV</em>. Para dizer “tenho medo de perder”, memorize <em>I’m afraid of losing</em>. Em <em>They apologized to you</em>, o <em>to</em> introduz a pessoa. Em <em>apologize for being late</em>, o <em>for</em> introduz o motivo.</p>
+            <p style="margin:0;">Na revisão do presente simples, vocês compararam <em>the investor wants</em> com <em>the investors want</em>. Em afirmativas, <em>he</em>, <em>she</em>, <em>it</em> e sujeitos como <em>everyone</em> pedem a forma de terceira pessoa. Na negativa e na pergunta com <em>does</em>, o verbo principal fica na forma base. O mesmo vale depois de modais como <em>can</em>, <em>might</em> e <em>will</em>. Em <em>I can help us</em>, <em>I</em> é o sujeito e <em>us</em> é o objeto. Vocês ainda revisaram <em>clear laws</em>, <em>ask my teacher</em> e a diferença de tonicidade entre <em>OBject / obJECT</em> e <em>PROject / proJECT</em>. No fim, a conversa sobre futebol trouxe <em>coach</em> e <em>play</em> como substantivos e verbos.</p>
+          </div>
+        </section>
+
+        <!-- FRASES MODELO -->
+        <section>
+          <h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2>
+          <div class="outline-card">
+            <ul>
+              <li><strong lang="en">I want to go.</strong> — Eu quero ir.</li>
+              <li><strong lang="en">I object to speaking in public.</strong> — Eu me oponho a falar em público.</li>
+              <li><strong lang="en">I am crazy about cooking.</strong> — Eu adoro cozinhar.</li>
+              <li><strong lang="en">The investors want profit.</strong> — Os investidores querem lucro.</li>
+              <li><strong lang="en">Do you have kids?</strong> — Você tem filhos?</li>
+              <li><strong lang="en">Does he have grandkids?</strong> — Ele tem netos?</li>
+              <li><strong lang="en">She works.</strong> — Ela trabalha.</li>
+              <li><strong lang="en">He does it.</strong> — Ele faz isso.</li>
+              <li><strong lang="en">They apologized to you.</strong> — Eles pediram desculpas a você.</li>
+              <li><strong lang="en">Everybody wants to rule the world.</strong> — Todo mundo quer governar o mundo. Título de música citado na aula.</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- KEY VOCABULARY: 3 palavras/expressões em destaque, cada uma com botão de áudio.
+             data-czk-say = SOMENTE o inglês (é o que será pronunciado). Nunca a tradução. -->
+        <section>
+          <h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <div class="vocab-head">
+                <h3>enjoy playing</h3>
+                <button type="button" class="vocab-say" data-czk-say="enjoy playing"
+                        aria-label="Ouvir a pronúncia de enjoy playing" aria-pressed="false"
+                        title="Ouvir enjoy playing">&#128266;</button>
+              </div>
+              <p><em>(pt) gostar de jogar, curtir jogar</em><br><small>Quando <em>enjoy</em> vem antes de outro verbo, use <em>-ing</em>. <span lang="en">I enjoy playing CS.</span> Eu gosto de jogar CS.</small></p>
+            </div>
+            <div class="vocab green">
+              <div class="vocab-head">
+                <h3>object to</h3>
+                <button type="button" class="vocab-say" data-czk-say="object to"
+                        aria-label="Ouvir a pronúncia de object to" aria-pressed="false"
+                        title="Ouvir object to">&#128266;</button>
+              </div>
+              <p><em>(pt) opor-se a</em><br><small>Quando a objeção é a uma ação, use <em>to + -ing</em>. <span lang="en">I object to speaking in public.</span> Eu me oponho a falar em público.</small></p>
+            </div>
+            <div class="vocab yellow">
+              <div class="vocab-head">
+                <h3>look forward to</h3>
+                <button type="button" class="vocab-say" data-czk-say="look forward to"
+                        aria-label="Ouvir a pronúncia de look forward to" aria-pressed="false"
+                        title="Ouvir look forward to">&#128266;</button>
+              </div>
+              <p><em>(pt) estar animado por algo que vai acontecer</em><br><small>Depois de <em>to</em>, use um substantivo ou um verbo em <em>-ing</em>. <span lang="en">I’m looking forward to the match.</span> Estou ansioso pelo jogo.</small></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- VOCABULÁRIO COMPLETO POR CATEGORIA -->
+        <section>
+          <h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2>
+          <div class="outline-card">
+            <h3 style="margin-top:0;">Verbos e expressões em bloco</h3>
+            <ul>
+              <li><strong lang="en">like to swim / like swimming</strong> — gostar de nadar</li>
+              <li><strong lang="en">enjoy playing</strong> — curtir jogar</li>
+              <li><strong lang="en">want to go</strong> — querer ir</li>
+              <li><strong lang="en">need to</strong> — precisar fazer algo</li>
+              <li><strong lang="en">avoid + -ing</strong> — evitar fazer algo</li>
+              <li><strong lang="en">be afraid of losing</strong> — ter medo de perder</li>
+              <li><strong lang="en">be crazy about cooking</strong> — adorar cozinhar</li>
+              <li><strong lang="en">be angry about</strong> — estar irritado com algo</li>
+              <li><strong lang="en">be bored with watching TV</strong> — estar entediado de assistir TV</li>
+              <li><strong lang="en">object to speaking</strong> — opor-se a falar</li>
+              <li><strong lang="en">apologize to someone / apologize for something</strong> — pedir desculpas a alguém / por algo</li>
+              <li><strong lang="en">complain about / talk about</strong> — reclamar de / falar sobre</li>
+              <li><strong lang="en">look forward to the match</strong> — estar ansioso pelo jogo</li>
+            </ul>
+            <h3>Frequência e família</h3>
+            <ul>
+              <li><strong lang="en">always / often / sometimes / never</strong> — sempre / frequentemente / às vezes / nunca</li>
+              <li><strong lang="en">in-laws</strong> — parentes por casamento. Na frase da aula, sogros</li>
+              <li><strong lang="en">sister-in-law / brother-in-law</strong> — cunhada / cunhado</li>
+              <li><strong lang="en">aunt / niece</strong> — tia / sobrinha</li>
+              <li><strong lang="en">cousins</strong> — primos ou primas</li>
+              <li><strong lang="en">grandkids</strong> — netos</li>
+            </ul>
+            <h3>Jogos, trabalho e palavras com mais de uma função</h3>
+            <ul>
+              <li><strong lang="en">round / match</strong> — rodada / partida</li>
+              <li><strong lang="en">a coach / to coach</strong> — um técnico / treinar</li>
+              <li><strong lang="en">a play / to play</strong> — uma jogada ou peça de teatro / jogar ou interpretar</li>
+              <li><strong lang="en">a project / to project</strong> — um projeto / projetar</li>
+              <li><strong lang="en">an object / to object</strong> — um objeto / opor-se</li>
+              <li><strong lang="en">investor / profit</strong> — investidor / lucro</li>
+              <li><strong lang="en">clear laws</strong> — leis claras</li>
+              <li><strong lang="en">take over</strong> — assumir o controle</li>
+              <li><strong lang="en">lose your job</strong> — perder o emprego</li>
+              <li><strong lang="en">burst</strong> — estourar, como em <em>the bubble will burst</em></li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- CORREÇÕES IMPORTANTES -->
+        <section>
+          <h2 style="margin-bottom:8px;">🚨 Correções importantes</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 5px;"><strong>1. Enjoy + verbo em -ing</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ <span lang="en">I enjoy to play.</span></p>
+            <p style="margin:0 0 14px;color:#276749;">✅ <strong lang="en">I enjoy playing.</strong> — Esse foi o contraste trabalhado na aula. Depois de <em>enjoy</em>, use <em>playing</em>. Com <em>like</em>, você pode dizer <em>I like playing</em> ou <em>I like to play</em>.</p>
+            <p style="margin:0 0 5px;"><strong>2. Sujeito e verbo no presente simples</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ <span lang="en">The investor want profit.</span></p>
+            <p style="margin:0 0 14px;color:#276749;">✅ <strong lang="en">The investor wants profit.</strong> — No singular, <em>the investor</em> pede <em>wants</em>. Se a ideia for falar de vários investidores, diga <em>The investors want profit</em>. Com <em>everyone</em> ou <em>everybody</em>, use <em>wants</em>.</p>
+            <p style="margin:0 0 5px;"><strong>3. Does / doesn’t + verbo base</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ <span lang="en">My grandfather doesn’t works.</span></p>
+            <p style="margin:0 0 14px;color:#276749;">✅ <strong lang="en">My grandfather doesn’t work.</strong> — Neste exemplo de revisão, <em>doesn’t</em> já indica a terceira pessoa. Na pergunta, use <em>Does he have grandkids?</em>. Com <em>I</em>, <em>you</em>, <em>we</em> e <em>they</em>, use <em>do</em> ou <em>don’t</em>.</p>
+            <p style="margin:0 0 5px;"><strong>4. Preposição em look forward to</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ <span lang="en">I’m looking forward to see you.</span></p>
+            <p style="margin:0 0 14px;color:#276749;">✅ <strong lang="en">I’m looking forward to seeing you.</strong> — Esse <em>to</em> faz parte da expressão. Ele também pode vir antes de um substantivo, como em <em>I’m looking forward to the match</em>.</p>
+            <p style="margin:0 0 5px;"><strong>5. Ordem do adjetivo e complemento de ask</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ <span lang="en">laws clear / I asked to my teacher.</span></p>
+            <p style="margin:0 0 14px;color:#276749;">✅ <strong lang="en">clear laws / I asked my teacher.</strong> — Nesses exemplos de revisão, <em>clear</em> vem antes de <em>laws</em>. Quando <em>ask</em> significa “perguntar a alguém”, a pessoa vem diretamente depois do verbo.</p>
+            <p style="margin:0 0 10px;"><strong>💡 Dois lembretes de revisão</strong></p><ul style="margin-bottom:0;"><li><em>He can help us.</em> O verbo <em>help</em> fica na forma base depois de <em>can</em>. O pronome <em>us</em> indica quem recebe a ajuda.</li><li>Na afirmativa, compare <em>plays</em>, <em>studies</em>, <em>washes</em> e <em>watches</em>. Ao ler <em>washes</em> e <em>watches</em>, pronuncie a sílaba extra do final.</li></ul>
+          </div>
+        </section>
+
+        <!-- GRAVAÇÃO — só inclua esta seção se houver link do YouTube.
+             Sem link, remova a seção inteira: nada de botão morto. -->
+        <section>
+          <h2 style="margin-bottom:8px;">Gravação da aula</h2>
+          <div class="media-row">
+            <a class="media-btn" href="https://youtu.be/fwUb8Iiv9Fs" target="_blank" rel="noopener noreferrer" role="button"
+               style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">
+              🎥 Assistir gravação
+            </a>
+          </div>
+        </section>
+
+        <!-- TALK TIME -->
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>🗣️ Tempo de Fala</h2>
+          <table class="talk-table">
+            <thead>
+              <tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr>
+            </thead>
+            <tbody>
+              <tr class="row-teacher">
+                <td><span class="talk-label">César (Professor)</span></td>
+                <td><span class="talk-percent">73%</span></td>
+                <td class="talk-time">~36 minutos</td>
+              </tr>
+              <tr class="row-student">
+                <td><span class="talk-label">Vlad</span></td>
+                <td><span class="talk-percent">27%</span></td>
+                <td class="talk-time">~14 minutos</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin:8px 0 0;color:var(--muted);font-size:0.85rem;">Estimativa calculada pela duração dos trechos de fala identificados na transcrição.</p>
+        </section>
+
+        <!-- HOMEWORK -->
+        <section>
+          <h2 style="margin-bottom:8px;">📝 Homework</h2>
+          <div class="homework">
+            <p style="margin:0 0 8px 0;">📌 <strong>Lição de casa:</strong></p>
+            <ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+              <li>Quando os novos exercícios estiverem no app, pratique a terceira pessoa e os padrões <em>to</em> e <em>-ing</em>. Use o Dr. EurekIA para pedir uma dica se travar.</li>
+              <li>Como revisão, diga três frases sobre a sua rotina usando <em>like</em>, <em>enjoy</em> e <em>want</em>. Depois transforme <em>He plays CS</em> em uma negativa e em uma pergunta.</li>
+              <li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana.</li>
+            </ul>
+          </div>
+        </section>
+
+      </main>
+
+      <footer>
+        <p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">
+          © 2025 CZK English • czkenglish@gmail.com
+        </p>
+      </footer>
+
+    </article>
+  </div>
+
+  <!-- ÁUDIO DAS PALAVRAS-CHAVE — uma única função para o pós-aula inteiro.
+       Aberto direto: fala aqui mesmo. Dentro do app: pede ao app e quem fala é ele
+       (o app remove este script e injeta o próprio, então nada daqui roda por lá). -->
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body>
+</html>
