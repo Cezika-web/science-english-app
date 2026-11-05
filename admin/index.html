@@ -8643,7 +8643,7 @@
       } else {
         const pals = t.tipo === 'vocab' ? (un.vocab || {})[t.ref] : null;
         const lista = pals ? '<br><br>' + pals.map(p => esc(Array.isArray(p) ? `${p[0]} — ${p[1]}` : `${p.a} — ${p.b}`)).join('<br>') : '';
-        const texto = { vocab:'Cartões de vocabulário com áudio (o aluno vira o cartão):', jogo:'Jogo sobre o vocabulário desta lição.', teste:`Mini-teste da unidade: ${(t.perguntas || []).length} perguntas sorteadas dos exercícios das páginas (se você tirar exercícios, o teste continua com os que ficaram).`,
+        const texto = { vocab:'Cartões de vocabulário com áudio (o aluno vira o cartão):', jogo:'Jogo sobre o vocabulário desta lição.', teste:(t.prova ? `Prova da unidade: ${(t.perguntas || []).length} perguntas com nota de 0 a 10 (${(t.secoes || []).map(x => x.nome + ' ' + String(x.pts).replace('.', ',')).join(' · ')}). Tem áudios (voz do app) e usa as perguntas do livro do Grammar Expander, vocabulário, frases das conversas e perguntas novas. Selo com nota 7 ou mais; a melhor nota fica guardada no progresso da aluna.` : `Mini-teste da unidade: ${(t.perguntas || []).length} perguntas sorteadas dos exercícios das páginas.`),
           video:'Vídeo do livro. A tarefa só tem o vídeo quando você colar o link do YouTube (lá embaixo, no cartão “Vídeos e áudios”).', revisao:'Revisão da unidade (vem do workbook). Eu monto quando você mandar o PDF.' }[t.tipo] || '';
         esq.innerHTML = `<div class="cr-vazio"><div style="font-size:2rem;">${esc(t.ic || '')}</div><strong>${esc(t.titulo)}</strong><br>${esc(texto)}${lista}</div>`;
       }

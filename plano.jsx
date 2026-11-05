@@ -1648,14 +1648,58 @@ function PlanoTarefaExtra({ t, unidade, onAbrirExtras, onFeita, onClose, onAsk }
   );
 }
 
-/* ───────── mini-teste + "Agora eu consigo" + selo ───────── */
-function PlanoTarefaTeste({ t, unidade, onFeita, onClose, onAsk }) {
+/* ───────── PROVA DA UNIDADE: nota de 0 a 10 (cada pergunta tem um peso, ver provas.py) ───────── */
+const PLANO_NOTA = n => (Math.round(n * 10) / 10).toFixed(1).replace('.', ',');
+function PlanoProva({ t, onNota, onFim }) {
+  const itens = t.perguntas || []; const secoes = t.secoes || [];
+  const [i, setI] = React.useState(0); const [res, setRes] = React.useState({}); const [respondeu, setRespondeu] = React.useState(false); const [fim, setFim] = React.useState(false);
+  const total = itens.length; const q = itens[i];
+  const nota = Math.round(itens.reduce((a, it, k) => a + (res[k] === true ? it.peso : 0), 0) * 10) / 10;
+  const partes = secoes.map(sc => ({ k: sc.k, nome: sc.nome, max: sc.pts, n: sc.n,
+    pts: Math.round(itens.reduce((a, it, k) => a + (it.sec === sc.k && res[k] === true ? it.peso : 0), 0) * 100) / 100,
+    ok: itens.reduce((a, it, k) => a + (it.sec === sc.k && res[k] === true ? 1 : 0), 0) }));
+  const nomeSec = k => (secoes.find(sc => sc.k === k) || {}).nome || '';
+  const onEx = ok => { setRes(r => (r[i] === undefined ? { ...r, [i]: ok } : r)); setRespondeu(true); };
+  const ver = () => { setFim(true); if (onNota) onNota({ nota, partes: partes.map(p => ({ k: p.k, pts: p.pts, max: p.max })) }); };
+  const refazer = () => { setI(0); setRes({}); setRespondeu(false); setFim(false); };
+  if (fim) {
+    const passou = nota >= 7;
+    return <div style={{ textAlign: 'center', padding: '6px 2px 10px' }}>
+      <div style={{ fontSize: 52 }}>{passou ? '🏅' : '💪'}</div>
+      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: .8, color: '#64748B' }}>SUA NOTA</div>
+      <div style={{ fontSize: 58, fontWeight: 800, lineHeight: 1.05, color: passou ? '#15803D' : '#B45309' }}>{PLANO_NOTA(nota)}<span style={{ fontSize: 22, color: '#94A3B8' }}> / 10</span></div>
+      <div style={{ color: '#475569', fontWeight: 700, fontSize: 14, lineHeight: 1.45, margin: '6px 8px 14px' }}>{passou ? 'Muito bem! Você conquistou o selo da unidade.' : 'Quase lá! Para o selo da unidade a nota mínima é 7,0. Revise as explicações e refaça a prova quando quiser.'}</div>
+      <div style={{ textAlign: 'left', background: '#fff', border: '1px solid #E2E8F0', borderRadius: 16, padding: '12px 14px', marginBottom: 14 }}>
+        {partes.map(p => <div key={p.k} style={{ marginBottom: 10 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 800 }}><span>{p.nome}</span><span style={{ color: '#64748B' }}>{PLANO_NOTA(p.pts)} de {PLANO_NOTA(p.max)} · {p.ok}/{p.n} certas</span></div>
+          <div style={{ height: 7, borderRadius: 99, background: '#E5E7EB', marginTop: 4, overflow: 'hidden' }}><div style={{ width: `${p.max ? (p.pts / p.max) * 100 : 0}%`, height: '100%', background: 'linear-gradient(90deg,var(--brand),var(--brand-light))' }} /></div>
+        </div>)}
+      </div>
+      {passou && <button className="plano-btn" onClick={onFim}>Continuar ›</button>}
+      <button className={`plano-btn ${passou ? 'sec' : 'violeta'}`} style={passou ? { marginTop: 8 } : undefined} onClick={refazer}>Refazer a prova</button>
+    </div>;
+  }
+  return <div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+      <div style={{ flex: 1, height: 8, borderRadius: 99, background: '#E5E7EB', overflow: 'hidden' }}><div style={{ width: `${(i / total) * 100}%`, height: '100%', background: 'linear-gradient(90deg,var(--brand),var(--brand-light))', transition: 'width .3s' }} /></div>
+      <div style={{ fontSize: 12, fontWeight: 800, color: '#64748B' }}>{i + 1}/{total}</div>
+    </div>
+    <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 800, color: '#B45309', background: '#FFFBEB', border: '1px solid #FDE68A', padding: '2px 10px', borderRadius: 99, marginBottom: 8 }}>{nomeSec(q.sec)} · vale {PLANO_NOTA(q.peso)}</div>
+    <div style={{ background: '#fff', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 18, padding: 14, boxShadow: '0 8px 24px rgba(15,23,42,.05)' }}>
+      <PlanoExercicio key={i} ex={q} onFim={onEx} />
+    </div>
+    {respondeu && <button className="plano-btn" style={{ marginTop: 12 }} onClick={() => { if (i + 1 >= total) ver(); else { setI(i + 1); setRespondeu(false); } }}>{i + 1 >= total ? 'Ver a minha nota' : 'Continuar ›'}</button>}
+  </div>;
+}
+
+/* ───────── prova/mini-teste + "Agora eu consigo" + selo ───────── */
+function PlanoTarefaTeste({ t, unidade, onFeita, onClose, onAsk, onNota }) {
   const [fase, setFase] = React.useState('perguntas'); const [marcas, setMarcas] = React.useState({});
   const perguntas = t.perguntas || unidade.perguntas[t.ref]; const minimo = t.perguntas ? Math.ceil(perguntas.length * 0.7) : 7;
   return (
-    <PlanoCamada titulo={t.titulo} sub={fase === 'perguntas' ? `Acerte ${minimo} ou mais para ganhar o selo` : 'Agora eu consigo…'} onClose={onClose} onAsk={onAsk}>
+    <PlanoCamada titulo={t.titulo} sub={fase === 'perguntas' ? (t.prova ? 'Nota de 0 a 10 · selo com 7 ou mais' : `Acerte ${minimo} ou mais para ganhar o selo`) : 'Agora eu consigo…'} onClose={onClose} onAsk={onAsk}>
       {fase === 'perguntas'
-        ? <PlanoPerguntas perguntas={perguntas} minimo={minimo} rotuloFim="Continuar ›" onFim={() => setFase('selo')} />
+        ? (t.prova ? <PlanoProva t={t} onNota={onNota} onFim={() => setFase('selo')} /> : <PlanoPerguntas perguntas={perguntas} minimo={minimo} rotuloFim="Continuar ›" onFim={() => setFase('selo')} />)
         : <div>
           <div style={{ textAlign: 'center', padding: '6px 0 16px' }}><div style={{ fontSize: 64 }}>🏅</div><div style={{ fontSize: 22, fontWeight: 800 }}>Selo da Unit {unidade.numero || 4}!</div><div style={{ color: '#64748B', fontWeight: 700, fontSize: 13.5 }}>Marque o que você já consegue fazer:</div></div>
           {unidade.agoraPosso.map(a => <button key={a} onClick={() => setMarcas(m => ({ ...m, [a]: !m[a] }))} style={{ display: 'flex', width: '100%', alignItems: 'center', gap: 12, textAlign: 'left', background: marcas[a] ? '#F0FDF4' : '#fff', border: `1.5px solid ${marcas[a] ? '#22C55E' : '#E2E8F0'}`, borderRadius: 14, padding: '12px 14px', marginBottom: 8, fontFamily: 'inherit', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>
@@ -1941,7 +1985,8 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
       {tarefa && tarefa.tipo === 'jogo' && <PlanoTarefaJogo t={tarefa} unidade={u} onFeita={f} onClose={fechar} onAsk={perguntar} />}
       {tarefa && tarefa.tipo === 'video' && <PlanoTarefaVideo t={tarefa} onFeita={f} onResumo={enviarResumo} resumoAnterior={feitas['resumo:' + tarefa.id] && feitas['resumo:' + tarefa.id].texto} onClose={fechar} onAsk={perguntar} />}
       {tarefa && tarefa.tipo === 'extra' && <PlanoTarefaExtra t={tarefa} unidade={u} onAbrirExtras={() => { fechar(); onTab('atividades'); }} onFeita={f} onClose={fechar} onAsk={perguntar} />}
-      {tarefa && tarefa.tipo === 'teste' && <PlanoTarefaTeste t={tarefa} unidade={u} onFeita={() => concluir(tarefa.id, 'selo:' + u.id)} onClose={fechar} onAsk={perguntar} />}
+      {tarefa && tarefa.tipo === 'teste' && <PlanoTarefaTeste t={tarefa} unidade={u} onFeita={() => concluir(tarefa.id, 'selo:' + u.id)} onClose={fechar} onAsk={perguntar}
+        onNota={n => { const m = feitas['prova:' + u.id]; if (!m || typeof m !== 'object' || !(m.nota > n.nota)) marcar('prova:' + u.id, { nota: n.nota, partes: n.partes, em: new Date().toISOString() }); }} />}
       {aula && <PlanoAulaFolha aula={aula} student={student} cfg={cfg} onClose={() => setAula(null)} />}
       {duvida && <PlanoPerguntar cfg={cfg} student={student} contexto={duvida.contexto} previa={duvida.previa} sugestao={duvida.sugestao || undefined} onAsk={cfg.previa ? null : onAsk} onClose={() => setDuvida(null)} />}
       {bv && <PlanoBoasVindas cfg={cfg} nome={nome} onFim={() => { try { localStorage.setItem(chaveBV, '1'); } catch (e) {} setBv(false); }} />}
@@ -1990,7 +2035,7 @@ function PlanoCfgDoCurso(cfg, indice, un, ref, setSel) {
   const lista = ((indice && indice.unidades) || []).filter(u => u.pronta && u.n >= PlanoNumUnidade(ref.inicial) && u.n <= PlanoNumUnidade(ref.atual));
   const prox = ((indice && indice.unidades) || []).find(u => u.n === un.n + 1 && u.pronta);
   const pacotes = [{ aula: a0, titulo: `Unit ${un.n} · ${un.titulo}`, tarefas }];
-  if (prox && un.id === ref.atual) pacotes.push({ aula: a1, futuro: true, titulo: `Unit ${prox.n} · ${prox.titulo}`, tarefas: [{ id: 'f1', ic: '📖', titulo: 'Livro' }, { id: 'f2', ic: '🔤', titulo: 'Vocabulário' }, { id: 'f3', ic: '🃏', titulo: 'Jogo' }, { id: 'f4', ic: '🏁', titulo: 'Mini-teste' }] });
+  if (prox && un.id === ref.atual) pacotes.push({ aula: a1, futuro: true, titulo: `Unit ${prox.n} · ${prox.titulo}`, tarefas: [{ id: 'f1', ic: '📖', titulo: 'Livro' }, { id: 'f2', ic: '🔤', titulo: 'Vocabulário' }, { id: 'f3', ic: '🃏', titulo: 'Jogo' }, { id: 'f4', ic: '🏁', titulo: 'Prova' }] });
   // Chaves de fala do livro (sempre desligadas quando ausentes): vocabPronuncia, gravarFalas e a exigência pronunciaMin (a função é quem aplica).
   const fala = { vocabPronuncia: !!(indice && indice.vocabPronuncia), gravarFalas: !!(indice && indice.gravarFalas), pronunciaMin: indice && typeof indice.pronunciaMin === 'number' ? indice.pronunciaMin : null };
   return { ...cfg, unidade, pacotes, cursoId: ref.id, unidadesLista: lista, onUnidade: setSel, ...fala };
