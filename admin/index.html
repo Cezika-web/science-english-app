@@ -9160,7 +9160,7 @@
         return `<div class="cr-video cr-pag" style="display:block;">
           <div class="cr-pag-linha"><strong class="cr-pag-tit">📖 ${esc(t.titulo)}</strong>
             <div class="cr-pag-meio">${aud.map((a, i) => crChipAudio(a, `<button type="button" class="cr-aud-x" data-cr-tira="${esc(u.id)}|${esc(t.id)}|${i}" title="tirar desta página (o arquivo volta para a lista “sem página”)">✕</button>`)).join('') || '<span class="cr-sem">sem áudio</span>'}
-              <label class="cr-btn cr-mais">＋ áudio<input type="file" accept="audio/*,.mp3,.m4a" multiple hidden data-cr-add="${esc(u.id)}|${esc(t.id)}"></label></div></div>${vid}</div>`;
+              <label class="cr-btn cr-mais" title="Pode colocar mais de um áudio nesta página (por exemplo, um para cada exercício). Escolha os arquivos juntos (Ctrl + clique) ou toque aqui de novo.">${aud.length ? '＋ outro áudio' : '＋ áudio (pode ser mais de um)'}<input type="file" accept="audio/*,.mp3,.m4a" multiple hidden data-cr-add="${esc(u.id)}|${esc(t.id)}"></label></div></div>${vid}</div>`;
       }).join('');
       const caixaSoltos = soltos.length ? `<div class="cr-soltos"><div class="cr-soltos-t">📥 Áudios que subiram e ainda estão sem página (${soltos.length})</div>
         ${soltos.map((a, i) => `<div class="cr-solto">${crChipAudio(a)}
