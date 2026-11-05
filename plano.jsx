@@ -1525,16 +1525,17 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, 
           </div>
           <button style={btn} aria-label="Página anterior" disabled={pdf <= 15} onClick={() => setPdf(p => p - 1)}>‹</button>
           <button style={btn} aria-label="Próxima página" disabled={pdf >= 177} onClick={() => setPdf(p => p + 1)}>›</button>
-          {caixas && <button onClick={() => setCx(0)} aria-label="Explicação do Dr. EurekIA" style={{ ...btn, width: 'auto', padding: '0 9px', fontSize: 12, whiteSpace: 'nowrap', background: '#7C3AED', color: '#fff' }}>💡 Explicação</button>}
           {prev && <button onClick={() => setVerPrev(true)} aria-label="Rever a prévia desta página" style={{ ...btn, width: 'auto', padding: '0 8px', fontSize: 12, whiteSpace: 'nowrap' }}>💡 Prévia</button>}
-          {onAsk && <button onClick={() => onAsk()} aria-label="Dr. EurekIA" style={{ ...btn, width: 'auto', padding: '0 9px', fontSize: 15 }}>💡</button>}
+          {onAsk && <button onClick={() => onAsk()} aria-label="Perguntar ao Dr. EurekIA" title="Tem uma dúvida? Pergunte ao Dr. EurekIA" style={{ display: 'flex', alignItems: 'center', gap: 3, height: 38, padding: '0 9px 0 3px', borderRadius: 99, border: 0, background: '#F5F3FF', boxShadow: '0 2px 8px rgba(109,40,217,.28)', cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit' }}><EurekiaAvatar size={32} /><span style={{ fontSize: 20, lineHeight: 1 }}>💡</span></button>}
         </div>
         {(t.audios || []).length > 0 && pdf === t.pdf && <PlanoAudiosPagina audios={t.audios} />}
         <PlanoLeitor curso={cursoId} pdf={pdf} cobrir={pdf === t.pdf ? t.cobrir : null} caixas={caixas} onCaixa={setCx} />
         {total === 0
           ? <div style={{ padding: '10px 14px calc(12px + env(safe-area-inset-bottom, 0px))', background: '#fff', borderTop: '1px solid rgba(var(--brand-rgb),.12)', flexShrink: 0 }}>
+            {caixas && <button className="plano-btn sec" style={{ marginBottom: 8 }} onClick={() => setCx(0)}>💡 Ver a explicação do Dr. EurekIA</button>}
             <button className="plano-btn violeta" onClick={onFeita}>Já li a página ✓</button></div>
           : <div style={{ background: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, boxShadow: '0 -8px 24px rgba(15,23,42,.18)', flexShrink: 0, display: 'flex', flexDirection: 'column', height: aberta ? '54%' : 'auto', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+            {caixas && <button onClick={() => setCx(0)} style={{ width: '100%', border: 0, background: '#F5F3FF', color: '#5B21B6', fontWeight: 800, fontSize: 13, padding: '9px 14px', borderTopLeftRadius: 20, borderTopRightRadius: 20, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>💡 Ver a explicação do Dr. EurekIA</button>}
             <button onClick={() => setAberta(a => !a)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', border: 0, background: 'none', padding: '11px 14px 10px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left', flexShrink: 0 }}>
               <span style={{ fontSize: 14, fontWeight: 800, flex: 1 }}>✏️ Exercícios desta página</span>
               <span style={{ fontSize: 11.5, fontWeight: 800, color: '#5B21B6', background: '#F5F3FF', border: '1px solid #DDD6FE', padding: '3px 10px', borderRadius: 99 }}>{respondidos}/{total}</span>
@@ -1979,6 +1980,7 @@ function PlanoCfgDoCurso(cfg, indice, un, ref, setSel) {
       if (t.tipo === 'jogo' && t.formato === 'memoria' && t.jogo) n.jogo = t.jogo.map(par);
       // exercícios do livro tirados no painel (chave "tarefa:bloco" em ocultos): a região sai da imagem da página
       if (t.regioes) n.cobrir = t.regioes.filter(r => oc.has(`${t.id}:${r.id}`)).map(r => ({ y0: r.y0, y1: r.y1 }));
+      if (t.caixas) n.caixas = t.caixas.filter(c => !(c.reg && oc.has(`${t.id}:${c.reg}`)));   // quadro tirado: some da página e a explicação some junto
       return n;
     })
     .filter(t => !(t.tipo === 'teste' && !(t.perguntas && t.perguntas.length)));

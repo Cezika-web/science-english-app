@@ -8764,7 +8764,7 @@
         <button type="button" class="cr-btn pri" data-previa-tarefa="1" style="margin:0 0 10px;">👁 Ver como o aluno vê esta tarefa${exs ? ' (com os exercícios)' : ''}</button>
         ${caixaPrevia}${caixaVideo}${semLink}
         ${isE ? corpoE : expls.length ? opcoes : opc
-          ? `<label class="cr-tirar lig ${fora ? '' : 'on'}"><input type="checkbox" data-tarefa="${esc(t.id)}" data-lig="1" ${fora ? '' : 'checked'}> Ligar no app (esta vem DESLIGADA)</label>`
+          ? `<label class="cr-tirar lig ${fora ? '' : 'on'}"><input type="checkbox" data-tarefa="${esc(t.id)}" data-lig="1" ${fora ? '' : 'checked'}> Ligar no app (esta vem ${/Grammar Expander/.test(t.titulo || '') ? 'LIGADA' : 'DESLIGADA'})</label>`
           : `<label class="cr-tirar ${fora ? 'on' : ''}"><input type="checkbox" data-tarefa="${esc(t.id)}" ${fora ? 'checked' : ''}> 🗑 TIRAR esta tarefa inteira do app</label>`}
         ${exs ? `<div style="font-size:.76rem;color:var(--muted);margin:10px 0 6px;font-weight:700;">${isE ? 'MINI-EXERCÍCIOS DA EXPLICAÇÃO' : regs.length ? 'EXERCÍCIOS DO LIVRO NESTA PÁGINA — marque o exercício INTEIRO que quer tirar' : 'EXERCÍCIOS DESTA PÁGINA — marque só os que quer tirar'}</div>${exs}` : ''}
         <div style="font-size:.76rem;color:var(--muted);margin:10px 0 2px;font-weight:700;">O QUE VOCÊ QUERIA NO LUGAR? (opcional, é para eu criar as novas)</div>
