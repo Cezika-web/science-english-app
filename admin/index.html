@@ -9160,7 +9160,7 @@
         const vid = vagas.filter(x => naPagina(x) && x.pag.id === t.id && (!fechada || x.v.youtube)).map(x => crLinhaVideo(u.id, x.v)).join('');
         return `<div class="cr-video cr-pag" style="display:block;">
           <div class="cr-pag-linha"><strong class="cr-pag-tit">📖 ${esc(t.titulo)}</strong>
-            <div class="cr-pag-meio">${aud.map((a, i) => crChipAudio(a, `<button type="button" class="cr-aud-x" data-cr-tira="${esc(u.id)}|${esc(t.id)}|${i}" title="tirar desta página (o arquivo volta para a lista “sem página”)">✕</button>`)).join('') || '<span class="cr-sem">sem áudio</span>'}
+            <div class="cr-pag-meio">${aud.map((a, i) => crChipAudio(a, `<select class="cr-bk" data-cr-bk="${esc(u.id)}|${esc(t.id)}|${i}" title="Em qual exercício da página este áudio aparece para a aluna"><option value="">no topo da página</option>${(t.regioes || []).map(r => `<option value="${esc(r.id)}" ${a.bk === r.id ? 'selected' : ''}>exercício ${esc(r.letra)} · ${esc(String(r.titulo || '').slice(0, 28))}</option>`).join('')}</select><button type="button" class="cr-aud-x" data-cr-tira="${esc(u.id)}|${esc(t.id)}|${i}" title="tirar desta página (o arquivo volta para a lista “sem página”)">✕</button>`)).join('') || '<span class="cr-sem">sem áudio</span>'}
               <label class="cr-btn cr-mais" title="Pode colocar mais de um áudio nesta página (por exemplo, um para cada exercício). Escolha os arquivos juntos (Ctrl + clique) ou toque aqui de novo.">${aud.length ? '＋ outro áudio' : '＋ áudio (pode ser mais de um)'}<input type="file" accept="audio/*,.mp3,.m4a" multiple hidden data-cr-add="${esc(u.id)}|${esc(t.id)}"></label></div></div>${vid}</div>`;
       }).join('');
       const caixaSoltos = soltos.length ? `<div class="cr-soltos"><div class="cr-soltos-t">📥 Áudios que subiram e ainda estão sem página (${soltos.length})</div>
@@ -9202,6 +9202,11 @@
       box.querySelectorAll('[data-cr-onde]').forEach(sel => sel.onchange = () => { const b = box.querySelector(`[data-cr-poe="${sel.dataset.crOnde}"]`); if (b) b.disabled = !sel.value; });
       box.querySelectorAll('[data-cr-poe]').forEach(b => b.onclick = () => { const sel = box.querySelector(`[data-cr-onde="${b.dataset.crPoe}"]`); const [uid, i] = b.dataset.crPoe.split('|'); if (sel && sel.value) crColocarNaPagina(uid, Number(i), sel.value); });
       box.querySelectorAll('[data-cr-tira]').forEach(b => b.onclick = () => { const [uid, pag, i] = b.dataset.crTira.split('|'); crTirarDaPagina(uid, pag, Number(i)); });
+      box.querySelectorAll('[data-cr-bk]').forEach(sel => sel.onchange = async () => {
+        const [uid, pag, i] = sel.dataset.crBk.split('|'); const un = cursoUnidades[uid];
+        const tarefas = (un.tarefas || []).map(t => t.id !== pag ? t : { ...t, audios: (t.audios || []).map((a, k) => (k === Number(i) ? { ...a, bk: sel.value } : a)) });
+        try { await crGravarMidia(uid, { tarefas }); crRenderMidia(cursoIndice); } catch (e) { alert('Não consegui salvar: ' + e.message); }
+      });
       box.querySelectorAll('[data-cr-apaga]').forEach(b => b.onclick = () => { const [uid, i] = b.dataset.crApaga.split('|'); crApagarSolto(uid, Number(i)); });
       box.querySelectorAll('[data-cr-fecha]').forEach(b => b.onclick = async () => {
         const [uid, v] = b.dataset.crFecha.split('|');
@@ -9240,7 +9245,7 @@
             const m = daTela.get(t.id); if (!m) return t;
             const n = { ...t };
             if (m.youtube !== undefined) n.youtube = m.youtube; else delete n.youtube;
-            if (m.audios !== undefined) n.audios = m.audios.map(au => { const d = (t.audios || []).find(x => x.caminho === au.caminho); return d ? { ...au, ...(d.segs ? { segs: d.segs } : {}), ...(d.titulo ? { titulo: d.titulo } : {}) } : au; });   // o texto e o título que já estão no banco ficam
+            if (m.audios !== undefined) n.audios = m.audios.map(au => { const d = (t.audios || []).find(x => x.caminho === au.caminho); return d ? { ...au, ...(d.segs ? { segs: d.segs } : {}), ...(d.titulo ? { titulo: d.titulo } : {}), ...(d.bk && au.bk === undefined ? { bk: d.bk } : {}) } : au; });   // o texto e o título que já estão no banco ficam
             else delete n.audios;
             return n;
           }) };

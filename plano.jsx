@@ -1168,7 +1168,7 @@ function PlanoUrlAudio(caminho) {
   return PLANO_AUDIO_URL[caminho];
 }
 function PlanoTempo(s) { s = Math.max(0, Math.round(Number(s) || 0)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
-function PlanoAudiosPagina({ audios }) {
+function PlanoAudiosPagina({ audios, rotulo }) {
   const chave = audios.map(a => a.caminho).join('|');
   const [urls, setUrls] = React.useState({}); const [erro, setErro] = React.useState(false);
   const [tocando, setTocando] = React.useState(-1); const [sel, setSel] = React.useState(0);
@@ -1196,7 +1196,7 @@ function PlanoAudiosPagina({ audios }) {
   return (
     <div style={{ flexShrink: 0, margin: '8px 10px 0', background: '#fff', borderRadius: 16, boxShadow: '0 4px 14px rgba(15,23,42,.14)', padding: '9px 11px 10px', border: '1px solid #EDE9FE' }}>
       <button onClick={() => setAberta(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', border: 0, background: 'none', padding: 0, fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>
-        <span style={{ fontSize: 17 }}>🔊</span><b style={{ fontSize: 13.5, color: '#0F172A', flex: 1 }}>{audios.length > 1 ? 'Áudios desta página' : 'Áudio desta página'}</b>
+        <span style={{ fontSize: 17 }}>🔊</span><b style={{ fontSize: 13.5, color: '#0F172A', flex: 1 }}>{rotulo || (audios.length > 1 ? 'Áudios desta página' : 'Áudio desta página')}</b>
         <span style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B' }}>{aberta ? 'toque para ouvir' : '▼'}</span>
       </button>
       {aberta && <>
@@ -1656,6 +1656,10 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, 
   const acabou = total > 0 && i >= total; const acertos = res.filter(r => r === true).length;
   const respondidos = res.filter(r => r !== undefined).length;
   // O que o professor vê no painel (Science Lab): quantas certas, quantas respondeu e QUAIS exercícios errou (só os ids; o texto está no curso).
+  // Áudios ligados a um exercício (bk) aparecem junto dele; os outros (e os de exercício sem itens no app) ficam no topo da página.
+  const blocosComItens = new Set(exs.map(e => e.bk).filter(Boolean));
+  const audiosTopo = (t.audios || []).filter(a => !a.bk || !blocosComItens.has(a.bk));
+  const audiosDoBloco = bk => (t.audios || []).filter(a => a.bk === bk);
   const resultado = () => ({ ok: acertos, total, feitos: respondidos, err: exs.filter((e, k) => res[k] === false && e.id).map(e => e.id) });
   const sair = () => { if (onParcial && !semGravar && respondidos > 0) onParcial(resultado()); onClose(); };   // fechou no meio: guarda até onde foi
   const onFim = ok => { setRes(r => { const n = [...r]; if (n[i] === undefined) n[i] = ok; return n; }); setRespondeu(true); };
@@ -1675,7 +1679,7 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, 
           {prev && <button onClick={() => setVerPrev(true)} aria-label="Rever a prévia desta página" style={{ ...btn, width: 'auto', padding: '0 8px', fontSize: 12, whiteSpace: 'nowrap' }}>💡 Prévia</button>}
           {onAsk && <button onClick={() => onAsk()} aria-label="Perguntar ao Dr. EurekIA" title="Tem uma dúvida? Pergunte ao Dr. EurekIA" style={{ display: 'flex', alignItems: 'center', gap: 3, height: 38, padding: '0 9px 0 3px', borderRadius: 99, border: 0, background: '#F5F3FF', boxShadow: '0 2px 8px rgba(109,40,217,.28)', cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit' }}><EurekiaAvatar size={32} /><span style={{ fontSize: 20, lineHeight: 1 }}>💡</span></button>}
         </div>
-        {(t.audios || []).length > 0 && pdf === t.pdf && <PlanoAudiosPagina audios={t.audios} />}
+        {audiosTopo.length > 0 && pdf === t.pdf && <PlanoAudiosPagina audios={audiosTopo} />}
         <PlanoLeitor curso={cursoId} pdf={pdf} cobrir={pdf === t.pdf ? t.cobrir : null} caixas={caixas} onCaixa={setCx} />
         {total === 0
           ? <div style={{ padding: '10px 14px calc(12px + env(safe-area-inset-bottom, 0px))', background: '#fff', borderTop: '1px solid rgba(var(--brand-rgb),.12)', flexShrink: 0 }}>
@@ -1699,6 +1703,8 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, 
                 </div>
                 : <>
                   <div style={{ display: 'flex', gap: 5, marginBottom: 10 }}>{exs.map((e, k) => <div key={e.id || k} style={{ flex: 1, height: 5, borderRadius: 9, background: k < i ? '#22C55E' : k === i ? '#7C3AED' : '#E2E8F0' }} />)}</div>
+                  {/* o áudio deste exercício (campo bk do áudio = bloco do livro), logo acima dele: o do vocabulário com o vocabulário, o da conversa com a conversa */}
+                  {exs[i].bk && audiosDoBloco(exs[i].bk).length > 0 && <div style={{ margin: '0 -4px 10px' }}><PlanoAudiosPagina key={'bk-' + exs[i].bk} audios={audiosDoBloco(exs[i].bk)} rotulo={`Áudio do exercício ${((t.regioes || []).find(r => r.id === exs[i].bk) || {}).letra || ''}`.trim()} /></div>}
                   <PlanoExercicio key={exs[i].id || i} ex={exs[i]} onFim={onFim} />
                   {respondeu && <button className="plano-btn" style={{ marginTop: 12 }} onClick={() => { setI(i + 1); setRespondeu(false); }}>{i + 1 >= total ? 'Ver resultado' : 'Continuar ›'}</button>}
                 </>}
