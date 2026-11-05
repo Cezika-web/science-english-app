@@ -8571,7 +8571,7 @@
     function crItensChecklist(ind) {
       const unidades = (ind.unidades || []).filter(u => u.pronta).map(u => cursoUnidades[u.id]).filter(Boolean);
       const revisadas = unidades.filter(un => { const s = crStats(un); return s.total && s.revisadas >= s.total; }).length;
-      const vagas = (ind.unidades || []).filter(u => u.pronta).flatMap(u => { if (!cursoUnidades[u.id]) return []; const r = crVideosDaUnidade(cursoUnidades[u.id], u.n); return [...r.vagas, ...r.soVideo.filter(x => x.v.youtube)]; });
+      const vagas = (ind.unidades || []).filter(u => u.pronta).flatMap(u => { if (!cursoUnidades[u.id]) return []; const r = crVideosDaUnidade(cursoUnidades[u.id], u.n); return [...(cursoUnidades[u.id].soMidiaSubida ? r.vagas.filter(x => x.v.youtube) : r.vagas), ...r.soVideo.filter(x => x.v.youtube)]; });   // unidade fechada: vaga sem link não é pendência
       const comLink = vagas.filter(x => x.v.youtube).length;
       const arquivos = unidades.reduce((n, un) => n + (un.audiosSoltos || []).length + (un.tarefas || []).reduce((m, t) => m + (t.audios || []).length, 0), 0);
       return [
@@ -8879,7 +8879,7 @@
     // Página do livro a que cada vaga de vídeo pertence: p. 5 e p. 7 (os "Watch the video") e a última da unidade (o Connect TV).
     function crPaginaDoVideo(un, n, v) {
       const m = String(v.titulo || '').match(/p\.\s*(\d+)/);
-      const pg = m ? Number(m[1]) : 12 * n;
+      const pg = Number(v.paginaVideo) || (m ? Number(m[1]) : 12 * n);   // paginaVideo: o título pode ser um tema, sem "p. N"
       return (un.tarefas || []).find(t => t.tipo === 'livro' && Number(t.pagina) === pg) || null;
     }
     function crVideosDaUnidade(un, n) {
@@ -8911,9 +8911,12 @@
       const comLink = vagas.filter(x => x.v.youtube).length + soVideoLigados.length;
       const tiradas = (un.tarefas || []).filter(t => t.tipo === 'livro' && oc.has(t.id)).map(t => String(t.titulo || '').split(':')[0] + ((t.audios || []).length ? ` (⚠️ tem ${(t.audios || []).length} áudio guardado)` : ''));
       const opcoes = paginas.map(p => `<option value="${esc(p.id)}">${esc(p.titulo)}</option>`).join('');
-      const linhas = paginas.map(t => {
+      // Unidade fechada (`soMidiaSubida`): o professor disse "o que eu subi é o que vale, o resto não vou colocar". Some o que está vazio.
+      const fechada = un.soMidiaSubida === true;
+      const paginasMostradas = fechada ? paginas.filter(t => (t.audios || []).length || vagas.some(x => naPagina(x) && x.pag.id === t.id && x.v.youtube)) : paginas;
+      const linhas = paginasMostradas.map(t => {
         const aud = t.audios || [];
-        const vid = vagas.filter(x => naPagina(x) && x.pag.id === t.id).map(x => crLinhaVideo(u.id, x.v)).join('');
+        const vid = vagas.filter(x => naPagina(x) && x.pag.id === t.id && (!fechada || x.v.youtube)).map(x => crLinhaVideo(u.id, x.v)).join('');
         return `<div class="cr-video cr-pag" style="display:block;">
           <div class="cr-pag-linha"><strong class="cr-pag-tit">📖 ${esc(t.titulo)}</strong>
             <div class="cr-pag-meio">${aud.map((a, i) => crChipAudio(a, `<button type="button" class="cr-aud-x" data-cr-tira="${esc(u.id)}|${esc(t.id)}|${i}" title="tirar desta página (o arquivo volta para a lista “sem página”)">✕</button>`)).join('') || '<span class="cr-sem">sem áudio</span>'}
@@ -8925,18 +8928,21 @@
           <button type="button" class="cr-btn pri" data-cr-poe="${esc(u.id)}|${i}" disabled>Colocar na página</button>
           <button type="button" class="cr-btn" data-cr-apaga="${esc(u.id)}|${i}" title="apagar este arquivo">🗑</button></div>`).join('')}</div>` : '';
       return `<details class="cr-un-linha" style="display:block;" data-cr-un="${esc(u.id)}" ${crMidiaAberta.has(u.id) ? 'open' : ''}>
-        <summary style="cursor:pointer;font-weight:700;">Unit ${u.n} · ${esc(u.titulo)} <small style="color:var(--muted);font-weight:600;">· ${paginas.length} páginas ficaram · 🔊 ${comAudio} com áudio · 🎬 ${comLink}/${vagas.length + soVideoLigados.length} com vídeo · ${revisada ? '✅ revisão concluída' : `⏳ revisão ${st.revisadas}/${st.total}`}</small></summary>
-        ${revisada ? '' : '<div class="cr-aviso-e" style="margin:8px 0 0;">⏳ A revisão desta unidade ainda não terminou: pode aparecer aqui página que você ainda vai tirar. Espere os ✅ para subir os arquivos.</div>'}
+        <summary style="cursor:pointer;font-weight:700;">Unit ${u.n} · ${esc(u.titulo)} <small style="color:var(--muted);font-weight:600;">· ${fechada ? `✅ fechada: só o que você subiu · 🔊 ${comAudio} página(s) com áudio · 🎬 ${comLink} vídeo(s)` : `${paginas.length} páginas ficaram · 🔊 ${comAudio} com áudio · 🎬 ${comLink}/${vagas.length + soVideoLigados.length} com vídeo · ${revisada ? '✅ revisão concluída' : `⏳ revisão ${st.revisadas}/${st.total}`}`}</small></summary>
+        ${fechada
+          ? `<div style="font-size:.8rem;color:#166534;background:#dcfce7;border-radius:9px;padding:8px 12px;margin:8px 0 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><span style="flex:1;min-width:200px;">✅ Unidade fechada: o app usa só o que você já subiu aqui. As páginas sem áudio nem vídeo saíram desta lista.</span><button type="button" class="cr-btn" data-cr-fecha="${esc(u.id)}|0">Reabrir para subir mais</button></div>`
+          : `${revisada ? '' : '<div class="cr-aviso-e" style="margin:8px 0 0;">⏳ A revisão desta unidade ainda não terminou: pode aparecer aqui página que você ainda vai tirar. Espere os ✅ para subir os arquivos.</div>'}
         <div class="cr-drop" data-cr-drop="${esc(u.id)}"><div class="cr-drop-t">⬆️ Solte aqui os áudios da Unit ${u.n} (.mp3, pode ser vários de uma vez)</div>
           <div class="cr-drop-s">Depois escolha a página de cada um. Ou, na linha da página, use “＋ áudio”.</div>
           <label class="cr-btn pri" style="cursor:pointer;">Escolher arquivos<input type="file" accept="audio/*,.mp3,.m4a" multiple hidden data-cr-add="${esc(u.id)}|"></label>
-          <div class="cr-drop-msg" id="cr-msg-${esc(u.id)}"></div></div>
-        ${caixaSoltos}${linhas || '<div class="cr-sem" style="padding:6px 2px;">Nenhuma página ficou nesta unidade.</div>'}
-        ${finais.map(x => `<div class="cr-video cr-pag" style="display:block;"><div class="cr-pag-linha"><strong class="cr-pag-tit">🎬 Fim da unidade</strong></div>${crLinhaVideo(u.id, x.v)}</div>`).join('')}
-        ${soVideo.length ? `<details style="margin-top:8px;border:1px solid #bae6fd;background:#f0f9ff;border-radius:11px;padding:8px 12px;" ${soVideoLigados.length ? 'open' : ''}>
+          <button type="button" class="cr-btn" style="margin-left:6px;" data-cr-fecha="${esc(u.id)}|1" title="Tira desta lista as páginas sem áudio e sem vídeo">Não vou subir mais nada nesta unidade</button>
+          <div class="cr-drop-msg" id="cr-msg-${esc(u.id)}"></div></div>`}
+        ${caixaSoltos}${linhas || `<div class="cr-sem" style="padding:6px 2px;">${fechada ? 'Nenhum áudio nem vídeo subido nesta unidade.' : 'Nenhuma página ficou nesta unidade.'}</div>`}
+        ${finais.filter(x => !fechada || x.v.youtube).map(x => `<div class="cr-video cr-pag" style="display:block;"><div class="cr-pag-linha"><strong class="cr-pag-tit">🎬 Fim da unidade</strong></div>${crLinhaVideo(u.id, x.v)}</div>`).join('')}
+        ${(fechada ? soVideoLigados : soVideo).length ? `<details style="margin-top:8px;border:1px solid #bae6fd;background:#f0f9ff;border-radius:11px;padding:8px 12px;" ${soVideoLigados.length ? 'open' : ''}>
           <summary style="cursor:pointer;font-weight:800;font-size:.82rem;color:#0c4a6e;">🎬 Quer só o vídeo, sem a página? (${soVideo.length} de páginas que você tirou${soVideoLigados.length ? ` · ${soVideoLigados.length} ligado(s)` : ''})</summary>
           <div style="font-size:.78rem;color:#0c4a6e;margin:6px 0 2px;line-height:1.45;">A página saiu do curso, mas o vídeo dela pode ficar sozinho no Caminho: cole o link e ele liga. Para desligar, apague o link e salve.</div>
-          ${soVideo.map(x => crLinhaVideo(u.id, x.v)).join('')}</details>` : ''}
+          ${(fechada ? soVideoLigados : soVideo).map(x => crLinhaVideo(u.id, x.v)).join('')}</details>` : ''}
         ${tiradas.length ? `<div style="font-size:.78rem;color:#92400e;background:#fef3c7;border-radius:9px;padding:7px 11px;margin-top:8px;">🙈 Escondidas porque você tirou (${tiradas.length}): ${tiradas.map(esc).join(' · ')}</div>` : ''}
       </details>`;
     }
@@ -8956,6 +8962,11 @@
       box.querySelectorAll('[data-cr-poe]').forEach(b => b.onclick = () => { const sel = box.querySelector(`[data-cr-onde="${b.dataset.crPoe}"]`); const [uid, i] = b.dataset.crPoe.split('|'); if (sel && sel.value) crColocarNaPagina(uid, Number(i), sel.value); });
       box.querySelectorAll('[data-cr-tira]').forEach(b => b.onclick = () => { const [uid, pag, i] = b.dataset.crTira.split('|'); crTirarDaPagina(uid, pag, Number(i)); });
       box.querySelectorAll('[data-cr-apaga]').forEach(b => b.onclick = () => { const [uid, i] = b.dataset.crApaga.split('|'); crApagarSolto(uid, Number(i)); });
+      box.querySelectorAll('[data-cr-fecha]').forEach(b => b.onclick = async () => {
+        const [uid, v] = b.dataset.crFecha.split('|');
+        try { await crGravarMidia(uid, { soMidiaSubida: v === '1' }); crRenderMidia(cursoIndice); crRenderChecklist(cursoIndice); }
+        catch (e) { alert('Não consegui salvar: ' + e.message); }
+      });
     }
     async function crTocar(caminho, btn) {
       if (crAudioAtual && crAudioAtual.caminho === caminho) { const el = crAudioAtual.el; el.paused ? el.play() : el.pause(); return; }
