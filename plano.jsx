@@ -1658,8 +1658,10 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, 
   // O que o professor vê no painel (Science Lab): quantas certas, quantas respondeu e QUAIS exercícios errou (só os ids; o texto está no curso).
   // Áudios ligados a um exercício (bk) aparecem junto dele; os outros (e os de exercício sem itens no app) ficam no topo da página.
   const blocosComItens = new Set(exs.map(e => e.bk).filter(Boolean));
-  const audiosTopo = (t.audios || []).filter(a => !a.bk || !blocosComItens.has(a.bk));
-  const audiosDoBloco = bk => (t.audios || []).filter(a => a.bk === bk);
+  // bk pode listar vários exercícios separados por vírgula ("1B,1C,1D": o mesmo áudio serve a todos eles)
+  const blocosDe = a => (a.bk ? String(a.bk).split(',') : []);
+  const audiosTopo = (t.audios || []).filter(a => !blocosDe(a).some(b => blocosComItens.has(b)));
+  const audiosDoBloco = bk => (t.audios || []).filter(a => blocosDe(a).includes(bk));
   const resultado = () => ({ ok: acertos, total, feitos: respondidos, err: exs.filter((e, k) => res[k] === false && e.id).map(e => e.id) });
   const sair = () => { if (onParcial && !semGravar && respondidos > 0) onParcial(resultado()); onClose(); };   // fechou no meio: guarda até onde foi
   const onFim = ok => { setRes(r => { const n = [...r]; if (n[i] === undefined) n[i] = ok; return n; }); setRespondeu(true); };
