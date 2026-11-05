@@ -1495,7 +1495,7 @@ function PlanoPreviaFolha({ previa, onEntendi, onPerguntar }) {
 // `abrirEm` (só a prévia do painel): já abre a gaveta neste exercício, em vez de começar com ela fechada.
 // `uid` + `semGravar`: a prévia do Dr. EurekIA aparece na 1ª abertura de cada tarefa por aluno ou aluna (localStorage); com `semGravar`
 // (prévia do painel e espelho) ela aparece sempre e nada é gravado.
-function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, semGravar }) {
+function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, semGravar, onParcial }) {
   const prev = React.useMemo(() => PlanoPreviaNormaliza(t.previa), [t.previa]);
   const chavePrev = `plano-previa-v1-${uid || 'x'}-${t.id}`;
   const [verPrev, setVerPrev] = React.useState(() => {
@@ -1511,6 +1511,9 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, 
   const [aberta, setAberta] = React.useState(abrirEm >= 0 && abrirEm < total); const [respondeu, setRespondeu] = React.useState(false);
   const acabou = total > 0 && i >= total; const acertos = res.filter(r => r === true).length;
   const respondidos = res.filter(r => r !== undefined).length;
+  // O que o professor vê no painel (Science Lab): quantas certas, quantas respondeu e QUAIS exercícios errou (só os ids; o texto está no curso).
+  const resultado = () => ({ ok: acertos, total, feitos: respondidos, err: exs.filter((e, k) => res[k] === false && e.id).map(e => e.id) });
+  const sair = () => { if (onParcial && !semGravar && respondidos > 0) onParcial(resultado()); onClose(); };   // fechou no meio: guarda até onde foi
   const onFim = ok => { setRes(r => { const n = [...r]; if (n[i] === undefined) n[i] = ok; return n; }); setRespondeu(true); };
   const caixas = pdf === t.pdf && Array.isArray(t.caixas) && t.caixas.length ? t.caixas : null;
   const pagina = pdf - 14; const btn = { width: 34, height: 34, borderRadius: 10, border: 0, background: '#F5F3FF', color: '#5B21B6', fontWeight: 800, fontSize: 18, fontFamily: 'inherit', cursor: 'pointer' };
@@ -1518,7 +1521,7 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, 
     <div style={{ position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(15,23,42,.4)', display: 'flex', justifyContent: 'center' }}>
       <div style={{ width: '100%', maxWidth: 480, height: '100%', background: '#F6F1EA', display: 'flex', flexDirection: 'column', animation: 'planoSurge .22s' }}>
         <div style={{ background: '#fff', borderBottom: '1px solid rgba(var(--brand-rgb),.12)', padding: '9px 10px', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          <button onClick={onClose} aria-label="Fechar" style={{ width: 36, height: 36, borderRadius: 12, border: 0, background: '#F1F5F9', fontSize: 18, fontWeight: 800, color: '#475569', cursor: 'pointer' }}>✕</button>
+          <button onClick={sair} aria-label="Fechar" style={{ width: 36, height: 36, borderRadius: 12, border: 0, background: '#F1F5F9', fontSize: 18, fontWeight: 800, color: '#475569', cursor: 'pointer' }}>✕</button>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A', lineHeight: 1.15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.titulo}</div>
             <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B' }}>Connectivity 1 · página {pagina}</div>
@@ -1533,7 +1536,7 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, 
         {total === 0
           ? <div style={{ padding: '10px 14px calc(12px + env(safe-area-inset-bottom, 0px))', background: '#fff', borderTop: '1px solid rgba(var(--brand-rgb),.12)', flexShrink: 0 }}>
             {caixas && <button className="plano-btn sec" style={{ marginBottom: 8 }} onClick={() => setCx(0)}>💡 Ver a explicação do Dr. EurekIA</button>}
-            <button className="plano-btn violeta" onClick={onFeita}>Já li a página ✓</button></div>
+            <button className="plano-btn violeta" onClick={() => onFeita()}>Já li a página ✓</button></div>
           : <div style={{ background: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, boxShadow: '0 -8px 24px rgba(15,23,42,.18)', flexShrink: 0, display: 'flex', flexDirection: 'column', height: aberta ? '54%' : 'auto', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
             {caixas && <button onClick={() => setCx(0)} style={{ width: '100%', border: 0, background: '#F5F3FF', color: '#5B21B6', fontWeight: 800, fontSize: 13, padding: '9px 14px', borderTopLeftRadius: 20, borderTopRightRadius: 20, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>💡 Ver a explicação do Dr. EurekIA</button>}
             <button onClick={() => setAberta(a => !a)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', border: 0, background: 'none', padding: '11px 14px 10px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left', flexShrink: 0 }}>
@@ -1547,7 +1550,7 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, 
                   <div style={{ fontSize: 46 }}>🎉</div>
                   <div style={{ fontSize: 19, fontWeight: 800, margin: '2px 0' }}>{acertos} de {total} certas</div>
                   <div style={{ color: '#64748B', fontWeight: 700, fontSize: 13, margin: '0 0 12px' }}>Você pode rever a página antes de concluir.</div>
-                  <button className="plano-btn" onClick={onFeita}>Concluir tarefa ✓</button>
+                  <button className="plano-btn" onClick={() => onFeita(resultado())}>Concluir tarefa ✓</button>
                   <button className="plano-btn sec" style={{ marginTop: 8 }} onClick={() => { setI(0); setRes([]); setRespondeu(false); }}>Refazer os exercícios</button>
                 </div>
                 : <>
@@ -1612,7 +1615,7 @@ function PlanoTarefaExplicacao({ t, cursoId, onFeita, onClose, onAsk }) {
   const exs = t.exercicios || []; const feitos = Object.keys(res).length; const acertos = Object.values(res).filter(Boolean).length;
   return (
     <PlanoCamada titulo={t.titulo} sub={`Connectivity 1 · página ${t.pagina} · gramática`} onClose={onClose} onAsk={onAsk}
-      rodape={<><button className="plano-btn" style={{ background: 'linear-gradient(180deg,#38BDF8,#0284C7)', boxShadow: '0 8px 18px rgba(2,132,199,.3)' }} onClick={onFeita}>Já estudei ✓</button>
+      rodape={<><button className="plano-btn" style={{ background: 'linear-gradient(180deg,#38BDF8,#0284C7)', boxShadow: '0 8px 18px rgba(2,132,199,.3)' }} onClick={() => onFeita(exs.length ? { ok: acertos, total: exs.length, feitos: feitos, err: exs.filter(ex => res[ex.id] === false).map(ex => ex.id) } : undefined)}>Já estudei ✓</button>
         <div style={{ textAlign: 'center', fontSize: 11.5, fontWeight: 700, color: '#64748B', marginTop: 7 }}>Você pode voltar aqui quando quiser, antes ou depois dos exercícios.</div></>}>
       {t.quadro && <>
         <div style={{ fontSize: 15, fontWeight: 800, margin: '2px 0 8px' }}>📖 O quadro do livro <span style={{ color: '#64748B', fontWeight: 700, fontSize: 12 }}>(toque para ampliar)</span></div>
@@ -1660,7 +1663,7 @@ function PlanoProva({ t, onNota, onFim }) {
     ok: itens.reduce((a, it, k) => a + (it.sec === sc.k && res[k] === true ? 1 : 0), 0) }));
   const nomeSec = k => (secoes.find(sc => sc.k === k) || {}).nome || '';
   const onEx = ok => { setRes(r => (r[i] === undefined ? { ...r, [i]: ok } : r)); setRespondeu(true); };
-  const ver = () => { setFim(true); if (onNota) onNota({ nota, partes: partes.map(p => ({ k: p.k, pts: p.pts, max: p.max })) }); };
+  const ver = () => { setFim(true); if (onNota) onNota({ nota, partes: partes.map(p => ({ k: p.k, pts: p.pts, max: p.max, ok: p.ok, n: p.n })) }); };
   const refazer = () => { setI(0); setRes({}); setRespondeu(false); setFim(false); };
   if (fim) {
     const passou = nota >= 7;
@@ -1949,14 +1952,28 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
     if (t.tipo === 'atividade') { onTab('atividades'); avisar('✏️ Faça as atividades e toque em Corrigir.'); return; }
     setTarefa(t);
   };
-  const concluir = (id, extra) => { marcar(id); if (extra) marcar(extra); setTarefa(null); avisar(extra ? '🏅 Selo conquistado!' : '✅ Tarefa concluída!'); };
+  // Resultado da tarefa para o painel (feitas["res:ID"]): {ok, total, feitos, err:[ids dos exercícios errados], parcial, tent, melhor, em}.
+  // Concluída: grava sempre (cada vez que ela refaz soma uma tentativa). Fechou no meio: só grava se ainda não há resultado completo.
+  const normRes = (r, tot) => {
+    if (r && typeof r === 'object' && typeof r.total === 'number' && typeof r.ok === 'number') return { ok: r.ok, total: r.total, feitos: typeof r.feitos === 'number' ? r.feitos : r.total, err: Array.isArray(r.err) ? r.err.slice(0, 80) : [] };
+    if (typeof r === 'number' && typeof tot === 'number' && tot > 0) return { ok: r, total: tot, feitos: tot, err: [] };
+    return null;   // clique (evento), nada ou jogo sem total: sem resultado
+  };
+  const gravarRes = (id, r, parcial) => {
+    const v = feitas['res:' + id]; const velha = v && typeof v === 'object' ? v : null; const agora = new Date().toISOString();
+    if (parcial) { if (velha && !velha.parcial) return; marcar('res:' + id, { ok: r.ok, total: r.total, feitos: r.feitos, err: r.err, parcial: true, tent: (velha && velha.tent) || 0, em: agora }); return; }
+    const antes = velha && !velha.parcial ? velha : null;
+    marcar('res:' + id, { ok: r.ok, total: r.total, feitos: r.total, err: r.err, parcial: false, tent: ((antes && antes.tent) || 0) + 1, melhor: Math.max(antes ? (typeof antes.melhor === 'number' ? antes.melhor : antes.ok) : 0, r.ok), em: agora });
+  };
+  const concluir = (id, extra, r) => { marcar(id); if (extra) marcar(extra); if (r) gravarRes(id, r); setTarefa(null); avisar(extra ? '🏅 Selo conquistado!' : '✅ Tarefa concluída!'); };
   const fechar = () => setTarefa(null);
   // No espelho (o professor olhando o app do aluno) a EurekIA aparece, mas só avisa: a pergunta iria para a conta do professor.
   const avisarEspelho = () => avisar('👁 Modo espelho — somente leitura');
   // `sugestao`: pergunta já escrita (a da prévia da página). O texto da prévia da tarefa aberta vai SEMPRE junto, pelo botão que for
   // (o 💡 do cabeçalho também), para a IA saber em que página ela está. O typeof protege dos botões que passam o clique (onClick={onAsk}).
   const perguntar = sugestao => { if (mirror) { avisarEspelho(); return; } setDuvida({ contexto: tarefa ? tarefa.titulo : '', previa: PlanoPreviaTexto(tarefa), sugestao: typeof sugestao === 'string' ? sugestao : '' }); };
-  const f = () => concluir(tarefa.id);
+  const f = (r, tot) => concluir(tarefa.id, undefined, normRes(r, tot));
+  const parcial = r => { const x = normRes(r); if (x && tarefa) gravarRes(tarefa.id, x, true); };
   const enviarResumo = texto => { marcar('resumo:' + tarefa.id, { texto, em: new Date().toISOString() }); if (PlanoVideoFinal(tarefa)) concluir(tarefa.id); };   // vídeo com texto: só grava a resposta e libera o texto; ela conclui depois
 
   return (
@@ -1975,7 +1992,7 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
 
       {gram && <PlanoGramaticaLista cfg={cfg} feitas={feitas} onAbrir={setTarefa} onClose={() => setGram(false)} />}
       {tarefa && tarefa.tipo === 'livro' && (tarefa.pdf
-        ? <PlanoTarefaPagina t={tarefa} cursoId={cfg.cursoId} uid={uid} semGravar={!!(cfg.previa || mirror)} onFeita={f} onClose={fechar} onAsk={perguntar} />
+        ? <PlanoTarefaPagina t={tarefa} cursoId={cfg.cursoId} uid={uid} semGravar={!!(cfg.previa || mirror)} onFeita={f} onParcial={parcial} onClose={fechar} onAsk={perguntar} />
         : <PlanoTarefaLivro t={tarefa} unidade={u} onFeita={f} onClose={fechar} onAsk={perguntar} />)}
       {tarefa && tarefa.tipo === 'explicacao' && <PlanoTarefaExplicacao t={tarefa} cursoId={cfg.cursoId} onFeita={f} onClose={fechar} onAsk={perguntar} />}
       {tarefa && tarefa.tipo === 'revisao' && <PlanoCamada titulo={tarefa.titulo} sub={tarefa.sub} onClose={fechar}><div style={{ background: '#fff', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: '#64748B' }}>📝 Esta revisão ainda está sendo montada.</div></PlanoCamada>}
@@ -1986,7 +2003,11 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
       {tarefa && tarefa.tipo === 'video' && <PlanoTarefaVideo t={tarefa} onFeita={f} onResumo={enviarResumo} resumoAnterior={feitas['resumo:' + tarefa.id] && feitas['resumo:' + tarefa.id].texto} onClose={fechar} onAsk={perguntar} />}
       {tarefa && tarefa.tipo === 'extra' && <PlanoTarefaExtra t={tarefa} unidade={u} onAbrirExtras={() => { fechar(); onTab('atividades'); }} onFeita={f} onClose={fechar} onAsk={perguntar} />}
       {tarefa && tarefa.tipo === 'teste' && <PlanoTarefaTeste t={tarefa} unidade={u} onFeita={() => concluir(tarefa.id, 'selo:' + u.id)} onClose={fechar} onAsk={perguntar}
-        onNota={n => { const m = feitas['prova:' + u.id]; if (!m || typeof m !== 'object' || !(m.nota > n.nota)) marcar('prova:' + u.id, { nota: n.nota, partes: n.partes, em: new Date().toISOString() }); }} />}
+        onNota={n => {
+          const m = feitas['prova:' + u.id]; const velha = m && typeof m === 'object' ? m : null; const agora = new Date().toISOString();
+          const melhor = velha && velha.nota > n.nota ? { nota: velha.nota, partes: velha.partes || [], em: velha.em || agora } : { nota: n.nota, partes: n.partes, em: agora };   // a melhor nota fica; a última e as tentativas também
+          marcar('prova:' + u.id, { ...melhor, tent: ((velha && velha.tent) || (velha ? 1 : 0)) + 1, ultima: n.nota, ultimaEm: agora });
+        }} />}
       {aula && <PlanoAulaFolha aula={aula} student={student} cfg={cfg} onClose={() => setAula(null)} />}
       {duvida && <PlanoPerguntar cfg={cfg} student={student} contexto={duvida.contexto} previa={duvida.previa} sugestao={duvida.sugestao || undefined} onAsk={cfg.previa ? null : onAsk} onClose={() => setDuvida(null)} />}
       {bv && <PlanoBoasVindas cfg={cfg} nome={nome} onFim={() => { try { localStorage.setItem(chaveBV, '1'); } catch (e) {} setBv(false); }} />}

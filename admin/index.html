@@ -902,6 +902,7 @@
           <button class="tab" data-tab="curso"><span class="ic">📘</span><span class="lb">Curso</span></button>
           <button class="tab" data-tab="eurekia"><span class="ic">💡</span><span class="lb">Dr. EurekIA</span><span class="nova-bolinha" aria-hidden="true"></span></button>
           <button class="tab" data-tab="falas"><span class="ic">🎙️</span><span class="lb">Falas</span><span class="nova-bolinha" aria-hidden="true"></span></button>
+          <button class="tab" data-tab="lab"><span class="ic">🧪</span><span class="lb">Science Lab</span></button>
         </div>
 
         <div class="side-group">
@@ -1681,6 +1682,58 @@
           </div>
         </div>
         <div id="fa-lista"><div class="loading">Carregando...</div></div>
+      </div>
+
+      <!-- SCIENCE LAB — notas, exercícios e progresso de cada aluna do plano, sem entrar no app dela -->
+      <div class="tab-panel" id="tab-lab">
+        <style>
+          .sl-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px 16px; margin-bottom:12px; }
+          .sl-card h2 { font-size:1rem; margin:0 0 4px; }
+          .sl-sub { font-size:.82rem; color:var(--muted); margin:0 0 10px; line-height:1.5; }
+          .sl-chips { display:flex; gap:8px; flex-wrap:wrap; }
+          .sl-chip { border:1px solid var(--border); background:#fff; border-radius:99px; padding:7px 14px; font-size:.84rem; font-weight:700; cursor:pointer; font-family:inherit; color:var(--text, #0f172a); }
+          .sl-chip small { color:var(--muted); font-weight:600; margin-left:4px; }
+          .sl-chip.on { background:#f5f3ff; border-color:#7c3aed; color:#5b21b6; }
+          .sl-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:12px 0; }
+          .sl-kpi { background:#f8fafc; border:1px solid var(--border); border-radius:12px; padding:10px 12px; }
+          .sl-kpi small { display:block; font-size:.72rem; color:var(--muted); font-weight:700; }
+          .sl-kpi b { display:block; font-size:1.3rem; line-height:1.25; }
+          .sl-kpi em { display:block; font-style:normal; font-size:.72rem; color:var(--muted); font-weight:600; }
+          .sl-abas { display:flex; gap:4px; flex-wrap:wrap; border-bottom:1px solid var(--border); margin:6px 0 12px; }
+          .sl-aba { border:0; background:none; font-family:inherit; font-size:.86rem; font-weight:700; color:var(--muted); padding:8px 13px; cursor:pointer; border-bottom:2px solid transparent; }
+          .sl-aba.on { color:#5b21b6; border-bottom-color:#7c3aed; }
+          .sl-r { border-bottom:1px solid #f1f5f9; }
+          .sl-r > summary, .sl-sum { display:flex; align-items:center; gap:8px; padding:9px 2px; list-style:none; cursor:pointer; font-size:.88rem; }
+          .sl-r > summary::-webkit-details-marker { display:none; }
+          div.sl-r > .sl-sum { cursor:default; }
+          .sl-tit { flex:1; min-width:0; font-weight:700; line-height:1.35; }
+          .sl-ic { width:22px; text-align:center; flex-shrink:0; }
+          .sl-tag { font-size:.72rem; font-weight:800; padding:2px 9px; border-radius:99px; white-space:nowrap; background:#f1f5f9; color:#475569; }
+          .sl-tag.ok { background:#dcfce7; color:#166534; } .sl-tag.wip { background:#fef3c7; color:#92400e; } .sl-tag.err { background:#fee2e2; color:#991b1b; } .sl-tag.no { background:#f1f5f9; color:#64748b; }
+          .sl-det { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:9px 12px; margin:0 0 10px 30px; font-size:.84rem; line-height:1.5; }
+          .sl-err { padding:5px 0; border-top:1px solid #eef2f6; } .sl-err:first-child { border-top:0; }
+          .sl-certo { color:#475569; margin:2px 0 0 4px; font-size:.8rem; }
+          .sl-d { padding:4px 0; }
+          .sl-grupo { font-size:.7rem; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:#7c3aed; margin:12px 0 2px; }
+          .sl-bar { height:7px; border-radius:99px; background:#e5e7eb; overflow:hidden; min-width:90px; flex:0 0 140px; } .sl-bar i { display:block; height:100%; background:#7c3aed; }
+          .sl-un { border:1px solid var(--border); border-radius:12px; margin-bottom:10px; background:#fff; }
+          .sl-un > summary { padding:11px 14px; cursor:pointer; font-weight:800; font-size:.92rem; list-style:none; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+          .sl-un > summary::-webkit-details-marker { display:none; }
+          .sl-un > summary small { font-weight:600; color:var(--muted); }
+          .sl-un > .sl-un-corpo { padding:0 14px 10px; }
+          .sl-nota { font-size:1.15rem; font-weight:800; }
+          .sl-parte { display:flex; align-items:center; gap:10px; padding:3px 0; font-size:.84rem; } .sl-parte .nm { flex:0 0 120px; font-weight:700; }
+          .sl-vazio { font-size:.86rem; color:var(--muted); padding:8px 2px; line-height:1.5; }
+          .sl-fala { padding:10px 2px; border-bottom:1px solid #f1f5f9; } .sl-fala .meta { font-size:.74rem; color:var(--muted); font-weight:700; display:flex; gap:8px; flex-wrap:wrap; }
+          .sl-qa { border:1px solid var(--border); border-radius:12px; padding:11px 13px; margin-bottom:9px; background:#fff; } .sl-qa .p { font-weight:800; font-size:.9rem; } .sl-qa .r { margin-top:6px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:8px 10px; font-size:.84rem; line-height:1.5; white-space:pre-wrap; }
+          .sl-btn { border:1px solid var(--border); background:#fff; border-radius:9px; padding:5px 11px; font-size:.8rem; font-weight:700; cursor:pointer; font-family:inherit; }
+        </style>
+        <div class="sl-card">
+          <h2>🧪 Science Lab: notas e progresso</h2>
+          <p class="sl-sub">Tudo o que cada aluna fez no curso, sem você entrar no app dela: tarefas, quantas ela acertou em cada página (e quais errou), notas das provas, pronúncia, falas e dúvidas ao Dr. EurekIA. Os resultados por exercício só começam a ser guardados depois que a aluna abrir o app já atualizado; o que ela fez antes aparece só como “feita”.</p>
+          <div class="sl-chips" id="sl-chips"></div>
+        </div>
+        <div id="sl-corpo"><div class="loading">Carregando...</div></div>
       </div>
 
       <!-- CURSO — o livro (Connectivity) dentro do app: revisar o que fica, checklist, vídeos -->
@@ -6265,6 +6318,7 @@
         if (tab.dataset.tab === 'curso') carregarCurso();
         if (tab.dataset.tab === 'eurekia') carregarEurekia();
         if (tab.dataset.tab === 'falas') carregarFalas();
+        if (tab.dataset.tab === 'lab') carregarLab();
       };
     });
 
@@ -6278,7 +6332,7 @@
     // Quem administra a escola vê a interface dela — inclusive o César, ao
     // trocar de escola no seletor do topo.
     const ABAS_POR_MODO = {
-      manual:    ['students', 'groups', 'calendar', 'finance', 'challenge', 'adesao', 'creditos', 'posaula', 'processos', 'publish', 'correct', 'vocab', 'extras', 'curso', 'eurekia', 'falas', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
+      manual:    ['students', 'groups', 'calendar', 'finance', 'challenge', 'adesao', 'creditos', 'posaula', 'processos', 'publish', 'correct', 'vocab', 'extras', 'curso', 'eurekia', 'falas', 'lab', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
       assistido: ['students', 'groups', 'calendar', 'finance', 'challenge', 'adesao', 'creditos', 'posaula', 'processos', 'publish', 'extras', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
     };
 
@@ -8494,6 +8548,186 @@
     document.getElementById('fa-so-novas').onchange = () => { faLimite = 60; faRender(); };
     document.getElementById('fa-recarregar').onclick = () => carregarFalas();
     document.getElementById('fa-visto-todas').onclick = () => { const itens = faFiltradas().filter(r => !r.visto).map(r => ({ uid:r.uid, chave:r.chave })); if (itens.length) faMarcarVistas(itens); };
+
+    // ── Aba "Science Lab": notas, exercícios e progresso de cada aluna do plano, sem entrar no app dela ──
+    // Fonte: students/{uid}/planoProgresso/feitas = { ID da tarefa: true, "res:ID": {ok,total,feitos,err[],parcial,tent,melhor,em},
+    // "prova:uNN": {nota,partes[],tent,ultima,em}, "selo:uNN": true, "pron:ID": {ok,total,fracas[],em}, "resumo:ID": {texto,em} }
+    // + students/{uid}/falas e /duvidas. O texto das perguntas vem do próprio curso (cursoUnidades), só os ids dos erros ficam com a aluna.
+    const slDados = {};
+    let slAluna = '', slAba = 'resumo', slToken = 0;
+    const slNota = n => (Math.round(Number(n) * 10) / 10).toFixed(1).replace('.', ',');
+    const slPct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+    const slObj = v => (v && typeof v === 'object' && !Array.isArray(v) ? v : null);
+    const slData = iso => { const d = iso && typeof iso.toDate === 'function' ? iso.toDate() : iso ? new Date(String(iso).length === 10 ? iso + 'T12:00:00' : iso) : null; return d && !Number.isNaN(d.getTime()) ? d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) : ''; };
+    function slAlunas() { return allStudents.filter(s => s.plano && !s.archived).sort((x, y) => String(x.name || x.firstName || '').localeCompare(String(y.name || y.firstName || ''), 'pt-BR')); }
+    function slUnidades() { return ((cursoIndice && cursoIndice.unidades) || []).filter(u => u.pronta).map(u => cursoUnidades[u.id]).filter(Boolean); }
+    // As tarefas que a aluna realmente vê (o que você tirou no painel não conta), cada uma com os exercícios que sobraram.
+    function slVivas(un) {
+      const oc = new Set(un.ocultos || []); const porId = {}; (un.tarefas || []).forEach(t => { porId[t.id] = t; });
+      const exs = t => (t.exercicios || []).filter(e => !oc.has(e.id) && !(e.bk && oc.has(`${t.id}:${e.bk}`)));
+      const paiVivo = id => { const p = porId[id]; return !p || (!oc.has(id) && (!(p.exercicios || []).length || exs(p).length)); };
+      return (un.tarefas || []).filter(t => !oc.has(t.id) && t.tipo !== 'atividade' && t.tipo !== 'revisao' && (t.tipo !== 'explicacao' || paiVivo(t.para)) && !(t.tipo === 'teste' && !(t.perguntas && t.perguntas.length)))
+        .map(t => ({ t, exs: exs(t) }));
+    }
+    function slTarefa(id) { for (const un of slUnidades()) { const t = (un.tarefas || []).find(x => x.id === id); if (t) return { t, un }; } return null; }
+    async function slCarregar(uid, forcar) {
+      if (slDados[uid] && !forcar) return slDados[uid];
+      const ind = await cursoCarregarIndice(!!forcar);
+      await Promise.all((ind.unidades || []).filter(u => u.pronta).map(u => cursoCarregarUnidade(u.id, !!forcar)));
+      const ler = p => p.catch(e => { console.warn('Science Lab:', e); return null; });
+      const [sf, sfal, sdu, seu] = await Promise.all([
+        ler(getDoc(doc(db, 'students', uid, 'planoProgresso', 'feitas'))),
+        ler(getDocs(query(collection(db, 'students', uid, 'falas'), orderBy('em', 'desc'), limit(30)))),
+        ler(getDocs(query(collection(db, 'students', uid, 'duvidas'), orderBy('criadoEm', 'desc'), limit(10)))),
+        ler(getDoc(doc(db, 'schools', escolaAtual, 'eurekiaAlunos', uid))),
+      ]);
+      const d = {
+        feitas: (sf && sf.exists() ? sf.data().feitas : null) || {}, atualizadoEm: sf && sf.exists() ? sf.data().atualizadoEm : null,
+        falas: sfal ? sfal.docs.map(x => ({ ...x.data(), uid, chave: x.id })) : [], duvidas: sdu ? sdu.docs.map(x => ({ id: x.id, ...x.data() })) : [],
+        euTotal: seu && seu.exists() ? Number(seu.data().total || 0) : 0,
+      };
+      slDados[uid] = d; return d;
+    }
+
+    function slLinhaTarefa(o, f) {
+      const { t } = o; const res = slObj(f['res:' + t.id]);
+      const feita = !!f[t.id]; const andamento = !feita && res && res.parcial;
+      const tag = feita ? '<span class="sl-tag ok">✓ feita</span>' : andamento ? '<span class="sl-tag wip">em andamento</span>' : '<span class="sl-tag no">não começou</span>';
+      let chip = '', cor = 'no';
+      if (res && res.total) {
+        chip = res.parcial ? `${res.ok} certas em ${res.feitos} de ${res.total}` : `${res.ok} de ${res.total} certas${res.tent > 1 ? ` · ${res.tent} vezes` : ''}`;
+        cor = res.parcial ? 'wip' : res.ok === res.total ? 'ok' : res.ok / res.total >= 0.7 ? 'wip' : 'err';
+      }
+      const det = [];
+      ((res && res.err) || []).forEach(id => {
+        const ex = (t.exercicios || []).find(x => x.id === id);
+        det.push(ex
+          ? `<div class="sl-err"><span class="sl-tag err">errou</span> ${ex.ins ? `<i>${crLinha(ex.ins)}</i> ` : ''}<b>${crLinha(ex.q || (ex.linhas || []).join(' '))}</b><div class="sl-certo">Certo: ${crResposta(ex)}</div></div>`
+          : '<div class="sl-err"><span class="sl-tag err">errou</span> um exercício que saiu do curso</div>');
+      });
+      const pr = slObj(f['pron:' + t.id]);
+      if (pr) det.push(`<div class="sl-d">🔊 Pronúncia: <b>${Number(pr.ok) || 0} de ${Number(pr.total) || 0}</b> palavras${(pr.fracas || []).length ? ` · para treinar: <b>${esc(pr.fracas.join(', '))}</b>` : ''}</div>`);
+      const rs = slObj(f['resumo:' + t.id]);
+      if (rs && rs.texto) det.push(`<div class="sl-d">✍️ Ela escreveu${rs.em ? ` (${esc(slData(rs.em))})` : ''}: “${esc(rs.texto)}”</div>`);
+      const topo = `<span class="sl-ic">${esc(t.ic || '•')}</span><span class="sl-tit">${esc(t.titulo)}</span>${chip ? `<span class="sl-tag ${cor}">${esc(chip)}</span>` : ''}${tag}`;
+      return det.length ? `<details class="sl-r"><summary>${topo}</summary><div class="sl-det">${det.join('')}</div></details>` : `<div class="sl-r"><div class="sl-sum">${topo}</div></div>`;
+    }
+    function slBlocoUnidade(un, f, aberta) {
+      const lista = slVivas(un); const feitasN = lista.filter(o => f[o.t.id]).length; const prova = slObj(f['prova:' + un.id]);
+      let grupo = null;
+      const linhas = lista.map(o => { const cab = o.t.grupo && o.t.grupo !== grupo ? `<div class="sl-grupo">${esc(o.t.grupo)}</div>` : ''; grupo = o.t.grupo || grupo; return cab + slLinhaTarefa(o, f); }).join('');
+      return `<details class="sl-un" ${aberta ? 'open' : ''}><summary>Unit ${un.n} · ${esc(un.titulo)}
+        <span class="sl-bar"><i style="width:${slPct(feitasN, lista.length)}%"></i></span><small>${feitasN} de ${lista.length} tarefas${prova && typeof prova.nota === 'number' ? ` · prova ${slNota(prova.nota)}` : ''}${f['selo:' + un.id] ? ' · 🏅 selo' : ''}</small></summary>
+        <div class="sl-un-corpo">${linhas || '<div class="sl-vazio">Nenhuma tarefa nesta unidade.</div>'}</div></details>`;
+    }
+
+    function slKpis(s, d) {
+      const f = d.feitas; const uns = slUnidades();
+      const atualId = (s.plano && (s.plano.unidadeAtual || s.plano.unidadeInicial)) || '';
+      const un = uns.find(x => x.id === atualId);
+      const v = un ? slVivas(un) : []; const feitasAtual = v.filter(o => f[o.t.id]).length;
+      let melhor = null; uns.forEach(x => { const p = slObj(f['prova:' + x.id]); if (p && typeof p.nota === 'number' && (!melhor || p.nota > melhor.nota)) melhor = { nota: p.nota, n: x.n }; });
+      let ok = 0, tot = 0; Object.keys(f).forEach(k => { if (k.startsWith('res:')) { const r = slObj(f[k]); if (r && !r.parcial && r.total) { ok += r.ok; tot += r.total; } } });
+      const nFalas = d.falas.length >= 30 ? '30+' : String(d.falas.length); const nDuv = Math.max(d.euTotal, d.duvidas.length);
+      return `<div class="sl-kpis">
+        <div class="sl-kpi"><small>Tarefas da unidade atual</small><b>${un ? `${feitasAtual} de ${v.length}` : '—'}</b><em>${un ? `Unit ${un.n}` : 'unidade não encontrada'}</em></div>
+        <div class="sl-kpi"><small>Melhor nota de prova</small><b>${melhor ? `${slNota(melhor.nota)} / 10` : '—'}</b><em>${melhor ? `Unit ${melhor.n}` : 'ainda não fez prova'}</em></div>
+        <div class="sl-kpi"><small>Exercícios certos</small><b>${tot ? `${ok} de ${tot}` : '—'}</b><em>${tot ? `${slPct(ok, tot)}% nas páginas concluídas` : 'ainda sem resultado guardado'}</em></div>
+        <div class="sl-kpi"><small>Falas gravadas</small><b>${nFalas}</b><em>com áudio e transcrição</em></div>
+        <div class="sl-kpi"><small>Perguntas ao Dr. EurekIA</small><b>${nDuv}</b><em>&nbsp;</em></div></div>`;
+    }
+
+    function slAbaResumo(s, d) {
+      const f = d.feitas; const uns = slUnidades();
+      const atualId = (s.plano && (s.plano.unidadeAtual || s.plano.unidadeInicial)) || '';
+      const mexeu = uns.filter(un => un.id === atualId || f['prova:' + un.id] || slVivas(un).some(o => f[o.t.id] || f['res:' + o.t.id]));
+      const prog = mexeu.map(un => { const v = slVivas(un); const n = v.filter(o => f[o.t.id]).length; const p = slObj(f['prova:' + un.id]);
+        return `<div class="sl-sum"><span class="sl-tit">Unit ${un.n} · ${esc(un.titulo)}</span><span class="sl-bar"><i style="width:${slPct(n, v.length)}%"></i></span><span style="width:78px;text-align:right;font-size:.8rem;">${n} de ${v.length}</span>${p && typeof p.nota === 'number' ? `<span class="sl-tag ${p.nota >= 7 ? 'ok' : 'wip'}">prova ${slNota(p.nota)}</span>` : ''}${f['selo:' + un.id] ? '<span class="sl-tag ok">🏅 selo</span>' : ''}</div>`; }).join('');
+      // onde mais errou: páginas concluídas, as com mais erros primeiro
+      const erros = Object.keys(f).filter(k => k.startsWith('res:')).map(k => ({ id: k.slice(4), r: slObj(f[k]) })).filter(x => x.r && !x.r.parcial && (x.r.err || []).length)
+        .sort((a, b) => (b.r.err.length - a.r.err.length) || String(b.r.em).localeCompare(String(a.r.em))).slice(0, 5);
+      const errosHtml = erros.map(x => { const tt = slTarefa(x.id); return `<div class="sl-sum"><span class="sl-tit">${esc(tt ? tt.t.titulo : x.id)}</span><span class="sl-tag err">errou ${x.r.err.length} de ${x.r.total}</span></div>`; }).join('');
+      const resumos = Object.keys(f).filter(k => k.startsWith('resumo:') && slObj(f[k]) && f[k].texto).map(k => ({ id: k.slice(7), r: f[k] })).sort((a, b) => String(b.r.em).localeCompare(String(a.r.em)));
+      const resumosHtml = resumos.map(x => { const tt = slTarefa(x.id); return `<div class="sl-d"><b>${esc(tt ? tt.t.titulo : x.id)}</b>${x.r.em ? ` <small style="color:var(--muted)">${esc(slData(x.r.em))}</small>` : ''}<br>“${esc(x.r.texto)}”</div>`; }).join('');
+      const fracas = {}; Object.keys(f).filter(k => k.startsWith('pron:')).forEach(k => { const p = slObj(f[k]); ((p && p.fracas) || []).forEach(w => { fracas[w] = (fracas[w] || 0) + 1; }); });
+      const fracasHtml = Object.keys(fracas).sort((a, b) => fracas[b] - fracas[a]).map(w => `<span class="sl-tag wip" style="margin:2px 4px 2px 0;display:inline-block">${esc(w)}</span>`).join('');
+      const secao = (tit, corpo, vazio) => `<div class="sl-card"><h2 style="font-size:.95rem">${tit}</h2>${corpo || `<div class="sl-vazio">${vazio}</div>`}</div>`;
+      return secao('Progresso por unidade', prog, 'Ainda não começou nenhuma tarefa.')
+        + secao('Onde mais errou', errosHtml, 'Nenhum erro guardado ainda (os resultados por exercício começam quando ela abrir o app atualizado).')
+        + secao('Palavras para treinar a pronúncia', fracasHtml, 'Nenhuma palavra fraca no vocabulário com pronúncia.')
+        + secao('O que ela escreveu sobre os vídeos', resumosHtml, 'Ela ainda não enviou resumo de vídeo.');
+    }
+
+    function slAbaProvas(d) {
+      const f = d.feitas; let sem = []; let html = '';
+      slUnidades().forEach(un => {
+        const tp = (un.tarefas || []).find(t => t.prova); if (!tp) return;
+        const p = slObj(f['prova:' + un.id]);
+        if (!p || typeof p.nota !== 'number') { sem.push('Unit ' + un.n); return; }
+        const partes = (p.partes || []).map(x => { const nm = ((tp.secoes || []).find(sc => sc.k === x.k) || {}).nome || x.k;
+          return `<div class="sl-parte"><span class="nm">${esc(nm)}</span><span class="sl-bar"><i style="width:${slPct(x.pts, x.max)}%"></i></span><span>${slNota(x.pts)} de ${slNota(x.max)}${x.n ? ` · ${x.ok}/${x.n} certas` : ''}</span></div>`; }).join('');
+        const rodape = [p.tent ? `${p.tent} ${p.tent === 1 ? 'tentativa' : 'tentativas'}` : '', p.em ? `melhor nota em ${slData(p.em)}` : '', typeof p.ultima === 'number' && p.ultima !== p.nota ? `última tentativa: ${slNota(p.ultima)}` : ''].filter(Boolean).join(' · ');
+        html += `<details class="sl-r" open><summary><span class="sl-tit">Unit ${un.n} · ${esc(un.titulo)}</span><span class="sl-nota">${slNota(p.nota)} <small style="font-size:.8rem;color:var(--muted)">/ 10</small></span><span class="sl-tag ${p.nota >= 7 ? 'ok' : 'wip'}">${p.nota >= 7 ? '🏅 selo conquistado' : 'abaixo de 7'}</span></summary>
+          <div class="sl-det">${partes || '<div class="sl-d">Sem o detalhe por seção.</div>'}${rodape ? `<div class="sl-d" style="color:var(--muted)">${esc(rodape)}</div>` : ''}</div></details>`;
+      });
+      return `<div class="sl-card">${html || '<div class="sl-vazio">Ela ainda não fez nenhuma prova de unidade.</div>'}${sem.length && html ? `<div class="sl-vazio">Ainda sem prova: ${esc(sem.join(', '))}.</div>` : ''}</div>`;
+    }
+
+    function slAbaPaginas(s, d) {
+      const f = d.feitas; const atualId = (s.plano && (s.plano.unidadeAtual || s.plano.unidadeInicial)) || '';
+      const html = slUnidades().map(un => slBlocoUnidade(un, f, un.id === atualId || slVivas(un).some(o => f[o.t.id] || f['res:' + o.t.id]))).join('');
+      return `<div class="sl-card"><p class="sl-sub" style="margin-bottom:6px;">Toque numa tarefa para ver o que ela errou, a pronúncia ou o que escreveu. Só aparece o que ela vê no app (o que você tirou no painel não conta).</p>${html}</div>`;
+    }
+
+    function slAbaFalas(d) {
+      const html = d.falas.map(r => `<div class="sl-fala"><div class="meta"><span>${esc(faUnidade(r.unidade))}</span><span>${esc(faQuando(faData(r)))}</span><span>${r.palavra !== undefined || r.modo === 'palavra' ? 'vocabulário' : 'falar'}</span>${r.dur ? `<span>${Number(r.dur).toFixed(1).replace('.', ',')} s</span>` : ''}</div>
+        <div style="font-weight:700;font-size:.88rem;">${esc(r.enunciado || '')}</div>${faResultado(r)}
+        <div style="margin-top:6px;">${r.audio ? `<button type="button" class="sl-btn" data-sl-ouvir="${esc(r.audio)}">▶ Ouvir</button>` : '<span class="fa-sem-audio">⚠️ o áudio não foi enviado</span>'}</div></div>`).join('');
+      return `<div class="sl-card">${html || '<div class="sl-vazio">Nenhuma fala gravada ainda (as caixas de fala precisam estar ligadas na aba Curso).</div>'}${d.falas.length ? '<div style="margin-top:10px;"><button type="button" class="sl-btn" id="sl-ver-falas">Abrir a aba Falas (todas as alunas, com “visto”)</button></div>' : ''}</div>`;
+    }
+    function slAbaDuvidas(d) {
+      const html = d.duvidas.map(q => `<div class="sl-qa"><div style="font-size:.74rem;color:var(--muted);font-weight:700;margin-bottom:4px;">${esc(euQuando(q.criadoEm))}${q.contexto ? ` · durante: ${esc(q.contexto)}` : ''}</div><div class="p">${esc(q.pergunta || '')}</div><div class="r">${euMd(q.resposta || '')}</div></div>`).join('');
+      return `<div class="sl-card">${html || '<div class="sl-vazio">Ela ainda não perguntou nada ao Dr. EurekIA.</div>'}${d.duvidas.length ? '<div style="margin-top:10px;"><button type="button" class="sl-btn" id="sl-ver-duvidas">Abrir a aba Dr. EurekIA</button></div>' : ''}</div>`;
+    }
+
+    function slPintar(s, d) {
+      const corpo = document.getElementById('sl-corpo');
+      const abas = [['resumo', 'Resumo'], ['provas', 'Provas'], ['paginas', 'Páginas e exercícios'], ['falas', `Falas${d.falas.length ? ` (${d.falas.length >= 30 ? '30+' : d.falas.length})` : ''}`], ['duvidas', `Dúvidas${d.duvidas.length ? ` (${d.duvidas.length})` : ''}`]];
+      const ultima = d.atualizadoEm ? euQuando(d.atualizadoEm) : '';
+      const nome = s.name || s.firstName || 'Aluna';
+      const miolo = slAba === 'provas' ? slAbaProvas(d) : slAba === 'paginas' ? slAbaPaginas(s, d) : slAba === 'falas' ? slAbaFalas(d) : slAba === 'duvidas' ? slAbaDuvidas(d) : slAbaResumo(s, d);
+      corpo.innerHTML = `<div class="sl-card" style="margin-bottom:8px;"><div style="font-size:1.05rem;font-weight:800;">${esc(nome)}</div>
+        <div class="sl-sub" style="margin:2px 0 0;">${esc(s.plano.unidadeRotulo || '')}${s.plano.desde ? ` · plano desde ${esc(slData(s.plano.desde))}` : ''} · última atividade no curso: ${ultima ? esc(ultima) : 'nenhuma ainda'}</div>${slKpis(s, d)}
+        <div class="sl-abas">${abas.map(([k, r]) => `<button type="button" class="sl-aba ${k === slAba ? 'on' : ''}" data-sl-aba="${k}">${r}</button>`).join('')}</div></div>${miolo}`;
+      corpo.querySelectorAll('[data-sl-aba]').forEach(b => b.onclick = () => { slAba = b.dataset.slAba; slPintar(s, d); });
+      corpo.querySelectorAll('[data-sl-ouvir]').forEach(b => b.onclick = async () => {
+        const rotulo = b.textContent; b.disabled = true; b.textContent = 'Abrindo…';
+        try {
+          const a = document.createElement('audio'); a.controls = true; a.src = await getDownloadURL(storageRef(storage, b.dataset.slOuvir));
+          a.addEventListener('loadedmetadata', () => { if (!Number.isFinite(a.duration)) { a.currentTime = 1e101; a.addEventListener('timeupdate', () => { a.currentTime = 0; }, { once:true }); } });
+          b.replaceWith(a); a.play().catch(() => {});
+        } catch (e) { b.disabled = false; b.textContent = rotulo; alert('Não consegui abrir o áudio: ' + e.message); }
+      });
+      const irPara = (aba, depois) => { document.querySelector(`.tab[data-tab="${aba}"]`)?.click(); if (depois) setTimeout(depois, 600); };
+      document.getElementById('sl-ver-falas')?.addEventListener('click', () => irPara('falas', () => { const sel = document.getElementById('fa-aluno'); if (sel) { sel.value = s.uid; faLimite = 60; faRender(); } }));
+      document.getElementById('sl-ver-duvidas')?.addEventListener('click', () => irPara('eurekia', () => euAbrirAluno(s.uid)));
+    }
+
+    async function slRender(forcar) {
+      const alunas = slAlunas(); const corpo = document.getElementById('sl-corpo'); const chips = document.getElementById('sl-chips');
+      if (!alunas.length) { chips.innerHTML = ''; corpo.innerHTML = '<div class="sl-card"><div class="sl-vazio">Nenhuma aluna com o plano Science Lab ainda (⋮ → Mudar para o plano).</div></div>'; return; }
+      if (!alunas.some(s => s.uid === slAluna)) slAluna = alunas[0].uid;
+      chips.innerHTML = alunas.map(s => `<button type="button" class="sl-chip ${s.uid === slAluna ? 'on' : ''}" data-sl-a="${esc(s.uid)}">${esc(s.name || s.firstName || 'Aluna')}<small>${esc(s.plano.livro ? (s.plano.unidadeRotulo || '') : 'sem o livro')}</small></button>`).join('') + '<button type="button" class="sl-btn" id="sl-recarregar">↻ Recarregar</button>';
+      chips.querySelectorAll('[data-sl-a]').forEach(b => b.onclick = () => { slAluna = b.dataset.slA; slAba = 'resumo'; slRender(false); });
+      document.getElementById('sl-recarregar').onclick = () => slRender(true);
+      const s = alunas.find(x => x.uid === slAluna); const meu = ++slToken;
+      if (!s.plano.livro) { corpo.innerHTML = `<div class="sl-card"><div class="sl-vazio"><b>${esc(s.name || s.firstName || 'Esta aluna')}</b> ainda está no plano antigo, sem o livro no app, então não há progresso do curso para mostrar. Para ligar: ⋮ → Editar plano → Connectivity 1 → escolher a unidade.</div></div>`; return; }
+      corpo.innerHTML = '<div class="loading">Carregando...</div>';
+      let d; try { d = await slCarregar(s.uid, forcar); } catch (e) { if (meu === slToken) corpo.innerHTML = `<div class="form-msg err" style="display:block">Não consegui carregar: ${esc(e.message)}</div>`; return; }
+      if (meu !== slToken) return;
+      slPintar(s, d);
+    }
+    function carregarLab() { slRender(false); }
 
     // ── Aba "Curso": revisar o livro (marcar só o que SAI), checklist, vídeos e lista completa ──
     // Regra da tela: marcado = TIRAR do app. Só as tarefas "opcionais" (vídeo, revisão e extras do livro) vêm desligadas
