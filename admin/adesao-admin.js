@@ -336,12 +336,20 @@ export function initAdesaoAdmin(ctx) {
     S.saving = '';
     render();
   }
-  async function saveRelease(value) {       // value: 'AAAA-MM-DD' ou null
+  // "2026-11-05T12:00:00-03:00": o instante com o fuso do navegador de quem está no painel
+  function isoLocal(d) {
+    const p = n => String(n).padStart(2, '0'), off = -d.getTimezoneOffset(), a = Math.abs(off);
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':00' + (off >= 0 ? '+' : '-') + p(Math.floor(a / 60)) + ':' + p(a % 60);
+  }
+  async function saveRelease(quando) {       // quando: Date (a partir de quando os alunos veem) ou null para ocultar
     S.saving = 'rel';
     render();
     try {
-      await updateDoc(schoolRef(), { 'adesao.liberadaEm': value || null });
-      S.adesao.liberadaEm = value || null;
+      // `liberarEm` é o único campo que vale daqui para frente; o antigo (`liberadaEm`, só a data) é apagado para não haver duas datas
+      const iso = quando ? isoLocal(quando) : null;
+      await updateDoc(schoolRef(), { 'adesao.liberarEm': iso, 'adesao.liberadaEm': null });
+      S.adesao.liberarEm = iso;
+      S.adesao.liberadaEm = null;
     } catch (e) { alert('Não consegui alterar a liberação: ' + (e.message || e)); }
     S.saving = '';
     render();
@@ -569,9 +577,8 @@ export function initAdesaoAdmin(ctx) {
 
   function studentView(it) {
     const { s, c } = it;
-    const lib = S.adesao.liberadaEm;
-    const liberado = lib && lib <= todayKey();
-    const ribbon = liberado ? 'Visível para o aluno' : lib ? 'Prévia: o aluno só verá a partir de ' + brDate(lib) : 'Prévia: ainda não liberado para os alunos';
+    const quando = A.liberadaDesde(S.adesao), liberado = A.liberadaAgora(S.adesao);
+    const ribbon = liberado ? 'Visível para o aluno' : quando ? 'Prévia: o aluno só verá a partir de ' + A.liberadaTxt(quando) : 'Prévia: ainda não liberado para os alunos';
     // O que o aluno recebe: o cartão da meta de hoje (Início), o cartão "Meu estudo" (Progresso) e, ao tocar
     // em qualquer um dos dois, a página de adesão.
     const html = '<div class="czad-ptag">Na tela Início</div>' + A.goalHomeHtml(c, { firstName: firstOf(s) })
@@ -579,31 +586,34 @@ export function initAdesaoAdmin(ctx) {
       + '<div class="czad-ptag" id="czad-pageTag">Página de adesão (abre ao tocar em qualquer um dos dois)</div>'
       + A.pageHtml(c, { firstName: firstOf(s), recado: s.adesaoRecado && s.adesaoRecado.texto, ribbon, ribbonOpen: liberado, stats: S.stats });
     return '<div class="czad-prevgrid"><div class="czad-notes">'
-      + '<div><b>👁 O que o aluno vê</b><ul><li><b style="display:inline">Início</b>: só o cartão da meta de hoje, com a semana em bolinhas e os minutos de cada dia</li><li><b style="display:inline">Progresso</b>: o cartão “Meu estudo”, só com os dias</li><li><b style="display:inline">Página de adesão</b> (ao tocar num dos dois): em cima o cartão de hoje com 3 atalhos; embaixo, seções que abrem e fecham, cada uma com um resumo: Minha semana (tocar num dia abre onde o tempo foi gasto; dia sem estudo leva ✕ vermelho), Calendário, <b style="display:inline">Evolução</b>, Horas de estudo, Minha nota, Adesão e acertos e, por último, Como essa área funciona</li><li><b style="display:inline">Evolução</b>: gráfico de linha por dia, semana e mês, geral e por área. Na ficha Geral (estudo no app, sem as aulas) há a linha de meta: dia = meta do dia; semana = meta do dia × dias de estudo; mês = semana × 52 ÷ 12. Mostra em quantos períodos o aluno bateu a meta e, se ficar bem acima por um bom tempo, ele recebe o convite para subir a própria meta. Para subir a da escola, use Metas e pesos</li><li><b style="display:inline">Minha nota</b>: a nota (0–100) e a faixa, o recado do professor (você edita na visão do professor), o que melhorou e o que caiu e o próximo passo</li><li><b style="display:inline">Como essa área funciona</b>: o que conta, como o tempo é contado, os 5 pontos com o peso e a meta de cada um, e como a nota é calculada</li><li>Adesão × acertos dele e a média por faixa, sem nomes</li></ul></div>'
+      + '<div><b>👁 O que o aluno vê</b><ul><li><b style="display:inline">Início</b>: só o cartão da meta de hoje, com a semana em bolinhas e os minutos de cada dia</li><li><b style="display:inline">Progresso</b>: o cartão “Meu estudo”, só com os dias</li><li><b style="display:inline">Apresentação da Adesão</b> (uma vez, quando abrir o app depois da liberação): o que é, o que conta, faltou aula ou feriado, os números dos últimos 15 dias, o seu recado, o que ele acha da média e a escolha das metas do dia, da semana e do mês</li><li><b style="display:inline">Página de adesão</b> (ao tocar num dos dois): em cima o cartão de hoje com 3 atalhos; embaixo, seções que abrem e fecham, cada uma com um resumo: Minha semana (tocar num dia abre onde o tempo foi gasto; dia sem estudo leva ✕ vermelho), Calendário, <b style="display:inline">Evolução</b>, Horas de estudo, Minha nota, Adesão e acertos e, por último, Como essa área funciona</li><li><b style="display:inline">Evolução</b>: gráfico de linha por dia, semana e mês, geral e por área. Na ficha Geral (estudo no app, sem as aulas) há a linha de meta: dia = meta do dia; semana = meta do dia × dias de estudo; mês = semana × 52 ÷ 12. Mostra em quantos períodos o aluno bateu a meta e, se ficar bem acima por um bom tempo, ele recebe o convite para subir a própria meta. Para subir a da escola, use Metas e pesos</li><li><b style="display:inline">Minha nota</b>: a nota (0–100) e a faixa, o recado do professor (você edita na visão do professor), o que melhorou e o que caiu e o próximo passo</li><li><b style="display:inline">Como essa área funciona</b>: o que conta, como o tempo é contado, os 5 pontos com o peso e a meta de cada um, e como a nota é calculada</li><li>Adesão × acertos dele e a média por faixa, sem nomes</li></ul></div>'
       + '<div><b>🔒 Só você vê</b><ul><li>A lista da turma e a comparação entre alunos</li><li>As etiquetas internas (“Quase não abre o app”…): o aluno vê versões em tom de incentivo</li><li>O gráfico Adesão × acertos da turma, com nomes</li><li>Os controles de metas e pesos</li></ul></div>'
-      + '<div><b>⏳ Quando aparece</b>' + (liberado ? 'Já está liberado: o aluno vê esta tela em “Meu progresso”.' : lib ? 'Libera para os alunos em ' + brDate(lib) + '. Até lá você vê aqui e no modo espelho.' : 'Ainda não liberado. Defina a data no topo da página.') + '</div>'
+      + '<div><b>⏳ Quando aparece</b>' + (liberado ? 'Já está liberado: o aluno vê esta tela em “Meu progresso”.' : quando ? 'Libera para os alunos em ' + A.liberadaTxt(quando) + '. Até lá você vê aqui e no modo espelho.' : 'Ainda não liberado. Defina a data no topo da página.') + '</div>'
       + '<div><button type="button" class="czad-btn" id="czad-mirror" data-uid="' + esc(it.id) + '">Abrir no app como o aluno (modo espelho)</button></div></div>'
       + '<div class="czad-phone"><div class="czad-scroll" id="czad-phone-scroll">' + html + '</div></div></div>';
   }
 
   // ── cabeçalho: coleta e liberação ─────────────────────────────────────
   function lockHtml() {
-    const lib = S.adesao.liberadaEm, hoje = todayKey();
-    const liberado = lib && lib <= hoje;
+    const quando = A.liberadaDesde(S.adesao), hoje = todayKey();
+    const liberado = A.liberadaAgora(S.adesao);
     const dis = S.saving === 'rel' ? ' disabled' : '';
     if (!S.hasUsage) {
       return '<div class="czad-lock"><div>🔒 <b>A coleta ainda não começou.</b> Ela começa sozinha quando o primeiro aluno abrir a versão nova do app. Enquanto isso, aulas, atividades e desafio já entram na conta.</div></div>';
     }
     if (liberado) {
-      return '<div class="czad-lock open"><div>✅ <b>Liberado para os alunos</b> desde ' + brDate(lib) + '. Cada aluno vê só a própria adesão, em “Meu progresso”.</div><div class="czad-lockbtns"><button type="button" class="czad-btn" id="czad-unrelease"' + dis + '>Ocultar dos alunos</button></div></div>';
+      return '<div class="czad-lock open"><div>✅ <b>Liberado para os alunos</b> desde ' + esc(A.liberadaTxt(quando)) + '. Cada aluno vê só a própria adesão, em “Meu progresso”. Na primeira vez que abrir o app, ele vê a apresentação da Adesão.</div><div class="czad-lockbtns"><button type="button" class="czad-btn" id="czad-unrelease"' + dis + '>Ocultar dos alunos</button></div></div>';
     }
-    // Sugestão: 15 dias de coleta; se isso já passou, a própria data de hoje.
+    // Sugestão: 15 dias de coleta; se isso já passou, a própria data de hoje. Hora padrão: meio-dia.
     const sug15 = S.coleta ? U.dayKey(U.addDays(U.toDate(S.coleta), 15)) : '';
     const sugestao = sug15 && sug15 >= hoje ? sug15 : hoje;
-    return '<div class="czad-lock"><div>🔒 <b>Modo coleta: por enquanto só você vê.</b> Coletando desde <b>' + brDate(S.coleta) + '</b>. '
-      + (lib ? 'Os alunos passam a ver em <b>' + brDate(lib) + '</b>.' : 'Defina quando os alunos passam a ver' + (sug15 && sug15 >= hoje ? ' (sugestão: 15 dias de coleta, ' + brDate(sug15) + ')' : '') + '.') + '</div>'
-      + '<div class="czad-lockbtns"><label class="czad-small">Liberar em <input type="date" id="czad-reldate" value="' + esc(lib || sugestao) + '" min="' + hoje + '"></label>'
-      + '<button type="button" class="czad-btn" id="czad-setrelease"' + dis + '>' + (lib ? 'Alterar data' : 'Agendar') + '</button>'
+    const hh = quando ? String(quando.getHours()).padStart(2, '0') + ':' + String(quando.getMinutes()).padStart(2, '0') : '12:00';
+    return '<div class="czad-lock"><div>' + (quando
+        ? '⏳ <b>Liberação agendada.</b> Os alunos passam a ver em <b>' + esc(A.liberadaTxt(quando)) + '</b> e, na primeira abertura do app, aparece a apresentação da Adesão, com a escolha das metas. Até lá só você vê.'
+        : '🔒 <b>Modo coleta: por enquanto só você vê.</b> Coletando desde <b>' + brDate(S.coleta) + '</b>. Defina quando os alunos passam a ver' + (sug15 && sug15 >= hoje ? ' (sugestão: 15 dias de coleta, ' + brDate(sug15) + '). A sugestão só vale depois de clicar em Agendar.' : '.')) + '</div>'
+      + '<div class="czad-lockbtns"><label class="czad-small">Liberar em <input type="date" id="czad-reldate" value="' + esc(quando ? U.dayKey(quando) : sugestao) + '" min="' + hoje + '"> às <input type="time" id="czad-reltime" value="' + hh + '"></label>'
+      + '<button type="button" class="czad-btn" id="czad-setrelease"' + dis + '>' + (quando ? 'Alterar' : 'Agendar') + '</button>'
+      + (quando ? '<button type="button" class="czad-btn" id="czad-unrelease"' + dis + '>Cancelar agendamento</button>' : '')
       + '<button type="button" class="czad-btn pri" id="czad-releasenow"' + dis + '>Liberar agora</button></div></div>';
   }
 
@@ -683,8 +693,13 @@ export function initAdesaoAdmin(ctx) {
       if (t.closest('#czad-cfg-close') || t.id === 'czad-shade') { S.drawer = false; render(); return; }
       if (t.closest('#czad-cfg-reset')) { S.cfg = A.cfgOf({ coletaDesde: S.coleta || null }); S.dirty = true; recompute(); render(); return; }
       if (t.closest('#czad-cfg-save') || t.closest('#czad-cfg-save2')) { saveCfg(); return; }
-      if (t.closest('#czad-releasenow')) { saveRelease(todayKey()); return; }
-      if (t.closest('#czad-setrelease')) { const v = (document.getElementById('czad-reldate') || {}).value; if (v) saveRelease(v); return; }
+      if (t.closest('#czad-releasenow')) { saveRelease(new Date()); return; }
+      if (t.closest('#czad-setrelease')) {
+        const v = (document.getElementById('czad-reldate') || {}).value, h = (document.getElementById('czad-reltime') || {}).value || '12:00';
+        const q = v ? new Date(v + 'T' + h + ':00') : null;
+        if (q && !isNaN(q)) saveRelease(q);
+        return;
+      }
       if (t.closest('#czad-unrelease')) { saveRelease(null); return; }
     });
     el.addEventListener('keydown', e => {

@@ -187,11 +187,11 @@
 <div id="root"></div>
 <div class="toast-el" id="global-toast"></div>
 
-<script src="adesao.js"></script>
-<script type="text/babel" data-presets="react" src="challenge.jsx"></script>
-<script type="text/babel" data-presets="react" src="plano.jsx"></script>
-<script type="text/babel" data-presets="react" src="trilha.jsx"></script>
-<script type="text/babel" data-presets="react" src="novidades.jsx"></script>
+<script src="adesao.js?v=74"></script>
+<script type="text/babel" data-presets="react" src="challenge.jsx?v=74"></script>
+<script type="text/babel" data-presets="react" src="plano.jsx?v=74"></script>
+<script type="text/babel" data-presets="react" src="trilha.jsx?v=74"></script>
+<script type="text/babel" data-presets="react" src="novidades.jsx?v=74"></script>
 <script type="text/babel" data-presets="react">
 const FB_CONFIG = {
   apiKey:            "AIzaSyDgDlLyU15p8wQ1YtCN8NebGes_oq3atU8",
@@ -262,7 +262,7 @@ async function getFB() {
 // Falha de gravação (regra ainda não publicada, sem rede) nunca aparece para o aluno.
 const CzkUsage = (() => {
   // Versão do app que vai junto com o uso (para saber quem ainda roda versão velha). Mantenha igual ao CACHE do sw.js.
-  const APP_BUILD = 'v73';
+  const APP_BUILD = 'v74';
   const TICK = 1000, MIN_STEP = 200, FLUSH = 60000, NEW_VISIT = 30 * 60000;
   const BLIND_CAP = 10 * 60000, HOLD_CAP = 15 * 60000, MAX_FAILS = 5;
   const READ_MS = 180000;                 // maior pausa aceita na leitura do pós-aula (igual a LEITURA_SEG do adesao.js)
@@ -2403,12 +2403,23 @@ function useAdesaoData(student, posaulas, activities, tab, extras) {
   const AD = window.CzkAdesao;
   const mirror = !!new URLSearchParams(window.location.search).get('mirror');
   const meta = student?.escolaAdesao || null;
-  const lib = meta?.liberadaEm || '';
-  const hoje = AD ? AD.util.dayKey(new Date()) : '';
-  const liberado = !!lib && lib <= hoje;
+  // schools/{escola}.adesao: `liberarEm` (instante, ex.: 05/11 às 12:00) ou o campo antigo `liberadaEm` (só a data, vale desde 00:00)
+  const quando = AD ? AD.liberadaDesde(meta) : null;
+  const lib = quando ? AD.util.dayKey(quando) : '';       // só o dia, para o texto "o aluno só verá a partir de..."
+  const liberado = !!AD && AD.liberadaAgora(meta);
   const visivel = !!AD && !!student?.uid && (liberado || mirror);
   const [extra, setExtra] = useState(null);
   const [tick, setTick] = useState(0);
+  const [, setRel] = useState(0);
+  // Liberação agendada para daqui a pouco: abre sozinha na hora, sem o aluno precisar fechar e abrir o app.
+  const quandoMs = quando ? quando.getTime() : 0;
+  useEffect(() => {
+    if (!quandoMs || liberado) return undefined;
+    const ms = quandoMs - Date.now();
+    if (ms <= 0 || ms > 2147000000) return undefined;
+    const t = setTimeout(() => setRel(n => n + 1), ms + 800);
+    return () => clearTimeout(t);
+  }, [quandoMs, liberado]);
 
   // Lê o uso diário, o desafio e o resumo da turma só quando as telas vão aparecer.
   useEffect(() => {
@@ -6544,7 +6555,7 @@ function App() {
 
 
   // Apresentações de novidade (novidades.jsx): uma vez por aluno, uma de cada vez, nunca por cima de outro aviso.
-  // EurekIA: na próxima abertura. Adesão: só depois que o professor liberar (schools/{escola}.adesao.liberadaEm).
+  // EurekIA: na próxima abertura. Adesão: só depois que o professor liberar (schools/{escola}.adesao.liberarEm, ou liberadaEm nas escolas antigas).
   const novidadeVista = chave => { try { return !!localStorage.getItem(`czk-novidade-${chave}-${student?.uid}`); } catch (e) { return false; } };
   const fecharNovidade = chave => {
     if (!introForcada && !mirror) { try { localStorage.setItem(`czk-novidade-${chave}-${student?.uid}`, '1'); } catch (e) {} }
@@ -6618,7 +6629,9 @@ function App() {
         onComecar={() => { fecharNovidade(`trilha-${student.trilha.tipo}`); setTab('aulas'); setTrilhaAbrirForm(true); }} />}
       {novidadeAtual === 'eurekia' && <NovidadeEurekIA onFim={() => fecharNovidade('eurekia')}
         onExperimentar={assistenteLiberado ? () => { fecharNovidade('eurekia'); setPerguntaPronta(NOV_PERGUNTA_INICIAL); setDuvidaGeral(true); } : null} />}
-      {novidadeAtual === 'adesao' && <NovidadeAdesao AD={adesao.AD} result={adesao.result} student={student} onFim={() => fecharNovidade('adesao')}
+      {novidadeAtual === 'adesao' && <NovidadeAdesao AD={adesao.AD} result={adesao.result} student={student}
+        aulasSemana={lessonDaysFromStudent(student, posaulas).size} durMin={Number(student?.aulaDuracao) > 0 ? Number(student.aulaDuracao) : 60}
+        onSalvarMetas={patchStudent} onFim={() => fecharNovidade('adesao')}
         onVer={() => { fecharNovidade('adesao'); setAdesaoPage({ dia: null }); }} />}
 
       {!mirror && student?.avisoCobranca?.ativo && !avisoCobrancaFechado &&

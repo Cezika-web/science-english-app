@@ -731,4 +731,78 @@ ok('dias com meta acima do necessário: "6 dias com meta (a meta é 5)", nunca "
   assert.equal(Adesao.goalDaysTxt({ hits: 6, metaDias: 5 }), '6 dias com meta (a meta é 5)');
 });
 
+ok('liberação: vale o instante de liberarEm, o campo antigo só com a data, e o que vier primeiro', () => {
+  const hora = (y, m, d, h, mi = 0) => new Date(y, m - 1, d, h, mi, 0);
+  const meta = { liberarEm: '2026-11-05T12:00:00-03:00' };
+  const antes = new Date('2026-11-05T14:59:59Z'), depois = new Date('2026-11-05T15:00:00Z');         // 12:00 em Brasília = 15:00 UTC
+  assert.equal(Adesao.liberadaAgora(meta, antes), false);
+  assert.equal(Adesao.liberadaAgora(meta, depois), true);
+  assert.equal(Adesao.liberadaDesde(meta).getTime(), depois.getTime());
+  // campo antigo: só a data, vale desde 00:00 do dia
+  assert.equal(Adesao.liberadaAgora({ liberadaEm: '2026-11-05' }, hora(2026, 11, 4, 23, 59)), false);
+  assert.equal(Adesao.liberadaAgora({ liberadaEm: '2026-11-05' }, hora(2026, 11, 5, 0, 0)), true);
+  // os dois: vale o que liberar primeiro
+  assert.equal(Adesao.liberadaDesde({ liberarEm: '2026-11-05T12:00:00-03:00', liberadaEm: '2026-11-01' }).getTime(), Adesao.liberadaDesde({ liberadaEm: '2026-11-01' }).getTime());
+  // vazio, nulo e lixo: nunca libera
+  [null, undefined, {}, { liberarEm: null, liberadaEm: null }, { liberarEm: 'lixo' }, { liberadaEm: '05/11/2026' }].forEach(m => {
+    assert.equal(Adesao.liberadaDesde(m), null);
+    assert.equal(Adesao.liberadaAgora(m, new Date(2030, 0, 1)), false);
+  });
+  assert.equal(Adesao.liberadaAgora({ liberarEm: 'lixo', liberadaEm: '2026-11-01' }, hora(2026, 11, 2, 9)), true);   // instante inválido cai no campo antigo
+  // texto: com hora quando não é meia-noite
+  assert.equal(Adesao.liberadaTxt(hora(2026, 11, 5, 12, 0)), '05/11 às 12:00');
+  assert.equal(Adesao.liberadaTxt(hora(2026, 11, 5, 9, 5)), '05/11 às 09:05');
+  assert.equal(Adesao.liberadaTxt(hora(2026, 11, 5, 0, 0)), '05/11');
+});
+
+ok('apresentação: resumo dos últimos 15 dias fechados (até ontem), a partir do início da medição', () => {
+  // hoje = terça 20/10 (não entra: ainda corre). Janela: 05/10 a 19/10 = 15 dias.
+  const c = semMeta([uso(1, 0, 12, { pos: 12 }), uso(2, 4, 20, { ativ: 20 }), uso(2, 5, 2, { pos: 2 }), uso(3, 1, 30, { pos: 30 })]);
+  const r = Adesao.resumoPeriodo(c, 15);
+  assert.deepEqual([r.ini, r.ate, r.dias], ['2026-10-05', '2026-10-19', 15]);
+  assert.equal(r.total, 34);                                   // 12 + 20 + 2; os 30 min de hoje ficam de fora
+  assert.equal(r.diasEstudados, 2);                            // o dia de 2 min não chega a 3 min (dia estudado)
+  assert.ok(Math.abs(r.mediaGeral - 34 / 15) < 1e-9);
+  assert.equal(r.mediaEstudados, 16);
+  assert.deepEqual(r.melhor, { k: '2026-10-16', m: 20 });
+  assert.equal(r.metaDia, 10);
+  // a medição começou depois: a janela encurta
+  const tarde = compute({ now: NOW, student: {}, challenge: {}, posts: [], activities: [], attendance: [], usage: [uso(2, 4, 20, { ativ: 20 })] }, { coletaDesde: '2026-10-14' });
+  const t = Adesao.resumoPeriodo(tarde, 15);
+  assert.deepEqual([t.ini, t.dias, t.total], ['2026-10-14', 6, 20]);
+  // a medição começa hoje: nenhum dia fechado
+  const hoje = compute({ now: NOW, student: {}, challenge: {}, posts: [], activities: [], attendance: [], usage: [uso(3, 1, 9, { pos: 9 })] }, { coletaDesde: '2026-10-20' });
+  const h = Adesao.resumoPeriodo(hoje, 15);
+  assert.deepEqual([h.dias, h.total, h.mediaGeral, h.mediaEstudados, h.melhor], [0, 0, 0, 0, null]);
+  // a meta do dia que o aluno escolheu aparece no resumo
+  assert.equal(Adesao.resumoPeriodo(compute({ now: NOW, student: {}, challenge: {}, posts: [], activities: [], attendance: [], usage: [], metas: { diaMin: 20 } }, CFG), 15).metaDia, 20);
+});
+
+ok('apresentação: metas sugeridas = total da semana e do mês (app + aulas), um pouquinho abaixo', () => {
+  const m = Adesao.metasSugeridas;
+  // o exemplo do professor: 10 min por dia e 2 aulas de 1 h por semana → 3 h 10 → meta de 3 h
+  let c = m(10, 2, 60);
+  assert.deepEqual([c.appSem, c.aulasSemMin, c.totSem, c.sugSem], [70, 120, 190, 180]);
+  assert.deepEqual([c.aulasMesN, c.appMes, c.aulasMesMin, c.totMes, c.sugMes], [9, 300, 540, 840, 780]);   // mês: 14 h → 13 h
+  // sem aulas: 10 min por dia = 70 min na semana → 1 h
+  c = m(10, 0, 60);
+  assert.deepEqual([c.totSem, c.sugSem, c.totMes, c.sugMes], [70, 60, 300, 240]);
+  // 5 min por dia, sem aulas: 35 min → 30 min (nunca menos que meia hora); mês 150 → 2 h
+  c = m(5, 0, 60);
+  assert.deepEqual([c.sugSem, c.sugMes], [30, 120]);
+  // duração diferente e uma aula só
+  c = m(15, 1, 90);
+  assert.deepEqual([c.totSem, c.sugSem, c.aulasMesN, c.totMes, c.sugMes], [195, 180, 4, 810, 720]);
+  // sempre abaixo do total, em múltiplos de 30 (semana) e de 60 (mês)
+  for (let dia = 5; dia <= 60; dia += 5) for (let a = 0; a <= 4; a++) {
+    c = m(dia, a, 60);
+    assert.ok(c.sugSem <= c.totSem && c.sugSem % 30 === 0 && c.sugMes <= c.totMes && c.sugMes % 60 === 0, `${dia} min, ${a} aulas`);
+  }
+  // limites das metas do Perfil (semana até 120 h, mês até 500 h, mínimo de 0,5 h) e duração/valores inválidos
+  assert.equal(m(600, 7, 600).sugSem, 7200); assert.equal(m(600, 7, 600).sugMes, 30000);
+  assert.deepEqual([m(1, 0, 60).sugSem, m(1, 0, 60).sugMes], [30, 60]);
+  assert.equal(m(10, 2, 0).totSem, 190); assert.equal(m(10, 2, 'x').totSem, 190);                       // sem duração, vale 60 min
+  assert.equal(m(0, 0, 60).dia, 1); assert.equal(m(10, -3, 60).aulasSemMin, 0);
+});
+
 console.log(`\n${n} testes passaram`);

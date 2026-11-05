@@ -947,6 +947,55 @@
       + '<div class="cza-gtot"><b>' + Math.round(g.minutos) + ' min</b><span>de estudo no app</span></div>' + bar + chips + legend;
   }
 
+  // ── Liberação para os alunos ────────────────────────────────────────────
+  // meta = schools/{escola}.adesao. Vale o que liberar primeiro: `liberarEm` é o instante (texto ISO, ex.: 2026-11-05T12:00:00-03:00)
+  // e `liberadaEm` é o campo antigo, só a data (vale desde 00:00). O painel novo grava só `liberarEm`.
+  function liberadaDesde(meta) {
+    if (!meta) return null;
+    var ds = [];
+    if (meta.liberarEm) { var t = new Date(meta.liberarEm); if (!isNaN(t)) ds.push(t); }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(meta.liberadaEm || '')) ds.push(parseKey(meta.liberadaEm));
+    if (!ds.length) return null;
+    return ds.reduce(function (a, b) { return a.getTime() <= b.getTime() ? a : b; });
+  }
+  function liberadaAgora(meta, now) { var d = liberadaDesde(meta); return !!d && d.getTime() <= (now || new Date()).getTime(); }
+  // "05/11 às 12:00" (sem a hora quando é meia-noite, que é o caso do campo antigo)
+  function liberadaTxt(d) {
+    var hm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    return ddmm(d) + (hm === '00:00' ? '' : ' às ' + hm);
+  }
+
+  // ── Apresentação da Adesão: o que o aluno fez e as metas sugeridas ───────
+  // Resumo dos últimos `maxDias` dias FECHADOS (até ontem), a partir do início da medição.
+  function resumoPeriodo(c, maxDias) {
+    var ate = dayKey(addDays(c.now, -1)), ini = dayKey(addDays(c.now, -maxDias));
+    if (ini < c.measureFrom) ini = c.measureFrom;
+    var dias = ini > ate ? 0 : Math.round((parseKey(ate) - parseKey(ini)) / 86400000) + 1;
+    var total = 0, est = [], melhor = null, minDia = c.cfg.minDia;
+    for (var i = 0; i < dias; i++) {
+      var k = dayKey(addDays(parseKey(ini), i)), m = (c.daily[k] && c.daily[k].min) || 0;
+      total += m;
+      if (m >= minDia) est.push(m);
+      if (m > (melhor ? melhor.m : 0)) melhor = { k: k, m: m };
+    }
+    return {
+      ini: ini, ate: ate, dias: dias, total: total, diasEstudados: est.length,
+      mediaGeral: dias ? total / dias : 0, mediaEstudados: est.length ? sum(est) / est.length : 0, melhor: melhor, metaDia: c.cfg.metaDiaMin
+    };
+  }
+  // Metas sugeridas: o que o aluno escolhe por dia, mais as aulas, dá o total da semana e do mês; a sugestão fica 5% abaixo
+  // (para a meta ser possível), arredondada PARA BAIXO em meia hora na semana e em 1 hora no mês. Tudo em minutos.
+  // Semana: min/dia × 7 + aulas por semana × duração. Mês: min/dia × 30 + (aulas por semana × 52 ÷ 12, arredondado) × duração.
+  function metasSugeridas(diaMin, aulasSemana, durMin) {
+    var dia = Math.max(1, Number(diaMin) || 0), aulas = Math.max(0, Number(aulasSemana) || 0), dur = Number(durMin) > 0 ? Number(durMin) : 60;
+    var aulasSemMin = aulas * dur, appSem = dia * 7, totSem = appSem + aulasSemMin;
+    var aulasMesN = Math.round(aulas * 52 / 12), aulasMesMin = aulasMesN * dur, appMes = dia * 30, totMes = appMes + aulasMesMin;
+    return {
+      dia: dia, appSem: appSem, aulasSemMin: aulasSemMin, totSem: totSem, sugSem: Math.min(7200, Math.max(30, Math.floor(totSem * 0.95 / 30) * 30)),
+      aulasMesN: aulasMesN, aulasMesMin: aulasMesMin, appMes: appMes, totMes: totMes, sugMes: Math.min(30000, Math.max(60, Math.floor(totMes * 0.95 / 60) * 60))
+    };
+  }
+
   // Cronômetro de estudo (cantinho da tela): "45 s" abaixo de 1 min, "1:05" depois e "1:05:10" a partir de 1 h.
   function fmtTimer(secs) {
     var t = Math.max(0, Math.floor(Number(secs) || 0));
@@ -1593,6 +1642,7 @@
     // Os três tipos de estudo da meta diária/semanal e o que cada um reúne.
     STUDY_TYPES: A_STUDY_TYPES,
     goalHomeHtml: goalHomeHtml, goalProgressHtml: goalProgressHtml, pageHtml: pageHtml, pageClick: pageClick, evoBodyHtml: evoBodyHtml,
+    liberadaDesde: liberadaDesde, liberadaAgora: liberadaAgora, liberadaTxt: liberadaTxt, resumoPeriodo: resumoPeriodo, metasSugeridas: metasSugeridas,
     todayOf: todayOf, goalDaysTxt: goalDaysTxt, metasOf: metasOf, fhm: fhm, hoursHtml: hoursHtml, fmtTimer: fmtTimer, timerTone: timerTone, dayStatus: dayStatus, dayDetailHtml: dayDetailHtml, calendarHtml: calendarHtml, weekStripHtml: weekStripHtml, goalMsg: goalMsg,
     cfgOf: cfgOf, compute: compute, band: band, effWeight: effWeight, combine: combine, itemKey: itemKey,
     tagsOf: tagsOf, diagOf: diagOf, suggestComment: suggestComment, studentChips: studentChips, assistantSummary: assistantSummary,

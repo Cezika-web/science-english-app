@@ -2441,10 +2441,13 @@ export const perguntarAssistente = onCall(
       // Estudo e curso do próprio aluno ("qual a minha média?", "quanto está a minha adesão?"). Muda a cada pergunta,
       // então fica fora do cache. A Adesão só pode ser citada depois que o professor a libera (a tela do aluno segue a mesma regra).
       const hojeSP = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
-      const liberadaEm = escolaSnap && escolaSnap.exists ? String(escolaSnap.data().adesao?.liberadaEm || '') : '';
+      // liberarEm = instante (ISO) da liberação; liberadaEm = campo antigo, só a data
+      const adesaoEscola = escolaSnap && escolaSnap.exists ? (escolaSnap.data().adesao || {}) : {};
+      const adesaoLiberada = (!!adesaoEscola.liberarEm && Date.parse(adesaoEscola.liberarEm) <= Date.now())
+        || (!!adesaoEscola.liberadaEm && String(adesaoEscola.liberadaEm) <= hojeSP);
       system.push({
         type: 'text',
-        text: `${contextoPerfil(aluno, { totalPosAulas, atividades })}\n\n${contextoDadosEstudo(request.data?.dadosEstudo, { liberada: !!liberadaEm && liberadaEm <= hojeSP, hoje: hojeSP })}`,
+        text: `${contextoPerfil(aluno, { totalPosAulas, atividades })}\n\n${contextoDadosEstudo(request.data?.dadosEstudo, { liberada: adesaoLiberada, hoje: hojeSP })}`,
       });
       const resposta = await client.messages.create({
         model: MODEL,
