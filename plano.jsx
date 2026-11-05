@@ -1225,8 +1225,56 @@ function PlanoAudiosPagina({ audios }) {
   );
 }
 
+// Fala em português do Dr. EurekIA (voz do aparelho). O que estiver entre *asteriscos* é inglês e sai com a voz em inglês; o resto, com a voz em português.
+function PlanoParaDeOuvir() { try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) {} }
+function PlanoOuvirExplicacao(texto, onFim) {
+  try {
+    if (!('speechSynthesis' in window)) return false;
+    const ss = window.speechSynthesis; ss.cancel();
+    const vozes = ss.getVoices ? ss.getVoices() : [];
+    const pt = vozes.find(v => /^pt[-_]BR/i.test(v.lang)) || vozes.find(v => /^pt/i.test(v.lang));
+    const en = vozes.find(v => /^en[-_]US/i.test(v.lang)) || vozes.find(v => /^en/i.test(v.lang));
+    const partes = String(texto || '').replace(/\*\*/g, '').split('*').map((p, k) => ({ s: p.replace(/\s+/g, ' ').trim(), ing: k % 2 === 1 })).filter(p => p.s);
+    partes.forEach((p, k) => {
+      const u = new SpeechSynthesisUtterance(p.s); u.lang = p.ing ? 'en-US' : 'pt-BR';
+      const v = p.ing ? en : pt; if (v) u.voice = v; u.rate = p.ing ? .88 : .98;
+      if (k === partes.length - 1) { u.onend = () => { if (onFim) onFim(); }; u.onerror = () => { if (onFim) onFim(); }; }
+      ss.speak(u);
+    });
+    return partes.length > 0;
+  } catch (e) { return false; }
+}
+
+// Janela de baixo com a explicação de UM quadro da página (fala + cartões); ‹ › passam para os outros quadros da página.
+function PlanoCaixaFolha({ caixas, k, onK, onClose }) {
+  const c = caixas[k]; const [tocando, setTocando] = React.useState(false);
+  React.useEffect(() => { PlanoParaDeOuvir(); setTocando(false); return () => PlanoParaDeOuvir(); }, [k]);
+  const ouvir = () => { if (tocando) { PlanoParaDeOuvir(); setTocando(false); return; } setTocando(PlanoOuvirExplicacao(c.fala, () => setTocando(false))); };
+  const fechar = () => { PlanoParaDeOuvir(); onClose(); };
+  const seta = { width: 40, height: 40, borderRadius: 12, border: 0, background: '#F5F3FF', color: '#5B21B6', fontWeight: 800, fontSize: 20, fontFamily: 'inherit', cursor: 'pointer' };
+  return (
+    <PlanoFolha onClose={fechar} z={470}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 12 }}>
+        <EurekiaAvatar size={52} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: .7, color: '#6D28D9' }}>DR. EUREKIA EXPLICA · QUADRO {k + 1} DE {caixas.length}</div>
+          <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1.2, color: '#0F172A' }}>{c.titulo}</div>
+        </div>
+      </div>
+      <button className="plano-btn violeta" onClick={ouvir}>{tocando ? '⏹ Parar' : '🔊 Ouvir a explicação'}</button>
+      <div style={{ margin: '12px 0 4px', background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 16, padding: '12px 13px', fontSize: 14.5, fontWeight: 600, lineHeight: 1.65, color: '#2E1065' }}><PlanoMd x={c.fala} /></div>
+      {(c.blocos || []).map((b, i) => <PlanoBloco key={i} b={b} />)}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 18 }}>
+        {caixas.length > 1 && <button style={seta} aria-label="Quadro anterior" disabled={k <= 0} onClick={() => onK(k - 1)}>‹</button>}
+        <button className="plano-btn sec" style={{ flex: 1, margin: 0 }} onClick={fechar}>Voltar para a página</button>
+        {caixas.length > 1 && <button style={seta} aria-label="Próximo quadro" disabled={k >= caixas.length - 1} onClick={() => onK(k + 1)}>›</button>}
+      </div>
+    </PlanoFolha>
+  );
+}
+
 // A página aparece inteira (largura da tela); dois toques, pinça, roda do mouse ou +/− aproximam; arrastar anda na página.
-function PlanoLeitor({ curso, pdf, cobrir }) {
+function PlanoLeitor({ curso, pdf, cobrir, caixas, onCaixa }) {
   const caixa = React.useRef(null); const img = React.useRef(null);
   const V = React.useRef({ s: 1, x: 0, y: 0, w: 0, h: 0, fit: 1 });
   const ptr = React.useRef(new Map()); const pinca = React.useRef(null); const toque = React.useRef({ t: 0, x: 0, y: 0, mov: 0 });
@@ -1249,7 +1297,7 @@ function PlanoLeitor({ curso, pdf, cobrir }) {
     [pdf - 1, pdf + 1].forEach(p => { if (p >= 15) PlanoUrlPagina(curso, p).catch(() => {}); });
     return () => { vivo = false; };
   }, [curso, pdf]);
-  React.useEffect(() => { const t = setTimeout(() => setDica(false), 3500); return () => clearTimeout(t); }, [pdf]);
+  React.useEffect(() => { const t = setTimeout(() => setDica(false), 6000); return () => clearTimeout(t); }, [pdf]);
   React.useEffect(() => {
     const c = caixa.current; if (!c) return undefined;
     const roda = e => { e.preventDefault(); const r = c.getBoundingClientRect(); zoom(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - r.left, e.clientY - r.top); };
@@ -1277,6 +1325,11 @@ function PlanoLeitor({ curso, pdf, cobrir }) {
     const eraUm = ptr.current.size === 1; ptr.current.delete(e.pointerId); pinca.current = null;
     if (eraUm && toque.current.mov < 8) {   // dois toques seguidos: aproxima ou volta
       const agora = Date.now(); const r = caixa.current.getBoundingClientRect(); const t = toque.current;
+      if (caixas && caixas.length && onCaixa && V.current.w) {   // um toque dentro de um quadro explicado pelo Dr. EurekIA abre a explicação
+        const v = V.current; const fx = (e.clientX - r.left - v.x) / (v.s * v.w), fy = (e.clientY - r.top - v.y) / (v.s * v.h);
+        const k = caixas.findIndex(c => fx >= c.x0 && fx <= c.x1 && fy >= c.y0 && fy <= c.y1);
+        if (k >= 0) { t.t = 0; onCaixa(k); return; }
+      }
       if (agora - t.t < 320 && Math.hypot(e.clientX - t.x, e.clientY - t.y) < 30) { const v = V.current; if (v.s > v.fit * 1.2) ajustar(); else zoom(2.4, e.clientX - r.left, e.clientY - r.top); t.t = 0; }
       else { t.t = agora; t.x = e.clientX; t.y = e.clientY; }
     }
@@ -1289,6 +1342,8 @@ function PlanoLeitor({ curso, pdf, cobrir }) {
       {url && <div ref={img} style={{ position: 'absolute', left: 0, top: 0, transformOrigin: '0 0', willChange: 'transform' }}>
         <img src={url} alt="Página do livro" draggable="false" onLoad={e => { V.current.w = e.target.naturalWidth; V.current.h = e.target.naturalHeight; e.target.style.width = V.current.w + 'px'; e.target.style.height = V.current.h + 'px'; if (img.current) { img.current.style.width = V.current.w + 'px'; img.current.style.height = V.current.h + 'px'; } ajustar(); }}
           style={{ display: 'block', userSelect: 'none', WebkitUserDrag: 'none', maxWidth: 'none' }} />
+        {(caixas || []).map((c, k) => <div key={'cx' + k} style={{ position: 'absolute', left: `${c.x0 * 100}%`, top: `${c.y0 * 100}%`, width: `${(c.x1 - c.x0) * 100}%`, height: `${(c.y1 - c.y0) * 100}%`, boxSizing: 'border-box', border: '4px solid #7C3AED', borderRadius: 14, background: 'rgba(124,58,237,.08)', pointerEvents: 'none' }}>
+          <span style={{ position: 'absolute', right: 14, top: -20, background: '#7C3AED', color: '#fff', borderRadius: 99, padding: '2px 14px', fontWeight: 800, fontSize: 22, lineHeight: 1.25, boxShadow: '0 3px 10px rgba(76,29,149,.5)' }}>💡 Dr. EurekIA</span></div>)}
         {(cobrir || []).map((c, k) => <div key={k} style={{ position: 'absolute', left: 0, right: 0, top: `${c.y0 * 100}%`, height: `${(c.y1 - c.y0) * 100}%`, background: '#F1EDE6', boxShadow: 'inset 0 0 0 3px #E2DCD2', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: '#94A3B8', fontWeight: 800, fontSize: 30, padding: 40, boxSizing: 'border-box' }}>Este exercício do livro não faz parte do seu curso.</div>)}
       </div>}
       {!url && !erro && <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: '#CBD5E1', fontWeight: 800, fontSize: 14 }}>Abrindo a página…</div>}
@@ -1298,7 +1353,7 @@ function PlanoLeitor({ curso, pdf, cobrir }) {
         <button style={bt} aria-label="Afastar" onClick={() => { const [x, y] = meio(); zoom(1 / 1.4, x, y); }}>−</button>
         <button style={bt} aria-label="Ajustar à tela" onClick={ajustar}>⤢</button>
       </div>
-      <div style={{ position: 'absolute', left: 8, bottom: 8, background: 'rgba(15,23,42,.78)', color: '#fff', fontSize: 11, fontWeight: 700, padding: '5px 10px', borderRadius: 99, pointerEvents: 'none', opacity: dica && url ? 1 : 0, transition: 'opacity .5s' }}>Pince ou dê 2 toques para ampliar</div>
+      <div style={{ position: 'absolute', left: 8, bottom: 8, background: 'rgba(15,23,42,.78)', color: '#fff', fontSize: 11, fontWeight: 700, padding: '5px 10px', borderRadius: 99, pointerEvents: 'none', opacity: dica && url ? 1 : 0, transition: 'opacity .5s' }}>{caixas && caixas.length ? '💡 Toque nos quadros roxos: o Dr. EurekIA explica' : 'Pince ou dê 2 toques para ampliar'}</div>
     </div>
   );
 }
@@ -1362,6 +1417,7 @@ function PlanoExercicio({ ex, onFim }) {
   return (
     <div>
       <div style={{ display: 'inline-block', fontSize: 10, fontWeight: 800, letterSpacing: .6, textTransform: 'uppercase', color: '#5B21B6', background: '#F5F3FF', border: '1px solid #DDD6FE', padding: '2px 9px', borderRadius: 99, marginBottom: 7 }}>{PLANO_ROTULO_EX[ex.t] || 'Exercício'}</div>
+      {ex.ins && <div style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.4, color: '#64748B', marginBottom: 5 }}>{ex.ins}</div>}
       <div style={{ fontSize: 15.5, fontWeight: 800, lineHeight: 1.4, marginBottom: 6 }}>{ex.q}</div>
       {(ex.t === 'ouvir' || ex.t === 'ditado') && <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
         <button className="plano-btn sec" style={{ width: 'auto', padding: '9px 14px', fontSize: 14 }} onClick={() => PlanoFalar(ex.fala)}>🔊 Ouvir</button>
@@ -1450,11 +1506,13 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, 
   const fecharPrev = () => { if (!semGravar) { try { localStorage.setItem(chavePrev, '1'); } catch (e) {} } setVerPrev(false); };
   const perguntarPrev = () => { fecharPrev(); if (onAsk) onAsk(PLANO_PERGUNTA_PREVIA); };
   const exs = t.exercicios || []; const total = exs.length;
+  const [cx, setCx] = React.useState(-1);   // quadro explicado aberto (índice em t.caixas)
   const [pdf, setPdf] = React.useState(t.pdf); const [i, setI] = React.useState(abrirEm >= 0 && abrirEm < total ? abrirEm : 0); const [res, setRes] = React.useState([]);
   const [aberta, setAberta] = React.useState(abrirEm >= 0 && abrirEm < total); const [respondeu, setRespondeu] = React.useState(false);
   const acabou = total > 0 && i >= total; const acertos = res.filter(r => r === true).length;
   const respondidos = res.filter(r => r !== undefined).length;
   const onFim = ok => { setRes(r => { const n = [...r]; if (n[i] === undefined) n[i] = ok; return n; }); setRespondeu(true); };
+  const caixas = pdf === t.pdf && Array.isArray(t.caixas) && t.caixas.length ? t.caixas : null;
   const pagina = pdf - 14; const btn = { width: 34, height: 34, borderRadius: 10, border: 0, background: '#F5F3FF', color: '#5B21B6', fontWeight: 800, fontSize: 18, fontFamily: 'inherit', cursor: 'pointer' };
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(15,23,42,.4)', display: 'flex', justifyContent: 'center' }}>
@@ -1467,11 +1525,12 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, 
           </div>
           <button style={btn} aria-label="Página anterior" disabled={pdf <= 15} onClick={() => setPdf(p => p - 1)}>‹</button>
           <button style={btn} aria-label="Próxima página" disabled={pdf >= 177} onClick={() => setPdf(p => p + 1)}>›</button>
+          {caixas && <button onClick={() => setCx(0)} aria-label="Explicação do Dr. EurekIA" style={{ ...btn, width: 'auto', padding: '0 9px', fontSize: 12, whiteSpace: 'nowrap', background: '#7C3AED', color: '#fff' }}>💡 Explicação</button>}
           {prev && <button onClick={() => setVerPrev(true)} aria-label="Rever a prévia desta página" style={{ ...btn, width: 'auto', padding: '0 8px', fontSize: 12, whiteSpace: 'nowrap' }}>💡 Prévia</button>}
           {onAsk && <button onClick={() => onAsk()} aria-label="Dr. EurekIA" style={{ ...btn, width: 'auto', padding: '0 9px', fontSize: 15 }}>💡</button>}
         </div>
         {(t.audios || []).length > 0 && pdf === t.pdf && <PlanoAudiosPagina audios={t.audios} />}
-        <PlanoLeitor curso={cursoId} pdf={pdf} cobrir={pdf === t.pdf ? t.cobrir : null} />
+        <PlanoLeitor curso={cursoId} pdf={pdf} cobrir={pdf === t.pdf ? t.cobrir : null} caixas={caixas} onCaixa={setCx} />
         {total === 0
           ? <div style={{ padding: '10px 14px calc(12px + env(safe-area-inset-bottom, 0px))', background: '#fff', borderTop: '1px solid rgba(var(--brand-rgb),.12)', flexShrink: 0 }}>
             <button className="plano-btn violeta" onClick={onFeita}>Já li a página ✓</button></div>
@@ -1499,6 +1558,7 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, 
           </div>}
       </div>
       {prev && verPrev && <PlanoPreviaFolha previa={prev} onEntendi={fecharPrev} onPerguntar={onAsk ? perguntarPrev : null} />}
+      {caixas && cx >= 0 && cx < caixas.length && <PlanoCaixaFolha caixas={caixas} k={cx} onK={setCx} onClose={() => setCx(-1)} />}
     </div>
   );
 }
