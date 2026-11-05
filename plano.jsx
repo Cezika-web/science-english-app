@@ -1358,7 +1358,102 @@ function PlanoLeitor({ curso, pdf, cobrir, caixas, onCaixa }) {
   );
 }
 
-const PLANO_ROTULO_EX = { conv: 'Completar a conversa', mc: 'Escolher', vf: 'Verdadeiro ou falso', gap: 'Digitar', match: 'Ligar', order: 'Montar a frase', ouvir: 'Ouvir e escolher', ditado: 'Ouvir e escrever', speak: 'Falar' };
+const PLANO_ROTULO_EX = { conv: 'Completar a conversa', mc: 'Escolher', vf: 'Verdadeiro ou falso', gap: 'Digitar', match: 'Ligar', order: 'Montar a frase', ouvir: 'Ouvir e escolher', ditado: 'Ouvir e escrever', speak: 'Falar', mapa: 'Ligar no mapa' };
+
+/* ───────── exercício do MAPA: a aluna liga lugares e círculos de um mapa do livro (o app corrige) ─────────
+ * ex = { t:'mapa', q, ins, pdf, quadro:{x0,x1,y0,y1} (fração da página), pontos:[{id,x,y}] (x,y em fração do recorte), modo, resp, ... }
+ *  modo 'circulos' (padrão): os pontos são os círculos brancos do mapa; `chaves:[{k,t}]` é a legenda; resp = { idDoPonto: k }.
+ *  modo 'locais': os pontos são os lugares do mapa (a, b, c…); `itens:[{id,t}]` são as perguntas ("Conversation 1"); resp = { idDoItem: idDoPonto }.
+ * Até 3 conferências; só vale como "acertou" quem acerta tudo na 1ª. Na 3ª errada o app mostra os números certos. */
+function PlanoMapa({ ex, onFim }) {
+  const pontos = ex.pontos || []; const locais = ex.modo === 'locais';
+  const alvos = locais ? (ex.itens || []) : pontos;   // o que precisa de resposta
+  const [resp, setResp] = React.useState({}); const [sel, setSel] = React.useState(alvos[0] ? alvos[0].id : null);
+  const [conf, setConf] = React.useState({}); const [tent, setTent] = React.useState(0); const [fim, setFim] = React.useState(null); const [zoom, setZoom] = React.useState(false);
+  const completo = alvos.length > 0 && alvos.every(a => resp[a.id]);
+  const escolher = k => {   // k = número da legenda (circulos) ou id do lugar (locais)
+    if (fim || !sel) return;
+    const n = { ...resp };
+    if (!locais) Object.keys(n).forEach(id => { if (n[id] === k) delete n[id]; });   // na legenda cada número vale uma vez: trocar tira do outro círculo
+    n[sel] = k;
+    const c = { ...conf }; Object.keys(c).forEach(id => { if (id === sel || !n[id]) delete c[id]; });
+    setResp(n); setConf(c);
+    const prox = alvos.find(a => !n[a.id]); setSel(prox ? prox.id : null);
+  };
+  const tocarAlvo = id => { if (fim) return; setSel(id); setConf(c => { const n = { ...c }; delete n[id]; return n; }); };
+  const limpar = () => { setResp({}); setConf({}); setSel(alvos[0] ? alvos[0].id : null); };
+  const conferir = () => {
+    const c = {}; let erros = 0; alvos.forEach(a => { const ok = resp[a.id] === ex.resp[a.id]; c[a.id] = ok; if (!ok) erros++; });
+    const t = tent + 1; setTent(t); setConf(c);
+    if (!erros) { setFim({ ok: t === 1, erros: 0 }); onFim(t === 1); }
+    else if (t >= 3) { setFim({ ok: false, erros }); onFim(false); }
+  };
+  const certa = id => ex.resp[id];
+  const rotuloCerto = a => { const v = certa(a.id); return locais ? ((pontos.find(p => p.id === v) || {}).t || String(v)) : v; };
+  const cor = id => (conf[id] === true ? '#16A34A' : conf[id] === false ? '#DC2626' : '#6D28D9');
+  const bola = (selecionada, tem, c) => ({ position: 'absolute', transform: 'translate(-50%,-50%)', width: 34, height: 34, borderRadius: '50%', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 17, fontFamily: 'inherit', cursor: fim ? 'default' : 'pointer',
+    border: tem ? '2.5px solid #fff' : `2.5px ${selecionada ? 'solid' : 'dashed'} #7C3AED`, background: tem ? c : selecionada ? 'rgba(124,58,237,.28)' : 'rgba(124,58,237,.10)', boxShadow: tem ? `0 0 0 2px ${c}` : 'none', animation: selecionada && !tem ? 'planoPulso 1.2s infinite' : undefined });
+  const cheios = ex.chaves || [];
+  const mapa = (
+    <div style={{ overflow: 'auto', maxHeight: '62vh', border: '1px solid #E2E8F0', borderRadius: 12, background: '#fff', WebkitOverflowScrolling: 'touch' }}>
+      <div style={{ width: zoom ? '230%' : '100%' }}>
+        <PlanoQuadroLivro curso={ex.curso || 'connectivity-1'} pdf={ex.pdf} quadro={ex.quadro} alt="Mapa do livro">
+          {locais
+            ? pontos.map(p => {
+              const quem = alvos.map((a, i) => ({ a, i })).filter(x => resp[x.a.id] === p.id);
+              return <button key={p.id} type="button" aria-label={`Lugar ${p.t || p.id}`} disabled={!!fim || !sel} onClick={() => escolher(p.id)}
+                style={{ ...bola(false, false, ''), left: `${p.x * 100}%`, top: `${p.y * 100}%`, width: 40, height: 40, borderColor: sel && !fim ? '#7C3AED' : '#A78BFA', background: quem.length ? 'rgba(124,58,237,.18)' : 'rgba(124,58,237,.08)' }}>
+                {quem.map(x => <span key={x.a.id} style={{ minWidth: 20, height: 20, borderRadius: 99, background: cor(x.a.id), color: '#fff', fontSize: 12, lineHeight: '20px', padding: '0 5px', margin: '0 1px', boxShadow: '0 0 0 1.5px #fff' }}>{x.i + 1}</span>)}
+                {fim && quem.length === 0 && alvos.some(a => certa(a.id) === p.id && conf[a.id] === false) && <span style={{ position: 'absolute', top: -19, left: '50%', transform: 'translateX(-50%)', background: '#FEF3C7', color: '#92400E', fontSize: 11, padding: '0 6px', borderRadius: 99, border: '1px solid #FDE68A', whiteSpace: 'nowrap' }}>certo: {alvos.map((a, i) => (certa(a.id) === p.id && conf[a.id] === false ? i + 1 : '')).filter(Boolean).join(', ')}</span>}
+              </button>;
+            })
+            : pontos.map(p => {
+              const v = resp[p.id]; const errado = fim && conf[p.id] === false;
+              return <button key={p.id} type="button" aria-label="Círculo do mapa" onClick={() => tocarAlvo(p.id)} style={{ ...bola(sel === p.id && conf[p.id] === undefined, !!v, cor(p.id)), left: `${p.x * 100}%`, top: `${p.y * 100}%` }}>
+                {v || ''}
+                {errado && <span style={{ position: 'absolute', top: -19, left: '50%', transform: 'translateX(-50%)', background: '#FEF3C7', color: '#92400E', fontSize: 11, padding: '0 6px', borderRadius: 99, border: '1px solid #FDE68A', whiteSpace: 'nowrap' }}>certo: {certa(p.id)}</span>}
+              </button>;
+            })}
+        </PlanoQuadroLivro>
+      </div>
+    </div>
+  );
+  const abaixo = locais
+    ? <div style={{ display: 'grid', gap: 7, marginTop: 10 }}>
+      {alvos.map((a, i) => { const v = resp[a.id]; const l = v ? (pontos.find(p => p.id === v) || {}) : null; const ativo = sel === a.id && !fim;
+        return <button key={a.id} type="button" disabled={!!fim} onClick={() => tocarAlvo(a.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', background: ativo ? '#F5F3FF' : '#fff', border: `1.5px solid ${conf[a.id] === true ? '#22C55E' : conf[a.id] === false ? '#F87171' : ativo ? '#7C3AED' : '#E2E8F0'}`, borderRadius: 12, padding: '9px 12px', fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: fim ? 'default' : 'pointer' }}>
+          <b style={{ width: 24, height: 24, borderRadius: '50%', background: cor(a.id), color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>{i + 1}</b>
+          <span style={{ flex: 1 }}>{a.t}</span>
+          <span style={{ fontWeight: 800, color: l ? '#4C1D95' : '#94A3B8', fontSize: 13 }}>{l ? `lugar ${l.t || l.id}` : ativo ? 'toque no lugar do mapa' : 'sem resposta'}</span>
+          {fim && conf[a.id] === false && <span style={{ fontSize: 12, fontWeight: 800, color: '#15803D' }}>✓ {rotuloCerto(a)}</span>}
+        </button>; })}
+    </div>
+    : <div style={{ display: 'grid', gap: 7, marginTop: 10 }}>
+      {cheios.map(c => { const usado = pontos.find(p => resp[p.id] === c.k);
+        return <button key={c.k} type="button" disabled={!!fim || !sel} onClick={() => escolher(c.k)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', background: usado ? '#F8FAFC' : '#fff', border: '1.5px solid #E2E8F0', borderRadius: 12, padding: '9px 12px', fontSize: 14, fontWeight: 700, fontFamily: 'inherit', color: usado ? '#64748B' : '#0F172A', cursor: fim || !sel ? 'default' : 'pointer' }}>
+          <b style={{ width: 26, height: 26, borderRadius: '50%', background: usado ? '#6D28D9' : '#EDE9FE', color: usado ? '#fff' : '#5B21B6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{c.k}</b>
+          <span style={{ flex: 1 }}>{c.t}</span>{usado && <span style={{ fontSize: 11.5, color: '#64748B' }}>no mapa ✓</span>}</button>; })}
+    </div>;
+  const erros = Object.values(conf).filter(v => v === false).length; const certas = alvos.length - erros;
+  return (
+    <div>
+      <div style={{ display: 'inline-block', fontSize: 10, fontWeight: 800, letterSpacing: .6, textTransform: 'uppercase', color: '#5B21B6', background: '#F5F3FF', border: '1px solid #DDD6FE', padding: '2px 9px', borderRadius: 99, marginBottom: 7 }}>{PLANO_ROTULO_EX.mapa}</div>
+      {ex.ins && <div style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.4, color: '#64748B', marginBottom: 5 }}>{ex.ins}</div>}
+      <div style={{ fontSize: 15.5, fontWeight: 800, lineHeight: 1.4, marginBottom: 4 }}>{ex.q}</div>
+      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#7C3AED', marginBottom: 8 }}>{locais ? '1) Toque na conversa  2) Toque no lugar do mapa' : '1) Toque num círculo do mapa  2) Toque no lugar da lista'}</div>
+      {mapa}
+      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+        <button type="button" className="plano-btn sec" style={{ padding: '8px 10px', fontSize: 13 }} onClick={() => setZoom(z => !z)}>{zoom ? '🔍 Voltar ao tamanho normal' : '🔍 Ampliar o mapa'}</button>
+        {!fim && <button type="button" className="plano-btn sec" style={{ padding: '8px 10px', fontSize: 13 }} onClick={limpar}>↺ Limpar</button>}
+      </div>
+      {abaixo}
+      {!fim && <button className="plano-btn" style={{ marginTop: 12 }} disabled={!completo} onClick={conferir}>Conferir</button>}
+      {tent > 0 && !fim && erros > 0 && <div style={{ marginTop: 10, padding: '10px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, background: '#FEF2F2', color: '#7F1D1D', border: '1px solid #FECACA' }}>Você acertou {certas} de {alvos.length}. Ouça de novo, toque nos vermelhos e troque a resposta. ({tent} de 3 conferências)</div>}
+      {fim && <div style={{ marginTop: 11, padding: '10px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, background: fim.erros ? '#FEF2F2' : '#F0FDF4', color: fim.erros ? '#7F1D1D' : '#14532D', border: `1px solid ${fim.erros ? '#FECACA' : '#BBF7D0'}` }}>
+        {fim.erros ? `Você acertou ${alvos.length - fim.erros} de ${alvos.length}. O certo aparece em amarelo. Ouça o áudio de novo para entender.` : (tent === 1 ? '✔ Tudo certo de primeira!' : '✔ Agora sim, tudo certo!')}{ex.exp ? <div style={{ fontWeight: 600, marginTop: 3 }}>{ex.exp}</div> : null}</div>}
+    </div>
+  );
+}
 
 // Um exercício por vez. Avisa o resultado uma única vez (onFim) e mostra a correção.
 function PlanoExercicio({ ex, onFim }) {
@@ -1367,6 +1462,7 @@ function PlanoExercicio({ ex, onFim }) {
   const [erros, setErros] = React.useState(0); const [piscar, setPiscar] = React.useState(null); const [resp, setResp] = React.useState({});
   const banco = React.useMemo(() => ex.t === 'order' ? PlanoEmbaralhar(ex.w.map((w, k) => ({ w, k }))) : [], [ex]);
   const dir = React.useMemo(() => ex.pares ? PlanoEmbaralhar(ex.pares.map((p, k) => ({ x: p[1], k }))) : [], [ex]);
+  if (ex.t === 'mapa') return <PlanoMapa ex={ex} onFim={onFim} />;   // tem estado próprio (as hooks acima já rodaram)
   const certaTxt = ex.t === 'mc' || ex.t === 'ouvir' ? ex.o[ex.c] : ex.t === 'vf' ? (ex.c ? 'Verdadeiro' : 'Falso') : ex.t === 'order' ? ex.w.join(' ') : ex.t === 'conv' ? (ex.a || []).map(x => String(x).split('|')[0]).join(' · ') : (ex.a || [''])[0];
   const fechar = (ok, extra) => { if (fim) return; setFim({ ok, extra }); onFim(ok); };
   const confere = valor => fechar((ex.a || []).map(PlanoNormResp).includes(PlanoNormResp(valor)));
@@ -1570,7 +1666,7 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, 
 /* ───────── explicação de gramática: o quadro do livro + o que ele quer dizer, em português + mini-exercícios ───────── */
 // Mostra só um pedaço da página do livro (o quadro de GRAMMAR): a imagem da página já está no Storage, aqui só se recorta na tela.
 // `quadro` = {x0,x1,y0,y1} em fração da página (largura 396,67 × altura 522,08 pontos do PDF).
-function PlanoQuadroLivro({ curso, pdf, quadro, largura }) {
+function PlanoQuadroLivro({ curso, pdf, quadro, largura, children, alt }) {
   const [url, setUrl] = React.useState(''); const [erro, setErro] = React.useState(false);
   React.useEffect(() => {
     let vivo = true; setUrl(''); setErro(false);
@@ -1580,7 +1676,8 @@ function PlanoQuadroLivro({ curso, pdf, quadro, largura }) {
   const lw = quadro.x1 - quadro.x0, lh = quadro.y1 - quadro.y0;
   return (
     <div style={{ position: 'relative', width: largura || '100%', overflow: 'hidden', background: '#fff', borderRadius: 8, paddingBottom: `${((lh * 1.3162) / lw) * 100}%` }}>
-      {url && <img src={url} alt="Quadro de gramática do livro" draggable="false" style={{ position: 'absolute', maxWidth: 'none', width: `${100 / lw}%`, left: `${-(quadro.x0 / lw) * 100}%`, top: `${-(quadro.y0 / lh) * 100}%` }} />}
+      {url && <img src={url} alt={alt || 'Quadro de gramática do livro'} draggable="false" style={{ position: 'absolute', maxWidth: 'none', width: `${100 / lw}%`, left: `${-(quadro.x0 / lw) * 100}%`, top: `${-(quadro.y0 / lh) * 100}%` }} />}
+      {url && children}
       {!url && <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', padding: 12, textAlign: 'center', fontWeight: 800, fontSize: 13, color: erro ? '#B91C1C' : '#94A3B8' }}>{erro ? 'Não consegui abrir o quadro agora.' : 'Abrindo o quadro…'}</div>}
     </div>
   );
