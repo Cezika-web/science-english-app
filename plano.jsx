@@ -1358,7 +1358,54 @@ function PlanoLeitor({ curso, pdf, cobrir, caixas, onCaixa }) {
   );
 }
 
-const PLANO_ROTULO_EX = { conv: 'Completar a conversa', mc: 'Escolher', vf: 'Verdadeiro ou falso', gap: 'Digitar', match: 'Ligar', order: 'Montar a frase', ouvir: 'Ouvir e escolher', ditado: 'Ouvir e escrever', speak: 'Falar', mapa: 'Ligar no mapa' };
+const PLANO_ROTULO_EX = { conv: 'Completar a conversa', mc: 'Escolher', vf: 'Verdadeiro ou falso', gap: 'Digitar', match: 'Ligar', order: 'Montar a frase', ouvir: 'Ouvir e escolher', ditado: 'Ouvir e escrever', speak: 'Falar', mapa: 'Ligar no mapa', lacunas: 'Completar o texto' };
+
+/* ───────── TEXTO DO LIVRO COM LACUNAS: a página (recorte) com as lacunas numeradas + uma caixa para cada uma; o app confere ─────────
+ * ex = { t:'lacunas', q, ins, pdf, quadro:{x0,x1,y0,y1} (fração da página), blanks:[{id, n, x, y, adj, ctx, a}] }
+ *  x,y = centro da lacuna (fração do recorte); adj = a dica do livro, "(old)"; ctx = o trecho da frase com ____; a = respostas aceitas, separadas por |.
+ * Uma conferência só (como a conversa com lacunas): mostra o que acertou e a resposta certa das outras. */
+function PlanoLacunas({ ex, onFim }) {
+  const bl = ex.blanks || [];
+  const [resp, setResp] = React.useState({}); const [fim, setFim] = React.useState(null); const [zoom, setZoom] = React.useState(false); const [foco, setFoco] = React.useState(null);
+  const caixas = React.useRef({});
+  const certo = b => String(b.a || '').split('|').map(PlanoNormResp).includes(PlanoNormResp(resp[b.id] || ''));
+  const vazias = bl.some(b => !String(resp[b.id] || '').trim());
+  const conferir = () => { const certas = bl.filter(certo).length; setFim({ ok: certas === bl.length, certas }); onFim(certas === bl.length); };
+  const ir = id => { setFoco(id); const el = caixas.current[id]; if (el) { try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.focus({ preventScroll: true }); } catch (e) {} } };
+  const cor = b => (fim ? (certo(b) ? '#16A34A' : '#DC2626') : String(resp[b.id] || '').trim() ? '#6D28D9' : '#7C3AED');
+  return (
+    <div>
+      <div style={{ display: 'inline-block', fontSize: 10, fontWeight: 800, letterSpacing: .6, textTransform: 'uppercase', color: '#5B21B6', background: '#F5F3FF', border: '1px solid #DDD6FE', padding: '2px 9px', borderRadius: 99, marginBottom: 7 }}>{PLANO_ROTULO_EX.lacunas}</div>
+      {ex.ins && <div style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.4, color: '#64748B', marginBottom: 5 }}>{ex.ins}</div>}
+      <div style={{ fontSize: 15.5, fontWeight: 800, lineHeight: 1.4, marginBottom: 8 }}>{ex.q}</div>
+      <div style={{ overflow: 'auto', maxHeight: '55vh', border: '1px solid #E2E8F0', borderRadius: 12, background: '#fff', WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ width: zoom ? '230%' : '100%' }}>
+          <PlanoQuadroLivro curso={ex.curso || 'connectivity-1'} pdf={ex.pdf} quadro={ex.quadro} alt="Texto do livro com lacunas">
+            {bl.map(b => <button key={b.id} type="button" aria-label={`Lacuna ${b.n}`} onClick={() => ir(b.id)}
+              style={{ position: 'absolute', left: `${b.x * 100}%`, top: `${b.y * 100}%`, transform: 'translate(-50%,-50%)', minWidth: 24, height: 24, borderRadius: 99, padding: '0 5px', border: '2px solid #fff', background: cor(b), color: '#fff', fontWeight: 800, fontSize: 13, fontFamily: 'inherit', cursor: 'pointer', boxShadow: `0 0 0 2px ${cor(b)}`, opacity: foco && foco !== b.id && !fim ? .8 : 1 }}>{b.n}</button>)}
+          </PlanoQuadroLivro>
+        </div>
+      </div>
+      <button type="button" className="plano-btn sec" style={{ marginTop: 8, padding: '8px 10px', fontSize: 13 }} onClick={() => setZoom(z => !z)}>{zoom ? '🔍 Voltar ao tamanho normal' : '🔍 Ampliar o texto'}</button>
+      <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
+        {bl.map(b => { const ok = fim && certo(b);
+          return <div key={b.id} style={{ background: '#fff', border: `1.5px solid ${fim ? (ok ? '#BBF7D0' : '#FECACA') : foco === b.id ? '#7C3AED' : '#E2E8F0'}`, borderRadius: 14, padding: '10px 12px' }}>
+            <div style={{ display: 'flex', gap: 9, alignItems: 'flex-start' }}>
+              <b style={{ minWidth: 24, height: 24, borderRadius: 99, background: cor(b), color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0, marginTop: 1 }}>{b.n}</b>
+              <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.45, color: '#334155' }}>{b.ctx} <span style={{ color: '#7C3AED', fontWeight: 800 }}>({b.adj})</span></div>
+            </div>
+            <input ref={el => { caixas.current[b.id] = el; }} value={resp[b.id] || ''} disabled={!!fim} onFocus={() => setFoco(b.id)} onChange={e => setResp(r => ({ ...r, [b.id]: e.target.value }))}
+              autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="Digite aqui"
+              style={{ width: '100%', marginTop: 8, border: `2px solid ${!fim ? '#CBD5E1' : ok ? '#22C55E' : '#F87171'}`, borderRadius: 12, padding: '10px 12px', fontSize: 16, fontWeight: 700, fontFamily: 'inherit', outline: 'none', background: !fim ? '#fff' : ok ? '#F0FDF4' : '#FEF2F2' }} />
+            {fim && !ok && <div style={{ marginTop: 5, fontSize: 13, fontWeight: 800, color: '#15803D' }}>✓ {String(b.a).split('|')[0]}</div>}
+          </div>; })}
+      </div>
+      {!fim && <button className="plano-btn" style={{ marginTop: 12 }} disabled={vazias} onClick={conferir}>Conferir</button>}
+      {fim && <div style={{ marginTop: 11, padding: '10px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, background: fim.ok ? '#F0FDF4' : '#FFFBEB', color: fim.ok ? '#14532D' : '#78350F', border: `1px solid ${fim.ok ? '#BBF7D0' : '#FDE68A'}` }}>
+        {fim.ok ? '✔ Tudo certo!' : `Você acertou ${fim.certas} de ${bl.length}. A resposta certa aparece em verde embaixo de cada lacuna.`}{ex.exp ? <div style={{ fontWeight: 600, marginTop: 3 }}>{ex.exp}</div> : null}</div>}
+    </div>
+  );
+}
 
 /* ───────── exercício do MAPA: a aluna liga lugares e círculos de um mapa do livro (o app corrige) ─────────
  * ex = { t:'mapa', q, ins, pdf, quadro:{x0,x1,y0,y1} (fração da página), pontos:[{id,x,y}] (x,y em fração do recorte), modo, resp, ... }
@@ -1463,6 +1510,7 @@ function PlanoExercicio({ ex, onFim }) {
   const banco = React.useMemo(() => ex.t === 'order' ? PlanoEmbaralhar(ex.w.map((w, k) => ({ w, k }))) : [], [ex]);
   const dir = React.useMemo(() => ex.pares ? PlanoEmbaralhar(ex.pares.map((p, k) => ({ x: p[1], k }))) : [], [ex]);
   if (ex.t === 'mapa') return <PlanoMapa ex={ex} onFim={onFim} />;   // tem estado próprio (as hooks acima já rodaram)
+  if (ex.t === 'lacunas') return <PlanoLacunas ex={ex} onFim={onFim} />;
   const certaTxt = ex.t === 'mc' || ex.t === 'ouvir' ? ex.o[ex.c] : ex.t === 'vf' ? (ex.c ? 'Verdadeiro' : 'Falso') : ex.t === 'order' ? ex.w.join(' ') : ex.t === 'conv' ? (ex.a || []).map(x => String(x).split('|')[0]).join(' · ') : (ex.a || [''])[0];
   const fechar = (ok, extra) => { if (fim) return; setFim({ ok, extra }); onFim(ok); };
   const confere = valor => fechar((ex.a || []).map(PlanoNormResp).includes(PlanoNormResp(valor)));

@@ -8732,7 +8732,7 @@
     // ── Aba "Curso": revisar o livro (marcar só o que SAI), checklist, vídeos e lista completa ──
     // Regra da tela: marcado = TIRAR do app. Só as tarefas "opcionais" (vídeo, revisão e extras do livro) vêm desligadas
     // e aí a marca é ao contrário (LIGAR). Tudo vai para `ocultos` da unidade; `revisadas` e `notas` guardam o andamento.
-    const CR_ROTULO = { conv:'conversa', mc:'escolher', vf:'V ou F', gap:'digitar', match:'ligar', order:'montar', ouvir:'ouvir', ditado:'ditado', speak:'falar', mapa:'mapa' };
+    const CR_ROTULO = { conv:'conversa', mc:'escolher', vf:'V ou F', gap:'digitar', match:'ligar', order:'montar', ouvir:'ouvir', ditado:'ditado', speak:'falar', mapa:'mapa', lacunas:'texto' };
     const crUrls = {};
     let crUn = null, crPasso = 0, crTimer = null, crPdf = 0;
     const crEhOpcional = t => t.tipo === 'video' || t.tipo === 'revisao' || !!t.extra;
@@ -8743,6 +8743,7 @@
       if (e.t === 'conv') { let k = -1; return (e.linhas || []).map(l => esc(l).replace(/____/g, () => `<b>${esc(String((e.a || [])[++k] || '').split('|')[0])}</b>`)).join('<br>'); }
       if (e.t === 'gap' || e.t === 'ditado') return `<b>${esc((e.a || []).join(' / '))}</b>`;
       if (e.t === 'match') return (e.pares || []).map(p => esc(Array.isArray(p) ? `${p[0]} = ${p[1]}` : `${p.a} = ${p.b}`)).join(' · ');
+      if (e.t === 'lacunas') return (e.blanks || []).map(b => `${b.n}. <b>${esc(String(b.a).split('|')[0])}</b>`).join(' · ');
       if (e.t === 'mapa') {   // círculos do mapa de cima para baixo (ou as conversas) com a resposta certa; `prov` = gabarito ainda sem conferir com o áudio
         const aviso = e.prov ? ' <span style="background:#fef3c7;color:#92400e;border-radius:99px;padding:1px 8px;font-size:.72rem;font-weight:800;">⚠ gabarito provisório: confirmo com o áudio</span>' : '';
         if (e.modo === 'locais') return (e.itens || []).map(it => `${esc(it.t)} = <b>${esc((((e.pontos || []).find(p => p.id === (e.resp || {})[it.id])) || {}).t || (e.resp || {})[it.id] || '?')}</b>`).join(' · ') + aviso;
@@ -8960,7 +8961,7 @@
         + (fora && !oc.has(t.id) ? '<div class="cr-aviso-e">Esta explicação está saindo junto, porque a atividade da página foi tirada (ou ficou sem exercícios).</div>' : '')
         + `<div class="cr-resumo-e"><div class="cr-resumo-t">O QUE O ALUNO LÊ (resumo; a prévia 👁 mostra tudo)</div>${crResumoBlocos(t)}</div>` : '';
       const linhaEx = (e, comCaixa, off) => `<label class="cr-ex ${off ? 'off' : ''}">${comCaixa ? `<input type="checkbox" data-ex="${esc(e.id)}" ${oc.has(e.id) ? 'checked' : ''}>` : ''}
-          <span class="cr-tipo">${CR_ROTULO[e.t] || e.t}</span><span class="tx">${crLinha(e.q)}<span class="resp">${crResposta(e)}</span></span>
+          <span class="cr-tipo">${CR_ROTULO[e.t] || e.t}</span><span class="tx">${crLinha(e.q)}<span class="resp">${crResposta(e)}${e.prov && e.t !== 'mapa' ? ' <span style="background:#fef3c7;color:#92400e;border-radius:99px;padding:1px 8px;font-size:.72rem;font-weight:800;">⚠ gabarito provisório: confirmo com o áudio</span>' : ''}</span></span>
           <button type="button" class="cr-ver" data-previa-ex="${esc(e.id)}" title="Ver este exercício como o aluno vê">👁 Ver</button></label>`;
       // Páginas com os exercícios do livro mapeados: cada exercício do livro (A, B, C…) é um BLOCO inteiro, tirado de uma vez (nunca item solto).
       const regs = t.tipo === 'livro' ? (t.regioes || []) : [];
@@ -9228,6 +9229,23 @@
     // Grava os campos da unidade e atualiza a cópia da tela (a mesma que a revisão usa).
     async function crGravarMidia(uid, campos) {
       const un = cursoUnidades[uid];
+      // O conteúdo da unidade pode ter mudado por fora enquanto esta tela estava aberta (exercícios novos, textos dos áudios, títulos dos vídeos).
+      // Por isso a lista de tarefas NÃO é gravada como está na tela: pego a do banco e aplico só o que esta tela mexe (áudios e link do vídeo).
+      if (campos.tarefas) {
+        const sn = await getDoc(doc(db, 'cursos', CURSO_ID, 'unidades', uid));
+        const doBanco = sn.exists() ? (sn.data().tarefas || []) : null;
+        if (doBanco) {
+          const daTela = new Map(campos.tarefas.map(t => [t.id, t]));
+          campos = { ...campos, tarefas: doBanco.map(t => {
+            const m = daTela.get(t.id); if (!m) return t;
+            const n = { ...t };
+            if (m.youtube !== undefined) n.youtube = m.youtube; else delete n.youtube;
+            if (m.audios !== undefined) n.audios = m.audios.map(au => { const d = (t.audios || []).find(x => x.caminho === au.caminho); return d ? { ...au, ...(d.segs ? { segs: d.segs } : {}), ...(d.titulo ? { titulo: d.titulo } : {}) } : au; });   // o texto e o título que já estão no banco ficam
+            else delete n.audios;
+            return n;
+          }) };
+        }
+      }
       await updateDoc(doc(db, 'cursos', CURSO_ID, 'unidades', uid), { ...campos, atualizadoEm: serverTimestamp() });
       Object.assign(un, campos); if (crUn && crUn.id === uid) crUn = un;
     }
