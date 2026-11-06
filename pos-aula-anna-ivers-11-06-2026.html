@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Resumo Pós-Aula — Anna Ivers — CZK English</title>
+  <style>
+:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+body{color:#273444;line-height:1.55}
+.heading{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.badge{flex-shrink:0}
+h2{font-size:1.15rem;line-height:1.35;margin-bottom:8px;color:#0f1724}
+h3{color:#14532D;font-size:1rem}
+.outline-card>:first-child,.homework>:first-child{margin-top:0}
+.outline-card>:last-child,.homework>:last-child{margin-bottom:0}
+li+li{margin-top:4px}
+.note{font-size:.88rem;color:var(--muted)}
+.correction+.correction{border-top:1px solid var(--border);margin-top:14px;padding-top:12px}
+.correction h3,.correction p{margin:0 0 5px}
+.correction p:last-child{margin-bottom:0}
+@media(max-width:720px){
+  header{flex-wrap:wrap}
+  .wrap{padding:20px 12px}
+  .card{box-sizing:border-box;min-width:0}
+  .vocab{min-width:0}
+  .talk-table th,.talk-table td{padding:6px}
+}
+@media print{
+  html,body{height:auto;background:#fff}
+  .wrap{display:block;min-height:0;padding:0}
+  .card{box-sizing:border-box;max-width:none;padding:0;border:0;box-shadow:none}
+  .actions,.vocab-say{display:none}
+  h2,h3{break-after:avoid}
+  .vocab,.correction,.homework,.speaking{break-inside:avoid}
+}
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card">
+      <header>
+        <div>
+          <div class="heading"><span class="badge">PÓS-AULA</span><h1>Bairro, transporte e localização</h1></div>
+          <div class="meta"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluna:</strong> Anna Ivers &nbsp;•&nbsp; <strong>Data:</strong> 11/06/2026</div>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn" data-czk-action="print">Imprimir / Salvar PDF</button>
+        </div>
+      </header>
+      <main>
+        <section class="panel">
+          <p style="margin:0;font-weight:600;color:#14532D"><em>Anna, você começou a unidade 3 aprendendo a nomear meios de transporte e lugares do bairro. Depois, usou frases completas com <span lang="en">is</span> para dizer onde cada lugar fica.</em></p>
+        </section>
+        <section><h2>📘 Resumo da Aula</h2><div class="outline-card">
+
+<p><strong>Revisão do desafio e das atividades.</strong> César retomou os possessivos, a ordem de <em lang="en">Ken’s friend</em> e como falar da origem de alguém com <em lang="en">from</em>. Na revisão das profissões, você comparou <em lang="en">a scientist</em> e <em lang="en">an administrative assistant</em>. Use <strong>a</strong> antes de som de consoante e <strong>an</strong> antes de som de vogal quando falar de uma profissão no singular.</p>
+<p><strong>Sujeito e verbo <em lang="en">to be</em>.</strong> Em português, “É Michelle” funciona como resposta a “Qual é o primeiro nome dela?”. Em inglês, a resposta completa inclui um sujeito: <em lang="en">It is Michelle</em> ou <em lang="en">Her first name is Michelle</em>. Nessa conversa, <em lang="en">it</em> retoma o nome. Na pergunta <em lang="en">Where is she from?</em>, <strong>is</strong> vem antes de <strong>she</strong>.</p>
+<p><strong>Unidade 3 · O bairro.</strong> Você leu, repetiu e reconheceu pelo áudio meios de transporte como <em lang="en">bus</em>, <em lang="en">subway</em> e <em lang="en">moped</em>. Depois, identificou lugares como <em lang="en">bus stop</em>, <em lang="en">gas station</em> e <em lang="en">bookstore</em>. A aula também separou <em lang="en">bookstore</em>, onde se compram livros, de <em lang="en">library</em>, onde se podem pegar livros emprestados.</p>
+<p><strong>Prática oral.</strong> Você completou frases sobre origem, nacionalidade e possessivos, respondeu <em lang="en">No, they aren’t</em> e apresentou a Bruna em inglês. Em <em lang="en">She’s an actor</em>, praticou ligar o final de <em lang="en">an</em> ao início de <em lang="en">actor</em> ao falar.</p>
+<p><strong>Onde fica?</strong> Com as imagens, você praticou dar uma localização usando frases completas, como <em lang="en">The bus stop is down the street</em> e <em lang="en">The school is next to the restaurant</em>. Para montar uma resposta, diga <strong>o lugar + is + a localização</strong>. Na próxima aula, esse vocabulário se junta a perguntas como <em lang="en">Where is the bank?</em></p>
+
+</div></section>
+        <section><h2>💬 Frases usadas em aula</h2><div class="outline-card">
+<p class="note">Frases praticadas em aula, com grafia e pontuação padronizadas.</p><ul>
+<li><strong lang="en">My teacher is from Brazil.</strong> → Meu professor é do Brasil.</li>
+<li><strong lang="en">Her first name is Michelle.</strong> → O primeiro nome dela é Michelle.</li>
+<li><strong lang="en">My classmates are from Japan.</strong> → Meus colegas de classe são do Japão.</li>
+<li><strong lang="en">They are South Korean.</strong> → Eles são sul-coreanos.</li>
+<li><strong lang="en">Are they musicians? No, they aren’t.</strong> → Eles são músicos? Não, não são.</li>
+<li><strong lang="en">Where is she from?</strong> → De onde ela é?</li>
+<li><strong lang="en">Where are you from?</strong> → De onde você é?</li>
+<li><strong lang="en">She is from Canada.</strong> → Ela é do Canadá.</li>
+<li><strong lang="en">This is Bruna. She is Brazilian. She’s an actor.</strong> → Esta é a Bruna. Ela é brasileira. Ela é atriz.</li>
+<li><strong lang="en">Where is the bus stop?</strong> → Onde fica o ponto de ônibus?</li>
+<li><strong lang="en">The bus stop is down the street.</strong> → O ponto de ônibus fica mais adiante na rua.</li>
+<li><strong lang="en">The gas station is around the corner.</strong> → O posto de gasolina fica logo depois da esquina.</li>
+<li><strong lang="en">The school is next to the restaurant.</strong> → A escola fica ao lado do restaurante.</li>
+<li><strong lang="en">The bookstore is next to the pharmacy.</strong> → A livraria fica ao lado da farmácia.</li>
+<li><strong lang="en">Where is the bank?</strong> → Onde fica o banco?</li>
+</ul>
+</div></section>
+        <section>
+          <h2>⭐ Vocabulário-chave</h2>
+          <div class="vocab-grid">
+    <div class="vocab">
+      <div class="vocab-head">
+        <h3 lang="en">around the corner</h3>
+        <button type="button" class="vocab-say" data-czk-say="around the corner" aria-label="Ouvir a pronúncia de around the corner" aria-pressed="false" title="Ouvir around the corner">&#128266;</button>
+      </div>
+      <p><em>logo depois da esquina</em><br><small>Indica um lugar que você encontra depois de virar a esquina.<br><strong lang="en">The gas station is around the corner.</strong><br>O posto de gasolina fica logo depois da esquina.</small></p>
+    </div>
+    <div class="vocab green">
+      <div class="vocab-head">
+        <h3 lang="en">next to</h3>
+        <button type="button" class="vocab-say" data-czk-say="next to" aria-label="Ouvir a pronúncia de next to" aria-pressed="false" title="Ouvir next to">&#128266;</button>
+      </div>
+      <p><em>ao lado de</em><br><small>Indica que um lugar fica imediatamente ao lado de outro.<br><strong lang="en">The school is next to the restaurant.</strong><br>A escola fica ao lado do restaurante.</small></p>
+    </div>
+    <div class="vocab yellow">
+      <div class="vocab-head">
+        <h3 lang="en">between</h3>
+        <button type="button" class="vocab-say" data-czk-say="between" aria-label="Ouvir a pronúncia de between" aria-pressed="false" title="Ouvir between">&#128266;</button>
+      </div>
+      <p><em>entre</em><br><small>Para localizar algo usando dois pontos de referência, use between … and ….<br><strong lang="en">The house is between the bookstore and the bank.</strong><br>A casa fica entre a livraria e o banco.</small></p>
+    </div>
+          </div>
+        </section>
+        <section><h2>📚 Vocabulário completo da aula</h2><div class="outline-card">
+<h3>O bairro e os meios de transporte</h3>
+<ul>
+<li><strong lang="en">neighborhood</strong> → bairro, vizinhança</li>
+<li><strong lang="en">car</strong> → carro</li>
+<li><strong lang="en">taxi / city cab</strong> → táxi</li>
+<li><strong lang="en">train</strong> → trem</li>
+<li><strong lang="en">bus</strong> → ônibus</li>
+<li><strong lang="en">subway</strong> → metrô</li>
+<li><strong lang="en">bicycle</strong> → bicicleta</li>
+<li><strong lang="en">motorcycle</strong> → motocicleta</li>
+<li><strong lang="en">moped</strong> → ciclomotor</li>
+</ul>
+<h3>Lugares</h3>
+<ul>
+<li><strong lang="en">bank</strong> → banco</li>
+<li><strong lang="en">restaurant</strong> → restaurante</li>
+<li><strong lang="en">pharmacy</strong> → farmácia</li>
+<li><strong lang="en">school</strong> → escola</li>
+<li><strong lang="en">gas station</strong> → posto de gasolina</li>
+<li><strong lang="en">bus stop</strong> → ponto de ônibus</li>
+<li><strong lang="en">supermarket</strong> → supermercado</li>
+<li><strong lang="en">bookstore</strong> → livraria</li>
+<li><strong lang="en">library</strong> → biblioteca</li>
+<li><strong lang="en">store</strong> → loja</li>
+<li><strong lang="en">farm</strong> → fazenda</li>
+</ul>
+<h3>Localização</h3>
+<ul>
+<li><strong lang="en">across the street</strong> → do outro lado da rua</li>
+<li><strong lang="en">down the street</strong> → mais adiante na mesma rua</li>
+<li><strong lang="en">around the corner</strong> → logo depois da esquina</li>
+<li><strong lang="en">corner</strong> → esquina</li>
+<li><strong lang="en">on the left / on the right</strong> → à esquerda / à direita</li>
+<li><strong lang="en">next to</strong> → ao lado de</li>
+<li><strong lang="en">between … and …</strong> → entre … e …</li>
+<li><strong lang="en">Where is …?</strong> → Onde fica …?</li>
+</ul>
+<h3>Revisão · Pessoas e profissões</h3>
+<ul>
+<li><strong lang="en">first name / last name</strong> → primeiro nome / sobrenome</li>
+<li><strong lang="en">friend / friendly</strong> → amigo(a) / simpático(a)</li>
+<li><strong lang="en">classmate / neighbor</strong> → colega de classe / vizinho(a)</li>
+<li><strong lang="en">coworker / boss</strong> → colega de trabalho / chefe</li>
+<li><strong lang="en">teacher / scientist</strong> → professor(a) / cientista</li>
+<li><strong lang="en">administrative assistant</strong> → assistente administrativo(a)</li>
+<li><strong lang="en">engineer / musician</strong> → engenheiro(a) / músico(a)</li>
+<li><strong lang="en">artist / actor</strong> → artista / ator ou atriz</li>
+<li><strong lang="en">occupation / nationality</strong> → profissão / nacionalidade</li>
+<li><strong lang="en">my / your / our</strong> → meu ou minha / seu ou sua / nosso ou nossa</li>
+<li><strong lang="en">his / her</strong> → dele / dela</li>
+</ul>
+<h3>Revisão · Origem</h3>
+<ul>
+<li><strong lang="en">from</strong> → de, do ou da ao falar de origem</li>
+<li><strong lang="en">Brazil / Brazilian</strong> → Brasil / brasileiro(a)</li>
+<li><strong lang="en">Canada / Canadian</strong> → Canadá / canadense</li>
+<li><strong lang="en">Japan</strong> → Japão</li>
+<li><strong lang="en">South Korean</strong> → sul-coreano(a)</li>
+<li><strong lang="en">Colombia</strong> → Colômbia</li>
+<li><strong lang="en">Philadelphia</strong> → Filadélfia, uma cidade</li>
+</ul>
+</div></section>
+        <section><h2>🚨 Correções importantes</h2><div class="outline-card">
+
+<div class="correction">
+  <h3>A resposta precisa de sujeito</h3>
+  <p>❌ <span lang="en">Is Michelle.</span></p>
+  <p>✅ <strong lang="en">It is Michelle. / Her first name is Michelle.</strong></p>
+  <p>Ao responder sobre o primeiro nome, it retoma o nome. She is Michelle identifica a pessoa.</p>
+</div>
+
+<div class="correction">
+  <h3>Use um artigo antes da profissão</h3>
+  <p>❌ <span lang="en">I am administrative assistant.</span></p>
+  <p>✅ <strong lang="en">I am an administrative assistant.</strong></p>
+  <p>Use an antes do som de vogal de administrative. Em a scientist, o som inicial é de consoante.</p>
+</div>
+
+<div class="correction">
+  <h3>Mantenha apenas uma forma do verbo na pergunta</h3>
+  <p>❌ <span lang="en">Where are you’re from?</span></p>
+  <p>✅ <strong lang="en">Where are you from?</strong></p>
+  <p>A pergunta já tem are antes de you. A contração you’re significa you are e repetiria o verbo.</p>
+</div>
+
+<div class="correction">
+  <h3>Separe livraria e biblioteca</h3>
+  <p>❌ <span lang="en">bookstore = biblioteca</span></p>
+  <p>✅ <strong lang="en">bookstore = livraria / library = biblioteca</strong></p>
+  <p>Bookstore tem store, que significa loja. Library é o lugar onde se podem pegar livros emprestados.</p>
+</div>
+
+<div class="correction">
+  <h3>Complete a frase de localização</h3>
+  <p>❌ <span lang="en">The bus stop down the street.</span></p>
+  <p>✅ <strong lang="en">The bus stop is down the street.</strong></p>
+  <p>O ponto de ônibus é o sujeito e is faz o papel de “fica”. Down the street indica um ponto mais adiante na mesma rua, mesmo se ela for plana.</p>
+</div>
+
+<div class="correction">
+  <h3>Diga o lugar que fica ao lado da farmácia</h3>
+  <p>❌ <span lang="en">Bookstore next to the pharmacy.</span></p>
+  <p>✅ <strong lang="en">The bookstore is next to the pharmacy.</strong></p>
+  <p>Comece com the bookstore, inclua is e use next to para indicar que os dois lugares ficam lado a lado.</p>
+</div>
+</div></section>
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>🗣️ Tempo de Fala</h2>
+          <table class="talk-table">
+            <thead><tr><th scope="col">Quem falou</th><th scope="col">Porcentagem</th><th scope="col">Duração aproximada</th></tr></thead>
+            <tbody>
+              <tr class="row-teacher"><td class="talk-label">César (Professor)</td><td class="talk-percent">63%</td><td class="talk-time">25 min 20 s</td></tr>
+              <tr class="row-student"><td class="talk-label">Anna Ivers</td><td class="talk-percent">37%</td><td class="talk-time">15 min 08 s</td></tr>
+            </tbody>
+          </table>
+          <p class="note" style="margin-bottom:0">Estimativa pelos intervalos da transcrição, somando inglês e português. A proporção considera as duas pessoas e exclui os áudios do exercício e as pausas entre os trechos.</p>
+        </section>
+        <section>
+          <h2>📝 Homework</h2>
+          <div class="homework">
+            <p><strong>Para a próxima aula, revise os lugares do bairro e as expressões de localização.</strong></p>
+            <ol>
+              <li>Ouça as três expressões com áudio e repita cada frase em voz alta.</li>
+              <li>Desenhe um mapa simples com quatro lugares. Faça três perguntas com <em lang="en">Where is the …?</em> e responda com frases completas. Use <em lang="en">next to</em>, <em lang="en">between … and …</em> e <em lang="en">around the corner</em> uma vez cada.</li>
+              <li>Releia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana. Cubra as traduções e tente lembrar o sentido das expressões antes de conferir.</li>
+            </ol>
+          </div>
+        </section>
+      </main>
+      <footer><p>© 2025 CZK English • czkenglish@gmail.com</p></footer>
+    </article>
+  </div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body>
+</html>
