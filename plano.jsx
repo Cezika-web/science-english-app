@@ -665,7 +665,9 @@ function PlanoMontarWav(pcm) {
   for (let j = 0; j < pcm.length; j++) dv.setInt16(44 + j * 2, pcm[j], true);
   const bytes = new Uint8Array(dv.buffer); let bin = '';
   for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
-  return { base64: btoa(bin), dur: pcm.length / 16000 };
+  // pico = volume máximo da gravação (0 a 1): com voz clara passa de 0,25; só ruído de fundo fica abaixo de 0,05.
+  let pico = 0; for (let j = 0; j < pcm.length; j++) { const a = pcm[j] < 0 ? -pcm[j] : pcm[j]; if (a > pico) pico = a; }
+  return { base64: btoa(bin), dur: pcm.length / 16000, pico: pico / 32768 };
 }
 async function PlanoParaWav(blob) {
   const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -799,6 +801,9 @@ function PlanoVocabFalar({ vocab, titulo, onFeita, onClose, onAsk, fala }) {
     else { try { r = await PlanoAvaliar(fala, { modo: 'palavra', palavra: alvo, wav: wav.base64, chave }); } catch (e) { r = { falha: PlanoMsgErroFala(e) }; } }
     if (!vivo.current) return;
     if (!r.falha && typeof r.ok !== 'boolean') r = { falha: PlanoMsgErroFala(null) };
+    // O reconhecimento não devolveu palavra nenhuma, mas a gravação tem voz clara: o problema não é o microfone nem o barulho
+    // (o texto da função, "fale mais perto do microfone", seria falso). A palavra saiu diferente demais para ser reconhecida.
+    if (r.ok === false && !r.falha && !r.ouvi && wav && wav.pico >= 0.08) r = { ...r, semResposta: true, dica: 'Ouça o modelo de novo (🔊) e repita mais devagar, sílaba por sílaba.' };
     if (r.falha) { if (final.current[idx] !== 'ok') final.current[idx] = 'sem'; }
     else if (r.ok === true) final.current[idx] = 'ok';
     else { errosTotal.current[idx] = (errosTotal.current[idx] || 0) + 1; setErros(n => n + 1); }
@@ -841,9 +846,13 @@ function PlanoVocabFalar({ vocab, titulo, onFeita, onClose, onAsk, fala }) {
       {res && res.ok === true && <div style={caixa('#14532D', '#F0FDF4', '#BBF7D0')}>✅ Muito bem! Eu ouvi “{res.ouvi}”.<PlanoNotaTeste res={res} teste={fala.teste} /></div>}
       {res && res.falha && <div style={caixa('#78350F', '#FFFBEB', '#FDE68A')}>⚠️ {res.falha}</div>}
       {res && res.ok === false && !res.falha && <div style={{ ...caixa('#7F1D1D', '#FEF2F2', '#FECACA'), textAlign: 'center' }}>
-        <div>❌ Eu ouvi: <b>“{res.ouvi || 'nada'}”</b></div>
-        <div style={{ margin: '8px 0 4px' }}><PlanoPalavraComErros partes={res.partes} /></div>
-        <div style={{ fontSize: 11.5, fontWeight: 700, color: '#991B1B' }}>{res.motivo === 'pouco-claro' ? 'Eu entendi a palavra, mas o que está em vermelho não saiu com clareza.' : 'As letras em vermelho saíram diferentes.'}</div>
+        {res.semResposta
+          ? <div>🎧 Ouvi a sua voz, mas não reconheci a palavra.</div>
+          : <div>❌ Eu ouvi: <b>“{res.ouvi || 'nada'}”</b></div>}
+        <div style={{ margin: '8px 0 4px' }}>{res.semResposta
+          ? <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: .5, wordBreak: 'break-word', color: '#0F172A' }}>{alvo}</span>
+          : <PlanoPalavraComErros partes={res.partes} />}</div>
+        <div style={{ fontSize: 11.5, fontWeight: 700, color: '#991B1B' }}>{res.semResposta ? 'Alguma parte saiu diferente do esperado.' : res.motivo === 'pouco-claro' ? 'Eu entendi a palavra, mas o que está em vermelho não saiu com clareza.' : 'As letras em vermelho saíram diferentes.'}</div>
         {res.dica && <div style={{ marginTop: 8, fontWeight: 700, color: '#7F1D1D' }}>💡 {res.dica}</div>}
         <PlanoNotaTeste res={res} teste={fala.teste} />
         <button className="plano-btn sec" style={{ marginTop: 10, padding: '9px 14px', fontSize: 14 }} onClick={() => PlanoFalar(en)}>🔊 Ouvir de novo</button>
