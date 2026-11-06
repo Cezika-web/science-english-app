@@ -87,8 +87,11 @@
     .tab.tem-coisa:hover .lb { color: var(--text); }
     .tab.active.tem-coisa .lb { color: #fff; }
 
-    /* EurekIA: uma bolinha roxa (sem número) quando há pergunta nova de aluno. Pedido à parte, só para esta aba. */
-    .tab .nova-bolinha { display: none; width: 9px; height: 9px; border-radius: 50%; background: #7c3aed; margin-left: auto; flex-shrink: 0; }
+    /* EurekIA e Falas: uma bolinha roxa (sem número) quando há novidade. Pedido à parte, só para essas abas.
+       A bolinha fica solta no canto direito (position:absolute) pra NÃO tirar o ícone e o texto do centro —
+       antes ela usava margin-left:auto e empurrava o item inteiro pro lado esquerdo. */
+    .tab { position: relative; }
+    .tab .nova-bolinha { display: none; position: absolute; right: 12px; top: 50%; margin-top: -4.5px; width: 9px; height: 9px; border-radius: 50%; background: #7c3aed; }
     .tab.tem-bolinha .nova-bolinha { display: inline-block; }
     .tab.tem-bolinha .lb { font-weight: 800; color: var(--text); }
     .tab.active .nova-bolinha { background: #fff; }
