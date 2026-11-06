@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Joyce Rocha — CZK English</title>
+  <style>
+:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+.title-row{ display:flex;gap:10px;align-items:center; }
+.note{ color:var(--muted);font-size:0.9rem; }
+.outline-card li,.homework li{ margin-bottom:6px; }
+@media (max-width:540px){
+  .wrap{ padding:20px 12px; }
+  .card{ box-sizing:border-box; }
+  header{ flex-wrap:wrap; }
+  .title-row{ flex-wrap:wrap; }
+  .vocab{ min-width:0; }
+}
+@media print{
+  html,body{ background:#fff; }
+  .wrap,.card{ padding:0;box-shadow:none;border:0; }
+  .actions,.vocab-say{ display:none; }
+  h2,h3{ break-after:avoid; }
+  .vocab,.talk-table{ break-inside:avoid; }
+}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card">
+      <header>
+        <div>
+          <div class="title-row">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Unidade 2 — Possessivos e relações do dia a dia</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluna:</strong> Joyce Rocha &nbsp;•&nbsp;
+            <strong>Data:</strong> 11/05/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+      <main>
+        <section class="panel">
+          <p style="margin:0;font-weight:600;color:#14532D;"><em>Joyce, você retomou o verbo <span lang="en">to be</span>, as profissões e as respostas curtas. Na abertura da Unidade 2, praticou como dizer de quem alguém é amigo, vizinho ou colega usando <span lang="en">my, your, his, her, our, their</span> e o apóstrofo.</em></p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 8px;">Na revisão das quatro primeiras aulas, você substituiu nomes por <strong lang="en">they</strong>, praticou a diferença entre <strong lang="en">you are</strong> e <strong lang="en">they are</strong> e retomou as contrações <strong lang="en">I'm</strong> e <strong lang="en">you're</strong>. Também fez exercícios de escuta e soletração, relembrou <strong lang="en">twenty thousand</strong> e revisou o artigo de <strong lang="en">an artist</strong>.</p>
+            <p style="margin:0 0 8px;">Na correção do desafio, vocês compararam duas respostas curtas: <strong lang="en">No, they aren't.</strong> para uma pergunta com <em lang="en">are</em>, e <strong lang="en">No, they don't.</strong> para uma pergunta com <em lang="en">do</em>. Você também viu por que a frase <strong lang="en">It is an hour from here</strong> está correta. O <em>h</em> de <em lang="en">hour</em> é mudo, então a palavra começa com som de vogal.</p>
+            <p style="margin:0 0 8px;">Na Unidade 2, você passou dos pronomes de sujeito aos <strong>adjetivos possessivos</strong>. Em <em lang="en">they are teammates</em>, <em lang="en">they</em> é o sujeito. Em <em lang="en">their teammates</em>, <em lang="en">their</em> acompanha <em lang="en">teammates</em> e indica de quem são os colegas de time. A mesma lógica ajuda a distinguir <em lang="en">your</em> de <em lang="en">you're</em>. Você também praticou <em lang="en">my, his, her</em> e <em lang="en">our</em> e ouviu pequenos diálogos para identificar a relação de cada pessoa com Bruce.</p>
+            <p style="margin:0;">Depois, você praticou a posse com nomes e substantivos. Use <strong lang="en">Don's neighbors</strong> com um nome, <strong lang="en">my friend's boss</strong> com um substantivo singular e <strong lang="en">our friends' teammates</strong> com plural já terminado em <em>-s</em>. Quando duas pessoas compartilham a mesma relação, como em <strong lang="en">Liz and Julie's teacher</strong>, o <em>’s</em> vai no último nome. Para traduzir, comece pela relação: <em>os vizinhos do Don</em>, <em>o chefe do meu amigo</em>, <em>os colegas de time dos nossos amigos</em>.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2>
+          <div class="outline-card">
+            <p class="note" style="margin-top:0;">Frases da revisão, dos exercícios e dos diálogos, com grafia e pontuação normalizadas.</p>
+            <ul>
+              <li><strong lang="en">I&#x27;m Joyce.</strong><br>Eu sou a Joyce.</li>
+              <li><strong lang="en">Are you managers?</strong><br>Vocês são gerentes?</li>
+              <li><strong lang="en">It is an hour from here.</strong><br>Fica a uma hora daqui.</li>
+              <li><strong lang="en">Is Mary a pilot?</strong><br>Mary é piloto?</li>
+              <li><strong lang="en">She&#x27;s my teacher.</strong><br>Ela é minha professora.</li>
+              <li><strong lang="en">Melanie is my friend.</strong><br>Melanie é minha amiga.</li>
+              <li><strong lang="en">She&#x27;s your neighbor.</strong><br>Ela é sua vizinha.</li>
+              <li><strong lang="en">We’re their teammates.</strong><br>Somos colegas de time deles/delas.</li>
+              <li><strong lang="en">Nice to meet you.</strong><br>Prazer em conhecer você.</li>
+              <li><strong lang="en">He is my friend&#x27;s boss.</strong><br>Ele é chefe do meu amigo.</li>
+              <li><strong lang="en">Our neighbors&#x27; last name is Jones.</strong><br>O sobrenome dos nossos vizinhos é Jones.</li>
+              <li><strong lang="en">Are they Don&#x27;s neighbors?</strong><br>Eles são vizinhos do Don?</li>
+              <li><strong lang="en">Nina is Mr. Martin&#x27;s boss.</strong><br>Nina é chefe do Sr. Martin.</li>
+              <li><strong lang="en">They are our friends&#x27; teammates.</strong><br>Eles são colegas de time dos nossos amigos.</li>
+              <li><strong lang="en">Peter is Liz and Julie&#x27;s teacher.</strong><br>Peter é professor da Liz e da Julie.</li>
+              <li><strong lang="en">See you next week.</strong><br>Até a semana que vem.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <div class="vocab-head">
+                <h3 lang="en">classmate</h3>
+                <button type="button" class="vocab-say" data-czk-say="classmate"
+                        aria-label="Ouvir a pronúncia de classmate" aria-pressed="false"
+                        title="Ouvir classmate">&#128266;</button>
+              </div>
+              <p><em>colega de classe</em><br><small>Pessoa que estuda na mesma turma que você.<br>
+                <strong lang="en">He&#x27;s my classmate.</strong><br>Ele é meu colega de classe.</small></p>
+            </div>
+            <div class="vocab green">
+              <div class="vocab-head">
+                <h3 lang="en">teammate</h3>
+                <button type="button" class="vocab-say" data-czk-say="teammate"
+                        aria-label="Ouvir a pronúncia de teammate" aria-pressed="false"
+                        title="Ouvir teammate">&#128266;</button>
+              </div>
+              <p><em>colega de time ou de equipe</em><br><small>Pessoa que faz parte do mesmo time que você.<br>
+                <strong lang="en">They&#x27;re our teammates.</strong><br>Eles são nossos colegas de time.</small></p>
+            </div>
+            <div class="vocab yellow">
+              <div class="vocab-head">
+                <h3 lang="en">colleague</h3>
+                <button type="button" class="vocab-say" data-czk-say="colleague"
+                        aria-label="Ouvir a pronúncia de colleague" aria-pressed="false"
+                        title="Ouvir colleague">&#128266;</button>
+              </div>
+              <p><em>colega de trabalho</em><br><small>Pessoa com quem você trabalha. No dia a dia, também apareceu coworker.<br>
+                <strong lang="en">She&#x27;s his colleague.</strong><br>Ela é colega de trabalho dele.</small></p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2>
+          <div class="outline-card">
+            <h3>Relações pessoais e profissionais</h3>
+            <ul>
+              <li><strong lang="en">relationship / relationships</strong> — relação / relações, relacionamentos</li>
+              <li><strong lang="en">friend / mate</strong> — amigo(a). Mate, sozinho com esse sentido, é comum no inglês britânico informal</li>
+              <li><strong lang="en">classmate / student</strong> — colega de classe / aluno(a)</li>
+              <li><strong lang="en">teammate / team</strong> — colega de time / time, equipe</li>
+              <li><strong lang="en">neighbor / neighborhood</strong> — vizinho(a) / bairro, vizinhança</li>
+              <li><strong lang="en">colleague / coworker</strong> — colega de trabalho</li>
+              <li><strong lang="en">boss / manager</strong> — chefe / gerente</li>
+              <li><strong lang="en">teacher / doctor</strong> — professor(a) / médico(a)</li>
+              <li><strong lang="en">artist / pilot</strong> — artista / piloto</li>
+            </ul>
+            <h3>Pronomes e adjetivos possessivos</h3>
+            <ul>
+              <li><strong lang="en">I → my</strong> — eu → meu, minha, meus, minhas</li>
+              <li><strong lang="en">you → your</strong> — você / vocês → seu, sua, seus, suas / de vocês</li>
+              <li><strong lang="en">he → his</strong> — ele → dele</li>
+              <li><strong lang="en">she → her</strong> — ela → dela</li>
+              <li><strong lang="en">we → our</strong> — nós → nosso, nossa, nossos, nossas</li>
+              <li><strong lang="en">they → their</strong> — eles / elas → deles / delas</li>
+              <li><strong lang="en">my car / your house / my job</strong> — meu carro / sua casa / meu trabalho</li>
+            </ul>
+            <h3>Títulos, nomes e expressões</h3>
+            <ul>
+              <li><strong lang="en">Mr. / Dr.</strong> — senhor / doutor(a), normalmente com sobrenome</li>
+              <li><strong lang="en">Mrs. / Miss / Ms.</strong> — títulos femininos. Mrs. é tradicional para mulher casada, Miss para mulher solteira, e Ms. independe do estado civil</li>
+              <li><strong lang="en">last name / surname</strong> — sobrenome</li>
+              <li><strong lang="en">meet / know</strong> — conhecer alguém pela primeira vez ou encontrar / conhecer, saber</li>
+              <li><strong lang="en">Nice to meet you.</strong> — Prazer em conhecer você.</li>
+              <li><strong lang="en">See you next week.</strong> — Até a semana que vem.</li>
+            </ul>
+            <h3>Revisão da Unidade 1</h3>
+            <ul>
+              <li><strong lang="en">am / is / are</strong> — formas de be, ser ou estar</li>
+              <li><strong lang="en">I&#x27;m / you&#x27;re / she&#x27;s / they&#x27;re</strong> — contrações de I am / you are / she is / they are</li>
+              <li><strong lang="en">a doctor / an artist / an hour</strong> — um(a) médico(a) / um(a) artista / uma hora</li>
+              <li><strong lang="en">hour / our</strong> — hora / nosso(a)(s). O h de hour é mudo</li>
+              <li><strong lang="en">hundred / thousand / twenty thousand</strong> — cem / mil / vinte mil</li>
+              <li><strong lang="en">like / coffee / every morning</strong> — gostar / café / toda manhã</li>
+              <li><strong lang="en">well / good</strong> — bem / bom ou boa. Em resposta a How are you?, tanto I&#x27;m well quanto I&#x27;m good são possíveis</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">🚨 Correções importantes</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 6px;"><strong>1. Negativa com like e resposta curta</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ They not like coffee.</p>
+            <p style="margin:0 0 14px;color:#276749;">✅ <strong>No, they don&#x27;t.</strong> — A pergunta com <em>do</em> pede <em>do</em> também na resposta curta. Para escrever a negativa completa, use <em>They don't like coffee.</em> Com <em>be</em>, o próprio verbo faz esse papel, como em <em>No, they aren't.</em></p>
+            <p style="margin:0 0 6px;"><strong>2. A escolha de a ou an depende do som</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ a hour</p>
+            <p style="margin:0 0 14px;color:#276749;">✅ <strong>an hour</strong> — O <em>h</em> de <em>hour</em> é mudo. O primeiro som é de vogal, como em <em>an artist</em>. Compare com <em>a house</em>, em que o <em>h</em> é pronunciado.</p>
+            <p style="margin:0 0 6px;"><strong>3. O possessivo aponta para a pessoa certa</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ She&#x27;s your neighbor. → Ela é nossa vizinha.</p>
+            <p style="margin:0 0 14px;color:#276749;">✅ <strong>Ela é sua vizinha.</strong> — <em>Your</em> vem de <em>you</em> e significa “seu/sua” ou “de vocês”. Para “nossa vizinha”, use <em>our neighbor</em>.</p>
+            <p style="margin:0 0 6px;"><strong>4. O apóstrofo marca quem tem a relação</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ He is my friend&#x27;s boss. → Ele é meu chefe e amigo.</p>
+            <p style="margin:0 0 14px;color:#276749;">✅ <strong>Ele é chefe do meu amigo.</strong> — Leia em dois blocos: <em>my friend's</em> indica de quem estamos falando e <em>boss</em> diz qual é a relação. Em português, comece por <em>chefe</em>.</p>
+            <p style="margin:0 0 6px;"><strong>5. O apóstrofo vai depois do s no plural regular</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ They are our friend&#x27;s teammates. (para vários amigos)</p>
+            <p style="margin:0 0 14px;color:#276749;">✅ <strong>They are our friends&#x27; teammates.</strong> — <em>Friend's</em> indica um amigo. Em <em>friends'</em>, o <em>s</em> já marca o plural e o apóstrofo vem depois. O contexto ajuda a distinguir os dois na fala.</p>
+            <p style="margin:0 0 6px;"><strong>6. A ordem das palavras mostra que é uma pergunta</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ Are they Don&#x27;s neighbors? → Eles são vizinhos do Don.</p>
+            <p style="margin:0 0 14px;color:#276749;">✅ <strong>Eles são vizinhos do Don?</strong> — Quando <em>are</em> vem antes de <em>they</em>, temos uma pergunta direta com <em>be</em>. Na afirmação, a ordem é <em>They are</em>.</p>
+            <p class="note" style="margin-bottom:0;">💡 <strong>Sobrenome em inglês:</strong> <em lang="en">last name</em> e <em lang="en">surname</em> significam “sobrenome”. “Nome do meio” é <em lang="en">middle name</em>.</p>
+          </div>
+        </section>
+
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>🗣️ Tempo de Fala</h2>
+          <table class="talk-table">
+            <thead>
+              <tr><th scope="col">Quem falou</th><th scope="col">Porcentagem</th><th scope="col">Duração aproximada</th></tr>
+            </thead>
+            <tbody>
+              <tr class="row-teacher">
+                <td class="talk-label">César (Professor)</td><td class="talk-percent">77%</td><td class="talk-time">39 min 04 s</td>
+              </tr>
+              <tr class="row-student">
+                <td class="talk-label">Joyce Rocha</td><td class="talk-percent">23%</td><td class="talk-time">11 min 23 s</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="note" style="margin:10px 0 0;">Estimativa baseada nos intervalos da transcrição, incluindo falas em português. Pausas e áudios compartilhados ficam fora da conta.</p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">📝 Homework</h2>
+          <div class="homework">
+            <p style="margin:0 0 8px;"><strong>📌 Até a próxima aula</strong></p>
+            <ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+              <li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana. Ouça os três termos em destaque e repita os exemplos em voz alta.</li>
+              <li>Nas atividades do app, pratique <strong>adjetivos possessivos e posse com apóstrofo</strong>. Use o assistente do app se tiver dúvida sobre a tradução ou sobre singular e plural.</li>
+              <li><strong>Prática sugerida.</strong> Traduza em voz alta <em lang="en">my friend's boss</em>, <em lang="en">my boss's friend</em> e <em lang="en">my friends' boss</em>. Em cada expressão, identifique de quem é a relação e se ela envolve um ou vários amigos.</li>
+              <li><strong>Prática sugerida.</strong> Escreva três frases sobre pessoas que você conhece. Use um adjetivo possessivo, um nome com <em>’s</em> e um plural terminado em <em>-s</em> com o apóstrofo no fim.</li>
+            </ul>
+          </div>
+        </section>
+      </main>
+      <footer>
+        <p style="margin:18px 0 0;">© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p>
+      </footer>
+    </article>
+  </div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body>
+</html>
