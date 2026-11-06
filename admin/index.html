@@ -3461,9 +3461,44 @@
       if (document.getElementById('tab-calendar')?.classList.contains('active')) renderCalendar();
     });
 
+    // A linha vermelha do "agora" é ao vivo: ela é desenhada a partir do relógio
+    // do aparelho toda vez que alguém chama esta função, e o relógio abaixo chama
+    // de tempos em tempos e ao voltar para a aba. Não depende de a grade ter sido
+    // redesenhada — por isso uma agenda deixada aberta o dia todo continua certa.
+    let calendarAgoraCtx = null; // { dias, startMinutes, height, hojeAoDesenhar } da última grade desenhada
+    function calendarDesenharLinhaAgora() {
+      const grid = document.getElementById('calendar-grid');
+      if (!grid) return;
+      grid.querySelectorAll(':scope > .calendar-now-line').forEach(linha => linha.remove());
+      if (!calendarAgoraCtx) return;
+      const { dias, startMinutes, height } = calendarAgoraCtx;
+      const agora = new Date(), indice = dias.indexOf(calendarDateKey(agora));
+      if (indice < 0) return;
+      const top = (agora.getHours()*60 + agora.getMinutes() + agora.getSeconds()/60 - startMinutes) / 60 * CALENDAR_HOUR_HEIGHT;
+      if (top < 0 || top > height) return;
+      grid.insertAdjacentHTML('beforeend', `<div class="calendar-now-line" style="top:${top.toFixed(1)}px"><span class="calendar-now-today" style="left:${indice * 100 / dias.length}%;width:${100 / dias.length}%"></span></div>`);
+    }
+    function calendarAgoraTick() {
+      if (!document.getElementById('tab-calendar')?.classList.contains('active')) return;
+      if (calendarView === 'month') {
+        // A visão de mês não tem linha, mas o "hoje" destacado muda à meia-noite.
+        if (calendarAgoraCtx && calendarDateKey(new Date()) !== calendarAgoraCtx.hojeAoDesenhar) { calendarAgoraCtx.hojeAoDesenhar = calendarDateKey(new Date()); renderCalendar(); }
+        return;
+      }
+      if (!calendarAgoraCtx) return;
+      // Virou o dia com a agenda aberta: o destaque de "hoje" (cabeçalho e coluna) também muda.
+      if (calendarDateKey(new Date()) !== calendarAgoraCtx.hojeAoDesenhar) { renderCalendar(); return; }
+      calendarDesenharLinhaAgora();
+    }
+    setInterval(calendarAgoraTick, 15000);
+    // Aba que ficou escondida (ou computador que dormiu) tem o relógio atrasado:
+    // ao voltar, acerta na hora em vez de esperar o próximo ciclo.
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) calendarAgoraTick(); });
+    window.addEventListener('focus', calendarAgoraTick);
+
     function renderCalendar() {
       calendarApplyTheme();
-      if (calendarView === 'month') return renderCalendarMonth();
+      if (calendarView === 'month') { if (!calendarAgoraCtx) calendarAgoraCtx = { dias:[], startMinutes:0, height:0 }; calendarAgoraCtx.hojeAoDesenhar = calendarDateKey(new Date()); return renderCalendarMonth(); }
       calendarDisplayEvents.clear();
       // A grade sempre mostra a janela larga (05:00–23:00), como no Notion; o
       // expediente salvo continua valendo, só não limita mais o que aparece.
@@ -3589,12 +3624,8 @@
         return `<div class="calendar-day-column${work ? '' : ' off-hours'}${key === todayKey ? ' today' : ''}${key === calendarSelectedDay ? ' picked' : ''}" data-date="${key}" style="height:${height}px">${fundos}${events}${faixasHtml}</div>`;
       }).join('');
       document.getElementById('calendar-grid').innerHTML = `<div class="calendar-hours" style="height:${height}px">${labels}</div>${columns}`;
-      const now = new Date();
-      const todayIndex = days.findIndex(date => calendarDateKey(date) === todayKey);
-      if (todayIndex >= 0) {
-        const top = (now.getHours()*60 + now.getMinutes() - startMinutes) / 60 * CALENDAR_HOUR_HEIGHT;
-        if (top >= 0 && top <= height) document.getElementById('calendar-grid').insertAdjacentHTML('beforeend', `<div class="calendar-now-line" style="top:${top}px"><span class="calendar-now-today" style="left:${todayIndex * 100 / 7}%"></span></div>`);
-      }
+      calendarAgoraCtx = { dias:days.map(calendarDateKey), startMinutes, height, hojeAoDesenhar:todayKey };
+      calendarDesenharLinhaAgora();
       // Seleção por arrasto: segura o mouse e arrasta para pintar o horário, como no Notion Calendar.
       const slotMinutes = calendarSlotMinutes(), totalSlots = Math.max(1, Math.round((endMinutes - startMinutes) / slotMinutes));
       const weekEl = document.querySelector('.calendar-week');
