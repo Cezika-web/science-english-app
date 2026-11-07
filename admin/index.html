@@ -1870,10 +1870,11 @@
             <div style="font-weight:800;font-size:.88rem;margin-bottom:2px;">🎙️ Fala das alunas neste livro <small style="font-weight:600;color:var(--muted);">(vale para todas as alunas do Connectivity 1; desligado por padrão)</small></div>
             <label class="cr-opc" style="margin:6px 0 0;"><input type="checkbox" id="cr-vocab-pron"><span>🎤 Vocabulário: a aluna grava e o app confere a pronúncia<small>A aluna ouve a palavra, grava, e o app confere de forma bem exigente (outra palavra nunca vale) e mostra onde errou. O jogo da memória não muda.</small></span></label>
             <label class="cr-opc" style="margin:6px 0 0;"><input type="checkbox" id="cr-gravar-falas"><span>🎙️ Toda fala é gravada e transcrita<small>Os exercícios de falar passam a gravar de verdade (até 30 s). O áudio e a transcrição ficam na aba Falas.</small></span></label>
+            <label class="cr-opc" style="margin:6px 0 0;"><input type="checkbox" id="cr-pron-dica"><span>💡 Dar ao Google uma dica da palavra esperada<small>Sem a dica, o Google devolve “nada” quando a pronúncia sai diferente demais (aunt, niece…). Com a dica, ele escolhe a palavra esperada quando a pronúncia chega perto. Outra palavra continua sem valer. Use junto com uma exigência baixa (ex.: 0,25).</small></span></label>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:.84rem;">
               <label for="cr-pron-min" style="font-weight:700;">Exigência da pronúncia</label>
-              <input type="number" id="cr-pron-min" min="0.5" max="0.95" step="0.05" placeholder="0.80" style="width:84px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font:inherit;">
-              <span style="color:var(--muted);font-size:.76rem;">de 0,50 a 0,95 (padrão 0,80). Mais alto = mais exigente com a clareza da palavra.</span>
+              <input type="number" id="cr-pron-min" min="0" max="0.95" step="0.05" placeholder="0.80" style="width:84px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font:inherit;">
+              <span style="color:var(--muted);font-size:.76rem;">de 0 a 0,95 (padrão 0,80). Mais alto = mais exigente com a clareza da palavra; 0 = vale a palavra ouvida certa, qualquer que seja a nota.</span>
               <span id="cr-fala-msg" style="font-size:.78rem;font-weight:700;"></span>
             </div>
             <div style="margin-top:6px;font-size:.76rem;color:var(--muted);line-height:1.5;">Antes de ligar, teste com a sua voz (logado como professor): <code>index.html?planoteste=1&amp;curso=u05&amp;falar=1</code>. Para valer, a API “Cloud Speech-to-Text” precisa estar ligada no projeto e a função <code>avaliarFala</code> publicada.</div>
@@ -8854,10 +8855,11 @@
       } catch (e) { resumo.innerHTML = `<div class="form-msg err" style="display:block">Não consegui carregar o curso: ${esc(e.message)}</div>`; }
     }
 
-    // Chaves de fala do livro (cursos/connectivity-1): vocabPronuncia, gravarFalas e pronunciaMin. Ausentes = desligado / padrão 0,8.
+    // Chaves de fala do livro (cursos/connectivity-1): vocabPronuncia, gravarFalas, pronunciaDica e pronunciaMin. Ausentes = desligado / padrão 0,8.
     function crRenderFala(ind) {
       document.getElementById('cr-vocab-pron').checked = !!ind.vocabPronuncia;
       document.getElementById('cr-gravar-falas').checked = !!ind.gravarFalas;
+      document.getElementById('cr-pron-dica').checked = !!ind.pronunciaDica;
       document.getElementById('cr-pron-min').value = typeof ind.pronunciaMin === 'number' ? ind.pronunciaMin : '';
     }
     async function crSalvarFala(campos, msgOk) {
@@ -8868,10 +8870,11 @@
         msg.style.color = '#16a34a'; msg.textContent = '✅ ' + msgOk;
       } catch (e) { msg.style.color = '#dc2626'; msg.textContent = '❌ Não consegui salvar: ' + e.message; throw e; }
     }
-    [['cr-vocab-pron', 'vocabPronuncia', 'Vocabulário com pronúncia'], ['cr-gravar-falas', 'gravarFalas', 'Gravação das falas']].forEach(([id, campo, nome]) => {
+    [['cr-vocab-pron', 'vocabPronuncia', 'Vocabulário com pronúncia', 'Vale na próxima vez que a aluna abrir o app.'], ['cr-gravar-falas', 'gravarFalas', 'Gravação das falas', 'Vale na próxima vez que a aluna abrir o app.'],
+      ['cr-pron-dica', 'pronunciaDica', 'Dica da palavra ao Google', 'Vale na próxima gravação da aluna (a função avaliarFala precisa estar publicada com esta versão).']].forEach(([id, campo, nome, quando]) => {
       document.getElementById(id).onchange = async ev => {
         const cx = ev.target;
-        try { await crSalvarFala({ [campo]: cx.checked }, `${nome} ${cx.checked ? 'ligado' : 'desligado'}. Vale na próxima vez que a aluna abrir o app.`); }
+        try { await crSalvarFala({ [campo]: cx.checked }, `${nome} ${cx.checked ? 'ligado' : 'desligado'}. ${quando}`); }
         catch (e) { cx.checked = !cx.checked; }
       };
     });
@@ -8879,7 +8882,7 @@
       const c = ev.target, bruto = String(c.value).replace(',', '.').trim(), msg = document.getElementById('cr-fala-msg');
       if (!bruto) { try { await crSalvarFala({ pronunciaMin: deleteField() }, 'Exigência voltou ao padrão (0,80).'); if (cursoIndice) delete cursoIndice.pronunciaMin; } catch (e) {} return; }
       const n = Number(bruto);
-      if (!Number.isFinite(n) || n < 0.5 || n > 0.95) { msg.style.color = '#dc2626'; msg.textContent = '❌ Use um valor de 0,50 a 0,95.'; c.value = typeof cursoIndice?.pronunciaMin === 'number' ? cursoIndice.pronunciaMin : ''; return; }
+      if (!Number.isFinite(n) || n < 0 || n > 0.95) { msg.style.color = '#dc2626'; msg.textContent = '❌ Use um valor de 0 a 0,95.'; c.value = typeof cursoIndice?.pronunciaMin === 'number' ? cursoIndice.pronunciaMin : ''; return; }
       try { await crSalvarFala({ pronunciaMin: n }, `Exigência ${String(n).replace('.', ',')} salva.`); } catch (e) {}
     };
 

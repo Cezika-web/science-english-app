@@ -89,9 +89,26 @@ const token = { access_token: 'tok-1', expires_in: 3600, token_type: 'Bearer' };
   await assert.rejects(conferirFala(g, criarFonteDeToken(g), { modo: 'palavra', alvo: 'x', wav: 'QUJD' }), e => e.tipo === 'desligada');
 }
 
-// 7) exigência do livro: 0,5–0,95, padrão 0,8
+// 7) exigência do livro: 0–0,95, padrão 0,8 (até 06/11/2026 o piso era 0,5)
 assert.equal(exigencia(undefined), CONFIANCA_MINIMA); assert.equal(exigencia(null), CONFIANCA_MINIMA); assert.equal(exigencia(''), CONFIANCA_MINIMA); assert.equal(exigencia('abc'), CONFIANCA_MINIMA);
-assert.equal(exigencia(0.9), 0.9); assert.equal(exigencia('0,7'), 0.7); assert.equal(exigencia(0.99), 0.95); assert.equal(exigencia(0.1), 0.5);
+assert.equal(exigencia(0.9), 0.9); assert.equal(exigencia('0,7'), 0.7); assert.equal(exigencia(0.99), 0.95); assert.equal(exigencia(0.1), 0.1);
+assert.equal(exigencia(0.25), 0.25); assert.equal(exigencia('0,25'), 0.25); assert.equal(exigencia(0), 0); assert.equal(exigencia(-1), 0);
+
+// 7b) a dica vai ao Google só quando pedida, e o mínimo 0,25 deixa passar "cousin" ouvido certo com nota baixa (caso real da Fátima, 06/11/2026)
+{
+  const corpoEnviado = f => JSON.parse(f.chamadas.find(c => c.url === URL_SPEECH).opcoes.body);
+  const rotas = fala => ({ [URL_TOKEN]: resposta(200, token), [URL_SPEECH]: resposta(200, fala) });
+  const conferir = async (fala, extra) => { const f = fetchFalso(rotas(fala)); const r = await conferirFala(f, criarFonteDeToken(f), { modo: 'palavra', alvo: 'cousin', wav: 'QUJD', ...extra }); return { r, corpo: corpoEnviado(f) }; };
+  let x = await conferir(speechOk('cousin', 0.29), { minimo: 0.25, dica: true });
+  assert.equal(x.r.ok, true); assert.equal(x.r.minimo, 0.25); assert.deepEqual(x.corpo.config.speechContexts, [{ phrases: ['cousin'], boost: 10 }]);
+  x = await conferir(speechOk('cousin', 0.04), { minimo: 0.25, dica: true }); assert.equal(x.r.ok, false, 'nota 0,04 não passa com mínimo 0,25'); assert.equal(x.r.motivo, 'pouco-claro');
+  x = await conferir(speechOk('causing', 0.9), { minimo: 0.25, dica: true }); assert.equal(x.r.ok, false, 'outra palavra nunca vale, mesmo com nota alta e dica'); assert.equal(x.r.motivo, 'diferente');
+  x = await conferir(speechOk('cousin', 0.04), { minimo: 0 }); assert.equal(x.r.ok, true, 'mínimo 0: vale a palavra ouvida igual');
+  x = await conferir(speechOk('cousin', 0.9), { minimo: 0.8 }); assert.equal(x.corpo.config.speechContexts, undefined, 'sem `dica`, nada de speechContexts');
+  x = await conferir(speechOk('cousin', 0.9), { minimo: 0.8, dica: false }); assert.equal(x.corpo.config.speechContexts, undefined);
+  const f = fetchFalso(rotas(speechOk('hello', 0.9))); await conferirFala(f, criarFonteDeToken(f), { modo: 'livre', alvo: '', wav: 'QUJD', dica: true });
+  assert.equal(corpoEnviado(f).config.speechContexts, undefined, 'fala livre nunca leva dica');
+}
 
 // 8) cota por dia
 {

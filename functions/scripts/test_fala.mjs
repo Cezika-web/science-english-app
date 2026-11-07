@@ -51,8 +51,11 @@ h.writeUInt32LE(16000, 24); h.writeUInt32LE(32000, 28); h.writeUInt16LE(2, 32); 
 assert.equal(duracaoWav(Buffer.concat([h, dados]).toString('base64')), 1);
 assert.equal(duracaoWav('AAAA'), null);
 
-// 11) o pedido não leva "dicas" que deixariam o reconhecimento bonzinho
+// 11) por padrão o pedido não leva "dicas" (conferência exigente); com `alvoDica` a palavra esperada vai como dica, só na conferência de palavra
 const c = corpoSpeech('AAAA', 'palavra'); assert.equal(c.config.speechContexts, undefined); assert.equal(c.config.enableWordConfidence, true);
+assert.deepEqual(corpoSpeech('AAAA', 'palavra', 'aunt').config.speechContexts, [{ phrases: ['aunt'], boost: 10 }], 'com dica: a palavra esperada, peso 10');
+assert.equal(corpoSpeech('AAAA', 'livre', 'aunt').config.speechContexts, undefined, 'fala livre nunca leva dica');
+assert.equal(corpoSpeech('AAAA', 'palavra', '').config.speechContexts, undefined, 'dica vazia = sem dica');
 // 12) frase com palavrinha ("an appetizer"): a confiança baixa de "an" NÃO reprova (caso real do professor, 04/11/2026); a da palavra de sentido, sim
 const porPalavra = (transcript, notas) => ({ results: [{ alternatives: [{ transcript, confidence: 0.8, words: transcript.split(' ').map((w, k) => ({ word: w, confidence: notas[k] })) }] }] });
 r = interpretaPalavra(porPalavra('an appetizer', [0.52, 0.91]), palavraAlvo('an appetizer'));

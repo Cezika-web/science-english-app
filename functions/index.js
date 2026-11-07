@@ -2515,15 +2515,15 @@ export const avaliarFala = onCall(
     }
 
     try {
-      let minimo = exigencia(undefined);
+      let minimo = exigencia(undefined); let dica = false;
       if (modo === 'palavra' && curso) {
-        try { const c = await db.doc(`cursos/${curso}`).get(); if (c.exists) minimo = exigencia(c.data().pronunciaMin); }
+        try { const c = await db.doc(`cursos/${curso}`).get(); if (c.exists) { minimo = exigencia(c.data().pronunciaMin); dica = c.data().pronunciaDica === true; } }
         catch (e) { console.warn('avaliarFala: não li a exigência do curso, usando o padrão:', e?.message); }
       }
-      const r = await conferirFala((...args) => fetch(...args), fonteDeTokenFala, { modo, alvo, wav, minimo });
+      const r = await conferirFala((...args) => fetch(...args), fonteDeTokenFala, { modo, alvo, wav, minimo, dica });
       if (!teste) {
         const registro = modo === 'palavra'
-          ? { modo, palavra: alvo, ouvi: r.ouvi, ok: r.ok, conf: r.conf, motivo: r.motivo, palavras: (r.palavras || []).map(x => ({ t: x.t, c: x.c })) }
+          ? { modo, palavra: alvo, ouvi: r.ouvi, ok: r.ok, conf: r.conf, minimo: r.minimo, comDica: dica, motivo: r.motivo, palavras: (r.palavras || []).map(x => ({ t: x.t, c: x.c })) }
           : { modo, transcricao: r.texto, conf: r.conf };
         try {
           await db.doc(`students/${uid}/falas/${chave}`).set({ ...registro, avaliadoEm: new Date().toISOString() }, { merge: true });

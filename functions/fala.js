@@ -14,18 +14,20 @@ export const normaliza = s => String(s || '').toLowerCase().normalize('NFD').rep
 export function palavraAlvo(s) { return normaliza(String(s || '').replace(/\([^)]*\)/g, ' ').split(/[\/;,]/)[0]); }
 
 // ───────── pedido ao serviço de voz ─────────
-export function corpoSpeech(wavBase64, modo) {
+export const BOOST_DICA = 10;   // peso (0 a 20) da dica da palavra esperada; 10 foi o testado com gravações reais (06/11/2026)
+// `alvoDica` (opcional, só na conferência de palavra): dá ao Google a palavra esperada como "dica" (speechContexts). Sem dica, o Google
+// devolve VAZIO quando a pronúncia sai diferente demais (aunt, niece…); com dica ele escolhe a palavra esperada quando a pronúncia chega perto.
+// Por padrão NÃO vai dica (conferência bem exigente); o professor liga em cursos/{id}.pronunciaDica.
+export function corpoSpeech(wavBase64, modo, alvoDica) {
   const palavra = modo === 'palavra';
-  return {
-    config: {
-      encoding: 'LINEAR16', sampleRateHertz: 16000, languageCode: 'en-US', audioChannelCount: 1,
-      model: palavra ? 'latest_short' : 'latest_long',
-      enableWordConfidence: true, maxAlternatives: 1,
-      enableAutomaticPunctuation: !palavra,
-      // sem "dicas" de palavras (speechContexts): elas deixariam o reconhecimento mais bonzinho com o que foi dito.
-    },
-    audio: { content: wavBase64 },
+  const config = {
+    encoding: 'LINEAR16', sampleRateHertz: 16000, languageCode: 'en-US', audioChannelCount: 1,
+    model: palavra ? 'latest_short' : 'latest_long',
+    enableWordConfidence: true, maxAlternatives: 1,
+    enableAutomaticPunctuation: !palavra,
   };
+  if (palavra && alvoDica) config.speechContexts = [{ phrases: [String(alvoDica)], boost: BOOST_DICA }];
+  return { config, audio: { content: wavBase64 } };
 }
 
 // ───────── alinhamento letra a letra (para mostrar ONDE a palavra saiu diferente) ─────────
@@ -123,11 +125,12 @@ export function duracaoWav(base64) {
 }
 
 // ───────── exigência por livro (cursos/{id}.pronunciaMin) ─────────
-// O professor muda pelo painel (0,5 a 0,95). Ausente ou inválido: o padrão. Fora da faixa: encosta no limite mais próximo.
+// O professor muda pelo painel (0 a 0,95; 0 = vale qualquer palavra ouvida igual à esperada). Ausente ou inválido: o padrão.
+// Fora da faixa: encosta no limite mais próximo. (Até 06/11/2026 o piso era 0,5.)
 export function exigencia(valor) {
   const n = typeof valor === 'string' ? Number(valor.replace(',', '.')) : Number(valor);
   if (valor === null || valor === undefined || valor === '' || !Number.isFinite(n)) return CONFIANCA_MINIMA;
-  return Math.min(0.95, Math.max(0.5, n));
+  return Math.min(0.95, Math.max(0, n));
 }
 
 // ───────── cota por aluno por dia (o contador mora em students/{uid}/planoProgresso/quotaFala) ─────────
@@ -187,10 +190,10 @@ export function criarFonteDeToken(fetchFn, agora = () => Date.now()) {
   };
 }
 
-export async function chamarSpeech(fetchFn, token, wavBase64, modo) {
+export async function chamarSpeech(fetchFn, token, wavBase64, modo, alvoDica) {
   let r;
   try {
-    r = await fetchFn(URL_SPEECH, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(corpoSpeech(wavBase64, modo)) });
+    r = await fetchFn(URL_SPEECH, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(corpoSpeech(wavBase64, modo, alvoDica)) });
   } catch (e) { throw new ErroFala('servico', 'Não consegui falar com o serviço de voz.', e && e.message); }
   let j = null; try { j = JSON.parse(await r.text()); } catch (e) { /* corpo vazio ou não-JSON */ }
   if (r.ok) return j || {};
@@ -204,7 +207,8 @@ export async function chamarSpeech(fetchFn, token, wavBase64, modo) {
 }
 
 // Junta tudo: chama o serviço e interpreta. Palavra → { ok, ouvi, conf, motivo, partes, dica }; livre → { texto, conf }.
-export async function conferirFala(fetchFn, fonteDeToken, { modo, alvo, wav, minimo }) {
-  const resposta = await chamarSpeech(fetchFn, await fonteDeToken(), wav, modo);
+// `dica`: true = manda a palavra esperada ao Google como dica (ver corpoSpeech).
+export async function conferirFala(fetchFn, fonteDeToken, { modo, alvo, wav, minimo, dica }) {
+  const resposta = await chamarSpeech(fetchFn, await fonteDeToken(), wav, modo, modo === 'palavra' && dica ? alvo : '');
   return modo === 'palavra' ? interpretaPalavra(resposta, alvo, minimo) : interpretaLivre(resposta);
 }
