@@ -15,12 +15,12 @@ const messaging = firebase.messaging();
 // Subir esta versão a cada mudança em challenge.jsx ou no shell: os assets são
 // servidos cache-first, então sem trocar o nome do cache o aluno continua com o
 // arquivo antigo mesmo depois do deploy. Os arquivos de apoio (adesao.js, plano.jsx…) levam ?v=NN no index.html E aqui no SHELL: troque o NN junto com o CACHE. Os arquivos de apoio (adesao.js, plano.jsx…) levam ?v=NN no index.html E aqui no SHELL: troque o NN junto com o CACHE. Os arquivos de apoio (adesao.js, plano.jsx…) levam ?v=NN no index.html E aqui no SHELL: troque o NN junto com o CACHE. Os arquivos de apoio (adesao.js, plano.jsx…) levam ?v=NN no index.html E aqui no SHELL: troque o NN junto com o CACHE. Os arquivos de apoio (adesao.js, plano.jsx…) levam ?v=NN no index.html E aqui no SHELL: troque o NN junto com o CACHE. Os arquivos de apoio (adesao.js, plano.jsx…) levam ?v=NN no index.html E aqui no SHELL: troque o NN junto com o CACHE. Os arquivos de apoio (adesao.js, plano.jsx…) levam ?v=NN no index.html E aqui no SHELL: troque o NN junto com o CACHE. Os arquivos de apoio (adesao.js, plano.jsx…) levam ?v=NN no index.html E aqui no SHELL: troque o NN junto com o CACHE. Os arquivos de apoio (adesao.js, plano.jsx…) levam ?v=NN no index.html E aqui no SHELL: troque o NN junto com o CACHE.
-const CACHE = 'czk-v82';
+const CACHE = 'czk-v83';
 const SHELL = [
   '/science-english-app/',
   '/science-english-app/index.html',
   '/science-english-app/challenge.jsx?v=82',
-  '/science-english-app/plano.jsx?v=82',
+  '/science-english-app/plano.jsx?v=83',
   '/science-english-app/trilha.jsx?v=82',
   '/science-english-app/novidades.jsx?v=82',
   '/science-english-app/adesao.js?v=82',

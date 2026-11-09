@@ -1942,21 +1942,12 @@ function EurekiaMini({ onClick }) {
   return <button onClick={onClick} aria-label="Perguntar ao Dr. EurekIA" title="Perguntar ao Dr. EurekIA" style={{ width: 34, height: 34, padding: 0, border: 0, borderRadius: '50%', background: 'none', cursor: 'pointer', flexShrink: 0, boxShadow: '0 3px 8px rgba(109,40,217,.35)' }}><EurekiaAvatar size={34} /></button>;
 }
 
-// A pergunta que vai para a IA quando o aluno toca na bolinha de um exercício: o que ele escreveu + o enunciado + o
-// pedido de explicar sem dar a resposta. O servidor corta a pergunta em 400 caracteres, então tudo é medido aqui.
 function PlanoCorta(s, n) {
   s = String(s || '').replace(/\s+/g, ' ').trim();
   return s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s;
 }
-function PlanoPerguntaDoExercicio(texto, ex) {
-  const fim = ' Explique o que ele pede e como pensar, mas NÃO dê a resposta.';
-  const enun = ex.enunciado && ex.enunciado !== ex.item ? PlanoCorta(ex.enunciado, 110) : '';
-  const cab = `${PlanoCorta(texto, 120)}${enun ? ` Enunciado: “${enun}”` : ''} Exercício: “`;
-  return `${cab}${PlanoCorta(ex.item, Math.max(40, 398 - cab.length - 1 - fim.length))}”${fim}`;
-}
-
 // `sugestao`: pergunta já escrita no campo (a da apresentação do Dr. EurekIA, "Experimentar agora").
-// `exercicio`: {enunciado, item} da bolinha de um exercício; vai junto na 1ª pergunta e aparece num cartão acima da conversa.
+// `exercicio`: {enunciado, item} da bolinha de um exercício; vai em campo separado e aparece num cartão acima da conversa.
 // `previa`: a prévia da página do livro como texto (PlanoPreviaTexto); vai junto em TODAS as perguntas, para a IA saber o objetivo da página.
 function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose, z, sugestao, exercicio, previa }) {
   const [texto, setTexto] = React.useState(sugestao || ''); const [msgs, setMsgs] = React.useState([]); const [pensando, setPensando] = React.useState(false);
@@ -1965,16 +1956,18 @@ function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose, z, sugestao, e
   React.useEffect(() => { if (fimRef.current) fimRef.current.scrollIntoView({ block: 'end' }); }, [msgs, pensando]);
   const enviar = async () => {
     const pergunta = texto.trim(); if (!pergunta || pensando) return;
-    // Na 1ª pergunta de um exercício o enunciado vai junto; o aluno só vê o que escreveu (o cartão acima mostra o exercício).
-    const enviada = exercicio && msgs.length === 0 ? PlanoPerguntaDoExercicio(pergunta, exercicio) : pergunta;
-    setMsgs(m => [...m, { de: 'eu', x: pergunta, enviada }]); setTexto(''); setPensando(true);
+    const exercicioAberto = exercicio ? {
+      enunciado: exercicio.enunciado === exercicio.item ? '' : PlanoCorta(exercicio.enunciado, 160),
+      item: PlanoCorta(exercicio.item, 250),
+    } : null;
+    setMsgs(m => [...m, { de: 'eu', x: pergunta }]); setTexto(''); setPensando(true);
     try {
       let r;
       if (cfg.previa || !onAsk) { await new Promise(res => setTimeout(res, 900)); r = cfg.espelho ? { resposta: 'Você está no **espelho**: é assim que a EurekIA aparece para o aluno. Aqui ela não responde de verdade e a pergunta não é gravada.' } : { resposta: 'Boa pergunta! Depois de **do/does/don’t/doesn’t** o verbo principal fica sempre na forma base: *Does she work?* (e não *Does she works?*).\n\n(Resposta de exemplo — o assistente de verdade ainda não está ligado.)' }; }
       else {
         // A conversa segue: manda a última pergunta e resposta para a IA entender um "e no passado?".
-        const ultimaIA = [...msgs].reverse().find(m => m.de === 'ia' && !m.erro);
-        r = await onAsk(enviada, contexto, ultima && ultimaIA ? { pergunta: ultima.enviada || ultima.x, resposta: ultimaIA.x } : null, previa || '');
+        const ultimaIA = msgs.at(-1)?.de === 'ia' && !msgs.at(-1).erro ? msgs.at(-1) : null;
+        r = await onAsk(pergunta, contexto, ultima && ultimaIA ? { pergunta: ultima.x, resposta: ultimaIA.x } : null, previa || '', exercicioAberto);
       }
       // O servidor conta as perguntas do mês e a aluna não vê contador: só este aviso ao chegar no limite.
       if (r && r.limite) setMsgs(m => [...m, { de: 'ia', x: 'Suas perguntas chegaram ao limite mensal. Se precisar, fale com o César pelo WhatsApp.', erro: true }]);
@@ -1994,7 +1987,7 @@ function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose, z, sugestao, e
         {exercicio && <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 12, padding: '9px 11px', margin: '0 0 8px', fontSize: 12.5, lineHeight: 1.45, color: '#4C1D95', fontWeight: 600, overflowWrap: 'anywhere' }}><div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .4, textTransform: 'uppercase', color: '#6D28D9', marginBottom: 2 }}>Exercício</div>{exercicio.enunciado && exercicio.item !== exercicio.enunciado && <div style={{ color: '#64748B', marginBottom: 3 }}>{PlanoCorta(exercicio.enunciado, 160)}</div>}<div>{PlanoCorta(exercicio.item, 220)}</div></div>}
         {msgs.length === 0 && exercicio && <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B', padding: 6 }}>A pergunta já está escrita: toque em <b>Enviar</b> e o Dr. EurekIA explica o que o exercício pede, <b>sem entregar a resposta</b>.</div>}
         {msgs.length === 0 && sugestao && !exercicio && <div style={{ fontSize: 13, fontWeight: 700, color: '#5B21B6', background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 12, padding: '9px 11px', margin: '0 0 8px', lineHeight: 1.45 }}>{previa ? <>💡 A pergunta já está escrita: toque em <b>Enviar</b> e o Dr. EurekIA explica o que você vai aprender nesta página.</> : <>💡 Que tal começar por aqui? A pergunta já está escrita: toque em <b>Enviar</b> e veja o que o Dr. EurekIA sabe sobre os seus estudos.</>}</div>}
-        {msgs.length === 0 && !exercicio && <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B', padding: 6 }}>Escreva a sua dúvida de inglês abaixo. O assistente olha as suas últimas aulas e atividades para explicar, em português, com exemplos em inglês. Se precisar do César, toque em WhatsApp.</div>}
+        {msgs.length === 0 && !exercicio && <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B', padding: 6 }}>Escreva a sua dúvida de inglês abaixo. O assistente pode usar suas últimas aulas e atividades quando elas ajudarem a responder. Se precisar do César, toque em WhatsApp.</div>}
         {msgs.map((m, i) => <div key={i} style={{ display: 'flex', justifyContent: m.de === 'eu' ? 'flex-end' : 'flex-start', margin: '6px 0' }}><div style={{ maxWidth: '86%', padding: '9px 12px', borderRadius: 14, fontSize: 13.5, fontWeight: 600, lineHeight: 1.5, whiteSpace: 'pre-wrap', background: m.de === 'eu' ? '#7C3AED' : m.erro ? '#FEF2F2' : '#fff', color: m.de === 'eu' ? '#fff' : '#0F172A', border: m.de === 'eu' ? 0 : '1px solid #E2E8F0' }}>{m.de === 'ia' ? <PlanoMd x={m.x} /> : m.x}</div></div>)}
         {pensando && <div style={{ fontSize: 13, fontWeight: 700, color: '#64748B', padding: 6 }}>O Dr. EurekIA está pensando…</div>}
         <div ref={fimRef} />

@@ -1618,6 +1618,8 @@
           .eu-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px 16px; }
           .eu-card h2 { font-size:1rem; margin:0 0 4px; }
           .eu-sub { font-size:.82rem; color:var(--muted); margin:0 0 10px; line-height:1.5; }
+          .eu-gasto:not([hidden]) { display:flex; align-items:center; flex-wrap:wrap; justify-content:space-between; gap:10px; padding-top:12px; border-top:1px solid var(--border); }
+          .eu-gasto strong { display:block; font-size:1.3rem; }
           .eu-aluno { display:flex; align-items:center; gap:10px; width:100%; text-align:left; border:1px solid var(--border); background:#fff; border-radius:12px; padding:10px 12px; margin-bottom:8px; cursor:pointer; font-family:inherit; }
           .eu-aluno:hover { border-color:#c4b5fd; background:#faf5ff; }
           .eu-aluno.on { border-color:#7c3aed; background:#f5f3ff; }
@@ -1638,6 +1640,14 @@
           <h2>💡 Dr. EurekIA: o que os alunos perguntaram</h2>
           <p class="eu-sub">Cada aluno que fez uma pergunta aparece na lista. Toque no nome para ver as perguntas e as respostas do Dr. EurekIA. A <strong style="color:#7c3aed;">bolinha roxa</strong> marca quem tem pergunta nova; ela some quando você abre o aluno.</p>
           <span id="eu-msg" style="font-size:.8rem;color:var(--muted);"></span>
+          <section id="eu-gasto" class="eu-gasto" hidden>
+            <div>
+              <div class="eu-sub" style="margin:0;">Gasto acumulado com a API</div>
+              <strong id="eu-gasto-valor" aria-live="polite">Carregando…</strong>
+              <div id="eu-gasto-detalhe" class="eu-sub" style="margin:3px 0 0;"></div>
+            </div>
+            <button type="button" id="eu-gasto-atualizar" class="btn btn-sm">Atualizar</button>
+          </section>
         </div>
         <div class="eu-grade">
           <div class="eu-card"><div id="eu-lista"><div class="loading">Carregando...</div></div></div>
@@ -8437,7 +8447,54 @@
         euAtualizarBolinha();
       } catch (e) { console.warn('EurekIA: não consegui checar perguntas novas', e); }
     }
+    function euCustoUSD(uso) {
+      const valor = Number(uso.custoUSD) || 0;
+      if ('tokensCacheCriados' in uso) return valor;
+      // O registro antigo usava US$ 3/15 para Sonnet 5 e US$ 1/5 para o filtro Haiku 5.5.
+      // Os multiplicadores também corrigem leitura e escrita do cache cobradas na época.
+      if (uso.modelo === 'claude-sonnet-5') return valor * (2 / 3);
+      if (uso.modelo === 'claude-haiku-5-5') return valor / 10;
+      return valor;
+    }
+    async function euCarregarGasto() {
+      const card = document.getElementById('eu-gasto');
+      card.hidden = !ADMIN_EMAILS.includes(auth.currentUser?.email || '');
+      if (card.hidden) return;
+
+      const valor = document.getElementById('eu-gasto-valor');
+      const detalhe = document.getElementById('eu-gasto-detalhe');
+      const botao = document.getElementById('eu-gasto-atualizar');
+      if (botao.disabled) return;
+      botao.disabled = true;
+      valor.textContent = 'Carregando…';
+      detalhe.textContent = '';
+      try {
+        const cotacao = fetch('https://api.bcb.gov.br/dados/serie/bcdata.sgs.1/dados/ultimos/1?formato=json', { signal: AbortSignal.timeout(4000) })
+          .then(r => r.ok ? r.json() : null)
+          .then(dados => dados?.[0])
+          .catch(() => null);
+        const snap = await getDocs(query(collection(db, '_apiUsage'), where('tipo', '==', 'assistente')));
+        const total = snap.docs.reduce((soma, doc) => soma + euCustoUSD(doc.data()), 0);
+        const usd = 'US$ ' + total.toLocaleString('pt-BR', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+        valor.textContent = usd;
+        detalhe.textContent = 'Consumo registrado desde o lançamento, incluindo filtro e respostas.';
+        const cambio = await cotacao;
+        const taxa = Number(cambio?.valor);
+        if (taxa > 0 && /^\d{2}\/\d{2}\/\d{4}$/.test(cambio.data)) {
+          valor.textContent = '≈ ' + (total * taxa).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          detalhe.textContent = `${usd} · Câmbio de referência do Banco Central em ${cambio.data}. Inclui filtro e respostas.`;
+        }
+      } catch (e) {
+        valor.textContent = 'Gasto indisponível';
+        detalhe.textContent = 'Não consegui consultar o consumo. Tente atualizar.';
+        console.warn('EurekIA: não consegui carregar o gasto', e);
+      } finally {
+        botao.disabled = false;
+      }
+    }
+    document.getElementById('eu-gasto-atualizar').addEventListener('click', euCarregarGasto);
     async function carregarEurekia() {
+      void euCarregarGasto();
       const lista = document.getElementById('eu-lista');
       try {
         const snap = await getDocs(query(collection(db, 'schools', escolaAtual, 'eurekiaAlunos'), orderBy('ultimaEm', 'desc')));
@@ -8467,9 +8524,14 @@
         painel.innerHTML = `<h2>${esc(resumo.nome || 'Aluno')}</h2><p class="eu-sub">${itens.length} ${itens.length === 1 ? 'pergunta' : 'perguntas'}, da mais nova para a mais antiga.</p>` + itens.map(q => {
           const t = q.criadoEm && typeof q.criadoEm.toDate === 'function' ? q.criadoEm.toDate().getTime() : 0;
           const nova = t > visto;
+          const totalAulas = Array.isArray(q.aulas) ? q.aulas.length : 0;
+          const material = [
+            totalAulas ? `${totalAulas} pós-aula${totalAulas === 1 ? '' : 's'}` : '',
+            q.semanaAtividades ? `atividades da semana de ${esc(String(q.semanaAtividades).replace(/^\d{4}-(\d\d)-(\d\d).*$/, '$2/$1').toLowerCase().replace(/^semana de /, ''))}` : '',
+          ].filter(Boolean).join(' e ');
           return `<div class="eu-qa ${nova ? 'nova' : ''}"><div class="eu-meta">${nova ? '<span class="eu-nova">NOVA</span>' : ''}<span>${esc(euQuando(q.criadoEm))}</span>${q.contexto ? `<span>· durante: ${esc(q.contexto)}</span>` : ''}</div>
             <div class="eu-p">${esc(q.pergunta || '')}</div><div class="eu-r">${euMd(q.resposta || '')}</div>
-            ${Array.isArray(q.aulas) && q.aulas.length ? `<div class="eu-fonte">Material usado: ${q.aulas.length} pós-aulas${q.semanaAtividades ? ` e as atividades da semana de ${esc(String(q.semanaAtividades).replace(/^\d{4}-(\d\d)-(\d\d).*$/, '$2/$1').toLowerCase().replace(/^semana de /, ''))}` : ''}.</div>` : ''}</div>`;
+            ${material ? `<div class="eu-fonte">Material usado: ${material}.</div>` : ''}</div>`;
         }).join('');
         if (Number(resumo.naoVistas || 0) > 0) {
           await updateDoc(doc(db, 'schools', escolaAtual, 'eurekiaAlunos', uid), { naoVistas: 0, vistaEm: serverTimestamp() });
