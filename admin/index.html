@@ -2064,7 +2064,7 @@
               <div class="field"><label for="f-lab-un-ini">O aluno começa na unidade</label><select id="f-lab-un-ini"></select></div>
               <div class="field"><label for="f-lab-un-atual">Unidade liberada agora</label><select id="f-lab-un-atual"></select></div>
             </div>
-            <div class="field"><label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="f-lab-assistente" checked /> Assistente de dúvidas ligado (20 perguntas por mês)</label></div>
+            <div class="field"><label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="f-lab-assistente" checked /> Assistente de dúvidas ligado (30 perguntas por mês)</label></div>
             <p style="margin:-4px 0 16px;padding:10px 12px;border-radius:8px;background:#f5f3ff;border:1px solid #ddd6fe;color:#4c1d95;font-size:.78rem;line-height:1.5;">📅 Com data e hora, a aula entra na <strong>Agenda</strong> como <strong>Science Lab</strong> (1h, roxo). Sem elas, você marca depois pela Agenda. A mensalidade já entra no <strong>Financeiro</strong>.</p>
           </div>
           <p class="add-so-regular" style="margin:-4px 0 16px;padding:10px 12px;border-radius:8px;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A;font-size:.78rem;line-height:1.5;">📅 Os dias e o horário já entram sozinhos na <strong>Agenda</strong> como aula semanal, e a mensalidade já entra no <strong>Financeiro</strong>. <span id="f-mensalidade-hint"></span></p>
@@ -2182,7 +2182,7 @@
 
         <div class="field">
           <label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="e-assistente" checked /> Assistente de dúvidas (Dr. EurekIA) ligado</label>
-          <div id="e-assistente-dica" style="font-size:0.75rem;color:var(--muted);margin-top:4px;">Desmarque para esconder o Dr. EurekIA deste aluno. O limite é de 20 perguntas por mês.</div>
+          <div id="e-assistente-dica" style="font-size:0.75rem;color:var(--muted);margin-top:4px;">Desmarque para esconder o Dr. EurekIA deste aluno. O limite é de 30 perguntas por mês.</div>
         </div>
 
         <div class="field">
@@ -2219,7 +2219,7 @@
           <div class="field"><label>O aluno começou na unidade</label><select id="pl-un-ini"></select></div>
           <div class="field"><label>Unidade liberada agora (é a que o Caminho dele mostra; troque depois da aula do mês)</label><select id="pl-un-atual"></select></div>
         </div>
-        <div class="field"><label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="pl-assistente" /> Assistente de dúvidas ligado (20 perguntas por mês)</label></div>
+        <div class="field"><label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="pl-assistente" /> Assistente de dúvidas ligado (30 perguntas por mês)</label></div>
         <button class="btn-add" id="pl-save">Salvar</button>
         <div class="form-msg" id="pl-msg"></div>
       </div>
@@ -8197,7 +8197,7 @@
       caixaIA.disabled = emPlano;
       document.getElementById('e-assistente-dica').textContent = emPlano
         ? 'Este aluno está no Science Lab: ligue ou desligue em 🧪 Editar plano.'
-        : 'Desmarque para esconder o Dr. EurekIA deste aluno. O limite é de 20 perguntas por mês.';
+        : 'Desmarque para esconder o Dr. EurekIA deste aluno. O limite é de 30 perguntas por mês.';
       editCarregarPagamento(uid);
       document.getElementById('e-slug').value  = s.slug || toSlug(s.name || s.firstName || '');
       document.getElementById('e-photo-preview').src = editPhoto || '';

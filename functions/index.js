@@ -2311,7 +2311,7 @@ export const ajustarCreditos = onCall(
  * ficam em students/{uid}/duvidas (só o professor lê) e o custo em _apiUsage (tipo "assistente").
  * Escolas de outros professores só usam se schools/{id}.assistente === true (a API é paga pelo César).
  */
-const LIMITE_ASSISTENTE_MES = 20;
+const LIMITE_ASSISTENTE_MES = 30;
 const LIMITE_RECUSAS_MES = 40;            // conversas fora do assunto não gastam a cota, mas têm teto
 
 const REGRAS_ASSISTENTE = `Você é o Dr. EurekIA, o assistente de dúvidas de inglês de um aluno brasileiro do professor César (aulas particulares e curso com o livro Connectivity): um cientista simpático que ajuda a fazer o "eureka!" acontecer. Seu papel é ajudar o aluno a entender o que ele já estudou e a tirar dúvidas de inglês, como um monitor que conhece as aulas dele. Só diga seu nome se perguntarem.

@@ -110,12 +110,13 @@ function bancoEmMemoria(inicial) {
   };
 }
 
-const reservar = (db, uid, rota = 'DIFICIL', limite = 20) => reservarPerguntaAssistente(db, {
+const reservar = (db, uid, rota = 'DIFICIL', limite = 30) => reservarPerguntaAssistente(db, {
   usoRef: uid, mesRef: 'geral', uid, mes: '2026-11', limite, rota, atualizadoEm: 'agora',
 });
-const db = bancoEmMemoria({ geral: { haiku: 18, sonnet: 1 }, aluna: { perguntas: 20 } });
-assert.equal(await reservar(db, 'aluna'), null, 'cota padrão de 20');
-assert.equal(await reservar(db, 'aluna', 'TRADUCAO', 30), HAIKU_ASSISTENTE, 'cota personalizada de 30');
+const db = bancoEmMemoria({ geral: { haiku: 18, sonnet: 1 }, aluna: { perguntas: 30 } });
+assert.equal(await reservar(bancoEmMemoria({ aluna: { perguntas: 20 } }), 'aluna', 'TRADUCAO'), HAIKU_ASSISTENTE, 'aluna que já fez 20 pode continuar');
+assert.equal(await reservar(db, 'aluna'), null, 'cota padrão de 30');
+assert.equal(await reservar(db, 'aluna', 'TRADUCAO', 40), HAIKU_ASSISTENTE, 'cota personalizada de 40');
 const reservados = await Promise.all([reservar(db, 'aluno-a'), reservar(db, 'aluno-b', 'DIFICIL_MATERIAL')]);
 assert.deepEqual(reservados.sort(), [HAIKU_ASSISTENTE, SONNET_ASSISTENTE]);
 assert.ok(db.conflitos() > 0);
