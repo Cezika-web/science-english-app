@@ -3631,7 +3631,8 @@
     // Semanas (inteiras) entre a semana que está na janela e a semana de hoje.
     const livSemanasAFrente = () => Math.round((calendarAddDays(livBase, livSemana * 7) - calendarWeekStartDate(new Date())) / (7 * 86400000));
 
-    // Faixas livres de UM dia: o que a agenda mostra como vaga vermelha, sem o que já passou e sem o que não cabe uma aula.
+    // Horários livres de UM dia: o que a agenda mostra como vaga vermelha, sem o que já passou, fatiado em blocos do tamanho
+    // da aula (livre das 15h às 20h → 15–16, 16–17, 17–18…). A sobra que não comporta uma aula inteira fica de fora.
     function livFaixasDoDia(data, duracao) {
       const agora = new Date(), chave = calendarDateKey(data), chaveHoje = calendarDateKey(agora);
       if (chave < chaveHoje) return [];
@@ -3641,7 +3642,9 @@
         const corte = Math.ceil((agora.getHours() * 60 + agora.getMinutes()) / 30) * 30;
         faixas = faixas.map(([inicio, fim]) => [Math.max(inicio, corte), fim]).filter(([inicio, fim]) => fim > inicio);
       }
-      return faixas.filter(([inicio, fim]) => fim - inicio >= duracao);
+      const blocos = [];
+      faixas.forEach(([inicio, fim]) => { for (let ini = inicio; ini + duracao <= fim; ini += duracao) blocos.push([ini, ini + duracao]); });
+      return blocos;
     }
     function livSemanaCompleta() {
       const duracao = livDuracao();
@@ -3670,7 +3673,7 @@
       const { todos, lista, unico } = livDiasEscolhidos();
       if (unico && !lista[0].faixas.length) return `Não há horários livres ${datas ? 'em ' + LIV_DIAS[lista[0].dow].toLowerCase() + ', ' + livDM(lista[0].data) : 'nesse dia'}. 😕`;
       if (!lista.length) return 'Não há horários livres nesses dias. 😕';
-      const linhas = ['🗓️ *Horários disponíveis*', `_${livQuando(todos, datas)}_`, `_Aulas de ${livDuracaoTxt(duracao)} — é só escolher o início dentro da faixa_`, ''];
+      const linhas = ['🗓️ *Horários disponíveis*', `_${livQuando(todos, datas)}_`, `_Aulas de ${livDuracaoTxt(duracao)} — é só escolher o horário_`, ''];
       lista.forEach(dia => {
         if (!unico) linhas.push(`*${LIV_DIAS[dia.dow]}${datas ? ' · ' + livDM(dia.data) : ''}*`);   // 1 dia só: o dia já está no cabeçalho
         if (!dia.faixas.length) linhas.push('• sem horário livre');
@@ -3690,13 +3693,14 @@
       const { todos, lista: dias } = livDiasEscolhidos();
       const cor = /^#[0-9a-f]{6}$/i.test(calendarSchoolColor()) ? calendarSchoolColor() : '#2f86e6';
       const marca = String(escolas.find(escola => escola.id === escolaAtual)?.name || '').toUpperCase();
-      const PAD = 48, BADGE = 176, PILL_H = 66, GAP = 14, CARD_PAD = 30, CARD_GAP = 22, HEAD_H = 330, FOOT_H = 210;
+      const PAD = 48, BADGE = 176, PILL_H = 60, GAP = 14, CARD_PAD = 30, CARD_GAP = 22, HEAD_H = 330, FOOT_H = 210;
       const ctx = cv.getContext('2d');
-      ctx.font = `800 34px ${LIV_FONTE}`;
+      ctx.font = `800 30px ${LIV_FONTE}`;
       const areaX = PAD + BADGE, areaW = W - PAD - areaX - CARD_PAD;
-      // 1) mede cada cartão (as faixas quebram de linha quando não cabem)
+      // 1) mede cada cartão. Todos os blocos de horário têm a mesma largura (grade arrumada) e quebram de linha quando não cabem.
+      const pilulaW = Math.ceil(Math.max(0, ...dias.flatMap(dia => dia.faixas.map(([inicio, fim]) => ctx.measureText(`${calendarTime(inicio)} – ${calendarTime(fim)}`).width)))) + 40;
       const cartoes = dias.map(dia => {
-        const pilulas = dia.faixas.map(([inicio, fim]) => { const texto = `${calendarTime(inicio)} – ${calendarTime(fim)}`; return { texto, w:ctx.measureText(texto).width + 56 }; });
+        const pilulas = dia.faixas.map(([inicio, fim]) => ({ texto:`${calendarTime(inicio)} – ${calendarTime(fim)}`, w:pilulaW }));
         const linhas = []; let atual = [], usado = 0;
         pilulas.forEach(pilula => { if (atual.length && usado + GAP + pilula.w > areaW) { linhas.push(atual); atual = []; usado = 0; } usado += (atual.length ? GAP : 0) + pilula.w; atual.push(pilula); });
         if (atual.length) linhas.push(atual);
@@ -3742,7 +3746,7 @@
           linha.forEach(pilula => {
             ctx.fillStyle = '#e6f7ee'; livRetangulo(ctx, x, py, pilula.w, PILL_H, 33); ctx.fill();
             ctx.strokeStyle = '#a7e3c4'; ctx.lineWidth = 2; livRetangulo(ctx, x+1, py+1, pilula.w-2, PILL_H-2, 32); ctx.stroke();
-            ctx.fillStyle = '#12703f'; ctx.font = `800 34px ${LIV_FONTE}`; ctx.fillText(pilula.texto, x + 28, py + 45);
+            ctx.fillStyle = '#12703f'; ctx.font = `800 30px ${LIV_FONTE}`; ctx.textAlign = 'center'; ctx.fillText(pilula.texto, x + pilula.w/2, py + 40); ctx.textAlign = 'left';
             x += pilula.w + GAP;
           });
         });
@@ -3750,7 +3754,7 @@
       });
       // rodapé
       ctx.textAlign = 'center'; ctx.fillStyle = '#0f1724'; ctx.font = `800 40px ${LIV_FONTE}`; ctx.fillText('Qual horário fica melhor para você?', W/2, y + 62);
-      ctx.fillStyle = '#64748b'; ctx.font = `600 29px ${LIV_FONTE}`; ctx.fillText(`Aulas de ${livDuracaoTxt(duracao)} — escolha o início dentro da faixa`, W/2, y + 112);
+      ctx.fillStyle = '#64748b'; ctx.font = `600 29px ${LIV_FONTE}`; ctx.fillText(`Aulas de ${livDuracaoTxt(duracao)} — escolha o horário que preferir`, W/2, y + 112);
       if (marca) { ctx.fillStyle = cor; ctx.font = `800 26px ${LIV_FONTE}`; espaco('4px'); ctx.fillText(marca, W/2, y + 164); espaco('0px'); }
       ctx.textAlign = 'left';
     }
