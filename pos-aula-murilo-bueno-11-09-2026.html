@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Murilo Bueno — CZK English</title>
+  <style>
+:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+@media (max-width:540px){
+  header{flex-wrap:wrap;}
+  .card{min-width:0;}
+  .badge{white-space:nowrap;}
+  .vocab{min-width:0;}
+  .speaking{padding:10px;}
+  .talk-table th,.talk-table td{padding:6px;font-size:.8rem;}
+}
+@media print{
+  html,body{height:auto;background:#fff;}
+  .wrap{display:block;padding:0;}
+  .card{width:auto;max-width:none;border:none;box-shadow:none;padding:0;}
+  .actions,.vocab-say{display:none;}
+  h2,h3{break-after:avoid;}
+  .vocab,.speaking,.homework{break-inside:avoid;}
+}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card">
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Alfabeto e soletração em inglês</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Murilo Bueno &nbsp;•&nbsp;
+            <strong>Data:</strong> 11/09/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+        <section class="panel" aria-label="Introdução">
+          <p style="margin:0;font-weight:600;color:#14532D;"><em>Murilo, você retomou as perguntas e respostas com <span lang="en">to be</span> e treinou o alfabeto para reconhecer letras, anotar nomes que ouviu e soletrar o seu em inglês.</em></p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 8px;"><strong>Revisão do desafio e das atividades.</strong> Você relembrou <span lang="en">I am</span>, <span lang="en">he/she/it is</span> e <span lang="en">you/we/they are</span>. Para perguntar, colocou o verbo antes do sujeito, como em <span lang="en">You are a scientist</span> → <span lang="en">Are you a scientist?</span> Para negar, colocou <span lang="en">not</span> depois do verbo e praticou formas como <span lang="en">isn't</span> e <span lang="en">you're not</span>. Também revisou <span lang="en">a/an</span> pelo som inicial e retomou o pronome e o verbo nas respostas curtas.</p>
+            <p style="margin:0 0 8px;"><strong>Os nomes das letras.</strong> Você ouviu e repetiu o alfabeto. Algumas letras têm o mesmo som de palavras que você já usa, como <span lang="en">I</span> e <span lang="en">U</span> (como <span lang="en">you</span>). Você comparou <span lang="en">A</span>, <span lang="en">E</span> e <span lang="en">I</span>, diferenciou <span lang="en">D</span>, <span lang="en">G</span> e <span lang="en">J</span> e usou <span lang="en">DJ</span> para treinar os dois sons em sequência.</p>
+            <p style="margin:0;"><strong>Da letra ao nome inteiro.</strong> Primeiro, você escolheu entre duas letras. Depois, reconheceu letras sem alternativas e identificou nomes em minidiálogos. No último exercício de escuta, anotou os nomes que os falantes soletraram e conferiu detalhes como o <span lang="en">G</span> de <span lang="en">Geoffrey</span> e a posição do <span lang="en">N</span> em <span lang="en">Stephanie</span>. Para fechar, soletrou o próprio nome em inglês.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Frases usadas em aula</h2>
+          <div class="outline-card">
+            <ul>
+              <li><strong lang="en">I'm good.</strong> — Estou bem.</li>
+              <li><strong lang="en">Are you a scientist?</strong> — Você é cientista?</li>
+              <li><strong lang="en">They are doctors.</strong> — Eles são médicos.</li>
+              <li><strong lang="en">You are not a singer.</strong> — Você não é cantor.</li>
+              <li><strong lang="en">Are they actors?</strong> — Eles são atores?</li>
+              <li><strong lang="en">She is at the airport.</strong> — Ela está no aeroporto.</li>
+              <li><strong lang="en">Yes, she is.</strong> — Sim, ela é / está.</li>
+              <li><strong lang="en">Good morning. My name is Stephanie.</strong> — Bom dia. Meu nome é Stephanie.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Vocabulário-chave</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <div class="vocab-head">
+                <h3 lang="en">spell</h3>
+                <button type="button" class="vocab-say" data-czk-say="spell"
+                        aria-label="Ouvir a pronúncia de spell" aria-pressed="false"
+                        title="Ouvir spell">&#128266;</button>
+              </div>
+              <p><em>Soletrar</em><br><small>Dizer ou escrever as letras de uma palavra na ordem. <strong lang="en">How do you spell your name?</strong> — Como você soletra seu nome?</small></p>
+            </div>
+            <div class="vocab green">
+              <div class="vocab-head">
+                <h3 lang="en">short answer</h3>
+                <button type="button" class="vocab-say" data-czk-say="short answer"
+                        aria-label="Ouvir a pronúncia de short answer" aria-pressed="false"
+                        title="Ouvir short answer">&#128266;</button>
+              </div>
+              <p><em>Resposta curta</em><br><small>Resposta de sim ou não que retoma o pronome e o verbo. <strong lang="en">Are they actors? Yes, they are.</strong> — Eles são atores? Sim, são.</small></p>
+            </div>
+            <div class="vocab yellow">
+              <div class="vocab-head">
+                <h3 lang="en">flight attendant</h3>
+                <button type="button" class="vocab-say" data-czk-say="flight attendant"
+                        aria-label="Ouvir a pronúncia de flight attendant" aria-pressed="false"
+                        title="Ouvir flight attendant">&#128266;</button>
+              </div>
+              <p><em>Comissário ou comissária de bordo</em><br><small>Pessoa que cuida dos passageiros durante o voo. <strong lang="en">Is she a flight attendant?</strong> — Ela é comissária de bordo?</small></p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Vocabulário completo da aula</h2>
+          <div class="outline-card">
+            <h3 style="margin-top:0;">Alfabeto e soletração</h3>
+            <ul>
+              <li><strong lang="en">spell</strong> — soletrar. Para pedir a soletração, pratique <span lang="en">How do you spell that?</span> — Como se soletra isso?</li>
+              <li><strong>Vogais que pedem atenção</strong> — <span lang="en">A</span> /eɪ/ («ei»), <span lang="en">E</span> /iː/ («ii») e <span lang="en">I</span> /aɪ/ («ai»).</li>
+              <li><strong>Letras parecidas</strong> — <span lang="en">D</span> /diː/, <span lang="en">G</span> /dʒiː/ e <span lang="en">J</span> /dʒeɪ/. Em <span lang="en">DJ</span>, diga /diː dʒeɪ/.</li>
+              <li><strong>Outras letras praticadas</strong> — <span lang="en">H</span> /eɪtʃ/, <span lang="en">L</span> /ɛl/, <span lang="en">M</span> /ɛm/, <span lang="en">N</span> /ɛn/, <span lang="en">Q</span> /kjuː/, <span lang="en">U</span> /juː/, <span lang="en">W</span> («double U») e <span lang="en">Y</span> /waɪ/.</li>
+              <li><strong>Nomes do exercício</strong> — <span lang="en">Kellie</span> (K–E–L–L–I–E), <span lang="en">Geoffrey</span> (G–E–O–F–F–R–E–Y) e <span lang="en">Stephanie</span> (S–T–E–P–H–A–N–I–E).</li>
+            </ul>
+            <h3>Profissões e lugares</h3>
+            <ul>
+              <li><strong lang="en">scientist</strong> — cientista. <strong lang="en">actor</strong> — ator. <strong lang="en">artist</strong> — artista.</li>
+              <li><strong lang="en">doctor</strong> — médico(a). <strong lang="en">photographer</strong> — fotógrafo(a). <strong lang="en">singer</strong> — cantor(a). <strong lang="en">chef</strong> — chef de cozinha.</li>
+              <li><strong lang="en">pilot</strong> — piloto. <strong lang="en">flight attendant</strong> — comissário(a) de bordo. <strong lang="en">airport</strong> — aeroporto. <strong lang="en">hospital</strong> — hospital.</li>
+              <li><strong lang="en">student</strong> — estudante.</li>
+            </ul>
+            <h3>Estruturas de revisão</h3>
+            <ul style="margin-bottom:0;">
+              <li><strong lang="en">I, you, he, she, it, we, they</strong> — eu, você/vocês, ele, ela, pronome para coisas ou animais conforme o contexto, nós, eles/elas.</li>
+              <li><strong lang="en">am, is, are</strong> — formas de <span lang="en">to be</span> no presente (ser ou estar).</li>
+              <li><strong lang="en">I'm, you're, isn't</strong> — contrações de <span lang="en">I am</span>, <span lang="en">you are</span> e <span lang="en">is not</span>.</li>
+              <li><strong lang="en">a / an</strong> — um(a). Compare <span lang="en">a student</span> e <span lang="en">an actor</span>.</li>
+              <li><strong lang="en">short answer</strong> — resposta curta. <span lang="en">Yes, she is.</span> — Sim, ela é / está. <span lang="en">No, she isn't.</span> — Não, ela não é / está.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Correções importantes</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 4px;"><strong>1. Transforme a afirmação em pergunta.</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ Traduzir <span lang="en">You are a scientist.</span> quando o exercício pedia uma pergunta.</p>
+            <p style="margin:0 0 14px;color:#276749;">✅ <strong lang="en">Are you a scientist?</strong> — Coloque <span lang="en">are</span> antes de <span lang="en">you</span>. Faça a mesma inversão em <span lang="en">I am a student</span> → <span lang="en">Am I a student?</span></p>
+
+            <p style="margin:0 0 4px;"><strong>2. A resposta curta retoma o verbo e o pronome.</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ Aceitar <span lang="en">Yes, he am.</span> ou responder só <span lang="en">Yes</span> quando o exercício pede a forma completa.</p>
+            <p style="margin:0 0 14px;color:#276749;">✅ <strong lang="en">Is he an actor? Yes, he is.</strong> — Com <span lang="en">he</span>, use <span lang="en">is</span>. Se a pergunta for sobre Rachel, retome o pronome com <span lang="en">Yes, she is.</span> Para Rachel e Peter, use <span lang="en">Yes, they are.</span></p>
+
+            <p style="margin:0 0 4px;"><strong>3. Use <span lang="en">a/an</span> com profissões no singular.</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ Usar <span lang="en">an student</span>, deixar a profissão sem artigo em <span lang="en">You are pilot</span> ou colocar artigo singular antes de <span lang="en">students</span>.</p>
+            <p style="margin:0 0 14px;color:#276749;">✅ <strong lang="en">a student · an actor · You are a pilot. · We are students.</strong> — Escolha pelo primeiro som da palavra. <span lang="en">Student</span> começa com /s/ e <span lang="en">actor</span> começa com som de vogal. No plural, use <span lang="en">students</span> sem <span lang="en">a/an</span>.</p>
+
+            <p style="margin:0 0 4px;"><strong>4. Diferencie <span lang="en">am</span> de <span lang="en">an</span>.</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ Trocar o som final do verbo pelo do artigo durante a leitura.</p>
+            <p style="margin:0 0 14px;color:#276749;">✅ <strong lang="en">I am an artist.</strong> — Em <span lang="en">am</span>, feche os lábios para o /m/. Em <span lang="en">an</span>, encoste a ponta da língua logo atrás dos dentes superiores para o /n/.</p>
+
+            <p style="margin:0 0 4px;"><strong>5. Confira as letras antes de fechar o nome.</strong></p>
+            <p style="margin:0 0 4px;color:#c53030;">❌ Ouvir <span lang="en">D</span> no começo de <span lang="en">Geoffrey</span> ou ficar em dúvida sobre a posição do <span lang="en">N</span> em <span lang="en">Stephanie</span>.</p>
+            <p style="margin:0;color:#276749;">✅ <strong lang="en">G–E–O–F–F–R–E–Y</strong> e <strong lang="en">S–T–E–P–H–A–N–I–E</strong>. Compare <span lang="en">D</span> /diː/ e <span lang="en">G</span> /dʒiː/. No segundo nome, repita o trecho <span lang="en">A–N–I</span> para fixar a ordem.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Gravação da aula</h2>
+          <div class="media-row">
+            <a class="media-btn" href="https://youtu.be/f8QOLmdXQLk" target="_blank" rel="noopener noreferrer" role="button"
+               style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">
+              🎥 Assistir gravação
+            </a>
+          </div>
+        </section>
+
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>Tempo de Fala (Talk Time)</h2>
+          <table class="talk-table">
+            <thead>
+              <tr><th scope="col">Quem falou</th><th scope="col">%</th><th scope="col">Duração aprox.</th></tr>
+            </thead>
+            <tbody>
+              <tr class="row-teacher">
+                <td><span class="talk-label">César (Professor)</span></td>
+                <td><span class="talk-percent">76%</span></td>
+                <td class="talk-time">~31 min 56 s</td>
+              </tr>
+              <tr class="row-student">
+                <td><span class="talk-label">Murilo Bueno</span></td>
+                <td><span class="talk-percent">24%</span></td>
+                <td class="talk-time">~9 min 50 s</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin-bottom:0;color:var(--muted);font-size:0.85rem;">Estimativa pelos intervalos da transcrição com fala identificada. Os percentuais consideram a fala de César e Murilo, excluindo as pausas e o áudio compartilhado dos exercícios.</p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Homework</h2>
+          <div class="homework">
+            <ul style="margin:0 0 0 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+              <li><strong>Conclua as atividades pendentes no app</strong> e faça as novas quando estiverem disponíveis.</li>
+              <li><strong>Soletre palavras que encontrar no dia a dia.</strong> Viu um nome numa placa ou embalagem? Soletre em inglês, mesmo só de cabeça. César deu o exemplo <span lang="en">C–O–C–A C–O–L–A</span>.</li>
+              <li><strong>Leia este pós-aula de 2 a 3 vezes durante a semana.</strong> Ouça o vocabulário-chave e soletre seu nome em voz alta. Dê atenção especial a <span lang="en">A/E/I</span>, <span lang="en">D/G/J</span> e <span lang="en">M/N</span>.</li>
+            </ul>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <p style="margin:18px 0 0;color:var(--muted);font-size:0.9rem;">
+          © 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com
+        </p>
+      </footer>
+    </article>
+  </div>
+
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body>
+</html>
