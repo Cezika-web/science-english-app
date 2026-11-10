@@ -702,6 +702,46 @@
     .calendar-weekdays-settings span { display:block; padding:8px 2px; border:1px solid var(--border); border-radius:8px; color:#64748b; text-align:center; font-size:.68rem; font-weight:800; }
     .calendar-weekdays-settings input:checked + span { background:var(--cal-brand); border-color:var(--cal-brand); color:#fff; }
     .calendar-mobile-settings { display:none; }
+    /* ── Horários livres: copiar a disponibilidade (texto/imagem) para o WhatsApp ── */
+    .btn-livres { display:inline-flex; align-items:center; gap:7px; }
+    .btn-livres svg { flex:none; }
+    .btn-livres:hover { border-color:var(--cal-brand, var(--accent)); color:var(--cal-brand, var(--accent-dark)); }
+    /* A barra da agenda divide a tela com dois menus: abaixo de ~1340px o texto não cabe, fica só o ícone. */
+    @media (max-width:1340px) { .btn-livres .txt { display:none; } .btn-livres { width:36px; height:31px; justify-content:center; padding:0; } }
+    #liv-modal [hidden] { display:none !important; }
+    #liv-modal .modal { max-width:600px; max-height:92vh; display:flex; flex-direction:column; }
+    #liv-modal .modal-header { padding:16px 20px; }
+    #liv-modal .modal-header h2 { display:flex; align-items:center; gap:8px; }
+    #liv-modal .modal-body { padding:16px 20px 8px; }
+    .liv-semana { display:flex; align-items:center; gap:8px; }
+    .liv-semana .titulo { flex:1; text-align:center; font-size:.92rem; font-weight:800; }
+    .liv-semana .titulo small { display:block; font-size:.7rem; color:var(--muted); font-weight:600; margin-top:1px; }
+    .liv-semana .calendar-icon-btn:disabled { opacity:.35; cursor:not-allowed; }
+    .liv-dias { display:grid; grid-template-columns:repeat(6,1fr) auto; gap:6px; margin-top:12px; }
+    .liv-chip { border:1.5px solid var(--border); background:#fff; border-radius:10px; padding:6px 2px 7px; font:inherit; color:#475569; cursor:pointer; line-height:1.15; text-align:center; transition:background .12s, border-color .12s; }
+    .liv-chip small { display:block; font-size:.62rem; font-weight:800; letter-spacing:.04em; opacity:.85; }
+    .liv-chip strong { display:block; font-size:1rem; font-weight:800; }
+    .liv-chip:hover { border-color:var(--cal-brand, var(--accent)); }
+    .liv-chip.on { background:var(--cal-brand, var(--accent)); border-color:var(--cal-brand, var(--accent)); color:#fff; }
+    .liv-chip.sem:not(.on) { color:#a8b3c2; background:#f6f8fb; }
+    .liv-chip.sem small::after { content:' · sem vaga'; text-transform:none; letter-spacing:0; font-weight:600; font-size:.55rem; }
+    .liv-todos { border:1.5px dashed #c5d3e6; background:#fff; color:var(--accent-dark); border-radius:10px; padding:0 12px; font:inherit; font-size:.74rem; font-weight:800; cursor:pointer; }
+    .liv-todos.on { background:#e8f3ff; border-style:solid; border-color:var(--cal-brand, var(--accent)); }
+    .liv-abas { display:grid; grid-template-columns:1fr 1fr; gap:4px; background:#eef2f7; border-radius:11px; padding:4px; margin:14px 0 12px; }
+    .liv-aba { border:0; background:transparent; padding:10px 8px; border-radius:8px; font:inherit; font-size:.86rem; font-weight:800; color:#64748b; cursor:pointer; }
+    .liv-aba.on { background:#fff; color:var(--accent-dark); box-shadow:0 1px 4px rgba(15,23,42,.12); }
+    .liv-opcoes { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; font-size:.78rem; color:#475569; margin-bottom:12px; }
+    .liv-opcoes label { display:inline-flex; align-items:center; gap:6px; font-weight:700; cursor:pointer; }
+    .liv-opcoes select { border:1px solid var(--border); border-radius:8px; padding:6px 8px; font:inherit; font-size:.78rem; font-weight:700; background:#fff; color:#334155; }
+    .liv-opcoes input[type=checkbox] { accent-color:var(--accent); width:15px; height:15px; }
+    .liv-zap { background:#efeae2; border-radius:12px; padding:14px; }
+    .liv-zap textarea { display:block; width:100%; min-height:200px; resize:none; overflow:hidden; border:0; outline:0; background:#d9fdd3; border-radius:10px 10px 2px 10px; padding:12px 14px; font:inherit; font-size:.88rem; line-height:1.5; color:#111b21; box-shadow:0 1px 1px rgba(11,20,26,.14); }
+    .liv-dica { font-size:.72rem; color:var(--muted); margin-top:8px; line-height:1.45; }
+    .liv-img-box { background:#e9eef5; border-radius:12px; padding:14px; display:flex; justify-content:center; max-height:52vh; overflow:auto; }
+    .liv-img-box canvas { width:100%; max-width:380px; height:auto; border-radius:10px; box-shadow:0 8px 24px rgba(15,23,42,.18); background:#fff; }
+    .liv-foot { position:sticky; bottom:0; background:#fff; border-top:1px solid var(--border); padding:12px 20px; display:flex; gap:9px; flex-wrap:wrap; margin-top:auto; }
+    .liv-foot .btn-add { flex:1; min-width:150px; font-size:.92rem; padding:12px 20px; }
+    .liv-foot .btn-secondary { padding:12px 16px; font-size:.88rem; }
     /* Duas colunas viram uma no celular. Com minimo fixo na coluna da direita,
        a da esquerda virava uma tira de 79px e o texto saia letra por letra. */
     .duas-colunas { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr); gap:16px; align-items:start; }
@@ -715,6 +755,12 @@
       .calendar-toolbar { flex-wrap:wrap; }
       .calendar-toolbar h2 { order:3; width:100%; }
       .calendar-mobile-settings { display:inline-block; }
+      .btn-livres .txt { display:none; }
+      .btn-livres { width:36px; height:31px; justify-content:center; padding:0; }
+      .liv-chip.sem small::after { content:''; }
+      #liv-modal.modal-overlay { padding:0; align-items:flex-end; }
+      #liv-modal .modal { max-height:94vh; border-radius:16px 16px 0 0; }
+      .liv-foot .btn-secondary { flex:1; }
       .calendar-form-grid { grid-template-columns:1fr; }
       /* A semana inteira tem que caber na tela. Antes ela tinha 760px fixos e
          o celular mostrava três dias por vez, rolando de lado — dava para ver a
@@ -1095,6 +1141,7 @@
               <button class="calendar-today-btn" id="calendar-today" type="button">Hoje</button>
               <button class="calendar-icon-btn" id="calendar-prev" type="button" aria-label="Semana anterior">‹</button>
               <button class="calendar-icon-btn" id="calendar-next" type="button" aria-label="Próxima semana">›</button>
+              <button class="calendar-today-btn btn-livres" id="calendar-livres-open" type="button" title="Copiar horários disponíveis (texto ou imagem)" aria-label="Horários disponíveis"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="txt">Horários livres</span></button>
               <button class="calendar-icon-btn calendar-mobile-settings" id="calendar-settings-open-mobile" type="button" aria-label="Configurar expediente">⚙</button>
               <button class="calendar-today-btn" id="calendar-class-new" type="button">＋ Novo</button>
             </div>
@@ -2391,6 +2438,51 @@
     </div>
   </div>
 
+  <!-- Horários livres: copiar a disponibilidade (texto ou imagem) para o WhatsApp -->
+  <div class="modal-overlay" id="liv-modal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="liv-titulo">
+      <div class="modal-header">
+        <h2 id="liv-titulo">🕐 Horários disponíveis</h2>
+        <button class="btn-close" id="liv-fechar" type="button" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="liv-semana">
+          <button class="calendar-icon-btn" id="liv-prev" type="button" aria-label="Semana anterior">‹</button>
+          <div class="titulo"><span id="liv-semana-txt"></span><small id="liv-semana-sub"></small></div>
+          <button class="calendar-icon-btn" id="liv-next" type="button" aria-label="Próxima semana">›</button>
+        </div>
+        <div class="liv-dias" id="liv-dias" role="group" aria-label="Dias que entram na mensagem"></div>
+        <div class="liv-abas" role="tablist">
+          <button class="liv-aba on" id="liv-aba-texto" role="tab" type="button">💬 Texto</button>
+          <button class="liv-aba" id="liv-aba-img" role="tab" type="button">🖼️ Imagem</button>
+        </div>
+        <div class="liv-opcoes">
+          <label>Aula de
+            <select id="liv-dur"><option value="30">30 min</option><option value="60" selected>1h</option><option value="90">1h30</option><option value="120">2h</option></select>
+          </label>
+          <label><input type="checkbox" id="liv-datas" checked> Mostrar datas</label>
+          <label><input type="checkbox" id="liv-lotados"> Mostrar dias sem horário</label>
+        </div>
+        <div id="liv-painel-texto">
+          <div class="liv-zap"><textarea id="liv-txt" spellcheck="false" aria-label="Texto para o WhatsApp"></textarea></div>
+          <p class="liv-dica">Pode editar o texto antes de copiar. O <b>*asterisco*</b> vira negrito e o <b>_sublinhado_</b> vira itálico no WhatsApp. Horas que já passaram hoje não entram.</p>
+        </div>
+        <div id="liv-painel-img" hidden>
+          <div class="liv-img-box"><canvas id="liv-cv" width="1080" height="1400"></canvas></div>
+          <p class="liv-dica">Imagem de 1080 px de largura, pronta para o WhatsApp. Se o navegador não deixar copiar, use <b>Baixar</b> e anexe.</p>
+        </div>
+      </div>
+      <div class="liv-foot" id="liv-foot-texto">
+        <button class="btn-add" id="liv-copiar-texto" type="button">📋 Copiar texto</button>
+      </div>
+      <div class="liv-foot" id="liv-foot-img" hidden>
+        <button class="btn-add" id="liv-copiar-img" type="button">📋 Copiar imagem</button>
+        <button class="btn-secondary" id="liv-baixar-img" type="button">⬇ Baixar</button>
+        <button class="btn-secondary" id="liv-compart-img" type="button" hidden>📤 Compartilhar</button>
+      </div>
+    </div>
+  </div>
+
   <div class="calendar-toast" id="calendar-toast"></div>
 
   <div class="calendar-pop" id="calendar-pop">
@@ -3120,7 +3212,7 @@
       const root = document.getElementById('tab-calendar'); if (!root) return;
       const color = calendarSchoolColor();
       root.style.setProperty('--cal-brand', color); root.style.setProperty('--cal-brand-soft', `${color}18`);
-      ['calendar-event-modal','calendar-settings-modal','calendar-pop'].forEach(id => {
+      ['calendar-event-modal','calendar-settings-modal','calendar-pop','liv-modal'].forEach(id => {
         document.getElementById(id).style.setProperty('--cal-brand',color);
         document.getElementById(id).style.setProperty('--cal-brand-soft',`${color}18`);
       });
@@ -3515,6 +3607,248 @@
     // ao voltar, acerta na hora em vez de esperar o próximo ciclo.
     document.addEventListener('visibilitychange', () => { if (!document.hidden) calendarAgoraTick(); });
     window.addEventListener('focus', calendarAgoraTick);
+
+    // ── HORÁRIOS LIVRES ────────────────────────────────────────────────────
+    // Copia a disponibilidade (segunda a sábado, ou só os dias escolhidos) como
+    // texto de WhatsApp ou como imagem. A conta é a MESMA da agenda — expediente
+    // menos aulas e compromissos (calendarVagasAutomaticas), com cancelada ainda
+    // ocupando o horário — só que sem as horas de hoje que já passaram.
+    const LIV_DIAS = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+    const LIV_ABREV = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+    const LIV_MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+    const LIV_SEMANAS_A_FRENTE = 12;
+    const LIV_FONTE = 'Inter, "Segoe UI", system-ui, -apple-system, Roboto, sans-serif';
+    let livSel = new Set([1,2,3,4,5,6]), livBase = calendarWeekStartDate(new Date()), livSemana = 0, livAba = 'texto';
+    const livEl = id => document.getElementById(id);
+    const livJunta = lista => lista.length < 2 ? lista.join('') : lista.slice(0,-1).join(', ') + ' e ' + lista[lista.length-1];
+    const livCap = texto => texto.charAt(0).toUpperCase() + texto.slice(1);
+    const livNomeCurto = dow => LIV_DIAS[dow].replace('-feira','').toLowerCase();
+    const livDataDoDia = dow => calendarAddDays(livBase, livSemana * 7 + dow);
+    const livDM = data => `${String(data.getDate()).padStart(2,'0')}/${String(data.getMonth()+1).padStart(2,'0')}`;
+    const livDataLonga = data => `${data.getDate()} de ${LIV_MESES[data.getMonth()]}`;
+    const livDuracaoTxt = minutos => minutos === 30 ? '30 min' : minutos === 60 ? '1h' : minutos === 90 ? '1h30' : '2h';
+    const livDuracao = () => Number(livEl('liv-dur').value) || 60;
+    // Semanas (inteiras) entre a semana que está na janela e a semana de hoje.
+    const livSemanasAFrente = () => Math.round((calendarAddDays(livBase, livSemana * 7) - calendarWeekStartDate(new Date())) / (7 * 86400000));
+
+    // Faixas livres de UM dia: o que a agenda mostra como vaga vermelha, sem o que já passou e sem o que não cabe uma aula.
+    function livFaixasDoDia(data, duracao) {
+      const agora = new Date(), chave = calendarDateKey(data), chaveHoje = calendarDateKey(agora);
+      if (chave < chaveHoje) return [];
+      const doDia = calendarMergeGroups(calendarEvents.filter(event => calendarOccursOn(event, data)), data);
+      let faixas = calendarVagasAutomaticas(data, doDia, chave).map(vaga => [calendarMinutes(vaga.startTime), calendarMinutes(vaga.endTime)]);
+      if (chave === chaveHoje) {   // hoje: corta o que já passou (arredonda para a próxima meia hora)
+        const corte = Math.ceil((agora.getHours() * 60 + agora.getMinutes()) / 30) * 30;
+        faixas = faixas.map(([inicio, fim]) => [Math.max(inicio, corte), fim]).filter(([inicio, fim]) => fim > inicio);
+      }
+      return faixas.filter(([inicio, fim]) => fim - inicio >= duracao);
+    }
+    function livSemanaCompleta() {
+      const duracao = livDuracao();
+      return [1,2,3,4,5,6].map(dow => { const data = livDataDoDia(dow); return { dow, data, faixas:livFaixasDoDia(data, duracao) }; });
+    }
+    function livRotuloSemana() {
+      const a = livDataDoDia(1), b = livDataDoDia(6), mes = data => LIV_MESES[data.getMonth()];
+      return a.getMonth() === b.getMonth() ? `${a.getDate()} a ${b.getDate()} de ${mes(b)}`
+        : `${a.getDate()} de ${mes(a).slice(0,3)} a ${b.getDate()} de ${mes(b).slice(0,3)}`;
+    }
+    function livDiasEscolhidos() {
+      const todos = livSemanaCompleta().filter(dia => livSel.has(dia.dow)), unico = todos.length === 1;
+      // Um dia só, escolhido de propósito, aparece mesmo lotado — senão a mensagem sairia vazia sem explicação.
+      const lista = todos.filter(dia => dia.faixas.length || livEl('liv-lotados').checked || unico);
+      return { todos, lista, unico };
+    }
+    // "De quando é isso": um dia → "Sexta-feira, 13 de novembro"; vários → "Semana de 9 a 14 de novembro".
+    function livQuando(todos, datas) {
+      if (todos.length === 1) return datas ? `${LIV_DIAS[todos[0].dow]}, ${livDataLonga(todos[0].data)}` : LIV_DIAS[todos[0].dow];
+      if (!datas) return todos.length === 6 ? 'Segunda a sábado' : livJunta(todos.map(dia => LIV_DIAS[dia.dow].replace('-feira','')));
+      return todos.length === 6 ? `Semana de ${livRotuloSemana()}` : `${livCap(livJunta(todos.map(dia => livNomeCurto(dia.dow))))} · ${livRotuloSemana()}`;
+    }
+
+    function livMontarTexto() {
+      const datas = livEl('liv-datas').checked, duracao = livDuracao();
+      const { todos, lista, unico } = livDiasEscolhidos();
+      if (unico && !lista[0].faixas.length) return `Não há horários livres ${datas ? 'em ' + LIV_DIAS[lista[0].dow].toLowerCase() + ', ' + livDM(lista[0].data) : 'nesse dia'}. 😕`;
+      if (!lista.length) return 'Não há horários livres nesses dias. 😕';
+      const linhas = ['🗓️ *Horários disponíveis*', `_${livQuando(todos, datas)}_`, `_Aulas de ${livDuracaoTxt(duracao)} — é só escolher o início dentro da faixa_`, ''];
+      lista.forEach(dia => {
+        if (!unico) linhas.push(`*${LIV_DIAS[dia.dow]}${datas ? ' · ' + livDM(dia.data) : ''}*`);   // 1 dia só: o dia já está no cabeçalho
+        if (!dia.faixas.length) linhas.push('• sem horário livre');
+        dia.faixas.forEach(([inicio, fim]) => linhas.push(`• ${calendarTime(inicio)} às ${calendarTime(fim)}`));
+        if (!unico) linhas.push('');
+      });
+      if (unico) linhas.push('');
+      linhas.push('Qual desses fica melhor para você? 😊');
+      return linhas.join('\n');
+    }
+
+    function livRetangulo(ctx, x, y, w, h, r) {
+      ctx.beginPath(); ctx.moveTo(x+r, y); ctx.arcTo(x+w, y, x+w, y+h, r); ctx.arcTo(x+w, y+h, x, y+h, r); ctx.arcTo(x, y+h, x, y, r); ctx.arcTo(x, y, x+w, y, r); ctx.closePath();
+    }
+    function livDesenharImagem() {
+      const cv = livEl('liv-cv'), W = 1080, datas = livEl('liv-datas').checked, duracao = livDuracao();
+      const { todos, lista: dias } = livDiasEscolhidos();
+      const cor = /^#[0-9a-f]{6}$/i.test(calendarSchoolColor()) ? calendarSchoolColor() : '#2f86e6';
+      const marca = String(escolas.find(escola => escola.id === escolaAtual)?.name || '').toUpperCase();
+      const PAD = 48, BADGE = 176, PILL_H = 66, GAP = 14, CARD_PAD = 30, CARD_GAP = 22, HEAD_H = 330, FOOT_H = 210;
+      const ctx = cv.getContext('2d');
+      ctx.font = `800 34px ${LIV_FONTE}`;
+      const areaX = PAD + BADGE, areaW = W - PAD - areaX - CARD_PAD;
+      // 1) mede cada cartão (as faixas quebram de linha quando não cabem)
+      const cartoes = dias.map(dia => {
+        const pilulas = dia.faixas.map(([inicio, fim]) => { const texto = `${calendarTime(inicio)} – ${calendarTime(fim)}`; return { texto, w:ctx.measureText(texto).width + 56 }; });
+        const linhas = []; let atual = [], usado = 0;
+        pilulas.forEach(pilula => { if (atual.length && usado + GAP + pilula.w > areaW) { linhas.push(atual); atual = []; usado = 0; } usado += (atual.length ? GAP : 0) + pilula.w; atual.push(pilula); });
+        if (atual.length) linhas.push(atual);
+        const n = Math.max(1, linhas.length);
+        return { dia, linhas, h:Math.max(150, CARD_PAD*2 + n*PILL_H + (n-1)*GAP) };
+      });
+      const H = HEAD_H + 36 + (cartoes.length ? cartoes.reduce((soma, c) => soma + c.h + CARD_GAP, 0) : 220) + FOOT_H;
+      cv.width = W; cv.height = H;      // redimensionar limpa o canvas; o contexto volta ao padrão
+      ctx.fillStyle = '#f1f5fa'; ctx.fillRect(0, 0, W, H);
+      // cabeçalho em degradê + relógio decorativo
+      const grad = ctx.createLinearGradient(0, 0, W, HEAD_H); grad.addColorStop(0, '#1a3a5c'); grad.addColorStop(1, cor);
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, W, HEAD_H);
+      ctx.save(); ctx.globalAlpha = .10; ctx.strokeStyle = '#fff'; ctx.lineWidth = 16; ctx.beginPath(); ctx.arc(W-150, 120, 150, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W-150, 40); ctx.lineTo(W-150, 120); ctx.lineTo(W-95, 155); ctx.stroke(); ctx.restore();
+      const espaco = px => { if ('letterSpacing' in ctx) ctx.letterSpacing = px; };
+      ctx.textBaseline = 'alphabetic';
+      if (marca) { ctx.fillStyle = 'rgba(255,255,255,.78)'; ctx.font = `800 28px ${LIV_FONTE}`; espaco('6px'); ctx.fillText(marca, PAD, 92); espaco('0px'); }
+      ctx.fillStyle = '#fff'; ctx.font = `800 84px ${LIV_FONTE}`; ctx.fillText('Horários disponíveis', PAD, 185);
+      const quando = livQuando(todos, datas); ctx.font = `800 34px ${LIV_FONTE}`;
+      const largura = Math.min(W - PAD*2, ctx.measureText(quando).width + 56);
+      ctx.fillStyle = 'rgba(255,255,255,.18)'; livRetangulo(ctx, PAD, 222, largura, 62, 31); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.fillText(quando, PAD + 28, 265, W - PAD*2 - 56);
+      // cartões dos dias
+      let y = HEAD_H + 36;
+      if (!cartoes.length) { ctx.fillStyle = '#64748b'; ctx.font = `700 36px ${LIV_FONTE}`; ctx.textAlign = 'center'; ctx.fillText('Sem horários livres nesses dias', W/2, y + 110); ctx.textAlign = 'left'; y += 220; }
+      cartoes.forEach(cartao => {
+        const livre = cartao.linhas.length > 0;
+        ctx.save(); ctx.shadowColor = 'rgba(15,23,42,.10)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8;
+        ctx.fillStyle = '#fff'; livRetangulo(ctx, PAD, y, W - PAD*2, cartao.h, 28); ctx.fill(); ctx.restore();
+        const bx = PAD + 28, by = y + (cartao.h - 118) / 2;
+        ctx.fillStyle = livre ? `${cor}22` : '#f1f5f9'; livRetangulo(ctx, bx, by, 118, 118, 24); ctx.fill();
+        ctx.textAlign = 'center';
+        if (datas) {
+          ctx.fillStyle = livre ? cor : '#94a3b8'; ctx.font = `800 26px ${LIV_FONTE}`; ctx.fillText(LIV_ABREV[cartao.dia.dow], bx + 59, by + 38);
+          ctx.fillStyle = livre ? '#0f1724' : '#94a3b8'; ctx.font = `800 60px ${LIV_FONTE}`; ctx.fillText(String(cartao.dia.data.getDate()).padStart(2,'0'), bx + 59, by + 98);
+        } else {                                  // sem datas: só o dia da semana, maior
+          ctx.fillStyle = livre ? cor : '#94a3b8'; ctx.font = `800 40px ${LIV_FONTE}`; ctx.fillText(LIV_ABREV[cartao.dia.dow], bx + 59, by + 72);
+        }
+        ctx.textAlign = 'left';
+        if (!livre) { ctx.fillStyle = '#94a3b8'; ctx.font = `700 32px ${LIV_FONTE}`; ctx.fillText('Sem horário livre', areaX + 6, y + cartao.h/2 + 11); }
+        cartao.linhas.forEach((linha, indice) => {
+          let x = areaX; const py = y + CARD_PAD + indice * (PILL_H + GAP);
+          linha.forEach(pilula => {
+            ctx.fillStyle = '#e6f7ee'; livRetangulo(ctx, x, py, pilula.w, PILL_H, 33); ctx.fill();
+            ctx.strokeStyle = '#a7e3c4'; ctx.lineWidth = 2; livRetangulo(ctx, x+1, py+1, pilula.w-2, PILL_H-2, 32); ctx.stroke();
+            ctx.fillStyle = '#12703f'; ctx.font = `800 34px ${LIV_FONTE}`; ctx.fillText(pilula.texto, x + 28, py + 45);
+            x += pilula.w + GAP;
+          });
+        });
+        y += cartao.h + CARD_GAP;
+      });
+      // rodapé
+      ctx.textAlign = 'center'; ctx.fillStyle = '#0f1724'; ctx.font = `800 40px ${LIV_FONTE}`; ctx.fillText('Qual horário fica melhor para você?', W/2, y + 62);
+      ctx.fillStyle = '#64748b'; ctx.font = `600 29px ${LIV_FONTE}`; ctx.fillText(`Aulas de ${livDuracaoTxt(duracao)} — escolha o início dentro da faixa`, W/2, y + 112);
+      if (marca) { ctx.fillStyle = cor; ctx.font = `800 26px ${LIV_FONTE}`; espaco('4px'); ctx.fillText(marca, W/2, y + 164); espaco('0px'); }
+      ctx.textAlign = 'left';
+    }
+    const livBlob = () => new Promise(resolve => livEl('liv-cv').toBlob(resolve, 'image/png'));
+
+    function livDesenharChips() {
+      const duracao = livDuracao();
+      livEl('liv-dias').innerHTML = [1,2,3,4,5,6].map(dow => {
+        const data = livDataDoDia(dow), sem = !livFaixasDoDia(data, duracao).length;
+        return `<button type="button" class="liv-chip${livSel.has(dow) ? ' on' : ''}${sem ? ' sem' : ''}" data-dow="${dow}" aria-pressed="${livSel.has(dow)}"><small>${LIV_ABREV[dow]}</small><strong>${data.getDate()}</strong></button>`;
+      }).join('') + `<button type="button" class="liv-todos${livSel.size === 6 ? ' on' : ''}" id="liv-todos">Todos</button>`;
+    }
+    function livAjustarAlturaTexto() {
+      const texto = livEl('liv-txt'); if (!texto.offsetWidth) return;
+      texto.style.height = 'auto'; texto.style.height = `${texto.scrollHeight + 2}px`;
+    }
+    function livAtualizar() {
+      const dias = [...livSel].sort(), unico = dias.length === 1, n = livSemanasAFrente();
+      const quando = n === 0 ? 'esta semana' : n === 1 ? 'semana que vem' : `daqui a ${n} semanas`;
+      if (unico) {
+        livEl('liv-semana-txt').textContent = `${LIV_DIAS[dias[0]]}, ${livDataLonga(livDataDoDia(dias[0]))}`;
+        livEl('liv-semana-sub').textContent = quando;
+      } else {
+        livEl('liv-semana-txt').textContent = livRotuloSemana();
+        livEl('liv-semana-sub').textContent = `${dias.length === 6 ? 'segunda a sábado' : livJunta(dias.map(livNomeCurto))} · ${quando}`;
+      }
+      livEl('liv-prev').disabled = n <= 0;
+      livEl('liv-next').disabled = n >= LIV_SEMANAS_A_FRENTE;
+      livDesenharChips();
+      livEl('liv-txt').value = livMontarTexto();
+      livAjustarAlturaTexto();
+      if (livAba === 'img') livDesenharImagem();
+    }
+    function livTrocarAba(nova) {
+      livAba = nova;
+      livEl('liv-aba-texto').classList.toggle('on', nova === 'texto'); livEl('liv-aba-img').classList.toggle('on', nova === 'img');
+      livEl('liv-painel-texto').hidden = nova !== 'texto'; livEl('liv-foot-texto').hidden = nova !== 'texto';
+      livEl('liv-painel-img').hidden = nova !== 'img'; livEl('liv-foot-img').hidden = nova !== 'img';
+      livAtualizar();
+    }
+    // Abre já no dia que ele está olhando: visão Dia (o dia da tela) ou, na semana/mês, o dia que ele clicou.
+    // Domingo ou nenhum dia escolhido → semana toda. Semana já passada → começa na semana de hoje.
+    function livSelecaoInicial() {
+      const chave = calendarView === 'day' ? calendarFocusDay() : calendarSelectedDay;
+      const foco = chave ? new Date(`${chave}T00:00:00`) : null;
+      const semanaAtual = calendarWeekStartDate(new Date());
+      let base = calendarWeekStartDate(foco || calendarWeekStart);
+      if (base < semanaAtual) base = semanaAtual;
+      livBase = base; livSemana = 0;
+      const mesmaSemana = foco && calendarWeekStartDate(foco).getTime() === base.getTime();
+      livSel = mesmaSemana && foco.getDay() >= 1 && foco.getDay() <= 6 ? new Set([foco.getDay()]) : new Set([1,2,3,4,5,6]);
+    }
+    function livBaixar(blob) {
+      const link = document.createElement('a'), primeiro = livDataDoDia([...livSel].sort()[0]);
+      link.href = URL.createObjectURL(blob); link.download = `horarios-disponiveis-${livDM(primeiro).replace('/','-')}.png`; link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 4000);
+    }
+
+    livEl('calendar-livres-open').onclick = () => { livSelecaoInicial(); livEl('liv-modal').classList.add('open'); livTrocarAba('texto'); };
+    livEl('liv-fechar').onclick = () => livEl('liv-modal').classList.remove('open');
+    livEl('liv-modal').onclick = click => { if (click.target.id === 'liv-modal') livEl('liv-modal').classList.remove('open'); };
+    document.addEventListener('keydown', tecla => { if (tecla.key === 'Escape') livEl('liv-modal').classList.remove('open'); });
+    livEl('liv-prev').onclick = () => { livSemana--; livAtualizar(); };
+    livEl('liv-next').onclick = () => { livSemana++; livAtualizar(); };
+    livEl('liv-aba-texto').onclick = () => livTrocarAba('texto');
+    livEl('liv-aba-img').onclick = () => livTrocarAba('img');
+    ['liv-dur','liv-datas','liv-lotados'].forEach(id => livEl(id).onchange = livAtualizar);
+    livEl('liv-dias').onclick = click => {
+      const botao = click.target.closest('button'); if (!botao) return;
+      if (botao.id === 'liv-todos') livSel = new Set([1,2,3,4,5,6]);
+      else {
+        const dow = Number(botao.dataset.dow);
+        if (livSel.has(dow)) { if (livSel.size > 1) livSel.delete(dow); } else livSel.add(dow);   // nunca fica sem nenhum dia
+      }
+      livAtualizar();
+    };
+    livEl('liv-txt').addEventListener('input', livAjustarAlturaTexto);
+    // A altura da caixa depende da largura (barra de rolagem, celular girando...): reajusta sempre que ela mudar.
+    let livLarguraTexto = 0;
+    new ResizeObserver(() => { const w = livEl('liv-txt').offsetWidth; if (w && w !== livLarguraTexto) { livLarguraTexto = w; livAjustarAlturaTexto(); } }).observe(livEl('liv-painel-texto'));
+
+    livEl('liv-copiar-texto').onclick = async () => {
+      try { await navigator.clipboard.writeText(livEl('liv-txt').value); }
+      catch (erro) { livEl('liv-txt').select(); document.execCommand('copy'); }
+      calendarToast('✅ Texto copiado — é só colar no WhatsApp');
+    };
+    livEl('liv-copiar-img').onclick = async () => {
+      livDesenharImagem();
+      const blob = livBlob();   // a promessa vai direto para o ClipboardItem: o Safari exige que a cópia comece no toque
+      try { await navigator.clipboard.write([new ClipboardItem({ 'image/png':blob })]); calendarToast('✅ Imagem copiada — cole no WhatsApp (Ctrl+V)'); }
+      catch (erro) { livBaixar(await blob); calendarToast('Este navegador não deixou copiar a imagem — baixei para você anexar', true); }
+    };
+    livEl('liv-baixar-img').onclick = async () => { livDesenharImagem(); livBaixar(await livBlob()); calendarToast('⬇ Imagem baixada'); };
+    livEl('liv-compart-img').onclick = async () => {
+      livDesenharImagem(); const blob = await livBlob();
+      try { await navigator.share({ files:[new File([blob], 'horarios-disponiveis.png', { type:'image/png' })] }); } catch (erro) { /* ele fechou a folha de compartilhar */ }
+    };
+    try { if (navigator.canShare && navigator.canShare({ files:[new File([''], 'a.png', { type:'image/png' })] })) livEl('liv-compart-img').hidden = false; } catch (erro) { /* sem compartilhar neste navegador */ }
 
     function renderCalendar() {
       calendarApplyTheme();
