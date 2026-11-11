@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Rebeca — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+h2{font-size:1.12rem;color:#0f1724;} p,li{line-height:1.6;} li+li{margin-top:7px;} h3{font-size:1rem;color:#14532D;} a{color:var(--accent-dark);} .btn{color:#fff;} .outline-card p:first-child{margin-top:0;} .outline-card p:last-child{margin-bottom:0;}
+@media(max-width:600px){header{flex-direction:column;} .wrap{padding:18px 10px;} .card{box-sizing:border-box;} .vocab{min-width:0;} header>div>div:first-child{flex-wrap:wrap;}}
+@media print{.actions,.vocab-say{display:none;} .wrap{padding:0;} .card{max-width:none;border:0;box-shadow:none;} .vocab,.homework,.speaking{break-inside:avoid;} body{background:#fff;}}
+</style></head><body><div class="wrap"><article class="card" role="main">
+<header><div><div style="display:flex;gap:10px;align-items:center;"><span class="badge">PÓS-AULA</span><h1>Entrevista: vocabulário para começar com confiança</h1></div><div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Rebeca &nbsp;•&nbsp; <strong>Data:</strong> 11/10/2026</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header>
+<main><section class="panel"><p style="margin:0;font-weight:600;color:#14532D;"><em>Rebeca, nesta primeira aula da trilha você começou a reconhecer o vocabulário de uma entrevista para Healthcare Assistant e a organizar sua experiência. Vamos construir as respostas por etapas, com clareza, prática e calma.</em></p></section><section><h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2><div class="outline-card">
+<p><strong>Começo da trilha de entrevista.</strong> Rebeca, hoje você conheceu o caminho de preparação para uma entrevista na área de cuidados a idosos, com foco em uma possível vaga de <em>Healthcare Assistant</em> na CareChoice. César apresentou uma trilha de 12 aulas: esta primeira foi uma visão geral do vocabulário que aparecerá nas próximas etapas. O objetivo de hoje era reconhecer palavras e perguntas, começar a pronunciá-las e entender a proposta; as respostas completas serão construídas e treinadas aos poucos.</p>
+<p><strong>Do cargo às tarefas.</strong> Vocês diferenciaram <em>role</em> (cargo/função) de <em>duties</em> (tarefas e responsabilidades), praticaram <em>apply for</em> e viram palavras do ambiente de trabalho: <em>resident, get dressed, mealtimes, walking frame</em> e <em>call bell</em>. A pergunta <em>What does a Healthcare Assistant do?</em> serviu para conectar o nome da função às atividades. Também apareceu <em>Why are you interested in this role?</em>: a proposta é relacionar seu interesse à sua formação e ao que você realmente gosta de fazer, com uma resposta verdadeira.</p>
+<p><strong>Sua trajetória e suas qualidades.</strong> A preparação para <em>Talk about yourself</em> trouxe <em>background, experience</em> e <em>previous job</em>. Você começou a resgatar sua experiência em hospital no Brasil. Para falar de pontos fortes e pontos a desenvolver, apareceram <em>strengths</em> e <em>weaknesses</em>, além de <em>patient, reliable, motivated</em> e a ideia de estar disposta a aprender. O foco será selecionar experiências e qualidades ligadas à vaga e dar respostas objetivas, desenvolvendo a justificativa quando a pergunta pedir.</p>
+<p><strong>Estruturas para organizar a resposta.</strong> Vocês revisaram <em>enjoy + verbo com -ing</em> e a forma base depois de <em>will, would</em> e <em>can</em>. Assim, <em>will be</em> expressa “será/estará” e <em>would be</em>, “seria/estaria”. Na prévia de uma situação hipotética, a pergunta sobre um residente se sentir mal abriu o treino de <em>First, I would… Then, I would…</em>. Você chegou a <em>First, I would ask…</em> e a <em>What are you feeling?</em>; o desenvolvimento dessa resposta ficou para as próximas aulas.</p>
+<p><strong>Calma, tempo e participação.</strong> As três orientações foram falar devagar, responder ao que foi entendido e manter a calma. <em>Let me think</em> e <em>That's a good question</em> ajudam a criar uma pausa para organizar a ideia. Pedir repetição também foi discutido. Para suas perguntas ao entrevistador, vocês praticaram como pedir detalhes sobre um turno típico e sobre treinamento da equipe. Na abertura da aula, a conversa espontânea ainda rendeu ajustes em <em>texted me, I will tell you, if you had</em> e <em>find out</em>. A revisão final da trilha deverá acontecer perto da entrevista, preferencialmente no dia anterior.</p>
+</div></section><section><h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2><div class="outline-card"><p style="color:var(--muted);font-size:.9rem;margin-top:0;">Frases trabalhadas em aula, com a grafia em inglês revisada.</p><ul><li><strong>“I will tell you.”</strong> → Eu vou te contar.</li><li><strong>“We met.”</strong> → Nós nos conhecemos.</li><li><strong>“What are my duties?”</strong> → Quais são as minhas tarefas/responsabilidades?</li><li><strong>“What does a Healthcare Assistant do?”</strong> → O que um assistente de cuidados de saúde faz?</li><li><strong>“Why are you interested in this role?”</strong> → Por que você tem interesse neste cargo?</li><li><strong>“I would like to apply for this role because…”</strong> → Eu gostaria de me candidatar a este cargo porque…</li><li><strong>“I enjoy helping.”</strong> → Eu gosto de ajudar.</li><li><strong>“What is your background?”</strong> → Qual é a sua formação/trajetória?</li><li><strong>“I am patient.”</strong> → Eu sou paciente.</li><li><strong>“What are the care plans?”</strong> → Quais são os planos de cuidados?</li><li><strong>“First, I would ask…”</strong> → Primeiro, eu perguntaria…</li><li><strong>“What are you feeling?”</strong> → O que você está sentindo?</li><li><strong>“Let me think.”</strong> → Deixe-me pensar.</li><li><strong>“That’s a good question.”</strong> → Essa é uma boa pergunta.</li><li><strong>“Tell me more about a typical shift.”</strong> → Conte-me mais sobre um turno típico.</li><li><strong>“What kind of staff training do you have?”</strong> → Que tipo de treinamento para a equipe vocês têm?</li></ul></div></section><section><h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2><div class="key-panel"><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3>Duties</h3><button type="button" class="vocab-say" data-czk-say="Duties" aria-label="Ouvir a pronúncia de Duties" aria-pressed="false" title="Ouvir Duties">&#128266;</button></div><p><em>tarefas e responsabilidades</em><br><small>Aquilo que faz parte da função.<br><strong>What are my duties?</strong> — Quais são as minhas responsabilidades?</small></p></div><div class="vocab green"><div class="vocab-head"><h3>Reliable</h3><button type="button" class="vocab-say" data-czk-say="Reliable" aria-label="Ouvir a pronúncia de Reliable" aria-pressed="false" title="Ouvir Reliable">&#128266;</button></div><p><em>confiável</em><br><small>Uma pessoa com quem a equipe pode contar.<br><strong>I am reliable.</strong> — Eu sou confiável.</small></p></div><div class="vocab yellow"><div class="vocab-head"><h3>Would</h3><button type="button" class="vocab-say" data-czk-say="Would" aria-label="Ouvir a pronúncia de Would" aria-pressed="false" title="Ouvir Would">&#128266;</button></div><p><em>auxiliar para “faria”, “gostaria”, “seria”…</em><br><small>Ajuda a falar de hipóteses e de pedidos educados; vem antes da forma base do verbo.<br><strong>First, I would ask.</strong> — Primeiro, eu perguntaria.</small></p></div></div></div></section><section><h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2><div class="outline-card"><h3>Entrevista e candidatura</h3><ul><li><strong>interview</strong> — entrevista</li><li><strong>role</strong> — cargo; função</li><li><strong>duties</strong> — tarefas; responsabilidades</li><li><strong>apply for</strong> — candidatar-se a</li><li><strong>vacancy</strong> — vaga</li><li><strong>Healthcare Assistant</strong> — assistente de cuidados de saúde; o título da função</li><li><strong>background</strong> — formação e trajetória relevantes para a vaga</li><li><strong>experience</strong> — experiência</li><li><strong>previous job</strong> — emprego anterior</li><li><strong>strength / strengths</strong> — ponto forte / pontos fortes</li><li><strong>weakness / weaknesses</strong> — ponto fraco / pontos fracos; aspectos a desenvolver</li><li><strong>opportunity</strong> — oportunidade</li></ul><h3>Rotina de cuidados e ambiente de trabalho</h3><ul><li><strong>resident</strong> — residente; pessoa que mora na instituição e recebe cuidados</li><li><strong>help</strong> — ajudar</li><li><strong>get dressed</strong> — vestir-se</li><li><strong>mealtimes</strong> — horários das refeições</li><li><strong>from … to …</strong> — de … até …; ex.: from one to two</li><li><strong>walking frame</strong> — andador</li><li><strong>call bell</strong> — campainha/botão para chamar assistência</li><li><strong>care plan / care plans</strong> — plano de cuidados / planos de cuidados</li><li><strong>routine</strong> — rotina</li><li><strong>typical shift</strong> — turno típico</li><li><strong>staff</strong> — equipe; funcionários</li><li><strong>staff training</strong> — treinamento da equipe</li><li><strong>unwell</strong> — indisposto; sem se sentir bem</li><li><strong>ask</strong> — perguntar</li><li><strong>call someone</strong> — chamar alguém; telefonar para alguém, conforme o contexto</li></ul><h3>Qualidades e motivação</h3><ul><li><strong>patient</strong> — paciente, como adjetivo; ex.: I am patient</li><li><strong>patience</strong> — paciência, como substantivo; ex.: I have patience</li><li><strong>reliable</strong> — confiável</li><li><strong>motivated</strong> — motivado(a)</li><li><strong>willing to learn</strong> — disposto(a) a aprender; forma para expressar a ideia discutida na aula</li><li><strong>enjoy helping</strong> — gostar de ajudar; enjoy pede -ing no verbo seguinte</li><li><strong>elderly people</strong> — pessoas idosas; expressão apresentada na conversa sobre a função</li></ul><h3>Organizar respostas e ganhar tempo</h3><ul><li><strong>would</strong> — auxiliar em hipóteses e pedidos; ex.: I would ask</li><li><strong>will be</strong> — será; estará; serei; estarei, conforme o sujeito</li><li><strong>would be</strong> — seria; estaria</li><li><strong>first</strong> — primeiro</li><li><strong>then</strong> — depois; em seguida</li><li><strong>if</strong> — se</li><li><strong>Let me think</strong> — Deixe-me pensar</li><li><strong>That’s a good question</strong> — Essa é uma boa pergunta</li><li><strong>Tell me more about…</strong> — Conte-me mais sobre…</li><li><strong>What kind of…?</strong> — Que tipo de…?</li><li><strong>once</strong> — uma vez; pode iniciar o relato de uma experiência</li></ul><h3>Conversa inicial e revisão extra</h3><ul><li><strong>text someone / texted me</strong> — mandar mensagem para alguém / me mandou mensagem</li><li><strong>send a text / sent a text</strong> — mandar uma mensagem / mandou uma mensagem</li><li><strong>answer / answered</strong> — responder / respondeu</li><li><strong>meet / met</strong> — conhecer, encontrar / conheceu, encontrou</li><li><strong>find out</strong> — descobrir uma informação; investigar para saber</li><li><strong>husband</strong> — marido</li><li><strong>spend / waste time</strong> — gastar / desperdiçar tempo</li><li><strong>unloved</strong> — não amado(a)</li><li><strong>mog / mogged</strong> — gíria de internet: ofuscar / ofuscou; apareceu na conversa de abertura</li></ul><p style="color:var(--muted);font-size:.9rem;">💡 Na conversa, <em>mog</em> foi ligado à ideia de superar uma situação. É uma gíria informal; para apresentar sua experiência na entrevista, priorize as palavras profissionais desta revisão.</p></div></section><section><h2 style="margin-bottom:8px;">🚨 Correções importantes</h2><div class="outline-card"><div style="margin-bottom:16px;"><p><strong>1. Futuro: “vou te contar”</strong></p><p style="color:#c53030;">❌ “I tell you.”</p><p style="color:#276749;">✅ <strong>“I will tell you.”</strong> — Para a intenção futura, use <em>will + verbo na forma base</em>. <em>I tell you</em> não expressa, por si só, esse futuro.</p></div><div style="margin-bottom:16px;"><p><strong>2. Condição com “ter”</strong></p><p style="color:#c53030;">❌ “If you was…”</p><p style="color:#276749;">✅ <strong>“If you had a husband…”</strong> — Você queria dizer “se você tivesse um marido”. O verbo aqui é <em>have</em>; a forma usada nessa hipótese é <em>had</em>. A frase ficou como ponto de revisão na conversa inicial.</p></div><div style="margin-bottom:16px;"><p><strong>3. Descobrir uma informação</strong></p><p style="color:#c53030;">❌ “Discovery.”</p><p style="color:#276749;">✅ <strong>“I will find out.”</strong> — Na ideia de “vou descobrir quem é / vou investigar”, use <em>find out</em>. <em>Discovery</em> é o substantivo “descoberta”; não funciona como o verbo dessa frase.</p></div><div style="margin-bottom:16px;"><p><strong>4. People já é plural</strong></p><p style="color:#c53030;">❌ “Peoples.”</p><p style="color:#276749;">✅ <strong>“People.”</strong> — Para falar das pessoas em geral ou das pessoas que você ajuda, use <em>people</em>, sem <em>-s</em>. A forma <em>peoples</em> tem outro uso: diferentes povos.</p></div><div style="margin-bottom:16px;"><p><strong>5. Qualidade pessoal: patient × patience</strong></p><p style="color:#c53030;">❌ “I have patient.”</p><p style="color:#276749;">✅ <strong>“I am patient.”</strong> — Para “sou paciente”, use <em>am + adjetivo</em>. Outra construção correta é <em>I have patience</em> (“tenho paciência”), com o substantivo. Na pronúncia, ouça a diferença entre <em>patient</em> /ˈpeɪʃənt/ e <em>patience</em> /ˈpeɪʃəns/.</p></div><div style="margin-bottom:16px;"><p><strong>6. A expressão para ganhar tempo</strong></p><p style="color:#c53030;">❌ “Let my…”</p><p style="color:#276749;">✅ <strong>“Let me think.”</strong> — Depois de <em>let</em>, use <em>me</em> (“me”). <em>My</em> é possessivo: “meu/minha”. Complete a expressão com <em>think</em> e faça uma pausa natural.</p></div><p><strong>💡 Duas revisões da aula:</strong> depois de <em>will, would</em> e <em>can</em>, o verbo fica na forma base: <em>will be, would be, would ask, can help</em>. Não use <em>am/is/are</em> depois desses auxiliares.</p>
+<p><strong>💡 Atenção ao sentido:</strong> <em>What would you do?</em> pergunta “O que você faria?”, uma hipótese. <em>What do you do?</em> pergunta “O que você faz?”. Na aula, reconhecer o <em>would</em> foi um ponto importante para entender a pergunta.</p>
+<p><strong>💡 Pronúncia para retomar:</strong> pratique <em>duties, strengths, weaknesses</em> e <em>would</em> em pequenos blocos. O <em>l</em> de <em>would</em> não é pronunciado. O foco é reconhecer a palavra ao ouvi-la e falar com clareza, sem correr.</p></div></section><section><div class="ie-badge"><span class="ie-flag" aria-hidden="true"><span style="background:#169b62;"></span><span style="background:#ffffff;"></span><span style="background:#ff883e;"></span></span><span class="ie-shamrock">☘️</span><h2 class="ie-title" style="margin:0;">Como se diz na Irlanda</h2></div><div class="outline-card">
+<p style="margin-top:0;color:var(--muted);font-size:.9rem;">Duas frases reais desta aula em versões que você pode ouvir em conversas informais na Irlanda. Para responder à entrevista, mantenha as expressões neutras praticadas com César.</p>
+<div style="border-radius:10px;border:2px solid #c9f3dc;background:#f5fff6;padding:14px;margin-bottom:12px;">
+<span class="expr-tag">haven’t a notion</span>
+<p style="color:var(--muted);font-size:.85rem;">Na aula saiu assim (Rebeca, conversa inicial):</p><p>“I don’t know.” — Eu não sei.</p>
+<p style="color:var(--muted);font-size:.85rem;">Na Irlanda soa assim:</p><p style="font-weight:700;color:#14532D;">“I haven’t a notion.” — Não faço ideia.</p>
+<p>💡 Expressão informal para dizer que você não sabe ou não tem a menor ideia. Serve para conversa com amigos e colegas próximos. Atenção ao contexto: <em>haven’t a notion of doing something</em> também pode indicar que a pessoa não tem intenção de fazer aquilo. <a href="https://www.focail.ie/en/fgb/notion" target="_blank" rel="noopener noreferrer">Referência de uso</a>.</p>
+<p style="color:var(--muted);font-size:.85rem;">Outro exemplo com “haven’t a notion”:</p><p>“I haven’t a notion where I left my keys.” <span style="color:var(--muted);">— Não faço ideia de onde deixei minhas chaves.</span></p>
+</div>
+<div style="border-radius:10px;border:2px solid #fde68a;background:#fffdf0;padding:14px;">
+<span class="expr-tag" style="background:#92400e;">give us…</span>
+<p style="color:var(--muted);font-size:.85rem;">Na aula saiu assim (César, estratégia para ganhar tempo):</p><p>“Let me think.” — Deixe-me pensar.</p>
+<p style="color:var(--muted);font-size:.85rem;">Na Irlanda soa assim:</p><p style="font-weight:700;color:#14532D;">“Give us a minute to think.” — Me dê um minuto para pensar.</p>
+<p>💡 Na fala informal, <em>us</em> pode significar <em>me</em>: uma única pessoa está pedindo algo para si. Esse uso aparece na Irlanda e também em outras variedades de inglês; é natural entre amigos e colegas com intimidade. Aqui, <em>us</em> não significa necessariamente “nós”. <a href="https://www.fluentin3months.com/irish-english/" target="_blank" rel="noopener noreferrer">Referência de uso</a>.</p>
+<p style="color:var(--muted);font-size:.85rem;">Outro exemplo com “give us”:</p><p>“Give us a hand with this bag, please.” <span style="color:var(--muted);">— Me dê uma mão com esta bolsa, por favor.</span></p>
+</div></div></section><section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/snq2FOJvUTE" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section><section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead><tbody><tr class="row-teacher"><td class="talk-label">César (Professor)</td><td class="talk-percent">64%</td><td class="talk-time">~34 minutos</td></tr><tr class="row-student"><td class="talk-label">Rebeca</td><td class="talk-percent">36%</td><td class="talk-time">~19 minutos</td></tr></tbody></table><p style="color:var(--muted);font-size:.88rem;">Estimativa pelos intervalos atribuídos a cada participante na transcrição; inclui falas em português e em inglês e exclui os intervalos sem fala marcada. A maior participação do professor acompanha a apresentação inicial do vocabulário e do plano da trilha.</p></section><section><h2 style="margin-bottom:8px;">📝 Homework</h2><div class="homework"><p style="margin-top:0;">📌 <strong>Prioridade combinada:</strong> revisar o vocabulário junto com a pronúncia e começar a organizar sua trajetória para a próxima aula.</p><ul><li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana. Em cada revisão, escolha um grupo do vocabulário completo para ler em voz alta.</li><li>Ouça os três destaques nos botões de áudio e repita com calma. Retome também <em>strengths, weaknesses, patient</em> e <em>patience</em>.</li><li>Pense na sua experiência no hospital no Brasil: onde trabalhou, quais eram suas tarefas e qual situação real poderia contar. Pode organizar primeiro em português e anotar as palavras que faltam em inglês, sem inventar experiências.</li><li>Como prática curta, repita <em>Let me think</em> e <em>First, I would ask… Then, I would…</em>. Nesta etapa, o objetivo é se familiarizar com os blocos; a resposta completa será trabalhada em aula.</li></ul></div></section></main>
+<footer><p>© 2025 CZK English • czkenglish@gmail.com</p></footer></article></div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>
