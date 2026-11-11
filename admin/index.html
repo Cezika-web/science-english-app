@@ -2465,7 +2465,7 @@
         </div>
         <div id="liv-painel-texto">
           <div class="liv-zap"><textarea id="liv-txt" spellcheck="false" aria-label="Texto para o WhatsApp"></textarea></div>
-          <p class="liv-dica">Pode editar o texto antes de copiar. O <b>*asterisco*</b> vira negrito e o <b>_sublinhado_</b> vira itálico no WhatsApp. Horas que já passaram hoje não entram.</p>
+          <p class="liv-dica">Pode editar o texto antes de copiar. O <b>*asterisco*</b> vira negrito e o <b>_sublinhado_</b> vira itálico no WhatsApp. Entram todos os horários vermelhos da semana, inclusive de dias que já passaram.</p>
         </div>
         <div id="liv-painel-img" hidden>
           <div class="liv-img-box"><canvas id="liv-cv" width="1080" height="1400"></canvas></div>
@@ -3612,7 +3612,7 @@
     // Copia a disponibilidade (segunda a sábado, ou só os dias escolhidos) como
     // texto de WhatsApp ou como imagem. A conta é a MESMA da agenda — expediente
     // menos aulas e compromissos (calendarVagasAutomaticas), com cancelada ainda
-    // ocupando o horário — só que sem as horas de hoje que já passaram.
+    // ocupando o horário. Entra a semana toda, também o que já passou (decisão dele).
     const LIV_DIAS = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
     const LIV_ABREV = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
     const LIV_MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
@@ -3631,17 +3631,13 @@
     // Semanas (inteiras) entre a semana que está na janela e a semana de hoje.
     const livSemanasAFrente = () => Math.round((calendarAddDays(livBase, livSemana * 7) - calendarWeekStartDate(new Date())) / (7 * 86400000));
 
-    // Horários livres de UM dia: o que a agenda mostra como vaga vermelha, sem o que já passou, fatiado em blocos do tamanho
-    // da aula (livre das 15h às 20h → 15–16, 16–17, 17–18…). A sobra que não comporta uma aula inteira fica de fora.
+    // Horários livres de UM dia: tudo o que a agenda mostra como vaga vermelha (inclusive de dias e horas que já passaram:
+    // o César manda a semana inteira), fatiado em blocos do tamanho da aula (livre das 15h às 20h → 15–16, 16–17, 17–18…).
+    // A sobra que não comporta uma aula inteira fica de fora.
     function livFaixasDoDia(data, duracao) {
-      const agora = new Date(), chave = calendarDateKey(data), chaveHoje = calendarDateKey(agora);
-      if (chave < chaveHoje) return [];
+      const chave = calendarDateKey(data);
       const doDia = calendarMergeGroups(calendarEvents.filter(event => calendarOccursOn(event, data)), data);
-      let faixas = calendarVagasAutomaticas(data, doDia, chave).map(vaga => [calendarMinutes(vaga.startTime), calendarMinutes(vaga.endTime)]);
-      if (chave === chaveHoje) {   // hoje: corta o que já passou (arredonda para a próxima meia hora)
-        const corte = Math.ceil((agora.getHours() * 60 + agora.getMinutes()) / 30) * 30;
-        faixas = faixas.map(([inicio, fim]) => [Math.max(inicio, corte), fim]).filter(([inicio, fim]) => fim > inicio);
-      }
+      const faixas = calendarVagasAutomaticas(data, doDia, chave).map(vaga => [calendarMinutes(vaga.startTime), calendarMinutes(vaga.endTime)]);
       const blocos = [];
       faixas.forEach(([inicio, fim]) => { for (let ini = inicio; ini + duracao <= fim; ini += duracao) blocos.push([ini, ini + duracao]); });
       return blocos;
