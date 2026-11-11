@@ -2307,7 +2307,9 @@ export const ajustarCreditos = onCall(
  *
  * Cota: LIMITE_ASSISTENTE_MES perguntas por mês, contada AQUI no servidor em _assistenteUso/{uid}_{AAAA-MM}
  * (o professor pode mudar por aluno com `assistenteLimite`, ou desligar com `assistente:false`, ou
- * `plano.assistente:false`). O aluno não vê contador: só o aviso ao chegar no limite. Pergunta e resposta
+ * `plano.assistente:false`). Cota COMPARTILHADA: quem chega no limite recebe mais 5 de cada vez, tiradas de quem
+ * ainda não usou as suas (cada um sempre guarda 10), então a soma dos limites do mês nunca passa de alunos × 30
+ * (ver reservarPerguntaAssistente). O aluno não vê contador: só o aviso ao chegar no limite. Pergunta e resposta
  * ficam em students/{uid}/duvidas (só o professor lê) e o custo em _apiUsage (tipo "assistente").
  * Escolas de outros professores só usam se schools/{id}.assistente === true (a API é paga pelo César).
  */
@@ -2407,8 +2409,22 @@ export const perguntarAssistente = onCall(
     }
 
     const limite = Number.isFinite(aluno.assistenteLimite) ? aluno.assistenteLimite : LIMITE_ASSISTENTE_MES;
+    // Só roda quando o aluno já gastou o limite dele: lista os alunos ativos da escola que podem ceder perguntas.
+    const carregarColegas = async () => {
+      const snap = await db.collection('students').select('schoolId', 'archived', 'assistente', 'assistenteLimite', 'plano.assistente').get();
+      return snap.docs
+        .filter((d) => {
+          const a = d.data();
+          return !a.archived && (a.schoolId || 'science-english') === escolaId && a.assistente !== false && a.plano?.assistente !== false;
+        })
+        .map((d) => ({
+          uid: d.id,
+          base: Number.isFinite(d.get('assistenteLimite')) ? d.get('assistenteLimite') : LIMITE_ASSISTENTE_MES,
+          ref: db.doc(`_assistenteUso/${d.id}_${mes}`),
+        }));
+    };
     const modelo = await reservarPerguntaAssistente(db, {
-      usoRef, mesRef, uid, mes, limite, rota, atualizadoEm: FieldValue.serverTimestamp(),
+      usoRef, mesRef, uid, mes, limite, rota, atualizadoEm: FieldValue.serverTimestamp(), carregarColegas,
     });
     if (!modelo) return { limite: true };
 

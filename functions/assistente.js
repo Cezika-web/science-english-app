@@ -412,13 +412,56 @@ export async function gerarRespostaAssistente(client, { rota, modelo, entrada, r
   return { retorno, aulas, semanaAtividades };
 }
 
+// Cota compartilhada. Cada aluno ativo tem `limite` perguntas por mês (30). Quem chega no limite recebe
+// mais BLOCO_EMPRESTIMO_ASSISTENTE de cada vez, tiradas de quem ainda não usou as suas, e a soma de todos
+// os limites do mês nunca passa de (alunos ativos × 30): o gasto máximo continua o mesmo.
+// Em `_assistenteUso/{uid}_{AAAA-MM}`: `perguntas` (feitas), `extras` (recebidas) e `emprestou` (cedidas);
+// o limite de hoje do aluno é limite + extras − emprestou.
+export const BLOCO_EMPRESTIMO_ASSISTENTE = 5;   // de quanto em quanto se empresta
+export const RESERVA_ASSISTENTE = 10;           // quanto cada aluno sempre guarda para si, mesmo cedendo aos outros
+export const TETO_EXTRAS_ASSISTENTE = 30;       // ninguém recebe mais que isso por mês (no total, até 60 com o seu 30)
+
+const limiteDeHoje = (uso, limite) => limite + Number(uso.get('extras') || 0) - Number(uso.get('emprestou') || 0);
+
+// Escolhe de quem tirar, uma pergunta por vez, sempre de quem tem mais sobrando, para o empréstimo se espalhar
+// entre os alunos parados em vez de esvaziar um só. Só cede quem continua com a RESERVA depois de ceder.
+function escolherEmprestimo(candidatos, quantas) {
+  const cedido = new Map();
+  for (let tiradas = 0; tiradas < quantas; tiradas++) {
+    candidatos.sort((a, b) => b.sobra - a.sobra);
+    const c = candidatos[0];
+    if (!c || c.sobra - 1 < RESERVA_ASSISTENTE) break;
+    c.sobra -= 1;
+    cedido.set(c, (cedido.get(c) || 0) + 1);
+  }
+  return cedido;
+}
+
 // Uma chamada Sonnet precisa de nove respostas Haiku já concluídas. Só respostas
 // concluídas geram saldo e a transação reserva o Sonnet antes da chamada paga.
-export function reservarPerguntaAssistente(db, { usoRef, mesRef, uid, mes, limite, rota, atualizadoEm }) {
+// `carregarColegas()` devolve [{ uid, base, ref }] dos alunos ativos da escola e só é chamada quando o aluno
+// já gastou o limite de hoje; sem ninguém que possa ceder, devolve null (limite do mês).
+export function reservarPerguntaAssistente(db, { usoRef, mesRef, uid, mes, limite, rota, atualizadoEm, carregarColegas }) {
   return db.runTransaction(async (tx) => {
     const uso = await tx.get(usoRef);
     const perguntas = Number(uso.get('perguntas') || 0);
-    if (perguntas >= limite) return null;
+    let extras = Number(uso.get('extras') || 0);
+    const cedencias = [];
+    if (perguntas >= limiteDeHoje(uso, limite)) {
+      const quantas = Math.min(BLOCO_EMPRESTIMO_ASSISTENTE, TETO_EXTRAS_ASSISTENTE - extras);
+      if (quantas <= 0 || !carregarColegas) return null;
+      const colegas = (await carregarColegas()).filter((c) => c.uid !== uid);
+      const candidatos = await Promise.all(colegas.map(async (c) => {
+        const d = await tx.get(c.ref);
+        return { ...c, emprestou: Number(d.get('emprestou') || 0), sobra: limiteDeHoje(d, c.base) - Number(d.get('perguntas') || 0) };
+      }));
+      const cedido = escolherEmprestimo(candidatos, quantas);
+      if (!cedido.size) return null;
+      for (const [c, n] of cedido) {
+        extras += n;
+        cedencias.push({ ref: c.ref, uid: c.uid, emprestou: c.emprestou + n });
+      }
+    }
 
     let modelo = HAIKU_ASSISTENTE;
     if (rota === 'DIFICIL' || rota === 'DIFICIL_MATERIAL') {
@@ -430,7 +473,8 @@ export function reservarPerguntaAssistente(db, { usoRef, mesRef, uid, mes, limit
         tx.set(mesRef, { sonnet: sonnet + 1 }, { merge: true });
       }
     }
-    tx.set(usoRef, { uid, mes, perguntas: perguntas + 1, atualizadoEm }, { merge: true });
+    for (const c of cedencias) tx.set(c.ref, { uid: c.uid, mes, emprestou: c.emprestou }, { merge: true });
+    tx.set(usoRef, { uid, mes, perguntas: perguntas + 1, ...(cedencias.length ? { extras } : {}), atualizadoEm }, { merge: true });
     return modelo;
   });
 }

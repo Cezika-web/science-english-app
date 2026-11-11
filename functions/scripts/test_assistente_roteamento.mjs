@@ -125,6 +125,74 @@ assert.equal(await reservar(db, 'aluno-c'), HAIKU_ASSISTENTE, 'fallback quando o
 assert.equal(await reservar(bancoEmMemoria({ geral: { haiku: 8 } }), 'aluno-d'), HAIKU_ASSISTENTE);
 assert.equal(await reservar(bancoEmMemoria({ geral: { haiku: 9 } }), 'aluno-d'), SONNET_ASSISTENTE);
 
+// ── Cota compartilhada: quem chega nos 30 recebe de 5 em 5, tirado de quem não usou ──
+const BASE = 30;
+const turma = (ids) => async () => ids.map((id) => ({ uid: id, base: BASE, ref: id }));
+const pedir = (banco, uid, ids, rota = 'GERAL') => reservarPerguntaAssistente(banco, {
+  usoRef: uid, mesRef: 'geral', uid, mes: '2026-11', limite: BASE, rota, atualizadoEm: 'agora', carregarColegas: turma(ids),
+});
+const limitesSomados = (banco, ids) => ids.reduce((soma, id) => {
+  const d = banco.docs.get(id) || {};
+  return soma + BASE + (d.extras || 0) - (d.emprestou || 0);
+}, 0);
+const parados = ['p1', 'p2', 'p3', 'p4'];
+const todos = ['gu', ...parados];
+
+// dentro do limite: não mexe em ninguém
+let cota = bancoEmMemoria({ gu: { perguntas: 29 } });
+assert.equal(await pedir(cota, 'gu', todos), HAIKU_ASSISTENTE);
+assert.deepEqual(cota.docs.get('gu'), { perguntas: 30, uid: 'gu', mes: '2026-11', atualizadoEm: 'agora' });
+assert.equal(cota.docs.has('p1'), false, 'não tira de ninguém antes de precisar');
+
+// no 31º pedido recebe 5, espalhados entre os parados, e a soma dos limites não muda
+cota = bancoEmMemoria({ gu: { perguntas: 30 } });
+assert.equal(await pedir(cota, 'gu', todos), HAIKU_ASSISTENTE);
+assert.equal(cota.docs.get('gu').perguntas, 31);
+assert.equal(cota.docs.get('gu').extras, 5);
+const cedidos = parados.map((id) => cota.docs.get(id)?.emprestou || 0);
+assert.equal(cedidos.reduce((a, b) => a + b, 0), 5);
+assert.ok(Math.max(...cedidos) <= 2, 'empréstimo espalhado: ' + cedidos);
+assert.equal(cota.docs.get('gu').emprestou, undefined, 'o aluno não cede a si mesmo');
+assert.equal(limitesSomados(cota, todos), BASE * todos.length);
+
+// as 4 perguntas seguintes já estão pagas; a 6ª pede mais um bloco de 5
+for (let i = 0; i < 4; i++) assert.equal(await pedir(cota, 'gu', todos), HAIKU_ASSISTENTE);
+assert.equal(cota.docs.get('gu').extras, 5, 'ainda dentro do bloco');
+assert.equal(await pedir(cota, 'gu', todos), HAIKU_ASSISTENTE);
+assert.equal(cota.docs.get('gu').extras, 10);
+assert.equal(limitesSomados(cota, todos), BASE * todos.length);
+
+// quem emprestou fica com menos: usa só o que sobrou (e guarda sempre a reserva de 10)
+cota = bancoEmMemoria({ gu: { perguntas: 30 }, p1: { emprestou: 20, perguntas: 10 }, p2: { emprestou: 20, perguntas: 10 } });
+assert.equal(await pedir(cota, 'gu', ['gu', 'p1', 'p2']), null, 'ninguém pode ceder: p1 e p2 já estão na reserva');
+assert.equal(await pedir(cota, 'p1', ['gu', 'p1', 'p2']), null, 'p1 gastou o que lhe restou depois de emprestar');
+
+// a reserva de 10 é intocável: quem tem exatamente 10 sobrando não cede, quem tem 11 cede uma
+cota = bancoEmMemoria({ gu: { perguntas: 30 }, p1: { perguntas: 20 }, p2: { perguntas: 20 } });
+assert.equal(await pedir(cota, 'gu', ['gu', 'p1', 'p2']), null, 'reserva de 10 protegida');
+cota = bancoEmMemoria({ gu: { perguntas: 30 }, p1: { perguntas: 19 }, p2: { perguntas: 20 } });
+assert.equal(await pedir(cota, 'gu', ['gu', 'p1', 'p2']), HAIKU_ASSISTENTE, 'cede só o que passa da reserva');
+assert.deepEqual([cota.docs.get('gu').extras, cota.docs.get('p1').emprestou], [1, 1]);
+assert.equal(await pedir(cota, 'gu', ['gu', 'p1', 'p2']), null, 'acabou o que dava para ceder');
+
+// teto de 30 extras por aluno (60 no mês) e ninguém sobrando
+cota = bancoEmMemoria({ gu: { perguntas: 60, extras: 30 } });
+assert.equal(await pedir(cota, 'gu', todos), null, 'teto de 30 extras');
+cota = bancoEmMemoria({ gu: { perguntas: 30 }, p1: { perguntas: 30 }, p2: { perguntas: 30 } });
+assert.equal(await pedir(cota, 'gu', ['gu', 'p1', 'p2']), null, 'todos zeraram');
+
+// sem lista de alunos continua valendo o limite
+assert.equal(await reservar(bancoEmMemoria({ gu: { perguntas: 30 } }), 'gu'), null);
+
+// dois alunos estourando ao mesmo tempo: cada um recebe os seus 5 e a conta fecha
+const seis = ['a', 'b', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6'];
+cota = bancoEmMemoria({ a: { perguntas: 30 }, b: { perguntas: 30 } });
+assert.deepEqual(await Promise.all([pedir(cota, 'a', seis), pedir(cota, 'b', seis)]), [HAIKU_ASSISTENTE, HAIKU_ASSISTENTE]);
+assert.ok(cota.conflitos() > 0);
+assert.equal(cota.docs.get('a').extras + cota.docs.get('b').extras, 10);
+assert.equal(['q1', 'q2', 'q3', 'q4', 'q5', 'q6'].reduce((s, id) => s + (cota.docs.get(id)?.emprestou || 0), 0), 10);
+assert.equal(limitesSomados(cota, seis), BASE * seis.length);
+
 const uso = {
   input_tokens: 1_000_000, output_tokens: 1_000_000, cache_read_input_tokens: 1_000_000,
   cache_creation_input_tokens: 2_000_000,
