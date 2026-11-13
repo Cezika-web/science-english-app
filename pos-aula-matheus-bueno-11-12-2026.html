@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Resumo Pós-Aula — Matheus Bueno — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+@media print{.actions,.vocab-say{display:none}.wrap{padding:0}.card{box-shadow:none;border:0}.vocab,.homework,.talk-table tr{break-inside:avoid}}
+</style></head><body>
+<div class="wrap"><article class="card" role="main">
+<header><div><div style="display:flex;gap:10px;align-items:center;"><span class="badge">PÓS-AULA</span><h1>Soletração e profissões: respostas curtas com to be</h1></div>
+<div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Matheus Bueno &nbsp;•&nbsp; <strong>Data:</strong> 11/12/2026</div></div>
+<div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header><main>
+<section class="panel"><p style="margin:0;font-style:italic;color:#14532D;">Matheus, nesta aula você retomou a soletração de nomes, revisou profissões e praticou afirmações, negativas e respostas curtas com o verbo <strong>to be</strong>. O foco foi reconhecer melhor os sons e responder com o pronome e o verbo certos.</p></section>
+<section><h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2><div class="outline-card"><p style="margin:0 0 12px;line-height:1.6;">Matheus, começamos a aula retomando os estudos depois de um intervalo. Você contou sobre a correria de trabalho no fim do ano e já havia feito três atividades no app. César apresentou o acompanhamento do tempo de estudo, as metas do perfil e o recurso para tirar dúvidas. A orientação foi escolher uma <strong>meta realista</strong> e continuar praticando mesmo nas semanas sem aula, concluindo as atividades pendentes.</p><p style="margin:0 0 12px;line-height:1.6;">Na revisão das atividades, retomamos <strong>a/an</strong>: os dois significam “um/uma” e acompanham substantivos contáveis no singular. A escolha depende do <strong>som inicial</strong> da próxima palavra: <em>a scientist</em>, mas <em>an engineer</em>, <em>an artist</em> e <em>an actor</em>. No plural, retiramos o artigo e ajustamos a profissão: <em>They are singers</em>. Também revisamos a inversão nas perguntas: <em>You are a scientist → Are you a scientist?</em></p><p style="margin:0 0 12px;line-height:1.6;">O primeiro grande bloco de prática foi o <strong>alfabeto e a soletração</strong>. Você ouviu diálogos com nomes como Kellie, Geoffrey e Stephanie, anotou as letras e pediu repetições até reconhecer as sequências. Os contrastes principais foram <strong>A /eɪ/, E /iː/ e I /aɪ/</strong>, além de <strong>D/G/J</strong>. César usou a sigla <em>DJ</em> como associação e pediu que você soletrasse seu próprio nome e sobrenomes. Também retomou a diferença entre <em>am</em>, com os lábios fechados no M, e <em>an</em>, com o final N.</p><p style="margin:0 0 12px;line-height:1.6;">Depois, usamos imagens de pessoas e suas profissões para treinar <strong>short answers</strong>. O objetivo foi responder com <strong>Yes/No + pronome + to be</strong>: <em>Yes, he is</em>, <em>No, she is not</em>, <em>Yes, they are</em> e <em>No, they are not</em>. Quando a pergunta envolve duas pessoas, precisamos de <strong>they</strong>. Você também completou frases afirmativas e negativas, distinguindo <em>is/is not</em> e <em>are/are not</em>. A pronúncia de <strong>singer</strong> e <strong>athlete</strong> recebeu atenção especial, assim como o S de <em>actors</em>.</p><p style="margin:0 0 12px;line-height:1.6;">Nas atividades de <strong>listening</strong>, você associou conversas a imagens de profissões. Um ponto importante foi escutar a resposta inteira: uma pergunta pode mencionar <em>scientist</em>, mas a resposta negar essa profissão e informar <em>chef</em>. Na atividade seguinte, identificou profissões e nomes soletrados, com destaque para <strong>Shepherd — S-H-E-P-H-E-R-D</strong> e <strong>Jeffrey — J-E-F-F-R-E-Y</strong>. Repetir trechos curtos ajudou a separar as letras e corrigir a escrita.</p><p style="margin:0 0 12px;line-height:1.6;">Você perguntou sobre <strong>meet</strong>, presente nas apresentações do livro. Em <em>Meet Leonardo…</em>, ele funciona como verbo: “Conheça Leonardo…”. O sentido depende do contexto; para a palavra comum “reunião”, use <em>meeting</em>. Ao final, César reforçou que a prática melhorou seu desempenho durante a própria aula. Na próxima, a proposta é terminar a Unidade 1, acelerar as respostas curtas e assistir ao vídeo da unidade sem legendas, revisando cumprimentos, apresentações, pronomes sujeito, profissões e o verbo <em>to be</em>.</p></div></section>
+<section><h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2><div class="outline-card"><ul style="margin:0;padding-left:20px;line-height:1.65;"><li><strong>How do you spell it?</strong> → Como se soletra isso?</li><li><strong>Excuse me.</strong> → Com licença.</li><li><strong>That is right.</strong> → Isso está certo.</li><li><strong>Are you a scientist?</strong> → Você é cientista?</li><li><strong>Is Pablo Pérez an athlete?</strong> → Pablo Pérez é atleta?</li><li><strong>Yes, he is.</strong> → Sim, ele é.</li><li><strong>No, she is not.</strong> → Não, ela não é.</li><li><strong>Yes, they are.</strong> → Sim, eles/elas são.</li><li><strong>No, they are not.</strong> → Não, eles/elas não são.</li><li><strong>Adam Driver is not a singer. He is an actor.</strong> → Adam Driver não é cantor. Ele é ator.</li><li><strong>She is a writer.</strong> → Ela é escritora.</li><li><strong>See you next week.</strong> → Até a semana que vem.</li></ul><p style="margin:12px 0 0;color:var(--muted);font-size:0.88rem;">Frases da prática e dos diálogos, com a grafia em inglês normalizada para revisão.</p></div></section>
+<section><h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3>spell</h3><button type="button" class="vocab-say" data-czk-say="spell" aria-label="Ouvir a pronúncia de spell" aria-pressed="false" title="Ouvir spell">&#128266;</button></div><p><em>soletrar</em><br>Dizer as letras de uma palavra, uma por uma.<br><small><strong>How do you spell it?</strong><br>Como se soletra isso?</small></p></div><div class="vocab green"><div class="vocab-head"><h3>singer</h3><button type="button" class="vocab-say" data-czk-say="singer" aria-label="Ouvir a pronúncia de singer" aria-pressed="false" title="Ouvir singer">&#128266;</button></div><p><em>cantor / cantora</em><br>Pessoa que canta. O som de NG é /ŋ/, sem o som de J.<br><small><strong>He is a singer.</strong><br>Ele é cantor.</small></p></div><div class="vocab yellow"><div class="vocab-head"><h3>athlete</h3><button type="button" class="vocab-say" data-czk-say="athlete" aria-label="Ouvir a pronúncia de athlete" aria-pressed="false" title="Ouvir athlete">&#128266;</button></div><p><em>atleta</em><br>Pessoa que pratica uma modalidade esportiva. Atenção ao TH /θ/.<br><small><strong>Is Pablo Pérez an athlete?</strong><br>Pablo Pérez é atleta?</small></p></div></div></section>
+<section><h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2><div class="outline-card"><h3 style="margin-top:0;">Profissões</h3><ul style="margin:0;padding-left:20px;line-height:1.65;"><li><strong>actor / actors</strong> → ator / atores; <strong>artist</strong> → artista.</li><li><strong>athlete / athletes</strong> → atleta / atletas; <strong>singer / singers</strong> → cantor(es), cantora(s).</li><li><strong>writer</strong> → escritor(a); <strong>chef</strong> → chef de cozinha.</li><li><strong>scientist</strong> → cientista; <strong>engineer</strong> → engenheiro(a).</li><li><strong>teacher / English teacher</strong> → professor(a) / professor(a) de inglês.</li><li><strong>doctor</strong> → médico(a); <strong>pilot</strong> → piloto; <strong>photographer</strong> → fotógrafo(a).</li></ul><h3>Soletração, apresentações e instruções</h3><ul style="margin:0;padding-left:20px;line-height:1.65;"><li><strong>spell / spelling</strong> → soletrar / soletração; <strong>name</strong> → nome.</li><li><strong>first name / last name</strong> → primeiro nome / sobrenome.</li><li><strong>occupation</strong> → profissão, ocupação; <strong>What do you do?</strong> → Qual é sua profissão?</li><li><strong>meet</strong> → conhecer, encontrar; em uma apresentação: “Conheça…”.</li><li><strong>Excuse me</strong> → com licença; <strong>That is right</strong> → isso está certo.</li><li><strong>questions</strong> → perguntas; <strong>short answer</strong> → resposta curta; <strong>listening</strong> → compreensão oral.</li></ul><h3>Pronomes e verbo to be</h3><ul style="margin:0;padding-left:20px;line-height:1.65;"><li><strong>I am</strong> → eu sou/estou; <strong>you are</strong> → você é/está, vocês são/estão.</li><li><strong>he is / she is</strong> → ele é/está / ela é/está; <strong>they are</strong> → eles/elas são/estão.</li><li><strong>is not = isn’t</strong> e <strong>are not = aren’t</strong> → formas negativas.</li><li><strong>a / an</strong> → um/uma, antes de substantivos contáveis no singular.</li></ul><h3>Letras que merecem atenção</h3><table class="talk-table"><thead><tr><th>Letra</th><th>Pronúncia</th><th>Apoio aproximado</th></tr></thead><tbody><tr><td><strong>A</strong></td><td>/eɪ/</td><td>ei</td></tr><tr><td><strong>E</strong></td><td>/iː/</td><td>i</td></tr><tr><td><strong>I</strong></td><td>/aɪ/</td><td>ai</td></tr><tr><td><strong>D</strong></td><td>/diː/</td><td>di</td></tr><tr><td><strong>G</strong></td><td>/dʒiː/</td><td>dji</td></tr><tr><td><strong>J</strong></td><td>/dʒeɪ/</td><td>djei</td></tr><tr><td><strong>H</strong></td><td>/eɪtʃ/</td><td>eitch</td></tr><tr><td><strong>M</strong></td><td>/ɛm/</td><td>ém</td></tr><tr><td><strong>N</strong></td><td>/ɛn/</td><td>én</td></tr><tr><td><strong>O</strong></td><td>/oʊ/</td><td>ou</td></tr><tr><td><strong>R</strong></td><td>/ɑr/</td><td>ar</td></tr><tr><td><strong>Y</strong></td><td>/waɪ/</td><td>uai</td></tr></tbody></table><p style="margin-bottom:0;color:var(--muted);font-size:0.88rem;">As aproximações em português servem de apoio. Priorize o som que você escuta e repita as letras fora da ordem do alfabeto.</p></div></section>
+<section><h2 style="margin-bottom:8px;">🚨 Correções importantes</h2><div class="outline-card"><p style="margin-top:0;color:var(--muted);">Pontos corrigidos na revisão das atividades e na prática oral. Os padrões abaixo resumem os ajustes trabalhados.</p><div style="margin-bottom:18px;"><p style="margin:0 0 6px;"><strong>1. A, E e I: separar os sons</strong></p><p style="margin:0 0 5px;color:#c53030;">❌ Trocar E por I ao ouvir ou soletrar um nome.</p><p style="margin:0 0 6px;color:#276749;">✅ <strong>A /eɪ/ (“ei”) • E /iː/ (“i”) • I /aɪ/ (“ai”).</strong></p><p style="margin:0;line-height:1.6;">Na aula, esses sons apareceram várias vezes em Kellie e Stephanie. Anote uma letra por vez e confira a sequência antes de tentar ler o nome inteiro.</p></div><div style="margin-bottom:18px;"><p style="margin:0 0 6px;"><strong>2. Letras parecidas nos nomes</strong></p><p style="margin:0 0 5px;color:#c53030;">❌ Trocar D por G ou misturar G com J.</p><p style="margin:0 0 6px;color:#276749;">✅ <strong>D /diː/ • G /dʒiː/ • J /dʒeɪ/.</strong></p><p style="margin:0;line-height:1.6;">Compare as letras em pares. Para o nome do último exercício, a forma final foi Jeffrey: J-E-F-F-R-E-Y. Em Shepherd, preserve a sequência S-H-E-P-H-E-R-D.</p></div><div style="margin-bottom:18px;"><p style="margin:0 0 6px;"><strong>3. A/an: singular e som inicial</strong></p><p style="margin:0 0 5px;color:#c53030;">❌ Tratar a/an como marca de plural ou escolher só pela letra escrita.</p><p style="margin:0 0 6px;color:#276749;">✅ <strong>a scientist • an engineer • an artist • an actor.</strong></p><p style="margin:0;line-height:1.6;">Os dois artigos são singulares. No plural, diga singers, actors ou athletes sem a/an. O critério para escolher a ou an é o som que vem logo depois.</p></div><div style="margin-bottom:18px;"><p style="margin:0 0 6px;"><strong>4. Pergunta com to be</strong></p><p style="margin:0 0 5px;color:#c53030;">❌ Usar a ordem de afirmação ao montar a pergunta do exercício.</p><p style="margin:0 0 6px;color:#276749;">✅ <strong>You are a scientist. → Are you a scientist?</strong></p><p style="margin:0;line-height:1.6;">A pergunta começa com o verbo to be, seguido do sujeito. Com he/she, o mesmo padrão produz Is he…? ou Is she…?.</p></div><div style="margin-bottom:18px;"><p style="margin:0 0 6px;"><strong>5. Resposta curta: pronome e verbo completos</strong></p><p style="margin:0 0 5px;color:#c53030;">❌ Deixar a negativa incompleta ou buscar o nome da pessoa no lugar do pronome.</p><p style="margin:0 0 6px;color:#276749;">✅ <strong>No, she is not. • No, they are not.</strong></p><p style="margin:0;line-height:1.6;">Para uma mulher, use she is; para duas pessoas, they are. As contrações também funcionam: No, she isn’t e No, they aren’t. O verbo continua presente nas duas formas.</p></div><div style="margin-bottom:18px;"><p style="margin:0 0 6px;"><strong>6. Singer e athlete: pronúncia</strong></p><p style="margin:0 0 5px;color:#c53030;">❌ Pronunciar singer com som de J e perder o som de TH em athlete.</p><p style="margin:0 0 6px;color:#276749;">✅ <strong>singer /ˈsɪŋər/ • athlete /ˈæθliːt/.</strong></p><p style="margin:0;line-height:1.6;">Em singer, faça o som nasal /ŋ/ sem acrescentar /dʒ/. Em athlete, o TH /θ/ é feito com a ponta da língua entre os dentes e passagem de ar. Ouça os botões e repita devagar antes de colocar as palavras na frase.</p></div><div style="margin-bottom:18px;"><p style="margin:0 0 6px;"><strong>7. Plural na fala</strong></p><p style="margin:0 0 5px;color:#c53030;">❌ Ler actors como actor ao falar sobre duas pessoas.</p><p style="margin:0 0 6px;color:#276749;">✅ <strong>They are not actors.</strong></p><p style="margin:0;line-height:1.6;">César chamou atenção para o S final na leitura. Com they, mantenha are e a profissão no plural; não use a/an.</p></div><p style="margin-bottom:0;line-height:1.6;">💡 <strong>Chef é chef de cozinha.</strong> Essa palavra não corresponde automaticamente ao “chefe” de qualquer empresa. No listening, escute a resposta completa antes de decidir a profissão: uma palavra mencionada na pergunta pode ser negada logo em seguida.</p></div></section>
+<section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/t9mjlWrCKeI" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section>
+<section class="speaking"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Fala aproximada</th></tr></thead><tbody><tr class="row-teacher"><td class="talk-label">César (Professor)</td><td class="talk-percent">70%</td><td class="talk-time">24 min 31 s</td></tr><tr class="row-student"><td class="talk-label">Matheus Bueno</td><td class="talk-percent">30%</td><td class="talk-time">10 min 36 s</td></tr></tbody></table><p style="margin:10px 0 0;color:var(--muted);font-size:0.88rem;line-height:1.5;">Estimativa pelos intervalos da transcrição, incluindo português e inglês. Os percentuais comparam somente professor e aluno; excluem áudios dos exercícios e pausas. A aula durou aproximadamente 56 minutos.</p></section>
+<section><h2 style="margin-bottom:8px;">📝 Homework</h2><div class="homework"><p style="margin-top:0;"><strong>Prática para a semana</strong></p><ul style="margin:0;padding-left:20px;line-height:1.65;"><li><strong>Leia este pós-aula de 2 a 3 vezes durante a semana.</strong> Retome as frases em voz alta e ouça os três botões de vocabulário.</li><li><strong>Soletre seu nome e sobrenome em inglês.</strong> Depois, escolha palavras que encontrar no dia a dia e diga cada letra. Essa foi a orientação de César para manter contato frequente com os sons.</li><li><strong>Treine A/E/I e D/G/J.</strong> Alterne a ordem e escreva as letras que escutar. Revise também H, R e Y, que apareceram na soletração dos nomes.</li><li><strong>Faça as atividades pendentes do app e acompanhe as novas.</strong> César anunciou uma atividade de áudio de soletração, incluindo o próprio nome. Use o recurso de dúvidas quando não entender uma instrução ou regra.</li><li><strong>Como revisão sugerida, pratique três pares de pergunta e resposta:</strong> Is he an actor? — Yes, he is. / Is she a singer? — No, she is not. / Are they athletes? — Yes, they are.</li><li><strong>Defina uma meta de estudo possível no perfil.</strong> Mantenha a prática mesmo entre as aulas. Na próxima aula, vamos acelerar as short answers, concluir a Unidade 1 e trabalhar o vídeo de revisão.</li></ul></div></section>
+</main><footer>© 2025 CZK English • czkenglish@gmail.com</footer></article></div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — Giovanna Azzi — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+.badge{white-space:nowrap;flex-shrink:0;}
+h2{font-size:1.16rem;color:#14532D;line-height:1.35;}
+h3{font-size:1rem;color:#14532D;}
+p,li{line-height:1.65;color:#374151;}
+li+li{margin-top:6px;}
+.note{font-size:.86rem;color:var(--muted);}
+.correction+.correction{border-top:1px solid var(--border);margin-top:16px;padding-top:14px;}
+.scale{padding:12px;border-radius:8px;background:#F0FDF4;color:#14532D;font-weight:700;line-height:1.8;}
+@media(max-width:720px){header{flex-direction:column;}header>div>div:first-child{flex-wrap:wrap;}.wrap{padding:20px 12px;}.card{box-sizing:border-box;}.vocab{min-width:0;}.actions,.btn{max-width:100%;}}
+@media print{html,body{height:auto;background:#fff;}.wrap{display:block;padding:0;}.card{max-width:none;width:auto;box-shadow:none;border:0;}.actions,.vocab-say{display:none;}.vocab,.correction,.homework,.speaking{break-inside:avoid;}h2,h3{break-after:avoid;}}
+</style></head><body>
+<div class="wrap"><article class="card" role="main"><header><div><div style="display:flex;gap:10px;align-items:center;"><span class="badge">PÓS-AULA</span><h1>Férias e viagens: adjetivos, intensidade e passado</h1></div><div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluna:</strong> Giovanna Azzi &nbsp;•&nbsp; <strong>Data:</strong> 11/12/2026</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header><main>
+<section class="panel"><p style="margin:0;font-weight:600;color:#14532D;"><em>Giovanna, nesta aula você escreveu sobre férias, praticou escolhas com would rather e começou a descrever viagens no passado. O foco final foi combinar adjetivos com palavras como very, really e kind of para mostrar a intensidade da sua opinião.</em></p></section>
+<section><h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2><div class="outline-card">
+<p><strong>Revisão do desafio:</strong> retomamos a terceira pessoa do singular no presente simples. Nas afirmativas com <span lang="en">he, she e it</span>, o verbo pode receber <strong>-s ou -es</strong>: <span lang="en">catches, watches, washes</span>. Já depois de <strong>would</strong>, usamos o verbo na forma base: <span lang="en">would live</span>. Para comparar preferências, a estrutura trabalhada foi <strong>I would rather + verbo</strong>.</p>
+<p><strong>Would you rather…?</strong> No aquecimento, você leu escolhas sobre comer um bolo com ingredientes misteriosos, celebrar feriados, parar o tempo, envelhecer e passar a véspera de Ano-Novo em casa ou numa festa cheia. Nesse contexto, apareceram <span lang="en">made, stuck, age, eve, packed e barely</span>. Também ajustamos <strong>your → my</strong> ao transformar a pergunta em uma resposta sobre você.</p>
+<p><strong>Escrita sobre férias:</strong> você produziu uma frase para cada categoria: <span lang="en">beach vacations, family vacations, city vacations e staycations</span>. Usou ideias como visitar lojas, viajar com a família, apreciar a vista e encontrar amigos. Retomamos <strong>like + to + verbo</strong> ou <strong>like + verbo em -ing</strong>, e usamos <strong>can + verbo base</strong> para dizer o que dá para fazer. Um destaque da sua produção foi <span lang="en">I can do whatever I want and I can see my friends</span>.</p>
+<p><strong>Passado de be:</strong> revisamos que <strong>am/is → was</strong> e <strong>are → were</strong>. Assim, usamos <strong>I/he/she/it was</strong> e <strong>you/we/they were</strong>. Ao ler <span lang="en">The bus trip was so scary</span>, o importante foi reconhecer que <strong>was</strong> leva a descrição ao passado: a viagem <em>foi/estava</em> assustadora. A sequência de estudos seguirá com <span lang="en">be</span> no passado e, depois, outros verbos.</p>
+<p><strong>Como descrever uma viagem:</strong> aprendemos sete adjetivos: <span lang="en">scary, bumpy, short, long, scenic, comfortable e boring</span>. Eles apareceram em frases sobre ônibus, avião, trem e carro. Diferenciamos <strong>trip</strong> (uma viagem) de <strong>travel</strong> usado como verbo (viajar), e identificamos as palavras que modificam a intensidade do adjetivo.</p>
+<p><strong>Escala de referência apresentada em aula, do mais forte ao mais suave:</strong></p>
+<div class="scale" lang="en">so → very → really → pretty → quite → kind of</div>
+<p><strong>Para revisar:</strong> <span lang="en">so</span> = tão/muito; <span lang="en">very</span> = muito; <span lang="en">really</span> = realmente/muito; <span lang="en">pretty</span> = bem/bastante; <span lang="en">quite</span> = bem/razoavelmente; <span lang="en">kind of</span> = meio/um pouco. Use essa ordem como referência do exercício: a força exata também depende do contexto e da entonação. Em <span lang="en">pretty scenic</span>, <strong>pretty</strong> modifica <strong>scenic</strong>; não significa “bonita”. Em <span lang="en">quite comfortable</span>, <strong>quite</strong> não é <strong>quiet</strong> (quieto/silencioso).</p>
+</div></section>
+<section><h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2><div class="outline-card"><p class="note" style="margin-top:0;">Frases lidas ou construídas na aula, com grafia e pontuação revisadas.</p><ul><li><strong lang="en">I can do whatever I want.</strong><br>Posso fazer o que eu quiser.</li><li><strong lang="en">I can see my friends.</strong><br>Posso ver meus amigos.</li><li><strong lang="en">The view is very beautiful.</strong><br>A vista é muito bonita.</li><li><strong lang="en">The bus trip was so scary.</strong><br>A viagem de ônibus foi muito assustadora.</li><li><strong lang="en">The flight was very bumpy.</strong><br>O voo foi muito turbulento.</li><li><strong lang="en">The flight was really short.</strong><br>O voo foi bem curto.</li><li><strong lang="en">It was really long.</strong><br>Foi bem longo.</li><li><strong lang="en">The train trip was pretty scenic.</strong><br>A viagem de trem teve paisagens bem bonitas.</li><li><strong lang="en">It was quite comfortable.</strong><br>Foi bem confortável.</li><li><strong lang="en">The drive was kind of boring.</strong><br>A viagem de carro foi meio entediante.</li></ul></div></section>
+<section><h2 style="margin-bottom:8px;">⭐ Vocabulário-chave (Key Vocabulary)</h2><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3 lang="en">bumpy</h3><button type="button" class="vocab-say" data-czk-say="bumpy" aria-label="Ouvir a pronúncia de bumpy" aria-pressed="false" title="Ouvir bumpy">&#128266;</button></div><p><em>turbulento; com solavancos</em><br>Descreve um trajeto em que o veículo balança ou sacode.<br><small><strong lang="en">The flight was very bumpy.</strong><br>O voo foi muito turbulento.</small></p></div><div class="vocab green"><div class="vocab-head"><h3 lang="en">scenic</h3><button type="button" class="vocab-say" data-czk-say="scenic" aria-label="Ouvir a pronúncia de scenic" aria-pressed="false" title="Ouvir scenic">&#128266;</button></div><p><em>com belas paisagens</em><br>Descreve um lugar ou percurso com vistas bonitas.<br><small><strong lang="en">The train trip was pretty scenic.</strong><br>A viagem de trem teve paisagens bem bonitas.</small></p></div><div class="vocab yellow"><div class="vocab-head"><h3 lang="en">staycation</h3><button type="button" class="vocab-say" data-czk-say="staycation" aria-label="Ouvir a pronúncia de staycation" aria-pressed="false" title="Ouvir staycation">&#128266;</button></div><p><em>férias em casa ou perto de casa</em><br>Férias aproveitadas sem viajar para longe.<br><small><strong lang="en">I like staycations because I can see my friends.</strong><br>Gosto de férias em casa porque posso ver meus amigos.</small></p></div></div></section>
+<section><h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2><div class="outline-card"><h3>Férias e deslocamentos</h3><ul><li><strong lang="en">beach vacations</strong> — férias na praia</li><li><strong lang="en">family vacations</strong> — férias em família</li><li><strong lang="en">city vacations</strong> — férias na cidade</li><li><strong lang="en">staycation</strong> — férias em casa ou perto de casa</li><li><strong lang="en">trip</strong> — viagem; substantivo contável</li><li><strong lang="en">travel</strong> — viajar; verbo no contraste estudado</li><li><strong lang="en">bus trip</strong> — viagem de ônibus</li><li><strong lang="en">flight</strong> — voo</li><li><strong lang="en">train trip</strong> — viagem de trem</li><li><strong lang="en">drive</strong> — trajeto/viagem de carro</li><li><strong lang="en">view</strong> — vista; paisagem</li><li><strong lang="en">stores</strong> — lojas</li><li><strong lang="en">beach sellers</strong> — vendedores de praia; expressão usada na aula</li><li><strong lang="en">sell → seller</strong> — vender → vendedor</li><li><strong lang="en">people</strong> — pessoas</li><li><strong lang="en">friends</strong> — amigos</li></ul><h3>Adjetivos para descrever experiências</h3><ul><li><strong lang="en">scary</strong> — assustador</li><li><strong lang="en">bumpy</strong> — turbulento; com solavancos</li><li><strong lang="en">short</strong> — curto</li><li><strong lang="en">long</strong> — longo</li><li><strong lang="en">scenic</strong> — com belas paisagens</li><li><strong lang="en">comfortable</strong> — confortável</li><li><strong lang="en">boring</strong> — entediante</li><li><strong lang="en">fun</strong> — divertido; usado em “They are fun”</li><li><strong lang="en">beautiful</strong> — bonito</li><li><strong lang="en">annoying</strong> — irritante; “chato” quando algo ou alguém incomoda</li><li><strong lang="en">handsome</strong> — bonito; usado na aula para descrever um homem</li><li><strong lang="en">random</strong> — aleatório</li></ul><h3>Intensidade e contraste de palavras</h3><ul><li><strong lang="en">so</strong> — tão; muito, com ênfase</li><li><strong lang="en">very</strong> — muito</li><li><strong lang="en">really</strong> — realmente; muito</li><li><strong lang="en">pretty</strong> — bem; bastante, antes de adjetivo</li><li><strong lang="en">quite</strong> — bem; razoavelmente, no exemplo da aula</li><li><strong lang="en">kind of</strong> — meio; um pouco</li><li><strong lang="en">quiet</strong> — quieto; silencioso — diferente de quite</li></ul><h3>Escolhas, feriados e leitura do aquecimento</h3><ul><li><strong lang="en">would rather</strong> — preferiria; usado com verbo base</li><li><strong lang="en">than</strong> — do que; na comparação de preferências</li><li><strong lang="en">without</strong> — sem</li><li><strong lang="en">fruitcake</strong> — bolo de frutas</li><li><strong lang="en">made</strong> — feito; forma de make em “made in China”</li><li><strong lang="en">entirely</strong> — inteiramente</li><li><strong lang="en">mysterious ingredients</strong> — ingredientes misteriosos</li><li><strong lang="en">holiday</strong> — feriado; data comemorativa</li><li><strong lang="en">celebrate</strong> — celebrar</li><li><strong lang="en">Christmas</strong> — Natal</li><li><strong lang="en">Easter</strong> — Páscoa</li><li><strong lang="en">New Year’s Eve</strong> — véspera de Ano-Novo</li><li><strong lang="en">Christmas Eve</strong> — véspera de Natal</li><li><strong lang="en">age</strong> — idade como substantivo; envelhecer como verbo</li><li><strong lang="en">stuck</strong> — preso; sem conseguir sair de uma situação</li><li><strong lang="en">single moment</strong> — um único momento</li><li><strong lang="en">forever</strong> — para sempre</li><li><strong lang="en">twice as fast</strong> — duas vezes mais rápido</li><li><strong lang="en">packed</strong> — lotado; muito cheio</li><li><strong lang="en">barely</strong> — mal; quase não</li><li><strong lang="en">alone</strong> — sozinho</li><li><strong lang="en">snacks</strong> — lanches; petiscos</li><li><strong lang="en">shows</strong> — programas; séries, no contexto do aquecimento</li></ul><h3>Estruturas retomadas</h3><ul><li><strong lang="en">was / were</strong> — passado de be: era/estava/foi; eram/estavam/foram, conforme o sujeito e o contexto</li><li><strong lang="en">did</strong> — auxiliar do passado de outros verbos, retomado na revisão</li><li><strong lang="en">like to do / like doing</strong> — gostar de fazer</li><li><strong lang="en">can + verbo base</strong> — poder; conseguir fazer algo</li><li><strong lang="en">whatever I want</strong> — o que eu quiser</li><li><strong lang="en">see</strong> — ver; verbo</li><li><strong lang="en">my / your</strong> — meu/minha / seu/sua</li><li><strong lang="en">otherwise</strong> — caso contrário; senão</li><li><strong lang="en">warm-up</strong> — aquecimento; atividade inicial da aula</li></ul></div></section>
+<section><h2 style="margin-bottom:8px;">🚨 Correções importantes</h2><div class="outline-card"><div class="correction"><p><strong>1. Verbo base depois de would</strong></p><p style="color:#c53030;">❌ would … lives</p><p style="color:#276749;">✅ <strong>would … live</strong></p><p>Na resposta do desafio, o trecho com <strong>lives</strong> precisava de <strong>live</strong>. Depois de <strong>would</strong>, o verbo fica na forma base. Modelo revisado: <span lang="en">I would rather live without the internet than live without art.</span> O <strong>-s/-es</strong> pertence às afirmativas do presente simples com <span lang="en">he/she/it</span>, como <span lang="en">he watches</span>.</p></div><div class="correction"><p><strong>2. Ao responder sobre você: my</strong></p><p style="color:#c53030;">❌ …with your favorite snacks and shows.</p><p style="color:#276749;">✅ <strong>…with my favorite snacks and shows.</strong></p><p>A pergunta usa <strong>your</strong> porque fala com você. Na sua resposta, use <strong>my</strong> para falar dos seus próprios lanches e programas. Modelo: <span lang="en">I would rather spend New Year’s Eve alone at home with my favorite snacks and shows.</span></p></div><div class="correction"><p><strong>3. Bus trip e was na tradução</strong></p><p style="color:#c53030;">❌ “O ônibus de viagem está assustador.”</p><p style="color:#276749;">✅ <strong>“A viagem de ônibus foi muito assustadora.”</strong></p><p>Em <span lang="en">The bus trip was so scary</span>, <strong>bus trip</strong> é “viagem de ônibus”, <strong>was</strong> indica passado e <strong>so</strong> intensifica “assustadora”.</p></div><div class="correction"><p><strong>4. Travel usado como verbo</strong></p><p style="color:#c53030;">❌ travel = “viagem” no contraste estudado</p><p style="color:#276749;">✅ <strong>travel = “viajar”; a trip = “uma viagem”</strong></p><p>Ao identificar a ação, use “viajar”: <span lang="en">I like to travel.</span> Para nomear uma viagem específica, use <strong>trip</strong>: <span lang="en">The trip was long.</span> <strong>Travel</strong> também pode ser substantivo em outros contextos; aqui revisamos seu uso como verbo.</p></div><div class="correction"><p><strong>5. Quite não é quiet</strong></p><p style="color:#c53030;">❌ quite = “quieto”</p><p style="color:#276749;">✅ <strong>quite comfortable = “bem confortável”</strong></p><p>Você associou <strong>quite</strong> a “quieto”, mas essa tradução é de <strong>quiet</strong>. Na frase da aula, <strong>quite</strong> modifica a intensidade de <strong>comfortable</strong>.</p></div><div class="correction"><p><strong>6. Adjetivo ou palavra de intensidade?</strong></p><p style="color:#c53030;">❌ short e long como intensificadores</p><p style="color:#276749;">✅ <strong>really é o intensificador; short e long são adjetivos</strong></p><p>Em <span lang="en">really short</span> e <span lang="en">really long</span>, o adjetivo descreve a duração e <strong>really</strong> mostra o grau. Pense em duas peças: <strong>intensificador + adjetivo</strong>.</p></div><div class="correction"><p><strong>7. Handsome e random</strong></p><p style="color:#c53030;">❌ handsome = “aleatório”</p><p style="color:#276749;">✅ <strong>handsome = “bonito”; random = “aleatório”</strong></p><p>Essa diferença apareceu na revisão final. Compare: <span lang="en">He is handsome.</span> = Ele é bonito. <span lang="en">A random question.</span> = Uma pergunta aleatória.</p></div></div></section>
+<section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/KrkSWfsUSAI" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section>
+<section class="speaking"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Participante</th><th>Proporção</th><th>Tempo aproximado</th></tr></thead><tbody><tr class="row-teacher"><td class="talk-label">César (Professor)</td><td class="talk-percent">65%</td><td class="talk-time">21min39s</td></tr><tr class="row-student"><td class="talk-label">Giovanna Azzi</td><td class="talk-percent">35%</td><td class="talk-time">11min34s</td></tr></tbody></table><p class="note">Estimativa pela soma dos intervalos de fala identificados na transcrição, em português e inglês. Exclui pausas, escrita, tempo do desafio e áudio compartilhado; não corresponde à duração total da aula.</p></section>
+<section><h2 style="margin-bottom:8px;">📝 Homework</h2><div class="homework"><p style="margin-top:0;"><strong>Combinado para a próxima aula</strong></p><ul><li><strong>Prepare seis frases:</strong> uma com cada palavra da sequência <span lang="en">so, very, really, pretty, quite, kind of</span>. Você vai construir frases com elas no aquecimento da próxima aula. Use a estrutura <strong>sujeito + was/were + intensificador + adjetivo</strong> para também revisar o passado. Exemplo de apoio: <span lang="en">The bus trip was so scary.</span></li><li><strong>Revise os sete adjetivos:</strong> <span lang="en">scary, bumpy, short, long, scenic, comfortable, boring</span>. Identifique o significado e combine cada um com uma palavra de intensidade.</li><li><strong>Faça as atividades disponíveis no app.</strong> César avisou que os exercícios vão retomar adjetivos, verbos no passado e intensificadores.</li><li><strong>Mantenha a meta de 15 minutos de inglês por dia.</strong> Divida o tempo entre revisão, leitura em voz alta e atividades.</li><li>Leia este pós-aula <strong>de 2 a 3 vezes durante a semana</strong>. Use os três botões de áudio e repita as palavras em voz alta.</li></ul></div></section>
+</main><footer><p>© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer></article></div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>
