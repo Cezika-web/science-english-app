@@ -187,7 +187,8 @@
 <div id="root"></div>
 <div class="toast-el" id="global-toast"></div>
 
-<script src="adesao.js?v=82"></script>
+<script src="functions/attendance.js?v=85"></script>
+<script src="adesao.js?v=85"></script>
 <script type="text/babel" data-presets="react" src="challenge.jsx?v=82"></script>
 <script type="text/babel" data-presets="react" src="plano.jsx?v=83"></script>
 <script type="text/babel" data-presets="react" src="trilha.jsx?v=84"></script>
@@ -262,7 +263,7 @@ async function getFB() {
 // Falha de gravação (regra ainda não publicada, sem rede) nunca aparece para o aluno.
 const CzkUsage = (() => {
   // Versão do app que vai junto com o uso (para saber quem ainda roda versão velha). Mantenha igual ao CACHE do sw.js.
-  const APP_BUILD = 'v84';
+  const APP_BUILD = 'v85';
   const TICK = 1000, MIN_STEP = 200, FLUSH = 60000, NEW_VISIT = 30 * 60000;
   const BLIND_CAP = 10 * 60000, HOLD_CAP = 15 * 60000, MAX_FAILS = 5;
   const READ_MS = 180000;                 // maior pausa aceita na leitura do pós-aula (igual a LEITURA_SEG do adesao.js)
@@ -626,7 +627,7 @@ function postTitle(post) {
 // Mesmo texto, com "Pós-aula 07/10/2026" em negrito e o tópico em peso normal.
 function PostTitleText({ post }) {
   const { head, topic } = postTitleParts(post);
-  return <><span style={{ fontWeight: 800 }}>{head}</span>{topic ? ` – ${topic}` : ''}</>;
+  return <><span style={{ fontWeight: 800 }}>{head}</span>{topic ? ` – ${topic}` : ''}{post?.attendanceStatus === 'absent' && <span style={{ display:'block', color:'#991B1B', fontSize:12 }}>✕ Não compareceu</span>}</>;
 }
 
 // Trilhas (Entrevista, Business, Viagem). Uma pós-aula pode ser "da trilha": vem do campo `trilha` do documento ou, para
@@ -731,6 +732,7 @@ function lessonDaysFromStudent(student, posts = []) {
 }
 
 function talkTimeFromPost(post) {
+  if (post?.attendanceStatus === 'absent') return null;
   const structured = Number(post?.talkTime?.studentPct ?? post?.studentTalkPct);
   if (Number.isFinite(structured)) return Math.max(0, Math.min(100, structured));
   if (!post?.html) return null;
@@ -744,6 +746,7 @@ function talkTimeFromPost(post) {
 
 async function hydrateLegacyTalkTimes(posts) {
   return Promise.all((posts || []).map(async post => {
+    if (post?.attendanceStatus === 'absent') return post;
     const direct = talkTimeFromPost(post);
     if (Number.isFinite(direct)) return post;
     const filename = post?.filename || (String(post?.id || '').startsWith('pos-aula-') ? `${post.id}.html` : '');
@@ -1901,242 +1904,7 @@ function ProgressSection({ title, subtitle, children }) {
 }
 
 function calculateAttendance(student, posaulas) {
-  const lessonDays = lessonDaysFromStudent(student, posaulas);
-  const startRaw = student?.inicioCurso;
-  const courseStart = startRaw
-    ? (typeof startRaw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(startRaw) ? new Date(`${startRaw}T00:00:00`) : dateFrom(startRaw))
-    : null;
-  const postDates = (posaulas || []).map(postReferenceDate).filter(Boolean).sort((a,b)=>a-b);
-  const legacyStart = postDates.length ? addDays(postDates[0],-3) : null;
-  const historicalStart = courseStart && legacyStart
-    ? new Date(Math.min(courseStart.getTime(),legacyStart.getTime()))
-    : courseStart || legacyStart;
-  const scheduleStartRaw = student?.aulaDiasDesde;
-  const scheduleStart = scheduleStartRaw
-    ? (typeof scheduleStartRaw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(scheduleStartRaw)
-      ? new Date(`${scheduleStartRaw}T00:00:00`) : dateFrom(scheduleStartRaw))
-    : null;
-  const start = historicalStart;
-  const cutoff = addDays(new Date(), -1); // o pós-aula normalmente chega no dia seguinte
-  const exceptions = new Set((student?.aulaExcecoes || []).map(String));
-  const candidateKeys = new Set();
-  const attendanceDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
-    ? new Date(`${value}T00:00:00`) : dateFrom(value);
-  const historicalSchedules = (Array.isArray(student?.aulaDiasHistorico) ? student.aulaDiasHistorico : [])
-    .map(item => ({
-      days:new Set((Array.isArray(item?.dias) ? item.dias : []).map(Number).filter(day => day >= 0 && day <= 6)),
-      from:attendanceDate(item?.desde), to:attendanceDate(item?.ate),
-    })).filter(item => item.days.size && item.from && item.to);
-  const schedules = [...historicalSchedules, {
-    days:lessonDays,
-    from:scheduleStart || historicalStart,
-    to:cutoff,
-  }].filter(item => item.days.size && item.from && item.to);
-  // Cada grade vale somente dentro de sua vigência. Assim, a grade nova não
-  // inventa sábados no passado e a grade antiga continua preservada no histórico.
-  schedules.forEach(schedule => {
-    const from = historicalStart
-      ? new Date(Math.max(historicalStart.getTime(),schedule.from.getTime())) : schedule.from;
-    const to = new Date(Math.min(cutoff.getTime(),schedule.to.getTime()));
-    for (let d = new Date(from); d <= to; d = addDays(d,1)) {
-      if (schedule.days.has(d.getDay())) candidateKeys.add(dateKey(d));
-    }
-  });
-
-  // Registros novos têm classDate e entram exatamente no dia da aula. Nos
-  // antigos, a data pode ser a da publicação: procuramos a aula agendada mais
-  // próxima anteriormente. Cada registro ocupa no máximo uma aula.
-  const presentKeys = new Set();
-  const extraClassKeys = new Set();
-  // A presença continua pertencendo à data prevista, mas guardamos a data
-  // real da reposição para explicar o asterisco na linha do tempo.
-  const makeupByScheduledKey = new Map();
-  const recordedHeld = (posaulas || []).length;
-  const matchScheduledDate = date => {
-    if (!date) return '';
-    for (let daysBack = 0; daysBack <= 3; daysBack++) {
-      const key = dateKey(addDays(date,-daysBack));
-      if (candidateKeys.has(key) && !presentKeys.has(key)) return key;
-    }
-    return '';
-  };
-  const orderedPosts = (posaulas || []).map(post => ({ post, reference:postReferenceDate(post) }))
-    .sort((a,b) => (a.reference?.getTime() || 0) - (b.reference?.getTime() || 0));
-  const unmatchedPosts = [];
-  // O pós-aula de uma reposição carrega o dia real da aula (ex.: quarta), que
-  // não é dia de aula do aluno. Sem essa checagem ele virava um candidateKey
-  // novo e contava a mesma aula duas vezes: uma na reposição (segunda) e outra
-  // no classDate exato (quarta). A presença será atribuída à falta prevista
-  // quando o pós-aula da reposição entrar, nunca só pelo agendamento.
-  const makeupActualDates = new Set(
-    Object.values(student?.attendanceMakeups || {})
-      .map(makeup => String(makeup?.makeupDate || ''))
-      .filter(key => /^\d{4}-\d{2}-\d{2}$/.test(key))
-  );
-
-  // Reserva primeiro as datas exatas para um registro legado próximo não
-  // ocupar a aula que já possui classDate confiável.
-  orderedPosts.forEach(entry => {
-    const explicitKey = dateKey(entry.post.classDate);
-    if (explicitKey && !presentKeys.has(explicitKey) && !makeupActualDates.has(explicitKey)) {
-      candidateKeys.add(explicitKey);
-      presentKeys.add(explicitKey);
-      entry.exactMatch = true;
-    }
-  });
-  orderedPosts.forEach(({ post, reference, exactMatch }) => {
-    const explicitKey = dateKey(post.classDate);
-    if (exactMatch) return;
-    // classDate/createdAt pode representar o envio, não a aula. Se a data não
-    // coincidir com a grade, procura a falta prevista mais próxima anteriormente.
-    const matched = matchScheduledDate(reference);
-    if (matched) presentKeys.add(matched);
-    else unmatchedPosts.push({ post, reference, explicitKey });
-  });
-
-  const availableKeys = [...candidateKeys].filter(key => !presentKeys.has(key)).sort();
-  unmatchedPosts.forEach(({ post, reference, explicitKey }) => {
-    const referenceKey = dateKey(reference);
-    const limitKey = reference ? dateKey(addDays(reference,14)) : '';
-    const availableIndex = referenceKey
-      ? availableKeys.findIndex(key => key >= referenceKey && (!limitKey || key <= limitKey))
-      : -1;
-    if (availableIndex >= 0) {
-      presentKeys.add(availableKeys.splice(availableIndex,1)[0]);
-    } else {
-      const extraKey = explicitKey || dateKey(post.createdAt) || referenceKey;
-      if (extraKey) extraClassKeys.add(extraKey);
-    }
-  });
-
-  // Presenças confirmadas pelo professor podem existir sem um pós-aula nessa
-  // data. O registro explícito prevalece sobre a inferência pelo arquivo.
-  // Precisa rodar ANTES do bloco de reposição abaixo: uma falta só vira
-  // presença coberta por reposição depois que essa marcação manual existe.
-  (Array.isArray(student?.attendancePresentDates) ? student.attendancePresentDates : []).forEach(value => {
-    const key = String(value);
-    if (/^\d{4}-\d{2}-\d{2}$/.test(key) && candidateKeys.has(key)) presentKeys.add(key);
-  });
-
-  // O evento da agenda descreve a reposição, mas não confirma presença.
-  // Só mostramos o asterisco após existir um pós-aula para o dia real.
-  Object.values(student?.attendanceMakeups || {}).forEach(makeup => {
-    const scheduledKey = String(makeup?.scheduledDate || '');
-    const actualKey = String(makeup?.makeupDate || '');
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(scheduledKey) || !candidateKeys.has(scheduledKey)) return;
-    if (presentKeys.has(scheduledKey) && orderedPosts.some(({ post, reference }) => dateKey(post.classDate) === actualKey || dateKey(reference) === actualKey)) {
-      makeupByScheduledKey.set(scheduledKey, actualKey);
-    }
-  });
-
-  // Sem data de início/dias fixos (ou com cadastro incompatível com o legado),
-  // ainda existe uma certeza: cada pós-aula representa uma aula realizada.
-  // Sem calendário suficiente para provar uma ausência, não inventamos faltas.
-  if (recordedHeld && (!start || !schedules.length || !presentKeys.size)) {
-    const points = (posaulas || []).map(postReferenceDate).filter(Boolean).sort((a,b)=>a-b).map(date => ({
-      key:dateKey(date),
-      label:date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),
-      weekday:date.toLocaleDateString('pt-BR',{weekday:'short'}).replace('.',''),
-      present:true,
-      value:100,
-      color:PROGRESS_COLORS.good,
-    }));
-    return {
-      held:recordedHeld,
-      misses:0,
-      scheduled:recordedHeld,
-      attendedScheduled:recordedHeld,
-      rate:100,
-      points,
-      currentStreak:recordedHeld,
-      maxStreak:recordedHeld,
-      missedDates:[],
-      untracked:0,
-      trackingStartKey:'',
-      inferredOnly:true,
-      makeups:[],
-    };
-  }
-  const trackingStartKey = [...presentKeys].sort()[0] || '';
-  const untracked = trackingStartKey ? [...candidateKeys].filter(key => key < trackingStartKey).length : candidateKeys.size;
-  const scheduled = [];
-  const excused = [];
-  if (candidateKeys.size && trackingStartKey) {
-    const holidayCache = {};
-    for (const key of [...candidateKeys].sort()) {
-      if (key < trackingStartKey) continue; // antes do app: sem dados, nunca falta
-      const d = new Date(`${key}T00:00:00`);
-      holidayCache[d.getFullYear()] ||= nationalHolidayKeys(d.getFullYear());
-      // Feriado/cancelamento só sai da conta quando realmente não houve aula.
-      // Se existe pós-aula, a aula aconteceu e vale para a sequência.
-      const holiday = holidayCache[d.getFullYear()].has(key);
-      const cancelled = exceptions.has(key);
-      if (!presentKeys.has(key) && (holiday || cancelled)) {
-        excused.push({ date:new Date(d), key, reason:holiday ? 'feriado' : 'aula cancelada' });
-        continue;
-      }
-      scheduled.push({ date:new Date(d), key, present:presentKeys.has(key) });
-    }
-  }
-  const attendanceBaseline = student?.attendanceBaseline || {};
-  const baselineThrough = /^\d{4}-\d{2}-\d{2}$/.test(String(attendanceBaseline.through || ''))
-    ? String(attendanceBaseline.through) : '';
-  const baselineAttended = baselineThrough ? Math.max(0, Number(attendanceBaseline.attended || 0)) : 0;
-  const baselineMisses = baselineThrough ? Math.max(0, Number(attendanceBaseline.misses || 0)) : 0;
-  const countedSchedule = baselineThrough ? scheduled.filter(item => item.key > baselineThrough) : scheduled;
-  let currentStreak = baselineThrough && baselineMisses === 0 ? baselineAttended : 0;
-  let maxStreak = currentStreak;
-  countedSchedule.forEach(item => {
-    currentStreak = item.present ? currentStreak + 1 : 0;
-    maxStreak = Math.max(maxStreak, currentStreak);
-  });
-  const dynamicMisses = countedSchedule.filter(x => !x.present).length;
-  const misses = baselineMisses + dynamicMisses;
-  const attendedScheduled = baselineAttended + countedSchedule.length - dynamicMisses;
-  const scheduledCount = baselineAttended + baselineMisses + countedSchedule.length;
-  const rate = scheduledCount ? Math.round(attendedScheduled/scheduledCount*100) : null;
-  const held = baselineThrough
-    ? baselineAttended + (posaulas || []).filter(post => dateKey(postReferenceDate(post)) > baselineThrough).length
-    : recordedHeld;
-  // Cada ponto representa a data real prevista da aula. Antes o rótulo usava
-  // a segunda-feira que iniciava a semana, parecendo registrar falta no dia errado.
-  const points = [...scheduled.map(item => ({
-    key:item.key,
-    label:`${item.date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}${makeupByScheduledKey.has(item.key) ? '*' : ''}`,
-    weekday:item.date.toLocaleDateString('pt-BR',{weekday:'short'}).replace('.',''),
-    present:item.present,
-    makeupDate:makeupByScheduledKey.get(item.key) || '',
-    value:item.present ? 100 : 0,
-    color:item.present ? PROGRESS_COLORS.good : PROGRESS_COLORS.low,
-  })), ...excused.map(item => ({
-    key:item.key,
-    label:item.date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),
-    weekday:item.date.toLocaleDateString('pt-BR',{weekday:'short'}).replace('.',''),
-    present:false,
-    excused:true,
-    reason:item.reason,
-    value:0,
-    color:'#F59E0B',
-  }))].sort((a,b) => a.key.localeCompare(b.key));
-  const missedDates = countedSchedule.filter(item => !item.present).map(item => ({
-    key:item.key,
-    label:item.date.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'}).replace('.', ''),
-  }));
-  const makeups = scheduled.filter(item => makeupByScheduledKey.has(item.key)).map(item => {
-    const actualKey = makeupByScheduledKey.get(item.key);
-    return {
-      scheduledKey:item.key,
-      scheduledLabel:item.date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),
-      actualKey,
-      actualLabel:new Date(`${actualKey}T00:00:00`).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),
-    };
-  });
-  const excusedDates = excused.map(item => ({
-    key:item.key,
-    label:item.date.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'}).replace('.', ''),
-    reason:item.reason,
-  }));
-  return { held, misses, scheduled:scheduledCount, attendedScheduled, rate, points, currentStreak, maxStreak, missedDates, excusedDates, makeups, untracked, trackingStartKey, inferredOnly:false };
+  return window.CzkAttendance.calculateAttendance(student, posaulas);
 }
 
 function calculateExerciseProgress(activities) {
@@ -2499,7 +2267,7 @@ function useAdesaoData(student, posaulas, activities, tab, extras) {
         names,
         metas: student?.metaEstudo || null,
         usage,
-        posts: posaulas.map(p => ({ id: p.id, title: postTitle(p), createdAt: p.createdAt, classDate: p.classDate, filename: p.filename, url: p.url })),
+        posts: posaulas.map(p => ({ id: p.id, title: postTitle(p), createdAt: p.createdAt, classDate: p.classDate, filename: p.filename, url: p.url, attendanceStatus:p.attendanceStatus })),
         activities: activities.filter(a => { const d = dateFrom(a.createdAt); return d && d.getTime() >= Date.now() - 40 * 86400000; }).map(a => {
           const ex = activityExercises(a);
           const errs = a.summary?.errors || {};
@@ -2987,6 +2755,7 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities, ad
                 : <Pill>POS-AULA DA SEMANA</Pill>}
               <div style={{ fontSize: 20, fontWeight: 800, color: '#0F172A', marginTop: 12, lineHeight: 1.25, overflowWrap: 'anywhere' }}>
                 {postTitleParts(latest).head}
+                {latest.attendanceStatus === 'absent' && <span style={{ display:'block', color:'#991B1B', fontSize:12 }}>✕ Não compareceu</span>}
                 {/* O cartão é estreito (o ícone ocupa o lado): o tópico vai na linha de baixo, sem traço solto. */}
                 {postTitleParts(latest).topic && <span style={{ display: 'block', fontSize: 16, fontWeight: 600, lineHeight: 1.3, marginTop: 3, color: '#334155' }}>{postTitleParts(latest).topic}</span>}
               </div>

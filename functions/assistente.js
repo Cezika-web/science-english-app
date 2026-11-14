@@ -69,16 +69,23 @@ const cortar = (s, n) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s
  * posaulas: até 5 documentos { id, title, topic, createdAt, html }, do mais novo para o mais antigo.
  * Devolve { estatico, dinamico, ids }.
  */
+export function contextoParticipacao(post) {
+  if (post?.attendanceStatus === 'absent') return 'PRESENÇA: o aluno não compareceu à aula ao vivo. Material para estudo posterior. Não atribua a ele falas, erros, talk time ou desempenho dos colegas citados no material. Leitura, vídeo, IA e atividades não alteram a falta.';
+  if (post?.attendanceStatus === 'present') return 'PRESENÇA: o aluno compareceu à aula ao vivo.';
+  return '';
+}
+
 export function contextoPosAulas(posaulas, pergunta, { resumoPorAula = 2000, orcamentoDinamico = 4200 } = {}) {
   const fixos = []; const todas = [];
   posaulas.forEach((p, i) => {
     const linhas = htmlParaLinhas(p.html);
     const data = dataCurta(p.createdAt);
-    const rotulo = `[${data || `aula ${i + 1}`}]`;
+    const participacao = contextoParticipacao(p);
+    const rotulo = `[${data || `aula ${i + 1}`}]${participacao ? ` ${participacao}` : ''}`;
     const inicio = Math.max(0, linhas.findIndex((l) => /resumo da aula/i.test(l)));
     const corpo = linhas.slice(inicio); const usadas = new Set(); let tamanho = 0;
     corpo.forEach((l, k) => { if (tamanho < resumoPorAula) { usadas.add(k); tamanho += l.length + 1; } });
-    if (resumoPorAula > 0) fixos.push(`### Pós-aula ${data} — ${p.topic || p.title || ''}\n${corpo.filter((_, k) => usadas.has(k)).map((l) => cortar(l, 700)).join('\n')}`);
+    if (resumoPorAula > 0) fixos.push(`### Pós-aula ${data} — ${p.topic || p.title || ''}\n${participacao}\n${corpo.filter((_, k) => usadas.has(k)).map((l) => cortar(l, 700)).join('\n')}`);
     corpo.forEach((l, k) => { if (!usadas.has(k)) todas.push({ aula: i, rotulo, texto: l }); });
   });
   const pontos = pontuarLinhas(todas.map((t) => t.texto), pergunta);

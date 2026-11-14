@@ -10,8 +10,9 @@ import { problemasProducaoOral, REGRAS_ATIVIDADES, SCHEMA_ATIVIDADES, textoDaPos
 import { createChallengeFunctions } from './challenge.js';
 import { createCobrancaFunctions } from './cobranca.js';
 import { activityPublicationMetadata } from './activity-publication.js';
+import './attendance.js';
 import {
-  contextoPosAulas, contextoAtividades, contextoDadosEstudo, contextoPerfil,
+  contextoPosAulas, contextoParticipacao, contextoAtividades, contextoDadosEstudo, contextoPerfil,
   HAIKU_ASSISTENTE, lerPerguntaAssistente, textoRespostaAssistente, classificarPerguntaAssistente,
   gerarRespostaAssistente, reservarPerguntaAssistente, custoAssistenteUSD,
 } from './assistente.js';
@@ -1355,13 +1356,14 @@ async function conteudoDaPosAula(uid, posaulaId) {
   const p = snap.data();
   const base = { id: snap.id, titulo: p.title || '', url: p.url || '', data: p.classDate || p.createdAt || null };
 
-  if (p.html) return { ...base, texto: textoDaPosAula(p.html) };
+  const textoEstudo = html => [contextoParticipacao(p), textoDaPosAula(html)].filter(Boolean).join('\n');
+  if (p.html) return { ...base, texto: textoEstudo(p.html) };
 
   if (p.url) {
     try {
       const r = await fetch(p.url);
       if (!r.ok) return null;
-      return { ...base, texto: textoDaPosAula(await r.text()) };
+      return { ...base, texto: textoEstudo(await r.text()) };
     } catch (e) {
       console.error('Não consegui ler a pós-aula', p.url, e.message);
       return null;
@@ -2456,17 +2458,20 @@ export const perguntarAssistente = onCall(
         if (atv.dinamico) blocos.push({ type: 'text', text: `Exercícios respondidos relacionados à pergunta:\n${atv.dinamico}` });
       }
       if (rota === 'ESTUDO') {
-        const [atividades, escola, totalPosAulas] = await Promise.all([
+        const [atividades, escola, postsPresenca] = await Promise.all([
           lerRecentes('activities', 12),
           db.doc(`schools/${escolaId}`).get().catch(() => null),
-          db.collection(`students/${uid}/posaulas`).count().get().then((snap) => snap.data().count).catch(() => null),
+          db.collection(`students/${uid}/posaulas`).get().then(snap => snap.docs.map(d => ({ id:d.id, ...d.data() }))),
         ]);
+        const totalPosAulas = postsPresenca.length;
+        const frequencia = globalThis.CzkAttendance.calculateAttendance(aluno, postsPresenca);
+        const presencaConfirmada = `PRESENÇA AO VIVO (fonte atual do servidor, histórico contabilizado): ${frequencia.attendedScheduled} de ${frequencia.scheduled} aulas previstas; ${frequencia.misses} falta(s); ${frequencia.rate ?? 'indisponível'}%. Pós-aulas disponíveis incluem material de estudo de aulas ausentes e não comprovam comparecimento. Para presença, estes dados prevalecem sobre resumos antigos enviados pelo aparelho.`;
         const adesao = escola?.get('adesao') || {};
         const liberada = (!!adesao.liberarEm && Date.parse(adesao.liberarEm) <= Date.now())
           || (!!adesao.liberadaEm && String(adesao.liberadaEm) <= hojeSP);
         blocos.push({
           type: 'text',
-          text: `${contextoPerfil(aluno, { totalPosAulas, atividades })}\n\n${contextoDadosEstudo(entrada.dadosEstudo, { liberada, hoje: hojeSP })}`,
+          text: `${contextoPerfil(aluno, { totalPosAulas, atividades })}\n\n${presencaConfirmada}\n\n${contextoDadosEstudo(entrada.dadosEstudo, { liberada, hoje: hojeSP })}`,
         });
       }
       return { blocos, aulas, semanaAtividades };

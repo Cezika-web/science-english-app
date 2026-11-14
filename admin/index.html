@@ -2596,7 +2596,8 @@
     </div>
   </div>
 
-  <script src="../adesao.js"></script>
+  <script src="../functions/attendance.js?v=85"></script>
+  <script src="../adesao.js?v=85"></script>
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword }
@@ -2820,137 +2821,8 @@
     }
 
     function adminAttendanceStats(student, posts) {
-      const lessonDays = adminLessonDays(student, posts);
-      const courseStart = adminDate(student?.inicioCurso);
-      const postDates = (posts || []).map(adminPostReferenceDate).filter(Boolean).sort((a,b)=>a-b);
-      const legacyStart = postDates.length ? adminAddDays(postDates[0],-3) : null;
-      const historicalStart = courseStart && legacyStart
-        ? new Date(Math.min(courseStart.getTime(),legacyStart.getTime()))
-        : courseStart || legacyStart;
-      const scheduleStart = adminDate(student?.aulaDiasDesde);
-      const start = historicalStart;
-      // Ex-aluno congela a frequência no desligamento; não pode acumular faltas
-      // novas só porque os dias antigos continuam guardados para reativação.
-      const archivedAt = student?.archived ? adminDate(student.archivedAt) : null;
-      const cutoff = adminAddDays(archivedAt || new Date(), -1);
-      const candidateKeys = new Set();
-      const historicalSchedules = (Array.isArray(student?.aulaDiasHistorico) ? student.aulaDiasHistorico : [])
-        .map(item => ({ days:new Set((Array.isArray(item?.dias) ? item.dias : []).map(Number).filter(day => day >= 0 && day <= 6)),
-          from:adminDate(item?.desde), to:adminDate(item?.ate) }))
-        .filter(item => item.days.size && item.from && item.to);
-      const schedules = [...historicalSchedules, { days:lessonDays, from:scheduleStart || historicalStart, to:cutoff }]
-        .filter(item => item.days.size && item.from && item.to);
-      schedules.forEach(schedule => {
-        const from = historicalStart
-          ? new Date(Math.max(historicalStart.getTime(),schedule.from.getTime())) : schedule.from;
-        const to = new Date(Math.min(cutoff.getTime(),schedule.to.getTime()));
-        for (let date = new Date(from); date <= to; date = adminAddDays(date,1)) {
-          if (schedule.days.has(date.getDay())) candidateKeys.add(adminDateKey(date));
-        }
-      });
-
-      const presentKeys = new Set();
-      const extraKeys = new Set();
-      const recordedHeld = (posts || []).length;
-      const matchScheduledDate = date => {
-        if (!date) return '';
-        for (let daysBack = 0; daysBack <= 3; daysBack++) {
-          const key = adminDateKey(adminAddDays(date,-daysBack));
-          if (candidateKeys.has(key) && !presentKeys.has(key)) return key;
-        }
-        return '';
-      };
-      const orderedPosts = (posts || []).map(post => ({ post, reference:adminPostReferenceDate(post) }))
-        .sort((a,b) => (a.reference?.getTime() || 0) - (b.reference?.getTime() || 0));
-      const unmatchedPosts = [];
-      const makeupActualDates = new Set(Object.values(student?.attendanceMakeups || {})
-        .map(makeup => String(makeup?.makeupDate || ''))
-        .filter(key => /^\d{4}-\d{2}-\d{2}$/.test(key)));
-      orderedPosts.forEach(entry => {
-        const explicit = adminDateKey(entry.post.classDate);
-        if (explicit && !presentKeys.has(explicit) && !makeupActualDates.has(explicit)) {
-          candidateKeys.add(explicit);
-          presentKeys.add(explicit);
-          entry.exactMatch = true;
-        }
-      });
-      orderedPosts.forEach(({ post, reference, exactMatch }) => {
-        const explicit = adminDateKey(post.classDate);
-        if (exactMatch) return;
-        const matched = matchScheduledDate(reference);
-        if (matched) presentKeys.add(matched);
-        else unmatchedPosts.push({ post, reference, explicit });
-      });
-      const availableKeys = [...candidateKeys].filter(key => !presentKeys.has(key)).sort();
-      unmatchedPosts.forEach(({ post, reference, explicit }) => {
-        const referenceKey = adminDateKey(reference);
-        const limitKey = reference ? adminDateKey(adminAddDays(reference,14)) : '';
-        const availableIndex = referenceKey
-          ? availableKeys.findIndex(key => key >= referenceKey && (!limitKey || key <= limitKey))
-          : -1;
-        if (availableIndex >= 0) {
-          presentKeys.add(availableKeys.splice(availableIndex,1)[0]);
-        } else {
-          const extra = explicit || adminDateKey(post.createdAt) || referenceKey;
-          if (extra) extraKeys.add(extra);
-        }
-      });
-
-      if (recordedHeld && (!start || !schedules.length || !presentKeys.size)) {
-        return {
-          held:recordedHeld,
-          misses:0,
-          currentStreak:recordedHeld,
-          rate:100,
-          untracked:0,
-          trackingStartKey:'',
-          inferredOnly:true,
-          missedDates:[],
-        };
-      }
-      const trackingStartKey = [...presentKeys].sort()[0] || '';
-      const untracked = trackingStartKey ? [...candidateKeys].filter(key => key < trackingStartKey).length : candidateKeys.size;
-
-      const exceptions = new Set((student?.aulaExcecoes || []).map(String));
-      const scheduled = [];
-      const holidayCache = {};
-      if (candidateKeys.size && trackingStartKey) {
-        for (const key of [...candidateKeys].sort()) {
-          if (key < trackingStartKey) continue;
-          const date = new Date(`${key}T00:00:00`);
-          holidayCache[date.getFullYear()] ||= adminHolidayKeys(date.getFullYear());
-          if (!presentKeys.has(key) && (holidayCache[date.getFullYear()].has(key) || exceptions.has(key))) continue;
-          scheduled.push({ key, present:presentKeys.has(key) });
-        }
-      }
-
-      const attendanceBaseline = student?.attendanceBaseline || {};
-      const baselineThrough = /^\d{4}-\d{2}-\d{2}$/.test(String(attendanceBaseline.through || ''))
-        ? String(attendanceBaseline.through) : '';
-      const baselineAttended = baselineThrough ? Math.max(0, Number(attendanceBaseline.attended || 0)) : 0;
-      const baselineMisses = baselineThrough ? Math.max(0, Number(attendanceBaseline.misses || 0)) : 0;
-      const countedSchedule = baselineThrough ? scheduled.filter(item => item.key > baselineThrough) : scheduled;
-      let currentStreak = baselineThrough && baselineMisses === 0 ? baselineAttended : 0;
-      countedSchedule.forEach(item => { currentStreak = item.present ? currentStreak + 1 : 0; });
-      const dynamicMisses = countedSchedule.filter(item => !item.present).length;
-      const attended = baselineAttended + countedSchedule.length - dynamicMisses;
-      const misses = baselineMisses + dynamicMisses;
-      const scheduledCount = baselineAttended + baselineMisses + countedSchedule.length;
-      const held = baselineThrough
-        ? baselineAttended + (posts || []).filter(post => adminDateKey(adminPostReferenceDate(post)) > baselineThrough).length
-        : recordedHeld;
-      const missedDates = countedSchedule.filter(item => !item.present).map(item => item.key);
-      return {
-        held,
-        misses,
-        currentStreak,
-        rate: scheduledCount ? Math.round(attended / scheduledCount * 100) : null,
-        points: countedSchedule.map(item => ({ key:item.key, present:item.present })),   // por aula (usado na aba Adesão)
-        untracked,
-        trackingStartKey,
-        inferredOnly:false,
-        missedDates,
-      };
+      const result = window.CzkAttendance.calculateAttendance(student, posts);
+      return { ...result, missedDates:result.missedDates.map(item => item.key) };
     }
 
     function adminExerciseStats(activities) {
@@ -2965,6 +2837,7 @@
     }
 
     function adminTalkValue(post) {
+      if (post?.attendanceStatus === 'absent') return null;
       const structured = Number(post?.talkTime?.studentPct ?? post?.studentTalkPct);
       if (Number.isFinite(structured)) return structured;
       if (!post?.html) return null;
@@ -2976,6 +2849,7 @@
 
     async function adminHydrateTalkTimes(posts) {
       return Promise.all((posts || []).map(async post => {
+        if (post?.attendanceStatus === 'absent') return post;
         if (Number.isFinite(adminTalkValue(post))) return post;
         const filename = post?.filename || (String(post?.id || '').startsWith('pos-aula-') ? `${post.id}.html` : '');
         const contentUrl = post?.url || (filename ? new URL(`../${filename}`, document.baseURI).href : '');
@@ -4253,7 +4127,7 @@
 
     function briefingUltimaAula(posaula) {
       if (!posaula) return briefingBloco('Última aula', '<p style="color:var(--muted);font-size:.85rem;">Nenhum pós-aula ainda.</p>');
-      const fala = posaula.talkTime;
+      const fala = posaula.attendanceStatus === 'absent' ? null : posaula.talkTime;
       const alertaFala = fala && Number(fala.studentPct) < 45;
       return briefingBloco('Última aula', `<div style="padding:12px 14px;border-radius:12px;background:var(--card);border:1px solid var(--border);">
         <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;">
@@ -10726,7 +10600,7 @@
     function adminAdesaoInput(student, posts, activities, progress) {
       const corte = adminAddDays(new Date(), -40);   // a aba só olha as últimas semanas: não conta exercícios de atividade antiga
       return {
-        posts: posts.map(p => ({ id:p.id, title:adminPostTitle(p), createdAt:p.createdAt, classDate:p.classDate, filename:p.filename, url:p.url })),
+        posts: posts.map(p => ({ id:p.id, title:adminPostTitle(p), createdAt:p.createdAt, classDate:p.classDate, filename:p.filename, url:p.url, attendanceStatus:p.attendanceStatus })),
         activities: activities.filter(a => { const d = adminDate(a.createdAt); return d && d >= corte; }).map(a => {
           const ex = adminActivityEx(a);
           const errs = a.summary?.errors || {};
@@ -11057,6 +10931,12 @@
           <div style="display:flex;align-items:flex-start;gap:10px;">
             <div style="flex:1;">
               <div class="p-title">${esc(adminPostTitle(p))}</div>
+              ${p.attendanceStatus === 'absent' ? '<div style="color:#991B1B;font-weight:700;">✕ Não compareceu</div>' : ''}
+              <label>Presença na aula <select class="post-attendance" data-id="${esc(p.id)}" aria-label="Presença em ${esc(adminPostTitle(p))}">
+                <option value="" ${!p.attendanceStatus ? 'selected' : ''} disabled>Legado (inferida)</option>
+                <option value="present" ${p.attendanceStatus === 'present' ? 'selected' : ''}>Presente</option>
+                <option value="absent" ${p.attendanceStatus === 'absent' ? 'selected' : ''}>Não compareceu</option>
+              </select></label>
               <div class="p-meta">Data do pós-aula: ${fmtDate(adminPostReferenceDate(p) || p.createdAt)}</div>
               <div class="p-status ${isRead ? 'read' : 'unread'}">${isRead ? `✓ Lido em ${fmtDate(p.readAt)}` : '⏳ Ainda não lido'}</div>
             </div>
@@ -11270,6 +11150,22 @@
         };
       }
 
+      body.querySelectorAll('.post-attendance').forEach(select => {
+        select.addEventListener('change', async () => {
+          const status = select.value;
+          if (!['present', 'absent'].includes(status)) return;
+          select.disabled = true;
+          try {
+            await updateDoc(doc(db, 'students', uid, 'posaulas', select.dataset.id), {
+              attendanceStatus:status, attendanceSource:'manual', attendanceUpdatedAt:serverTimestamp(),
+              ...(status === 'absent' ? { talkTime:deleteField(), studentTalkPct:deleteField() } : {}),
+            });
+            await renderDetail(uid, name);
+            // Other summaries are re-read, never patched with stale inferred attendance.
+            if (typeof loadStudents === 'function') await loadStudents();
+          } catch (e) { alert('Não foi possível salvar a presença: ' + e.message); select.disabled = false; }
+        });
+      });
       body.querySelectorAll('.btn-del-item').forEach(btn => {
         btn.onclick = async () => {
           const { type, id, label } = btn.dataset;
