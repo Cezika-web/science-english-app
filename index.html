@@ -4763,6 +4763,11 @@ window.addEventListener('message', event => {
   if (!ok) reply('speak-error');
 });
 
+// Cada chunk tem um MP3 gravado em audio/chunks/<slug>.mp3 (gerado por tools/gera_audio_chunks.py).
+// Toca em qualquer celular; a voz do aparelho (pronounceEnglish) só entra quando o arquivo falta ou falha.
+// O slug precisa ser idêntico ao slug() do script.
+function chunkAudioSlug(text) { return String(text).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+
 function VocabTab({ vocab, onViewChange }) {
   const [openMonths, setOpenMonths] = useState({});
   const [listView, setListView] = useState(null);
@@ -4773,16 +4778,60 @@ function VocabTab({ vocab, onViewChange }) {
   const [speakingWord, setSpeakingWord] = useState('');
   const [speechMessage, setSpeechMessage] = useState('');
 
-  useEffect(() => () => window.speechSynthesis?.cancel(), []);
+  const speechWatchdog = useRef(null);
+  const clearSpeechWatchdog = () => { if (speechWatchdog.current) { clearTimeout(speechWatchdog.current); speechWatchdog.current = null; } };
+  const chunkAudio = useRef(null);
+  const stopChunkAudio = () => {
+    const a = chunkAudio.current;
+    chunkAudio.current = null;
+    if (a) { a.onplaying = a.onended = a.onerror = null; try { a.pause(); } catch (_) {} }
+  };
+  useEffect(() => () => { clearSpeechWatchdog(); stopChunkAudio(); window.speechSynthesis?.cancel(); }, []);
+  // Ao trocar de lista o aviso de voz e o áudio da lista anterior não fazem mais sentido.
+  useEffect(() => { clearSpeechWatchdog(); stopChunkAudio(); setSpeakingWord(''); setSpeechMessage(''); }, [listView]);
 
   const playWord = word => {
+    clearSpeechWatchdog();
     setSpeechMessage('');
+    let started = false;
+    const fail = () => { clearSpeechWatchdog(); setSpeechMessage('Não consegui tocar o áudio neste aparelho. Confira se o som está ligado e fora do modo silencioso. Alguns celulares não têm voz em inglês instalada.'); };
     const ok = pronounceEnglish(word, {
-      onStart:() => setSpeakingWord(word),
+      onStart:() => { started = true; clearSpeechWatchdog(); setSpeechMessage(''); setSpeakingWord(word); },
       onEnd:() => setSpeakingWord(current => current === word ? '' : current),
-      onError:() => setSpeechMessage('A voz não está disponível neste aparelho.'),
+      onError:fail,
     });
-    if (!ok) setSpeechMessage('A voz não está disponível neste aparelho.');
+    if (!ok) { fail(); return; }
+    // Há celulares que aceitam o pedido e nunca falam (sem voz em inglês no sistema, modo silencioso).
+    // Sem este aviso o aluno toca no 🔊 e simplesmente nada acontece.
+    speechWatchdog.current = setTimeout(() => { if (!started) fail(); }, 4000);
+  };
+
+  const playChunk = chunk => {
+    // Tocar de novo no que está tocando (■) para.
+    if (chunkAudio.current && speakingWord === chunk) { stopChunkAudio(); setSpeakingWord(''); return; }
+    clearSpeechWatchdog();
+    stopChunkAudio();
+    setSpeechMessage('');
+    const synth = window.speechSynthesis;
+    if (synth && (synth.speaking || synth.pending)) synth.cancel();
+    let audio;
+    try { audio = new Audio(new URL(`audio/chunks/${chunkAudioSlug(chunk)}.mp3`, document.baseURI).href); }
+    catch (_) { playWord(chunk); return; }
+    chunkAudio.current = audio;
+    let started = false;
+    const fallback = () => {
+      if (chunkAudio.current !== audio) return;   // já foi trocado ou parado pelo aluno
+      stopChunkAudio();
+      setSpeakingWord('');
+      playWord(chunk);
+    };
+    audio.onplaying = () => { started = true; clearSpeechWatchdog(); setSpeakingWord(chunk); };
+    audio.onended = () => { if (chunkAudio.current === audio) { chunkAudio.current = null; setSpeakingWord(current => current === chunk ? '' : current); } };
+    audio.onerror = fallback;
+    const promise = audio.play();
+    if (promise && promise.catch) promise.catch(error => { if (error && error.name === 'AbortError') return; fallback(); });
+    // Conexão lenta: se o arquivo não começar em 6 s, tenta a voz do aparelho.
+    speechWatchdog.current = setTimeout(() => { if (!started) fallback(); }, 6000);
   };
 
   const grouped = React.useMemo(() => {
@@ -4835,6 +4884,7 @@ function VocabTab({ vocab, onViewChange }) {
           <span style={{ flex:1 }}><strong style={{ display:'block', color:'#0F172A', fontSize:14.5 }}>{listView === 'vocab' ? 'Meu vocabulário' : listView === 'verbs' ? 'Verbos irregulares' : 'Chunks do inglês'}</strong><span style={{ color:'#64748B', fontSize:11.5 }}>{listView === 'vocab' ? `${vocab.length} palavra${vocab.length !== 1 ? 's' : ''}` : listView === 'verbs' ? `${IRREGULAR_VERBS.length} verbos` : `${ENGLISH_CHUNKS.length} chunks`}</span></span>
           <span style={{ color:'#64748B', fontSize:11.5 }}>Trocar lista</span>
         </button>
+        {speechMessage && <div role="status" onClick={() => setSpeechMessage('')} style={{ marginTop:8, padding:'9px 11px', borderRadius:11, background:'#FFFBEB', border:'1px solid #FDE68A', color:'#92400E', fontSize:11.5, lineHeight:1.45 }}>{speechMessage}</div>}
       </div>
 
       {listView === 'verbs' && <div style={{ marginBottom:14, border:'1px solid rgba(139,94,52,.2)', borderRadius:16, background:'rgba(255,255,255,.72)', overflow:'hidden' }}>
@@ -4875,7 +4925,7 @@ function VocabTab({ vocab, onViewChange }) {
             {filteredChunks.map(([chunk,translation,exampleEn,examplePt]) => <div key={chunk} style={{ padding:'12px', border:'1px solid rgba(184,134,11,.16)', borderRadius:14, background:'#FFFEFC' }}>
               <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:10 }}>
                 <strong style={{ color:'#7A5B0A', fontSize:15 }}>{chunk}</strong>
-                <button type="button" onClick={() => playWord(chunk)} aria-label={`Ouvir ${chunk}`} title={`Ouvir ${chunk}`} style={{
+                <button type="button" onClick={() => playChunk(chunk)} aria-label={`Ouvir ${chunk}`} title={`Ouvir ${chunk}`} style={{
                   width:30, height:30, borderRadius:'50%', flexShrink:0, border:'1px solid rgba(184,134,11,.3)',
                   background:speakingWord === chunk ? '#B8860B' : 'rgba(184,134,11,.12)',
                   color:speakingWord === chunk ? '#fff' : '#7A5B0A', cursor:'pointer', fontSize:13,
@@ -4897,8 +4947,6 @@ function VocabTab({ vocab, onViewChange }) {
         <div style={{ fontSize:14, fontWeight:700, color:'#0F172A' }}>Nenhuma palavra ainda</div>
         <div style={{ fontSize:12.5, color:'#64748B', marginTop:3 }}>As palavras dos seus pós-aulas aparecerão aqui.</div>
       </GlassCard>}
-
-      {listView === 'vocab' && speechMessage && <div role="status" style={{ marginBottom:10, padding:'9px 11px', borderRadius:11, background:'#FFFBEB', border:'1px solid #FDE68A', color:'#92400E', fontSize:11.5 }}>{speechMessage}</div>}
 
       {listView === 'vocab' && grouped.map(([month, { words }]) => {
         const open = openMonths[month] !== false;
