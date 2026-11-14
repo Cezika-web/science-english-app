@@ -301,12 +301,14 @@
       desDisp: sum(vw.map(function (w) { return w.des[0]; })), desFeitas: sum(vw.map(function (w) { return w.des[1]; })),
       posN: posRead.length, posAvg: posRead.length ? mean(posRead.map(function (i) { return i.minutes; })) : null
     };
-    // Horas de estudo: o tempo de aula entra a cada pós-aula publicado (sem estimar pela agenda: sem pós-aula, não soma),
+    // Horas de estudo: ausência explícita mantém o material, mas não soma tempo de aula ao vivo.
+    // Legados continuam inferindo aula pelo pós-aula, sem estimar pela agenda.
     // com a duração do cadastro (60 min se vazio), contando só desde o início da medição, como o tempo no app.
     var dur = Number(input.student && input.student.aulaDuracao) > 0 ? Number(input.student.aulaDuracao) : 60;
     var nowKey = dayKey(now), monKey = dayKey(mondayOf(now)), sunKey = dayKey(addDays(mondayOf(now), 6)), monthKey = nowKey.slice(0, 7);
     var aN = 0, aSem = 0, aMes = 0, pTot = 0, pSem = 0, pMes = 0;
     posts.forEach(function (x) {
+      if (x.p.attendanceStatus === 'absent') return;
       var k = dayKey(x.ref);
       if (k < measureFrom || k > nowKey) return;
       aN++; if (k >= monKey && k <= sunKey) aSem++; if (k.slice(0, 7) === monthKey) aMes++;
@@ -1064,7 +1066,7 @@
   // Meta, em minutos: por dia = a meta do dia; por semana = meta do dia × dias de estudo da semana; por mês = semana × 52 ÷ 12 (12 meses fecham o ano).
   function evoSeries(c, posts, dur) {
     var mf = c.measureFrom, today = dayKey(c.now), aulDay = {}, i;
-    posts.forEach(function (x) { var k = dayKey(x.ref); if (k >= mf && k <= today) aulDay[k] = (aulDay[k] || 0) + dur; });
+    posts.forEach(function (x) { if (x.p.attendanceStatus === 'absent') return; var k = dayKey(x.ref); if (k >= mf && k <= today) aulDay[k] = (aulDay[k] || 0) + dur; });
     function cell(k) {
       var d = c.daily[k] || { pos: 0, act: 0, des: 0, voc: 0 };
       var v = { pos: d.pos, act: d.act, voc: d.voc, des: d.des, aul: aulDay[k] || 0 };

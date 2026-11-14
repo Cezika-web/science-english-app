@@ -12,6 +12,7 @@ import re
 import sys
 import datetime
 from urllib.parse import quote
+from html.parser import HTMLParser
 import requests
 from google.oauth2 import service_account
 import google.auth.transport.requests
@@ -19,6 +20,63 @@ import google.auth.transport.requests
 
 # Trilhas de aula: a palavra no fim do slug do arquivo marca a pós-aula (ver o app: TRILHAS no index.html).
 TRILHAS = ("entrevista", "business", "viagem")
+
+
+def parse_attendance(post_html):
+    """Only the explicit head marker is authoritative; malformed markers fail closed."""
+    class MarkerParser(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.in_head = False
+            self.values = []
+
+        def handle_starttag(self, tag, attrs):
+            if tag == "head":
+                self.in_head = True
+            if tag == "meta" and self.in_head:
+                attrs = dict(attrs)
+                if attrs.get("name", "").lower() == "czk-attendance":
+                    self.values.append(attrs.get("content"))
+
+        def handle_endtag(self, tag):
+            if tag == "head":
+                self.in_head = False
+
+    parser = MarkerParser()
+    parser.feed(post_html)
+    if not parser.values:
+        return None
+    if len(parser.values) != 1 or parser.values[0] not in ("absent", "present"):
+        raise ValueError("czk-attendance must have exactly one value: absent or present")
+    return parser.values[0]
+
+
+def import_update(existing, fields, marker):
+    """Field masks preserve study data; updateTime prevents racing a teacher correction."""
+    fields = dict(fields)
+    old = (existing or {}).get("fields", {})
+    if existing:
+        fields.pop("readAt", None)
+        fields.pop("publishedAt", None)
+    old_status = old.get("attendanceStatus", {}).get("stringValue")
+    source = old.get("attendanceSource", {}).get("stringValue")
+    protected = old_status in ("absent", "present") and source != "html"
+    status = old_status if protected or marker is None else marker
+    if marker and not protected:
+        fields["attendanceStatus"] = {"stringValue": marker}
+        fields["attendanceSource"] = {"stringValue": "html"}
+    mask = list(fields)
+    if status == "absent":
+        for key in ("talkTime", "studentTalkPct"):
+            fields.pop(key, None)
+            if key not in mask:
+                mask.append(key)  # masked field omitted from payload = delete
+    params = [("updateMask.fieldPaths", key) for key in mask]
+    if existing:
+        params.append(("currentDocument.updateTime", existing["updateTime"]))
+    else:
+        params.append(("currentDocument.exists", "false"))
+    return fields, params
 
 
 def parse_talk_time(filename):
@@ -118,6 +176,10 @@ def main():
     if "/" in filename or not filename.startswith("pos-aula-") or not filename.endswith(".html"):
         print(f"Invalid pós-aula filename: {filename}")
         sys.exit(1)
+
+    # Validate the convention before obtaining credentials or touching Firestore.
+    with open(filename, "r", encoding="utf-8") as post_file:
+        marker = parse_attendance(post_file.read())
 
     # Parse slug from filename: pos-aula-{slug}-DD-MM-YYYY.html
     basename = filename
@@ -265,11 +327,19 @@ def main():
             }
         }
 
-    resp = requests.patch(
-        f"{base_url}/students/{uid}/posaulas/{post_id}",
-        headers=headers,
-        json={"fields": fields},
-    )
+    document_url = f"{base_url}/students/{uid}/posaulas/{post_id}"
+    for attempt in range(3):
+        previous = requests.get(document_url, headers=headers)
+        if previous.status_code != 404:
+            previous.raise_for_status()
+        existing = previous.json() if previous.ok else None
+        update, params = import_update(existing, fields, marker)
+        resp = requests.patch(document_url, headers=headers, params=params, json={"fields": update})
+        retry = resp.status_code in (409, 412)
+        if resp.status_code == 400:
+            retry = resp.json().get("error", {}).get("status") == "FAILED_PRECONDITION"
+        if not retry:
+            break
 
     if resp.status_code in (200, 201):
         print("✅ Pós-aula saved to Firestore")
