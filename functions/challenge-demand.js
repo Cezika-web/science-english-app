@@ -7,6 +7,14 @@ import { OPEN_ANSWER_CLARITY } from './challenge-clarity.js';
 // começa do zero. O teto total só existe para um bug sistemático não gastar sem fim.
 const ATTEMPTS_PER_CALL = 2;
 const ATTEMPTS_LIMIT = 10;
+// O claude-sonnet-5 raciocina por padrão (adaptativo, esforço alto) e esse raciocínio conta no
+// max_tokens. Em 13/11/2026, de 134 gerações sob demanda a mediana de saída era 3314 tokens e 26%
+// bateram em ~4000 antes de o JSON fechar (stop_reason 'max_tokens' → "Resposta incompleta."):
+// a Fátima precisou de 5 tentativas. O JSON útil tem ~1500 tokens; o resto era raciocínio. O
+// esforço baixo encurta o raciocínio (e o tempo: as gerações iam de 22 a 45 s, rente ao timeout
+// de 45 s abaixo) e o teto maior só serve de folga para a cauda.
+const GENERATION_EFFORT = 'low';
+const GENERATION_MAX_TOKENS = 8000;
 const TEMPORARY_FAILURE = 'Não conseguimos preparar suas perguntas agora. Tente novamente em instantes.';
 
 // Jobs and answer keys are server-only. A repeated click joins the existing job.
@@ -73,7 +81,7 @@ export function createDemandChallengeService({ db, FieldValue, HttpsError, Anthr
       const { input, previous, otherPart, materials, format } = context;
       const student = studentDoc.data();
       const client = new Anthropic({ apiKey:anthropicApiKey.value(), maxRetries:0, timeout:45000 });
-      const response = await client.messages.create({ model, max_tokens:4000,
+      const response = await client.messages.create({ model, max_tokens:GENERATION_MAX_TOKENS,
         system:[{ type:'text', text:
           'Crie apenas UMA parte de um desafio individual de inglês: exatamente 5 perguntas, 3 focus=weak e 2 focus=strong. ' +
           'Use somente o conteúdo e os padrões dos materiais fornecidos dos últimos 90 dias. Dificuldade exigente relativa ao CEFR, sem ensinar assunto novo. ' +
@@ -88,7 +96,7 @@ export function createDemandChallengeService({ db, FieldValue, HttpsError, Anthr
           'Preserve posse, parentesco e referências na resposta correta. Uma resposta inequívoca, expected e explanation breves. ' +
           'Calibre pelos resultados anteriores e ajustes do professor; evite repetir perguntas da outra parte. Não revele weak/strong ao aluno. ' +
           'analysis: até 3 pontos fracos e 3 fortes, breves. Para Amorzinho seja especialmente exigente.' }],
-        output_config:{ format:{ type:'json_schema', schema } },
+        output_config:{ format:{ type:'json_schema', schema }, effort:GENERATION_EFFORT },
         messages:[{ role:'user', content:JSON.stringify({
           student:student.name || student.firstName, level:student.level || 'A1', weekKey, part,
           materials, corrections:input.corrections, previous,

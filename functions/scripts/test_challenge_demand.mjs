@@ -64,6 +64,10 @@ assert.equal((await service.prepare(studentDoc.id, '2026-09-14-part-1', studentD
 assert.equal(calls, 1, 'cliques concorrentes compartilham a geração');
 release(); gate = null; await first;
 assert.equal(payload.output_config.format.schema.properties.questions.maxItems, undefined, 'schema usa apenas restrições suportadas pela API');
+// Fátima, 13/11/2026: o raciocínio padrão do modelo comia o max_tokens e 26% das gerações vinham cortadas.
+assert.equal(payload.output_config.effort, 'low', 'esforço baixo: o raciocínio não pode esgotar o teto de tokens');
+assert.ok(payload.max_tokens >= 8000, 'teto com folga para a cauda de raciocínio + o JSON');
+assert.equal(payload.thinking, undefined, 'raciocínio segue adaptativo (padrão do modelo), só com esforço baixo');
 assert.throws(() => prepareDemandQuestions(questions().slice(0, 4), 1, 'assistido'), /incompleta/);
 assert.deepEqual(payload.output_config.format.schema.required, ['analysis','questions']);
 assert.equal(JSON.parse(payload.messages[0].content).part, 1);
