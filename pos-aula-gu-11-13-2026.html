@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>Resumo Pós-Aula — Gu — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+main{line-height:1.6;color:#374151;} h2{font-size:1.12rem;color:#0f1724;} li{margin-bottom:8px;} .outline-card h3:first-child{margin-top:0;}
+@media(max-width:720px){header{flex-wrap:wrap;}header>div:first-child>div:first-child{flex-wrap:wrap;}.wrap{padding:20px 12px;}.vocab{min-width:0;}.actions .btn{font-size:.85rem;}.talk-table th,.talk-table td{padding:8px 6px;}}
+@media print{.wrap{display:block;padding:0;}.card{max-width:none;border:0;box-shadow:none;padding:0;}.actions,.vocab-say{display:none;}body{background:white;}.vocab,.speaking,.homework{break-inside:avoid;}}
+</style></head><body><div class="wrap"><article class="card" role="main"><header><div><div style="display:flex;gap:10px;align-items:center;"><span class="badge">PÓS-AULA</span><h1>Causativo: serviços, favores e revisão do passado</h1></div><div class="meta" style="margin-top:8px;"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Gu &nbsp;•&nbsp; <strong>Data:</strong> 11/13/2026</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header><main>
+<section class="panel"><p style="margin:0;font-weight:600;color:#14532D;"><em>Gu, nesta aula você praticou como pedir e organizar serviços com o causativo, treinou a pronúncia do passado e retomou pontos do desafio. O foco foi reconhecer quem faz a ação, o tempo verbal e as palavras que mudam o sentido da frase.</em></p></section><section><h2 style="margin-bottom:8px;">📘 Resumo da Aula</h2><div class="outline-card">
+<p style="margin-top:0;"><strong>Conversação e rotina.</strong> Você contou sobre a visita à Toyota, o trabalho com manutenção e clientes, a semana movimentada e seus planos de ir ao CrossFit. A conversa também abordou oportunidades de usar o inglês em outro país e o acompanhamento do progresso nos estudos. Nesse início, apareceram ajustes como <em>“Sorry, I’m late”</em> e <em>“I needed to go”</em>.</p>
+<p><strong>Passado e pronúncia de -ed.</strong> Revisamos verbos regulares e os três sons da terminação: <strong>/d/</strong> em <em>played, called, rained</em>; <strong>/t/</strong> em <em>liked, missed</em>; e <strong>/ɪd/</strong> em <em>wanted, needed</em>. O objetivo é manter a consoante final sem acrescentar uma vogal ou sílaba desnecessária. Também retomamos <em>think → thought</em>: <em>thought</em> pode ser o passado de “pensar” ou o substantivo “pensamento”, conforme o contexto.</p>
+<p><strong>Causativo em pedidos de serviços.</strong> No vídeo da Unit 2, <em>“I’ll take care of it”</em>, um personagem usa um aplicativo para organizar favores e serviços: lavar o carro, lavar um vestido a seco, consertar sapatos, encomendar um bolo, imprimir folhetos e buscar alguém no aeroporto. Revimos os trechos em partes para identificar as estruturas e entender também as recusas do aplicativo.</p>
+<div class="panel"><p style="margin:0 0 8px;"><strong>Objeto que recebe o serviço:</strong> have/get + objeto + particípio.<br><em>I had my car repaired.</em> → Mandei consertar meu carro.<br><em>Could you get a cake made?</em> → Você poderia encomendar um bolo?</p>
+<p style="margin:0;"><strong>Pessoa que executa a ação:</strong> have + pessoa + verbo na forma base.<br><em>They’ll have someone pick up your clothes.</em> → Eles vão providenciar alguém para buscar suas roupas.<br>Com <strong>get + pessoa</strong>, entra <strong>to</strong>: <em>get someone to feed your cat</em>.</p></div>
+<p><strong>Perguntas e escuta.</strong> Analisamos <em>“Are they having someone pick up my sister at the airport?”</em>: a pergunta começa com <strong>Are + they + having</strong>, mas o verbo depois de <em>someone</em> continua <strong>pick up</strong>. Na compreensão oral, também trabalhamos <em>can’t</em>, o prazo <em>by 3 PM</em> e expressões como <em>turn down your request</em>.</p>
+<p style="margin-bottom:0;"><strong>Revisão do desafio.</strong> Você fez o desafio com a tela compartilhada e revisou as respostas com César. Os pontos centrais foram reconhecer <em>my brother = he</em> para conjugar o verbo, usar o passado quando o contexto pede, escolher <em>hasn’t he?</em> em uma tag com present perfect e lembrar <em>cut → cut → cut</em>. Também discutimos <em>customer</em> e <em>client</em>: ambos podem significar “cliente”; o primeiro é comum no comércio, e o segundo em relações de prestação de serviços, com sobreposição entre os usos.</p></div></section><section><h2 style="margin-bottom:8px;">💬 Frases usadas em aula</h2><div class="outline-card"><p style="margin-top:0;color:var(--muted);">Frases da conversa, das explicações e do vídeo trabalhado na aula.</p><ul><li><strong>Sorry, I’m late.</strong><br>Desculpe, estou atrasado.</li><li><strong>I needed to go.</strong><br>Eu precisei ir.</li><li><strong>I had my car repaired.</strong><br>Mandei consertar meu carro.</li><li><strong>I’ll take care of it.</strong><br>Eu cuido disso.</li><li><strong>I owe you one.</strong><br>Fico te devendo uma.</li><li><strong>Could you have my blue dress dry cleaned on the way home from work?</strong><br>Você poderia mandar lavar meu vestido azul a seco no caminho de volta do trabalho?</li><li><strong>Could you have my shoes repaired, too?</strong><br>Você poderia mandar consertar meus sapatos também?</li><li><strong>They’ll have someone pick up your clothes, clean them, and return them.</strong><br>Eles vão providenciar alguém para buscar suas roupas, limpá-las e devolvê-las.</li><li><strong>What if they can’t get someone to feed your cat?</strong><br>E se eles não conseguirem alguém para alimentar seu gato?</li><li><strong>They send a message and turn down your request.</strong><br>Eles enviam uma mensagem e recusam seu pedido.</li><li><strong>They can’t have a birthday cake made by 3 PM today.</strong><br>Eles não conseguem providenciar um bolo de aniversário até as 15h de hoje.</li><li><strong>Are they having someone pick up my sister at the airport?</strong><br>Eles estão providenciando alguém para buscar minha irmã no aeroporto?</li></ul></div></section><section><h2 style="margin-bottom:8px;">⭐ Vocabulário-chave</h2><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3>reliable</h3><button type="button" class="vocab-say" data-czk-say="reliable" aria-label="Ouvir a pronúncia de reliable" aria-pressed="false" title="Ouvir reliable">&#128266;</button></div><p><em>confiável</em><br><small>Alguém ou algo em que você pode confiar.</small></p><p><strong>A friendly, reliable driver will meet her and drive her home.</strong><br><small>Um motorista simpático e confiável vai encontrá-la e levá-la para casa.</small></p></div><div class="vocab green"><div class="vocab-head"><h3>turn down</h3><button type="button" class="vocab-say" data-czk-say="turn down" aria-label="Ouvir a pronúncia de turn down" aria-pressed="false" title="Ouvir turn down">&#128266;</button></div><p><em>recusar</em><br><small>Não aceitar um pedido, convite ou proposta.</small></p><p><strong>They send a message and turn down your request.</strong><br><small>Eles enviam uma mensagem e recusam seu pedido.</small></p></div><div class="vocab yellow"><div class="vocab-head"><h3>take care of</h3><button type="button" class="vocab-say" data-czk-say="take care of" aria-label="Ouvir a pronúncia de take care of" aria-pressed="false" title="Ouvir take care of">&#128266;</button></div><p><em>cuidar de / resolver</em><br><small>Assumir a responsabilidade por alguém, algo ou uma tarefa.</small></p><p><strong>I’ll take care of it.</strong><br><small>Eu cuido disso.</small></p></div></div></section><section><h2 style="margin-bottom:8px;">📚 Vocabulário completo da aula</h2><div class="outline-card"><h3>Trabalho e rotina</h3><ul><li><strong>maintenance</strong> — manutenção</li><li><strong>client / customer</strong> — cliente; a escolha depende do contexto</li><li><strong>budget</strong> — orçamento</li><li><strong>meeting</strong> — reunião</li><li><strong>schedule a meeting</strong> — agendar uma reunião</li><li><strong>brave</strong> — corajoso</li><li><strong>daycare center</strong> — creche</li><li><strong>neighborhood</strong> — bairro / vizinhança</li></ul><h3>Serviços e tarefas</h3><ul><li><strong>have the car washed and cleaned</strong> — mandar lavar e limpar o carro</li><li><strong>dry clean</strong> — lavar a seco</li><li><strong>have shoes repaired</strong> — mandar consertar sapatos</li><li><strong>get a cake made</strong> — encomendar um bolo</li><li><strong>printing service</strong> — serviço de impressão / gráfica</li><li><strong>brochures</strong> — folhetos</li><li><strong>do the laundry</strong> — lavar a roupa</li><li><strong>pick up</strong> — buscar / pegar</li><li><strong>feed the cat</strong> — alimentar o gato</li><li><strong>return</strong> — devolver / retornar</li><li><strong>hire</strong> — contratar</li><li><strong>driver</strong> — motorista</li><li><strong>reliable</strong> — confiável</li></ul><h3>Expressões e compreensão oral</h3><ul><li><strong>take care of it</strong> — cuidar disso / resolver isso</li><li><strong>I owe you one</strong> — fico te devendo uma</li><li><strong>have a lot on your plate</strong> — ter muita coisa para fazer / resolver</li><li><strong>You’re a lifesaver</strong> — você me salvou / você foi uma grande ajuda</li><li><strong>No worries</strong> — sem problemas</li><li><strong>a bunch of favors</strong> — um monte de favores</li><li><strong>turn down a request</strong> — recusar um pedido</li><li><strong>on the way home</strong> — no caminho de volta para casa</li><li><strong>stay late</strong> — ficar até mais tarde</li><li><strong>by 3 PM</strong> — até as 15h; prazo máximo</li><li><strong>What if…?</strong> — E se…?</li><li><strong>shouldn’t you be leaving soon?</strong> — você não deveria estar saindo em breve?</li></ul><h3>Verbos retomados</h3><ul><li><strong>call → called</strong> — ligar → ligou / liguei</li><li><strong>play → played</strong> — jogar / tocar → jogou / tocou</li><li><strong>rain → rained</strong> — chover → choveu</li><li><strong>like → liked</strong> — gostar → gostou / gostei</li><li><strong>miss → missed</strong> — perder / sentir falta → perdeu / sentiu falta</li><li><strong>want → wanted</strong> — querer → quis / queria</li><li><strong>need → needed</strong> — precisar → precisou / precisei</li><li><strong>think → thought → thought</strong> — pensar; passado e particípio: thought</li><li><strong>lose → lost → lost</strong> — perder; passado e particípio: lost</li><li><strong>cut → cut → cut</strong> — cortar; as três formas têm a mesma escrita</li><li><strong>have → had → had</strong> — ter; também usado na estrutura causativa</li></ul></div></section><section><h2 style="margin-bottom:8px;">🚨 Correções importantes</h2><div class="outline-card">
+<p style="margin-top:0;"><strong>1. Pedir desculpas pelo atraso</strong><br>❌ “Sorry for the too late.”<br>✅ <strong>“Sorry, I’m late.”</strong><br>Para dizer que você está atrasado, use <em>I’m late</em>. Você repetiu a forma corrigida logo no início.</p>
+<p><strong>2. Perguntar sobre a semana</strong><br>❌ “How are your week?”<br>✅ <strong>“How was your week?”</strong><br><em>Week</em> é singular; para perguntar como foi a semana, use <em>was</em>. Se a pergunta for sobre como ela está indo, use <em>“How is your week going?”</em>.</p>
+<p><strong>3. Preposição com morning</strong><br>❌ “On the morning.”<br>✅ <strong>“In the morning.”</strong><br>Você se corrigiu ao contar sobre o dia. Use <em>in the morning</em> para “de manhã”; <em>on</em> aparece com uma manhã específica, como <em>on Friday morning</em>.</p>
+<p><strong>4. Precisar fazer alguma coisa</strong><br>✅ <strong>“I needed to go.”</strong><br>Essa foi a forma construída na conversa: <strong>needed + to + verbo</strong>. Mantenha o passado em <em>needed</em>; <em>go</em> fica na forma base depois de <em>to</em>.</p>
+<p><strong>5. Teach × learn</strong><br>❌ “You learning me…”<br>✅ <strong>“You are teaching me.”</strong><br>O professor <em>teaches</em> (ensina); o aluno <em>learns</em> (aprende). Você já buscou <em>teaching</em> na própria fala. Para “você está me ensinando”, inclua <em>are</em>.</p>
+<div class="panel"><p style="margin-top:0;"><strong>Pontos retomados no desafio — modelos para revisão</strong></p>
+<p><strong>Tag question:</strong> na frase com <em>has + particípio</em>, a tag negativa é <strong>hasn’t he?</strong>, e não <em>doesn’t he?</em>. Modelo: <em>He has already finished, hasn’t he?</em> → Ele já terminou, não terminou?</p>
+<p><strong>Sujeito e conjugação:</strong> lembre que <em>my brother</em> corresponde a <em>he</em>. Modelo: <em>My brother loses…</em> no presente; <em>My brother lost…</em> no passado. Escolha o verbo e confira também sua forma.</p>
+<p style="margin-bottom:0;"><strong>Causativo no passado:</strong> <em>She had her hair cut.</em> → Ela mandou cortar o cabelo. O passado aparece em <strong>had</strong>; <strong>cut</strong> é o particípio e não muda para <em>cutted</em>.</p></div>
+<p style="margin-bottom:0;">💡 <strong>Na escuta:</strong> não perca a negativa em <em>can’t</em>. Em <em>They can’t have a birthday cake made by 3 PM today</em>, o serviço não pode ser providenciado dentro do prazo. A presença ou ausência da negativa muda o sentido inteiro.</p></div></section><section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/45J_xu9aGgc" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section><section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead><tbody><tr class="row-teacher"><td class="talk-label">César (Professor)</td><td class="talk-percent">67%</td><td class="talk-time">20 min 41 s</td></tr><tr class="row-student"><td class="talk-label">Gu</td><td class="talk-percent">33%</td><td class="talk-time">10 min 12 s</td></tr></tbody></table><p style="margin-bottom:0;color:var(--muted);font-size:0.85rem;">Estimativa pelos intervalos de fala identificados na transcrição. Os percentuais consideram apenas César e Gu; excluem o áudio do exercício (cerca de 4 min 57 s), pausas e trechos sem fala identificada. Não representam a duração total da aula.</p></section><section><h2 style="margin-bottom:8px;">📝 Homework</h2><div class="homework"><p style="margin-top:0;"><strong>Prática sugerida para consolidar a aula:</strong></p><ol>
+<li>Reveja o trecho da gravação entre <strong>26:43 e 38:50</strong>. Primeiro acompanhe o sentido geral; depois pause e repita três pedidos de serviços.</li>
+<li>Escreva <strong>três frases sobre serviços</strong>: uma com <em>have + objeto + particípio</em>, uma com <em>have + pessoa + verbo base</em> e uma com <em>get + pessoa + to + verbo</em>.</li>
+<li>Leia em voz alta os três grupos: <strong>played / called / rained</strong>, <strong>liked / missed</strong> e <strong>wanted / needed</strong>. Mantenha o final de cada palavra, sem acrescentar uma sílaba nos dois primeiros grupos.</li>
+<li>Revise as respostas corrigidas do desafio: confira <strong>sujeito, tempo verbal e auxiliar da tag</strong>. Relembre <em>lose–lost–lost</em> e <em>cut–cut–cut</em>.</li>
+<li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana e use os botões de áudio para repetir as três expressões-chave.</li></ol></div></section>
+</main><footer><p style="margin:18px 0 0;color:var(--muted);font-size:0.9rem;">© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</p></footer></article></div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>

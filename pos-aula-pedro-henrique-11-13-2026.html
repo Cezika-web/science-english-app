@@ -1,0 +1,220 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="czk-attendance" content="present"><title>Resumo Pós-Aula — Pedro Henrique — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+body{color:#243244;line-height:1.6} .card{min-width:0} header>div:first-child{min-width:0} h2{font-size:1.15rem;color:#14532D;line-height:1.35}
+h3{font-size:1rem;color:#14532D} p{margin:0 0 12px} p:last-child{margin-bottom:0}
+li{margin:6px 0} .outline-card+.outline-card{margin-top:12px}
+.intro{font-style:italic} .note{padding:12px 14px;background:#F0FDF4;border-left:4px solid #16A34A;border-radius:6px;margin:12px 0}
+.absence{background:#fff8ed;border:1px solid #f3d6a6;border-radius:10px;padding:14px;margin-top:14px;color:#794618}
+.table-scroll{overflow-x:auto} .study-table{width:100%;border-collapse:collapse;font-size:.92rem}
+.study-table td,.study-table th{border:1px solid #DCF0E3;padding:9px 10px;text-align:left;vertical-align:top}
+.study-table th{background:#E7F6EC;color:#14532D} .small{font-size:.88rem;color:#6b7280}
+.example{font-weight:600;color:#14532D} header .badge{white-space:nowrap}
+@media(max-width:720px){.wrap{padding:18px 10px}.card{box-sizing:border-box} header{flex-wrap:wrap}.actions{width:100%}.btn{justify-content:center}.vocab{min-width:0}.meta{line-height:1.8}}
+@media print{.wrap{padding:0}.card{box-shadow:none;border:0;max-width:none}.actions,.vocab-say{display:none}body{background:#fff}.outline-card,.vocab,.homework{break-inside:avoid}.table-scroll{overflow:visible}}
+</style></head><body><div class="wrap"><article class="card" role="main"><header><div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="badge">PÓS-AULA</span><h1>To be e outros verbos: perguntas, negativas e família</h1></div><div class="meta" style="margin-top:8px"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> Pedro Henrique &nbsp;•&nbsp; <strong>Data:</strong> 11/13/2026</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header><main><section class="panel"><p class="intro" style="margin:0;font-weight:600;color:#14532D">Pedro, nesta aula organizamos perguntas e negativas com to be e com outros verbos, revisamos família e plurais e praticamos as mudanças do presente simples. O objetivo é transformar essa lógica em hábito.</p></section><section><h2>📘 Resumo da Aula</h2><div class="outline-card"><p>Pedro, você começou contando como revisou o pós-aula anterior e usou a IA do aplicativo para praticar afirmações e negativas. Isso virou o ponto de partida para organizar a gramática: <strong>primeiro descubra se o verbo da frase é o to be ou outro verbo</strong>. Essa escolha define como negar e perguntar.</p>
+<h3>1. Dois caminhos para montar frases</h3><p>Com <strong>am, is, are</strong>, a negativa recebe <strong>not</strong> depois do verbo; na pergunta, o verbo vem antes do sujeito. Com os outros verbos no presente simples, usamos <strong>do / does</strong> para perguntar e <strong>don’t / doesn’t</strong> para negar. Veja os modelos de revisão:</p><div class="table-scroll"><table class="study-table"><thead><tr><th>Verbo / sujeito</th><th>Afirmação</th><th>Negativa</th><th>Pergunta</th></tr></thead><tbody><tr><td>to be — she</td><td>She is ready.<br>Ela está pronta.</td><td>She isn’t ready.<br>Ela não está pronta.</td><td>Is she ready?<br>Ela está pronta?</td></tr><tr><td>live — they</td><td>They live nearby.<br>Eles moram perto.</td><td>They don’t live nearby.<br>Eles não moram perto.</td><td>Do they live nearby?<br>Eles moram perto?</td></tr><tr><td>live — she</td><td>She lives nearby.<br>Ela mora perto.</td><td>She doesn’t live nearby.<br>Ela não mora perto.</td><td>Does she live nearby?<br>Ela mora perto?</td></tr></tbody></table></div>
+<h3>2. O auxiliar muda; o verbo principal fica na forma base</h3><p><strong>I / you / we / they → do / don’t.</strong> <strong>He / she / it → does / doesn’t.</strong> Depois desses auxiliares, use <em>go, live, have, watch</em>, sem acrescentar <em>-s</em>. Na revisão do passado, a mesma lógica apareceu com <strong>did / didn’t + forma base</strong>: <em>She didn’t go</em> (ela não foi). O passado já está indicado por <em>didn’t</em>; não coloque <em>went</em> depois dele.</p>
+<h3>3. Afirmativa no presente com he / she / it</h3><p>Sem o auxiliar, a afirmativa do presente pede a mudança no verbo: <strong>live → lives; watch → watches; do → does; play → plays; fly → flies</strong>. Com consoante + <em>y</em>, trocamos o <em>y</em> por <em>ies</em>; com vogal + <em>y</em>, acrescentamos só <em>s</em>. Compare: <em>She lives nearby</em> × <em>Does she live nearby?</em></p>
+<h3>4. Família, singular e plural</h3><p>A pergunta <em>Does he have grandkids?</em> trouxe a palavra <strong>grandkids</strong> (netos). Também revisamos <strong>kid → kids</strong> e o plural irregular <strong>child → children</strong>, além de <strong>foot → feet</strong> e <strong>goose → geese</strong>. Saber o número do sujeito ajuda a escolher o auxiliar: <em>Does the child…?</em> × <em>Do the children…?</em> Nem todo singular usa <em>does</em>: <em>I</em> e <em>you</em> usam <em>do</em>.</p>
+<h3>5. Life, live e lives: a escrita não conta tudo</h3><div class="table-scroll"><table class="study-table"><thead><tr><th>Palavra e função</th><th>Pronúncia</th><th>Sentido / exemplo</th></tr></thead><tbody><tr><td>life — substantivo</td><td>/laɪf/</td><td>vida</td></tr><tr><td>lives — plural de life</td><td>/laɪvz/</td><td>vidas</td></tr><tr><td>live — verbo</td><td>/lɪv/</td><td>morar / viver</td></tr><tr><td>lives — verbo com he / she / it</td><td>/lɪvz/</td><td>My aunt lives nearby.</td></tr><tr><td>live — ao vivo</td><td>/laɪv/</td><td>uma transmissão ao vivo</td></tr></tbody></table></div>
+<p>Em <em>My aunt lives nearby</em>, <em>my aunt</em> equivale a <em>she</em>, e <em>lives</em> tem o som do verbo. <strong>Nearby</strong> indica distância física; <strong>close friends</strong> indica uma relação próxima, mesmo quando os amigos estão longe.</p>
+<h3>6. Verbos e próximos passos</h3><p>Na revisão final, você reconheceu vários verbos por associações com jogos e músicas. Ajustamos <strong>find = encontrar</strong> e <strong>send = enviar</strong>, além de diferenciar <strong>do</strong> e <strong>make</strong>: aprenda combinações como <em>do exercise</em> e <em>make a cake</em>. O passado foi apresentado como próximo foco, depois de firmar essas bases. <em>Will</em> e <em>would</em> também apareceram como exemplos seguidos de forma base; por enquanto, a prioridade é automatizar presente, negativas e perguntas.</p>
+<p class="note"><strong>Estratégia da semana:</strong> antes de responder, identifique o sujeito, o verbo e o tipo de frase. Aproveite seu vocabulário de jogos, mas confira o sentido e a escrita no contexto.</p></div></section><section><h2>💬 Frases usadas em aula</h2><div class="outline-card"><p class="small">Frases e exemplos trabalhados na aula, apresentados com a escrita padronizada para revisão.</p><ul>
+<li><strong>Does he have grandkids?</strong> → Ele tem netos?</li>
+<li><strong>Do you have kids?</strong> → Você tem filhos?</li>
+<li><strong>My aunt lives nearby.</strong> → Minha tia mora perto.</li>
+<li><strong>What do you do?</strong> → O que você faz? <em>O primeiro do é auxiliar; o segundo significa fazer.</em></li>
+<li><strong>I’m not afraid.</strong> → Eu não estou com medo.</li>
+<li><strong>Made in China.</strong> → Feito / Fabricado na China.</li>
+<li><strong>Make a cake.</strong> → Fazer um bolo.</li>
+</ul></div></section><section><h2>⭐ Vocabulário-chave (Key Vocabulary)</h2><div class="vocab-grid"><div class="vocab "><div class="vocab-head"><h3>grandkids</h3><button type="button" class="vocab-say" data-czk-say="grandkids" aria-label="Ouvir a pronúncia de grandkids" aria-pressed="false" title="Ouvir grandkids">&#128266;</button></div><p><em>netos / netas</em></p><p>Forma informal de <strong>grandchildren</strong>. Uma pessoa pode ter <em>kids</em> (filhos) e <em>grandkids</em> (netos). O singular informal é <em>grandkid</em>.</p><p><strong>Does he have grandkids?</strong><br>Ele tem netos?</p></div><div class="vocab green"><div class="vocab-head"><h3>nearby</h3><button type="button" class="vocab-say" data-czk-say="nearby" aria-label="Ouvir a pronúncia de nearby" aria-pressed="false" title="Ouvir nearby">&#128266;</button></div><p><em>perto / nas proximidades</em></p><p>Indica proximidade física. Em <em>lives nearby</em>, já significa “mora perto”: não acrescente <em>of</em> depois. Para dizer “perto de mim”, use <em>near me</em>.</p><p><strong>My aunt lives nearby.</strong><br>Minha tia mora perto.</p></div><div class="vocab yellow"><div class="vocab-head"><h3>base form</h3><button type="button" class="vocab-say" data-czk-say="base form" aria-label="Ouvir a pronúncia de base form" aria-pressed="false" title="Ouvir base form">&#128266;</button></div><p><em>forma base do verbo</em></p><p>É a forma sem <em>to</em>, sem <em>-s</em> e sem marca de passado: <em>go, live, have, watch</em>. Depois de <em>does</em> ou <em>did</em>, por exemplo, o verbo principal volta a essa forma.</p><p><strong>She doesn’t live nearby.</strong><br>Ela não mora perto.</p></div></div></section><section><h2>📚 Vocabulário completo da aula</h2><div class="outline-card">
+<h3>Família</h3><p><strong>kid / kids</strong> — criança(s); filho(s), conforme o contexto • <strong>child / children</strong> — criança / crianças; filho / filhos • <strong>parent / parents</strong> — pai ou mãe / pais • <strong>grandkid / grandkids</strong> — neto(a) / netos(as) • <strong>grandchildren</strong> — netos(as) • <strong>grandfather</strong> — avô • <strong>grandmother</strong> — avó • <strong>grandparents</strong> — avós • <strong>aunt</strong> — tia • <strong>sister</strong> — irmã.</p>
+<h3>Proximidade e sentimentos</h3><p><strong>nearby</strong> — perto, nas proximidades • <strong>near</strong> — perto de • <strong>close</strong> — próximo; pode indicar vínculo afetivo • <strong>close friends</strong> — amigos próximos • <strong>alone</strong> — sozinho, sem companhia • <strong>lonely</strong> — solitário, sentindo solidão • <strong>loneliness</strong> — solidão (substantivo) • <strong>afraid</strong> — com medo • <strong>ready</strong> — pronto.</p>
+<h3>Verbos revisados</h3><p><strong>have</strong> — ter • <strong>live</strong> — morar, viver • <strong>go</strong> — ir • <strong>watch</strong> — assistir • <strong>play</strong> — jogar, brincar ou tocar • <strong>fly</strong> — voar • <strong>buy</strong> — comprar • <strong>do</strong> — fazer; também pode ser auxiliar • <strong>make</strong> — fazer, produzir • <strong>drive</strong> — dirigir • <strong>eat</strong> — comer • <strong>find</strong> — encontrar • <strong>send</strong> — enviar • <strong>get</strong> — pegar, obter ou receber, conforme o contexto • <strong>leave</strong> — sair, partir ou deixar • <strong>lose</strong> — perder • <strong>meet</strong> — conhecer alguém / encontrar-se com alguém • <strong>read</strong> — ler • <strong>sell</strong> — vender • <strong>see</strong> — ver • <strong>sleep</strong> — dormir • <strong>steal</strong> — roubar • <strong>take</strong> — pegar, levar.</p>
+<h3>Palavras parecidas e plurais</h3><p><strong>life / lives</strong> — vida / vidas • <strong>live</strong> — ao vivo, quando usado nesse sentido • <strong>foot / feet</strong> — pé / pés • <strong>goose / geese</strong> — ganso / gansos • <strong>shield</strong> — escudo (diferente de <em>child</em>).</p>
+<h3>Estruturas e expressões</h3><p><strong>base form</strong> — forma base • <strong>statement</strong> — afirmação • <strong>question</strong> — pergunta • <strong>last night</strong> — ontem à noite • <strong>last month</strong> — no mês passado • <strong>yesterday</strong> — ontem • <strong>right now</strong> — agora mesmo • <strong>make a cake</strong> — fazer um bolo • <strong>do exercise / do yoga</strong> — fazer exercícios / praticar ioga • <strong>made</strong> — passado e particípio de <em>make</em> • <strong>have a good week</strong> — tenha uma boa semana.</p>
+</div></section><section><h2>🚨 Correções importantes</h2><div class="outline-card"><p class="small">Pontos que precisaram de ajuste durante a revisão. Os exemplos abaixo são modelos de estudo, não uma transcrição literal das suas respostas.</p>
+<h3>1. Negativa com to be precisa do próprio to be</h3><p>❌ <em>They don’t my friends.</em><br>✅ <strong>They aren’t my friends.</strong> — Eles não são meus amigos.<br>Você cogitou usar <em>don’t</em> no desafio, mas a ideia de “ser” pede <em>are + not</em>. <em>Don’t</em> combina com outro verbo: <em>They don’t know my friends</em> = Eles não conhecem meus amigos.</p>
+<h3>2. Depois do auxiliar, volte à forma base</h3><p>❌ <em>She didn’t went.</em><br>✅ <strong>She didn’t go.</strong> — Ela não foi.<br>Esse foi um ponto central da revisão das frases que você havia praticado: não conjugue o verbo principal depois de <em>don’t, doesn’t</em> ou <em>didn’t</em>.</p>
+<h3>3. Artigo: o som de apple pede an</h3><p>❌ <em>a apple</em><br>✅ <strong>an apple</strong> — uma maçã.<br>No desafio, você lembrou do artigo, mas precisava de <em>an</em>. A escolha entre <em>a</em> e <em>an</em> depende do som inicial da palavra seguinte.</p>
+<h3>4. Find não é enviar</h3><p>❌ <em>find = enviar</em><br>✅ <strong>find = encontrar; send = enviar.</strong><br>Use como contraste: <em>find a message</em> = encontrar uma mensagem; <em>send a message</em> = enviar uma mensagem.</p>
+<h3>5. Ready e read são palavras diferentes</h3><p>Você associou <em>read</em> a “pronto” na revisão de verbos. ✅ <strong>read = ler; ready = pronto.</strong> Compare <em>I read</em> (eu leio) com <em>I am ready</em> (eu estou pronto).</p>
+<h3>6. Atenção a last night e à pronúncia de lives</h3><p>Use <strong>last night</strong> diretamente para “ontem à noite”, sem <em>in / on / at</em> antes. Em <strong>My aunt lives nearby</strong>, leia <em>lives</em> como <strong>/lɪvz/</strong>; <strong>/laɪvz/</strong> é “vidas”.</p></div></section><section><h2 style="margin-bottom:8px;">🎥 Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/8UYs0t49hPI" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">🎥 Assistir gravação</a></div></section><section class="speaking" aria-label="Distribuição de fala"><h2>🗣️ Tempo de Fala</h2><table class="talk-table"><thead><tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr></thead><tbody><tr class="row-teacher"><td class="talk-label">César (Professor)</td><td class="talk-percent">77%</td><td class="talk-time">~37.3 minutos</td></tr><tr class="row-student"><td class="talk-label">Pedro Henrique</td><td class="talk-percent">23%</td><td class="talk-time">~11.4 minutos</td></tr></tbody></table><p class="small" style="margin-top:10px">Estimativa pelos intervalos de fala identificados na transcrição, incluindo falas em português e em inglês. Silêncios não entram na proporção.</p></section><section><h2>📝 Homework</h2><div class="homework"><p>📌 <strong>Prática da semana:</strong></p><ul><li>Leia este pós-aula <strong>2 a 3 vezes</strong>, em sessões curtas. Mantenha a meta de estudo que você configurou no aplicativo.</li><li>Crie uma afirmativa, uma negativa e uma pergunta para cada verbo: <strong>live, have, watch, play</strong>. Alterne <em>she</em> e <em>they</em>; confira o uso de <em>does / do</em>.</li><li>Revise <strong>child / children, grandkids, aunt, nearby</strong> e a diferença de pronúncia entre <em>lives</em> (mora) e <em>lives</em> (vidas).</li><li>Use a IA do app para praticar sua principal dificuldade. Sugestão: <em>“Com base no pós-aula de 13 de novembro, me dê uma frase por vez para transformar em negativa e pergunta. Misture to be e outros verbos e explique meus erros.”</em></li><li>Quando as atividades estiverem disponíveis, faça-as aos poucos. Se precisar, reveja a gravação; o desafio serve para identificar o que revisar.</li></ul></div></section></main><footer>© 2025 CZK English • Conteúdo para fins educacionais.<br>Suporte: czkenglish@gmail.com</footer></article></div>
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body></html>
