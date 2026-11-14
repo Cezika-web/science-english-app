@@ -10,8 +10,14 @@
  *   Aulas       aulas assistidas ÷ aulas previstas
  *   Desafio     partes feitas ÷ partes disponíveis
  * Pilar sem dado (ex.: aluno sem aulas, ou semana anterior à coleta) sai da
- * conta e os pesos dos demais se redistribuem. A nota do aluno é a média das
- * últimas 3 semanas fechadas, com mais peso para a mais recente (1·2·3).
+ * conta e os pesos dos demais se redistribuem.
+ *
+ * A nota é recalculada na hora (não espera a semana fechar): média das últimas 3
+ * semanas fechadas e da semana de hoje, com mais peso para a mais recente. O peso
+ * escorrega dia a dia (ver `wts` em compute), então a nota não dá salto na segunda.
+ * O dia de hoje ainda está aberto: o que o aluno faz hoje só ajuda; o que ficar por
+ * fazer passa a contar quando o dia virar. A medição de cada aluno começa no primeiro
+ * sinal dele (1ª aula, pós-aula ou atividade), não no dia do cadastro.
  */
 (function (root) {
   'use strict';
@@ -30,8 +36,13 @@
   var DEFAULTS = {
     minPos: 5, secEx: 15, metaDias: 5, minDia: 3, limiteSeg: 60,
     metaDiaMin: 10, metaDiasEstudo: 5, minTipo: 1,
+    // A nota aparece quando houver este tanto de dias medidos (antes disso um único dia mandaria em tudo).
+    minDiasNota: 3,
     w: { C: 25, At: 25, Pos: 20, Aula: 20, Des: 10 }
   };
+  // Quem ainda não teve aula, pós-aula nem atividade só começa a ser medido pelo primeiro uso do app;
+  // quem não fez nem isso ganha uma carência antes de a medição começar a contar os dias em branco.
+  var CARENCIA_DIAS = 7;
 
   // ── utilidades ────────────────────────────────────────────────────────
   function sum(a) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i]; return s; }
@@ -109,6 +120,7 @@
       metaDiaMin: n(c.metaDiaMin, DEFAULTS.metaDiaMin, 1, 180),
       metaDiasEstudo: Math.round(n(c.metaDiasEstudo, DEFAULTS.metaDiasEstudo, 1, 7)),
       minTipo: n(c.minTipo, DEFAULTS.minTipo, 0.5, 30),
+      minDiasNota: Math.round(n(c.minDiasNota, DEFAULTS.minDiasNota, 1, 14)),
       w: {
         C: n(w.C, DEFAULTS.w.C, 0, 100), At: n(w.At, DEFAULTS.w.At, 0, 100), Pos: n(w.Pos, DEFAULTS.w.Pos, 0, 100),
         Aula: n(w.Aula, DEFAULTS.w.Aula, 0, 100), Des: n(w.Des, DEFAULTS.w.Des, 0, 100)
@@ -188,13 +200,31 @@
     posts.forEach(function (x) { names[itemKey('pos', x.p.id)] = x.p.title || ('Pós-aula ' + ddmm(x.ref)); });
     (input.activities || []).forEach(function (a) { if (a && a.id != null) names[itemKey('act', a.id)] = a.name || 'Atividade'; });
     Object.keys(input.names || {}).forEach(function (k) { names[k] = input.names[k]; });
-    // O dia só vira "não estudou" depois de o app começar a medir (e do cadastro do aluno).
-    var measureFrom = coleta || dayKey(now);
-    if (studentStart && dayKey(studentStart) > measureFrom) measureFrom = dayKey(studentStart);
     var acts = (input.activities || []).map(function (a) { return { a: a, at: toDate(a.createdAt) }; }).filter(function (x) { return x.at; });
     var att = input.attendance || [];
     var ch = input.challenge || {};
     var start0 = mondayOf(now);
+    var todayK = dayKey(now);
+    // O dia só vira "não estudou" depois de o app começar a medir (e do cadastro do aluno).
+    var measureFrom = coleta || todayK;
+    if (studentStart && dayKey(studentStart) > measureFrom) measureFrom = dayKey(studentStart);
+    // Aluno novo: a medição dele começa no 1º sinal (aula, pós-aula ou atividade; sem isso, o 1º uso do app), não no
+    // dia do cadastro. Cadastrado numa sexta e com a 1ª aula na quarta seguinte, os dias de espera não são "dias sem
+    // estudar". Quem já tinha histórico antes da medição (aula, pós-aula ou atividade) segue medido desde o cadastro.
+    var before = false, firstClass = null, firstUse = null;
+    function seen(k, use) {
+      if (!k) return;
+      if (k < measureFrom) { if (!use) before = true; return; }
+      if (use) { if (!firstUse || k < firstUse) firstUse = k; } else if (!firstClass || k < firstClass) firstClass = k;
+    }
+    posts.forEach(function (x) { seen(dayKey(x.ref), false); });
+    acts.forEach(function (x) { seen(dayKey(x.at), false); });
+    att.forEach(function (x) { if (x && x.key && !x.excused) seen(x.key, false); });
+    usage.forEach(function (u) { if (u && u.date && Number((u.secs || {}).total || 0) > 0) seen(u.date, true); });
+    // (Sem data de cadastro não dá para saber se o aluno é novo: segue medido desde o início da coleta.)
+    if (!before && studentStart) measureFrom = firstClass || firstUse || dayKey(addDays(parseKey(measureFrom), CARENCIA_DIAS));
+    // Semana só vale (para snapshot e nota) se terminar depois de o aluno entrar.
+    var validFrom = before ? (studentStart ? dayKey(studentStart) : '0000-00-00') : measureFrom;
 
     function weekCalc(start, isCurrent) {
       var key = dayKey(start), end = addDays(start, 6), endExclusive = addDays(start, 7);
@@ -211,7 +241,19 @@
       }
       var elapsed = isCurrent ? ((now.getDay() + 6) % 7) + 1 : 7;
       var activeDays = days.slice(0, elapsed).filter(function (m) { return m >= cfg.minDia; }).length;
-      var hasTime = !!coleta && key >= coleta;
+      // Dias medidos da semana: do início da medição do aluno (firstIdx) até hoje, na semana atual, ou até domingo.
+      // Dias antes de o aluno começar não são "dias sem estudar". Hoje ainda corre: só entra na conta se já estudou.
+      var firstIdx = 7, lastIdx = elapsed - 1;
+      for (i = 0; i < 7; i++) if (dayKey(addDays(start, i)) >= measureFrom) { firstIdx = i; break; }
+      // A semana vale pelos dias medidos (do início da medição em diante), mesmo que comece antes dele (ex.: coleta numa quarta).
+      var hasTime = !!coleta && firstIdx <= lastIdx;
+      var nDias = 0, ativos = 0;
+      for (i = firstIdx; i <= lastIdx; i++) {
+        var on = days[i] >= cfg.minDia;
+        if (isCurrent && i === lastIdx) { if (on) { nDias++; ativos++; } }
+        else { nDias++; if (on) ativos++; }
+      }
+      var from0 = hasTime ? new Date(Math.max(start.getTime(), parseKey(measureFrom).getTime())) : start;
 
       // Meta de estudo da semana: dias que bateram a meta diária, minutos, e quais tipos de
       // estudo (ler pós-aula, vocabulário/verbos/chunks, exercícios) foram feitos.
@@ -230,50 +272,74 @@
       };
       goal.atingida = goal.hits >= goal.metaDias;
 
-      var posItems = !hasTime ? [] : posts.filter(function (x) { return x.ref >= start && x.ref < endExclusive; }).map(function (x) {
+      // `open` = item do dia de hoje (ou o Desafio da semana em andamento): ainda dá tempo de fazer, então não conta como
+      // "deixou de fazer". Só passa a valer quando o dia (ou a semana) vira.
+      var posItems = !hasTime ? [] : posts.filter(function (x) { return x.ref >= from0 && x.ref < endExclusive; }).map(function (x) {
         var pk = itemKey('pos', x.p.id), m = (itemSecs[pk] || 0) / 60;
-        return { id: x.p.id, name: x.p.title || 'Pós-aula ' + ddmm(x.ref), ref: x.ref, minutes: m, opens: itemOpens[pk] || 0, score: Math.min(1, m / cfg.minPos) };
+        return { id: x.p.id, name: x.p.title || 'Pós-aula ' + ddmm(x.ref), ref: x.ref, minutes: m, opens: itemOpens[pk] || 0, score: Math.min(1, m / cfg.minPos), open: isCurrent && dayKey(x.ref) === todayK };
       });
-      var atItems = acts.filter(function (x) { return x.at >= start && x.at < endExclusive; }).map(function (x) {
+      var atItems = acts.filter(function (x) { return x.at >= from0 && x.at < endExclusive; }).map(function (x) {
         var a = x.a, known = Number(a.exTotal) > 0;
         var n = known ? Number(a.exTotal) : 1;
         var done = known ? Math.min(n, Number(a.exFeitos || 0)) : (a.finalizada ? 1 : 0);
         var t = (itemSecs[itemKey('act', a.id)] || 0) / 60, exp = done * cfg.secEx / 60;
         var entrega = done / n;
         var fator = !hasTime ? 1 : (done ? Math.min(1, t / exp) : 0);
-        return { id: a.id, name: a.name || 'Atividade', n: n, done: done, time: t, exp: exp, entrega: entrega, fator: fator, score: entrega * fator };
+        return { id: a.id, name: a.name || 'Atividade', n: n, done: done, time: t, exp: exp, entrega: entrega, fator: fator, score: entrega * fator, open: isCurrent && dayKey(x.at) === todayK };
       });
-      var nTot = sum(atItems.map(function (i) { return i.n; }));
+      function atPart(list) { var nn = sum(list.map(function (i) { return i.n; })); return nn ? sum(list.map(function (i) { return i.n * i.score; })) / nn : null; }
+      function posPart(list) { return list.length ? mean(list.map(function (i) { return i.score; })) : null; }
+      // Ao vivo, mostra o que o aluno já fez hoje (item aberto com progresso) e, na nota, só o que já venceu.
+      var atVisto = atItems.filter(function (i) { return !i.open || i.done > 0; }), atVence = atItems.filter(function (i) { return !i.open; });
+      var posVisto = posItems.filter(function (i) { return !i.open || i.minutes > 0; }), posVence = posItems.filter(function (i) { return !i.open; });
 
-      var pts = att.filter(function (x) { return x.key >= key && x.key <= dayKey(end) && !x.excused; });
+      var fromKey = hasTime && measureFrom > key ? measureFrom : key;
+      var pts = att.filter(function (x) { return x.key >= fromKey && x.key <= dayKey(end) && !x.excused; });
       var aulas = [pts.length, pts.filter(function (x) { return x.present; }).length];
 
       var avail = 0, doneParts = 0;
-      if (ch.enabled !== false && (ch.weeks || []).indexOf(key) >= 0 && (!studentStart || end >= studentStart)) {
+      if (ch.enabled !== false && (ch.weeks || []).indexOf(key) >= 0 && dayKey(end) >= validFrom) {
         avail = 2;
         doneParts = [1, 2].filter(function (n) { return (ch.completed || []).indexOf(key + '-part-' + n) >= 0; }).length;
       }
 
-      var parts = {
-        C: hasTime ? Math.min(1, activeDays / cfg.metaDias) : null,
-        At: nTot ? sum(atItems.map(function (i) { return i.n * i.score; })) / nTot : null,
-        Pos: posItems.length ? mean(posItems.map(function (i) { return i.score; })) : null,
-        Aula: aulas[0] ? aulas[1] / aulas[0] : null,
-        Des: avail ? doneParts / avail : null
-      };
+      // Constância proporcional aos dias medidos: 5 dias de meta por semana de 7, então 3 dias medidos pedem ~2,1 dias.
+      // Semana inteira (7 dias medidos) dá a conta de sempre: dias ativos ÷ meta de dias.
+      var cC = null;
+      if (hasTime && nDias) {
+        cC = Math.min(1, ativos / (cfg.metaDias * nDias / 7));
+        if (isCurrent) {
+          // Semana em andamento: um dia em branco no começo ainda dá para compensar (a meta é 5 dias por semana, não "todo dia").
+          // No começo da semana pesa também a chance de ainda bater a meta com os dias que restam (amanhã em diante e hoje, se ainda
+          // não estudou); a cada dia que passa a conta fica mais exata, e no domingo vale só o ritmo real.
+          var resta = (7 - elapsed) + (days[lastIdx] >= cfg.minDia ? 0 : 1);
+          var possivel = Math.min(1, (ativos + resta) / (cfg.metaDias * (7 - firstIdx) / 7));
+          cC = cC * (elapsed / 7) + possivel * (1 - elapsed / 7);
+        }
+      }
+      var aulaP = aulas[0] ? aulas[1] / aulas[0] : null;
+      var partsVence = { C: cC, At: atPart(atVence), Pos: posPart(posVence), Aula: aulaP, Des: isCurrent ? null : (avail ? doneParts / avail : null) };
+      var parts = !isCurrent ? partsVence : { C: cC, At: atPart(atVisto), Pos: posPart(posVisto), Aula: aulaP, Des: avail && doneParts ? doneParts / avail : null };
       var corr = 0, wrong = 0;
       acts.forEach(function (x) {
         var when = toDate(x.a.correctedAt) || x.at;
         if (!(x.a.correct != null || x.a.wrong != null) || when < start || when >= endExclusive) return;
         corr += Number(x.a.correct || 0); wrong += Number(x.a.wrong || 0);
       });
+      // Semana em andamento: a nota nunca cai por algo feito hoje. Vale a maior entre "com o que já fez hoje" e "só o que já
+      // venceu", e os pilares mostrados são os do conjunto que deu a nota (assim a conta da tela fecha com o número).
+      var tVisto = combine(parts, cfg), tVence = combine(partsVence, cfg);
+      var usaVence = isCurrent && tVence != null && (tVisto == null || tVence >= tVisto);
+      var total = usaVence ? tVence : tVisto;
+      if (usaVence) parts = partsVence;
       return {
         key: key, start: start, label: ddmm(start) + ' – ' + ddmm(end), short: ddmm(start),
         partial: !!isCurrent, elapsed: elapsed, days: days, dp: dp, da: da, dd: dd, dv: dv, df: df, goal: goal,
         activeDays: activeDays, hasTime: hasTime, weekMin: sum(days),
+        firstIdx: Math.min(firstIdx, 7), span: Math.max(0, lastIdx - firstIdx + 1), nDias: nDias, ativos: ativos,
         posItems: posItems, atItems: atItems, aulas: aulas, des: [avail, doneParts],
-        parts: parts, total: combine(parts, cfg),
-        valid: !isCurrent && (!studentStart || end >= studentStart),
+        parts: parts, total: total,
+        valid: !isCurrent && dayKey(end) >= validFrom,
         acc: (corr + wrong) ? Math.round(corr / (corr + wrong) * 100) : null
       };
     }
@@ -282,17 +348,29 @@
     var cur = weeks[3];
     // Só semanas com tempo medido entram na nota: sem constância, quem estuda num dia só
     // pareceria melhor do que é, e as semanas ficariam incomparáveis entre si.
+    // `used` = semanas FECHADAS (gráfico, tendência e detalhe do professor). A nota usa também a semana de hoje (`ser`).
     var used = weeks.slice(0, 3).filter(function (w) { return w.valid && w.hasTime && w.total != null; });
+    // Pesos que escorregam dia a dia: a semana de hoje ganha 3/7 de peso por dia que passa e a mais antiga perde 1/7.
+    // Na segunda (1/7 da semana) ficam ≈ 0,86 · 1,86 · 2,86 · 0,43 e no domingo 0 · 1 · 2 · 3, que vira 1 · 2 · 3 na
+    // semana seguinte. Assim a nota não dá salto quando a semana vira, e o dia de hoje já mexe nela.
+    var fr = cur.elapsed / 7;
+    var wts = [1 - fr, 2 - fr, 3 - fr, 3 * fr];
+    var ser = [];
+    weeks.forEach(function (w, i) {
+      var vale = i < 3 ? (w.valid && w.hasTime && w.total != null) : (w.hasTime && w.total != null && w.nDias > 0);
+      if (vale) ser.push({ w: w, wt: wts[i] });
+    });
+    var temNota = ser.length > 0 && sum(ser.map(function (s) { return s.w.nDias; })) >= cfg.minDiasNota;
     var res = {
       cfg: cfg, weeks: weeks, cur: cur, used: used, now: now, coleta: coleta,
       daily: daily, names: names, measureFrom: measureFrom,
-      status: used.length ? 'ok' : 'coletando',
+      status: temNota ? 'ok' : 'coletando',
       opensTotal: opensTotal, hasUsage: usage.length > 0,
-      timeReady: used.some(function (w) { return w.hasTime; })
+      timeReady: ser.some(function (s) { return s.w.hasTime; })
     };
     // Números "até agora" por pilar (valem mesmo antes da primeira nota): explicam, na tela do aluno, o que
-    // já está sendo olhado e por que um pilar não se aplica. Semanas anteriores ao cadastro ficam de fora.
-    var vw = weeks.filter(function (w) { return !studentStart || addDays(w.start, 6) >= studentStart; });
+    // já está sendo olhado e por que um pilar não se aplica. Semanas anteriores à entrada do aluno ficam de fora.
+    var vw = weeks.filter(function (w) { return dayKey(addDays(w.start, 6)) >= validFrom; });
     var atAll = [].concat.apply([], vw.map(function (w) { return w.atItems; }));
     var posRead = [].concat.apply([], vw.map(function (w) { return w.posItems; })).filter(function (i) { return i.minutes > 0; });
     res.live = {
@@ -323,43 +401,46 @@
     res.evo = evoSeries(res, posts, dur);
     res.metas = metas;
     res.desEnabled = ch.enabled !== false;
-    // Só entram semanas inteiras (segunda a domingo) com o tempo medido: a 1ª é a segunda depois do início da
-    // coleta, e a nota aparece na segunda seguinte.
-    if (coleta) {
-      var m0 = mondayOf(parseKey(coleta));
-      if (dayKey(m0) < coleta) m0 = addDays(m0, 7);
-      res.firstNota = dayKey(addDays(m0, 7));
-    } else res.firstNota = null;
-    if (!used.length) { res.pm = {}; res.totals = []; res.index = null; res.band = null; res.trend = null; return res; }
+    // A nota aparece quando houver `minDiasNota` dias medidos (a partir do 1º sinal do aluno); depois disso ela
+    // se atualiza a cada abertura do app e vira de dia à meia-noite.
+    res.firstNota = coleta ? dayKey(addDays(parseKey(measureFrom), cfg.minDiasNota)) : null;
+    if (!temNota) { res.pm = {}; res.totals = []; res.index = null; res.band = null; res.trend = null; res.agora = null; return res; }
 
     var totals = used.map(function (w) { return w.total; });
-    var wts = used.map(function (_, i) { return 3 - (used.length - 1 - i); });
     res.totals = totals;
-    res.index = Math.round(sum(totals.map(function (t, i) { return t * wts[i]; })) / sum(wts));
+    var wsum = sum(ser.map(function (s) { return s.wt; }));
+    res.index = Math.round(wsum > 0 ? sum(ser.map(function (s) { return s.wt * s.w.total; })) / wsum : mean(ser.map(function (s) { return s.w.total; })));
     res.band = band(res.index);
     res.trend = used.length >= 2 ? totals[totals.length - 1] - totals[totals.length - 2] : null;
+    // A semana de hoje já entra na nota (peso `agora.peso`); fora dela, `agora` é null.
+    res.agora = ser.some(function (s) { return s.w === cur; }) ? { total: cur.total, nDias: cur.nDias, ativos: cur.ativos, peso: wts[3] } : null;
+    // Tudo o que descreve a nota (pilares, médias, frases) olha as mesmas semanas da nota: as fechadas e a de hoje.
+    var sw = ser.map(function (s) { return s.w; });
     res.pm = {};
     KEYS.forEach(function (k) {
-      var v = used.map(function (w) { return w.parts[k]; }).filter(function (x) { return x != null; });
+      var v = sw.map(function (w) { return w.parts[k]; }).filter(function (x) { return x != null; });
       res.pm[k] = v.length ? mean(v) : null;
     });
-    var timed = used.filter(function (w) { return w.hasTime; });
-    res.avgDays = timed.length ? mean(timed.map(function (w) { return w.activeDays; })) : null;
-    var posTot = [].concat.apply([], used.map(function (w) { return w.posItems.map(function (i) { return i.minutes; }); }));
+    // Item de hoje ainda sem nada feito não entra nas médias: ainda não venceu.
+    var seenPos = function (i) { return !i.open || i.minutes > 0; }, seenAt = function (i) { return !i.open || i.done > 0; };
+    var diasMed = sum(sw.map(function (w) { return w.nDias; }));
+    res.avgDays = diasMed ? sum(sw.map(function (w) { return w.ativos; })) / diasMed * 7 : null;
+    var posTot = [].concat.apply([], sw.map(function (w) { return w.posItems.filter(seenPos).map(function (i) { return i.minutes; }); }));
     res.avgPos = posTot.length ? mean(posTot) : null;
-    var at = [].concat.apply([], used.map(function (w) { return w.atItems; }));
+    var at = [].concat.apply([], sw.map(function (w) { return w.atItems.filter(seenAt); }));
     var nAll = sum(at.map(function (i) { return i.n; })), doneAll = sum(at.map(function (i) { return i.done; }));
     res.entrega = nAll ? doneAll / nAll : null;
-    var atT = [].concat.apply([], timed.map(function (w) { return w.atItems; }));
-    res.timeAll = sum(atT.map(function (i) { return i.time; }));
-    res.expAll = sum(atT.map(function (i) { return i.exp; }));
-    res.fator = res.expAll ? Math.min(1, res.timeAll / res.expAll) : (sum(atT.map(function (i) { return i.done; })) ? 1 : null);
-    var shares = timed.filter(function (w) { return w.weekMin > 0; }).map(function (w) { return Math.max.apply(null, w.days) / w.weekMin; });
+    res.timeAll = sum(at.map(function (i) { return i.time; }));
+    res.expAll = sum(at.map(function (i) { return i.exp; }));
+    res.fator = res.expAll ? Math.min(1, res.timeAll / res.expAll) : (sum(at.map(function (i) { return i.done; })) ? 1 : null);
+    var shares = used.filter(function (w) { return w.weekMin > 0; }).map(function (w) { return Math.max.apply(null, w.days) / w.weekMin; });
     res.topShare = shares.length ? mean(shares) : 0;
-    res.aulasPrev = sum(used.map(function (w) { return w.aulas[0]; }));
-    res.aulasPres = sum(used.map(function (w) { return w.aulas[1]; }));
-    res.desDisp = sum(used.map(function (w) { return w.des[0]; }));
-    res.desFeitas = sum(used.map(function (w) { return w.des[1]; }));
+    res.aulasPrev = sum(sw.map(function (w) { return w.aulas[0]; }));
+    res.aulasPres = sum(sw.map(function (w) { return w.aulas[1]; }));
+    // O Desafio da semana em andamento só entra na contagem depois de a 1ª parte feita (a semana ainda corre).
+    var desOf = function (w) { return w.partial && !w.des[1] ? [0, 0] : w.des; };
+    res.desDisp = sum(sw.map(function (w) { return desOf(w)[0]; }));
+    res.desFeitas = sum(sw.map(function (w) { return desOf(w)[1]; }));
     res.acc = used.map(function (w) { return w.acc; });
     res.accLast = (function () { for (var i = res.acc.length - 1; i >= 0; i--) if (res.acc[i] != null) return res.acc[i]; return null; })();
     res.tags = tagsOf(res);
@@ -407,7 +488,7 @@
   };
   function suggestComment(c, firstName) {
     var nm = firstName || 'Oi', cfg = c.cfg;
-    if (c.status !== 'ok') return nm + ', bem-vindo(a) à sua adesão! Nas próximas semanas você vai ver aqui como está sua rotina de estudo: dias, pós-aulas, atividades e Desafio. Comece com 10 minutinhos por dia.';
+    if (c.status !== 'ok') return nm + ', bem-vindo(a) à sua adesão! Em poucos dias você vai ver aqui como está sua rotina de estudo: dias, pós-aulas, atividades e Desafio. Comece com 10 minutinhos por dia.';
     var ks = KEYS.filter(function (k) { return c.pm[k] != null; });
     var worst = ks.slice().sort(function (a, b) { return c.pm[a] - c.pm[b]; })[0];
     if (c.avgDays != null && c.avgDays < 1) return nm + ', sentimos sua falta por aqui! Sem pressão: que tal começar com 10 minutinhos amanhã? Abra o pós-aula da última aula e leia com calma. Estou por aqui para ajudar.';
@@ -470,13 +551,16 @@
   // Média de minutos por dia da semana, nas semanas usadas e na atual (só dias já passados).
   function wdStats(c) {
     var ws = c.used.concat([c.cur]);
-    var avg = WD.map(function (_, d) {
-      return mean(ws.filter(function (w) { return !(w.partial && d >= w.elapsed); }).map(function (w) { return w.days[d]; }));
+    // Só entram os dias medidos: antes de o aluno começar e dias que ainda não chegaram não contam como "em branco".
+    var seen = WD.map(function (_, d) {
+      return ws.filter(function (w) { return d >= w.firstIdx && !(w.partial && d >= w.elapsed); }).map(function (w) { return w.days[d]; });
     });
+    var avg = seen.map(function (a) { return mean(a); });
     var max = Math.max.apply(null, avg), minDia = c.cfg.minDia;
     return {
       avg: avg, max: max, best: max >= minDia ? avg.indexOf(max) : -1,
-      blanks: avg.map(function (m, d) { return m < minDia ? d : -1; }).filter(function (d) { return d >= 0; })
+      known: seen.filter(function (a) { return a.length; }).length,
+      blanks: avg.map(function (m, d) { return seen[d].length && m < minDia ? d : -1; }).filter(function (d) { return d >= 0; })
     };
   }
   function changes(c) {
@@ -589,7 +673,10 @@
     var present = {};
     KEYS.forEach(function (k) { present[k] = c.pm[k] != null; });
     var since = c.coleta ? ddmm(parseKey(c.coleta)) : '';
-    var wait = 'Entra na nota quando a primeira semana inteira medida fechar' + (c.firstNota ? ' (a nota aparece em ' + ddmm(parseKey(c.firstNota)) + ')' : '') + '.';
+    // Antes da 1ª nota: espera os primeiros dias medidos. Com a nota já rodando, um ponto sem nada fechado ainda (ex.: pós-aula
+    // de hoje, Desafio da semana) entra assim que o dia (ou a semana) virar.
+    var wait = ok ? 'Ainda não há nada vencido neste ponto. Ele entra na nota quando o dia (ou a semana, no Desafio) virar.'
+      : 'A nota aparece depois de ' + cfg.minDiasNota + ' dias medidos' + (c.firstNota ? ' (a partir de ' + ddmm(parseKey(c.firstNota)) + ')' : '') + '. Depois disso ela se atualiza na hora.';
     // state: 'val' entra na nota · 'coll' ainda coletando · 'na' não se aplica a este aluno (e o motivo aparece em `why`)
     function row(k, state, status, why, goal) {
       var v = c.pm[k];
@@ -605,7 +692,7 @@
     // Constância
     h += c.pm.C != null
       ? row('C', 'val', 'Você estuda em média ' + (c.avgDays != null ? num1(c.avgDays) : '—') + ' dias por semana', '', gC)
-      : row('C', 'coll', 'Esta semana: ' + c.cur.activeDays + ' de ' + c.cur.elapsed + (c.cur.elapsed === 1 ? ' dia estudado' : ' dias estudados'), 'O app mede os seus dias desde ' + since + '. ' + wait, gC);
+      : row('C', 'coll', 'Esta semana: ' + c.cur.activeDays + ' de ' + Math.max(c.cur.span, c.cur.activeDays) + (c.cur.span === 1 ? ' dia estudado' : ' dias estudados'), 'O app mede os seus dias desde ' + since + '. ' + wait, gC);
     // Atividades
     if (c.pm.At != null) {
       var stAt = c.entrega == null ? 'Sem atividades enviadas' : c.entrega < .7 ? 'Você fez ' + pct(c.entrega) + '% dos exercícios enviados'
@@ -627,6 +714,13 @@
     else if (L.desDisp > 0) h += row('Des', 'coll', 'Você fez ' + L.desFeitas + ' de ' + L.desDisp + ' partes do Desafio nas últimas semanas', wait, 'participar do Desafio da semana');
     else h += row('Des', 'na', 'Nenhum Desafio foi publicado para você nas últimas semanas', 'Por isso este ponto não entra na sua nota.', 'participar do Desafio da semana');
     return h;
+  }
+
+  // Texto do estado "ainda sem nota": a nota espera os primeiros dias medidos e depois anda sozinha.
+  function semNotaTxt(c, curto) {
+    var n = c.cfg.minDiasNota;
+    if (curto) return 'Sua nota aparece depois de ' + n + ' dias de estudo medidos. Toque para ver o que conta e como seus dias estão indo.';
+    return 'A nota aparece depois de ' + n + ' dias medidos' + (c.firstNota && c.coleta ? ', a partir de ' + ddmm(parseKey(c.firstNota)) : '') + '. Daí em diante ela se atualiza na hora: sobe quando você estuda e desce quando um dia passa sem estudo.';
   }
 
   /* c = resultado de compute(); o = { firstName, recado, ribbon, ribbonOpen, stats } */
@@ -658,16 +752,16 @@
       h += '<div class="cza-pc cza-herocard"' + TOG + '><div class="cza-hero">' + ring(c.index, 96, 11, b.soft) + '<div class="cza-t"><b>' + msg[0] + '</b>' + msg[1] + dt + '</div></div>' + (coll ? HINT : chipsHtml) + '</div>';
       h += '<div class="cza-more"' + (coll ? ' hidden' : '') + '>' + (coll ? SUB + chipsHtml : '');
     } else {
-      h += '<div class="cza-pc cza-herocard"' + TOG + '><div class="cza-hero"><div class="cza-t"><b>Estamos conhecendo o seu ritmo</b>' + (coll ? 'Sua nota aparece depois da primeira semana completa (de segunda a domingo). Toque para ver o que conta e como seus dias estão indo.' : 'A nota usa semanas inteiras (segunda a domingo) com o tempo medido.' + (c.firstNota && c.coleta ? ' A medição começou em ' + ddmm(parseKey(c.coleta)) + ', então a primeira nota aparece em ' + ddmm(parseKey(c.firstNota)) + '.' : '') + ' Abaixo você vê como estão os seus dias e por que cada ponto está assim.') + '</div></div>' + (coll ? HINT : '') + '</div>';
+      h += '<div class="cza-pc cza-herocard"' + TOG + '><div class="cza-hero"><div class="cza-t"><b>Estamos conhecendo o seu ritmo</b>' + (coll ? semNotaTxt(c, true) : semNotaTxt(c, false) + ' Abaixo você vê como estão os seus dias e por que cada ponto está assim.') + '</div></div>' + (coll ? HINT : '') + '</div>';
       h += '<div class="cza-more"' + (coll ? ' hidden' : '') + '>' + (coll ? SUB : '');
     }
     h += '<div class="cza-pc cza-recado"><div class="cza-by">💬 Recado do seu professor</div><p>' + esc(recado) + '</p></div>';
 
     // semana atual (na página de adesão a semana e o calendário já aparecem acima)
     if (!o.page) h += '<div class="cza-pc"><h4>Sua semana</h4><div class="cza-hsub">Segunda a domingo. A bolinha verde é um dia estudado.</div><div class="cza-days">' + cur.days.map(function (m, i) {
-      var fut = i >= cur.elapsed, on = !fut && m >= cfg.minDia;
+      var fut = i >= cur.elapsed || (i < cur.firstIdx && m === 0), on = !fut && m >= cfg.minDia;
       return '<div class="cza-dd ' + (fut ? 'fut' : on ? 'on' : 'off') + (i === todayIdx ? ' today' : '') + '"><span>' + (on ? '✓' : '') + '</span>' + WD1[i] + '</div>';
-    }).join('') + '</div><div class="cza-cap">Você estudou <b>' + cur.activeDays + ' de ' + cur.elapsed + ' dias</b> até agora. A meta é ' + cfg.metaDias + ' dias por semana.</div></div>';
+    }).join('') + '</div><div class="cza-cap">Você estudou <b>' + cur.activeDays + ' de ' + Math.max(cur.span, cur.activeDays) + ' dias</b> até agora. A meta é ' + cfg.metaDias + ' dias por semana.</div></div>';
 
     // mapa de 4 semanas
     var hSave = h;
@@ -675,7 +769,7 @@
     c.weeks.forEach(function (w, wi) {
       h += '<div class="cza-sm-row"><span class="cza-wl">' + w.short + '</span>';
       w.days.forEach(function (m, i) {
-        var fut = w.partial && i >= w.elapsed;
+        var fut = (w.partial && i >= w.elapsed) || (i < w.firstIdx && m === 0);
         var lv = m < cfg.minDia ? 0 : m < 10 ? 1 : m < 25 ? 2 : m < 45 ? 3 : 4;
         h += '<button type="button" class="cza-cell ' + (fut ? 'fut' : lv ? 'g' + lv : m > 0 ? '' : 'z') + '" data-cza-w="' + wi + '" data-cza-d="' + i + '" ' + (fut ? 'disabled' : '') + ' aria-label="' + WD[i] + ' ' + ddmm(addDays(w.start, i)) + '">' + (fut ? '' : m >= 1 ? Math.round(m) : m > 0 ? '<1' : '·') + '</button>';
       });
@@ -690,7 +784,7 @@
           + '<i class="' + (i === ws.best ? 'best' : m < cfg.minDia ? 'zero' : '') + '" style="height:' + (m < cfg.minDia ? 10 : Math.max(8, m / ws.max * 74)) + 'px"></i>' + WD1[i] + '</div>';
       }).join('') + '</div>'
       + '<div class="cza-cap">' + (ws.best >= 0 ? 'Seu dia mais forte é <b>' + WDF[ws.best] + '</b>. ' : '')
-      + (ws.blanks.length ? 'Dias em branco: <b>' + listPt(ws.blanks.map(function (i) { return WDF[i]; })) + '</b>. Que tal escolher um deles para 10 minutinhos?' : 'Você estuda em todos os dias da semana. 👏') + '</div></div>';
+      + (ws.blanks.length ? 'Dias em branco: <b>' + listPt(ws.blanks.map(function (i) { return WDF[i]; })) + '</b>. Que tal escolher um deles para 10 minutinhos?' : ws.known === 7 ? 'Você estuda em todos os dias da semana. 👏' : '') + '</div></div>';
 
     // o que conta
     h += '<div class="cza-pc"><h4>O que conta na sua adesão</h4><div class="cza-hsub">São 5 pontos. Cada um vale uma parte da nota, e a barra mostra como você está.</div>' + ruleRowsHtml(c) + '</div>';
@@ -1262,7 +1356,7 @@
           + '<i class="' + (i === ws.best ? 'best' : m < cfg.minDia ? 'zero' : '') + '" style="height:' + (m < cfg.minDia ? 10 : Math.max(8, m / ws.max * 74)) + 'px"></i>' + WD1[i] + '</div>';
       }).join('') + '</div>'
       + '<div class="cza-cap">' + (ws.best >= 0 ? 'Seu dia mais forte é <b>' + WDF[ws.best] + '</b>. ' : '')
-      + (ws.blanks.length ? 'Dias em branco: <b>' + listPt(ws.blanks.map(function (i) { return WDF[i]; })) + '</b>. Que tal escolher um deles para 10 minutinhos?' : 'Você estuda em todos os dias da semana. 👏') + '</div>';
+      + (ws.blanks.length ? 'Dias em branco: <b>' + listPt(ws.blanks.map(function (i) { return WDF[i]; })) + '</b>. Que tal escolher um deles para 10 minutinhos?' : ws.known === 7 ? 'Você estuda em todos os dias da semana. 👏' : '') + '</div>';
   }
 
   // Minha nota: a nota e a faixa, o recado do professor, o que mudou e o próximo passo.
@@ -1280,8 +1374,7 @@
       h += '<div class="cza-hero">' + ring(c.index, 92, 11, b.soft) + '<div class="cza-t"><b>' + msg[0] + '</b>' + msg[1] + dt + '</div></div>'
         + (chips.length ? '<div class="cza-chs">' + chips.map(function (x) { return '<span class="' + x.c + '">' + esc(x.t) + '</span>'; }).join('') + '</div>' : '');
     } else {
-      h += '<div class="cza-hero"><div class="cza-t"><b>Estamos conhecendo o seu ritmo</b>A nota usa semanas inteiras (segunda a domingo) com o tempo medido.'
-        + (c.firstNota && c.coleta ? ' A medição começou em ' + ddmm(parseKey(c.coleta)) + ', então a primeira nota aparece em ' + ddmm(parseKey(c.firstNota)) + '.' : '')
+      h += '<div class="cza-hero"><div class="cza-t"><b>Estamos conhecendo o seu ritmo</b>' + semNotaTxt(c, false)
         + ' Os seus dias e o que conta estão nas outras seções e em “Como essa área funciona”.</div></div>';
     }
     h += '<div class="cza-pc cza-recado"><div class="cza-by">💬 Recado do seu professor</div><p>' + esc(o.recado || suggestComment(c, o.firstName)) + '</p></div>';
@@ -1313,7 +1406,8 @@
       + '<div class="cza-grule"><span style="font-size:18px">⏱️</span><div><b>Como o tempo é contado.</b> O relógio anda enquanto você usa o app: tocando, rolando a página, digitando, ouvindo ou gravando áudio. Pensar um pouco também vale: pausas de até <b>' + limiteTxt(cfg.limiteSeg) + '</b> contam' + (cfg.limiteSeg < LEITURA_SEG ? ' (lendo o pós-aula, até <b>' + limiteTxt(LEITURA_SEG) + '</b>)' : '') + '. Passou disso, o app entende que você saiu e não conta.</div></div>'
       + '<div class="cza-sect" style="margin-top:16px">Os 5 pontos da sua adesão</div><div class="cza-lead">Cada ponto vale uma parte da nota. A barra mostra como você está e a meta diz o que fazer.</div>' + ruleRowsHtml(c)
       + '<div class="cza-sect" style="margin-top:16px">Como a nota é calculada</div>'
-      + '<p class="cza-cap">A nota vai de 0 a 100 e é feita toda semana (segunda a domingo). Constância vale <b>' + wp('C') + '%</b>, Atividades <b>' + wp('At') + '%</b>, Pós-aula <b>' + wp('Pos') + '%</b>, Aulas <b>' + wp('Aula') + '%</b> e Desafio <b>' + wp('Des') + '%</b>. Vale a média das últimas 3 semanas fechadas, e a mais recente pesa mais. Se um ponto não se aplica a você, os outros ganham o peso dele.</p>'
+      + '<p class="cza-cap">A nota vai de 0 a 100 e é calculada na hora, toda vez que você abre o app. Constância vale <b>' + wp('C') + '%</b>, Atividades <b>' + wp('At') + '%</b>, Pós-aula <b>' + wp('Pos') + '%</b>, Aulas <b>' + wp('Aula') + '%</b> e Desafio <b>' + wp('Des') + '%</b>. Vale a média das últimas 3 semanas e da semana de hoje, e o mais recente pesa mais. Se um ponto não se aplica a você, os outros ganham o peso dele.</p>'
+      + '<p class="cza-cap">O dia de hoje ainda está aberto: o que você faz hoje só ajuda a nota, e o que ficar por fazer passa a contar quando o dia virar, à meia-noite. O Desafio da semana conta quando a semana fecha, no domingo. A constância da semana de hoje é mais tranquila no começo (um dia de descanso ainda dá para compensar) e vai ficando exata até domingo. Nos seus primeiros dias, a contagem começa na sua primeira aula (ou no primeiro uso do app) e a nota aparece depois de ' + cfg.minDiasNota + ' dias medidos.</p>'
       + '<div class="cza-sect" style="margin-top:16px">Suas metas</div>'
       + '<p class="cza-cap">Você escolhe no <b>Perfil</b> quantos minutos por dia, e quantas horas por semana e por mês quer estudar. A meta do dia vale só para o app. As da semana e do mês somam as aulas. As metas não mexem na nota.</p>'
       + '<div class="cza-sect" style="margin-top:16px">A linha de meta do gráfico</div>'
@@ -1347,9 +1441,9 @@
     h += accHtml('nota', '🏅', '#FEF3C7', 'Minha nota',
       ok ? 'Adesão <em style="color:' + c.band.color + '">' + c.index + '</em> · ' + c.band.label : 'Coletando' + (c.firstNota ? ' · a 1ª nota aparece em ' + ddmm(parseKey(c.firstNota)) : ''),
       notaBodyHtml(c, o), opened.nota);
-    h += accHtml('ace', '🎯', '#EDE9FE', 'Adesão e acertos', ok && c.accLast != null ? 'Acertos <em>' + c.accLast + '%</em> na última semana' : 'Aparece com 2 semanas de nota',
+    h += accHtml('ace', '🎯', '#EDE9FE', 'Adesão e acertos', ok && c.accLast != null ? 'Acertos <em>' + c.accLast + '%</em> na última semana' : 'Aparece com 2 semanas fechadas',
       ok ? '<div class="cza-hsub">Mais prática, mais acertos. Veja se isso acontece com você.</div>' + lineChartHtml(c) + '<div class="cza-divider"></div>' + groupBarsHtml(c, o.stats)
-        : '<div class="cza-cap">O gráfico de adesão e acertos aparece quando houver pelo menos 2 semanas de nota.</div>', opened.ace);
+        : '<div class="cza-cap">O gráfico de adesão e acertos aparece quando houver pelo menos 2 semanas fechadas.</div>', opened.ace);
     h += accHtml('como', '❓', '#F1F5F9', 'Como essa área funciona', 'O que conta, quanto tempo e o que fazer', howHtml(c), opened.como);
     return h + '</div>';
   }

@@ -25,7 +25,7 @@ export function initAdesaoAdmin(ctx) {
     cfg: A.cfgOf({}), dirty: false,
     items: [],                  // [{ id, s, c }]
     stats: null,
-    tab: 'turma', sub: 'prof', view: 'lista', sort: 'asc', sel: null, selWeek: 2,
+    tab: 'turma', sub: 'prof', view: 'lista', sort: 'asc', sel: null, selWeek: 99,
     drawer: false, saving: '',
   };
   const root = () => document.getElementById('adesao-root');
@@ -377,7 +377,7 @@ export function initAdesaoAdmin(ctx) {
     c.weeks.forEach(w => {
       h += '<div class="wk">';
       w.days.forEach((m, d) => {
-        const fut = w.partial && d >= w.elapsed;
+        const fut = (w.partial && d >= w.elapsed) || (d < w.firstIdx && m === 0);
         h += '<i class="' + (fut ? 'fut' : 'l' + heat(m, c.cfg)) + '" title="' + WD[d] + ' ' + U.ddmm(U.addDays(w.start, d)) + (fut ? '' : ' — ' + fm(m)) + '"></i>';
       });
       h += '</div>';
@@ -433,14 +433,17 @@ export function initAdesaoAdmin(ctx) {
     } else h += scatterHtml();
     const cfg = S.cfg;
     h += '<details class="czad-how"><summary>Como o número é calculado</summary><ul>'
-      + '<li>A adesão de cada semana (seg–dom) é a média ponderada de 5 pilares. A semana em andamento não entra na nota.</li>'
+      + '<li>A adesão de cada semana (seg–dom) é a média ponderada de 5 pilares. A nota é recalculada na hora: entram as últimas semanas fechadas e a semana de hoje (até agora).</li>'
+      + '<li><b>Hoje ainda está aberto:</b> o que o aluno faz hoje só ajuda a nota (ela não cai por algo feito hoje). O que ficou por fazer (pós-aula, atividade, aula) passa a contar quando o dia vira, à meia-noite; o Desafio, quando a semana fecha. Por isso a nota sobe durante o dia e só cai na virada.</li>'
+      + '<li><b>Constância da semana em andamento:</b> a meta é ' + cfg.metaDias + ' dias por semana, não "todo dia", então um dia em branco no começo ainda dá para compensar. A conta mistura o ritmo real (dias estudados ÷ dias esperados até agora) com a chance de ainda bater a meta nos dias que restam; a cada dia que passa pesa mais o ritmo real, e no domingo vale só ele (a conta de uma semana fechada). Quem estuda de segunda a sexta e descansa no fim de semana não leva tombo.</li>'
+      + '<li><b>Início da medição:</b> cada aluno é medido a partir da primeira aula, pós-aula ou atividade dele (ou do primeiro uso do app), e não do dia do cadastro. Dias antes disso não contam como "sem estudar", e a constância da primeira semana é proporcional aos dias medidos. A nota aparece depois de ' + cfg.minDiasNota + ' dias medidos.</li>'
       + '<li><b>Pesos agora:</b> ' + KEYS.map(k => PIL[k].name + ' ' + cfg.w[k]).join(' · ') + '. Pilar que não se aplica (ex.: aluno sem aulas) sai da conta e os pesos se redistribuem.</li>'
       + '<li><b>Pós-aula:</b> soma o tempo de todas as aberturas. Meta: ' + cfg.minPos + ' min por pós-aula. Abrir e fechar não conta.</li>'
       + '<li><b>Atividades:</b> % de exercícios feitos × fator de tempo (tempo real ÷ ' + cfg.secEx + ' s por exercício feito, no máximo 1). Responder rápido demais vale menos.</li>'
       + '<li><b>Constância:</b> dias com pelo menos ' + cfg.minDia + ' min ativos ÷ meta de ' + cfg.metaDias + ' dias.</li>'
       + '<li><b>Meta de estudo:</b> ' + num1(cfg.metaDiaMin) + ' min de estudo por dia, em ' + cfg.metaDiasEstudo + ' dias por semana. O aluno vê a meta de hoje na tela Início e o estudo da semana em Progresso, com o que compôs o tempo (ler pós-aula, chunks e verbos, exercícios). Início, perfil e avisos não contam como estudo.</li>'
       + '<li><b>Como o tempo é medido:</b> o intervalo entre dois movimentos do aluno (toque, clique, rolagem, digitar ou apagar) só conta se tiver até ' + cfg.limiteSeg + ' s. Se ele voltar a mexer dentro desse tempo, o intervalo inteiro entra; se não voltar, o intervalo todo é descartado, então app esquecido aberto não conta. Ler o pós-aula é a exceção: como a leitura é parada, a pausa aceita ali é de pelo menos ' + A.LEITURA_SEG + ' s. Gravar a fala e ouvir áudio contam o tempo todo. Aba oculta nunca conta.</li>'
-      + '<li>O número do aluno é a média das últimas 3 semanas fechadas, com mais peso para a mais recente (1·2·3). Faixas: Alta ≥ 85 · Média 65–84 · Baixa &lt; 65.</li>'
+      + '<li>O número do aluno é a média das últimas 3 semanas e da semana de hoje, com mais peso para a mais recente (1·2·3). O peso escorrega um pouco a cada dia (a semana de hoje ganha, a mais antiga perde), então a nota não dá salto na segunda-feira. Faixas: Alta ≥ 85 · Média 65–84 · Baixa &lt; 65.</li>'
       + '<li>Semanas anteriores à coleta (' + (S.coleta ? 'desde ' + brDate(S.coleta) : 'ainda não começou') + ') não têm tempo nem dias medidos: nelas só entram aulas, atividades e desafio.</li>'
       + '<li>O aluno vê estes mesmos critérios na tela dele (aba “Aluno” → “O que o aluno vê”).</li></ul></details>';
     return h;
@@ -485,6 +488,8 @@ export function initAdesaoAdmin(ctx) {
   function metaCardHtml(c) {
     const rows = c.weeks.map(w => {
       const g = w.goal;
+      // semana inteira antes de o aluno começar (1ª aula ou 1º uso): não é "não bateu"
+      if (w.firstIdx >= 7) return '<div class="czad-mrow"><span class="lab">' + w.label + '</span><span><em>antes de ele começar</em></span><span></span><span></span><span></span></div>';
       const tipos = A.STUDY_TYPES.map(t => '<span class="czad-chip ' + (g.tipos[t.k] ? 'ok' : 'neutral') + '" title="' + esc(t.name + ' (' + t.inclui + ')') + '">' + t.ic + ' ' + (g.tipos[t.k] ? '✓' : '—') + '</span>').join(' ');
       return '<div class="czad-mrow"><span class="lab">' + w.label + (w.partial ? ' <em>em andamento</em>' : '') + '</span>'
         + '<span><b>' + esc(A.goalDaysTxt(g)) + '</b></span><span>' + Math.round(g.minutos) + ' de ' + num1(g.metaSemanaMin) + ' min</span>'
@@ -501,15 +506,19 @@ export function initAdesaoAdmin(ctx) {
     if (ok) {
       h += '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><span class="czad-chip ' + bandChip(c) + '">Adesão ' + c.band.label.toLowerCase() + '</span>'
         + (c.trend == null ? '' : c.trend >= 3 ? '<span class="czad-chip ok">▲ +' + c.trend + ' vs semana anterior</span>' : c.trend <= -3 ? '<span class="czad-chip bad">▼ ' + c.trend + ' vs semana anterior</span>' : '<span class="czad-chip neutral">estável</span>') + '</div>'
-        + '<div class="czad-small czad-muted" style="margin-top:8px">Média das últimas ' + c.used.length + ' semana' + (c.used.length > 1 ? 's' : '') + ' fechada' + (c.used.length > 1 ? 's' : '') + '; a mais recente pesa mais.</div>';
+        + '<div class="czad-small czad-muted" style="margin-top:8px">Calculada na hora: ' + (c.used.length ? 'as últimas ' + c.used.length + ' semana' + (c.used.length > 1 ? 's' : '') + ' fechada' + (c.used.length > 1 ? 's' : '') + ' e ' : '') + 'a semana de hoje (até agora). O mais recente pesa mais.'
+        + (c.agora ? ' Medido desde ' + brDate(c.measureFrom) + '.' : '') + '</div>';
     } else {
-      h += '<div class="czad-small czad-muted" style="margin-top:8px">Ainda não há uma semana completa (seg–dom) com dados desde o início da coleta' + (S.coleta ? ' (' + brDate(S.coleta) + ')' : '') + '. A nota aparece sozinha na primeira segunda-feira depois disso.</div>';
+      h += '<div class="czad-small czad-muted" style="margin-top:8px">Ainda não há ' + c.cfg.minDiasNota + ' dias medidos' + (c.firstNota ? ' (a nota aparece a partir de ' + brDate(c.firstNota) + ')' : '') + '. A medição de cada aluno começa na primeira aula, pós-aula ou atividade dele. Depois disso a nota se atualiza sozinha, na hora.</div>';
     }
     h += '<button type="button" class="czad-btn pri" id="czad-viewAs" style="margin-top:10px">👁 Ver o que ' + esc(firstOf(s)) + ' vê</button></div>';
     if (ok) {
       h += '<div><div class="czad-small czad-muted" style="margin-bottom:6px;font-weight:700">Adesão por semana</div><div class="czad-evo">'
         + c.used.map(w => '<div><b>' + w.total + '</b><i style="height:' + Math.max(4, w.total * .78) + 'px;background:' + A.band(w.total).color + '"></i><span>' + w.short + '</span></div>').join('')
-        + '<div><b style="color:var(--muted)">…</b><i class="part" style="height:' + Math.max(4, c.cur.activeDays / cfg.metaDias * 60) + 'px"></i><span>agora</span></div></div></div>';
+        + (c.agora
+          ? '<div><b style="color:var(--muted)">' + c.agora.total + '</b><i class="part" style="height:' + Math.max(4, c.agora.total * .78) + 'px"></i><span>agora</span></div>'
+          : '<div><b style="color:var(--muted)">…</b><i class="part" style="height:' + Math.max(4, c.cur.activeDays / cfg.metaDias * 60) + 'px"></i><span>agora</span></div>')
+        + '</div></div>';
     }
     h += '</div></div>';
     if (ok) h += '<div class="czad-card czad-sec"><h3>O que chama atenção</h3><div class="sub">Frases geradas a partir dos números, para a conversa com o aluno. Só você vê esta versão técnica.</div><div class="czad-diag">'
@@ -523,17 +532,20 @@ export function initAdesaoAdmin(ctx) {
     c.weeks.forEach((w, wi) => {
       h += '<div class="czad-hm-row"><span class="lab">' + w.short + (w.partial ? '<br><span style="font-weight:600;color:var(--muted)">em andamento</span>' : '') + '</span>';
       w.days.forEach((m, d) => {
-        const fut = w.partial && d >= w.elapsed;
+        const fut = (w.partial && d >= w.elapsed) || (d < w.firstIdx && m === 0);
         h += '<button type="button" class="czad-cell ' + (fut ? 'fut' : 'l' + heat(m, cfg)) + (!fut && m > 0 && m < cfg.minDia ? ' low' : '') + '" data-w="' + wi + '" data-d="' + d + '" ' + (fut ? 'disabled' : '') + '>' + (fut ? '' : m >= 1 ? Math.round(m) : m > 0 ? '<1' : '') + '</button>';
       });
-      h += '<span class="sum"><b>' + w.activeDays + (w.partial ? ' de ' + w.elapsed : ' de ' + cfg.metaDias) + ' dias</b>' + (w.partial ? 'sem nota ainda' : (w.valid && w.total != null ? 'nota ' + w.total : 'sem nota')) + '</span></div>';
+      if (w.firstIdx >= 7) { h += '<span class="sum"><b>—</b>antes do início</span></div>'; return; }
+      h += '<span class="sum"><b>' + w.activeDays + (w.partial ? ' de ' + Math.max(w.span, w.activeDays) : ' de ' + cfg.metaDias) + ' dias</b>' + (w.partial ? (c.agora ? 'nota agora ' + w.total : 'sem nota ainda') : (w.valid && w.total != null ? 'nota ' + w.total : 'sem nota')) + '</span></div>';
     });
     h += '</div><div class="czad-dayinfo" id="czad-dayinfo">Toque num quadrado para ver onde o aluno gastou o tempo naquele dia.</div></div>';
     if (ok) {
-      const sw = Math.min(S.selWeek, c.used.length - 1);
-      const wc = c.used[sw];
-      h += '<div class="czad-card czad-sec"><div class="czad-ph"><div><h3>Os 5 pilares</h3><div class="sub">Detalhe de uma semana fechada.</div></div><div class="czad-pills" id="czad-wk">'
-        + c.used.map((w, i) => '<button type="button" data-w="' + i + '" class="' + (sw === i ? 'on' : '') + '">' + w.label + '</button>').join('') + '</div></div><div class="czad-pgrid">'
+      // Semanas fechadas da nota e a de hoje (quando já entra na nota). Abre na mais recente.
+      const pw = c.used.concat(c.agora ? [c.cur] : []);
+      const sw = Math.max(0, Math.min(S.selWeek, pw.length - 1));
+      const wc = pw[sw];
+      h += '<div class="czad-card czad-sec"><div class="czad-ph"><div><h3>Os 5 pilares</h3><div class="sub">Detalhe de uma semana da nota. A de hoje mostra o que já foi feito até agora.</div></div><div class="czad-pills" id="czad-wk">'
+        + pw.map((w, i) => '<button type="button" data-w="' + i + '" class="' + (sw === i ? 'on' : '') + '">' + w.label + (w.partial ? ' · hoje' : '') + '</button>').join('') + '</div></div><div class="czad-pgrid">'
         + pillarCards(wc, cfg) + '</div></div>';
       h += '<div class="czad-card czad-sec"><h3>Adesão e acertos, semana a semana</h3><div class="sub">É o mesmo gráfico que o aluno vê na tela dele.</div><div style="max-width:520px;margin-top:8px">' + A.lineChartHtml(c) + '</div></div>';
     }
@@ -546,16 +558,18 @@ export function initAdesaoAdmin(ctx) {
       + (val == null ? '' : '<div class="czad-big" style="color:' + pcol(val) + '">' + big + '</div><div class="czad-meter"><i style="width:' + Math.round(val * 100) + '%;background:' + pcol(val) + '"></i></div>');
     const na = (k, msg) => '<div class="czad-pcard"><div class="czad-ph"><b>' + PIL[k].ic + ' ' + PIL[k].name + '</b><span class="czad-chip neutral">não conta</span></div><div class="czad-na">' + msg + '</div></div>';
     let h = '';
-    if (p.C == null) h += na('C', 'Semana anterior à coleta: ainda não havia medição de dias e tempo.');
-    else h += '<div class="czad-pcard">' + head('C', p.C, pct(p.C) + '%') + '<div class="czad-small">' + w.activeDays + ' dias ativos (meta: ' + cfg.metaDias + ') · ' + fm(w.weekMin) + ' no total</div>'
+    if (p.C == null) h += na('C', w.hasTime ? 'Ainda sem dia medido nesta semana (hoje só entra quando o aluno já tiver estudado).' : 'Semana anterior à coleta: ainda não havia medição de dias e tempo.');
+    else h += '<div class="czad-pcard">' + head('C', p.C, pct(p.C) + '%') + '<div class="czad-small">'
+      + (w.partial ? w.ativos + ' de ' + Math.max(w.span, w.ativos) + ' dias medidos até agora (meta: ' + cfg.metaDias + ' por semana)' : w.nDias < 7 ? w.ativos + ' de ' + w.nDias + ' dias medidos (a semana começou a ser medida no meio; meta proporcional)' : w.activeDays + ' dias ativos (meta: ' + cfg.metaDias + ')')
+      + ' · ' + fm(w.weekMin) + ' no total</div>'
       + '<div class="czad-wdays">' + w.days.map((m, d) => '<div><i class="' + (m >= cfg.minDia ? 'on' : '') + '"></i>' + WD[d] + '</div>').join('') + '</div></div>';
-    if (p.At == null) h += '<div class="czad-pcard"><div class="czad-ph"><b>' + PIL.At.ic + ' Atividades</b></div><div class="czad-na">Sem atividades enviadas nesta semana.</div></div>';
+    if (p.At == null) h += '<div class="czad-pcard"><div class="czad-ph"><b>' + PIL.At.ic + ' Atividades</b></div><div class="czad-na">' + (w.atItems.length ? 'Atividade de hoje ainda sem nada feito: conta quando o dia virar.' : 'Sem atividades enviadas nesta semana.') + '</div></div>';
     else h += '<div class="czad-pcard">' + head('At', p.At, pct(p.At) + '%') + '<div class="czad-items">' + w.atItems.map(i => {
       const lento = w.hasTime && i.done && i.fator < .8;
       return '<div class="czad-it"><div class="nm"><span>' + esc(i.name) + '</span><span>' + i.done + '/' + i.n + ' exercícios</span></div><div class="bar"><i style="width:' + Math.round(i.entrega * 100) + '%;background:' + pcol(i.entrega) + '"></i></div>'
         + (w.hasTime ? '<div>Tempo: ' + fm(i.time) + ' · esperado ≥ ' + fm(i.exp) + (lento ? ' <span class="czad-chip warn">rápido demais</span>' : i.done ? ' <span class="czad-chip ok">ok</span>' : '') + '</div>' : '<div>Sem medição de tempo (antes da coleta)</div>') + '</div>';
     }).join('') + '</div></div>';
-    if (p.Pos == null) h += na('Pos', w.hasTime ? 'Sem pós-aula nesta semana (sem aula, ou aula ainda sem pós-aula).' : 'Semana anterior à coleta: não dá para medir leitura.');
+    if (p.Pos == null) h += na('Pos', !w.hasTime ? 'Semana anterior à coleta: não dá para medir leitura.' : w.posItems.length ? 'Pós-aula de hoje ainda sem leitura: conta quando o dia virar.' : 'Sem pós-aula nesta semana (sem aula, ou aula ainda sem pós-aula).');
     else h += '<div class="czad-pcard">' + head('Pos', p.Pos, pct(p.Pos) + '%') + '<div class="czad-items">' + w.posItems.map(i => {
       const sc = Math.max(cfg.minPos * 1.6, i.minutes);
       return '<div class="czad-it"><div class="nm"><span>' + esc(i.name) + '</span><span>' + fm(i.minutes) + ' de ' + cfg.minPos + ' min</span></div>'
@@ -564,7 +578,7 @@ export function initAdesaoAdmin(ctx) {
     }).join('') + '</div></div>';
     if (p.Aula == null) h += na('Aula', 'Sem aulas previstas: o pilar sai da conta e os outros ganham peso.');
     else h += '<div class="czad-pcard">' + head('Aula', p.Aula, w.aulas[1] + ' de ' + w.aulas[0]) + '<div class="czad-small czad-muted">aulas realizadas ÷ previstas</div></div>';
-    if (p.Des == null) h += na('Des', 'Sem desafio publicado para este aluno nesta semana.');
+    if (p.Des == null) h += na('Des', w.partial && w.des[0] ? 'Desafio da semana ainda sem parte feita: conta quando a semana fechar (ou assim que fizer a 1ª parte).' : 'Sem desafio publicado para este aluno nesta semana.');
     else h += '<div class="czad-pcard">' + head('Des', p.Des, w.des[1] + ' de ' + w.des[0]) + '<div class="czad-small czad-muted">partes do desafio concluídas</div></div>';
     return h;
   }

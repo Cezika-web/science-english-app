@@ -45,17 +45,22 @@ const maratonista = () => {
   return { now: NOW, student: {}, usage, posts, activities, attendance, challenge: { enabled: false } };
 };
 
-ok('maratonista: 90 exercícios num dia só rendem 1 de 5 dias (constância 20%)', () => {
+ok('maratonista: 90 exercícios num dia só rendem 1 de 5 dias (constância 20%) em cada semana fechada', () => {
   const c = compute(maratonista(), CFG);
   assert.equal(c.status, 'ok');
   assert.equal(c.used.length, 3);
-  assert.ok(Math.abs(c.pm.C - 0.2) < 1e-9);
+  c.used.forEach(w => assert.ok(Math.abs(w.parts.C - 0.2) < 1e-9));
   assert.equal(c.pm.At, 1);
   assert.equal(c.pm.Pos, 1);
   assert.equal(c.pm.Aula, 1);
   assert.equal(c.pm.Des, null);                    // desafio desligado: sai da conta
-  // (25*.2 + 25 + 20 + 20) / 90 = 78
-  assert.equal(c.index, 78);
+  // cada semana fechada: (25*.2 + 25 + 20 + 20) / 90 = 78
+  assert.deepEqual(c.totals, [78, 78, 78]);
+  // Hoje é terça 12h e a segunda (19/10) passou em branco. Um dia de descanso no começo da semana ainda dá para compensar:
+  // a constância da semana de hoje vale 5/7 (71) e entra na nota com peso 6/7 de 3 (pesos [5/7, 12/7, 19/7, 6/7]).
+  // Ao vivo: (78 · 36 + 71 · 6) / 42 = 77.
+  assert.equal(c.agora.total, 71);
+  assert.equal(c.index, 77);
   assert.equal(c.band.k, 'media');
   assert.ok(c.tags.some(t => t.t.startsWith('Tudo concentrado')));
 });
@@ -65,7 +70,7 @@ ok('quem estuda 5 dias com o mesmo volume fica acima do maratonista', () => {
   const constante = maratonista();
   for (let s = 0; s < 3; s++) for (const d of [0, 2, 3, 4]) constante.usage.push(uso(s, d, 15));
   assert.ok(compute(constante, CFG).index > compute(m, CFG).index);
-  assert.equal(compute(constante, CFG).pm.C, 1);
+  compute(constante, CFG).used.forEach(w => assert.equal(w.parts.C, 1));
 });
 
 ok('pós-aula: várias aberturas somam (2 + 1 + 2 min = 5 min bate a meta)', () => {
@@ -110,7 +115,8 @@ ok('aluno sem aulas: pilar Aulas sai da conta e os pesos se redistribuem', () =>
   const c = compute({ now: NOW, student: {}, usage, activities, posts: [], attendance: [], challenge: { enabled: false } }, CFG);
   assert.equal(c.pm.Aula, null);
   assert.equal(c.pm.Pos, null);
-  assert.equal(c.index, 100);                       // só Constância e Atividades, ambas cheias
+  assert.deepEqual(c.totals, [100, 100, 100]);      // só Constância e Atividades, ambas cheias, em cada semana fechada
+  assert.equal(c.index, 96);                        // a segunda de hoje em branco (terça 12h) puxa pouco: (100 · 36 + 71 · 6) / 42
   assert.equal(Adesao.effWeight({ C: true, At: true, Pos: false, Aula: false, Des: false }, 'C', Adesao.cfgOf({})), 50);
 });
 
@@ -148,14 +154,16 @@ ok('semanas antes do cadastro do aluno não entram na nota', () => {
   assert.equal(c.used[0].key, dia(1, 0));
 });
 
-ok('nota pesa mais a semana recente (1·2·3) e a tendência compara as duas últimas', () => {
+ok('nota pesa mais a semana recente e a tendência compara as duas últimas semanas fechadas', () => {
   const usage = [], posts = [], activities = [];
   // semana 0 cheia, semana 1 média, semana 2 zerada (só presença)
   for (const d of [0, 1, 2, 3, 4]) usage.push(uso(0, d, 15));
   for (const d of [0, 1]) usage.push(uso(1, d, 15));
   const c = compute({ now: NOW, student: {}, usage, posts, activities, attendance: [], challenge: { enabled: false } }, CFG);
   assert.deepEqual(c.totals, [100, 40, 0]);
-  assert.equal(c.index, Math.round((100 * 1 + 40 * 2 + 0 * 3) / 6));
+  // Pesos que escorregam com o dia da semana (terça = 2/7): [1-2/7, 2-2/7, 3-2/7, 3·2/7] = [5, 12, 19, 6] / 7.
+  // A semana de hoje (segunda em branco, ainda compensável) vale 71. Soma dos pesos = 42/7.
+  assert.equal(c.index, Math.round((100 * 5 + 40 * 12 + 0 * 19 + 71 * 6) / 42));                 // 33
   assert.equal(c.trend, -40);
   assert.ok(c.tags.some(t => t.t.includes('Caindo')));
 });
@@ -287,11 +295,22 @@ ok('estado do dia: ✕ só para dia que já passou e que o app media; hoje nunca
   assert.equal(st('2026-10-20'), 'now');      // hoje sem estudo ainda: o dia corre, não é ✕
   assert.equal(st('2026-10-21'), 'fut');
   assert.equal(st('2026-09-20'), 'pre');      // antes de o app medir: não dá para dizer que não estudou
-  // aluno que entrou depois do início da coleta: dias antes do cadastro são "sem medição"
+  // aluno que entrou depois do início da coleta e ainda não deu nenhum sinal (nem aula, nem pós-aula, nem uso):
+  // 7 dias de carência depois do cadastro; antes disso os dias são "sem medição", não ✕
   const novo = semMeta([], { student: { createdAt: new Date(2026, 9, 15) } });
-  assert.equal(novo.measureFrom, '2026-10-15');
+  assert.equal(novo.measureFrom, '2026-10-22');
   assert.equal(Adesao.dayStatus(novo, '2026-10-14').st, 'pre');
-  assert.equal(Adesao.dayStatus(novo, '2026-10-15').st, 'x');
+  assert.equal(Adesao.dayStatus(novo, '2026-10-16').st, 'pre');
+  // o 1º uso do app começa a medição naquele dia: antes é "sem medição" e, depois, dia sem estudo é ✕
+  const usou = semMeta([uso(2, 5, 6, { pos: 6 })], { student: { createdAt: new Date(2026, 9, 10) } });     // sábado 17/10
+  assert.equal(usou.measureFrom, '2026-10-17');
+  assert.equal(Adesao.dayStatus(usou, '2026-10-16').st, 'pre');
+  assert.equal(Adesao.dayStatus(usou, '2026-10-18').st, 'x');
+  // a 1ª aula (pós-aula) vem antes do 1º uso: a medição começa na aula
+  const aula = semMeta([uso(2, 5, 6, { pos: 6 })], { student: { createdAt: new Date(2026, 9, 10) }, posts: [post('p1', 2, 3)] });   // aula quinta 15/10
+  assert.equal(aula.measureFrom, '2026-10-15');
+  assert.equal(Adesao.dayStatus(aula, '2026-10-14').st, 'pre');
+  assert.equal(Adesao.dayStatus(aula, '2026-10-16').st, 'x');
   // dia com uso gravado antes da data de início continua contando (existe medição)
   const cedo = semMeta([uso(0, 0, 8, { pos: 8 })], { student: { createdAt: new Date(2026, 9, 15) } });
   assert.equal(Adesao.dayStatus(cedo, '2026-09-28').st, 'part');
@@ -403,9 +422,11 @@ ok('página de adesão: cartão de hoje e seções fechadas com resumo; "Como es
   assert.match(h, /<b>Calendário<\/b><small>Outubro · 1 dia com meta batida<\/small>/);
   assert.match(h, /<b>Evolução<\/b><small><em>0 de 3<\/em> semanas com a meta batida<\/small>/);          // 3 semanas fechadas desde 28/09, sem estudo nelas
   assert.match(h, /<b>Horas de estudo<\/b><small>18 min no total · 18 min esta semana<\/small>/);
-  assert.match(h, /<b>Minha nota<\/b><small>Adesão <em style="color:#dc2626">0<\/em> · Baixa<\/small>/);        // 3 semanas fechadas sem estudo
-  const cedo = compute({ now: NOW, student: {}, challenge: {}, posts: [], activities: [], attendance: [], usage: [uso(3, 1, 6, { pos: 6 })] }, { coletaDesde: '2026-10-14' });
-  assert.match(Adesao.pageHtml(cedo, {}), /<b>Minha nota<\/b><small>Coletando · a 1ª nota aparece em 26\/10<\/small>/);
+  // 3 semanas fechadas sem estudo (0), mas segunda e hoje foram estudados: a semana de hoje vale 100 com peso 6/7 de 6 → 14
+  assert.match(h, /<b>Minha nota<\/b><small>Adesão <em style="color:#dc2626">14<\/em> · Baixa<\/small>/);
+  // medição começou hoje de manhã: ainda faltam dias medidos para a 1ª nota
+  const cedo = compute({ now: NOW, student: {}, challenge: {}, posts: [], activities: [], attendance: [], usage: [uso(3, 1, 6, { pos: 6 })] }, { coletaDesde: '2026-10-19' });
+  assert.match(Adesao.pageHtml(cedo, {}), /<b>Minha nota<\/b><small>Coletando · a 1ª nota aparece em 22\/10<\/small>/);
   assert.match(h, /<b>Como essa área funciona<\/b>/);
   assert.ok(!h.includes('data-cza-toggle') && !h.includes('data-cza-cal') && !h.includes('data-cza-gtoggle'));
   assert.ok(!h.includes('class="cza-title"'));                                       // o título "Minha adesão" é da página
@@ -447,46 +468,46 @@ ok('página de adesão: tocar numa bolinha do Início abre a página já com a s
 });
 
 ok('antes da primeira nota: cada ponto mostra o motivo (coletando ou não se aplica), sem precisar abrir nada', () => {
-  // Aluno com aula, Desafio e pós-aula, mas sem atividades; a medição começou quarta 14/10 (semana 12/10 não conta).
+  // Aluno com aula, Desafio e pós-aula, mas sem atividades; a medição começou segunda 19/10 (ontem): só 1 dia medido.
   const base = {
     now: NOW, student: {}, usage: [uso(3, 0, 8, { pos: 8, items: { pos_p1: 8 * 60 } })],
     posts: [post('p1', 3, 0)], activities: [],
     attendance: [pres(3, 0)], challenge: { enabled: true, weeks: [dia(3, 0)], completed: [`${dia(3, 0)}-part-1`] },
   };
-  const c = compute(base, { coletaDesde: '2026-10-14' });
+  const c = compute(base, { coletaDesde: '2026-10-19' });
   assert.equal(c.status, 'coletando');
-  assert.equal(c.firstNota, '2026-10-26');            // a semana de 19/10 fecha domingo; a nota sai na segunda
+  assert.equal(c.firstNota, '2026-10-22');            // 3 dias medidos: 19, 20 e 21/10
   assert.equal(c.live.aulasPres, 1); assert.equal(c.live.desFeitas, 1); assert.equal(c.live.desDisp, 2); assert.equal(c.live.atN, 0);
   const h = Adesao.studentHtml(c, { firstName: 'Mateus', collapsible: false });
-  assert.match(h, /A medição começou em 14\/10, então a primeira nota aparece em 26\/10/);
+  assert.match(h, /A nota aparece depois de 3 dias medidos, a partir de 22\/10\. Daí em diante ela se atualiza na hora/);
   assert.match(h, /Esta semana: 1 de 2 dias estudados|Esta semana: 1 dia estudado|Esta semana: 0 de 2 dias estudados/);
   assert.match(h, /Nenhuma atividade foi enviada para você nas últimas semanas/);        // Atividades: não se aplica, com o motivo
   assert.match(h, /Você foi a 1 de 1 aulas nas últimas semanas/);                        // Aulas: coletando, com o número de hoje
   assert.match(h, /Você fez 1 de 2 partes do Desafio nas últimas semanas/);              // Desafio: coletando, com o número de hoje
   assert.match(h, /Até agora: 8 min de leitura por pós-aula/);
-  assert.match(h, /a nota aparece em 26\/10/);
+  assert.match(h, /A nota aparece depois de 3 dias medidos \(a partir de 22\/10\)/);
   assert.equal((h.match(/<em>coletando<\/em>/g) || []).length, 4);                      // constância, pós-aula, aulas e desafio
   assert.equal((h.match(/<em>não se aplica<\/em>/g) || []).length, 1);                  // só atividades
   // Desafio desligado e sem aulas: o motivo é dito
-  const off = compute({ ...base, attendance: [], challenge: { enabled: false } }, { coletaDesde: '2026-10-14' });
+  const off = compute({ ...base, attendance: [], challenge: { enabled: false } }, { coletaDesde: '2026-10-19' });
   const ho = Adesao.studentHtml(off, { collapsible: false });
   assert.match(ho, /O Desafio não está ligado para você/);
   assert.match(ho, /Não houve aulas previstas para você nas últimas semanas/);
 });
 
 ok('página de adesão: "Minha nota" reúne a nota, o recado, o que mudou e o próximo passo (sem "Ver detalhes")', () => {
-  const c = compute({ now: NOW, student: {}, challenge: {}, posts: [], activities: [], attendance: [], usage: [uso(3, 0, 12, { pos: 6, ativ: 6 }), uso(3, 1, 6, { pos: 4, ativ: 2 })] }, { coletaDesde: '2026-10-14' });
+  const c = compute({ now: NOW, student: {}, challenge: {}, posts: [], activities: [], attendance: [], usage: [uso(3, 0, 12, { pos: 6, ativ: 6 }), uso(3, 1, 6, { pos: 4, ativ: 2 })] }, { coletaDesde: '2026-10-19' });
   const h = Adesao.pageHtml(c, { firstName: 'Ana' });
   assert.ok(!h.includes('Ver detalhes'));
   assert.match(h, /Estamos conhecendo o seu ritmo/);
-  assert.match(h, /A medição começou em 14\/10, então a primeira nota aparece em 26\/10/);
+  assert.match(h, /A nota aparece depois de 3 dias medidos, a partir de 22\/10/);
   assert.match(h, /Recado do seu professor/);
   assert.ok(!h.includes('Seu mapa de estudo'));
   assert.ok(!h.includes('<h4>Sua semana</h4>'));
   // com nota: faixa, o que mudou e o próximo passo
   const ok3 = compute(maratonista(), CFG);
   const g = Adesao.pageHtml(ok3, { firstName: 'Ana', recado: 'Parabéns <b>Ana</b>' });
-  assert.match(g, /<b>Minha nota<\/b><small>Adesão <em style="color:#d97706">78<\/em> · Média<\/small>/);
+  assert.match(g, /<b>Minha nota<\/b><small>Adesão <em style="color:#d97706">77<\/em> · Média<\/small>/);
   assert.match(g, /Seu próximo passo/);
   assert.match(g, /Parabéns &lt;b&gt;Ana&lt;\/b&gt;/);                                // recado escapado
   assert.match(g, /<b>Adesão e acertos<\/b>/);
@@ -803,6 +824,204 @@ ok('apresentação: metas sugeridas = total da semana e do mês (app + aulas), u
   assert.deepEqual([m(1, 0, 60).sugSem, m(1, 0, 60).sugMes], [30, 60]);
   assert.equal(m(10, 2, 0).totSem, 190); assert.equal(m(10, 2, 'x').totSem, 190);                       // sem duração, vale 60 min
   assert.equal(m(0, 0, 60).dia, 1); assert.equal(m(10, -3, 60).aulasSemMin, 0);
+});
+
+// ── Nota ao vivo: não espera a semana fechar, sobe com o que o aluno faz e desce quando o dia vira ──────────────────
+// uso em dia calendário qualquer (os helpers acima são presos às semanas de 28/09).
+const usoEm = (date, min, extra = {}) => ({
+  date,
+  secs: {
+    total: min * 60, posaula: (extra.pos || 0) * 60, atividade: (extra.ativ || 0) * 60, desafio: (extra.des || 0) * 60,
+    vocab: Math.max(0, min - (extra.pos || 0) - (extra.ativ || 0) - (extra.des || 0) - (extra.outros || 0)) * 60,
+    outros: (extra.outros || 0) * 60,
+  },
+  items: extra.items || {}, itemOpens: {}, opens: 1,
+});
+const keyOf = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const ateAgora = (usage, agora) => usage.filter(u => u.date <= keyOf(agora));          // só o que já aconteceu até "agora"
+
+// O caso real do João Tondato (14/11/2026, sábado): cadastrado na sexta 06/11, 1ª aula na quarta 11/11 (aulas qua e sex),
+// estudou nos 4 dias. Antes da correção a nota dele era 0: a semana de 02/11, anterior à 1ª aula, entrava como "sem estudo".
+const joaoUso = [
+  usoEm('2026-11-11', 16), usoEm('2026-11-12', 19, { pos: 18, items: { pos_p1: 18 * 60 } }), usoEm('2026-11-13', 11), usoEm('2026-11-14', 15),
+];
+const joao = agora => ({
+  now: agora, student: { createdAt: new Date(2026, 10, 6, 17, 17), aulaDuracao: 60 },
+  usage: ateAgora(joaoUso, agora),
+  posts: [{ id: 'p1', title: 'Pós 11/11', classDate: new Date(2026, 10, 11) }, { id: 'p2', title: 'Pós 13/11', classDate: new Date(2026, 10, 13) }],
+  activities: [],
+  attendance: [{ key: '2026-11-11', present: true }, { key: '2026-11-13', present: true }],
+  challenge: { enabled: true, weeks: ['2026-11-02', '2026-11-09'], completed: ['2026-11-09-part-2'] },
+});
+const CFG_N = { coletaDesde: '2026-10-21' };
+
+ok('aluno novo (caso João): a medição começa na 1ª aula, não no cadastro, e a nota não fica em 0', () => {
+  const c = compute(joao(new Date(2026, 10, 14, 12, 1)), CFG_N);
+  assert.equal(c.status, 'ok');
+  assert.equal(c.measureFrom, '2026-11-11');                          // cadastro 06/11; 1ª aula (e 1º uso) 11/11
+  assert.equal(c.used.length, 0);                                     // nenhuma semana fechada: a nota vem só da semana de hoje
+  assert.ok(c.weeks.slice(0, 3).every(w => !w.hasTime && !w.valid));  // 02/11 e antes: dias de espera, não "dias sem estudar"
+  assert.deepEqual(c.weeks[2].des, [0, 0]);                           // o Desafio de 02/11 não conta contra ele
+  assert.equal(c.cur.nDias, 4); assert.equal(c.cur.ativos, 4);       // qua, qui, sex e sáb (hoje já estudou)
+  assert.equal(c.cur.parts.C, 1);                                     // 4 dias de 4 medidos
+  assert.equal(c.cur.parts.Aula, 1);
+  assert.equal(c.cur.parts.Pos, 0.5);                                 // leu o pós-aula de 11/11 (18 min) e ainda não abriu o de 13/11
+  // A parte do Desafio (1 de 2) é da semana em andamento: só conta quando a semana fechar. Sem ela: (25 + 20·.5 + 20) / 65.
+  assert.equal(c.cur.parts.Des, null);                                // e os pilares da tela são os que deram a nota
+  assert.equal(c.index, 85);
+  assert.equal(c.band.k, 'alta');
+  assert.equal(c.avgDays, 7);
+  assert.deepEqual([c.desFeitas, c.desDisp], [1, 2]);
+  // telas: sem "dias em branco" inventados (segunda e terça eram antes de ele começar) e sem texto de "coletando"
+  const h = Adesao.pageHtml(c, { firstName: 'João' });
+  assert.match(h, /<b>Minha nota<\/b><small>Adesão <em style="color:#15935f">85<\/em> · Alta<\/small>/);
+  assert.ok(!h.includes('Dias em branco') && !h.includes('Estamos conhecendo o seu ritmo'));
+  assert.equal(Adesao.assistantSummary(c).indice, 85);
+});
+
+ok('nota só aparece com 3 dias medidos (um dia só não decide tudo) e depois anda sozinha', () => {
+  const quinta = compute(joao(new Date(2026, 10, 12, 12, 0)), CFG_N);       // 11/11 fechado + hoje (12/11) já estudado = 2 dias
+  assert.equal(quinta.status, 'coletando');
+  assert.equal(quinta.index, null);
+  assert.equal(quinta.firstNota, '2026-11-14');                             // 11, 12 e 13
+  const sexta = compute(joao(new Date(2026, 10, 13, 12, 0)), CFG_N);        // 11 e 12 fechados + hoje estudado = 3 dias
+  assert.equal(sexta.status, 'ok');
+  assert.ok(sexta.index >= 85);
+  assert.match(Adesao.pageHtml(quinta, {}), /<b>Minha nota<\/b><small>Coletando · a 1ª nota aparece em 14\/11<\/small>/);
+  assert.match(Adesao.pageHtml(quinta, {}), /A nota aparece depois de 3 dias medidos, a partir de 14\/11\. Daí em diante ela se atualiza na hora/);
+});
+
+ok('cadastrado e sem nenhum sinal: 7 dias de carência; depois, quem some leva nota baixa (e não some da lista)', () => {
+  const sem = agora => ({ now: agora, student: { createdAt: new Date(2026, 10, 6, 17, 0) }, usage: [], posts: [], activities: [], attendance: [], challenge: { enabled: false } });
+  const a = compute(sem(new Date(2026, 10, 14, 12, 0)), CFG_N);
+  assert.equal(a.measureFrom, '2026-11-13');                               // cadastro + 7 dias
+  assert.equal(a.status, 'coletando');
+  const b = compute(sem(new Date(2026, 10, 17, 12, 0)), CFG_N);            // 13, 14, 15 e 16 sem nenhum uso
+  assert.equal(b.status, 'ok');
+  assert.equal(b.band.k, 'baixa');
+  assert.equal(b.index, 17);                                                // semana de 09/11: 0; a de hoje (só a segunda em branco, ainda compensável): 71 · 6/7 de peso
+  const c2 = compute(sem(new Date(2026, 10, 22, 12, 0)), CFG_N);            // sábado seguinte, ainda sem nenhum uso: a conta fica exata e a nota some
+  assert.ok(c2.index < b.index && c2.index <= 5);
+});
+
+ok('constância é proporcional aos dias medidos: 3 dias de 3 medidos bate a meta, 1 de 3 não', () => {
+  const agora = new Date(2026, 10, 14, 9, 0);                              // sábado de manhã; começou na quarta
+  const base = usage => ({ now: agora, student: { createdAt: new Date(2026, 10, 2) }, usage, posts: [{ id: 'p1', classDate: new Date(2026, 10, 11) }], activities: [], attendance: [], challenge: { enabled: false } });
+  const todos = compute(base([usoEm('2026-11-11', 10), usoEm('2026-11-12', 10), usoEm('2026-11-13', 10)]), CFG_N);
+  assert.equal(todos.cur.nDias, 3);                                         // hoje (sáb) ainda sem estudo: não entra
+  assert.equal(todos.cur.parts.C, 1);                                       // meta de 5 em 7 dias → 2,14 em 3 dias
+  const um = compute(base([usoEm('2026-11-12', 10)]), CFG_N);
+  // 1 dia de 3 medidos: ritmo = 1 / (5·3/7) = 0,47, com peso 6/7 (já passou 6 dos 7 dias da semana); dá para compensar com os
+  // 2 dias que restam (amanhã e hoje): (1 + 2) / (5·5/7) = 0,84, com peso 1/7. Total 0,52, bem abaixo do 1 de quem estudou os 3.
+  assert.ok(Math.abs(um.cur.parts.C - (1 / (5 * 3 / 7) * 6 / 7 + 3 / (5 * 5 / 7) / 7)) < 1e-9);
+  assert.ok(um.cur.parts.C < 0.55);
+});
+
+// Fechadas as semanas de 28/09 a 12/10 com 5 dias de estudo por semana (constância cheia).
+const semanasCheias = () => { const u = []; for (let s = 0; s < 3; s++) for (let d = 0; d < 5; d++) u.push(uso(s, d, 15)); return u; };
+
+ok('hoje ainda está aberto: o que ficou por fazer só pesa quando o dia vira (atividade de hoje)', () => {
+  const terca = new Date(2026, 9, 20, 12, 0), quarta = new Date(2026, 9, 21, 0, 30);
+  const entrada = (agora, feitos) => ({
+    now: agora, student: {}, challenge: { enabled: false }, posts: [], attendance: [],
+    usage: [...semanasCheias(), uso(3, 0, 15), uso(3, 1, 3, { ativ: 3, items: feitos ? { act_a1: 180 } : {} })],
+    activities: [ativ('a1', 3, 1, 10, feitos)],                              // enviada hoje (terça), 10 exercícios
+  });
+  const semFazer = compute(entrada(terca, 0), CFG);
+  assert.equal(semFazer.index, 100);                                         // atividade de hoje, nada feito: ainda não venceu
+  assert.equal(semFazer.cur.parts.At, null);
+  const metade = compute(entrada(terca, 4), CFG);
+  // 4 de 10, no tempo certo: com ela a semana daria 70 (25·1 + 25·.4), sem ela 100. Vale o maior, e a tela mostra o conjunto que deu a nota.
+  assert.equal(metade.cur.parts.At, null);
+  assert.equal(metade.cur.total, 100);
+  assert.equal(metade.index, 100);
+  // virou o dia (quarta 00:30) com 4 de 10 feitos: a atividade venceu. Semana de hoje: (25·1 + 25·.4) / 50 = 70
+  const virou = compute(entrada(quarta, 4), CFG);
+  assert.equal(virou.cur.parts.At, 0.4);
+  assert.equal(virou.cur.total, 70);
+  assert.equal(virou.index, 94);                                             // (100·33 + 70·9) / 42 com pesos [4, 11, 18, 9] / 7
+  assert.ok(virou.index < metade.index);
+});
+
+ok('virou o dia sem estudar: a nota desce (pouco no começo da semana); durante o dia, estudar a mantém ou sobe', () => {
+  const base = agora => ({ now: agora, student: {}, challenge: { enabled: false }, posts: [], activities: [], attendance: [], usage: [...semanasCheias(), uso(3, 0, 15)] });
+  const terca = compute(base(new Date(2026, 9, 20, 12, 0)), CFG);           // segunda estudada, hoje ainda não: dia aberto
+  assert.equal(terca.cur.parts.C, 1);
+  assert.equal(terca.index, 100);
+  const quarta = compute(base(new Date(2026, 9, 21, 0, 30)), CFG);          // terça fechou em branco: 1 dia de 2 medidos
+  // ritmo 1 / (5·2/7) = 0,7 com peso 3/7; chance de compensar (1 + 5) / 5 → 1, com peso 4/7: 0,87
+  assert.ok(Math.abs(quarta.cur.parts.C - (0.7 * 3 / 7 + 4 / 7)) < 1e-9);
+  assert.equal(quarta.cur.total, 87);
+  assert.equal(quarta.index, 97);
+  assert.ok(quarta.index < terca.index);
+  // estudando na terça à tarde (3 min bastam para o dia contar), a nota volta
+  const tardeEstudou = compute({ ...base(new Date(2026, 9, 20, 17, 0)), usage: [...semanasCheias(), uso(3, 0, 15), uso(3, 1, 3)] }, CFG);
+  assert.equal(tardeEstudou.index, 100);
+});
+
+ok('um dia de descanso no começo da semana não pune quem ainda bate a meta de 5 dias', () => {
+  const base = (agora, dias) => ({ now: agora, student: {}, challenge: { enabled: false }, posts: [], activities: [], attendance: [], usage: [...semanasCheias(), ...dias.map(d => uso(3, d, 15))] });
+  // terça 00:30, segunda em branco: nada de tombo, vale 5/7 (a semana ainda tem 6 dias para fechar os 5)
+  const cedo = compute(base(new Date(2026, 9, 20, 0, 30), []), CFG);
+  assert.ok(Math.abs(cedo.cur.parts.C - 5 / 7) < 1e-9);
+  // domingo à noite, com terça a sábado estudados (5 dias): meta batida, a segunda de descanso não pesa
+  const fim = compute(base(new Date(2026, 9, 25, 23, 30), [1, 2, 3, 4, 5]), CFG);
+  assert.equal(fim.cur.parts.C, 1);
+  assert.equal(fim.index, 100);
+  // mas quem de fato some perde: segunda a quinta em branco (sexta 00:30), a conta já é quase só o ritmo real
+  const sumiu = compute(base(new Date(2026, 9, 23, 0, 30), []), CFG);       // e = 5; ritmo 0; chance (0 + 2 + 1) / 5
+  assert.ok(Math.abs(sumiu.cur.parts.C - 0.6 * 2 / 7) < 1e-9);
+  assert.ok(sumiu.cur.parts.C < cedo.cur.parts.C);
+});
+
+ok('pós-aula de hoje lido pela metade: a nota nunca cai por isso; ao virar o dia ele passa a valer', () => {
+  const entrada = (agora, min) => ({
+    now: agora, student: {}, challenge: { enabled: false }, activities: [], attendance: [],
+    posts: [post('pT', 3, 1)],                                               // pós-aula de hoje (terça 20/10)
+    usage: [...semanasCheias(), uso(3, 1, min, { pos: min, items: min ? { pos_pT: min * 60 } : {} })],   // segunda 19/10 sem estudo
+  });
+  const terca = new Date(2026, 9, 20, 12, 0);
+  const totais = [0, 1, 3, 5, 8].map(min => compute(entrada(terca, min), CFG));
+  const t = totais.map(c => c.cur.total);
+  // 0 e 1 min: o dia de hoje não conta (menos de 3 min) e o pós-aula de hoje ainda não venceu: fica a constância compensável (71);
+  // 3 min: hoje vira dia estudado (constância 91); 5 min: o pós-aula também fecha 100% (95)
+  assert.deepEqual(t, [71, 71, 91, 95, 95]);
+  for (let i = 1; i < t.length; i++) assert.ok(t[i] >= t[i - 1], `nota caiu: ${t.join(', ')}`);
+  const idx = totais.map(c => c.index);
+  for (let i = 1; i < idx.length; i++) assert.ok(idx[i] >= idx[i - 1], `índice caiu: ${idx.join(', ')}`);
+  assert.ok(idx[4] > idx[0]);
+  // quarta 00:30 com 3 min lidos: o pós-aula venceu (3 de 5 min = 60%) e a nota perde o benefício da dúvida: 91 → 75
+  const quarta = compute(entrada(new Date(2026, 9, 21, 0, 30), 3), CFG);
+  assert.equal(quarta.cur.total, 75);
+  assert.ok(quarta.cur.total < t[2]);
+});
+
+ok('Desafio da semana em andamento não derruba a nota; semana fechada sem fazer, sim', () => {
+  const sem = [0, 1, 2, 3].map(s => dia(s, 0));
+  const feito = [`${dia(0, 0)}-part-1`, `${dia(0, 0)}-part-2`, `${dia(1, 0)}-part-1`, `${dia(1, 0)}-part-2`, `${dia(2, 0)}-part-1`, `${dia(2, 0)}-part-2`];
+  const entrada = (agora, extra) => ({ now: agora, student: {}, posts: [], activities: [], attendance: [], challenge: { enabled: true, weeks: sem, completed: feito },
+    usage: [...semanasCheias(), ...extra] });
+  const terca = compute(entrada(new Date(2026, 9, 20, 12, 0), [uso(3, 0, 15), uso(3, 1, 15)]), CFG);
+  assert.equal(terca.cur.parts.Des, null);                                   // semana de 19/10: 2 partes disponíveis, 0 feitas, ainda corre
+  assert.equal(terca.index, 100);
+  assert.deepEqual([terca.desFeitas, terca.desDisp], [6, 6]);               // só as 3 semanas fechadas entram na contagem
+  // segunda 26/10 00:30: a semana de 19/10 fechou (5 dias estudados, Desafio 0 de 2) → (25 + 0) / 35 = 71
+  const fechou = compute(entrada(new Date(2026, 9, 26, 0, 30), [0, 1, 2, 3, 4].map(d => uso(3, d, 15))), CFG);
+  assert.equal(fechou.used[2].total, 71);
+  assert.equal(fechou.index, 85);                                            // (100·6 + 100·13 + 71·20) / 39
+});
+
+ok('pesos escorregam: virar a semana quase não muda a nota (sem salto na segunda-feira)', () => {
+  // 28/09: 5 dias (100) · 05/10: 2 dias (40) · 12/10: 4 dias (80) · 19/10: segunda a sexta (100)
+  const usage = [];
+  [[0, [0, 1, 2, 3, 4]], [1, [0, 1]], [2, [0, 1, 2, 3]], [3, [0, 1, 2, 3, 4]]].forEach(([s, ds]) => ds.forEach(d => usage.push(uso(s, d, 15))));
+  const base = agora => ({ now: agora, student: {}, challenge: { enabled: false }, posts: [], activities: [], attendance: [], usage });
+  const domingo = compute(base(new Date(2026, 9, 25, 23, 30)), CFG);         // fr = 7/7: pesos [0, 1, 2, 3] / 6
+  assert.deepEqual(domingo.weeks.map(w => w.total), [100, 40, 80, 100]);
+  assert.equal(domingo.index, Math.round((40 * 1 + 80 * 2 + 100 * 3) / 6));  // 83
+  const segunda = compute(base(new Date(2026, 9, 26, 0, 30)), CFG);          // semanas deslizam; fr = 1/7: [6, 13, 20] / 7
+  assert.equal(segunda.index, Math.round((40 * 6 + 80 * 13 + 100 * 20) / 39));   // 84
+  assert.ok(Math.abs(segunda.index - domingo.index) <= 2);
 });
 
 console.log(`\n${n} testes passaram`);

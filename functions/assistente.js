@@ -229,12 +229,12 @@ export function contextoDadosEstudo(bruto, { liberada, hoje }) {
   const l = [cab];
   const usadas = d.semanas.length;
   if (d.status === 'ok' && !vazio(d.indice)) {
-    l.push(`Adesão: ${d.indice} de 100${d.faixa ? ` (faixa ${FAIXAS[d.faixa]})` : ''}. É a média das últimas ${usadas} semana(s) fechada(s) (segunda a domingo), com mais peso para a mais recente.`);
+    l.push(`Adesão: ${d.indice} de 100${d.faixa ? ` (faixa ${FAIXAS[d.faixa]})` : ''}. É calculada na hora: média das últimas semanas fechadas${usadas ? ` (${usadas})` : ''} e da semana de hoje (até agora), com mais peso para a mais recente. Sobe quando o aluno estuda e cai quando um dia passa sem estudo. Hoje ainda está aberto: o que ele faz hoje só ajuda; o que fica por fazer passa a contar à meia-noite.`);
     if (!vazio(d.tendencia)) l.push(`Tendência: ${d.tendencia > 0 ? '+' : ''}${virgula(d.tendencia)} ponto(s) da penúltima para a última semana fechada.`);
     const pil = PILARES.filter(([k]) => !vazio(d.pilares[k])).map(([k, nome]) => `${nome} ${d.pilares[k]}% (peso ${vazio(d.pesos[k]) ? '?' : d.pesos[k]})`);
     if (pil.length) l.push(`Pilares da nota (média das semanas usadas): ${pil.join('; ')}. Pilar sem dado (ex.: sem aula ou sem desafio na semana) não entra na conta e os pesos dos outros se redistribuem.`);
   } else {
-    l.push(`Adesão: ainda sem nota. O app está juntando as primeiras semanas completas (segunda a domingo)${d.primeiraNota ? `; a primeira nota aparece em ${dataBR(d.primeiraNota)}` : ''}. Não invente nota.`);
+    l.push(`Adesão: ainda sem nota. A nota aparece depois dos primeiros dias de estudo medidos (3 dias, contados a partir da primeira aula ou do primeiro uso do app)${d.primeiraNota ? `; a primeira nota aparece em ${dataBR(d.primeiraNota)}` : ''}. Depois disso ela se atualiza na hora. Não invente nota.`);
   }
   d.semanas.forEach((w) => l.push(`- Semana de ${diaMes(w.de)}: nota ${vazio(w.nota) ? 'sem dado' : w.nota}, ${fmMin(w.min)} de estudo no app, ${vazio(w.dias) ? '?' : w.dias} dia(s) ativo(s).`));
   const mins = d.semanas.map((w) => w.min).filter((v) => !vazio(v));
