@@ -1,0 +1,188 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumo Pós-Aula — João Tondato — CZK English</title><style>:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+
+.intro{font-style:italic} h2{font-size:1.12rem;color:#14532D} h3{font-size:1rem} p,li{line-height:1.65} li{margin-bottom:7px} table.review{width:100%;border-collapse:collapse} .review td,.review th{padding:9px;border:1px solid var(--border);text-align:left} .review th{background:#F0FDF4} .scroll{overflow-x:auto} @media(max-width:720px){header{flex-wrap:wrap}.wrap{padding:18px 10px}.vocab{min-width:0} .actions{width:100%}} @media print{.wrap{padding:0}.card{max-width:none;box-shadow:none;border:0}.actions,.vocab-say{display:none}.outline-card,.vocab,.homework{break-inside:avoid}}</style></head><body><div class="wrap"><article class="card" role="main"><header><div><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="badge">PÓS-AULA</span><h1>Simple Present: do/does, terceira pessoa e vocabulário</h1></div><div class="meta"><strong>Professor:</strong> César &nbsp;•&nbsp; <strong>Aluno:</strong> João Tondato &nbsp;•&nbsp; <strong>Data:</strong> 11/16/2026<br><strong>Aula em dupla:</strong> João Tondato e Pedro Henrique</div></div><div class="actions"><a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a></div></header><main><section class="panel"><p class="intro" style="margin:0;color:#14532D">João Tondato, nesta aula praticamos vocabulário com imagens e revisamos como montar afirmativas, negativas e perguntas no presente simples. O ponto principal foi identificar o sujeito e escolher entre do e does, mantendo o verbo na forma correta.</p></section><section><h2>📘 Resumo da Aula</h2><div class="outline-card"><p>Começamos com o relato de Pedro sobre a viagem a Juquiá e Mongaguá. A conversa mostrou a diferença entre falar de hábitos no presente e contar algo que já aconteceu: <em>travel</em> passa a <em>traveled</em> no passado. O passado apareceu como preparação para as próximas aulas; o foco deste encontro foi o <strong>Simple Present</strong>.</p>
+<h3>1. Primeiro, identifique o sujeito</h3><p>Antes de escolher o auxiliar, descubra de quem a frase fala. <em>Your sister-in-law</em> corresponde a <strong>she</strong>; <em>your nephew</em>, a <strong>he</strong>; <em>your cousins</em>, a <strong>they</strong>. Uma pessoa no singular pede <strong>does</strong>, mesmo quando aparece com um nome ou parentesco em vez de he ou she.</p>
+<h3>2. Afirmativas, negativas e perguntas</h3><div class="scroll"><table class="review"><thead><tr><th>Sujeito</th><th>Afirmativa</th><th>Negativa</th><th>Pergunta</th></tr></thead><tbody><tr><td>I / you / we / they</td><td>They work.</td><td>They don’t work.</td><td>Do they work?</td></tr><tr><td>He / she / it</td><td>He works.</td><td>He doesn’t work.</td><td>Does he work?</td></tr></tbody></table></div>
+<p><strong>Com does ou doesn’t, o verbo principal fica na forma base.</strong> A marca da terceira pessoa já está no auxiliar: <em>She lives in Atlanta</em>, mas <em>Does she live in Atlanta?</em> e <em>She doesn’t live in Atlanta.</em></p>
+<h3>3. Como acrescentar a terminação</h3><div class="scroll"><table class="review"><thead><tr><th>Padrão</th><th>Exemplos</th></tr></thead><tbody><tr><td>Regra mais comum: + s</td><td>work → works; live → lives; play → plays</td></tr><tr><td>Algumas terminações pedem + es</td><td>fix → fixes; do → does</td></tr><tr><td>Consoante + y: retirar y e acrescentar ies</td><td>study → studies</td></tr><tr><td>Vogal + y: manter y e acrescentar s</td><td>play → plays</td></tr><tr><td>Forma especial</td><td>have → has</td></tr></tbody></table></div>
+<h3>4. To be segue outra estrutura</h3><p>Para perguntar com <em>to be</em>, invertemos verbo e sujeito: <em>He is your brother-in-law → Is he your brother-in-law?</em> Para negar, acrescentamos <em>not</em>: <em>He isn’t your brother-in-law.</em> Com os outros verbos praticados, usamos do/does: <em>Does he have a car?</em></p>
+<h3>5. Perguntas com informação e respostas curtas</h3><p>Nas perguntas praticadas, a ordem é <strong>WH + do/does + sujeito + verbo base</strong>: <em>Where do your aunts and uncles live?</em> Para perguntar sobre frequência, usamos <strong>How often</strong>. A resposta <em>once a year</em> significa “uma vez por ano”; também revisamos <em>always</em>, <em>sometimes</em> e <em>never</em>.</p>
+<div class="scroll"><table class="review"><thead><tr><th>Pergunta</th><th>Sim</th><th>Não</th></tr></thead><tbody><tr><td>Is he your brother-in-law?</td><td>Yes, he is.</td><td>No, he isn’t.</td></tr><tr><td>Do they work?</td><td>Yes, they do.</td><td>No, they don’t.</td></tr><tr><td>Does she live in Miami?</td><td>Yes, she does.</td><td>No, she doesn’t.</td></tr></tbody></table></div>
+<h3>6. Dois do na mesma pergunta?</h3><p>Sim: <em>What do you do?</em> O primeiro <em>do</em> é auxiliar; o segundo é o verbo “fazer”. Em contexto de profissão, a pergunta equivale a “O que você faz?”. Com terceira pessoa: <em>What does your father-in-law do?</em> O verbo principal continua <em>do</em>.</p>
+<h3>7. Vocabulário, pronúncia e interpretação</h3><p>Jogamos uma rodada de vocabulário com imagens e alternativas, trabalhando reconhecimento e pronúncia. O placar anunciado foi <strong>João: 14/15; Pedro: 11/15</strong>. Revisitamos <em>alone</em> (sem companhia), <em>lonely</em> (sentindo solidão) e <em>loneliness</em> (solidão). Em <em>raccoon</em>, a sílaba forte é a segunda: /ræˈkuːn/.</p><p>Também diferenciamos <em>life</em> /laɪf/ (vida), <em>lives</em> /laɪvz/ (vidas), <em>live</em> /lɪv/ (viver/morar), <em>lives</em> /lɪvz/ (vive/mora) e <em>live</em> /laɪv/ (ao vivo). Por fim, vimos <strong>one/ones</strong> para evitar repetir um substantivo: <em>the ones from my father’s side</em> retoma os familiares do lado paterno. O plural é <em>ones</em>, sem apóstrofo.</p></div></section><section><h2>💬 Frases usadas em aula</h2><div class="outline-card"><ul><li><b>He works every day.</b> — Ele trabalha todos os dias.</li><li><b>She plays tennis on Sunday.</b> — Ela joga tênis no domingo.</li><li><b>How many grandkids does she have?</b> — Quantos netos ela tem?</li><li><b>Does your sister-in-law live in Miami?</b> — Sua cunhada mora em Miami?</li><li><b>She lives in Atlanta.</b> — Ela mora em Atlanta.</li><li><b>Is he your brother-in-law?</b> — Ele é seu cunhado?</li><li><b>Where do your aunts and uncles live?</b> — Onde seus tios e tias moram?</li><li><b>What does your father-in-law do?</b> — O que seu sogro faz? / Qual é a profissão dele?</li><li><b>He works.</b> — Ele trabalha.</li><li><b>Once a year.</b> — Uma vez por ano.</li></ul></div></section><section><h2>🔑 Vocabulário-chave (Key Vocabulary)</h2><div class="vocab-grid"><div class="vocab"><div class="vocab-head"><h3>raccoon</h3><button type="button" class="vocab-say" data-czk-say="raccoon" aria-label="Ouvir a pronúncia de raccoon" aria-pressed="false" title="Ouvir raccoon">&#128266;</button></div><p><em>guaxinim</em><br>Mamífero mencionado no jogo. A força está na segunda sílaba: /ræˈkuːn/.<br><strong>This is a raccoon.</strong><br>Isto é um guaxinim.</p></div><div class="vocab green"><div class="vocab-head"><h3>fix</h3><button type="button" class="vocab-say" data-czk-say="fix" aria-label="Ouvir a pronúncia de fix" aria-pressed="false" title="Ouvir fix">&#128266;</button></div><p><em>consertar</em><br>No contexto da aula, reparar algo que não funciona.<br><strong>He fixes cars.</strong><br>Ele conserta carros.</p></div><div class="vocab yellow"><div class="vocab-head"><h3>how often</h3><button type="button" class="vocab-say" data-czk-say="how often" aria-label="Ouvir a pronúncia de how often" aria-pressed="false" title="Ouvir how often">&#128266;</button></div><p><em>com que frequência</em><br>Expressão usada para perguntar a frequência de uma ação.<br><strong>How often do you travel?</strong><br>Com que frequência você viaja?</p></div></div></section><section><h2>📚 Vocabulário completo da aula</h2><div class="outline-card"><h3>Jogo — natureza e animais</h3><ul><li><strong>sky</strong> — céu</li><li><strong>crab</strong> — caranguejo</li><li><strong>icicle</strong> — pingente de gelo</li><li><strong>raccoon</strong> — guaxinim</li><li><strong>waterfall</strong> — cachoeira</li><li><strong>badger</strong> — texugo</li><li><strong>mistletoe</strong> — visco; planta</li></ul><h3>Jogo — objetos e equipamentos</h3><ul><li><strong>first aid kit</strong> — kit de primeiros socorros; exemplo inicial</li><li><strong>chain</strong> — corrente</li><li><strong>toy</strong> — brinquedo</li><li><strong>tray</strong> — bandeja</li><li><strong>steering wheel</strong> — volante</li><li><strong>bowling pins</strong> — pinos de boliche</li><li><strong>spinning top</strong> — pião</li><li><strong>lampshade</strong> — cúpula de abajur</li><li><strong>basket</strong> — cesta</li><li><strong>stretcher</strong> — maca</li><li><strong>satellite</strong> — satélite</li><li><strong>antenna</strong> — antena</li><li><strong>sewing machine</strong> — máquina de costura</li><li><strong>jet aircraft</strong> — avião a jato</li></ul><h3>Jogo — lugares, ações e outros termos</h3><ul><li><strong>crosswalk</strong> — faixa de pedestres</li><li><strong>ice hockey</strong> — hóquei no gelo</li><li><strong>maze</strong> — labirinto</li><li><strong>pitchfork</strong> — forcado; alternativa discutida no jogo</li><li><strong>railroad station</strong> — estação ferroviária</li><li><strong>Japan</strong> — Japão</li><li><strong>download</strong> — baixar; download</li><li><strong>write</strong> — escrever</li><li><strong>sew</strong> — costurar</li><li><strong>grandson</strong> — neto</li><li><strong>teeth</strong> — dentes; plural de tooth</li></ul><h3>Família e relações</h3><ul><li><strong>aunt / aunts</strong> — tia / tias</li><li><strong>uncle / uncles</strong> — tio / tios</li><li><strong>cousin / cousins</strong> — primo(a) / primos(as)</li><li><strong>nephew</strong> — sobrinho</li><li><strong>niece</strong> — sobrinha</li><li><strong>grandkids</strong> — netos e netas</li><li><strong>brother-in-law</strong> — cunhado</li><li><strong>sister-in-law</strong> — cunhada</li><li><strong>father-in-law</strong> — sogro</li><li><strong>mother-in-law</strong> — sogra</li><li><strong>son-in-law</strong> — genro</li><li><strong>daughter-in-law</strong> — nora</li><li><strong>in-laws</strong> — familiares por casamento</li><li><strong>my father’s side / my mother’s side</strong> — lado paterno / lado materno</li><li><strong>law / lawyer</strong> — lei / advogado(a)</li></ul><h3>Verbos e formas trabalhadas</h3><ul><li><strong>work / works</strong> — trabalhar / trabalha</li><li><strong>live / lives</strong> — morar ou viver / mora ou vive</li><li><strong>play / plays</strong> — jogar ou tocar / joga ou toca</li><li><strong>fix / fixes</strong> — consertar / conserta</li><li><strong>attach</strong> — anexar ou prender</li><li><strong>do / does</strong> — fazer / faz; também formas do auxiliar</li><li><strong>have / has</strong> — ter / tem</li><li><strong>travel / traveled</strong> — viajar / viajou; passado regular</li><li><strong>manage / manages</strong> — gerenciar / gerencia</li><li><strong>visit</strong> — visitar</li></ul><h3>Frequência, sentimentos e contexto</h3><ul><li><strong>how often</strong> — com que frequência</li><li><strong>once a year</strong> — uma vez por ano</li><li><strong>always</strong> — sempre</li><li><strong>sometimes</strong> — às vezes</li><li><strong>never</strong> — nunca</li><li><strong>at all</strong> — em negativas: de modo algum; nem um pouco</li><li><strong>alone</strong> — sozinho; sem companhia</li><li><strong>lonely</strong> — solitário; sentindo solidão</li><li><strong>loneliness</strong> — solidão</li><li><strong>age</strong> — idade; como verbo, envelhecer</li><li><strong>life / lives</strong> — vida / vidas</li><li><strong>live</strong> — ao vivo, quando pronunciado /laɪv/</li><li><strong>one / ones</strong> — substituem um substantivo contável no singular / plural</li></ul><p style="color:var(--muted);font-size:.9rem">Algumas palavras do jogo ficaram indistintas na transcrição automática. A lista reúne os termos recuperáveis com segurança.</p></div></section><section><h2>✅ Correções importantes</h2><div class="outline-card"><h3>Pedro — identificar singular e plural</h3><p style="color:#b91c1c">❌ Does your cousins work…?</p><p style="color:#166534">✅ <strong>Do your cousins work…?</strong></p><p>Cousins é plural: corresponde a they, que pede do. Um único cousin pede does. O parentesco por si só não decide: é preciso observar singular ou plural.</p><h3>Pedro — terceira pessoa na afirmativa</h3><p style="color:#b91c1c">❌ He work.</p><p style="color:#166534">✅ <strong>He works.</strong></p><p>Na afirmativa com he, acrescente s ao verbo. Não há does nessa frase para carregar a marca da terceira pessoa.</p><h3>João — ser não é ter</h3><p style="color:#b91c1c">❌ Is he your brother-in-law? = Ele tem cunhado?</p><p style="color:#166534">✅ <strong>Is he your brother-in-law? = Ele é seu cunhado?</strong></p><p>Is é uma forma de be, ser/estar. Para perguntar se alguém tem um cunhado, use Does he have a brother-in-law?</p><h3>Revisão das atividades de João — verbo base após does</h3><p style="color:#b91c1c">❌ Does … lives …?</p><p style="color:#166534">✅ <strong>Does … live …?</strong></p><p>A revisão das atividades retomou a regra: com does, retire o s do verbo principal. Sem auxiliar, na afirmativa, use she lives.</p><h3>Pedro — sentido de fix no contexto</h3><p style="color:#b91c1c">❌ fix cars = fixar carros</p><p style="color:#166534">✅ <strong>fix cars = consertar carros</strong></p><p>No exemplo do mecânico, fix significa consertar. Attach apareceu como alternativa para anexar ou prender.</p><h3>João — pronúncia de raccoon</h3><p style="color:#b91c1c">❌ Força na primeira sílaba de raccoon.</p><p style="color:#166534">✅ <strong>raccoon /ræˈkuːn/: força na segunda sílaba.</strong></p><p>Ouça o áudio e repita marcando a segunda sílaba.</p><h3>Para fixar a regra</h3><p><strong>Pessoa com gênero não informado:</strong> não use <em>it</em> para substituir um primo ou uma prima. Você pode manter <em>your cousin</em> (que pede <em>does</em>) ou usar o singular <em>they</em> (que pede <em>do</em>): <em>Does your cousin work here?</em> / <em>Do they work here?</em></p><p><strong>Pronúncia de Atlanta:</strong> o segundo t pode ficar reduzido ou desaparecer em algumas pronúncias americanas; pronunciá-lo também é possível. Essa variação não é uma regra gramatical.</p></div></section><section><h2>Gravação da aula</h2><div class="media-row"><a class="media-btn" href="https://youtu.be/V3K4ROSJbI8" target="_blank" rel="noopener noreferrer" role="button" style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">▶ Assistir gravação</a></div></section><section><h2>🗣️ Tempo de Fala</h2><div class="speaking"><p style="color:var(--muted)">Estimativa aproximada da distribuição de fala na dupla, com base na transcrição; não é uma medição automática. Silêncios e áudios do jogo não são fala dos participantes.</p><div class="scroll"><table class="review"><thead><tr><th>Quem falou</th><th>Proporção estimada</th></tr></thead><tbody><tr><td>César (professor)</td><td>75%</td></tr><tr><td>João Tondato</td><td>11%</td></tr><tr><td>Pedro Henrique</td><td>14%</td></tr></tbody></table></div></div></section><section><h2>📝 Homework</h2><div class="homework"><ul><li>Leia este pós-aula de <strong>2 a 3 vezes durante a semana</strong>.</li><li><strong>Pedro:</strong> concluir os exercícios pendentes no app, conforme combinado. As atividades continuam disponíveis; a orientação foi realizá-las antes da aula de quarta-feira.</li><li><strong>Desafio:</strong> fazer até quarta-feira, <strong>18/11/2026</strong>, caso ainda esteja pendente. João já havia concluído o desafio comentado na aula.</li><li>Na revisão, dê atenção ao sujeito, a do/does, às respostas curtas e à ordem das perguntas com WH.</li></ul></div></section></main><footer>© 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com</footer></article></div><script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script></body></html>
