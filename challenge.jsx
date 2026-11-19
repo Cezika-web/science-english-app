@@ -576,9 +576,9 @@ function ChallengeTurmaHub({ challenge, mirror, onBack, onLoad, onPrepare, onPla
     }
   }, [groupId]);
 
-  // Gera as perguntas na hora quando a turma ainda não tem rodada (turma criada
-  // no meio da semana, ou a leva de domingo que não rodou). Só o aluno gera: no
-  // espelho o professor apenas acompanha.
+  // Gera as perguntas quando o aluno toca em "Gerar perguntas" e a turma ainda
+  // não tem rodada nesta semana. Nunca roda sozinho ao abrir a tela. Só o aluno
+  // gera: no espelho o professor apenas acompanha.
   const prepare = React.useCallback(async () => {
     if (busyRef.current) return;
     busyRef.current = true; setPreparing(true); setPrepareError('');
@@ -602,19 +602,19 @@ function ChallengeTurmaHub({ challenge, mirror, onBack, onLoad, onPrepare, onPla
     }
   }, [groupId, load]);
 
+  // Abrir a tela NÃO gera nada: o aluno às vezes só quer ver o histórico. As
+  // perguntas só são geradas (e cobradas) quando ele toca em "Gerar perguntas".
   React.useEffect(() => {
-    let cancelled = false;
-    load().then(result => { if (!cancelled && result && !mirror && needsPreparation(result)) prepare(); });
+    load();
     const refresh = () => { if (!busyRef.current) load(); };
     const onVisible = () => { if (document.visibilityState === 'visible') refresh(); };
     window.addEventListener('peer-duel-updated', refresh);
     document.addEventListener('visibilitychange', onVisible);
     return () => {
-      cancelled = true;
       window.removeEventListener('peer-duel-updated', refresh);
       document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [load, prepare, mirror]);
+  }, [load]);
 
   const partes = data?.partes || [];
   const members = data?.membros || [];
@@ -656,10 +656,18 @@ function ChallengeTurmaHub({ challenge, mirror, onBack, onLoad, onPrepare, onPla
     // aberta
     if (!parte.published) {
       if (mirror) {
-        return <div key={parte.part} style={turmaCard(false)}><span style={turmaLabel('#7B8DA3')}>Parte {parte.part} · ainda sem perguntas</span><h2 style={turmaTitle}>As perguntas ainda não foram preparadas</h2><p style={turmaSub}>Elas saem assim que um dos alunos abrir o Desafio da turma no app.</p></div>;
+        return <div key={parte.part} style={turmaCard(false)}><span style={turmaLabel('#7B8DA3')}>Parte {parte.part} · ainda sem perguntas</span><h2 style={turmaTitle}>As perguntas ainda não foram preparadas</h2><p style={turmaSub}>Elas saem assim que um dos alunos tocar em Gerar perguntas no app.</p></div>;
       }
       if (prepareError && !preparing) {
         return <div key={parte.part} style={{ ...turmaCard(false), borderColor:'#F2D18A', background:'#FFFBF2' }}><span style={turmaLabel('#B87316')}>Ainda sem perguntas</span><h2 style={turmaTitle}>Não deu para preparar a turma</h2><p style={turmaSub}>{prepareError}</p><button onClick={prepare} style={turmaGhost}>Tentar de novo</button></div>;
+      }
+      if (!preparing) {
+        return <div key={parte.part} style={turmaCard(true)}>
+          <span style={turmaLabel()}>Parte {parte.part} · aberta até {days.closes}</span>
+          <h2 style={turmaTitle}>As perguntas ainda não foram geradas</h2>
+          <p style={turmaSub}>Quando quiserem jogar, toquem em Gerar perguntas: são as mesmas {parte.questionCount} perguntas por parte para {pair ? 'vocês dois' : 'a turma'}, feitas com o que viram nas aulas. Leva cerca de 1 minuto e só precisa ser feito uma vez por semana. Se quiser só ver o histórico, é só ficar por aqui.</p>
+          <button onClick={prepare} style={turmaButton}>GERAR PERGUNTAS →</button>
+        </div>;
       }
       return <React.Fragment key={parte.part}><div role="status" aria-live="polite" style={{ ...turmaCard(true), textAlign:'center' }}><div style={{ width:34, height:34, borderRadius:'50%', border:'4px solid #CFE9E6', borderTopColor:'#087982', animation:'czkTurmaSpin 1s linear infinite', margin:'6px auto 12px' }} /><h2 style={turmaTitle}>Preparando as perguntas da turma…</h2><p style={turmaSub}>Estamos montando {parte.questionCount} perguntas por parte com o que vocês viram nas aulas. Leva cerca de 1 minuto e só acontece uma vez por semana.</p></div><div style={turmaFoot}>Pode sair e voltar: assim que estiver pronto, o botão de começar aparece aqui.</div></React.Fragment>;
     }
