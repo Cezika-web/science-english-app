@@ -983,17 +983,28 @@ export function createChallengeFunctions({
   // acertou o quê na MESMA pergunta. Sai do material somado dos integrantes e
   // fica no formato assistido — o desafio da turma é o leve, o duro é o geral.
   async function generateForGroup(client, grupo, membros, weekKey) {
-    const materiais = [];
+    // Aula em dupla gera uma cópia do pós-aula para CADA aluno, com o mesmo texto.
+    // Junta por dia e prefere os dias em que mais de um integrante tem pós-aula (a
+    // aula em comum); só as 6 mais recentes, para a espera na tela ser curta.
+    const dias = new Map();
     for (const membro of membros) {
       const entrada = await personalizationInput(membro);
-      entrada.posts.forEach(post => materiais.push({
-        ...post, title:`${membro.data().firstName || membro.data().name || 'Aluno'} — ${post.title}`,
-      }));
+      const nome = membro.data().firstName || membro.data().name || 'Aluno';
+      entrada.posts.forEach(post => {
+        const dia = String(post.date || '').slice(0, 10) || post.id;
+        const atual = dias.get(dia) || { ...post, nomes:[] };
+        if (!atual.nomes.includes(nome)) atual.nomes.push(nome);
+        dias.set(dia, atual);
+      });
     }
+    const emComum = [...dias.values()].filter(item => item.nomes.length > 1);
+    const materiais = (emComum.length ? emComum : [...dias.values()])
+      .sort((a, b) => String(a.date || '').localeCompare(String(b.date || ''))).slice(-6)
+      .map(item => ({ ...item, title:`${item.nomes.join(' e ')} — ${item.title}` }));
     if (!materiais.length) throw new Error('Nenhum pós-aula dos integrantes nos últimos 90 dias.');
     const nomes = membros.map(item => item.data().firstName || item.data().name || 'Aluno');
-    const response = await client.messages.create({
-      model, max_tokens:12000,
+    const requestPayload = {
+      model,
       system:[{ type:'text', text:
         `Você cria o desafio de uma turma do Science English: ${nomes.join(' e ')} fazem aula JUNTOS. ` +
         'Use SOMENTE fatos linguísticos, vocabulário e contextos presentes nos pós-aulas fornecidos, que são das aulas em comum. ' +
@@ -1003,7 +1014,10 @@ export function createChallengeFunctions({
         FORMAT_RULES.multipleChoice + ' ' + FORMAT_RULES.trueFalse + ' ' + FORMAT_RULES.text + ' ' +
         'hint deve ser SEMPRE uma string vazia. O prompt deve conter apenas a ação neutra e o texto exato da tarefa deve ficar em context. Em tradução, context precisa conter a frase literal completa que o aluno traduzirá, nunca uma descrição vaga. Antes da resposta, não cite tempo verbal, estrutura gramatical, voz ativa/passiva, causative, infinitive, base form, past participle, fórmula ou regra. ' +
         'Em todos os formatos: uma única resposta inequívoca e explicação pedagógica curta em português. Não copie exercícios literalmente.' }],
-      output_config:{ format:{ type:'json_schema', schema:PERSONALIZED_CHALLENGE_SCHEMA } },
+      // Esforço baixo, como no desafio individual sob demanda (challenge-demand.js):
+      // o raciocínio escondido era a maior parte da saída (7 mil tokens por turma
+      // contra ~1 mil no individual) e é o que mais custa.
+      output_config:{ format:{ type:'json_schema', schema:PERSONALIZED_CHALLENGE_SCHEMA }, effort:'low' },
       messages:[{ role:'user', content:
         `Turma: ${grupo.name || nomes.join(' e ')}
 Integrantes: ${nomes.join(', ')}
@@ -1014,22 +1028,37 @@ Semana: ${weekKey}
 ${materiais.map((item, i) => `[${i + 1}] ${item.title} (${item.date || 'sem data'})
 ${item.text}`).join('\n\n')}`
       }],
-    });
-    const text = response.content.find(block => block.type === 'text')?.text;
-    if (!text) throw new Error('A IA não devolveu as perguntas da turma.');
-    const generated = JSON.parse(text);
-    const prepared = [generated.part1, generated.part2].map((questions, partIndex) => {
-      if (!Array.isArray(questions) || questions.length !== 5) throw new Error(`Parte ${partIndex + 1} da turma incompleta.`);
-      const normalized = questions.map((question, index) => ({
-        ...question, id:`g${partIndex + 1}q${index + 1}`,
-        type:question.format === 'text' ? 'text' : 'multipleChoice',
-      }));
-      assertFocusMix(normalized, partIndex + 1);
-      assertFormatMix(normalized, partIndex + 1, 'assistido');
-      const checked = normalized.map(validateQuestion);
-      return { questions:checked.map(item => item.publicQuestion), keys:checked.map(item => item.answerKey) };
-    });
-    return { prepared, analysis:generated.analysis, usage:response.usage,
+    };
+    // Como no desafio individual: resposta cortada ou parte inválida repete com
+    // mais espaço antes de desistir. O aluno está olhando a tela esperando.
+    let generated, prepared, lastError;
+    const usage = {};
+    for (const maxTokens of [8000, 16000]) {
+      const response = await client.messages.create({ ...requestPayload, max_tokens:maxTokens });
+      Object.entries(response.usage || {}).forEach(([key, value]) => {
+        if (Number.isFinite(Number(value))) usage[key] = Number(usage[key] || 0) + Number(value);
+      });
+      const text = response.content.find(block => block.type === 'text')?.text;
+      try {
+        if (!text) throw new Error('A IA não devolveu as perguntas da turma.');
+        generated = JSON.parse(text);
+        prepared = [generated.part1, generated.part2].map((questions, partIndex) => {
+          if (!Array.isArray(questions) || questions.length !== 5) throw new Error(`Parte ${partIndex + 1} da turma incompleta.`);
+          const normalized = questions.map((question, index) => ({
+            ...question, id:`g${partIndex + 1}q${index + 1}`,
+            type:question.format === 'text' ? 'text' : 'multipleChoice',
+          }));
+          assertFocusMix(normalized, partIndex + 1);
+          assertFormatMix(normalized, partIndex + 1, 'assistido');
+          const checked = normalized.map(validateQuestion);
+          return { questions:checked.map(item => item.publicQuestion), keys:checked.map(item => item.answerKey) };
+        });
+        lastError = null;
+        break;
+      } catch (error) { lastError = error; }
+    }
+    if (lastError || !prepared) throw lastError || new Error('Não foi possível montar as duas partes da turma.');
+    return { prepared, analysis:generated.analysis, usage,
       sources:materiais.map(item => ({ id:item.id, title:item.title, date:item.date })) };
   }
 

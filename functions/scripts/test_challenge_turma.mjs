@@ -31,12 +31,16 @@ const part = () => [q('1','weak'), q('2','weak'), q('3','weak'),
   { ...q('4','strong'), format:'trueFalse', context:'She works every day.', options:[{ id:'a', text:'True' }, { id:'b', text:'False' }], correctOption:'a', acceptedAnswers:[], expected:'True' },
   { ...q('5','strong'), format:'multipleChoice', context:'He ___ at home.', options:[{ id:'a', text:'work' }, { id:'b', text:'works' }, { id:'c', text:'working' }, { id:'d', text:'worked' }], correctOption:'b', acceptedAnswers:[], expected:'works' }];
 
-let calls = 0, gate = null, breakAi = false;
+let calls = 0, gate = null, breakAi = false, truncateNext = 0, lastRequest = null;
 class FakeAnthropic {
-  constructor() { this.messages = { create:async () => {
-    calls++;
+  constructor() { this.messages = { create:async params => {
+    calls++; lastRequest = params;
     if (gate) await gate;
     if (breakAi) throw new Error('boom: erro interno da API que o aluno não deve ver');
+    if (truncateNext > 0) {   // resposta cortada no limite de tokens
+      truncateNext--;
+      return { stop_reason:'max_tokens', usage:{ input_tokens:100, output_tokens:12000 }, content:[{ type:'text', text:'{"analysis":{"weakPoints":["Pres' }] };
+    }
     return { stop_reason:'end_turn', usage:{ input_tokens:100, output_tokens:200 },
       content:[{ type:'text', text:JSON.stringify({ analysis:{ weakPoints:['Present'], strongPoints:[] }, part1:part(), part2:part() }) }] };
   } }; }
@@ -197,5 +201,29 @@ try {
   const domingo = await fns.obterDesafioDaTurma.run(as('u-karlla', { groupId:'g1' }));
   assert.equal(domingo.partes.every(item => item.status === 'closed'), true);
   assert.equal((await fns.prepararDesafioDaTurma.run(as('u-karlla', { groupId:'g1' }))).skipped, 'semana-encerrada');
+
+  // 11. Resposta cortada não chega ao aluno: repete com mais espaço. E a aula em
+  // dupla (uma cópia do pós-aula por aluno) vai UMA vez, só as aulas em comum.
+  clock = new NativeDate('2026-11-10T10:00:00-03:00');
+  for (const [uid, name] of [['u-a', 'A'], ['u-b', 'B']]) {
+    await db.doc(`students/${uid}`).set({ name, firstName:name, schoolId:'school-1' });
+    await db.doc(`students/${uid}/classGroups/g4`).set({ schoolId:'school-1', id:'g4', active:true });
+    await db.doc(`students/${uid}/posaulas/p-a`).set({ title:'Aula 30/10', content:'We go to school.', createdAt:new NativeDate('2026-10-30T12:00:00-03:00') });
+    await db.doc(`students/${uid}/posaulas/p-b`).set({ title:'Aula 03/11', content:'She likes tea.', createdAt:new NativeDate('2026-11-03T12:00:00-03:00') });
+  }
+  await db.doc('students/u-a/posaulas/p-solo').set({ title:'Aula solo', content:'Só o A teve.', createdAt:new NativeDate('2026-11-05T12:00:00-03:00') });
+  await db.doc('schools/school-1/classGroups/g4').set({ name:'A e B', active:true, automaticChallenge:true,
+    memberUids:['u-a', 'u-b'], memberNames:['A', 'B'] });
+  const antesCorte = calls;
+  truncateNext = 1;
+  const retomada = await fns.prepararDesafioDaTurma.run(as('u-a', { groupId:'g4' }));
+  assert.equal(retomada.ready, true, 'resposta cortada é refeita, sem erro para o aluno');
+  assert.equal(calls, antesCorte + 2);
+  assert.equal(lastRequest.max_tokens, 16000, 'a segunda tentativa tem mais espaço');
+  assert.equal(lastRequest.output_config.effort, 'low', 'esforço baixo: o raciocínio escondido era o maior custo');
+  const pedido = lastRequest.messages[0].content;
+  assert.equal(pedido.split('A e B — Aula').length - 1, 2, 'cada aula em comum vai uma vez só, com os dois nomes');
+  assert.equal(pedido.includes('Aula solo'), false, 'o que só um deles teve não entra na rodada da dupla');
+  assert.equal(db.docs.get('students/u-b/challengeRounds/2026-11-09-g-g4-part-2').questions.length, 5);
 } finally { globalThis.Date = NativeDate; }
-console.log('OK — turma: estado sem gabarito, geração única sob demanda, jogo pelo caminho de sempre, placar só depois de fechar, espelho do professor, entrada tardia, falha da IA e semana encerrada.');
+console.log('OK — turma: estado sem gabarito, geração única sob demanda, jogo pelo caminho de sempre, placar só depois de fechar, espelho do professor, entrada tardia, falha da IA, resposta cortada refeita, aulas em comum sem duplicar e semana encerrada.');
