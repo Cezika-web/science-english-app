@@ -453,6 +453,103 @@ function TurmaScoreRows({ rows }) {
   })}</React.Fragment>;
 }
 
+const rankMedal = position => position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : position;
+
+// Ranking próprio dos duelos da escola (obterDesafiosEntreAlunos → ranking).
+// Só conta duelo terminado pelos dois; não mistura com o ranking geral do Desafio.
+function DuelRankingTab({ ranking = [] }) {
+  const own = ranking.find(row => row.isOwn);
+  return <div style={{ marginTop:14 }}>
+    <div style={{ padding:16, borderRadius:18, color:'#fff', background:challengeBlue }}>
+      <span style={{ color:'#A9EEFF', fontSize:9.5, fontWeight:900, letterSpacing:1 }}>RANKING DOS DUELOS</span>
+      <strong style={{ display:'block', fontSize:18, marginTop:5 }}>{own ? `Você está em ${own.position}º lugar` : 'Termine um duelo para entrar'}</strong>
+      <p style={{ margin:'6px 0 0', color:'rgba(255,255,255,.78)', fontSize:12, lineHeight:1.5 }}>Só conta duelo terminado pelos dois. Vale quem tem mais vitórias; no empate, mais pontos. Não entra no ranking geral do Desafio.</p>
+    </div>
+    {ranking.length > 0
+      ? <div style={{ display:'grid', gap:7, marginTop:12 }}>{ranking.map(row => <div key={row.uid} style={{ display:'flex', alignItems:'center', gap:11, padding:'11px 12px', borderRadius:15, background:row.isOwn ? '#EAF4FF' : '#fff', border:`1.5px solid ${row.isOwn ? '#147AE0' : '#DCE7F4'}` }}>
+        <span style={{ width:28, textAlign:'center', fontSize:row.position <= 3 ? 20 : 13, fontWeight:900, color:'#7B8DA3' }}>{rankMedal(row.position)}</span>
+        <span style={{ width:38, height:38, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background:'#E7F3FF', color:'#0D5AA7', fontWeight:900 }}>{String(row.name || '?').slice(0, 1).toUpperCase()}</span>
+        <span style={{ flex:1, minWidth:0 }}><strong style={{ display:'block', color:'#173654', fontSize:13.5 }}>{row.name}{row.isOwn ? ' (você)' : ''}</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:10.5, marginTop:2 }}>{row.duels} duelo{row.duels === 1 ? '' : 's'} · {Number(row.points || 0).toLocaleString('pt-BR')} pts</span></span>
+        <span style={{ textAlign:'right' }}><strong style={{ display:'block', color:'#14745C', fontSize:14 }}>{row.wins}V</strong><span style={{ color:'#8EA0B5', fontSize:10.5 }}>{row.losses}D{row.draws ? ` · ${row.draws}E` : ''}</span></span>
+      </div>)}</div>
+      : <div style={{ marginTop:12, padding:20, textAlign:'center', borderRadius:16, background:'#fff', color:'#64748B', fontSize:12, lineHeight:1.5 }}>Ainda não há duelos terminados na escola. Quando dois alunos terminarem um duelo, o ranking aparece aqui.</div>}
+    <p style={{ margin:'12px 4px 0', color:'#7B8DA3', fontSize:11, lineHeight:1.5, textAlign:'center' }}>Todos os seus duelos ficam guardados na aba Histórico.</p>
+  </div>;
+}
+
+// Semanas que já terminaram, placar acumulado e ranking entre as duplas da escola
+// (obterDesafioDaTurma → historico e rankingDuplas). Tudo vem do que já ficou gravado.
+function TurmaHistorico({ historico, duplas = [], noun = 'dupla' }) {
+  const [openWeek, setOpenWeek] = React.useState(null);
+  const [openFix, setOpenFix] = React.useState('');
+  const weeks = historico?.weeks || [];
+  React.useEffect(() => { if (weeks.length && openWeek === null) setOpenWeek(weeks[0].weekKey); }, [weeks.length]);
+  if (!historico) return null;
+  if (!historico.totalWeeks) {
+    return <div style={turmaCard(false)}>
+      <span style={turmaLabel('#7B8DA3')}>Semanas anteriores</span>
+      <p style={{ ...turmaSub, marginTop:8 }}>Quando a primeira semana terminar, o placar aparece aqui. Tudo o que {noun === 'dupla' ? 'vocês fizerem' : 'a turma fizer'} fica guardado.</p>
+    </div>;
+  }
+  const members = historico.members || [];
+  const best = Math.max(0, ...members.map(item => item.weeksWon));
+  const leaders = members.filter(item => item.weeksWon === best);
+  const secondBest = Math.max(0, ...members.filter(item => !leaders.includes(item)).map(item => item.weeksWon));
+  const weekCount = historico.totalWeeks;
+  const draws = historico.draws || 0;
+  const ownRank = duplas.find(row => row.isOwn);
+  const title = best === 0 ? 'Todas as semanas terminaram empatadas'
+    : leaders.length > 1 ? `Empate: ${leaders.map(item => item.name).join(' e ')}`
+    : `${leaders[0].name} lidera ${noun === 'dupla' ? 'a dupla' : 'a turma'} 🏆`;
+  const verdict = best === 0 ? null : leaders.length > 1
+    ? `${best} semana${best === 1 ? '' : 's'} vencida${best === 1 ? '' : 's'} cada`
+    : `👑 ${leaders[0].name} vence por ${best - secondBest} semana${best - secondBest === 1 ? '' : 's'}`;
+  const rows = members.map(item => ({ name:item.name, done:true, score:item.points, maxScore:historico.maxPoints || 1 }));
+  return <React.Fragment>
+    <div style={turmaCard(false)}>
+      <span style={turmaLabel('#9A6A00')}>Placar acumulado · {weekCount} semana{weekCount === 1 ? '' : 's'}</span>
+      <h2 style={turmaTitle}>{title}</h2>
+      <div style={{ display:'grid', gridTemplateColumns:`repeat(${Math.min(3, Math.max(1, members.length))},1fr)`, gap:9, marginTop:12 }}>{members.map(item => {
+        const lead = best > 0 && leaders.includes(item);
+        return <div key={item.name} style={{ padding:'11px 8px', borderRadius:14, textAlign:'center', background:lead ? '#FFF7E0' : '#F4F8FC', border:`1px solid ${lead ? '#F2D18A' : '#E1EAF4'}` }}>
+          <strong style={{ display:'block', fontSize:22, color:lead ? '#9A6A00' : '#0D3F82' }}>{item.weeksWon}</strong>
+          <span style={{ fontSize:10.5, color:'#64748B', fontWeight:700 }}>semana{item.weeksWon === 1 ? '' : 's'} de {item.name}</span></div>;
+      })}</div>
+      <TurmaScoreRows rows={rows} />
+      {(verdict || draws > 0) && <div style={turmaVerdict(Boolean(verdict) && leaders.length === 1)}>{[verdict, draws > 0 ? `${draws} empate${draws === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ')}</div>}
+    </div>
+    <div style={turmaCard(false)}>
+      <span style={turmaLabel('#7B8DA3')}>Semanas anteriores</span>
+      <div style={{ display:'grid', gap:8, marginTop:10 }}>{weeks.map(week => {
+        const isOpen = openWeek === week.weekKey;
+        return <div key={week.weekKey} style={{ borderRadius:14, border:'1px solid #DCE7F4', background:'#fff', overflow:'hidden' }}>
+          <button onClick={() => setOpenWeek(isOpen ? '' : week.weekKey)} aria-expanded={isOpen} style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'11px 12px', border:0, background:'transparent', fontFamily:'inherit', textAlign:'left' }}>
+            <span style={{ flex:1, minWidth:0 }}><strong style={{ display:'block', color:'#173654', fontSize:13 }}>Semana de {turmaWeekLabel(week.weekKey)}</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:10.5, marginTop:2 }}>{week.winner ? `👑 ${week.winner} venceu` : 'Empate'} · {week.scores.map(item => `${item.name} ${item.total}`).join(' × ')}</span></span>
+            <span style={{ color:'#8EA0B5', fontSize:18 }}>{isOpen ? '▴' : '▾'}</span>
+          </button>
+          {isOpen && <div style={{ padding:'0 12px 12px' }}>{week.parts.map(part => {
+            const key = `${week.weekKey}-${part.part}`, fixOpen = openFix === key;
+            return <div key={part.part} style={{ borderTop:'1px solid #EEF3F9', padding:'8px 0' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', gap:8, fontSize:12, color:'#213B5B' }}><span style={{ fontWeight:800 }}>Parte {part.part}</span><span>{part.scores.map(item => `${item.name} ${item.score}`).join('  ·  ')}</span></div>
+              {(part.details || []).length > 0 && <React.Fragment><button onClick={() => setOpenFix(fixOpen ? '' : key)} style={{ ...turmaGhost, marginTop:8 }}>{fixOpen ? 'Esconder' : 'Ver'} minhas correções {fixOpen ? '▴' : '▾'}</button>{fixOpen && <ChallengeCorrectionList details={part.details} />}</React.Fragment>}
+            </div>;
+          })}</div>}
+        </div>;
+      })}</div>
+      <p style={{ ...turmaSub, marginTop:12, fontSize:11.5 }}>Tudo fica guardado: placar, suas respostas e a correção de cada semana.</p>
+    </div>
+    {duplas.length >= 2 && <div style={turmaCard(false)}>
+      <span style={turmaLabel('#7B8DA3')}>Ranking das {noun === 'dupla' ? 'duplas' : 'turmas'}</span>
+      <h2 style={turmaTitle}>{ownRank ? `${noun === 'dupla' ? 'Sua dupla' : 'Sua turma'} está em ${ownRank.position}º` : 'Como as duplas estão'}</h2>
+      <div style={{ display:'grid', gap:7, marginTop:10 }}>{duplas.map(row => <div key={row.position} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:14, background:row.isOwn ? '#EAF4FF' : '#F8FBFE', border:`1.5px solid ${row.isOwn ? '#147AE0' : '#E1EAF4'}` }}>
+        <span style={{ width:26, textAlign:'center', fontSize:row.position <= 3 ? 19 : 13, fontWeight:900, color:'#7B8DA3' }}>{rankMedal(row.position)}</span>
+        <span style={{ flex:1, minWidth:0 }}><strong style={{ display:'block', color:'#173654', fontSize:13 }}>{row.name}{row.isOwn ? ' (vocês)' : ''}</strong><span style={{ color:'#7B8DA3', fontSize:10.5 }}>{row.weeks} semana{row.weeks === 1 ? '' : 's'}</span></span>
+        <strong style={{ color:'#0D3F82', fontSize:14 }}>{row.avg} pts</strong></div>)}</div>
+      <p style={{ ...turmaSub, marginTop:10, fontSize:11 }}>Média de pontos por aluno em cada semana encerrada.</p>
+    </div>}
+  </React.Fragment>;
+}
+
 function ChallengeTurmaHub({ challenge, mirror, onBack, onLoad, onPrepare, onPlay }) {
   const [data, setData] = React.useState(null);
   const [error, setError] = React.useState('');
@@ -609,6 +706,7 @@ function ChallengeTurmaHub({ challenge, mirror, onBack, onLoad, onPrepare, onPla
         {weekVerdict && !weekVerdict.gold && <div style={turmaVerdict(false)}>{weekVerdict.text}</div>}
       </div>}
       {data && partes.map(renderPart)}
+      {data && <TurmaHistorico historico={data.historico} duplas={data.rankingDuplas || []} noun={noun} />}
       {data && <div style={turmaFoot}>🤝 Vale só entre {pair ? 'vocês dois' : 'a turma'} — não entra no ranking geral do Desafio.</div>}
       {data && allClosed && <div style={turmaFoot}>Nova rodada da turma abre segunda-feira.</div>}
     </div>
@@ -659,7 +757,7 @@ function ChallengeDuels({ onClose, onLoad, onCreate, onRespond, onPlay, onLive }
   return <div style={{ position:'absolute', inset:0, zIndex:4, background:'#F3F7FC', overflowY:'auto' }}>
     <ChallengeSubpageHeader title="Desafiar alguém" subtitle="Disputas particulares entre alunos" onClose={onClose} />
     <div style={{ padding:'16px 16px 34px' }}>
-      <div style={{ display:'flex', padding:4, borderRadius:14, background:'#E3ECF6' }}>{[['create','Criar'],['invites',`Convites${invites.length ? ` · ${invites.length}` : ''}`],['mine','Ativos'],['history','Histórico']].map(([id,label]) => <button key={id} onClick={() => { setTab(id); if (id !== 'history') setHistoryOpponent(null); }} style={{ flex:1, border:0, borderRadius:11, padding:'9px 2px', background:tab === id ? '#fff' : 'transparent', color:tab === id ? '#0D3F82' : '#70839A', boxShadow:tab === id ? '0 3px 9px rgba(7,27,58,.09)' : 'none', fontFamily:'inherit', fontSize:9.8, fontWeight:900 }}>{label}</button>)}</div>
+      <div style={{ display:'flex', padding:4, borderRadius:14, background:'#E3ECF6' }}>{[['create','Criar'],['invites',`Convites${invites.length ? ` · ${invites.length}` : ''}`],['mine','Ativos'],['history','Histórico'],['ranking','Ranking']].map(([id,label]) => <button key={id} onClick={() => { setTab(id); if (id !== 'history') setHistoryOpponent(null); }} style={{ flex:1, border:0, borderRadius:11, padding:'9px 2px', background:tab === id ? '#fff' : 'transparent', color:tab === id ? '#0D3F82' : '#70839A', boxShadow:tab === id ? '0 3px 9px rgba(7,27,58,.09)' : 'none', fontFamily:'inherit', fontSize:9.8, fontWeight:900 }}>{label}</button>)}</div>
       {!data && !message && <div style={{ padding:24, textAlign:'center', color:'#70839A', fontSize:12 }}>Carregando alunos…</div>}
       {message && <div role="status" style={{ marginTop:12, padding:'11px 12px', borderRadius:13, background:message.startsWith('✓') ? '#E7F8F1' : '#FFF4E5', color:message.startsWith('✓') ? '#14745C' : '#8A5200', fontSize:11.5, lineHeight:1.45 }}>{message}</div>}
       {tab === 'create' && data && <React.Fragment>
@@ -677,6 +775,7 @@ function ChallengeDuels({ onClose, onLoad, onCreate, onRespond, onPlay, onLive }
         const state = duel.state || {}, playable = duel.mode !== 'live' && state.phase === 'open' && state.canStart && state.round;
         return <div key={duel.id} style={{ padding:15, borderRadius:17, background:'#fff', border:'1px solid #B9DDFB' }}><div style={{ display:'flex', justifyContent:'space-between', gap:10 }}><span><span style={{ display:'block', color:'#0D5AA7', fontSize:9, fontWeight:900, textTransform:'uppercase' }}>{statusLabel(duel)}</span><strong style={{ display:'block', color:'#102C4E', fontSize:14, marginTop:4 }}>Você × {duel.opponentName}</strong></span><span style={{ padding:'6px 8px', height:'fit-content', borderRadius:9, background:duel.mode === 'live' ? '#FEE2E2' : '#E8F3FF', color:duel.mode === 'live' ? '#B91C1C' : '#0D5AA7', fontSize:9, fontWeight:900 }}>{duel.mode === 'live' ? '● AO VIVO' : '⚡ RÁPIDO'}</span></div>{duel.scores?.length > 0 && <div style={{ display:'flex', gap:8, marginTop:11 }}>{duel.scores.map(row => <span key={row.uid} style={{ flex:1, padding:9, borderRadius:10, background:'#F4F8FC', color:'#213B5B', fontSize:10.5 }}><strong>{row.name}</strong><span style={{ display:'block', color:'#0D5AA7', marginTop:2 }}>{row.score} PTS</span></span>)}</div>}{playable && <button onClick={() => onPlay(state)} style={{ width:'100%', marginTop:12, border:0, borderRadius:12, padding:12, background:'#087982', color:'#fff', fontFamily:'inherit', fontWeight:900 }}>{state.started ? 'CONTINUAR DUELO' : 'RESPONDER 10 PERGUNTAS'} →</button>}{duel.mode === 'live' && duel.status === 'accepted' && <button onClick={() => onLive(duel)} style={{ width:'100%', marginTop:12, border:0, borderRadius:12, padding:12, background:'#DC2626', color:'#fff', fontFamily:'inherit', fontWeight:900 }}>ENTRAR NA SALA AO VIVO →</button>}{state.completed && !duel.bothCompleted && <div style={{ marginTop:10, padding:10, borderRadius:11, background:'#FFF7E6', color:'#8A5200', textAlign:'center', fontSize:11, fontWeight:850 }}>✓ Você terminou. Aguardando {duel.opponentName} para revelar o resultado.</div>}{duel.bothCompleted && <div style={{ marginTop:10, padding:10, borderRadius:11, background:'#E7F8F1', color:'#14745C', textAlign:'center', fontSize:11, fontWeight:850 }}>🏆 Resultado liberado assim que os dois terminaram</div>}</div>;
       })}{!mine.length && <div style={{ padding:20, textAlign:'center', borderRadius:16, background:'#fff', color:'#64748B', fontSize:12 }}>Você ainda não criou nem aceitou desafios.</div>}</div>}
+      {tab === 'ranking' && data && <DuelRankingTab ranking={data.ranking || []} />}
       {tab === 'history' && data && <div style={{ marginTop:14 }}>
         {!historyOpponent && <React.Fragment><div style={{ color:'#0D5AA7', fontSize:10, fontWeight:900, letterSpacing:.8, textTransform:'uppercase', marginBottom:8 }}>Escolha um adversário</div><div style={{ display:'grid', gap:8 }}>{historyGroups.map(group => <button key={group.uid} onClick={() => setHistoryOpponent(group)} style={{ width:'100%', display:'flex', alignItems:'center', gap:11, padding:'12px', border:'1px solid #DCE7F4', borderRadius:15, background:'#fff', fontFamily:'inherit', textAlign:'left' }}><span style={{ width:40, height:40, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background:'#E7F3FF', color:'#0D5AA7', fontWeight:900 }}>{group.name.slice(0,1).toUpperCase()}</span><span style={{ flex:1 }}><strong style={{ display:'block', color:'#173654', fontSize:13.5 }}>{group.name}</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:10.5, marginTop:2 }}>{group.duels.length} desafio{group.duels.length === 1 ? '' : 's'} entre vocês</span></span><span style={{ color:'#8EA0B5', fontSize:20 }}>›</span></button>)}</div>{!historyGroups.length && <div style={{ padding:20, textAlign:'center', borderRadius:16, background:'#fff', color:'#64748B', fontSize:12 }}>O histórico aparecerá aqui depois do primeiro desafio aceito.</div>}</React.Fragment>}
         {historyOpponent && <React.Fragment><button onClick={() => setHistoryOpponent(null)} style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'11px 12px', border:'1px solid #DCE7F4', borderRadius:14, background:'#fff', color:'#0D3F82', fontFamily:'inherit', textAlign:'left' }}><span style={{ fontSize:20 }}>‹</span><span><strong style={{ display:'block', fontSize:13.5 }}>{historyOpponent.name}</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:10 }}>Todos os desafios com esta pessoa</span></span></button><div style={{ display:'grid', gap:8, marginTop:10 }}>{historyOpponent.duels.map(duel => <div key={duel.id} style={{ padding:13, borderRadius:15, background:'#fff', border:'1px solid #DCE7F4' }}><div style={{ display:'flex', justifyContent:'space-between', gap:9 }}><span><strong style={{ display:'block', color:'#173654', fontSize:12.5 }}>{duel.mode === 'live' ? '🔴 Duelo ao vivo' : '⚡ Duelo rápido'}</strong><span style={{ display:'block', color:'#7B8DA3', fontSize:9.8, marginTop:3 }}>{historyDate(duel.createdAt)}</span></span><span style={{ color:duel.bothCompleted ? '#14745C' : '#8A5200', fontSize:9.5, fontWeight:900 }}>{duel.bothCompleted ? 'FINALIZADO' : 'EM ANDAMENTO'}</span></div>{duel.scores?.length > 0 && <div style={{ display:'grid', gridTemplateColumns:'repeat(2,minmax(0,1fr))', gap:7, marginTop:10 }}>{duel.scores.map(row => <div key={row.uid} style={{ padding:9, borderRadius:10, background:'#F4F8FC' }}><span style={{ display:'block', color:'#53677E', fontSize:9.5 }}>{row.name}</span><strong style={{ display:'block', color:'#0D5AA7', fontSize:13, marginTop:2 }}>{row.score} PTS</strong></div>)}</div>}</div>)}</div></React.Fragment>}

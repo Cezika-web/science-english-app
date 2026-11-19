@@ -1178,6 +1178,45 @@ ${item.text}`).join('\n\n')}`
     }
   }
 
+  // Ranking próprio dos duelos da escola: só conta duelo em que os DOIS terminaram.
+  // Ordem: mais vitórias, depois mais pontos. Não mistura com o ranking geral do
+  // Desafio. Quem está arquivado ou fora do desafio não aparece.
+  async function duelRanking(schoolId, uid, studentDocs) {
+    if (!schoolId) return [];
+    const duelsSnap = await db.collection('_challengeDuels').where('schoolId', '==', schoolId).get();
+    const played = duelsSnap.docs.map(doc => doc.data())
+      .filter(duel => duel.status === 'accepted' && duel.generated === true && duel.roundId && (duel.participantUids || []).length === 2)
+      .sort((a, b) => String(iso(b.createdAt) || '').localeCompare(String(iso(a.createdAt) || '')))
+      .slice(0, 400);
+    const stats = new Map();
+    const bump = (id, score, outcome) => {
+      const row = stats.get(id) || { uid:id, wins:0, losses:0, draws:0, points:0, duels:0 };
+      row.duels += 1; row.points += score;
+      if (outcome === 'win') row.wins += 1; else if (outcome === 'loss') row.losses += 1; else row.draws += 1;
+      stats.set(id, row);
+    };
+    await Promise.all(played.map(async duel => {
+      const [a, b] = duel.participantUids;
+      const [resultA, resultB] = await Promise.all([a, b].map(id => db.doc(`_challengeResults/${duel.roundId}_${id}`).get()));
+      if (!resultA.exists || !resultB.exists) return;
+      const scoreA = Number(resultA.data().score || 0), scoreB = Number(resultB.data().score || 0);
+      bump(a, scoreA, scoreA > scoreB ? 'win' : scoreA < scoreB ? 'loss' : 'draw');
+      bump(b, scoreB, scoreB > scoreA ? 'win' : scoreB < scoreA ? 'loss' : 'draw');
+    }));
+    const byId = new Map(studentDocs.map(doc => [doc.id, doc.data()]));
+    const ranked = [...stats.values()].filter(row => {
+      const student = byId.get(row.uid);
+      return student && student.archived !== true && student.challengeEnabled !== false && String(student.schoolId || '') === String(schoolId);
+    }).sort((a, b) => b.wins - a.wins || b.points - a.points || b.duels - a.duels)
+      .map((row, index) => {
+        const student = byId.get(row.uid);
+        return { ...row, position:index + 1, isOwn:row.uid === uid,
+          name:student.firstName || String(student.name || 'Aluno').split(/\s+/)[0] };
+      });
+    const own = ranked.find(row => row.isOwn);
+    return (own && own.position > 20 ? [...ranked.slice(0, 19), own] : ranked.slice(0, 20));
+  }
+
   const obterDesafiosEntreAlunos = onCall(
     { region:REGION, timeoutSeconds:60, memory:'256MiB' },
     async request => {
@@ -1193,7 +1232,10 @@ ${item.text}`).join('\n\n')}`
         .map(doc => ({ uid:doc.id, name:doc.data().firstName || String(doc.data().name || 'Aluno').split(/\s+/)[0] }));
       const duels = await Promise.all(duelsSnap.docs.map(doc => publicPeerDuel(doc, uid)));
       duels.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
-      return { opponents:opponents.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')), duels };
+      // Ranking é um extra: se falhar, o painel de duelos abre do mesmo jeito.
+      const ranking = await duelRanking(student.schoolId, uid, studentsSnap.docs)
+        .catch(error => { console.error('Ranking dos duelos:', error.message); return []; });
+      return { opponents:opponents.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')), duels, ranking };
     }
   );
 
@@ -1427,6 +1469,76 @@ ${item.text}`).join('\n\n')}`
     return { schoolId, group };
   }
 
+  // Histórico da dupla/turma: as semanas que já terminaram, lidas de
+  // `_challengeResults` (que nunca é apagado). A semana em andamento fica fora —
+  // ela já aparece nos cartões das partes, e nota de parte aberta não circula.
+  // Cada aluno só recebe as PRÓPRIAS correções.
+  function summarizeTurmaResults(resultDocs, membros, currentWeekKey) {
+    const weeks = new Map();
+    resultDocs.forEach(doc => {
+      const result = doc.data();
+      if (!result.weekKey || result.weekKey >= currentWeekKey || ![1, 2].includes(Number(result.part))) return;
+      const week = weeks.get(result.weekKey) || { weekKey:result.weekKey, parts:new Map() };
+      const part = week.parts.get(Number(result.part)) || { part:Number(result.part), byUid:new Map(), max:0 };
+      part.byUid.set(result.uid, result);
+      part.max = Math.max(part.max, Number(result.maxScore || 500));
+      week.parts.set(part.part, part);
+      weeks.set(result.weekKey, week);
+    });
+    return [...weeks.values()].sort((a, b) => b.weekKey.localeCompare(a.weekKey)).map(week => {
+      const parts = [...week.parts.values()].sort((a, b) => a.part - b.part);
+      const totals = membros.map(membro => parts.reduce((sum, part) => sum + Number(part.byUid.get(membro.uid)?.score || 0), 0));
+      const top = Math.max(0, ...totals);
+      const leaders = totals.filter(total => total === top);
+      return { week, parts, totals, top, winnerIndex:top > 0 && leaders.length === 1 ? totals.indexOf(top) : -1,
+        draw:top > 0 && leaders.length > 1, max:parts.reduce((sum, part) => sum + part.max, 0) };
+    });
+  }
+
+  async function turmaHistory(groupId, membros, ownUid, currentWeekKey) {
+    const snap = await db.collection('_challengeResults').where('groupId', '==', groupId).get();
+    const summary = summarizeTurmaResults(snap.docs, membros, currentWeekKey);
+    const stats = membros.map(membro => ({ name:membro.name, isOwn:membro.uid === ownUid, weeksWon:0, points:0 }));
+    summary.forEach(item => {
+      item.totals.forEach((total, index) => { stats[index].points += total; });
+      if (item.winnerIndex >= 0) stats[item.winnerIndex].weeksWon += 1;
+    });
+    return {
+      totalWeeks:summary.length, draws:summary.filter(item => item.draw).length,
+      maxPoints:summary.reduce((sum, item) => sum + item.max, 0), members:stats,
+      weeks:summary.slice(0, 12).map(item => ({
+        weekKey:item.week.weekKey, winner:item.winnerIndex >= 0 ? membros[item.winnerIndex].name : null, draw:item.draw,
+        scores:membros.map((membro, index) => ({ name:membro.name, total:item.totals[index] })),
+        parts:item.parts.map(part => ({
+          part:part.part,
+          scores:membros.map(membro => ({ name:membro.name, score:Number(part.byUid.get(membro.uid)?.score || 0) })),
+          details:part.byUid.get(ownUid)?.details || [],
+        })),
+      })),
+    };
+  }
+
+  // Ranking entre as duplas/turmas da escola: média de pontos POR ALUNO em cada
+  // semana encerrada (assim dupla e turma de três comparam de forma justa).
+  async function turmaRanking(schoolId, ownGroupId, currentWeekKey) {
+    const groupsSnap = await db.collection(`schools/${schoolId}/classGroups`).get();
+    const rows = (await Promise.all(groupsSnap.docs
+      .filter(doc => doc.data().active !== false && (doc.data().memberUids || []).length >= 2)
+      .map(async doc => {
+        const group = doc.data();
+        const membros = (group.memberUids || []).map(uid => ({ uid }));
+        const snap = await db.collection('_challengeResults').where('groupId', '==', doc.id).get();
+        const summary = summarizeTurmaResults(snap.docs, membros, currentWeekKey);
+        if (!summary.length) return null;
+        const perStudent = summary.map(item => item.totals.reduce((sum, total) => sum + total, 0) / membros.length);
+        return { id:doc.id, name:group.name || 'Dupla', weeks:summary.length,
+          avg:Math.round(perStudent.reduce((sum, value) => sum + value, 0) / perStudent.length) };
+      }))).filter(Boolean).sort((a, b) => b.avg - a.avg || b.weeks - a.weeks || a.name.localeCompare(b.name, 'pt-BR'));
+    const ranked = rows.map((row, index) => ({ position:index + 1, name:row.name, avg:row.avg, weeks:row.weeks, isOwn:row.id === ownGroupId }));
+    const own = ranked.find(row => row.isOwn);
+    return own && own.position > 10 ? [...ranked.slice(0, 9), own] : ranked.slice(0, 10);
+  }
+
   const obterDesafioDaTurma = onCall(
     { region:REGION, timeoutSeconds:60, memory:'256MiB' },
     async request => {
@@ -1437,7 +1549,7 @@ ${item.text}`).join('\n\n')}`
       const uid = adminMirror ? alvo : quemChamou;
       const studentSnap = await assertStudent(uid);
       const groupId = String(request.data?.groupId || '').trim();
-      const { group } = await loadGroupForStudent(uid, studentSnap.data(), groupId);
+      const { schoolId, group } = await loadGroupForStudent(uid, studentSnap.data(), groupId);
 
       const now = new Date();
       const weekKey = weekKeyFor(now);
@@ -1447,6 +1559,12 @@ ${item.text}`).join('\n\n')}`
         uid:memberUid, name:(group.memberNames || [])[index] || 'Aluno', isOwn:memberUid === uid,
       }));
       const ownIndex = membros.findIndex(item => item.isOwn);
+
+      // Histórico e rankings são um extra: se falharem, a rodada da semana abre do mesmo jeito.
+      const extras = Promise.all([
+        turmaHistory(groupId, membros, uid, weekKey).catch(error => { console.error(`Histórico da turma ${groupId}:`, error.message); return null; }),
+        turmaRanking(schoolId, groupId, weekKey).catch(error => { console.error(`Ranking das turmas ${schoolId}:`, error.message); return []; }),
+      ]);
 
       const partes = await Promise.all([schedule.part1, schedule.part2].map(async item => {
         const status = now < item.opensAt ? 'upcoming' : now <= item.closesAt ? 'open' : 'closed';
@@ -1492,8 +1610,10 @@ ${item.text}`).join('\n\n')}`
         return parte;
       }));
 
+      const [historico, rankingDuplas] = await extras;
       return { enabled:true, groupId, groupName:group.name || '', weekKey, phase:stage.phase,
-        membros:membros.map(item => ({ name:item.name, isOwn:item.isOwn })), partes };
+        membros:membros.map(item => ({ name:item.name, isOwn:item.isOwn })), partes,
+        historico, rankingDuplas:rankingDuplas.length >= 2 ? rankingDuplas : [] };
     }
   );
 
