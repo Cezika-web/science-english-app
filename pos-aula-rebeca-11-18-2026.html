@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Rebeca — CZK English</title>
+  <style>
+:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Perguntas no passado com did, was e were</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Rebeca &nbsp;•&nbsp;
+            <strong>Data:</strong> 11/18/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+
+        <section class="panel">
+          <p style="margin:0;font-weight:600;color:#14532D;"><em>Você revisou como fazer perguntas no passado e aprendeu a reconhecer quando <strong>who</strong> ou <strong>what</strong> já faz o papel de sujeito. Também praticou verbos irregulares, a pronúncia de <strong>-ed</strong> e expressões para falar de viagens e do cotidiano.</em></p>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 8px 0;">Começamos pela correção das atividades do app. Para falar de deslocamento, você separou <strong>go → went</strong> de <strong>be → was/were</strong>. Em <em>He went to the hotel by bus</em>, <strong>went</strong> indica que ele foi até o hotel. Para perguntar sobre o destino, usamos <em>Where did you go?</em>. Para perguntar onde a pessoa estava, invertemos <strong>were</strong> e <strong>you</strong> em <em>Where were you last night?</em>.</p>
+            <p style="margin:0 0 8px 0;">A pergunta que você fez sobre compras levou à diferença entre <em>What did you buy?</em> e <em>Who bought the tickets?</em>. Na primeira, <strong>you</strong> é quem compra, <strong>what</strong> pergunta pela coisa comprada e <strong>did</strong> marca o passado. Na segunda, <strong>who</strong> é quem compra, então a pergunta já tem sujeito e o verbo fica no passado, <strong>bought</strong>. Você aplicou a mesma lógica ao formular <em>What delayed the flight?</em> durante a aula.</p>
+            <p style="margin:0 0 8px 0;">Depois, voltamos aos verbos que costumam andar juntos. Use <strong>enjoy + verbo em -ing</strong> e <strong>want + to + verbo</strong>. Com <strong>like</strong> e <strong>love</strong>, as duas formas são possíveis. Você praticou esse padrão para falar de passar tempo com a família e retomou <strong>spend → spent</strong>, <strong>sleep → slept</strong> e <strong>waste → wasted</strong>.</p>
+            <p style="margin:0;">Na pronúncia, ouvimos os três sons de <strong>-ed</strong> em <em>played</em> /d/, <em>missed</em> /t/ e <em>wasted</em> /ɪd/. Também vimos como perguntar se há novidades com <em>Any news?</em>, como usar <em>it depends on</em> e como reconhecer <strong>won’t</strong> como a contração de <strong>will not</strong>.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Frases usadas em aula</h2>
+          <div class="outline-card">
+            <ul>
+              <li><strong lang="en">He went to the hotel by bus.</strong> → Ele foi para o hotel de ônibus.</li>
+              <li><strong lang="en">What did you buy?</strong> → O que você comprou?</li>
+              <li><strong lang="en">Who did they meet?</strong> → Quem eles encontraram?</li>
+              <li><strong lang="en">Who returned the wallet?</strong> → Quem devolveu a carteira?</li>
+              <li><strong lang="en">Julia bought the tickets.</strong> → A Julia comprou as passagens.</li>
+              <li><strong lang="en">Who bought the tickets?</strong> → Quem comprou as passagens?</li>
+              <li><strong lang="en">Did Julia buy the tickets?</strong> → A Julia comprou as passagens?</li>
+              <li><strong lang="en">Who lost his passport?</strong> → Quem perdeu o passaporte?</li>
+              <li><strong lang="en">Who sat next to you?</strong> → Quem se sentou ao seu lado?</li>
+              <li><strong lang="en">What delayed the flight?</strong> → O que atrasou o voo?</li>
+              <li><strong lang="en">Where were you last night?</strong> → Onde você estava ontem à noite?</li>
+              <li><strong lang="en">Where were you this morning?</strong> → Onde você estava hoje de manhã?</li>
+              <li><strong lang="en">I have good news today.</strong> → Tenho boas notícias hoje.</li>
+              <li><strong lang="en">I really like coffee.</strong> → Eu gosto muito de café.</li>
+            </ul>
+          </div>
+        </section>
+        <section>
+          <h2 style="margin-bottom:8px;">Vocabulário-chave</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <div class="vocab-head">
+                <h3>missed</h3>
+                <button type="button" class="vocab-say" data-czk-say="missed"
+                        aria-label="Ouvir a pronúncia de missed" aria-pressed="false"
+                        title="Ouvir missed">&#128266;</button>
+              </div>
+              <p><em>(pt) perdeu, no sentido de não conseguir pegar a tempo</em><br><small>Use para ônibus, voos e outros compromissos com horário. <em lang="en">I missed the bus.</em> — Perdi o ônibus. O final de <em>missed</em> tem som de /t/.</small></p>
+            </div>
+            <div class="vocab green">
+              <div class="vocab-head">
+                <h3>spent</h3>
+                <button type="button" class="vocab-say" data-czk-say="spent"
+                        aria-label="Ouvir a pronúncia de spent" aria-pressed="false"
+                        title="Ouvir spent">&#128266;</button>
+              </div>
+              <p><em>(pt) gastou ou passou, no passado</em><br><small>É o passado de <em>spend</em>. <em lang="en">She spent a lot of money last week.</em> — Ela gastou muito dinheiro na semana passada.</small></p>
+            </div>
+            <div class="vocab yellow">
+              <div class="vocab-head">
+                <h3>it depends on</h3>
+                <button type="button" class="vocab-say" data-czk-say="it depends on"
+                        aria-label="Ouvir a pronúncia de it depends on" aria-pressed="false"
+                        title="Ouvir it depends on">&#128266;</button>
+              </div>
+              <p><em>(pt) isso depende de</em><br><small>Use antes do fator que determina a resposta. <em lang="en">It depends on the week.</em> — Depende da semana.</small></p>
+            </div>
+          </div>
+        </section>
+
+        
+
+        <section>
+          <h2 style="margin-bottom:8px;">Vocabulário completo da aula</h2>
+          <div class="outline-card">
+            <h3 style="margin-top:0;">Casa e hotel</h3>
+            <ul>
+              <li><strong lang="en">front yard / backyard</strong> – quintal da frente / quintal dos fundos</li>
+              <li><strong lang="en">balcony</strong> – varanda, como a de um quarto de hotel</li>
+              <li><strong lang="en">paint</strong> – pintar</li>
+              <li><strong lang="en">elevator</strong> – elevador</li>
+            </ul>
+            <h3>Viagens e transporte</h3>
+            <ul>
+              <li><strong lang="en">by bus</strong> – de ônibus</li>
+              <li><strong lang="en">aisle seat</strong> – assento no corredor</li>
+              <li><strong lang="en">ticket</strong> – passagem ou ingresso, conforme o contexto</li>
+              <li><strong lang="en">luggage</strong> – bagagem, substantivo incontável</li>
+              <li><strong lang="en">wallet / passport</strong> – carteira / passaporte</li>
+              <li><strong lang="en">storm / flight</strong> – tempestade / voo</li>
+              <li><strong lang="en">delay a flight</strong> – atrasar um voo</li>
+              <li><strong lang="en">miss a flight / lose a passport</strong> – perder um voo / perder um passaporte</li>
+            </ul>
+            <h3>Formas verbais da aula</h3>
+            <ul>
+              <li><strong lang="en">go → went</strong> – ir → foi</li>
+              <li><strong lang="en">buy → bought</strong> – comprar → comprou</li>
+              <li><strong lang="en">lose → lost</strong> – perder → perdeu</li>
+              <li><strong lang="en">sit → sat</strong> – sentar → sentou</li>
+              <li><strong lang="en">sleep → slept</strong> – dormir → dormiu</li>
+              <li><strong lang="en">spend → spent</strong> – gastar dinheiro ou passar tempo</li>
+              <li><strong lang="en">waste → wasted</strong> – desperdiçar → desperdiçou. Como substantivo, waste significa desperdício ou resíduos.</li>
+              <li><strong lang="en">play → played / miss → missed</strong> – jogar ou tocar → jogou ou tocou / perder → perdeu</li>
+            </ul>
+            <h3>Expressões do dia a dia</h3>
+            <ul>
+              <li><strong lang="en">spend time with my family</strong> – passar tempo com a minha família</li>
+              <li><strong lang="en">good news / any news?</strong> – boas notícias / alguma novidade?</li>
+              <li><strong lang="en">in the morning / in the evening / at night</strong> – de manhã / no começo da noite / à noite</li>
+              <li><strong lang="en">this morning / last night</strong> – hoje de manhã / ontem à noite</li>
+              <li><strong lang="en">after that</strong> – depois disso</li>
+              <li><strong lang="en">than / then</strong> – than introduz o segundo termo de uma comparação. Then indica sequência, como “depois” ou “então”.</li>
+              <li><strong lang="en">won’t</strong> – contração de will not</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Correções importantes</h2>
+          <div class="outline-card">
+            <ul>
+              <li><strong lang="en">❌ He was to the hotel by bus.</strong> → <strong lang="en">✅ He went to the hotel by bus.</strong><br>Para expressar o movimento de ir até o hotel, use <em>went to</em>. Para dizer que ele estava no hotel, use <em>was at the hotel</em>.</li>
+              <li><strong lang="en">❌ What you bought last time?</strong> → <strong lang="en">✅ What did you buy last time?</strong><br>A pergunta direta tem <em>you</em> como sujeito. Use <em>did</em> para marcar o passado e mantenha <em>buy</em> na forma base.</li>
+              <li><strong lang="en">❌ Where you were last night?</strong> → <strong lang="en">✅ Where were you last night?</strong><br>Em uma pergunta direta com <em>be</em>, coloque <em>were</em> antes de <em>you</em>.</li>
+              <li><strong lang="en">❌ Where you went?</strong> → <strong lang="en">✅ Where did you go?</strong><br>Aqui o verbo é <em>go</em>. Com <em>did</em>, use <em>go</em>. Na afirmação, use <em>went</em>.</li>
+              <li><strong lang="en">❌ I love spend time with my family.</strong> → <strong lang="en">✅ I love spending time with my family.</strong><br>Depois de <em>love</em>, também cabe <em>to spend</em>. Com <em>enjoy</em>, use <em>spending</em>.</li>
+              <li><strong lang="en">❌ She spend a lot of money last week.</strong> → <strong lang="en">✅ She spent a lot of money last week.</strong><br>Na afirmativa sobre a semana passada, <em>spend</em> vira <em>spent</em>. O verbo <em>waste</em> indica desperdício e acrescenta uma ideia de mau aproveitamento.</li>
+              <li><strong lang="en">❌ a news</strong> → <strong lang="en">✅ some news / a piece of news</strong><br><em>News</em> é incontável em inglês. Para contar uma novidade específica, use <em>a piece of news</em>.</li>
+              <li><strong lang="en">❌ Depend the week.</strong> → <strong lang="en">✅ It depends on the week.</strong><br>Use <em>it</em> como sujeito, acrescente <em>-s</em> em <em>depends</em> e ligue ao complemento com <em>on</em>.</li>
+              <li><strong lang="en">❌ I sleep eight hours yesterday.</strong> → <strong lang="en">✅ I slept eight hours yesterday.</strong><br>O passado irregular de <em>sleep</em> é <em>slept</em>. Escreva o pronome <em>I</em> em maiúscula e <em>yesterday</em> com <em>e</em> depois do <em>y</em> inicial.</li>
+            </ul>
+          </div>
+        </section>
+        <section>
+          <div class="ie-badge">
+            <span class="ie-flag" aria-hidden="true"><span style="background:#169b62;"></span><span style="background:#ffffff;"></span><span style="background:#ff883e;"></span></span>
+            <span class="ie-shamrock">☘️</span>
+            <span class="ie-title">Como se diz na Irlanda</span>
+          </div>
+          <div class="outline-card">
+            <p style="margin:0 0 12px 0;color:var(--muted);font-size:0.9rem;">Duas expressões da aula e formas que você pode ouvir na Irlanda.</p>
+
+            <div style="border-radius:10px;border:2px solid #c9f3dc;background:#f5fff6;padding:14px;margin-bottom:12px;">
+              <span class="expr-tag">What’s the craic?</span>
+              <p style="margin:0 0 4px 0;color:var(--muted);font-size:0.85rem;">Na aula saiu assim:</p>
+              <p style="margin:0 0 10px 0;font-size:0.95rem;color:#374151;">"How are you?"</p>
+              <p style="margin:0 0 4px 0;color:var(--muted);font-size:0.85rem;">Na Irlanda soa assim:</p>
+              <p style="margin:0 0 10px 0;font-size:1rem;font-weight:700;color:#14532D;">"What’s the craic?"</p>
+              <p style="margin:0 0 10px 0;font-size:0.92rem;color:#374151;">💡 É um cumprimento informal parecido com “E aí, tudo bem?” ou “Quais são as novidades?”. É comum entre amigos ou colegas com quem você já tem intimidade. <em>Craic</em> soa como <em>crack</em>. <a href="https://www.ireland.com/en/things-to-do/themes/culture/craic-in-ireland/" target="_blank" rel="noopener noreferrer">Tourism Ireland</a>.</p>
+              <p style="margin:0 0 3px 0;color:var(--muted);font-size:0.85rem;">Outro exemplo com "What’s the craic?":</p>
+              <p style="margin:0;font-size:0.93rem;color:#374151;">"What’s the craic, everyone?" <span style="color:var(--muted);">— E aí, pessoal, tudo bem?</span></p>
+            </div>
+
+            <div style="border-radius:10px;border:2px solid #fde68a;background:#fffdf0;padding:14px;margin-bottom:12px;">
+              <span class="expr-tag" style="background:#92400e;">back garden</span>
+              <p style="margin:0 0 4px 0;color:var(--muted);font-size:0.85rem;">Na aula saiu assim:</p>
+              <p style="margin:0 0 10px 0;font-size:0.95rem;color:#374151;">"Backyard."</p>
+              <p style="margin:0 0 4px 0;color:var(--muted);font-size:0.85rem;">Na Irlanda soa assim:</p>
+              <p style="margin:0 0 10px 0;font-size:1rem;font-weight:700;color:#14532D;">"Back garden."</p>
+              <p style="margin:0 0 10px 0;font-size:0.92rem;color:#374151;">💡 É um jeito comum, também ouvido na Irlanda, de chamar a área externa atrás da casa. Serve para conversa em geral e vale para o quintal dos fundos, inclusive se parte dele for pavimentada. <a href="https://www.focal.ie/en/eid/back-garden" target="_blank" rel="noopener noreferrer">English–Irish Dictionary</a>.</p>
+              <p style="margin:0 0 3px 0;color:var(--muted);font-size:0.85rem;">Outro exemplo com "back garden":</p>
+              <p style="margin:0;font-size:0.93rem;color:#374151;">"We had lunch in the back garden." <span style="color:var(--muted);">— Almoçamos no quintal dos fundos.</span></p>
+            </div>
+
+          </div>
+        </section>
+        
+
+
+        <!-- GRAVAÇÃO — só inclua esta seção se houver link do YouTube.
+             Sem link, remova a seção inteira: nada de botão morto. -->
+        <section>
+          <h2 style="margin-bottom:8px;">Gravação da aula</h2>
+          <div class="media-row">
+            <a class="media-btn" href="https://youtu.be/ujisb0fwJw4" target="_blank" rel="noopener noreferrer" role="button"
+               style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">
+              🎥 Assistir gravação
+            </a>
+          </div>
+        </section>
+
+        <!-- TALK TIME -->
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>Tempo de Fala (Talk Time)</h2>
+          <table class="talk-table">
+            <thead>
+              <tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr>
+            </thead>
+            <tbody>
+              <tr class="row-teacher">
+                <td><span class="talk-label">César (Professor)</span></td>
+                <td><span class="talk-percent">71%</span></td>
+                <td class="talk-time">~37 minutos</td>
+              </tr>
+              <tr class="row-student">
+                <td><span class="talk-label">Rebeca</span></td>
+                <td><span class="talk-percent">29%</span></td>
+                <td class="talk-time">~15 minutos</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin:8px 0 0;color:var(--muted);font-size:0.85rem;">Estimativa a partir dos trechos de fala de César e Rebeca na transcrição.</p>
+        </section>
+
+        <!-- HOMEWORK -->
+        <section>
+          <h2 style="margin-bottom:8px;">Homework</h2>
+          <div class="homework">
+            <p style="margin:0 0 8px 0;">📌 <strong>Lição de casa:</strong></p>
+            <ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+              <li>Faça as novas atividades do app, incluindo a atividade extra combinada em aula. Ao revisar, diga em voz alta <em>Who bought the tickets?</em> e <em>What did you buy?</em> e identifique o sujeito de cada pergunta.</li>
+              <li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana.</li>
+            </ul>
+          </div>
+        </section>
+
+      </main>
+
+      <footer>
+        <p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">
+          © 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com
+        </p>
+      </footer>
+
+    </article>
+  </div>
+
+  <!-- ÁUDIO DAS PALAVRAS-CHAVE — uma única função para o pós-aula inteiro.
+       Aberto direto: fala aqui mesmo. Dentro do app: pede ao app e quem fala é ele
+       (o app remove este script e injeta o próprio, então nada daqui roda por lá). -->
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body>
+</html>
