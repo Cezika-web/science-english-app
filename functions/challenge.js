@@ -1158,6 +1158,26 @@ ${item.text}`).join('\n\n')}`
     return { ...base, state, bothCompleted, ...(bothCompleted ? { scores } : {}) };
   }
 
+  // Aviso do duelo entre alunos (convite e aceite). Melhor esforço: nunca derruba
+  // a criação nem a resposta do convite, e não toca nos logs de lembrete do
+  // desafio semanal — é um canal à parte.
+  async function notifyDuel(studentSnap, { type, duelId, title, body }) {
+    try {
+      const student = studentSnap.data();
+      if (student.archived === true || student.challengeEnabled === false) return false;
+      const tokens = [...new Set([student.fcmToken, ...(Array.isArray(student.fcmTokens) ? student.fcmTokens : [])].filter(Boolean))];
+      if (!tokens.length) return false;
+      const response = await getMessaging().sendEachForMulticast({
+        tokens, notification:{ title, body }, data:{ type, duelId },
+        webpush:{ headers:{ Urgency:'high' }, fcmOptions:{ link:APP_URL } },
+      });
+      return response.successCount > 0;
+    } catch (error) {
+      console.error(`Aviso de duelo falhou para ${studentSnap?.id}:`, error.message);
+      return false;
+    }
+  }
+
   const obterDesafiosEntreAlunos = onCall(
     { region:REGION, timeoutSeconds:60, memory:'256MiB' },
     async request => {
@@ -1207,6 +1227,12 @@ ${item.text}`).join('\n\n')}`
         title:`${creatorName} × ${opponentName}`, mode, status:'pending', generated:false,
         createdAt:FieldValue.serverTimestamp(), updatedAt:FieldValue.serverTimestamp(),
       });
+      // O convite já está gravado: se o aviso falhar, ele continua valendo e fica
+      // só o registro de que o aluno não foi avisado (aparece no painel).
+      const inviteNotified = await notifyDuel(opponentSnap, { type:'duel-invite', duelId:ref.id,
+        title:`⚔️ ${creatorName} desafiou você`,
+        body:`Duelo ${mode === 'live' ? 'ao vivo' : 'rápido'} de 10 perguntas. Abra o app e entre em Desafio › Desafiar alguém › Convites.` });
+      await ref.set({ inviteNotified }, { merge:true }).catch(() => {});
       return { ok:true, id:ref.id };
     }
   );
@@ -1237,6 +1263,16 @@ ${item.text}`).join('\n\n')}`
         const published = await publishPeerDuelRound(client, duelId, duel, acceptedAt);
         await ref.set({ status:'accepted', generated:true, ...published,
           acceptedAt:FieldValue.serverTimestamp(), updatedAt:FieldValue.serverTimestamp() }, { merge:true });
+        // Quem criou o duelo precisa saber que já pode jogar. notifyDuel nunca lança.
+        const creatorSnap = await db.doc(`students/${duel.creatorUid}`).get().catch(() => null);
+        if (creatorSnap?.exists) {
+          const invitedName = (duel.participantNames || [])[(duel.participantUids || []).indexOf(uid)] || 'Seu colega';
+          await notifyDuel(creatorSnap, { type:'duel-accepted', duelId,
+            title:`${invitedName} aceitou o duelo`,
+            body:duel.mode === 'live'
+              ? 'Abra o app e entre na sala ao vivo em Desafio › Desafiar alguém.'
+              : 'As 10 perguntas já estão prontas. Abra o app e jogue: o duelo vale por 7 dias.' });
+        }
         return { ok:true, status:'accepted', weekKey:published.weekKey };
       } catch (error) {
         await ref.set({ status:'generation_error', generationError:String(error.message || error).slice(0, 500), updatedAt:FieldValue.serverTimestamp() }, { merge:true });
@@ -1278,6 +1314,75 @@ ${item.text}`).join('\n\n')}`
         throw new HttpsError('permission-denied', 'Você não participa desta sala.');
       }
       return publicPeerDuel(snap, uid);
+    }
+  );
+
+  // Painel do professor: duelos entre alunos e desafio das duplas da escola
+  // escolhida no painel. Só leitura. O professor vê as notas na hora; o aluno só
+  // vê depois que os dois terminam (publicPeerDuel).
+  const obterDuelosAdmin = onCall(
+    { region:REGION, timeoutSeconds:60, memory:'256MiB' },
+    async request => {
+      requireAdmin(request, adminEmails);
+      const schoolId = String(request.data?.schoolId || '').trim();
+      if (!schoolId) throw new HttpsError('invalid-argument', 'Faltou a escola.');
+      const now = new Date();
+      const isoOrNull = value => (value ? iso(value) : null);
+      const [duelsSnap, groupsSnap] = await Promise.all([
+        db.collection('_challengeDuels').where('schoolId', '==', schoolId).get(),
+        db.collection(`schools/${schoolId}/classGroups`).get(),
+      ]);
+
+      const duels = await Promise.all(duelsSnap.docs.map(async doc => {
+        const duel = doc.data();
+        const uids = duel.participantUids || [];
+        const played = duel.status === 'accepted' && duel.generated === true && duel.roundId;
+        const [submissions, results] = played ? await Promise.all([
+          Promise.all(uids.map(uid => db.doc(`students/${uid}/challengeSubmissions/${duel.roundId}`).get())),
+          Promise.all(uids.map(uid => db.doc(`_challengeResults/${duel.roundId}_${uid}`).get())),
+        ]) : [[], []];
+        return {
+          id:doc.id, title:duel.title || '', mode:duel.mode || 'quick', status:duel.status || 'pending',
+          inviteNotified:duel.inviteNotified ?? null, generationError:duel.generationError || '',
+          createdAt:isoOrNull(duel.createdAt), respondedAt:isoOrNull(duel.respondedAt), closesAt:isoOrNull(duel.closesAt),
+          players:uids.map((uid, index) => ({
+            uid, name:(duel.participantNames || [])[index] || 'Aluno', isCreator:uid === duel.creatorUid,
+            started:Boolean(submissions[index]?.exists),
+            done:Boolean(submissions[index]?.exists && submissions[index].data().completed === true),
+            score:results[index]?.exists ? Number(results[index].data().score || 0) : null,
+          })),
+        };
+      }));
+      duels.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+
+      const weekKey = weekKeyFor(now);
+      const turmas = await Promise.all(groupsSnap.docs.filter(doc => doc.data().active !== false).map(async doc => {
+        const group = doc.data();
+        const members = (group.memberUids || []).map((uid, index) => ({ uid, name:(group.memberNames || [])[index] || 'Aluno' }));
+        const schedule = groupScheduleFor(weekKey, doc.id);
+        const partes = await Promise.all([schedule.part1, schedule.part2].map(async item => {
+          const [rounds, submissions, results] = await Promise.all([
+            Promise.all(members.map(member => db.doc(`students/${member.uid}/challengeRounds/${item.roundId}`).get())),
+            Promise.all(members.map(member => db.doc(`students/${member.uid}/challengeSubmissions/${item.roundId}`).get())),
+            Promise.all(members.map(member => db.doc(`_challengeResults/${item.roundId}_${member.uid}`).get())),
+          ]);
+          return {
+            part:item.part, roundId:item.roundId,
+            status:now < item.opensAt ? 'upcoming' : now <= item.closesAt ? 'open' : 'closed',
+            opensAt:iso(item.opensAt), closesAt:iso(item.closesAt),
+            published:rounds.some(snap => snap.exists),
+            membros:members.map((member, index) => ({
+              name:member.name, started:submissions[index].exists,
+              done:Boolean(submissions[index].exists && submissions[index].data().completed === true),
+              score:results[index].exists ? Number(results[index].data().score || 0) : null,
+            })),
+          };
+        }));
+        return { id:doc.id, name:group.name || '', members:members.map(member => member.name),
+          automaticChallenge:group.automaticChallenge !== false, weekKey, partes };
+      }));
+
+      return { schoolId, weekKey, duels:duels.slice(0, 80), turmas };
     }
   );
 
@@ -3008,7 +3113,7 @@ ${item.text}`).join('\n\n')}`
     salvarRespostaDesafio, obterStatusDesafioAdmin, finalizarDesafioSemanal,
     notificarAberturaDesafio, lembrarDesafioManha, lembrarDesafioNoite, lembrarDesafioDiario,
     gerarDesafiosAtrasados, gerarDesafioDaSemana, gerarDesafioDaTurma,
-    obterDesafioDaTurma, prepararDesafioDaTurma,
+    obterDesafioDaTurma, prepararDesafioDaTurma, obterDuelosAdmin,
     aceitarRespostaDesafio, ajustarPontuacaoRespostaDesafio,
     obterDesafiosEntreAlunos, criarDesafioEntreAlunos, responderDesafioEntreAlunos,
     marcarProntoDesafioAoVivo, obterSalaDesafioAoVivo,

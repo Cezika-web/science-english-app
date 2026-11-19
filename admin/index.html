@@ -957,6 +957,7 @@
         <div class="side-group">
           <div class="side-title">Engajamento</div>
           <button class="tab" data-tab="challenge"><span class="ic">🏆</span><span class="lb">Desafio</span></button>
+          <button class="tab" data-tab="duelos"><span class="ic">⚔️</span><span class="lb">Duelos e duplas</span></button>
           <button class="tab" data-tab="adesao"><span class="ic">📈</span><span class="lb">Adesão</span></button>
           <button class="tab" data-tab="avisos"><span class="ic">📣</span><span class="lb">Avisos</span></button>
           <button class="tab tab-review" data-tab="avaliacoes">
@@ -1103,6 +1104,23 @@
             </div>
             <p style="font-size:.84rem;color:var(--muted);line-height:1.5;margin:8px 0 14px;">Os resultados só aparecem aqui depois que a semana fecha. Abra um mês para ver o ranking geral e cada semana concluída.</p>
             <div id="challenge-results-body"><div class="loading">Carregando...</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DUELOS E DUPLAS (só leitura, exceto "Preparar agora") -->
+      <div class="tab-panel" id="tab-duelos">
+        <div class="duas-colunas">
+          <div class="form-card" style="margin:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;"><h2 style="margin:0;">Duplas · desafio da semana</h2><button class="btn-secondary" id="duelos-refresh" type="button">Atualizar</button></div>
+            <p style="font-size:.84rem;color:var(--muted);line-height:1.5;margin:8px 0 12px;">Cada dupla joga as duas partes entre si, fora do ranking geral. As perguntas nascem quando um dos dois abre o desafio no app; se quiser adiantar, use <strong>Preparar perguntas agora</strong>.</p>
+            <div class="form-msg" id="duelos-msg" style="display:none;"></div>
+            <div id="duelos-turmas"><div class="loading">Carregando...</div></div>
+          </div>
+          <div class="form-card" style="margin:0;">
+            <h2 style="margin:0 0 4px;">Duelos entre alunos</h2>
+            <p style="font-size:.84rem;color:var(--muted);line-height:1.5;margin:0 0 12px;">Convites do botão <strong>Desafiar alguém</strong> no app. O aluno convidado recebe um aviso por push; as notas aparecem aqui assim que existem.</p>
+            <div id="duelos-lista"><div class="loading">Carregando...</div></div>
           </div>
         </div>
       </div>
@@ -6610,6 +6628,7 @@
           if (document.querySelector('.tab[data-tab="avaliacoes"]')?.classList.contains('active')) recarregarAvaliacoes();
           if (document.querySelector('.tab[data-tab="calendar"]')?.classList.contains('active')) loadCalendar();
           if (document.querySelector('.tab[data-tab="finance"]')?.classList.contains('active')) loadFinance();
+          if (document.querySelector('.tab[data-tab="duelos"]')?.classList.contains('active')) carregarDuelos();
         };
       });
     }
@@ -6697,6 +6716,7 @@
         if (tab.dataset.tab === 'pendencias') marcarPendenciasVistas();
         if (tab.dataset.tab === 'groups') loadClassGroups();
         if (tab.dataset.tab === 'challenge') loadChallengeAdmin();
+        if (tab.dataset.tab === 'duelos') carregarDuelos();
         if (tab.dataset.tab === 'adesao') loadAdesaoAdmin();
         if (tab.dataset.tab === 'calendar') loadCalendar();
         if (tab.dataset.tab === 'finance') loadFinance();
@@ -6717,8 +6737,8 @@
     // Quem administra a escola vê a interface dela — inclusive o César, ao
     // trocar de escola no seletor do topo.
     const ABAS_POR_MODO = {
-      manual:    ['students', 'groups', 'calendar', 'finance', 'challenge', 'adesao', 'creditos', 'posaula', 'processos', 'publish', 'correct', 'vocab', 'extras', 'curso', 'eurekia', 'falas', 'lab', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
-      assistido: ['students', 'groups', 'calendar', 'finance', 'challenge', 'adesao', 'creditos', 'posaula', 'processos', 'publish', 'extras', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
+      manual:    ['students', 'groups', 'calendar', 'finance', 'challenge', 'duelos', 'adesao', 'creditos', 'posaula', 'processos', 'publish', 'correct', 'vocab', 'extras', 'curso', 'eurekia', 'falas', 'lab', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
+      assistido: ['students', 'groups', 'calendar', 'finance', 'challenge', 'duelos', 'adesao', 'creditos', 'posaula', 'processos', 'publish', 'extras', 'avisos', 'avaliacoes', 'add', 'exalunos', 'pendencias'],
     };
 
     function modoDaEscolaAtual() {
@@ -12303,6 +12323,112 @@
         await loadChallengeResults();
       } catch (error) { status.innerHTML = `<div class="form-msg err" style="display:block;">Erro: ${esc(error.message)}</div>`; }
     }
+
+    // ── DUELOS E DUPLAS ─────────────────────────────────────────────────────
+    // Painel de leitura (obterDuelosAdmin). Único botão que age: "Preparar
+    // perguntas agora" chama gerarDesafioDaTurma, que não gera de novo o que já existe.
+    const diaHoraDuelo = valor => valor
+      ? new Date(valor).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—';
+    const diaDuelo = valor => valor ? new Date(valor).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) : '—';
+    const chipDuelo = (texto, cor, fundo) => `<span style="display:inline-block;padding:3px 9px;border-radius:999px;font-size:.7rem;font-weight:800;white-space:nowrap;color:${cor};background:${fundo};">${esc(texto)}</span>`;
+
+    function statusDoDuelo(duelo) {
+      const feitos = duelo.players.filter(p => p.done).length;
+      if (duelo.status === 'accepted') {
+        if (duelo.players.length && feitos === duelo.players.length) return ['Finalizado', '#15803D', '#F0FDF4'];
+        if (duelo.closesAt && new Date(duelo.closesAt) < new Date()) return ['Encerrado', '#6B7280', '#F3F4F6'];
+        return ['Em andamento', '#0D5AA7', '#EFF6FF'];
+      }
+      return ({
+        pending:['Aguardando aceite', '#B45309', '#FFFBEB'],
+        preparing:['Preparando perguntas', '#5B21B6', '#F5F3FF'],
+        declined:['Recusado', '#6B7280', '#F3F4F6'],
+        generation_error:['Erro ao gerar perguntas', '#B91C1C', '#FEF2F2'],
+      })[duelo.status] || [duelo.status, '#6B7280', '#F3F4F6'];
+    }
+
+    function linhaMembroDupla(membro) {
+      if (membro.done) return `<span style="color:#15803D;font-weight:800;">✓ ${esc(membro.name)}${membro.score != null ? ` · ${membro.score} PTS` : ''}</span>`;
+      if (membro.started) return `<span style="color:#B45309;font-weight:700;">● ${esc(membro.name)} · jogando</span>`;
+      return `<span style="color:var(--muted);">○ ${esc(membro.name)} · não respondeu</span>`;
+    }
+
+    function cartaoDupla(turma) {
+      const faltaPreparar = turma.partes.some(p => p.status === 'open' && !p.published);
+      const partes = turma.partes.map(p => {
+        const [rotulo, cor, fundo] = p.status === 'upcoming' ? [`Abre em ${diaDuelo(p.opensAt)}`, '#6B7280', '#F3F4F6']
+          : p.status === 'closed' ? [p.published ? 'Encerrada' : 'Encerrada · não chegou a abrir', '#6B7280', '#F3F4F6']
+          : p.published ? ['Aberta · perguntas prontas', '#15803D', '#F0FDF4'] : ['Aberta · sem perguntas', '#B45309', '#FFFBEB'];
+        const membros = p.published ? p.membros.map(linhaMembroDupla).join('<br>') : '';
+        return `<div style="padding:10px 0;border-top:1px solid var(--border);">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><strong>Parte ${p.part}</strong>${chipDuelo(rotulo, cor, fundo)}</div>
+          <div style="font-size:.74rem;color:var(--muted);margin-top:3px;">${diaDuelo(p.opensAt)} → ${diaDuelo(p.closesAt)}</div>
+          ${membros ? `<div style="font-size:.8rem;line-height:1.6;margin-top:6px;">${membros}</div>` : ''}
+        </div>`;
+      }).join('');
+      return `<div style="padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--card);margin-top:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+          <div><strong style="font-size:.95rem;">${esc(turma.name)}</strong><br><small style="color:var(--muted);">${turma.members.map(esc).join(' e ')}${turma.automaticChallenge ? '' : ' · desafio desligado'}</small></div>
+          ${faltaPreparar ? `<button type="button" class="btn-primary" data-preparar-turma="${esc(turma.id)}" style="padding:8px 12px;font-size:.78rem;">Preparar perguntas agora</button>` : ''}
+        </div>${partes}</div>`;
+    }
+
+    function cartaoDuelo(duelo) {
+      const [rotulo, cor, fundo] = statusDoDuelo(duelo);
+      const aviso = duelo.status !== 'pending' ? ''
+        : duelo.inviteNotified === true ? '🔔 o convidado foi avisado por push'
+        : duelo.inviteNotified === false ? '🔕 sem aviso: o convidado não ligou as notificações'
+        : 'convite anterior ao aviso por push';
+      const jogadores = ['accepted'].includes(duelo.status)
+        ? `<div style="font-size:.8rem;line-height:1.6;margin-top:6px;">${duelo.players.map(linhaMembroDupla).join('<br>')}</div>` : '';
+      return `<div style="padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--card);margin-top:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+          <strong>${esc(duelo.title || 'Duelo')}</strong>${chipDuelo(rotulo, cor, fundo)}
+        </div>
+        <div style="font-size:.74rem;color:var(--muted);margin-top:3px;">${duelo.mode === 'live' ? 'Ao vivo' : 'Rápido'} · criado em ${diaHoraDuelo(duelo.createdAt)}${aviso ? ` · ${aviso}` : ''}${duelo.generationError ? ` · ${esc(duelo.generationError)}` : ''}</div>
+        ${jogadores}
+      </div>`;
+    }
+
+    async function carregarDuelos() {
+      const caixaTurmas = document.getElementById('duelos-turmas');
+      const caixaDuelos = document.getElementById('duelos-lista');
+      if (!caixaTurmas || !caixaDuelos) return;
+      caixaTurmas.innerHTML = '<div class="loading">Consultando servidor...</div>';
+      caixaDuelos.innerHTML = '<div class="loading">Consultando servidor...</div>';
+      try {
+        const obter = httpsCallable(fns, 'obterDuelosAdmin', { timeout:60000 });
+        const { data } = await obter({ schoolId:escolaAtual });
+        caixaTurmas.innerHTML = data.turmas.length
+          ? `<div style="font-size:.75rem;font-weight:800;text-transform:uppercase;color:var(--muted);">${esc(challengeWeekLabel(data.weekKey))}</div>${data.turmas.map(cartaoDupla).join('')}`
+          : '<p style="color:var(--muted);font-size:.84rem;">Nenhuma dupla ou turma ativa nesta escola. Crie uma em Turmas/Duplas.</p>';
+        caixaDuelos.innerHTML = data.duels.length
+          ? data.duels.map(cartaoDuelo).join('')
+          : '<p style="color:var(--muted);font-size:.84rem;">Nenhum duelo criado ainda nesta escola.</p>';
+        caixaTurmas.querySelectorAll('[data-preparar-turma]').forEach(botao => {
+          botao.onclick = async () => {
+            const original = botao.textContent;
+            botao.disabled = true; botao.textContent = 'Gerando perguntas...';
+            showMsg('duelos-msg', 'Gerando as perguntas da dupla. Pode levar até um minuto.', 'ok');
+            try {
+              const gerar = httpsCallable(fns, 'gerarDesafioDaTurma', { timeout:600000 });
+              const { data: saida } = await gerar({ schoolId:escolaAtual, groupId:botao.dataset.prepararTurma });
+              showMsg('duelos-msg', saida.written?.length
+                ? `✅ Parte ${saida.written.join(' e ')} pronta${saida.written.length > 1 ? 's' : ''} para ${saida.membros} alunos. Já aparece no app deles.`
+                : ({ 'ja-publicado':'As perguntas já estavam prontas.', 'semana-encerrada':'A semana desta dupla já encerrou.', 'turma-sem-dois-alunos':'A dupla precisa de dois alunos ativos.' })[saida.skipped] || 'Nada para gerar agora.', 'ok');
+              await carregarDuelos();
+            } catch (error) {
+              showMsg('duelos-msg', `Não foi possível gerar: ${error.message}`, 'err');
+              botao.disabled = false; botao.textContent = original;
+            }
+          };
+        });
+      } catch (error) {
+        const falha = `<div class="form-msg err" style="display:block;">Erro: ${esc(error.message)}</div>`;
+        caixaTurmas.innerHTML = falha; caixaDuelos.innerHTML = '';
+      }
+    }
+    document.getElementById('duelos-refresh').onclick = carregarDuelos;
 
     // Resultado da semana e temporada. A semana isolada some na segunda; aqui
     // fica o acumulado e o mapa de erro coletivo.

@@ -2240,6 +2240,7 @@ export const gerarDesafioDaSemana = challengeFunctions.gerarDesafioDaSemana;
 export const gerarDesafioDaTurma = challengeFunctions.gerarDesafioDaTurma;
 export const obterDesafioDaTurma = challengeFunctions.obterDesafioDaTurma;
 export const prepararDesafioDaTurma = challengeFunctions.prepararDesafioDaTurma;
+export const obterDuelosAdmin = challengeFunctions.obterDuelosAdmin;
 export const aceitarRespostaDesafio = challengeFunctions.aceitarRespostaDesafio;
 export const ajustarPontuacaoRespostaDesafio = challengeFunctions.ajustarPontuacaoRespostaDesafio;
 export const obterDesafiosEntreAlunos = challengeFunctions.obterDesafiosEntreAlunos;
