@@ -188,7 +188,7 @@
 <div class="toast-el" id="global-toast"></div>
 
 <script src="adesao.js?v=85"></script>
-<script type="text/babel" data-presets="react" src="challenge.jsx?v=82"></script>
+<script type="text/babel" data-presets="react" src="challenge.jsx?v=86"></script>
 <script type="text/babel" data-presets="react" src="plano.jsx?v=83"></script>
 <script type="text/babel" data-presets="react" src="trilha.jsx?v=84"></script>
 <script type="text/babel" data-presets="react" src="novidades.jsx?v=82"></script>
@@ -6106,6 +6106,21 @@ function App() {
     return (await obter({ duelId })).data;
   }, [mirror]);
 
+  // Desafio da turma: estado das duas partes da semana. No espelho o uid do aluno
+  // vai junto (só admin pode pedir por outro uid) e nada é gerado nem jogado.
+  const loadTurmaChallenge = React.useCallback(async groupId => {
+    const fb = await getFB();
+    const obter = fb.httpsCallable(fb.functions, 'obterDesafioDaTurma');
+    return (await obter(mirror ? { groupId, uid:mirrorUid.current } : { groupId })).data;
+  }, [mirror]);
+
+  const prepareTurmaChallenge = React.useCallback(async groupId => {
+    if (mirror) throw new Error('No modo espelho, as perguntas são preparadas pelo aluno.');
+    const fb = await getFB();
+    const preparar = fb.httpsCallable(fb.functions, 'prepararDesafioDaTurma', { timeout:300000 });
+    return (await preparar({ groupId })).data;
+  }, [mirror]);
+
   async function refreshChallengeState(fbOverride = null) {
     try {
       const fb = fbOverride || await getFB();
@@ -6699,6 +6714,10 @@ function App() {
         onRespondDuel={respondPeerDuel}
         onPlayDuel={setPeerGameState}
         onLiveDuel={setPeerLiveDuel}
+        mirror={mirror}
+        onLoadTurma={loadTurmaChallenge}
+        onPrepareTurma={prepareTurmaChallenge}
+        onPlayTurma={setPeerGameState}
         onBack={() => { setChallengeView(null); setSelectedChallenge(null); }}
         onStart={() => setChallengeView('game')}
         onJoinChallenge={async (challenge) => {
@@ -6733,7 +6752,7 @@ function App() {
       />}
       {peerGameState && <ChallengeGame
         challengeState={peerGameState}
-        onExit={() => setPeerGameState(null)}
+        onExit={() => { setPeerGameState(null); window.dispatchEvent(new Event('peer-duel-updated')); }}
         onFinish={() => { setPeerGameState(null); window.dispatchEvent(new Event('peer-duel-updated')); }}
         onStart={async roundId => {
           if (mirror) throw new Error('Aqui você só acompanha — quem responde é o aluno.');

@@ -74,7 +74,7 @@ function ChallengeCard({ onOpen, challenge, challengeState }) {
       <span style={{ padding:'5px 8px', borderRadius:999, background:personal ? 'rgba(255,255,255,.18)' : state.tone, color:personal ? '#fff' : state.color, fontSize:9, fontWeight:900 }}>{personal ? 'OPCIONAL' : state.badge}</span>
     </span>
     <span style={{ display:'block', position:'relative', fontSize:20, lineHeight:1.15, fontWeight:900, marginTop:14 }}>{personal ? title : state.title}</span>
-    <span style={{ display:'block', position:'relative', color:'rgba(255,255,255,.78)', fontSize:12.5, marginTop:6 }}>{personal ? `${questionCount} perguntas por rodada` : state.detail}</span>
+    <span style={{ display:'block', position:'relative', color:'rgba(255,255,255,.78)', fontSize:12.5, marginTop:6 }}>{personal ? (challenge?.source === 'class-group' ? 'Duas partes por semana · vale só entre vocês' : `${questionCount} perguntas por rodada`) : state.detail}</span>
     <span style={{ display:'flex', position:'relative', alignItems:'center', justifyContent:'space-between', marginTop:16 }}><span style={{ fontSize:11.5, fontWeight:750, color:'#D8F8FF' }}>{personal ? `${challenge.participantCount || 2} participantes` : challengeState?.phase === 'results' ? 'Atualizado no domingo' : 'Até 500 PTS por parte'}</span><span style={{ padding:'8px 12px', borderRadius:11, background:'#fff', color:'#0B4C91', fontSize:10.5, fontWeight:900 }}>ABRIR →</span></span>
   </button>;
 }
@@ -399,6 +399,222 @@ function ChallengePrivateHub({ challenge, onBack, onJoin }) {
   return <div style={{ position:'fixed', inset:0, zIndex:10020, maxWidth:480, margin:'0 auto', background:'#F3F7FC', overflowY:'auto' }}><div style={{ padding:'calc(env(safe-area-inset-top,0px) + 14px) 18px 30px', color:'#fff', background:'linear-gradient(135deg,#073D43,#087982,#20A9A0)' }}><button onClick={onBack} style={challengeRoundButton}>‹</button><div style={{ textAlign:'center', marginTop:20 }}><div style={{ fontSize:36 }}>⚔️</div><h1 style={{ fontSize:23 }}>{challenge?.title || 'Desafio da turma'}</h1><p style={{ color:'rgba(255,255,255,.75)' }}>{challenge?.participantLabel || `${challenge?.participantCount || 2} participantes`}</p></div></div><div style={{ margin:-20, marginTop:-20, padding:36 }}><div style={{ padding:17, borderRadius:20, background:'#fff', border:'1px solid #DCE7F4' }}><strong style={{ color:'#0D3F82' }}>Desafio coletivo cadastrado</strong><p style={{ color:'#64748B', fontSize:12, lineHeight:1.5 }}>As rodadas coletivas serão ativadas depois do lançamento do desafio geral.</p>{!challenge?.joined && <button onClick={() => onJoin?.(challenge)} style={{ width:'100%', border:0, borderRadius:13, padding:13, background:'#087982', color:'#fff', fontWeight:900 }}>PARTICIPAR</button>}</div></div></div>;
 }
 
+// ── Desafio da turma ──────────────────────────────────────────────────────
+// Os integrantes recebem as MESMAS perguntas: Parte 1 (segunda a quarta) e
+// Parte 2 (quinta a sábado). Antes de a parte fechar só se sabe QUEM já
+// respondeu — nota e correção chegam do servidor depois, porque as perguntas
+// são iguais e o gabarito não pode circular. Vale só entre a turma: fora do
+// ranking geral.
+const turmaTeal = 'linear-gradient(135deg,#073D43,#087982,#20A9A0)';
+const turmaDays = {
+  1:{ opens:'segunda', closes:'quarta', closesAt:'na quarta', range:'de segunda a quarta' },
+  2:{ opens:'quinta', closes:'sábado', closesAt:'no sábado', range:'de quinta a sábado' },
+};
+const turmaCard = hot => ({ padding:17, borderRadius:20, background:'#fff', border:`1px solid ${hot ? '#7FD3CC' : '#DCE7F4'}`, boxShadow:'0 10px 24px rgba(7,27,58,.09)', marginBottom:12 });
+const turmaLabel = (color = '#087982') => ({ display:'block', fontSize:9.5, fontWeight:900, letterSpacing:1.1, color, textTransform:'uppercase' });
+const turmaTitle = { margin:'7px 0 3px', fontSize:19, lineHeight:1.2, color:'#0D3F82' };
+const turmaSub = { margin:0, color:'#64748B', fontSize:12.5, lineHeight:1.5 };
+const turmaFoot = { margin:'6px 4px 12px', color:'#7B8DA3', fontSize:11, lineHeight:1.5, textAlign:'center' };
+const turmaButton = { width:'100%', marginTop:15, border:0, borderRadius:15, padding:15, background:'linear-gradient(135deg,#087982,#20A9A0)', color:'#fff', fontFamily:'inherit', fontSize:13.5, fontWeight:900, letterSpacing:.3, cursor:'pointer', boxShadow:'0 8px 18px rgba(8,121,130,.22)' };
+const turmaGhost = { width:'100%', marginTop:12, padding:11, border:'1.5px solid #BFE9E6', borderRadius:15, background:'#fff', color:'#087982', fontFamily:'inherit', fontSize:12.5, fontWeight:900, cursor:'pointer' };
+const turmaVerdict = gold => ({ marginTop:14, padding:'10px 12px', borderRadius:13, background:gold ? '#FFF7E0' : '#F0F9F8', color:gold ? '#9A6A00' : '#0B6B63', fontSize:12.5, fontWeight:700, textAlign:'center' });
+
+function turmaWeekLabel(weekKey) {
+  const [, month, day] = String(weekKey || '').split('-');
+  return month && day ? `${day}/${month}` : '';
+}
+
+// Erros genéricos do Firebase ("internal") não ajudam o aluno: troca por texto claro.
+function turmaMessage(failure, fallback) {
+  const text = String(failure?.message || '').trim();
+  return !text || /^(internal|unavailable|unknown|deadline-exceeded|cancelled)$/i.test(text) ? fallback : text;
+}
+
+// Quem venceu: maior pontuação. Empate e "ninguém pontuou" têm texto próprio.
+function turmaVerdictFor(rows, winLabel, tieLabel) {
+  const top = Math.max(0, ...rows.map(row => row.score));
+  if (!top) return null;
+  const leaders = rows.filter(row => row.score === top);
+  if (leaders.length > 1) return { gold:false, text:`Empate ${tieLabel}: ${leaders.map(row => row.name).join(' e ')} com ${top} pts` };
+  const second = Math.max(0, ...rows.filter(row => row !== leaders[0]).map(row => row.score));
+  return { gold:true, name:leaders[0].name, text:`👑 ${leaders[0].name} venceu ${winLabel} por ${top - second} pts` };
+}
+
+function TurmaScoreRows({ rows }) {
+  const top = Math.max(0, ...rows.map(row => row.score));
+  const scale = Math.max(1, ...rows.map(row => row.maxScore || 1));
+  return <React.Fragment>{rows.map((row, index) => {
+    const win = top > 0 && row.score === top;
+    return <div key={index} style={{ display:'grid', gridTemplateColumns:'minmax(54px,92px) 1fr auto', gap:10, alignItems:'center', marginTop:12 }}>
+      <span style={{ fontWeight:800, fontSize:13, color:'#213B5B', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{row.name}</span>
+      <div style={{ height:11, borderRadius:999, background:'#E8EFF7', overflow:'hidden' }}><div style={{ height:'100%', width:`${row.done ? Math.min(100, row.score / scale * 100) : 0}%`, borderRadius:999, background:win ? 'linear-gradient(90deg,#20A9A0,#087982)' : 'linear-gradient(90deg,#B9C7D6,#97A9BC)' }} /></div>
+      <span style={{ fontWeight:900, fontSize:13, color:'#0D3F82', minWidth:62, textAlign:'right' }}>{row.done ? <React.Fragment>{win ? '👑 ' : ''}{row.score} <small style={{ color:'#94A3B8', fontWeight:700 }}>/ {row.maxScore}</small></React.Fragment> : <small style={{ color:'#94A3B8', fontWeight:700 }}>não respondeu</small>}</span>
+    </div>;
+  })}</React.Fragment>;
+}
+
+function ChallengeTurmaHub({ challenge, mirror, onBack, onLoad, onPrepare, onPlay }) {
+  const [data, setData] = React.useState(null);
+  const [error, setError] = React.useState('');
+  const [preparing, setPreparing] = React.useState(false);
+  const [prepareError, setPrepareError] = React.useState('');
+  const [correctionsOpen, setCorrectionsOpen] = React.useState(null);
+  const aliveRef = React.useRef(true);
+  const busyRef = React.useRef(false);
+  const onLoadRef = React.useRef(onLoad); onLoadRef.current = onLoad;
+  const onPrepareRef = React.useRef(onPrepare); onPrepareRef.current = onPrepare;
+  const groupId = challenge?.id;
+  const needsPreparation = result => (result?.partes || []).some(item => item.status === 'open' && !item.published);
+
+  React.useEffect(() => { aliveRef.current = true; return () => { aliveRef.current = false; }; }, []);
+
+  const load = React.useCallback(async () => {
+    try {
+      const result = await onLoadRef.current(groupId);
+      if (aliveRef.current) { setData(result); setError(''); }
+      return result;
+    } catch (failure) {
+      if (aliveRef.current) setError(turmaMessage(failure, 'Não foi possível abrir a turma agora.'));
+      return null;
+    }
+  }, [groupId]);
+
+  // Gera as perguntas na hora quando a turma ainda não tem rodada (turma criada
+  // no meio da semana, ou a leva de domingo que não rodou). Só o aluno gera: no
+  // espelho o professor apenas acompanha.
+  const prepare = React.useCallback(async () => {
+    if (busyRef.current) return;
+    busyRef.current = true; setPreparing(true); setPrepareError('');
+    try {
+      const deadline = Date.now() + 300000;
+      let reply;
+      do {
+        reply = await onPrepareRef.current(groupId);
+        if (!aliveRef.current) return;
+        if (reply?.preparing) await new Promise(resolve => setTimeout(resolve, 4000));
+      } while (reply?.preparing && aliveRef.current && Date.now() < deadline);
+      if (!aliveRef.current) return;
+      if (reply?.preparing) throw new Error('As perguntas ainda estão sendo preparadas. Volte em alguns minutos.');
+      const fresh = await load();
+      if (needsPreparation(fresh)) throw new Error('As perguntas ainda não ficaram prontas. Tente de novo em instantes.');
+    } catch (failure) {
+      if (aliveRef.current) setPrepareError(turmaMessage(failure, 'Não foi possível preparar as perguntas agora. Tente de novo em instantes.'));
+    } finally {
+      busyRef.current = false;
+      if (aliveRef.current) setPreparing(false);
+    }
+  }, [groupId, load]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    load().then(result => { if (!cancelled && result && !mirror && needsPreparation(result)) prepare(); });
+    const refresh = () => { if (!busyRef.current) load(); };
+    const onVisible = () => { if (document.visibilityState === 'visible') refresh(); };
+    window.addEventListener('peer-duel-updated', refresh);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('peer-duel-updated', refresh);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [load, prepare, mirror]);
+
+  const partes = data?.partes || [];
+  const members = data?.membros || [];
+  const pair = members.length === 2;
+  const noun = pair ? 'dupla' : 'turma';
+  const allClosed = partes.length > 0 && partes.every(item => item.status === 'closed');
+  const weekRows = members.map((member, index) => {
+    const rows = partes.map(item => (item.placar || [])[index]).filter(Boolean);
+    return { name:member.name, isOwn:member.isOwn, done:rows.some(row => row.done),
+      score:rows.reduce((sum, row) => sum + row.score, 0), maxScore:rows.reduce((sum, row) => sum + row.maxScore, 0) };
+  });
+  const weekVerdict = turmaVerdictFor(weekRows, 'a semana', 'na semana');
+
+  const chips = parte => <div style={{ display:'flex', gap:7, marginTop:13, flexWrap:'wrap' }}>{(parte.membros || []).map((item, index) => <span key={index} style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 11px', borderRadius:999, fontSize:12, fontWeight:700, background:item.done ? '#E9F8F2' : '#F2F6FB', color:item.done ? '#168C72' : '#64748B', border:`1px solid ${item.done ? '#BFE8D7' : '#E1E9F2'}`, outline:item.isOwn ? '2px solid #BFE9E6' : 'none' }}>{item.done ? '✅' : '⏳'} {item.name}{item.done ? ' respondeu' : ' ainda não'}</span>)}</div>;
+
+  const renderPart = parte => {
+    const days = turmaDays[parte.part] || turmaDays[1];
+    if (parte.status === 'upcoming') {
+      return <div key={parte.part} style={{ ...turmaCard(false), opacity:.78 }}><span style={turmaLabel('#7B8DA3')}>Parte {parte.part} · abre {days.opens}</span><p style={{ ...turmaSub, marginTop:6 }}>Mais {parte.questionCount} perguntas, {days.range}.</p></div>;
+    }
+    if (parte.status === 'closed') {
+      if (!parte.published) {
+        return <div key={parte.part} style={turmaCard(false)}><span style={turmaLabel('#7B8DA3')}>Parte {parte.part} · encerrada</span><p style={{ ...turmaSub, marginTop:6 }}>Esta parte não chegou a abrir para a turma.</p></div>;
+      }
+      const rows = parte.placar || [];
+      const own = rows.find(row => row.isOwn);
+      const verdict = turmaVerdictFor(rows, `a Parte ${parte.part}`, `na Parte ${parte.part}`);
+      const open = correctionsOpen === parte.part;
+      return <div key={parte.part} style={turmaCard(false)}>
+        <span style={turmaLabel('#7B8DA3')}>Parte {parte.part} · encerrada</span>
+        <h2 style={turmaTitle}>Placar da {noun}</h2>
+        <TurmaScoreRows rows={rows} />
+        <div style={turmaVerdict(Boolean(verdict?.gold))}>{verdict ? verdict.text : 'Ninguém pontuou nesta parte.'}</div>
+        {own?.done && (parte.details || []).length > 0
+          ? <React.Fragment><button onClick={() => setCorrectionsOpen(open ? null : parte.part)} style={turmaGhost}>{open ? 'Esconder' : 'Ver'} minhas correções {open ? '▴' : '▾'}</button>{open && <ChallengeCorrectionList details={parte.details} />}</React.Fragment>
+          : !own?.done && <p style={{ ...turmaSub, marginTop:12 }}>Você não respondeu esta parte, então ela ficou zerada.</p>}
+      </div>;
+    }
+    // aberta
+    if (!parte.published) {
+      if (mirror) {
+        return <div key={parte.part} style={turmaCard(false)}><span style={turmaLabel('#7B8DA3')}>Parte {parte.part} · ainda sem perguntas</span><h2 style={turmaTitle}>As perguntas ainda não foram preparadas</h2><p style={turmaSub}>Elas saem assim que um dos alunos abrir o Desafio da turma no app.</p></div>;
+      }
+      if (prepareError && !preparing) {
+        return <div key={parte.part} style={{ ...turmaCard(false), borderColor:'#F2D18A', background:'#FFFBF2' }}><span style={turmaLabel('#B87316')}>Ainda sem perguntas</span><h2 style={turmaTitle}>Não deu para preparar a turma</h2><p style={turmaSub}>{prepareError}</p><button onClick={prepare} style={turmaGhost}>Tentar de novo</button></div>;
+      }
+      return <React.Fragment key={parte.part}><div role="status" aria-live="polite" style={{ ...turmaCard(true), textAlign:'center' }}><div style={{ width:34, height:34, borderRadius:'50%', border:'4px solid #CFE9E6', borderTopColor:'#087982', animation:'czkTurmaSpin 1s linear infinite', margin:'6px auto 12px' }} /><h2 style={turmaTitle}>Preparando as perguntas da turma…</h2><p style={turmaSub}>Estamos montando {parte.questionCount} perguntas por parte com o que vocês viram nas aulas. Leva cerca de 1 minuto e só acontece uma vez por semana.</p></div><div style={turmaFoot}>Pode sair e voltar: assim que estiver pronto, o botão de começar aparece aqui.</div></React.Fragment>;
+    }
+    if (parte.completed) {
+      const waiting = (parte.membros || []).filter(item => !item.isOwn && !item.done).map(item => item.name);
+      return <div key={parte.part} style={turmaCard(false)}>
+        <span style={turmaLabel('#168C72')}>Parte {parte.part} · respondida ✓</span>
+        <h2 style={turmaTitle}>Suas respostas foram confirmadas</h2>
+        <p style={turmaSub}>A correção e o placar aparecem quando a parte fechar, {days.closesAt} à noite — assim ninguém copia o gabarito do outro.</p>
+        {chips(parte)}
+        <div style={turmaVerdict(false)}>{waiting.length ? `Falta ${waiting.join(' e ')} responder até ${days.closes}. Que tal lembrar? 😉` : 'Todos já responderam. O placar aparece quando a parte fechar.'}</div>
+      </div>;
+    }
+    return <div key={parte.part} style={turmaCard(true)}>
+      <span style={turmaLabel()}>Parte {parte.part} · aberta até {days.closes}</span>
+      <h2 style={turmaTitle}>{parte.questionCount} perguntas para {pair ? 'vocês dois' : 'a turma'}</h2>
+      <p style={turmaSub}>As mesmas perguntas para {pair ? 'os dois' : 'todos'}, sobre o que vocês viram juntos. {challengeTimeLabel(challengeTimeSeconds())} no total, uma única tentativa.</p>
+      {chips(parte)}
+      {mirror
+        ? <div style={{ marginTop:14, padding:'11px 12px', borderRadius:13, background:'#EEF4FB', color:'#41617F', fontSize:12, textAlign:'center' }}>👁 Você está acompanhando — quem responde é o aluno.</div>
+        : parte.game && <button onClick={() => onPlay(parte.game)} style={turmaButton}>{parte.started ? 'CONTINUAR' : 'COMEÇAR'} PARTE {parte.part} →</button>}
+    </div>;
+  };
+
+  return <div style={{ position:'fixed', inset:0, zIndex:10020, maxWidth:480, margin:'0 auto', background:'#F3F7FC', overflowY:'auto' }}>
+    <style>{'@keyframes czkTurmaSpin{to{transform:rotate(360deg)}}'}</style>
+    <div style={{ padding:'calc(env(safe-area-inset-top,0px) + 14px) 18px 40px', color:'#fff', background:turmaTeal }}>
+      <button onClick={onBack} aria-label="Voltar" style={challengeRoundButton}>‹</button>
+      <div style={{ textAlign:'center', marginTop:10 }}>
+        <div style={{ fontSize:36 }}>⚔️</div>
+        <h1 style={{ margin:'2px 0 4px', fontSize:22, lineHeight:1.15 }}>{challenge?.title || 'Desafio da turma'}</h1>
+        {challenge?.participantLabel && <p style={{ margin:0, color:'rgba(255,255,255,.78)', fontSize:13 }}>{challenge.participantLabel}</p>}
+        {data?.weekKey && <span style={{ display:'inline-block', marginTop:12, padding:'5px 11px', borderRadius:999, background:'rgba(255,255,255,.17)', fontSize:10.5, fontWeight:800, letterSpacing:.4 }}>Semana de {turmaWeekLabel(data.weekKey)}{allClosed ? ' · encerrada' : ''}</span>}
+      </div>
+    </div>
+    <div style={{ padding:'0 16px 28px', marginTop:-26 }}>
+      {!data && !error && <div role="status" style={{ ...turmaCard(true), textAlign:'center' }}><div style={{ width:34, height:34, borderRadius:'50%', border:'4px solid #CFE9E6', borderTopColor:'#087982', animation:'czkTurmaSpin 1s linear infinite', margin:'6px auto 12px' }} /><p style={turmaSub}>Carregando a turma…</p></div>}
+      {!data && error && <div role="alert" style={{ ...turmaCard(false), borderColor:'#F2D18A', background:'#FFFBF2' }}><span style={turmaLabel('#B87316')}>Sem conexão com a turma</span><h2 style={turmaTitle}>Não foi possível abrir</h2><p style={turmaSub}>{error}</p><button onClick={load} style={turmaGhost}>Tentar de novo</button></div>}
+      {data && error && <div role="status" style={{ marginBottom:12, padding:'10px 12px', borderRadius:13, background:'#FFF4E5', color:'#8A5200', fontSize:12, lineHeight:1.45 }}>{error}</div>}
+      {data && allClosed && <div style={turmaCard(false)}>
+        <span style={turmaLabel('#9A6A00')}>Placar da semana</span>
+        <h2 style={turmaTitle}>{weekVerdict ? (weekVerdict.gold ? `${weekVerdict.name} venceu a semana 🏆` : 'Empate na semana') : 'Ninguém pontuou nesta semana'}</h2>
+        <TurmaScoreRows rows={weekRows} />
+        {weekVerdict && !weekVerdict.gold && <div style={turmaVerdict(false)}>{weekVerdict.text}</div>}
+      </div>}
+      {data && partes.map(renderPart)}
+      {data && <div style={turmaFoot}>🤝 Vale só entre {pair ? 'vocês dois' : 'a turma'} — não entra no ranking geral do Desafio.</div>}
+      {data && allClosed && <div style={turmaFoot}>Nova rodada da turma abre segunda-feira.</div>}
+    </div>
+  </div>;
+}
+
 function ChallengeDuels({ onClose, onLoad, onCreate, onRespond, onPlay, onLive }) {
   const [tab, setTab] = React.useState('create');
   const [data, setData] = React.useState(null);
@@ -509,8 +725,19 @@ function ChallengeLiveRoom({ duel, onClose, onLoad, onReady, onPlay }) {
 
 // Quinta-feira a Parte 1 fecha e a nota dela sai na hora, sem esperar domingo.
 // Quem nao respondeu ve o zero: e o preco de nao ter entrado ate quarta.
-function ChallengeParte1({ parte1 }) {
+// Lista de perguntas corrigidas (toque abre a correção). Usada pela Parte 1 do
+// desafio geral e pelo desafio da turma.
+function ChallengeCorrectionList({ details }) {
   const [openQuestion, setOpenQuestion] = React.useState(null);
+  return <div style={{ display:'grid', gap:7, marginTop:11 }}>{details.map((detail,index) => {
+    const open = openQuestion === index;
+    const partial = detail.parcial === true || (!detail.correct && Number(detail.score || 0) > 0);
+    const tone = detail.correct ? '#168C72' : partial ? '#B87316' : '#B33A3A';
+    return <div key={detail.questionId || index} style={{ border:`1px solid ${detail.correct ? '#B8E8D5' : partial ? '#F2D18A' : '#F0D1C8'}`, borderRadius:13, overflow:'hidden' }}><button onClick={() => setOpenQuestion(open ? null : index)} style={{ width:'100%', display:'flex', alignItems:'center', gap:9, padding:11, border:0, background:detail.correct ? '#F1FBF7' : partial ? '#FFF8EA' : '#FFF7F3', textAlign:'left', fontFamily:'inherit' }}><span>{detail.correct ? '✅' : partial ? '🟡' : '❌'}</span><span style={{ flex:1, minWidth:0, color:'#213B5B', fontSize:11.5, fontWeight:750 }}>Pergunta {index + 1}{partial ? ' · parcial' : ''}</span><strong style={{ color:tone }}>{detail.score} PTS</strong><span style={{ color:'#8293A7' }}>{open ? '⌃' : '⌄'}</span></button>{open && <div style={{ padding:11, color:'#53677E', fontSize:11, lineHeight:1.5 }}><strong style={{ display:'block', color:'#213B5B', marginBottom:7 }}>{detail.prompt}</strong>{detail.context && <div style={{ marginBottom:7, padding:'8px 9px', borderRadius:9, background:'#F2F6FA', color:'#53677E' }}><strong style={{ display:'block', color:'#0D5AA7', fontSize:8.5, letterSpacing:.5, marginBottom:3 }}>{/\b(translate|traduza|tradução)\b/i.test(detail.prompt || '') ? 'TEXTO QUE VOCÊ TRADUZIU' : 'TEXTO DA QUESTÃO'}</strong>{detail.context}</div>}<div><strong>Sua resposta:</strong> {detail.answer || 'Sem resposta'}</div><div style={{ marginTop:5 }}><strong>Resposta correta:</strong> {detail.expected}</div>{partial && <div style={{ marginTop:5, color:'#9A5B10', fontWeight:800 }}>As partes corretas da frase receberam pontos.</div>}{detail.explanation && <div style={{ marginTop:7, padding:'8px 9px', borderRadius:9, background:'#F4F7FA' }}><strong>Por quê:</strong> {detail.explanation}</div>}</div>}</div>;
+  })}</div>;
+}
+
+function ChallengeParte1({ parte1 }) {
   if (!parte1) return null;
   const acertos = (parte1.details || []).filter(item => item.correct).length;
   const parciais = (parte1.details || []).filter(item => !item.correct && Number(item.score || 0) > 0).length;
@@ -527,16 +754,11 @@ function ChallengeParte1({ parte1 }) {
         ? `${acertos} correta(s) · ${parciais} parcial(is) · ${semPontos} sem pontuar. Confira cada pergunta abaixo.`
         : 'Você não respondeu a Parte 1 até quarta, então ela ficou zerada. A Parte 2 ainda dá tempo, até sábado.'}
     </p>
-    {(parte1.details || []).length > 0 && <div style={{ display:'grid', gap:7, marginTop:11 }}>{parte1.details.map((detail,index) => {
-      const open = openQuestion === index;
-      const partial = detail.parcial === true || (!detail.correct && Number(detail.score || 0) > 0);
-      const tone = detail.correct ? '#168C72' : partial ? '#B87316' : '#B33A3A';
-      return <div key={detail.questionId || index} style={{ border:`1px solid ${detail.correct ? '#B8E8D5' : partial ? '#F2D18A' : '#F0D1C8'}`, borderRadius:13, overflow:'hidden' }}><button onClick={() => setOpenQuestion(open ? null : index)} style={{ width:'100%', display:'flex', alignItems:'center', gap:9, padding:11, border:0, background:detail.correct ? '#F1FBF7' : partial ? '#FFF8EA' : '#FFF7F3', textAlign:'left', fontFamily:'inherit' }}><span>{detail.correct ? '✅' : partial ? '🟡' : '❌'}</span><span style={{ flex:1, minWidth:0, color:'#213B5B', fontSize:11.5, fontWeight:750 }}>Pergunta {index + 1}{partial ? ' · parcial' : ''}</span><strong style={{ color:tone }}>{detail.score} PTS</strong><span style={{ color:'#8293A7' }}>{open ? '⌃' : '⌄'}</span></button>{open && <div style={{ padding:11, color:'#53677E', fontSize:11, lineHeight:1.5 }}><strong style={{ display:'block', color:'#213B5B', marginBottom:7 }}>{detail.prompt}</strong>{detail.context && <div style={{ marginBottom:7, padding:'8px 9px', borderRadius:9, background:'#F2F6FA', color:'#53677E' }}><strong style={{ display:'block', color:'#0D5AA7', fontSize:8.5, letterSpacing:.5, marginBottom:3 }}>{/\b(translate|traduza|tradução)\b/i.test(detail.prompt || '') ? 'TEXTO QUE VOCÊ TRADUZIU' : 'TEXTO DA QUESTÃO'}</strong>{detail.context}</div>}<div><strong>Sua resposta:</strong> {detail.answer || 'Sem resposta'}</div><div style={{ marginTop:5 }}><strong>Resposta correta:</strong> {detail.expected}</div>{partial && <div style={{ marginTop:5, color:'#9A5B10', fontWeight:800 }}>As partes corretas da frase receberam pontos.</div>}{detail.explanation && <div style={{ marginTop:7, padding:'8px 9px', borderRadius:9, background:'#F4F7FA' }}><strong>Por quê:</strong> {detail.explanation}</div>}</div>}</div>;
-    })}</div>}
+    {(parte1.details || []).length > 0 && <ChallengeCorrectionList details={parte1.details} />}
   </div>;
 }
 
-function ChallengeHub({ challengeState, selectedChallenge, onBack, onStart, onJoinChallenge, onRefresh, onLoadSeason, onLoadDuels, onLoadLiveDuel, onCreateDuel, onRespondDuel, onPlayDuel, onLiveDuel }) {
+function ChallengeHub({ challengeState, selectedChallenge, mirror, onBack, onStart, onJoinChallenge, onRefresh, onLoadSeason, onLoadDuels, onLoadLiveDuel, onCreateDuel, onRespondDuel, onPlayDuel, onLiveDuel, onLoadTurma, onPrepareTurma, onPlayTurma }) {
   const [panel, setPanel] = React.useState(null);
   const [seasonData, setSeasonData] = React.useState(null);
   const [seasonError, setSeasonError] = React.useState('');
@@ -549,6 +771,9 @@ function ChallengeHub({ challengeState, selectedChallenge, onBack, onStart, onJo
       .catch(error => { if (alive) setSeasonError(error?.message || 'Não foi possível carregar as posições.'); });
     return () => { alive = false; };
   }, [selectedChallenge?.kind]);
+  // Turma cadastrada pelo professor (source 'class-group') tem rodadas de verdade;
+  // qualquer outro desafio privado antigo continua no aviso fixo.
+  if (selectedChallenge?.kind === 'private' && selectedChallenge?.source === 'class-group') return <ChallengeTurmaHub key={selectedChallenge.id} challenge={selectedChallenge} mirror={mirror} onBack={onBack} onLoad={onLoadTurma} onPrepare={onPrepareTurma} onPlay={onPlayTurma} />;
   if (selectedChallenge?.kind === 'private') return <ChallengePrivateHub challenge={selectedChallenge} onBack={onBack} onJoin={onJoinChallenge} />;
   // Temporada é uma tela, não um painel por cima do hub. Renderizar só ela
   // impede o conteúdo anterior de reaparecer atrás no desktop durante o scroll.
@@ -771,7 +996,7 @@ function ChallengeGame({ challengeState, onFinish, onExit, onStart, onSaveAnswer
   const wideColumn = phase === 'question' || phase === 'saving' || phase === 'transition';
 
   return <div style={{ position:'fixed', inset:0, zIndex:10040, maxWidth:wideColumn ? 780 : 480, margin:'0 auto', color:'#fff', background:'linear-gradient(160deg,#06162F,#071F43 54%,#092B56)', overflow:'hidden' }}>
-    {phase === 'intro' && <div style={{ height:'100%', display:'flex', flexDirection:'column', padding:'calc(env(safe-area-inset-top,0px) + 20px) 22px calc(env(safe-area-inset-bottom,0px) + 22px)' }}><button onClick={onExit} aria-label="Fechar" style={{ ...challengeRoundButton, alignSelf:'flex-end' }}>×</button><div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center' }}><div style={{ width:76, height:76, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:24, background:'linear-gradient(145deg,#238BFF,#0A5BB4)', fontSize:37 }}>🏆</div><div style={{ color:'#7DE7FF', fontSize:10.5, fontWeight:900, letterSpacing:1.7, marginTop:24 }}>{challengeState?.peerDuel ? (challengeState?.live ? 'DUELO AO VIVO' : 'DUELO RÁPIDO') : `PARTE ${challengeState?.part}`}</div><h2 style={{ fontSize:27, margin:'8px 0 10px' }}>{challengeState?.started ? 'Continue de onde parou' : 'Você está pronto?'}</h2><p style={{ color:'rgba(255,255,255,.66)', fontSize:13, lineHeight:1.55 }}>{questions.length || challengeState?.round?.questionCount || 5} perguntas. {timeLabel} no total. Uma única tentativa.</p></div><button onClick={start} style={{ width:'100%', border:0, borderRadius:16, padding:16, color:'#06162F', background:'linear-gradient(135deg,#5DE1FF,#E5FBFF)', fontFamily:'inherit', fontSize:13.5, fontWeight:900 }}>{challengeState?.started ? 'CONTINUAR' : 'PARTICIPAR E COMEÇAR'} →</button></div>}
+    {phase === 'intro' && <div style={{ height:'100%', display:'flex', flexDirection:'column', padding:'calc(env(safe-area-inset-top,0px) + 20px) 22px calc(env(safe-area-inset-bottom,0px) + 22px)' }}><button onClick={onExit} aria-label="Fechar" style={{ ...challengeRoundButton, alignSelf:'flex-end' }}>×</button><div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center' }}><div style={{ width:76, height:76, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:24, background:'linear-gradient(145deg,#238BFF,#0A5BB4)', fontSize:37 }}>🏆</div><div style={{ color:'#7DE7FF', fontSize:10.5, fontWeight:900, letterSpacing:1.7, marginTop:24 }}>{challengeState?.peerDuel ? (challengeState?.live ? 'DUELO AO VIVO' : 'DUELO RÁPIDO') : challengeState?.turma ? `TURMA · PARTE ${challengeState?.part}` : `PARTE ${challengeState?.part}`}</div><h2 style={{ fontSize:27, margin:'8px 0 10px' }}>{challengeState?.started ? 'Continue de onde parou' : 'Você está pronto?'}</h2><p style={{ color:'rgba(255,255,255,.66)', fontSize:13, lineHeight:1.55 }}>{questions.length || challengeState?.round?.questionCount || 5} perguntas. {timeLabel} no total. Uma única tentativa.</p></div><button onClick={start} style={{ width:'100%', border:0, borderRadius:16, padding:16, color:'#06162F', background:'linear-gradient(135deg,#5DE1FF,#E5FBFF)', fontFamily:'inherit', fontSize:13.5, fontWeight:900 }}>{challengeState?.started ? 'CONTINUAR' : challengeState?.turma ? 'COMEÇAR' : 'PARTICIPAR E COMEÇAR'} →</button></div>}
     {phase === 'question' && question && <ChallengeQuestionScreen key={question.id || questionIndex} question={question} index={questionIndex} total={questions.length} seconds={seconds} timeLimit={timeLimit} answer={answer} error={error} onAnswer={value => { setAnswer(value); setError(''); }} onSend={() => sendCurrent(false)} onSkip={() => sendCurrent(true)} onClose={close} />}
     {phase === 'transition' && <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}><div style={{ width:62, height:62, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background:'#168C72', fontSize:29 }}>✓</div><strong style={{ fontSize:18, marginTop:14 }}>Resposta confirmada</strong></div>}
     {phase === 'preparing' && <div role="status" aria-live="polite" style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center', padding:24 }}>
@@ -785,6 +1010,6 @@ function ChallengeGame({ challengeState, onFinish, onExit, onStart, onSaveAnswer
     </div>}
     {phase === 'saving' && <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}><div style={{ fontSize:34 }}>↻</div><strong style={{ marginTop:14 }}>Salvando com segurança…</strong></div>}
     {phase === 'save-error' && <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center', padding:24 }}><div style={{ fontSize:38 }}>⚠️</div><strong style={{ fontSize:20, marginTop:14 }}>Não foi possível continuar</strong><span style={{ color:'rgba(255,255,255,.65)', fontSize:12.5, marginTop:7 }}>{error}</span><button onClick={() => retryRef.current?.()} style={{ border:0, borderRadius:14, padding:'13px 18px', marginTop:20, color:'#06162F', background:'#5DE1FF', fontFamily:'inherit', fontWeight:900 }}>TENTAR NOVAMENTE</button><button onClick={onExit} style={{ marginTop:16, border:0, background:'transparent', color:'#fff', fontFamily:'inherit' }}>Voltar</button></div>}
-    {phase === 'done' && <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center', padding:'30px 24px' }}><div style={{ width:82, height:82, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(145deg,#168C72,#35C69F)', fontSize:39 }}>✓</div><div style={{ color:'#8DEBFF', fontSize:10.5, fontWeight:900, letterSpacing:1.4, marginTop:24 }}>DESAFIO FINALIZADO</div><h2 style={{ fontSize:26, margin:'8px 0' }}>Suas respostas foram confirmadas</h2><p style={{ maxWidth:320, color:'rgba(255,255,255,.66)', fontSize:13, lineHeight:1.55 }}>{challengeState?.peerDuel ? 'O placar aparece automaticamente assim que o outro aluno também terminar.' : 'O resultado, sua posição e as correções serão liberados no domingo.'}</p><button onClick={onFinish} style={{ width:'100%', maxWidth:330, border:0, borderRadius:16, padding:15, marginTop:22, color:'#06162F', background:'linear-gradient(135deg,#5DE1FF,#E5FBFF)', fontFamily:'inherit', fontSize:13, fontWeight:900 }}>VOLTAR AO DESAFIO</button></div>}
+    {phase === 'done' && <div style={{ height:'100%', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center', padding:'30px 24px' }}><div style={{ width:82, height:82, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(145deg,#168C72,#35C69F)', fontSize:39 }}>✓</div><div style={{ color:'#8DEBFF', fontSize:10.5, fontWeight:900, letterSpacing:1.4, marginTop:24 }}>{challengeState?.turma ? `PARTE ${challengeState?.part} FINALIZADA` : 'DESAFIO FINALIZADO'}</div><h2 style={{ fontSize:26, margin:'8px 0' }}>Suas respostas foram confirmadas</h2><p style={{ maxWidth:320, color:'rgba(255,255,255,.66)', fontSize:13, lineHeight:1.55 }}>{challengeState?.peerDuel ? 'O placar aparece automaticamente assim que o outro aluno também terminar.' : challengeState?.turma ? `As correções e o placar da turma aparecem quando a parte fechar, ${Number(challengeState?.part) === 2 ? 'no sábado' : 'na quarta'} à noite.` : 'O resultado, sua posição e as correções serão liberados no domingo.'}</p><button onClick={onFinish} style={{ width:'100%', maxWidth:330, border:0, borderRadius:16, padding:15, marginTop:22, color:'#06162F', background:'linear-gradient(135deg,#5DE1FF,#E5FBFF)', fontFamily:'inherit', fontSize:13, fontWeight:900 }}>{challengeState?.turma ? 'VOLTAR À TURMA' : 'VOLTAR AO DESAFIO'}</button></div>}
   </div>;
 }

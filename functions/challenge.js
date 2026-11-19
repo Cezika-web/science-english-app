@@ -1301,6 +1301,173 @@ ${item.text}`).join('\n\n')}`
     }
   );
 
+  // ── Desafio da turma: o aluno abre e joga a rodada da dupla ────────────────
+  // A rodada já nasce dentro de cada integrante (publishGroupRounds), com o
+  // calendário do desafio semanal. O que faltava era o app encontrá-la:
+  // `obterDesafioSemanal` só procura os ids gerais (`{semana}-part-N`). Estas
+  // duas funções entregam o estado da turma e geram a rodada na hora quando
+  // ela ainda não existe. Jogar e responder continuam sendo
+  // `iniciarDesafioSemanal` e `salvarRespostaDesafio`, que já aceitam o id.
+  async function loadGroupForStudent(uid, student, groupId) {
+    if (!groupId) throw new HttpsError('invalid-argument', 'Faltou a turma.');
+    // Quem prova que o aluno é da turma é o documento da escola: o espelho
+    // gravado dentro do aluno ele mesmo consegue editar.
+    const espelho = await db.doc(`students/${uid}/classGroups/${groupId}`).get();
+    const schoolId = String((espelho.exists && espelho.data().schoolId) || student.schoolId || '');
+    const snap = schoolId ? await db.doc(`schools/${schoolId}/classGroups/${groupId}`).get() : null;
+    const group = snap?.exists ? snap.data() : null;
+    if (!group || group.active === false || !(group.memberUids || []).includes(uid)) {
+      throw new HttpsError('permission-denied', 'Você não faz parte desta turma.');
+    }
+    return { schoolId, group };
+  }
+
+  const obterDesafioDaTurma = onCall(
+    { region:REGION, timeoutSeconds:60, memory:'256MiB' },
+    async request => {
+      const quemChamou = requireAuth(request);
+      // O César abre o app do aluno pelo espelho: só admin pode pedir por outro uid.
+      const alvo = String(request.data?.uid || '').trim();
+      const adminMirror = Boolean(alvo && adminEmails.includes(request.auth.token?.email || ''));
+      const uid = adminMirror ? alvo : quemChamou;
+      const studentSnap = await assertStudent(uid);
+      const groupId = String(request.data?.groupId || '').trim();
+      const { group } = await loadGroupForStudent(uid, studentSnap.data(), groupId);
+
+      const now = new Date();
+      const weekKey = weekKeyFor(now);
+      const schedule = groupScheduleFor(weekKey, groupId);
+      const stage = stageFor(now, schedule);
+      const membros = (group.memberUids || []).map((memberUid, index) => ({
+        uid:memberUid, name:(group.memberNames || [])[index] || 'Aluno', isOwn:memberUid === uid,
+      }));
+      const ownIndex = membros.findIndex(item => item.isOwn);
+
+      const partes = await Promise.all([schedule.part1, schedule.part2].map(async item => {
+        const status = now < item.opensAt ? 'upcoming' : now <= item.closesAt ? 'open' : 'closed';
+        const [roundSnap, submissions, results] = await Promise.all([
+          db.doc(`students/${uid}/challengeRounds/${item.roundId}`).get(),
+          Promise.all(membros.map(membro => db.doc(`students/${membro.uid}/challengeSubmissions/${item.roundId}`).get())),
+          status === 'closed'
+            ? Promise.all(membros.map(membro => db.doc(`_challengeResults/${item.roundId}_${membro.uid}`).get()))
+            : Promise.resolve([]),
+        ]);
+        const round = roundSnap.exists ? roundSnap.data() : null;
+        const terminou = membros.map((membro, index) => submissions[index].exists && submissions[index].data().completed === true);
+        const own = submissions[ownIndex];
+        const parte = {
+          part:item.part, roundId:item.roundId, status, published:Boolean(round),
+          opensAt:iso(item.opensAt), closesAt:iso(item.closesAt),
+          questionCount:Number(round?.questionCount || 5),
+          completed:terminou[ownIndex], started:own.exists,
+          nextIndex:Number(own.exists ? own.data().answers?.length || 0 : 0),
+          // Antes de fechar só se sabe QUEM já respondeu — nunca nota nem resposta,
+          // porque as perguntas são as mesmas e o gabarito não pode circular.
+          membros:membros.map((membro, index) => ({ name:membro.name, isOwn:membro.isOwn, done:terminou[index] })),
+        };
+        if (status === 'closed') {
+          parte.placar = membros.map((membro, index) => {
+            const result = results[index].exists ? results[index].data() : null;
+            return { name:membro.name, isOwn:membro.isOwn, done:Boolean(result),
+              score:Number(result?.score || 0), maxScore:Number(result?.maxScore || parte.questionCount * 100) };
+          });
+          parte.details = results[ownIndex].exists ? results[ownIndex].data().details || [] : [];
+        }
+        if (status === 'open' && round) {
+          // Mesmo formato do estado que o jogo já entende (obterDesafioSemanal).
+          parte.game = {
+            enabled:true, turma:true, groupId, groupName:group.name || '', weekKey,
+            title:`Desafio da turma ${group.name || ''}`.trim(), phase:'open', part:item.part,
+            startsAt:iso(schedule.startsAt), endsAt:iso(schedule.endsAt),
+            canStart:!parte.completed, completed:parte.completed, started:parte.started, nextIndex:parte.nextIndex,
+            round:{ roundId:round.roundId, part:round.part, questionCount:round.questionCount,
+              opensAt:iso(round.opensAt), closesAt:iso(round.closesAt), questions:publicChallengeQuestions(round.questions) },
+          };
+        }
+        return parte;
+      }));
+
+      return { enabled:true, groupId, groupName:group.name || '', weekKey, phase:stage.phase,
+        membros:membros.map(item => ({ name:item.name, isOwn:item.isOwn })), partes };
+    }
+  );
+
+  // Quem abre a turma antes de a rodada existir (turma criada no meio da semana,
+  // ou a leva de domingo que não rodou) dispara a geração aqui. A trava impede
+  // que os dois alunos abrindo juntos paguem duas chamadas de IA, e uma falha
+  // não é repetida a cada toque: espera dez minutos.
+  const prepararDesafioDaTurma = onCall(
+    { region:REGION, secrets:anthropicApiKey ? [anthropicApiKey] : [], timeoutSeconds:300, memory:'1GiB' },
+    async request => {
+      const uid = requireAuth(request);
+      const studentSnap = await assertStudent(uid);
+      const groupId = String(request.data?.groupId || '').trim();
+      const { schoolId, group } = await loadGroupForStudent(uid, studentSnap.data(), groupId);
+      if (group.automaticChallenge === false) {
+        throw new HttpsError('failed-precondition', 'O desafio desta turma está desligado.');
+      }
+      const now = new Date();
+      const weekKey = weekKeyFor(now);
+      const schedule = groupScheduleFor(weekKey, groupId);
+      const abertas = [schedule.part1, schedule.part2].filter(item => item.closesAt.getTime() >= now.getTime());
+      if (!abertas.length) return { ready:false, skipped:'semana-encerrada' };
+
+      const meus = await Promise.all(abertas.map(item => db.doc(`students/${uid}/challengeRounds/${item.roundId}`).get()));
+      if (meus.every(snap => snap.exists)) return { ready:true };
+
+      // Integrante que entrou depois de a rodada sair: copia a MESMA rodada e o
+      // mesmo gabarito de quem já tem, em vez de gerar perguntas novas por cima.
+      for (const outro of (group.memberUids || []).filter(item => item !== uid)) {
+        const delas = await Promise.all(abertas.map(item => db.doc(`students/${outro}/challengeRounds/${item.roundId}`).get()));
+        const chaves = await Promise.all(abertas.map(item => answerKeyRef(outro, item.roundId, true).get()));
+        if (!delas.every(snap => snap.exists) || !chaves.every(snap => snap.exists)) continue;
+        const batch = db.batch();
+        abertas.forEach((item, index) => {
+          batch.set(db.doc(`students/${uid}/challengeRounds/${item.roundId}`),
+            { ...delas[index].data(), updatedAt:FieldValue.serverTimestamp() });
+          batch.set(answerKeyRef(uid, item.roundId, true),
+            { ...chaves[index].data(), uid, updatedAt:FieldValue.serverTimestamp() });
+        });
+        await batch.commit();
+        return { ready:true, copied:true };
+      }
+
+      if (!Anthropic || !anthropicApiKey) {
+        throw new HttpsError('failed-precondition', 'As perguntas da turma ainda não foram preparadas.');
+      }
+      const lockRef = db.doc(`_challengeGroupLocks/${weekKey}_${groupId}`);
+      const lock = await db.runTransaction(async tx => {
+        const snap = await tx.get(lockRef);
+        const data = snap.exists ? snap.data() : null;
+        const agora = Date.now();
+        if (data?.status === 'running' && agora - Number(data.startedAtMs || 0) < 4 * 60000) return { run:false, preparing:true };
+        if (data?.status === 'failed' && agora - Number(data.failedAtMs || 0) < 10 * 60000) {
+          return { run:false, error:data.error || '' };
+        }
+        tx.set(lockRef, { status:'running', startedAtMs:agora, startedBy:uid, weekKey, groupId });
+        return { run:true };
+      });
+      if (!lock.run) {
+        if (lock.preparing) return { preparing:true };
+        throw new HttpsError('failed-precondition',
+          lock.error || 'Não foi possível preparar as perguntas da turma agora. Tente de novo em alguns minutos.');
+      }
+      try {
+        const client = new Anthropic({ apiKey:anthropicApiKey.value() });
+        const saida = await publishGroupRounds(client, schoolId, groupId, group, { force:false });
+        await lockRef.set({ status:'done', finishedAtMs:Date.now() }, { merge:true });
+        return { ready:!saida.skipped || saida.skipped === 'ja-publicado', ...saida };
+      } catch (error) {
+        console.error(`Desafio da turma ${groupId} (sob demanda) falhou:`, error.message);
+        // Só a falta de pós-aula é mensagem que o aluno entende; o resto fica no log.
+        const visivel = /^Nenhum pós-aula/.test(String(error.message))
+          ? error.message : 'Não foi possível preparar as perguntas da turma agora. Tente de novo em alguns minutos.';
+        await lockRef.set({ status:'failed', failedAtMs:Date.now(), error:visivel }, { merge:true });
+        throw new HttpsError('failed-precondition', visivel);
+      }
+    }
+  );
+
   // Variante válida que o gabarito não previu ("Chris' father" e "Chris's
   // father" são as duas corretas). Em vez de o aluno perder ponto por isso, o
   // professor dá como certa: corrige a nota dele E ensina o gabarito, para que
@@ -2009,7 +2176,9 @@ ${item.text}`).join('\n\n')}`
       const resultByStudentPart = new Map();
       results.docs.forEach(doc => {
         const result = doc.data();
-        if (!result.uid || ![1, 2].includes(Number(result.part))) return;
+        // Rodada de turma e duelo também gravam `part` 1 e guardam `groupId`:
+        // sem este filtro o resultado mais recente trocaria o do desafio geral.
+        if (!result.uid || result.groupId || ![1, 2].includes(Number(result.part))) return;
         const key = `${result.uid}:${Number(result.part)}`;
         const previous = resultByStudentPart.get(key);
         const time = result.completedAt?.toMillis?.() || result.retakenAt?.toMillis?.() || 0;
@@ -2839,6 +3008,7 @@ ${item.text}`).join('\n\n')}`
     salvarRespostaDesafio, obterStatusDesafioAdmin, finalizarDesafioSemanal,
     notificarAberturaDesafio, lembrarDesafioManha, lembrarDesafioNoite, lembrarDesafioDiario,
     gerarDesafiosAtrasados, gerarDesafioDaSemana, gerarDesafioDaTurma,
+    obterDesafioDaTurma, prepararDesafioDaTurma,
     aceitarRespostaDesafio, ajustarPontuacaoRespostaDesafio,
     obterDesafiosEntreAlunos, criarDesafioEntreAlunos, responderDesafioEntreAlunos,
     marcarProntoDesafioAoVivo, obterSalaDesafioAoVivo,
