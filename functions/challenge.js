@@ -1,5 +1,6 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
+import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { FieldValue } from 'firebase-admin/firestore';
 import { createDemandChallengeService } from './challenge-demand.js';
 import { OPEN_ANSWER_CLARITY } from './challenge-clarity.js';
@@ -1385,6 +1386,48 @@ ${item.text}`).join('\n\n')}`
         throw new HttpsError('permission-denied', 'Você não participa desta sala.');
       }
       return publicPeerDuel(snap, uid);
+    }
+  );
+
+  // Um da dupla terminou a parte → avisa o OUTRO (e só ele). É um gatilho à parte,
+  // disparado quando o resultado é gravado, para não mexer em salvarRespostaDesafio
+  // (que é a função do desafio individual da semana). Nunca revela nota: só "já fez".
+  // Cada parceiro é avisado uma única vez por parte (reserva em challengeReminderLogs).
+  const avisarParceiroDaDupla = onDocumentCreated(
+    { document:'_challengeResults/{resultId}', region:REGION, memory:'256MiB' },
+    async event => {
+      const result = event.data?.data();
+      // Desafio individual não tem groupId; duelo tem, mas a rodada é peerDuel.
+      if (!result?.groupId || !result.uid || !result.roundId) return;
+      try {
+        const roundSnap = await db.doc(`students/${result.uid}/challengeRounds/${result.roundId}`).get();
+        const round = roundSnap.exists ? roundSnap.data() : null;
+        if (!round || round.peerDuel === true || round.groupId !== result.groupId || !round.schoolId) return;
+        const groupSnap = await db.doc(`schools/${round.schoolId}/classGroups/${round.groupId}`).get();
+        if (!groupSnap.exists) return;
+        const part = Number(round.part || result.part || 1);
+        const quem = String(result.studentName || 'Seu parceiro').trim().split(/\s+/)[0];
+        const prazo = part === 1 ? 'quarta' : 'sábado';
+        for (const otherUid of (groupSnap.data().memberUids || []).filter(item => item !== result.uid)) {
+          const otherSnap = await db.doc(`students/${otherUid}`).get();
+          if (!otherSnap.exists) continue;
+          const submission = await db.doc(`students/${otherUid}/challengeSubmissions/${result.roundId}`).get();
+          if (submission.exists && submission.data().completed === true) continue;   // já fez também
+          const logRef = otherSnap.ref.collection('challengeReminderLogs').doc(`${result.roundId}-parceiro-${result.uid}`);
+          const reservou = await db.runTransaction(async tx => {
+            if ((await tx.get(logRef)).exists) return false;
+            tx.create(logRef, { roundId:result.roundId, part, period:'parceiro', status:'sending', createdAt:FieldValue.serverTimestamp() });
+            return true;
+          });
+          if (!reservou) continue;
+          const enviado = await notifyDuel(otherSnap, { type:'turma-parceiro-fez', duelId:result.roundId,
+            title:`⚔️ ${quem} já fez a Parte ${part}`,
+            body:`Falta você! Vale até ${prazo}, 23h59. Abra o app e toque em Desafio.` });
+          await logRef.set({ status:enviado ? 'sent' : 'not-sent', sentAt:FieldValue.serverTimestamp() }, { merge:true }).catch(() => {});
+        }
+      } catch (error) {
+        console.error(`Aviso ao parceiro da dupla (${event.params?.resultId}):`, error.message);
+      }
     }
   );
 
@@ -3262,7 +3305,7 @@ ${item.text}`).join('\n\n')}`
     salvarRespostaDesafio, obterStatusDesafioAdmin, finalizarDesafioSemanal,
     notificarAberturaDesafio, lembrarDesafioManha, lembrarDesafioNoite, lembrarDesafioDiario,
     gerarDesafiosAtrasados, gerarDesafioDaSemana, gerarDesafioDaTurma,
-    obterDesafioDaTurma, prepararDesafioDaTurma, obterDuelosAdmin,
+    obterDesafioDaTurma, prepararDesafioDaTurma, obterDuelosAdmin, avisarParceiroDaDupla,
     aceitarRespostaDesafio, ajustarPontuacaoRespostaDesafio,
     obterDesafiosEntreAlunos, criarDesafioEntreAlunos, responderDesafioEntreAlunos,
     marcarProntoDesafioAoVivo, obterSalaDesafioAoVivo,

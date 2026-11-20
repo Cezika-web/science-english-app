@@ -7,7 +7,7 @@
     "node": "22"
   },
   "scripts": {
-    "test:challenge": "node scripts/test_challenge_scoring.mjs && node scripts/test_challenge_manual_import.mjs && node scripts/test_challenge_demand.mjs && node scripts/test_challenge_turma.mjs && node scripts/test_challenge_duelos.mjs && node scripts/test_challenge_ranking.mjs"
+    "test:challenge": "node scripts/test_challenge_scoring.mjs && node scripts/test_challenge_manual_import.mjs && node scripts/test_challenge_demand.mjs && node scripts/test_challenge_turma.mjs && node scripts/test_challenge_duelos.mjs && node scripts/test_challenge_ranking.mjs && node scripts/test_challenge_parceiro.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.112.4",
