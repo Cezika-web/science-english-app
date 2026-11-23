@@ -3794,7 +3794,8 @@ function CorrecaoModal({ data, onClose }) {
 
 // ── Gravador de áudio (Speaking) — grava no navegador e entrega o Blob ──
 function AudioRecorder({ existingUrl, readOnly, onBlob, maxSeconds, teto = 30 }) {
-  // `teto`: 30 s para as atividades em geral; as tarefas de trilha (Entrevista, Business, Viagem) passam 60.
+  // `teto`: 30 s para as atividades em geral; as tarefas de trilha (Entrevista, Business, Viagem) passam 60;
+  // a produção oral das atividades (OralExercisePanel) passa 45 — o perfil de fala do Flávio usa maxSeconds 45.
   const maxSecs = Math.max(1, Math.min(teto, Number(maxSeconds) || teto));
   const [state, setState] = useState(existingUrl ? 'recorded' : 'idle'); // idle | recording | recorded
   const [url, setUrl]     = useState(existingUrl || null);
@@ -3956,7 +3957,7 @@ function OralExercisePanel({ exercise, saved = {}, readOnly = false, lockComplet
           return <div key={id} style={{ padding:13, borderRadius:14, background:'#fff', border:'1px solid #FED7AA' }}>
             <div style={{ color:'#7C2D12', fontSize:13.5, fontWeight:800, lineHeight:1.45 }}>{index + 1}. {prompt.prompt || 'Grave sua resposta em inglês.'}</div>
             {prompt.hint && <div style={{ color:'#9A6438', fontSize:11.5, lineHeight:1.45, margin:'5px 0 10px' }}>{prompt.hint}</div>}
-            <AudioRecorder key={`${id}:${stored.url || ''}`} existingUrl={stored.url || ''} readOnly={readOnly || (lockCompleted && !!stored.url)} maxSeconds={prompt.maxSeconds}
+            <AudioRecorder key={`${id}:${stored.url || ''}`} existingUrl={stored.url || ''} readOnly={readOnly || (lockCompleted && !!stored.url)} maxSeconds={prompt.maxSeconds} teto={45}
               onBlob={(blob, ext) => onChange && onChange(id, { blob, ext, cleared:!blob })} />
           </div>;
         })}

@@ -11340,8 +11340,10 @@
           if (part.oralExercise == null) return;
           activityHasOral = true;
           const prompts = part.oralExercise?.prompts;
-          if (!Array.isArray(prompts) || prompts.length !== 3) {
-            issues.push(`Atividade ${activityIndex + 1}, Parte ${partIndex + 1}: o bloco oral precisa ter exatamente 3 gravações.`);
+          // 3 gravações no lote padrão; 5 no perfil de fala do Flávio (skill atividades-firestore).
+          // Só o app e este painel aceitam 5: functions/atividades.js (geração por API) segue com 3.
+          if (!Array.isArray(prompts) || (prompts.length !== 3 && prompts.length !== 5)) {
+            issues.push(`Atividade ${activityIndex + 1}, Parte ${partIndex + 1}: o bloco oral precisa ter 3 gravações (ou 5, no perfil de fala).`);
             return;
           }
           prompts.forEach((prompt, promptIndex) => {
@@ -11352,8 +11354,8 @@
               issues.push(`Atividade ${activityIndex + 1}, Parte ${partIndex + 1}, áudio ${promptIndex + 1}: isQuestion precisa ser true ou false.`);
             }
             const limit = Number(prompt?.maxSeconds);
-            if (!Number.isInteger(limit) || limit < 1 || limit > 30) {
-              issues.push(`Atividade ${activityIndex + 1}, Parte ${partIndex + 1}, áudio ${promptIndex + 1}: maxSeconds precisa estar entre 1 e 30.`);
+            if (!Number.isInteger(limit) || limit < 1 || limit > 45) {
+              issues.push(`Atividade ${activityIndex + 1}, Parte ${partIndex + 1}, áudio ${promptIndex + 1}: maxSeconds precisa estar entre 1 e 45.`);
             }
           });
         });
