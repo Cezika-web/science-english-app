@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Mateus Richter — CZK English</title>
+  <style>
+:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Perguntas, roupas e adjetivos</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Mateus Richter &nbsp;•&nbsp;
+            <strong>Data:</strong> 11/21/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+
+<section class="panel"><p style="margin:0;font-weight:600;color:#14532D;"><em>Você revisou as perguntas e os possessivos que apareceram nos exercícios do app. Depois, praticou como descrever roupas com adjetivos e como dizer que algo passou do limite com <strong>too</strong>.</em></p></section>
+
+<section>
+<h2 style="margin-bottom:8px;">Resumo da Aula</h2>
+<div class="outline-card">
+<p style="margin:0 0 8px 0;">Na revisão do desafio e dos exercícios do app, você comparou <strong>Is the jacket blue?</strong> com <strong>Does your brother have …?</strong>. Quando o verbo é <strong>be</strong>, ele passa para antes do sujeito. Nas perguntas do presente simples com <strong>have</strong>, <strong>like</strong> ou <strong>want</strong>, use <strong>do</strong> com <em>I, you, we, they</em> e <strong>does</strong> com <em>he, she, it</em>. Depois de <strong>does</strong>, mantenha o verbo principal na forma base, como <strong>have</strong>. Você também viu <strong>does</strong> como verbo principal em <em>She does exercises</em> e <strong>do</strong> com ênfase em <em>I <strong>do</strong> want a jacket</em>.</p>
+<p style="margin:0 0 8px 0;">Ao revisar os possessivos, você retomou <strong>Anna’s phone</strong> e <strong>her bag</strong>. Em português, “seu” pode se referir a pessoas diferentes. Em inglês, o dono define a escolha. <strong>Your</strong> se refere à pessoa com quem você fala. <strong>Her</strong> se refere a uma mulher de quem você fala. Você também comparou <em>my jacket</em> com <em>mine</em>, que já substitui o grupo inteiro.</p>
+<p style="margin:0 0 8px 0;">Na parte de roupas, você praticou adjetivos opostos e a diferença de pronúncia entre <strong>loose</strong> /luːs/ e <strong>lose</strong> /luːz/. O adjetivo pode vir antes do substantivo (<em>an expensive shirt</em>) ou depois de <strong>be</strong> (<em>the shirt is expensive</em>). Ele mantém a mesma forma no plural (<em>expensive sweaters</em>). <strong>Very</strong> e <strong>so</strong> intensificam a descrição. <strong>Too</strong> indica que a característica passou do limite aceitável naquele contexto.</p>
+<p style="margin:0;">Para preparar a próxima aula, você praticou <strong>which</strong> para escolher entre opções e usou <strong>one</strong> ou <strong>ones</strong> para evitar repetir um substantivo contável. Em <em>the grey one</em>, <strong>one</strong> substitui <em>sweater</em>. A aula também retomou <strong>why</strong> para falar do motivo, inclusive em <em>I don’t know why</em>, e <strong>because</strong> para apresentar a explicação.</p>
+</div>
+</section>
+
+<section>
+<h2 style="margin-bottom:8px;">Frases usadas em aula</h2>
+<div class="outline-card">
+<ul>
+<li><strong lang="en">Is the jacket blue?</strong> — A jaqueta é azul?</li>
+<li><strong lang="en">Does your brother have …?</strong> — Seu irmão tem …?</li>
+<li><strong lang="en">Where is Anna’s phone?</strong> — Onde está o celular da Anna?</li>
+<li><strong lang="en">Anna’s phone is in her bag.</strong> — O celular da Anna está na bolsa dela.</li>
+<li><strong lang="en">Are you at home?</strong> — Você está em casa?</li>
+<li><strong lang="en">I want a jacket.</strong> — Eu quero uma jaqueta.</li>
+<li><strong lang="en">I do want a jacket.</strong> — Eu realmente quero uma jaqueta.</li>
+<li><strong lang="en">It is very cheap.</strong> — É bem barato.</li>
+<li><strong lang="en">The skirt is very short.</strong> — A saia é bem curta.</li>
+<li><strong lang="en">That skirt is too short.</strong> — Aquela saia é curta demais.</li>
+<li><strong lang="en">Yesterday was too hot.</strong> — Ontem fez calor demais.</li>
+<li><strong lang="en">Which sweater does Bill want?</strong> — Qual suéter o Bill quer?</li>
+<li><strong lang="en">The grey one.</strong> — O cinza.</li>
+<li><strong lang="en">Which shoes do they like?</strong> — De quais sapatos eles gostam?</li>
+<li><strong lang="en">I don’t know why.</strong> — Eu não sei por quê.</li>
+</ul>
+</div>
+</section>
+
+<section>
+<h2 style="margin-bottom:8px;">Vocabulário-chave</h2>
+<div class="vocab-grid">
+<div class="vocab">
+  <div class="vocab-head">
+    <h3 lang="en">loose</h3>
+    <button type="button" class="vocab-say" data-czk-say="loose" aria-label="Ouvir a pronúncia de loose" aria-pressed="false" title="Ouvir loose">&#128266;</button>
+  </div>
+  <p><em>(pt) folgado, largo</em><br><small>Descreve uma peça que fica folgada no corpo. <em>This jacket is loose.</em> — Esta jaqueta fica folgada.</small></p>
+</div>
+<div class="vocab green">
+  <div class="vocab-head">
+    <h3 lang="en">too short</h3>
+    <button type="button" class="vocab-say" data-czk-say="too short" aria-label="Ouvir a pronúncia de too short" aria-pressed="false" title="Ouvir too short">&#128266;</button>
+  </div>
+  <p><em>(pt) curto demais</em><br><small>Indica que o comprimento é menor do que o aceitável para a pessoa ou para a situação. <em>That skirt is too short.</em> — Aquela saia é curta demais.</small></p>
+</div>
+<div class="vocab yellow">
+  <div class="vocab-head">
+    <h3 lang="en">the grey one</h3>
+    <button type="button" class="vocab-say" data-czk-say="the grey one" aria-label="Ouvir a pronúncia de the grey one" aria-pressed="false" title="Ouvir the grey one">&#128266;</button>
+  </div>
+  <p><em>(pt) o cinza, a cinza</em><br><small>Use <strong>one</strong> para retomar um item no singular já mencionado. <em>Which sweater does Bill want? The grey one.</em> — Qual suéter o Bill quer? O cinza.</small></p>
+</div>
+</div>
+</section>
+
+<section>
+<h2 style="margin-bottom:8px;">Vocabulário completo da aula</h2>
+<div class="outline-card">
+<h3 style="margin-top:0;">Peças de roupa e compras</h3>
+<ul>
+<li><strong lang="en">jacket</strong> — jaqueta</li>
+<li><strong lang="en">shirt</strong> — camisa</li>
+<li><strong lang="en">skirt</strong> — saia</li>
+<li><strong lang="en">sweater</strong> — suéter</li>
+<li><strong lang="en">shoes</strong> — sapatos</li>
+<li><strong lang="en">store</strong> — loja</li>
+<li><strong lang="en">mall</strong> — shopping center</li>
+</ul>
+<h3>Adjetivos e intensificadores</h3>
+<ul>
+<li><strong lang="en">new / old</strong> — novo / velho</li>
+<li><strong lang="en">dirty / clean</strong> — sujo / limpo</li>
+<li><strong lang="en">loose / tight</strong> — folgado / apertado</li>
+<li><strong lang="en">cheap / expensive</strong> — barato / caro</li>
+<li><strong lang="en">long / short</strong> — comprido / curto</li>
+<li><strong lang="en">hot</strong> — quente</li>
+<li><strong lang="en">blue / grey / black</strong> — azul / cinza / preto</li>
+<li><strong lang="en">very / so</strong> — muito / tão</li>
+<li><strong lang="en">too</strong> — demais</li>
+<li><strong lang="en">lose</strong> — perder</li>
+</ul>
+<h3>Possessivos, escolhas e motivos</h3>
+<ul>
+<li><strong lang="en">his / her / your</strong> — dele / dela / seu ou sua, da pessoa com quem você fala</li>
+<li><strong lang="en">Anna’s</strong> — da Anna</li>
+<li><strong lang="en">mine</strong> — o meu ou a minha</li>
+<li><strong lang="en">which</strong> — qual, quais entre as opções disponíveis</li>
+<li><strong lang="en">one / ones</strong> — substituem um substantivo contável já mencionado, no singular ou no plural</li>
+<li><strong lang="en">why / because</strong> — por que ou por quê / porque</li>
+</ul>
+</div>
+</section>
+
+<section>
+<h2 style="margin-bottom:8px;">Correções importantes</h2>
+<div class="outline-card">
+<p style="margin:0 0 4px 0;"><strong>1. Pergunta com <em>be</em></strong></p>
+<p style="margin:0 0 4px 0;color:#c53030;">❌ <span lang="en">Do you are at home?</span></p>
+<p style="margin:0 0 14px 0;color:#276749;">✅ <strong lang="en">Are you at home?</strong> — Passe <em>are</em> para antes de <em>you</em>.</p>
+<p style="margin:0 0 4px 0;"><strong>2. Pergunta com <em>like</em></strong></p>
+<p style="margin:0 0 4px 0;color:#c53030;">❌ <span lang="en">Are they like the blue shirts?</span></p>
+<p style="margin:0 0 14px 0;color:#276749;">✅ <strong lang="en">Do they like the blue shirts?</strong> — Para perguntar se eles gostam das camisas azuis, use <em>do + they + like</em>.</p>
+<p style="margin:0 0 4px 0;"><strong>3. Ordem da pergunta com <em>be</em></strong></p>
+<p style="margin:0 0 14px 0;color:#276749;">✅ <strong lang="en">Is the jacket blue?</strong> — A pergunta estava correta no desafio. Compare com a ordem da afirmativa <em>The jacket is blue.</em></p>
+<p style="margin:0 0 4px 0;"><strong>4. De quem é o celular?</strong></p>
+<p style="margin:0 0 4px 0;color:#c53030;">❌ <span lang="en">Your phone is your bag.</span></p>
+<p style="margin:0 0 14px 0;color:#276749;">✅ <strong lang="en">Her phone is in her bag.</strong> — <em>Her</em> indica que o celular e a bolsa são da Anna. <em>In</em> indica que o celular está dentro da bolsa.</p>
+<p style="margin:0 0 4px 0;"><strong>5. Plural e lugar</strong></p>
+<p style="margin:0 0 4px 0;color:#c53030;">❌ <span lang="en">There are two jacket …</span></p>
+<p style="margin:0 0 14px 0;color:#276749;">✅ <strong lang="en">There are two jackets in the store.</strong> — A quantidade pede <em>jackets</em> no plural. Use <em>store</em> para loja e <em>mall</em> para shopping center.</p>
+<p style="margin:0 0 4px 0;"><strong>6. Possessivo que substitui a peça</strong></p>
+<p style="margin:0 0 4px 0;color:#c53030;">❌ <span lang="en">The mine is blue.</span></p>
+<p style="margin:0 0 14px 0;color:#276749;">✅ <strong lang="en">Mine is blue.</strong> — Use <em>mine</em> sozinho para retomar <em>my jacket</em>.</p>
+<p style="margin:0 0 4px 0;"><strong>7. Afirmativa com ou sem ênfase</strong></p>
+<p style="margin:0;color:#276749;">✅ <strong lang="en">I want a jacket. / I do want a jacket.</strong> — A primeira é a afirmativa neutra esperada no exercício. A segunda é gramatical e dá ênfase a <em>do</em>, como quando você reforça que realmente quer a jaqueta.</p>
+</div>
+</section>
+
+        <!-- GRAVAÇÃO — só inclua esta seção se houver link do YouTube.
+             Sem link, remova a seção inteira: nada de botão morto. -->
+        <section>
+          <h2 style="margin-bottom:8px;">Gravação da aula</h2>
+          <div class="media-row">
+            <a class="media-btn" href="https://youtu.be/iidawUVa2uA" target="_blank" rel="noopener noreferrer" role="button"
+               style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">
+              🎥 Assistir gravação
+            </a>
+          </div>
+        </section>
+
+        <!-- TALK TIME -->
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>Tempo de Fala (Talk Time)</h2>
+          <table class="talk-table">
+            <thead>
+              <tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr>
+            </thead>
+            <tbody>
+              <tr class="row-teacher">
+                <td><span class="talk-label">César (Professor)</span></td>
+                <td><span class="talk-percent">64%</span></td>
+                <td class="talk-time">~33 minutos</td>
+              </tr>
+              <tr class="row-student">
+                <td><span class="talk-label">Mateus Richter</span></td>
+                <td><span class="talk-percent">36%</span></td>
+                <td class="talk-time">~19 minutos</td>
+              </tr>
+            </tbody>
+          </table>
+        <p style="margin:8px 0 0;color:var(--muted);font-size:0.85rem;">Estimativa com base nos trechos de fala da aula inteira, incluindo a conversa inicial.</p>
+        </section>
+
+<section>
+<h2 style="margin-bottom:8px;">Homework</h2>
+<div class="homework">
+<p style="margin:0 0 8px 0;">📌 <strong>Prática sugerida</strong></p>
+<ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+<li>Escreva duas perguntas sobre roupas. Comece uma com <strong>Is</strong> ou <strong>Are</strong> e a outra com <strong>Do</strong> ou <strong>Does</strong>. Responda às duas em inglês.</li>
+<li>Descreva a mesma peça em duas frases. Use <strong>very</strong> na primeira e <strong>too</strong> na segunda. Diga o que muda no sentido.</li>
+<li>Imagine dois suéteres e dois pares de sapatos. Pergunte com <strong>Which</strong> e responda usando <strong>one</strong> para o suéter e <strong>ones</strong> para os sapatos.</li>
+<li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana.</li>
+</ul>
+</div>
+</section>
+
+      </main>
+
+      <footer>
+        <p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">
+          © 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com
+        </p>
+      </footer>
+
+    </article>
+  </div>
+
+  <!-- ÁUDIO DAS PALAVRAS-CHAVE — uma única função para o pós-aula inteiro.
+       Aberto direto: fala aqui mesmo. Dentro do app: pede ao app e quem fala é ele
+       (o app remove este script e injeta o próprio, então nada daqui roda por lá). -->
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body>
+</html>
