@@ -221,6 +221,59 @@ function PlanoNorm(s) { return String(s || '').toLowerCase().normalize('NFD').re
 function PlanoNormResp(s) { return PlanoNorm(s).replace(/[’‘`]/g, "'").replace(/[.,!?;:"]/g, '').replace(/\s+/g, ' ').trim(); }
 function PlanoTituloAula(p) { return typeof postTitle === 'function' ? postTitle(p) : (p.title || 'Pós-aula'); }
 function PlanoTextoAula(p) { return PlanoNorm(String(p.html || '').replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]+>/g, ' ')); }
+/* ───────── retomar de onde parou, salvar sozinho e o botão "voltar" do celular (23/11/2026) ───────── */
+// Quando foi: "hoje, 21:40", "ontem, 21:40" ou "DD/MM".
+function PlanoQuando(iso) {
+  const d = new Date(iso); if (!iso || isNaN(d)) return '';
+  const hh = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const n = Math.round((PlanoHoje() - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 86400000);
+  return n === 0 ? `hoje, ${hh}` : n === 1 ? `ontem, ${hh}` : `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+// Página de exercícios começada: guardada em feitas['parc:ID'] = { i: próximo exercício, r: '110-' (1 certo, 0 errado, - sem resposta), em }.
+function PlanoParcialLer(p, total) {
+  if (!p || typeof p !== 'object' || typeof p.i !== 'number' || p.i <= 0 || !total) return null;
+  const r = String(p.r || ''); const res = [];
+  for (let k = 0; k < r.length && k < total; k++) res[k] = r[k] === '1' ? true : r[k] === '0' ? false : undefined;
+  return { i: Math.min(p.i, total), res };
+}
+function PlanoParcialMontar(res, i) {
+  return { i, r: Array.from({ length: res.length }, (_, k) => (res[k] === true ? '1' : res[k] === false ? '0' : '-')).join(''), em: new Date().toISOString() };
+}
+// Posição da tarefa aberta ({ n, de }) para o cabeçalho: "tarefa 4 de 27".
+const PlanoPosCtx = React.createContext(null);
+// Botão "voltar" do celular (ou gesto): fecha a camada de cima em vez de tirar a aluna do app (o app não tratava o voltar).
+// Uma só escuta de popstate e uma pilha de camadas; cada camada aberta empurra UMA entrada no histórico ({planoCamada: profundidade}).
+// Fechar pelo ✕ não desfaz a entrada na hora (a camada seguinte pode abrir no mesmo instante): um ajuste adiado confere se sobrou entrada e volta só o que sobrou.
+const PLANO_VOLTAR = { pilha: [], empurradas: 0, ignorar: 0, pronto: false, agenda: null };
+function PlanoVoltarAjusta() {
+  const V = PLANO_VOLTAR; V.agenda = null;
+  const sobra = V.empurradas - V.pilha.length;
+  if (sobra > 0) { V.empurradas -= sobra; V.ignorar++; try { window.history.go(-sobra); } catch (e) { V.ignorar--; } }
+}
+function PlanoUsaVoltar(ativo, fechar) {
+  const ref = React.useRef(fechar); ref.current = fechar;   // sempre o fechar mais novo
+  React.useEffect(() => {
+    if (!ativo) return undefined;
+    const V = PLANO_VOLTAR;
+    if (!V.pronto) {
+      window.addEventListener('popstate', e => {
+        if (V.ignorar > 0) { V.ignorar--; return; }   // foi o ajuste acima desfazendo uma entrada
+        const d = e.state && e.state.planoCamada ? e.state.planoCamada : 0;
+        if (d >= V.empurradas) return;   // "avançar" do navegador: não há nada para fechar
+        V.empurradas = d;   // o navegador já tirou a entrada; falta fechar a camada de cima
+        const topo = V.pilha[V.pilha.length - 1]; if (topo) topo.fn.current();
+      });
+      V.pronto = true;
+    }
+    const item = { fn: ref };
+    V.pilha.push(item); V.empurradas++;
+    try { window.history.pushState({ planoCamada: V.empurradas }, ''); } catch (e) { V.empurradas--; V.pilha.pop(); return undefined; }
+    return () => {
+      const k = V.pilha.indexOf(item); if (k >= 0) V.pilha.splice(k, 1);
+      if (!V.agenda) V.agenda = setTimeout(PlanoVoltarAjusta, 0);
+    };
+  }, [ativo]);
+}
 function PlanoWhatsLink(student, texto) {
   const n = String((student && student.whatsapp) || PLANO_WHATS_PADRAO).replace(/\D/g, '');
   return `https://wa.me/${n}?text=${encodeURIComponent(texto)}`;
@@ -367,7 +420,7 @@ function PlanoLayout(cfg, feitas, ativOk) {
   return { itens, altura: y + 40, todo, feito: ultimoFeito > 0 ? feito : '', proxAula };
 }
 
-function PlanoNo({ it, onTarefa, onAula }) {
+function PlanoNo({ it, onTarefa, onAula, bolha, nota }) {
   const W = 340;
   if (it.k === 'cab') {
     const fut = it.pac.futuro;
@@ -409,19 +462,39 @@ function PlanoNo({ it, onTarefa, onAula }) {
     : e === 'aberta' ? { background: '#fff', color: '#0F172A', border: `3px solid ${COR}`, boxShadow: `0 6px 0 ${expl ? '#BAE6FD' : '#DDD6FE'}` }
     : { background: '#E2E8F0', color: '#94A3B8', boxShadow: '0 6px 0 #CBD5E1' };
   return <>
-    {e === 'atual' && <div style={{ position: 'absolute', top: it.y - it.r - 36, left: `${(it.x / W) * 100}%`, transform: 'translateX(-50%)', background: '#fff', border: `2px solid ${COR}`, color: expl ? '#075985' : '#5B21B6', borderRadius: 12, padding: '4px 12px', fontSize: 11.5, fontWeight: 800, letterSpacing: .5, whiteSpace: 'nowrap', boxShadow: '0 4px 10px rgba(124,58,237,.18)' }}>
-      COMEÇAR<span style={{ position: 'absolute', left: '50%', bottom: -7, width: 10, height: 10, background: '#fff', borderRight: `2px solid ${COR}`, borderBottom: `2px solid ${COR}`, transform: 'translateX(-50%) rotate(45deg)' }} /></div>}
-    <button data-atual={e === 'atual' ? '1' : undefined} onClick={() => onTarefa(t, e)} style={{ ...nodeBase, borderRadius: '50%', fontSize: 26, ...estilo }} aria-label={t.titulo}>
+    {bolha && <div style={{ position: 'absolute', top: it.y - it.r - 36, left: `${(it.x / W) * 100}%`, transform: 'translateX(-50%)', background: '#fff', border: `2px solid ${COR}`, color: expl ? '#075985' : '#5B21B6', borderRadius: 12, padding: '4px 12px', fontSize: 11.5, fontWeight: 800, letterSpacing: .5, whiteSpace: 'nowrap', boxShadow: '0 4px 10px rgba(124,58,237,.18)' }}>
+      {bolha}<span style={{ position: 'absolute', left: '50%', bottom: -7, width: 10, height: 10, background: '#fff', borderRight: `2px solid ${COR}`, borderBottom: `2px solid ${COR}`, transform: 'translateX(-50%) rotate(45deg)' }} /></div>}
+    <button data-atual={bolha ? '1' : undefined} onClick={() => onTarefa(t, e)} style={{ ...nodeBase, borderRadius: '50%', fontSize: 26, ...estilo }} aria-label={t.titulo}>
       {e === 'feita' ? '✓' : e === 'trancada' ? '🔒' : t.ic}
     </button>
     <div style={{ ...rotulo, opacity: e === 'trancada' ? .6 : 1 }}>
       <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', lineHeight: 1.2 }}>{t.titulo}</div>
       {t.sub && <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', marginTop: 1 }}>{t.sub}</div>}
+      {nota && <div style={{ fontSize: 11, fontWeight: 800, color: '#6D28D9', marginTop: 1 }}>{nota}</div>}
     </div>
   </>;
 }
 
-function PlanoCaminho({ cfg, feitas, ativOk, onTarefa, onAula, onComoFunciona, onGramatica }) {
+// Onde ela parou: a tarefa ainda não concluída mexida por último (página de exercícios com resposta ou vídeo com rascunho).
+// `info` diz até onde foi; `em` é quando. Fica de fora do que já está feito e das tarefas que levam a outra aba.
+function PlanoOndeParou(cfg, feitas) {
+  let melhor = null;
+  cfg.pacotes.filter(p => !p.futuro).forEach(p => p.tarefas.forEach(t => {
+    if (t.tipo === 'atividade' || feitas[t.id]) return;
+    let em = '', info = '';
+    if (t.tipo === 'livro' && t.pdf) {
+      const total = (t.exercicios || []).length; const pa = PlanoParcialLer(feitas['parc:' + t.id], total);
+      if (pa) { em = feitas['parc:' + t.id].em || ''; info = pa.i >= total ? 'ver o resultado' : `exercício ${pa.i + 1} de ${total}`; }
+    } else if (t.tipo === 'video') {
+      const r = feitas['rasc:' + t.id];
+      if (r && typeof r === 'object' && String(r.texto || '').trim()) { em = r.em || ''; info = 'seu rascunho está guardado'; }
+    }
+    if (info && (!melhor || String(em) > String(melhor.em))) melhor = { t, em, info };
+  }));
+  return melhor;
+}
+
+function PlanoCaminho({ cfg, feitas, ativOk, onTarefa, onAula, onComoFunciona, onGramatica, retomar }) {
   const ref = React.useRef(null);
   const L = React.useMemo(() => PlanoLayout(cfg, feitas, ativOk), [cfg, feitas, ativOk]);
   const tarefas = cfg.pacotes.filter(p => !p.futuro).flatMap(p => p.tarefas);
@@ -429,8 +502,20 @@ function PlanoCaminho({ cfg, feitas, ativOk, onTarefa, onAula, onComoFunciona, o
   const prox = L.proxAula && L.proxAula.aula;
   const selo = !!feitas['selo:' + cfg.unidade.id];
   React.useEffect(() => { const el = ref.current && ref.current.querySelector('[data-atual="1"]'); if (el) el.scrollIntoView({ block: 'center' }); }, []);
+  // A bolha do Caminho: com algo começado, ela marca ONDE PAROU ("CONTINUAR"); sem nada começado, a próxima tarefa ("COMEÇAR").
+  const bolhaDe = it => (it.k !== 'tarefa' ? null : retomar ? (it.t.id === retomar.t.id ? 'CONTINUAR' : null) : (it.estado === 'atual' ? 'COMEÇAR' : null));
   return (
     <div className="scroll-area" ref={ref} style={{ padding: '14px 16px 24px', position: 'relative' }}>
+      {retomar && <div style={{ position: 'sticky', top: -14, zIndex: 40, margin: '-14px -16px 12px', padding: '10px 16px', background: 'rgba(246,241,234,.96)', borderBottom: '1px solid rgba(var(--brand-rgb),.1)', boxShadow: '0 6px 14px rgba(15,23,42,.06)' }}>
+        <button onClick={() => onTarefa(retomar.t, 'aberta')} style={{ display: 'flex', alignItems: 'center', gap: 11, width: '100%', boxSizing: 'border-box', textAlign: 'left', background: '#fff', border: '1.5px solid #C4B5FD', borderRadius: 16, padding: '9px 11px', boxShadow: '0 8px 20px rgba(109,40,217,.16)', fontFamily: 'inherit', cursor: 'pointer' }}>
+          <span style={{ width: 38, height: 38, borderRadius: 12, background: '#F5F3FF', display: 'grid', placeItems: 'center', fontSize: 19, flexShrink: 0 }}>{retomar.t.ic || '📖'}</span>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: 'block', fontSize: 13.5, fontWeight: 800, color: '#4C1D95', lineHeight: 1.2 }}>Continuar de onde parei</span>
+            <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontSize: 11, fontWeight: 700, color: '#64748B', marginTop: 1, lineHeight: 1.3 }}>{retomar.t.titulo} · {retomar.info}{retomar.em ? ` · ${PlanoQuando(retomar.em)}` : ''}</span>
+          </span>
+          <span style={{ padding: '8px 12px', borderRadius: 11, background: 'linear-gradient(180deg,#8B5CF6,#6D28D9)', color: '#fff', fontWeight: 800, fontSize: 12.5, whiteSpace: 'nowrap' }}>Continuar ›</span>
+        </button>
+      </div>}
       <div style={{ background: 'linear-gradient(150deg,#6D28D9,#4C1D95)', color: '#fff', borderRadius: 22, padding: 16, boxShadow: '0 14px 30px rgba(76,29,149,.3)' }}>
         <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: .8, opacity: .8 }}>{String(cfg.nome).toUpperCase()} · {String(cfg.curso).toUpperCase()}</div>
         <div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.2, marginTop: 4 }}>{feitasN === tarefas.length && tarefas.length ? 'Tarefas do mês concluídas! 🎉' : 'Seu caminho até a próxima aula'}</div>
@@ -451,14 +536,17 @@ function PlanoCaminho({ cfg, feitas, ativOk, onTarefa, onAula, onComoFunciona, o
           <path d={L.todo} fill="none" stroke="#CBD5E1" strokeWidth="5" strokeLinecap="round" strokeDasharray="1 11" vectorEffect="non-scaling-stroke" />
           {L.feito && <path d={L.feito} fill="none" stroke="#22C55E" strokeWidth="6" strokeLinecap="round" vectorEffect="non-scaling-stroke" />}
         </svg>
-        {L.itens.map((it, i) => <PlanoNo key={i} it={it} onTarefa={onTarefa} onAula={onAula} />)}
+        {L.itens.map((it, i) => <PlanoNo key={i} it={it} onTarefa={onTarefa} onAula={onAula} bolha={bolhaDe(it)} nota={retomar && it.k === 'tarefa' && it.t.id === retomar.t.id ? `parou: ${retomar.info}` : null} />)}
       </div>
     </div>
   );
 }
 
 /* ───────── camadas (tela cheia e folha de baixo) ───────── */
-function PlanoCamada({ titulo, sub, onClose, onAsk, children, rodape }) {
+function PlanoCamada({ titulo, sub, onClose, onAsk, children, rodape, semPos }) {
+  PlanoUsaVoltar(true, onClose);   // o "voltar" do celular fecha esta tela, como o ✕
+  const pos = React.useContext(PlanoPosCtx);
+  if (pos && !semPos) sub = [sub, `tarefa ${pos.n} de ${pos.de}`].filter(Boolean).join(' · ');
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(15,23,42,.4)', display: 'flex', justifyContent: 'center' }}>
       <div style={{ width: '100%', maxWidth: 480, height: '100%', background: '#F6F1EA', display: 'flex', flexDirection: 'column', animation: 'planoSurge .22s' }}>
@@ -478,6 +566,7 @@ function PlanoCamada({ titulo, sub, onClose, onAsk, children, rodape }) {
 }
 
 function PlanoFolha({ onClose, children, z }) {
+  PlanoUsaVoltar(true, onClose);   // o "voltar" do celular fecha esta folha
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: z || 450, background: 'rgba(15,23,42,.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
       <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 480, maxHeight: '88%', overflowY: 'auto', background: '#fff', borderRadius: '24px 24px 0 0', padding: '18px 18px calc(20px + env(safe-area-inset-bottom, 0px))', animation: 'planoSobe .25s', boxShadow: '0 -12px 40px rgba(0,0,0,.25)' }}>
@@ -1077,15 +1166,24 @@ function PlanoLinhasTexto({ segs, pos, ligado, onIr }) {
   );
 }
 
-function PlanoTarefaVideo({ t, onFeita, onResumo, resumoAnterior, onClose, onAsk }) {
+function PlanoTarefaVideo({ t, onFeita, onResumo, resumoAnterior, rascunho, onRascunho, onClose, onAsk }) {
   const id = PlanoYoutubeId(t.youtube || t.youtubeId); const url = t.url;
   const final = PlanoVideoFinal(t);
   const segsVideo = (!final && t.segs && t.segs.length) ? t.segs : null;
   const textoVideo = final ? '' : (segsVideo ? segsVideo.map(g => g.t).join(' ') : (t.transcricao || ''));
   const temTexto = !!textoVideo;                 // este vídeo tem texto para liberar depois da resposta
   const pedeResposta = final || temTexto;
-  const [resumo, setResumo] = React.useState(resumoAnterior || ''); const [enviou, setEnviou] = React.useState(false);
+  const [resumo, setResumo] = React.useState(resumoAnterior || rascunho || ''); const [enviou, setEnviou] = React.useState(false);
   const liberado = !final && temTexto && (!!resumoAnterior || enviou);   // já respondeu: o texto aparece
+  // Rascunho: o que ela escreve é guardado sozinho (0,8 s depois de parar de digitar e, se sair antes, ao fechar). `onRascunho` só vem para a aluna (não na prévia/espelho).
+  const rasc = React.useRef({ texto: resumo, sujo: false }); const [rascSalvo, setRascSalvo] = React.useState(!!rascunho);
+  React.useEffect(() => {
+    if (!onRascunho || !pedeResposta || liberado || resumo === (resumoAnterior || rascunho || '')) return undefined;
+    rasc.current = { texto: resumo, sujo: true }; setRascSalvo(false);
+    const h = setTimeout(() => { onRascunho(resumo); rasc.current.sujo = false; setRascSalvo(true); }, 800);
+    return () => clearTimeout(h);
+  }, [resumo]);
+  React.useEffect(() => () => { if (rasc.current.sujo && onRascunho) onRascunho(rasc.current.texto); }, []);
   const palavras = PlanoPalavras(resumo); const pronto = palavras >= PLANO_RESUMO_MIN;
   const caixa = React.useRef(null); const jogador = React.useRef(null); const relogio = React.useRef(null);
   const [terminou, setTerminou] = React.useState(false); const [semApi, setSemApi] = React.useState(false);
@@ -1114,6 +1212,7 @@ function PlanoTarefaVideo({ t, onFeita, onResumo, resumoAnterior, onClose, onAsk
   const irPara = tempo => { try { if (jogador.current) { jogador.current.seekTo(tempo, true); jogador.current.playVideo(); setPos(tempo); } } catch (e) {} };
   const enviar = () => {
     const x = resumo.trim();
+    rasc.current.sujo = false;   // vai como resposta: o rascunho não precisa mais ser guardado
     if (onResumo) onResumo(x); else if (final) onFeita();
     if (!final) setEnviou(true);   // vídeo com texto: não fecha, libera o texto aqui mesmo
   };
@@ -1136,7 +1235,7 @@ function PlanoTarefaVideo({ t, onFeita, onResumo, resumoAnterior, onClose, onAsk
           ? 'Assista quantas vezes precisar. Aqui não tem texto do que é dito: escreva, em inglês e com as suas palavras, o que você entendeu.'
           : 'Assista quantas vezes precisar, sem texto. Escreva do jeito que der, mesmo que seja pouco ou “não entendi o suficiente”. Depois de enviar, o texto do vídeo aparece.'}</div>
         <textarea value={resumo} onChange={e => setResumo(e.target.value)} placeholder={final ? 'In this video…' : 'I understood…'} rows={final ? 5 : 4} style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid #CBD5E1', borderRadius: 12, padding: '10px 12px', fontSize: 15, fontFamily: 'inherit', lineHeight: 1.5, resize: 'vertical' }} />
-        <div style={{ fontSize: 11.5, fontWeight: 800, color: pronto ? '#15803D' : '#94A3B8', marginTop: 4 }}>{palavras} palavra{palavras === 1 ? '' : 's'}{pronto ? ' ✓' : ''}</div>
+        <div style={{ fontSize: 11.5, fontWeight: 800, color: pronto ? '#15803D' : '#94A3B8', marginTop: 4 }}>{palavras} palavra{palavras === 1 ? '' : 's'}{pronto ? ' ✓' : ''}{onRascunho && resumo.trim() && !resumoAnterior ? <span style={{ color: rascSalvo ? '#15803D' : '#B45309', marginLeft: 8 }}>{rascSalvo ? '✓ rascunho salvo' : 'salvando…'}</span> : null}</div>
         {final && resumoAnterior && <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B', marginTop: 4 }}>Você já enviou um resumo. Se mudar o texto e enviar de novo, o professor vê a versão nova.</div>}
       </div>}
       {liberado && <div style={{ marginTop: 14 }}>
@@ -1648,11 +1747,17 @@ function PlanoPreviaFolha({ previa, onEntendi, onPerguntar }) {
 // `abrirEm` (só a prévia do painel): já abre a gaveta neste exercício, em vez de começar com ela fechada.
 // `uid` + `semGravar`: a prévia do Dr. EurekIA aparece na 1ª abertura de cada tarefa por aluno ou aluna (localStorage); com `semGravar`
 // (prévia do painel e espelho) ela aparece sempre e nada é gravado.
-function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, semGravar, onParcial }) {
+function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, semGravar, onParcial, parc, onSalvar, proxima, onProxima }) {
   const prev = React.useMemo(() => PlanoPreviaNormaliza(t.previa), [t.previa]);
   const chavePrev = `plano-previa-v1-${uid || 'x'}-${t.id}`;
+  const pos = React.useContext(PlanoPosCtx);   // { n, de }: "tarefa 4 de 27" no cabeçalho
+  // Retomar: já tinha respondido alguns exercícios desta página? Abre direto no seguinte (o professor indo a um exercício, abrirEm, manda mais).
+  const [ret] = React.useState(() => (abrirEm === undefined && !semGravar ? PlanoParcialLer(parc, (t.exercicios || []).length) : null));
+  const [retomou, setRetomou] = React.useState(!!ret);   // faixa "Voltamos onde você parou" (some quando ela responde ou recomeça)
+  const [salvo, setSalvo] = React.useState(0);   // 0 nada ainda, 1 salvando, 2 salvo
+  const sigSalva = React.useRef(ret ? PlanoParcialMontar(ret.res, ret.i).r : '');
   const [verPrev, setVerPrev] = React.useState(() => {
-    if (!prev || abrirEm !== undefined) return false;   // abrirEm: o professor foi direto a um exercício, a prévia só atrapalharia
+    if (!prev || abrirEm !== undefined || ret) return false;   // abrirEm: o professor foi direto a um exercício; ret: ela já está no meio da página. A prévia só atrapalharia
     if (semGravar) return true;
     try { return !localStorage.getItem(chavePrev); } catch (e) { return true; }
   });
@@ -1660,8 +1765,8 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, 
   const perguntarPrev = () => { fecharPrev(); if (onAsk) onAsk(PLANO_PERGUNTA_PREVIA); };
   const exs = t.exercicios || []; const total = exs.length;
   const [cx, setCx] = React.useState(-1);   // quadro explicado aberto (índice em t.caixas)
-  const [pdf, setPdf] = React.useState(t.pdf); const [i, setI] = React.useState(abrirEm >= 0 && abrirEm < total ? abrirEm : 0); const [res, setRes] = React.useState([]);
-  const [aberta, setAberta] = React.useState(abrirEm >= 0 && abrirEm < total); const [respondeu, setRespondeu] = React.useState(false);
+  const [pdf, setPdf] = React.useState(t.pdf); const [i, setI] = React.useState(abrirEm >= 0 && abrirEm < total ? abrirEm : ret ? ret.i : 0); const [res, setRes] = React.useState(ret ? ret.res : []);
+  const [aberta, setAberta] = React.useState((abrirEm >= 0 && abrirEm < total) || !!ret); const [respondeu, setRespondeu] = React.useState(false);
   const acabou = total > 0 && i >= total; const acertos = res.filter(r => r === true).length;
   const respondidos = res.filter(r => r !== undefined).length;
   // O que o professor vê no painel (Science Lab): quantas certas, quantas respondeu e QUAIS exercícios errou (só os ids; o texto está no curso).
@@ -1673,7 +1778,18 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, 
   const audiosDoBloco = bk => (t.audios || []).filter(a => blocosDe(a).includes(bk));
   const resultado = () => ({ ok: acertos, total, feitos: respondidos, err: exs.filter((e, k) => res[k] === false && e.id).map(e => e.id) });
   const sair = () => { if (onParcial && !semGravar && respondidos > 0) onParcial(resultado()); onClose(); };   // fechou no meio: guarda até onde foi
-  const onFim = ok => { setRes(r => { const n = [...r]; if (n[i] === undefined) n[i] = ok; return n; }); setRespondeu(true); };
+  PlanoUsaVoltar(!semGravar, sair);   // o "voltar" do celular fecha a tarefa como o ✕ (guardando até onde foi), em vez de sair do app
+  const onFim = ok => { setRes(r => { const n = [...r]; if (n[i] === undefined) n[i] = ok; return n; }); setRespondeu(true); setRetomou(false); };
+  // Salvamento automático: cada exercício respondido grava na hora (conta + aparelho); na volta ela cai no exercício seguinte.
+  React.useEffect(() => {
+    if (!onSalvar || semGravar || !res.some(r => r !== undefined)) return undefined;
+    const p = PlanoParcialMontar(res, res.reduce((u, r, k) => (r !== undefined ? k : u), -1) + 1);
+    if (p.r === sigSalva.current) return undefined;
+    sigSalva.current = p.r; onSalvar(p); setSalvo(1);
+    const h = setTimeout(() => setSalvo(2), 700);
+    return () => clearTimeout(h);
+  }, [res]);
+  const recomecar = () => { setI(0); setRes([]); setRespondeu(false); setRetomou(false); setSalvo(0); sigSalva.current = ''; if (onSalvar && !semGravar) onSalvar(null); };
   const caixas = pdf === t.pdf && Array.isArray(t.caixas) && t.caixas.length ? t.caixas : null;
   const pagina = pdf - 14; const btn = { width: 34, height: 34, borderRadius: 10, border: 0, background: '#F5F3FF', color: '#5B21B6', fontWeight: 800, fontSize: 18, fontFamily: 'inherit', cursor: 'pointer' };
   return (
@@ -1683,19 +1799,24 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, 
           <button onClick={sair} aria-label="Fechar" style={{ width: 36, height: 36, borderRadius: 12, border: 0, background: '#F1F5F9', fontSize: 18, fontWeight: 800, color: '#475569', cursor: 'pointer' }}>✕</button>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A', lineHeight: 1.15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.titulo}</div>
-            <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B' }}>Connectivity 1 · página {pagina}</div>
+            <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B' }}>{pos ? `p. ${pagina} · tarefa ${pos.n} de ${pos.de}` : `Connectivity 1 · página ${pagina}`}{salvo > 0 && <span style={{ marginLeft: 6, color: salvo === 2 ? '#15803D' : '#B45309' }}>{salvo === 2 ? '✓ salvo' : 'salvando…'}</span>}</div>
           </div>
           <button style={btn} aria-label="Página anterior" disabled={pdf <= 15} onClick={() => setPdf(p => p - 1)}>‹</button>
           <button style={btn} aria-label="Próxima página" disabled={pdf >= 177} onClick={() => setPdf(p => p + 1)}>›</button>
           {prev && <button onClick={() => setVerPrev(true)} aria-label="Rever a prévia desta página" style={{ ...btn, width: 'auto', padding: '0 8px', fontSize: 12, whiteSpace: 'nowrap' }}>💡 Prévia</button>}
           {onAsk && <button onClick={() => onAsk()} aria-label="Perguntar ao Dr. EurekIA" title="Tem uma dúvida? Pergunte ao Dr. EurekIA" style={{ display: 'flex', alignItems: 'center', gap: 3, height: 38, padding: '0 9px 0 3px', borderRadius: 99, border: 0, background: '#F5F3FF', boxShadow: '0 2px 8px rgba(109,40,217,.28)', cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit' }}><EurekiaAvatar size={32} /><span style={{ fontSize: 20, lineHeight: 1 }}>💡</span></button>}
         </div>
+        {ret && retomou && !acabou && <div style={{ background: '#EDE9FE', borderBottom: '1px solid #DDD6FE', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 800, color: '#4C1D95', flexShrink: 0 }}>
+          <span style={{ flex: 1, lineHeight: 1.3 }}>↩ Voltamos onde você parou: exercício {Math.min(ret.i + 1, total)} de {total}.</span>
+          <button onClick={recomecar} style={{ padding: '5px 10px', borderRadius: 99, background: '#fff', border: '1.5px solid #C4B5FD', fontWeight: 800, fontSize: 11, color: '#5B21B6', whiteSpace: 'nowrap', fontFamily: 'inherit', cursor: 'pointer' }}>Recomeçar do 1</button>
+        </div>}
         {audiosTopo.length > 0 && pdf === t.pdf && <PlanoAudiosPagina audios={audiosTopo} />}
         <PlanoLeitor curso={cursoId} pdf={pdf} cobrir={pdf === t.pdf ? t.cobrir : null} caixas={caixas} onCaixa={setCx} />
         {total === 0
           ? <div style={{ padding: '10px 14px calc(12px + env(safe-area-inset-bottom, 0px))', background: '#fff', borderTop: '1px solid rgba(var(--brand-rgb),.12)', flexShrink: 0 }}>
             {caixas && <button className="plano-btn sec" style={{ marginBottom: 8 }} onClick={() => setCx(0)}>💡 Ver a explicação do Dr. EurekIA</button>}
-            <button className="plano-btn violeta" onClick={() => onFeita()}>Já li a página ✓</button></div>
+            <button className="plano-btn violeta" onClick={() => onFeita()}>Já li a página ✓</button>
+            {proxima && onProxima && <button className="plano-btn sec" style={{ marginTop: 8 }} onClick={() => onProxima()}>Já li e ir para a próxima ›</button>}</div>
           : <div style={{ background: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, boxShadow: '0 -8px 24px rgba(15,23,42,.18)', flexShrink: 0, display: 'flex', flexDirection: 'column', height: aberta ? '54%' : 'auto', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
             {caixas && <button onClick={() => setCx(0)} style={{ width: '100%', border: 0, background: '#F5F3FF', color: '#5B21B6', fontWeight: 800, fontSize: 13, padding: '9px 14px', borderTopLeftRadius: 20, borderTopRightRadius: 20, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>💡 Ver a explicação do Dr. EurekIA</button>}
             <button onClick={() => setAberta(a => !a)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', border: 0, background: 'none', padding: '11px 14px 10px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left', flexShrink: 0 }}>
@@ -1709,8 +1830,13 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, 
                   <div style={{ fontSize: 46 }}>🎉</div>
                   <div style={{ fontSize: 19, fontWeight: 800, margin: '2px 0' }}>{acertos} de {total} certas</div>
                   <div style={{ color: '#64748B', fontWeight: 700, fontSize: 13, margin: '0 0 12px' }}>Você pode rever a página antes de concluir.</div>
-                  <button className="plano-btn" onClick={() => onFeita(resultado())}>Concluir tarefa ✓</button>
-                  <button className="plano-btn sec" style={{ marginTop: 8 }} onClick={() => { setI(0); setRes([]); setRespondeu(false); }}>Refazer os exercícios</button>
+                  {proxima && onProxima
+                    ? <>
+                      <button className="plano-btn violeta" onClick={() => onProxima(resultado())}>Próxima tarefa › {proxima.titulo}</button>
+                      <button className="plano-btn sec" style={{ marginTop: 8 }} onClick={() => onFeita(resultado())}>Concluir e voltar ao Caminho</button>
+                    </>
+                    : <button className="plano-btn" onClick={() => onFeita(resultado())}>Concluir tarefa ✓</button>}
+                  <button className="plano-btn sec" style={{ marginTop: 8 }} onClick={recomecar}>Refazer os exercícios</button>
                 </div>
                 : <>
                   <div style={{ display: 'flex', gap: 5, marginBottom: 10 }}>{exs.map((e, k) => <div key={e.id || k} style={{ flex: 1, height: 5, borderRadius: 9, background: k < i ? '#22C55E' : k === i ? '#7C3AED' : '#E2E8F0' }} />)}</div>
@@ -2059,7 +2185,7 @@ function PlanoGramaticaLista({ cfg, feitas, onAbrir, onClose }) {
   }, [cfg.cursoId, cfg.unidadesLista]);
   const msg = (x, cor) => <div style={{ background: '#fff', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: cor || '#64748B' }}>{x}</div>;
   return (
-    <PlanoCamada titulo="📘 Gramática" sub="Todas as explicações das unidades liberadas" onClose={onClose}>
+    <PlanoCamada titulo="📘 Gramática" sub="Todas as explicações das unidades liberadas" onClose={onClose} semPos>
       {erro ? msg('Não consegui abrir agora. Confira a internet e tente de novo.', '#B91C1C')
         : !itens ? msg('Abrindo…')
         : !itens.length ? msg('Ainda não há explicações nas unidades liberadas.')
@@ -2094,8 +2220,17 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
   const [aviso, setAviso] = React.useState('');
   const nome = student.firstName || String(student.name || '').split(' ')[0] || 'Olá';
   const ativOk = activities.length > 0 && activities.every(a => a.finalizada || a.status === 'corrected');
-  const avisar = x => { setAviso(x); setTimeout(() => setAviso(''), 2200); };
+  const [avisoAcao, setAvisoAcao] = React.useState(null);   // botão dentro do aviso ("Próxima tarefa ›")
+  const avisoH = React.useRef(null);
+  const avisar = (x, acao) => { setAviso(x); setAvisoAcao(acao || null); clearTimeout(avisoH.current); avisoH.current = setTimeout(() => { setAviso(''); setAvisoAcao(null); }, acao ? 6000 : 2200); };
   const u = cfg.unidade;
+  // Posição da tarefa aberta no Caminho ("tarefa 4 de 27"), a seguinte (pula as que levam a outra aba) e onde ela parou (card "Continuar de onde parei").
+  const todasT = cfg.pacotes.filter(p => !p.futuro).flatMap(p => p.tarefas);
+  const idxT = tarefa ? todasT.findIndex(x => x.id === tarefa.id) : -1;
+  const posT = idxT >= 0 ? { n: idxT + 1, de: todasT.length } : null;
+  const proximaT = idxT >= 0 ? (todasT.slice(idxT + 1).find(x => x.tipo !== 'atividade') || null) : null;
+  const retomar = React.useMemo(() => PlanoOndeParou(cfg, feitas), [cfg, feitas]);
+  const gravaConta = !(cfg.previa || mirror);   // prévia e espelho não guardam nada
   // Contexto da fala gravada (vocabulário e exercício de falar). Chaves vindas do livro (cursos/{id}); `teste` = prévia do painel ou espelho: nada é gravado.
   const falaCtx = React.useMemo(() => ({
     vocab: !!(cfg.vocabPronuncia || cfg.forcaFala), falas: !!(cfg.gravarFalas || cfg.forcaFala), teste: !!cfg.previa || !!mirror,
@@ -2120,7 +2255,16 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
     const antes = velha && !velha.parcial ? velha : null;
     marcar('res:' + id, { ok: r.ok, total: r.total, feitos: r.total, err: r.err, parcial: false, tent: ((antes && antes.tent) || 0) + 1, melhor: Math.max(antes ? (typeof antes.melhor === 'number' ? antes.melhor : antes.ok) : 0, r.ok), em: agora });
   };
-  const concluir = (id, extra, r) => { marcar(id); if (extra) marcar(extra); if (r) gravarRes(id, r); setTarefa(null); avisar(extra ? '🏅 Selo conquistado!' : '✅ Tarefa concluída!'); };
+  const concluir = (id, extra, r, seguir) => {
+    marcar(id); if (extra) marcar(extra); if (r) gravarRes(id, r);
+    if (feitas['parc:' + id]) marcar('parc:' + id, null);   // terminou: o "onde parou" dessa tarefa some
+    if (feitas['rasc:' + id]) marcar('rasc:' + id, null);
+    // seguir: "Próxima tarefa ›" na tela final abre a seguinte direto, sem passar pelo Caminho.
+    setTarefa(seguir || null);
+    // Sem seguir direto, o aviso traz o botão "Próxima tarefa ›" (vale para todo tipo de tarefa, não só a página de exercícios).
+    const prox = !seguir && !extra && tarefa && tarefa.id === id ? proximaT : null;
+    avisar(extra ? '🏅 Selo conquistado!' : '✅ Tarefa concluída!', prox ? { rotulo: 'Próxima tarefa ›', fn: () => abrirTarefa(prox, 'aberta') } : null);
+  };
   const fechar = () => setTarefa(null);
   // No espelho (o professor olhando o app do aluno) a EurekIA aparece, mas só avisa: a pergunta iria para a conta do professor.
   const avisarEspelho = () => avisar('👁 Modo espelho — somente leitura');
@@ -2128,13 +2272,18 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
   // (o 💡 do cabeçalho também), para a IA saber em que página ela está. O typeof protege dos botões que passam o clique (onClick={onAsk}).
   const perguntar = sugestao => { if (mirror) { avisarEspelho(); return; } setDuvida({ contexto: tarefa ? tarefa.titulo : '', previa: PlanoPreviaTexto(tarefa), sugestao: typeof sugestao === 'string' ? sugestao : '' }); };
   const f = (r, tot) => concluir(tarefa.id, undefined, normRes(r, tot));
+  const fProxima = r => concluir(tarefa.id, undefined, normRes(r), proximaT);
+  // Salvamento automático (conta + aparelho): página de exercícios em feitas['parc:ID'], texto do vídeo em feitas['rasc:ID']. null = apagar.
+  const salvarParc = p => { if (tarefa && gravaConta && !feitas[tarefa.id]) marcar('parc:' + tarefa.id, p); };
+  const salvarRasc = texto => { if (tarefa && gravaConta) marcar('rasc:' + tarefa.id, texto && texto.trim() ? { texto, em: new Date().toISOString() } : null); };
   const parcial = r => { const x = normRes(r); if (x && tarefa) gravarRes(tarefa.id, x, true); };
-  const enviarResumo = texto => { marcar('resumo:' + tarefa.id, { texto, em: new Date().toISOString() }); if (PlanoVideoFinal(tarefa)) concluir(tarefa.id); };   // vídeo com texto: só grava a resposta e libera o texto; ela conclui depois
+  const enviarResumo = texto => { marcar('resumo:' + tarefa.id, { texto, em: new Date().toISOString() }); if (feitas['rasc:' + tarefa.id]) marcar('rasc:' + tarefa.id, null); if (PlanoVideoFinal(tarefa)) concluir(tarefa.id); };   // vídeo com texto: só grava a resposta e libera o texto; ela conclui depois
 
   return (
     <PlanoFalaCtx.Provider value={falaCtx}>
+      <PlanoPosCtx.Provider value={posT}>
       <style>{PLANO_CSS}</style>
-      {tab === 'caminho' && <PlanoCaminho cfg={cfg} feitas={feitas} ativOk={ativOk} onTarefa={abrirTarefa} onAula={setAula} onComoFunciona={() => setBv(true)} onGramatica={cfg.cursoId ? () => setGram(true) : null} />}
+      {tab === 'caminho' && <PlanoCaminho cfg={cfg} feitas={feitas} ativOk={ativOk} onTarefa={abrirTarefa} onAula={setAula} onComoFunciona={() => setBv(true)} onGramatica={cfg.cursoId ? () => setGram(true) : null} retomar={retomar} />}
       {tab === 'atividades' && slots.atividades}
       {tab === 'aulas' && <PlanoAulasLista posaulas={posaulas} onOpenPost={onOpenPost} />}
       {tab === 'perfil' && <>
@@ -2147,17 +2296,18 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
 
       {gram && <PlanoGramaticaLista cfg={cfg} feitas={feitas} onAbrir={setTarefa} onClose={() => setGram(false)} />}
       {tarefa && tarefa.tipo === 'livro' && (tarefa.pdf
-        ? <PlanoTarefaPagina t={tarefa} cursoId={cfg.cursoId} uid={uid} semGravar={!!(cfg.previa || mirror)} onFeita={f} onParcial={parcial} onClose={fechar} onAsk={perguntar} />
-        : <PlanoTarefaLivro t={tarefa} unidade={u} onFeita={f} onClose={fechar} onAsk={perguntar} />)}
-      {tarefa && tarefa.tipo === 'explicacao' && <PlanoTarefaExplicacao t={tarefa} cursoId={cfg.cursoId} onFeita={f} onClose={fechar} onAsk={perguntar} />}
+        ? <PlanoTarefaPagina key={tarefa.id} t={tarefa} cursoId={cfg.cursoId} uid={uid} semGravar={!!(cfg.previa || mirror)} onFeita={f} onParcial={parcial} onClose={fechar} onAsk={perguntar}
+          parc={feitas[tarefa.id] ? null : feitas['parc:' + tarefa.id]} onSalvar={feitas[tarefa.id] ? null : salvarParc} proxima={proximaT} onProxima={proximaT ? fProxima : null} />
+        : <PlanoTarefaLivro key={tarefa.id} t={tarefa} unidade={u} onFeita={f} onClose={fechar} onAsk={perguntar} />)}
+      {tarefa && tarefa.tipo === 'explicacao' && <PlanoTarefaExplicacao key={tarefa.id} t={tarefa} cursoId={cfg.cursoId} onFeita={f} onClose={fechar} onAsk={perguntar} />}
       {tarefa && tarefa.tipo === 'revisao' && <PlanoCamada titulo={tarefa.titulo} sub={tarefa.sub} onClose={fechar}><div style={{ background: '#fff', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: '#64748B' }}>📝 Esta revisão ainda está sendo montada.</div></PlanoCamada>}
-      {tarefa && tarefa.tipo === 'posaula' && <PlanoTarefaPosaula t={tarefa} unidade={u} posaulas={posaulas} onOpenPost={onOpenPost} onFeita={f} onClose={fechar} onAsk={perguntar} />}
-      {tarefa && tarefa.tipo === 'estudo' && <PlanoEstudo estudo={u.estudos[tarefa.ref]} unidade={u} posaulas={posaulas} onOpenPost={onOpenPost} onFeita={f} onClose={fechar} onAsk={perguntar} />}
-      {tarefa && tarefa.tipo === 'vocab' && <PlanoVocab vocab={u.vocab[tarefa.ref]} titulo={tarefa.titulo} onFeita={f} onClose={fechar} onAsk={perguntar} />}
-      {tarefa && tarefa.tipo === 'jogo' && <PlanoTarefaJogo t={tarefa} unidade={u} onFeita={f} onClose={fechar} onAsk={perguntar} />}
-      {tarefa && tarefa.tipo === 'video' && <PlanoTarefaVideo t={tarefa} onFeita={f} onResumo={enviarResumo} resumoAnterior={feitas['resumo:' + tarefa.id] && feitas['resumo:' + tarefa.id].texto} onClose={fechar} onAsk={perguntar} />}
-      {tarefa && tarefa.tipo === 'extra' && <PlanoTarefaExtra t={tarefa} unidade={u} onAbrirExtras={() => { fechar(); onTab('atividades'); }} onFeita={f} onClose={fechar} onAsk={perguntar} />}
-      {tarefa && tarefa.tipo === 'teste' && <PlanoTarefaTeste t={tarefa} unidade={u} onFeita={() => concluir(tarefa.id, 'selo:' + u.id)} onClose={fechar} onAsk={perguntar}
+      {tarefa && tarefa.tipo === 'posaula' && <PlanoTarefaPosaula key={tarefa.id} t={tarefa} unidade={u} posaulas={posaulas} onOpenPost={onOpenPost} onFeita={f} onClose={fechar} onAsk={perguntar} />}
+      {tarefa && tarefa.tipo === 'estudo' && <PlanoEstudo key={tarefa.id} estudo={u.estudos[tarefa.ref]} unidade={u} posaulas={posaulas} onOpenPost={onOpenPost} onFeita={f} onClose={fechar} onAsk={perguntar} />}
+      {tarefa && tarefa.tipo === 'vocab' && <PlanoVocab key={tarefa.id} vocab={u.vocab[tarefa.ref]} titulo={tarefa.titulo} onFeita={f} onClose={fechar} onAsk={perguntar} />}
+      {tarefa && tarefa.tipo === 'jogo' && <PlanoTarefaJogo key={tarefa.id} t={tarefa} unidade={u} onFeita={f} onClose={fechar} onAsk={perguntar} />}
+      {tarefa && tarefa.tipo === 'video' && <PlanoTarefaVideo key={tarefa.id} t={tarefa} onFeita={f} onResumo={enviarResumo} resumoAnterior={feitas['resumo:' + tarefa.id] && feitas['resumo:' + tarefa.id].texto} rascunho={feitas['rasc:' + tarefa.id] && feitas['rasc:' + tarefa.id].texto} onRascunho={gravaConta && !feitas[tarefa.id] ? salvarRasc : null} onClose={fechar} onAsk={perguntar} />}
+      {tarefa && tarefa.tipo === 'extra' && <PlanoTarefaExtra key={tarefa.id} t={tarefa} unidade={u} onAbrirExtras={() => { fechar(); onTab('atividades'); }} onFeita={f} onClose={fechar} onAsk={perguntar} />}
+      {tarefa && tarefa.tipo === 'teste' && <PlanoTarefaTeste key={tarefa.id} t={tarefa} unidade={u} onFeita={() => concluir(tarefa.id, 'selo:' + u.id)} onClose={fechar} onAsk={perguntar}
         onNota={n => {
           const m = feitas['prova:' + u.id]; const velha = m && typeof m === 'object' ? m : null; const agora = new Date().toISOString();
           const melhor = velha && velha.nota > n.nota ? { nota: velha.nota, partes: velha.partes || [], em: velha.em || agora } : { nota: n.nota, partes: n.partes, em: agora };   // a melhor nota fica; a última e as tentativas também
@@ -2166,7 +2316,8 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
       {aula && <PlanoAulaFolha aula={aula} student={student} cfg={cfg} onClose={() => setAula(null)} />}
       {duvida && <PlanoPerguntar cfg={cfg} student={student} contexto={duvida.contexto} previa={duvida.previa} sugestao={duvida.sugestao || undefined} onAsk={cfg.previa ? null : onAsk} onClose={() => setDuvida(null)} />}
       {bv && <PlanoBoasVindas cfg={cfg} nome={nome} onFim={() => { try { localStorage.setItem(chaveBV, '1'); } catch (e) {} setBv(false); }} />}
-      {aviso && <div style={{ position: 'fixed', left: '50%', bottom: 'calc(150px + env(safe-area-inset-bottom, 0px))', transform: 'translateX(-50%)', background: '#0F172A', color: '#fff', padding: '10px 18px', borderRadius: 12, fontSize: 13.5, fontWeight: 700, zIndex: 700, whiteSpace: 'nowrap', animation: 'planoSurge .2s' }}>{aviso}</div>}
+      {aviso && <div style={{ position: 'fixed', left: '50%', bottom: 'calc(150px + env(safe-area-inset-bottom, 0px))', transform: 'translateX(-50%)', background: '#0F172A', color: '#fff', padding: '10px 18px', borderRadius: 12, fontSize: 13.5, fontWeight: 700, zIndex: 700, whiteSpace: 'nowrap', animation: 'planoSurge .2s', display: 'flex', alignItems: 'center', gap: 12 }}>{aviso}{avisoAcao && <button onClick={() => { const a = avisoAcao; setAviso(''); setAvisoAcao(null); a.fn(); }} style={{ border: 0, borderRadius: 9, padding: '5px 10px', background: '#8B5CF6', color: '#fff', fontWeight: 800, fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer' }}>{avisoAcao.rotulo}</button>}</div>}
+      </PlanoPosCtx.Provider>
     </PlanoFalaCtx.Provider>
   );
 }
