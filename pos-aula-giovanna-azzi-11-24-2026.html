@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Giovanna Azzi — CZK English</title>
+  <style>
+:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Viagens e perguntas no passado</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluno:</strong> Giovanna Azzi &nbsp;•&nbsp;
+            <strong>Data:</strong> 11/24/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+
+        <!-- PAINEL INTRO: resumo rápido da aula em 1-2 linhas -->
+        <section class="panel">
+          <p style="margin:0;font-weight:600;font-style:italic;color:#14532D;">Giovanna, nesta aula você usou a viagem de aniversário para praticar como contar aonde foi, dizer o que havia no lugar e fazer perguntas no passado.</p>
+        </section>
+
+        <!-- RESUMO DETALHADO DA AULA -->
+        <section>
+          <h2 style="margin-bottom:8px;">Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 8px 0;">Você contou em inglês sobre a viagem de aniversário a Rio Quente e a ida ao parque aquático. Para dizer como foi a viagem, treinamos <em>How was it?</em> e adjetivos com intensificadores, como <em>kind of boring</em>, <em>really nice</em> e <em>quite comfortable</em>. Para dizer que você foi a algum lugar, retomamos o passado de <em>go</em>, que é <em>went</em>.</p>
+            <p style="margin:0 0 8px 0;">Na revisão do app, praticamos <em>was</em> com <em>I/he/she/it</em> e <em>were</em> com <em>you/we/they</em>. Para indicar que algo existia, usamos <em>there was</em> no singular e <em>there were</em> no plural. Em perguntas com <em>to be</em>, invertemos a ordem, como em <em>Were you there?</em>. Em <em>How many passengers were there?</em>, o bloco <em>how many passengers</em> fica junto no início.</p>
+            <p style="margin:0;">Você transformou frases com <em>she likes</em> em perguntas e negativas com <em>does</em> e <em>doesn’t</em>. Essa mesma lógica ajudou a entender por que usamos <em>sleep</em> em <em>Did you sleep well?</em>. Também revisamos <em>I’d like</em> para pedidos e <em>I’d rather not</em> para preferências. Depois, você fez o desafio e marcou <strong>360 pontos</strong>.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Frases usadas em aula</h2>
+          <div class="outline-card">
+            <ul>
+              <li><strong lang="en">How was it?</strong> — Como foi?</li>
+              <li><strong lang="en">The flight was long.</strong> — O voo foi longo.</li>
+              <li><strong lang="en">The hotel was really nice.</strong> — O hotel era muito bom.</li>
+              <li><strong lang="en">The seats on the bus were comfortable.</strong> — Os assentos do ônibus eram confortáveis.</li>
+              <li><strong lang="en">My friends were on the train.</strong> — Meus amigos estavam no trem.</li>
+              <li><strong lang="en">There was a passenger on the train.</strong> — Havia um passageiro no trem.</li>
+              <li><strong lang="en">How many passengers were there?</strong> — Quantos passageiros havia?</li>
+              <li><strong lang="en">Did you sleep well?</strong> — Você dormiu bem?</li>
+              <li><strong lang="en">See you on Thursday.</strong> — Até quinta-feira.</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- KEY VOCABULARY: 3 palavras/expressões em destaque, cada uma com botão de áudio.
+             data-czk-say = SOMENTE o inglês (é o que será pronunciado). Nunca a tradução. -->
+        <section>
+          <h2 style="margin-bottom:8px;">Vocabulário-chave</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <div class="vocab-head">
+                <h3>train ride</h3>
+                <button type="button" class="vocab-say" data-czk-say="train ride"
+                        aria-label="Ouvir a pronúncia de train ride" aria-pressed="false"
+                        title="Ouvir train ride">&#128266;</button>
+              </div>
+              <p><em>(pt) viagem ou passeio de trem</em><br><small><em>Ride</em> aqui é um substantivo. <em lang="en">The train ride was really scenic.</em></small></p>
+            </div>
+            <div class="vocab green">
+              <div class="vocab-head">
+                <h3>scenic</h3>
+                <button type="button" class="vocab-say" data-czk-say="scenic"
+                        aria-label="Ouvir a pronúncia de scenic" aria-pressed="false"
+                        title="Ouvir scenic">&#128266;</button>
+              </div>
+              <p><em>(pt) com belas paisagens</em><br><small>Descreve um trajeto ou lugar com uma vista bonita. <em lang="en">It was a scenic train ride.</em></small></p>
+            </div>
+            <div class="vocab yellow">
+              <div class="vocab-head">
+                <h3>kind of</h3>
+                <button type="button" class="vocab-say" data-czk-say="kind of"
+                        aria-label="Ouvir a pronúncia de kind of" aria-pressed="false"
+                        title="Ouvir kind of">&#128266;</button>
+              </div>
+              <p><em>(pt) meio, um pouco</em><br><small>Suaviza o adjetivo que vem depois. <em lang="en">The trip was kind of boring.</em></small></p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Vocabulário da aula</h2>
+          <div class="outline-card">
+            <h3 style="margin-top:0;">Viagens e transporte</h3>
+            <ul>
+              <li><strong lang="en">trip</strong> — viagem específica</li>
+              <li><strong lang="en">travel</strong> — viajar</li>
+              <li><strong lang="en">went</strong> — foi ou fui, no passado de <em>go</em></li>
+              <li><strong lang="en">flight</strong> — voo</li>
+              <li><strong lang="en">train ride</strong> — viagem de trem</li>
+              <li><strong lang="en">bus trip</strong> — viagem de ônibus</li>
+              <li><strong lang="en">seat</strong> — assento</li>
+              <li><strong lang="en">passenger</strong> — passageiro</li>
+              <li><strong lang="en">cruise</strong> — cruzeiro</li>
+              <li><strong lang="en">water park</strong> — parque aquático</li>
+              <li><strong lang="en">amusement park</strong> — parque de diversões</li>
+              <li><strong lang="en">aquarium</strong> — aquário, inclusive o local aberto a visitantes</li>
+              <li><strong lang="en">fish tank</strong> — aquário no sentido de tanque de peixes</li>
+            </ul>
+            <h3>Adjetivos para descrever experiências</h3>
+            <ul>
+              <li><strong lang="en">long</strong> — longo</li>
+              <li><strong lang="en">comfortable</strong> — confortável</li>
+              <li><strong lang="en">nice</strong> — agradável, bom</li>
+              <li><strong lang="en">boring</strong> — entediante</li>
+              <li><strong lang="en">bumpy</strong> — cheio de solavancos</li>
+              <li><strong lang="en">scenic</strong> — com belas paisagens</li>
+              <li><strong lang="en">scary</strong> — assustador</li>
+              <li><strong lang="en">scared</strong> — assustado, com medo</li>
+            </ul>
+            <h3>Intensificadores</h3>
+            <ul>
+              <li><strong lang="en">kind of</strong> — meio, um pouco</li>
+              <li><strong lang="en">pretty / quite</strong> — bem, bastante, como em <em>quite comfortable</em></li>
+              <li><strong lang="en">really / very</strong> — muito</li>
+              <li><strong lang="en">so</strong> — tão, muito enfático</li>
+            </ul>
+            <h3>Pedidos, refeições e preferências</h3>
+            <ul>
+              <li><strong lang="en">I’d like a coffee</strong> — eu gostaria de um café</li>
+              <li><strong lang="en">dinner</strong> — jantar, a refeição</li>
+              <li><strong lang="en">have dinner / eat dinner</strong> — jantar</li>
+              <li><strong lang="en">I’d rather not</strong> — eu preferiria evitar algo. Complete com um verbo, como em <em>I’d rather not eat here.</em></li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="margin-bottom:8px;">Correções importantes</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 10px 0;"><strong>1. Ir a um lugar no passado</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ <span lang="en">I was travel.</span></p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong lang="en">I went to Rio Quente.</strong> — Use <em>went</em> para dizer aonde você foi. Para dizer apenas que viajou, use <em>I traveled</em>.</p>
+            <p style="margin:0 0 10px 0;"><strong>2. Was e were</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ <span lang="en">The seats on the bus was comfortable.</span></p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong lang="en">The seats on the bus were comfortable.</strong> — <em>Seats</em> está no plural. Use <em>were</em> também com <em>you</em>, mesmo quando significa “você”: <em>You were very late yesterday.</em></p>
+            <p style="margin:0 0 10px 0;"><strong>3. Perguntas com there were</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ <span lang="en">There were how many passengers?</span></p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong lang="en">How many passengers were there?</strong> — Para pedir uma informação, comece com <em>how many passengers</em> e depois use <em>were there</em>.</p>
+            <p style="margin:0 0 10px 0;"><strong>4. Trip e travel</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ <span lang="en">The travel was kind of boring.</span></p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong lang="en">The trip was kind of boring.</strong> — Use <em>trip</em> para falar de uma viagem específica. <em>Kind of</em> suaviza <em>boring</em>.</p>
+            <p style="margin:0 0 10px 0;"><strong>5. Scary e scared</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ <span lang="en">The bus trip was so scared.</span></p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong lang="en">The bus trip was so scary.</strong> — A viagem causou medo, então ela foi <em>scary</em>. Para falar de quem sentiu medo, use <em>scared</em>: <em>I was scared.</em></p>
+            <p style="margin:0 0 10px 0;"><strong>6. Pedido educado</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ <span lang="en">I will like a coffee.</span></p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong lang="en">I’d like a coffee.</strong> — Para pedir um café, use <em>I’d like</em> (forma curta de <em>I would like</em>). <em>I will like</em> indica que você vai gostar de algo.</p>
+            <p style="margin:0 0 10px 0;"><strong>7. Verbo depois de I’d rather not</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ <span lang="en">I’d rather not dinner.</span></p>
+            <p style="margin:0 0 14px 0;color:#276749;">✅ <strong lang="en">I’d rather not have dinner in my room tonight.</strong> — <em>Dinner</em> é o nome da refeição. Para dizer “jantar”, use <em>have dinner</em> ou <em>eat dinner</em>.</p>
+            <p style="margin:0;"><strong>💡 Revisão de perguntas:</strong> em <em>Did you sleep well?</em>, <em>did</em> já marca o passado e <em>sleep</em> fica na forma base. Em <em>Were you at the beach?</em>, o próprio <em>were</em> vai para a frente. Ao escrever, lembre também do <strong>c</strong> depois do <strong>s</strong> em <em>scenic</em> e do <strong>I</strong> sempre maiúsculo.</p>
+          </div>
+        </section>
+
+        <!-- GRAVAÇÃO — só inclua esta seção se houver link do YouTube.
+             Sem link, remova a seção inteira: nada de botão morto. -->
+        <section>
+          <h2 style="margin-bottom:8px;">Gravação da aula</h2>
+          <div class="media-row">
+            <a class="media-btn" href="https://youtu.be/4QpmHmeOEE4" target="_blank" rel="noopener noreferrer" role="button"
+               style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">
+              🎥 Assistir gravação
+            </a>
+          </div>
+        </section>
+
+        <!-- TALK TIME -->
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>Tempo de Fala (Talk Time)</h2>
+          <table class="talk-table">
+            <thead>
+              <tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr>
+            </thead>
+            <tbody>
+              <tr class="row-teacher">
+                <td><span class="talk-label">César (Professor)</span></td>
+                <td><span class="talk-percent">72%</span></td>
+                <td class="talk-time">~27 minutos</td>
+              </tr>
+              <tr class="row-student">
+                <td><span class="talk-label">Giovanna Azzi</span></td>
+                <td><span class="talk-percent">28%</span></td>
+                <td class="talk-time">~10 minutos</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin:8px 0 0;color:var(--muted);font-size:0.85rem;">Estimativa pelos trechos de fala marcados na transcrição. As porcentagens consideram só esses trechos.</p>
+        </section>
+
+        <!-- HOMEWORK -->
+        <section>
+          <h2 style="margin-bottom:8px;">Homework</h2>
+          <div class="homework">
+            <p style="margin:0 0 8px 0;">📌 <strong>Lição de casa:</strong></p>
+            <ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+              <li>Deixe o próximo desafio para fazer com o professor no fim da aula de quinta.</li>
+              <li>Para praticar, descreva em voz alta um lugar que você visitou. Diga aonde foi com <em>I went to…</em>, conte o que havia lá com <em>there was</em> ou <em>there were</em> e termine com uma pergunta começando por <em>How many…?</em></li>
+              <li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana.</li>
+            </ul>
+          </div>
+        </section>
+
+      </main>
+
+      <footer>
+        <p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">
+          © 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com
+        </p>
+      </footer>
+
+    </article>
+  </div>
+
+  <!-- ÁUDIO DAS PALAVRAS-CHAVE — uma única função para o pós-aula inteiro.
+       Aberto direto: fala aqui mesmo. Dentro do app: pede ao app e quem fala é ele
+       (o app remove este script e injeta o próprio, então nada daqui roda por lá). -->
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body>
+</html>

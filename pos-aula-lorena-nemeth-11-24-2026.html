@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resumo Pós-Aula — Lorena Nemeth — CZK English</title>
+  <style>
+:root{
+  --page-bg: #f4f7fa;
+  --card-bg: #fff;
+  --accent: #16A34A;
+  --accent-dark: #15803D;
+  --green: #36b37e;
+  --muted: #6b7280;
+  --border: #DCF0E3;
+  --card-width: 720px;
+}
+html,body{ height:100%; margin:0; padding:0; background:var(--page-bg); font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; }
+.wrap{ min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:48px 20px; }
+.card{ width:100%; max-width:var(--card-width); background:var(--card-bg); border-radius:18px; padding:28px; box-shadow:0 6px 22px rgba(33,47,60,0.06); border:1px solid rgba(15,33,64,0.03); }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+.badge{ background:linear-gradient(180deg,#fff,#F0FDF4); border:1px solid var(--border); padding:8px 12px; border-radius:999px; color:var(--accent); font-weight:700; font-size:0.85rem; }
+h1{ margin:0; font-size:1.3rem; color:#0f1724; }
+.meta{ color:var(--muted); font-size:0.92rem; margin-top:6px; }
+.actions{ display:flex; gap:10px; }
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:10px; border:none; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(22,163,74,0.12); }
+main{ margin-top:18px; }
+section{ margin-top:18px; }
+.panel{ background:#F7FDF9; border-radius:12px; padding:16px; border:1px solid var(--border); }
+.outline-card{ border-radius:10px; border:1px solid var(--border); padding:16px; background:#fff; }
+.vocab-grid{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; }
+.vocab{ flex:1; min-width:220px; border-radius:10px; padding:14px; border:2px solid #C9E9D5; background:#fff; }
+.vocab.green{ border-color:#c9f3dc; background:#f5fff6; }
+.vocab.yellow{ border-color:#fde68a; background:#fffdf0; }
+.vocab h3{ margin:0; font-size:1rem; color:#14532D; min-width:0; overflow-wrap:anywhere; }
+.vocab p{ margin:8px 0 0 0; color:var(--muted); font-size:0.95rem; }
+.vocab-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.vocab-say{ flex:0 0 auto; width:40px; height:40px; padding:0; border-radius:50%; cursor:pointer;
+  border:1px solid #C9E9D5; background:#F0FDF4; color:#15803D; font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; font-family:inherit; }
+.vocab-say:hover{ background:#DCFCE7; }
+.vocab-say[data-czk-speaking="true"]{ background:var(--accent); border-color:var(--accent-dark); color:#fff;
+  animation:czk-pulse 0.9s ease-in-out infinite; }
+@keyframes czk-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+@media (prefers-reduced-motion:reduce){ .vocab-say[data-czk-speaking="true"]{ animation:none; } }
+.media-row{ display:flex; gap:14px; margin-top:12px; flex-wrap:wrap; }
+.media-btn{ background:#fff; border:1px solid var(--border); padding:12px 16px; border-radius:10px; font-weight:700; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:10px; min-width:200px; justify-content:center; }
+.homework{ background:#f3fff6; border:1px solid #d7f5df; border-radius:10px; padding:14px; margin-top:10px; }
+.speaking{ margin-top:18px; padding:16px; border-radius:12px; background:linear-gradient(180deg,#fff,#F7FDF9); border:1px solid var(--border); max-width:640px; }
+.speaking h2{ margin:0 0 10px 0; font-size:1.05rem; color:#0f1724; }
+.talk-table{ width:100%; border-collapse:collapse; overflow:hidden; background:#fff; border:1px solid #DCF0E3; font-size:0.9rem; }
+.talk-table th,.talk-table td{ padding:8px 10px; text-align:left; }
+.talk-table th{ background:#E7F6EC; color:#14532D; font-weight:700; border-bottom:1px solid #C9E9D5; }
+.row-teacher{ background:#E7F6EC; }
+.row-student{ background:#F3F4F6; }
+.talk-label{ font-weight:700; }
+.talk-percent{ font-weight:700; color:#0f1724; }
+.talk-time{ color:var(--muted); }
+footer{ margin-top:20px; color:var(--muted); font-size:0.9rem; text-align:center; }
+.ie-badge{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ie-flag{ width:34px; height:22px; border-radius:4px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(0,0,0,0.08); flex-shrink:0; }
+.ie-flag span{ flex:1; height:100%; }
+.ie-shamrock{ font-size:1.4rem; line-height:1; }
+.ie-title{ font-weight:800; color:#0f1724; font-size:1.1rem; }
+.expr-tag{ display:inline-block; background:#14532D; color:#fff; font-weight:800; font-size:0.85rem; padding:3px 10px; border-radius:6px; margin-bottom:8px; }
+@media (max-width:720px){ .card{padding:18px;border-radius:14px;} .vocab-grid,.media-row{flex-direction:column;} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <article class="card" role="main">
+
+      <header>
+        <div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="badge">PÓS-AULA</span>
+            <h1>Simple Past e histórias de viagem</h1>
+          </div>
+          <div class="meta" style="margin-top:8px;">
+            <strong>Professor:</strong> César &nbsp;•&nbsp;
+            <strong>Aluna:</strong> Lorena Nemeth &nbsp;•&nbsp;
+            <strong>Data:</strong> 11/24/2026
+          </div>
+        </div>
+        <div class="actions">
+          <a class="btn" href="#" data-czk-action="print" role="button">Imprimir / Salvar PDF</a>
+        </div>
+      </header>
+
+      <main>
+
+<section class="panel">
+          <p style="margin:0;font-weight:600;color:#14532D;"><em>Lorena, você fechou a Unidade 7 revisando o Simple Past em situações de viagem. Você praticou perguntas com <span lang="en">who</span>, os três sons de <span lang="en">-ed</span> e acompanhou um vídeo sobre férias que deram errado.</em></p>
+        </section>
+        <section>
+          <h2 style="margin-bottom:8px;">Resumo da Aula</h2>
+          <div class="outline-card">
+            <p style="margin:0 0 8px 0;">No desafio do app, você retomou <span lang="en">round-trip tickets</span> (passagens de ida e volta), <span lang="en">one-way tickets</span> (passagens só de ida) e a frase <span lang="en">I missed the train four days ago</span>. Depois, no jogo de encerramento da unidade, você completou histórias de aeroporto e estação e revisou afirmativas, negativas e perguntas no passado.</p>
+            <p style="margin:0 0 8px 0;">Você comparou <span lang="en">Who found your boarding pass?</span> com <span lang="en">Who did you meet?</span>. Na primeira, <span lang="en">who</span> é o sujeito de <span lang="en">found</span>. Na segunda, <span lang="en">you</span> é o sujeito, e <span lang="en">did</span> já marca o passado de <span lang="en">meet</span>. Você também revisou <span lang="en">was/were</span> e treinou os sons de <span lang="en">-ed</span> em <span lang="en">missed</span>, <span lang="en">played</span> e <span lang="en">wanted</span>. Na história da Zoe, a distinção entre <span lang="en">miss</span> e <span lang="en">lose</span> ajudou a interpretar o que aconteceu com o trem e com a bolsa.</p>
+            <p style="margin:0;">No vídeo, os personagens sugeriram um cruzeiro, Hong Kong e a praia, e contaram problemas como enjoo, chuva e um quarto de hotel ruim. Você identificou a decisão da personagem de passar as férias em casa e encontrar os amigos. A revisão também retomou adjetivos de viagem, intensificadores e a expressão <span lang="en">They drove me crazy</span>.</p>
+          </div>
+        </section>
+        <section>
+          <h2 style="margin-bottom:8px;">Frases usadas em aula</h2>
+          <div class="outline-card">
+            <ul>
+              <li><strong><span lang="en">Was she at the airport?</span></strong> → Ela estava no aeroporto?</li>
+              <li><strong><span lang="en">I missed the train four days ago.</span></strong> → Há quatro dias, eu perdi o trem.</li>
+              <li><strong><span lang="en">Who found your boarding pass?</span></strong> → Quem encontrou seu cartão de embarque?</li>
+              <li><strong><span lang="en">Who did you meet?</span></strong> → Quem você encontrou?</li>
+              <li><strong><span lang="en">Where did you go?</span></strong> → Aonde você foi?</li>
+              <li><strong><span lang="en">We weren’t at the airport because we didn’t take the flight.</span></strong> → Não estávamos no aeroporto porque não pegamos o voo.</li>
+              <li><strong><span lang="en">Maybe I should take a staycation.</span></strong> → Talvez eu devesse passar as férias em casa.</li>
+              <li><strong><span lang="en">The hotel room was awful.</span></strong> → O quarto do hotel era horrível.</li>
+              <li><strong><span lang="en">They drove me crazy.</span></strong> → Eles me deixaram louco(a).</li>
+            </ul>
+          </div>
+        </section>
+        <section>
+          <h2 style="margin-bottom:8px;">Vocabulário-chave</h2>
+          <div class="vocab-grid">
+            <div class="vocab">
+              <div class="vocab-head">
+                <h3 lang="en">miss the train</h3>
+                <button type="button" class="vocab-say" data-czk-say="miss the train"
+                        aria-label="Ouvir a pronúncia de miss the train" aria-pressed="false"
+                        title="Ouvir miss the train">&#128266;</button>
+              </div>
+              <p><em>perder o trem</em><br><small>Use quando você chega tarde demais para pegar o trem. Exemplo — <span lang="en">I missed the train four days ago.</span></small></p>
+            </div>
+            <div class="vocab green">
+              <div class="vocab-head">
+                <h3 lang="en">staycation</h3>
+                <button type="button" class="vocab-say" data-czk-say="staycation"
+                        aria-label="Ouvir a pronúncia de staycation" aria-pressed="false"
+                        title="Ouvir staycation">&#128266;</button>
+              </div>
+              <p><em>férias em casa ou na própria região</em><br><small>São férias em que você fica em casa ou faz passeios por perto. Exemplo — <span lang="en">Maybe I should take a staycation.</span></small></p>
+            </div>
+            <div class="vocab yellow">
+              <div class="vocab-head">
+                <h3 lang="en">drive someone crazy</h3>
+                <button type="button" class="vocab-say" data-czk-say="drive someone crazy"
+                        aria-label="Ouvir a pronúncia de drive someone crazy" aria-pressed="false"
+                        title="Ouvir drive someone crazy">&#128266;</button>
+              </div>
+              <p><em>deixar alguém louco(a)</em><br><small>Use quando algo ou alguém irrita muito. Exemplo — <span lang="en">They drove me crazy.</span></small></p>
+            </div>
+          </div>
+        </section>
+        <section>
+          <h2 style="margin-bottom:8px;">Vocabulário completo da aula</h2>
+          <div class="outline-card">
+            <h3 style="margin-top:0;">Passagens e embarque</h3>
+            <ul>
+              <li><strong><span lang="en">round-trip ticket</span></strong> – passagem de ida e volta</li>
+              <li><strong><span lang="en">one-way ticket</span></strong> – passagem só de ida</li>
+              <li><strong><span lang="en">boarding pass</span></strong> – cartão de embarque</li>
+              <li><strong><span lang="en">gate</span></strong> – portão de embarque</li>
+              <li><strong><span lang="en">flight</span></strong> – voo</li>
+              <li><strong><span lang="en">board the plane</span></strong> – embarcar no avião</li>
+              <li><strong><span lang="en">take off → took off</span></strong> – decolar → decolou</li>
+              <li><strong><span lang="en">leave → left</span></strong> – sair ou partir → saiu ou partiu</li>
+              <li><strong><span lang="en">reach the airport</span></strong> – chegar ao aeroporto</li>
+              <li><strong><span lang="en">delayed</span></strong> – atrasado</li>
+              <li><strong><span lang="en">station</span></strong> – estação</li>
+              <li><strong><span lang="en">bench</span></strong> – banco comprido, como os de estação ou praça</li>
+            </ul>
+            <h3>Férias e imprevistos</h3>
+            <ul>
+              <li><strong><span lang="en">cruise</span></strong> – cruzeiro</li>
+              <li><strong><span lang="en">staycation</span></strong> – férias em casa ou na própria região</li>
+              <li><strong><span lang="en">seasick</span></strong> – enjoado em um barco ou navio</li>
+              <li><strong><span lang="en">airsick</span></strong> – enjoado durante um voo</li>
+              <li><strong><span lang="en">bumpy</span></strong> – com solavancos ou turbulento</li>
+              <li><strong><span lang="en">scary</span></strong> – assustador</li>
+              <li><strong><span lang="en">awful</span></strong> – horrível</li>
+              <li><strong><span lang="en">long / short</span></strong> – longo / curto</li>
+              <li><strong><span lang="en">break → broke</span></strong> – quebrar → quebrou</li>
+              <li><strong><span lang="en">find → found</span></strong> – encontrar → encontrou</li>
+              <li><strong><span lang="en">miss → missed</span></strong> – perder um trem, ônibus ou voo</li>
+              <li><strong><span lang="en">lose → lost</span></strong> – perder algo, como a bolsa ou a câmera</li>
+              <li><strong><span lang="en">forget</span></strong> – esquecer</li>
+              <li><strong><span lang="en">drive someone crazy</span></strong> – deixar alguém louco</li>
+            </ul>
+            <h3>Tempo e intensidade</h3>
+            <ul>
+              <li><strong><span lang="en">four days ago</span></strong> – há quatro dias</li>
+              <li><strong><span lang="en">the day before yesterday</span></strong> – anteontem</li>
+              <li><strong><span lang="en">so / very / really</span></strong> – muito, com diferença de ênfase dependendo da frase</li>
+              <li><strong><span lang="en">pretty / quite</span></strong> – bem / bastante, dependendo do contexto</li>
+              <li><strong><span lang="en">kind of</span></strong> – meio / um pouco</li>
+            </ul>
+          </div>
+        </section>
+        <section>
+          <h2 style="margin-bottom:8px;">Correções importantes</h2>
+          <div class="outline-card">
+            <p style="margin:0px 0 10px 0;"><strong>1. Marcar o passado na afirmativa</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ <span lang="en">I miss the train four days ago.</span></p>
+            <p style="margin:0 0 10px 0;color:#276749;">✅ <strong><span lang="en">I missed the train four days ago.</span></strong> — Use <span lang="en">missed</span> com <span lang="en">four days ago</span>. O final de <span lang="en">missed</span> soa /t/.</p>
+            <p style="margin:16px 0 10px 0;"><strong>2. Perguntar quem encontrou algo</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ <span lang="en">Who did find your boarding pass?</span></p>
+            <p style="margin:0 0 10px 0;color:#276749;">✅ <strong><span lang="en">Who found your boarding pass?</span></strong> — Na pergunta neutra da atividade, <span lang="en">who</span> faz a ação. Use <span lang="en">found</span> diretamente depois de <span lang="en">who</span>.</p>
+            <p style="margin:16px 0 10px 0;"><strong>3. Perguntar quem você encontrou</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ <span lang="en">Who you met?</span></p>
+            <p style="margin:0 0 10px 0;color:#276749;">✅ <strong><span lang="en">Who did you meet?</span></strong> — <span lang="en">You</span> é o sujeito. Use <span lang="en">did</span> antes de <span lang="en">you</span> e mantenha <span lang="en">meet</span> na forma base.</p>
+            <p style="margin:16px 0 10px 0;"><strong>4. Negar com dois tipos de verbo</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ <span lang="en">We did take the flight.</span></p>
+            <p style="margin:0 0 10px 0;color:#276749;">✅ <strong><span lang="en">We weren’t at the airport because we didn’t take the flight.</span></strong> — Para negar <span lang="en">be</span> com <span lang="en">we</span>, use <span lang="en">weren’t</span>. Para negar <span lang="en">take</span>, use <span lang="en">didn’t take</span>. <span lang="en">Did take</span> é afirmativo.</p>
+            <p style="margin:16px 0 10px 0;"><strong>5. Dizer “decolar”</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ <span lang="en">take up</span></p>
+            <p style="margin:0 0 10px 0;color:#276749;">✅ <strong><span lang="en">take off → took off</span></strong> — Em viagens de avião, <span lang="en">take off</span> é “decolar”. No passado, <span lang="en">take</span> vira <span lang="en">took</span>.</p>
+            <p style="margin:16px 0 10px 0;"><strong>6. Distinguir perder de esquecer</strong></p>
+            <p style="margin:0 0 4px 0;color:#c53030;">❌ “lost” = esquecer</p>
+            <p style="margin:0 0 10px 0;color:#276749;">✅ <strong>“lost” = perdeu</strong> — Use <span lang="en">missed the train</span> para “perdeu o trem” e <span lang="en">lost her bag</span> para “perdeu a bolsa”. Para “esqueceu”, use <span lang="en">forgot</span>.</p>
+            <p style="margin:16px 0 0;">💡 <strong>Pronúncia de -ed</strong> — <span lang="en">missed</span>, <span lang="en">liked</span> e <span lang="en">checked</span> terminam em /t/. <span lang="en">Played</span> termina em /d/. <span lang="en">Wanted</span> e <span lang="en">visited</span> ganham uma sílaba extra, /ɪd/.</p>
+          </div>
+        </section>
+        <section>
+          <h2 style="margin-bottom:8px;">Gravação da aula</h2>
+          <div class="media-row">
+            <a class="media-btn" href="https://youtu.be/kryjALEsEyQ" target="_blank" rel="noopener noreferrer" role="button"
+               style="background:linear-gradient(180deg,var(--accent-dark),var(--accent));color:#fff;border:none;width:100%;flex:1 1 100%;min-width:0;box-sizing:border-box;padding:14px 16px;">
+              🎥 Assistir gravação
+            </a>
+          </div>
+        </section>
+        <section class="speaking" aria-label="Distribuição de fala">
+          <h2>Tempo de Fala (Talk Time)</h2>
+          <table class="talk-table">
+            <thead>
+              <tr><th>Quem falou</th><th>Porcentagem</th><th>Duração aproximada</th></tr>
+            </thead>
+            <tbody>
+              <tr class="row-teacher">
+                <td><span class="talk-label">César (Professor)</span></td>
+                <td><span class="talk-percent">68%</span></td>
+                <td class="talk-time">20 min 27 s</td>
+              </tr>
+              <tr class="row-student">
+                <td><span class="talk-label">Lorena Nemeth</span></td>
+                <td><span class="talk-percent">32%</span></td>
+                <td class="talk-time">9 min 30 s</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin:8px 0 0;color:var(--muted);font-size:0.85rem;">Estimativa com base nos trechos de fala da transcrição, descontando o áudio compartilhado e as pausas.</p>
+        </section>
+        <section>
+          <h2 style="margin-bottom:8px;">Homework</h2>
+          <div class="homework">
+            <p style="margin:0 0 8px 0;">📌 <strong>Lição de casa:</strong></p>
+            <ul style="margin:0 0 6px 18px;padding:0;font-size:0.94rem;color:var(--muted);">
+              <li>Conclua as <strong>quatro atividades pendentes no app</strong> até terça-feira, <strong>1º de dezembro</strong>.</li>
+              <li>Leia este pós-aula de <strong>2 a 3 vezes</strong> durante a semana.</li>
+            </ul>
+          </div>
+        </section>
+
+      </main>
+
+      <footer>
+        <p style="margin:18px 0 0 0;color:var(--muted);font-size:0.9rem;">
+          © 2025 CZK English • Este conteúdo é exclusivo para fins educacionais. • Suporte: czkenglish@gmail.com
+        </p>
+      </footer>
+
+    </article>
+  </div>
+
+  <!-- ÁUDIO DAS PALAVRAS-CHAVE — uma única função para o pós-aula inteiro.
+       Aberto direto: fala aqui mesmo. Dentro do app: pede ao app e quem fala é ele
+       (o app remove este script e injeta o próprio, então nada daqui roda por lá). -->
+  <script>
+  (function(){
+    var host = window.parent === window ? null : window.parent;
+    var active = null, pendingId = 0, acked = false, fallbackTimer = null, audioEl = null;
+
+    function mark(btn, on){
+      if(!btn) return;
+      btn.setAttribute('data-czk-speaking', on ? 'true' : 'false');
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function clearActive(){ mark(active, false); active = null; }
+
+    function warn(msg){
+      var box = document.getElementById('czk-audio-msg');
+      if(!box){
+        box = document.createElement('div');
+        box.id = 'czk-audio-msg';
+        box.setAttribute('role', 'status');
+        box.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;'
+          + 'background:#FBF7F1;color:#5C4530;border:1px solid #E3D5C3;border-radius:10px;padding:10px 14px;'
+          + 'font:600 0.85rem Inter,"Segoe UI",Roboto,Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:99;';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      clearTimeout(warn._t);
+      warn._t = setTimeout(function(){ box.style.display = 'none'; }, 4000);
+    }
+
+    function stopAll(){
+      if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; }
+      if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+      try{ if(window.speechSynthesis) window.speechSynthesis.cancel(); }catch(e){}
+      if(host){ try{ host.postMessage({ source:'czk-posaula', type:'stop' }, '*'); }catch(e){} }
+      clearActive();
+    }
+
+    function localSpeak(text, btn){
+      var synth = window.speechSynthesis;
+      if(!synth || typeof window.SpeechSynthesisUtterance !== 'function'){
+        warn('Este aparelho ainda não tem voz em inglês.');
+        clearActive();
+        return;
+      }
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      var isPhrase = text.trim().split(/\s+/).length > 1;
+      u.lang = 'en-US'; u.rate = isPhrase ? 0.95 : 0.88; u.pitch = 1;
+      function score(v){
+        var n = /^en[-_]US/i.test(v.lang) ? 100 : 0;
+        if(/natural|neural|premium|enhanced/i.test(v.name)) n += 80;
+        if(/samantha|ava/i.test(v.name)) n += 65;
+        if(/google.*(us|english)|aria/i.test(v.name)) n += 55;
+        if(/zira/i.test(v.name)) n += 35;
+        if(v.localService) n += 5;
+        return n;
+      }
+      var en = synth.getVoices().filter(function(v){ return /^en[-_]/i.test(v.lang); });
+      var pick = en.sort(function(a,b){ return score(b) - score(a); })[0];
+      if(pick) u.voice = pick;
+      u.onstart = function(){ mark(btn, true); };
+      u.onend = function(){ if(active === btn) clearActive(); };
+      u.onerror = function(ev){
+        if(ev.error !== 'canceled' && ev.error !== 'interrupted') warn('Não consegui reproduzir o áudio agora.');
+        if(active === btn) clearActive();
+      };
+      synth.speak(u);
+    }
+
+    function requestSpeech(text, btn){
+      if(!host){ localSpeak(text, btn); return; }
+      acked = false;
+      var id = ++pendingId;
+      try{ host.postMessage({ source:'czk-posaula', type:'speak', id:id, text:text }, '*'); }
+      catch(e){ localSpeak(text, btn); return; }
+      fallbackTimer = setTimeout(function(){
+        if(!acked && active === btn) localSpeak(text, btn);
+      }, 700);
+    }
+
+    function play(btn){
+      var text = (btn.getAttribute('data-czk-say') || '').trim();
+      if(!text) return;
+      var wasActive = (active === btn);
+      stopAll();
+      if(wasActive) return;
+      active = btn; mark(btn, true);
+      // data-czk-audio já aceita um MP3 pronto (voz clonada do professor).
+      var url = btn.getAttribute('data-czk-audio');
+      if(url && /^https:\/\//i.test(url)){
+        audioEl = new Audio(url);
+        audioEl.onended = function(){ if(active === btn) clearActive(); };
+        audioEl.onerror = function(){ if(active === btn) requestSpeech(text, btn); };
+        var p = audioEl.play();
+        if(p && p.catch) p.catch(function(){ if(active === btn) requestSpeech(text, btn); });
+        return;
+      }
+      requestSpeech(text, btn);
+    }
+
+    window.addEventListener('message', function(ev){
+      var d = ev.data;
+      if(!d || d.source !== 'czk-app' || d.id !== pendingId) return;
+      if(d.type === 'speak-ack'){ acked = true; if(fallbackTimer){ clearTimeout(fallbackTimer); fallbackTimer = null; } return; }
+      if(d.type === 'speak-start'){ mark(active, true); return; }
+      if(d.type === 'speak-end'){ clearActive(); return; }
+      if(d.type === 'speak-error'){ warn('Este aparelho ainda não tem voz em inglês.'); clearActive(); }
+    });
+
+    document.addEventListener('click', function(ev){
+      var t = ev.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest('[data-czk-say]');
+      if(btn){ ev.preventDefault(); play(btn); return; }
+      var pr = t.closest('[data-czk-action="print"]');
+      if(pr){ ev.preventDefault(); try{ window.print(); }catch(e){} }
+    });
+  })();
+  </script>
+</body>
+</html>
