@@ -345,16 +345,16 @@ const PLANO_CSS = `
 @keyframes planoSurge { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 .plano-btn { display:block; width:100%; border:0; border-radius:16px; padding:14px 16px; color:#fff; font-weight:800; font-size:15px; font-family:inherit; cursor:pointer;
   background:linear-gradient(180deg,#34D399,var(--brand-light)); box-shadow:0 8px 20px rgba(var(--brand-rgb),.28); }
-.plano-btn.sec { background:var(--c-card); color:var(--c-brand-ink); border:1.5px solid rgba(var(--brand-rgb),.35); box-shadow:none; }
+.plano-btn.sec { background:#fff; color:var(--brand-dark); border:1.5px solid rgba(var(--brand-rgb),.35); box-shadow:none; }
 .plano-btn.violeta { background:linear-gradient(180deg,#8B5CF6,#6D28D9); box-shadow:0 8px 20px rgba(109,40,217,.28); }
-.plano-btn:disabled { background:var(--c-line); color:var(--c-mute2); box-shadow:none; cursor:not-allowed; }
-.plano-opt { display:block; width:100%; text-align:left; padding:11px 13px; border-radius:12px; border:1.5px solid var(--c-line); background:var(--c-card); font-weight:800; font-size:14px; font-family:inherit; margin-top:7px; cursor:pointer; }
-.plano-opt.ok { background:var(--p-DCFCE7); border-color:#22C55E; color:var(--t-14532D); }
-.plano-opt.no { background:var(--p-FEE2E2); border-color:#F87171; color:var(--t-7F1D1D); }
-.plano-md b, .plano-md strong { color:var(--c-ink); }
+.plano-btn:disabled { background:#E2E8F0; color:#94A3B8; box-shadow:none; cursor:not-allowed; }
+.plano-opt { display:block; width:100%; text-align:left; padding:11px 13px; border-radius:12px; border:1.5px solid #E2E8F0; background:#fff; font-weight:800; font-size:14px; font-family:inherit; margin-top:7px; cursor:pointer; }
+.plano-opt.ok { background:#DCFCE7; border-color:#22C55E; color:#14532D; }
+.plano-opt.no { background:#FEE2E2; border-color:#F87171; color:#7F1D1D; }
+.plano-md b, .plano-md strong { color:#0F172A; }
 .plano-tab { width:100%; border-collapse:collapse; font-size:12.5px; font-weight:700; margin:0 0 12px; }
-.plano-tab th { background:var(--c-soft); text-align:left; padding:7px 8px; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--c-mute); }
-.plano-tab td { padding:7px 8px; border-bottom:1px solid var(--p-EEF2F6); vertical-align:top; }
+.plano-tab th { background:#F1F5F9; text-align:left; padding:7px 8px; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:#64748B; }
+.plano-tab td { padding:7px 8px; border-bottom:1px solid #EEF2F6; vertical-align:top; }
 `;
 
 // **negrito** e *itálico* simples (o conteúdo é nosso, não do aluno).
@@ -373,16 +373,12 @@ const PLANO_ABAS = [
 ];
 function PlanoNav({ active, onChange }) {
   return (
-    <div className="czk-nav" style={{ position: 'sticky', bottom: 0, zIndex: 200, background: 'color-mix(in srgb,var(--c-card) 95%,transparent)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+    <div style={{ position: 'sticky', bottom: 0, zIndex: 200, background: 'rgba(255,255,255,.95)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
       borderTop: '1px solid rgba(var(--brand-rgb),.12)', display: 'flex', paddingBottom: 'env(safe-area-inset-bottom, 8px)', flexShrink: 0 }}>
-      <div className="czk-nav-brand">
-        <div className="czk-nav-logo"><ChatBubble w={22} fill="#fff" dot="var(--brand)" /></div>
-        <div><b>Science Lab</b><small>Explore. Learn. Grow.</small></div>
-      </div>
       {PLANO_ABAS.map(t => { const on = t.id === active; return (
         <button key={t.id} onClick={() => onChange(t.id)} style={{ flex: 1, background: 'none', border: 'none', cursor: 'pointer', padding: '8px 4px 6px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, fontFamily: 'inherit' }}>
           <div style={{ width: 44, height: 36, borderRadius: 12, background: on ? 'rgba(124,58,237,.14)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19 }}>{t.ic}</div>
-          <span style={{ fontSize: 10, fontWeight: on ? 800 : 500, color: on ? 'var(--t-5B21B6)' : 'var(--c-mute2)', lineHeight: 1 }}>{t.l}</span>
+          <span style={{ fontSize: 10, fontWeight: on ? 800 : 500, color: on ? '#5B21B6' : '#94A3B8', lineHeight: 1 }}>{t.l}</span>
         </button>); })}
     </div>
   );
@@ -429,13 +425,13 @@ function PlanoNo({ it, onTarefa, onAula, bolha, nota }) {
   if (it.k === 'cab') {
     const fut = it.pac.futuro;
     return <div style={{ position: 'absolute', left: 0, right: 0, top: it.y, display: 'flex', justifyContent: 'center' }}>
-      <div style={{ padding: '7px 14px', borderRadius: 99, background: fut ? 'var(--c-soft)' : 'var(--p-F5F3FF)', border: `1px solid ${fut ? 'var(--c-line)' : '#DDD6FE'}`, color: fut ? 'var(--c-mute)' : 'var(--t-5B21B6)', fontSize: 11.5, fontWeight: 800, letterSpacing: .4 }}>
+      <div style={{ padding: '7px 14px', borderRadius: 99, background: fut ? '#F1F5F9' : '#F5F3FF', border: `1px solid ${fut ? '#E2E8F0' : '#DDD6FE'}`, color: fut ? '#64748B' : '#5B21B6', fontSize: 11.5, fontWeight: 800, letterSpacing: .4 }}>
         {fut ? '🔒 DEPOIS DA AULA · ' : '📘 '}{it.pac.titulo}
       </div></div>;
   }
   if (it.k === 'sem') {
     return <div style={{ position: 'absolute', left: 0, right: 0, top: it.y, display: 'flex', alignItems: 'center', gap: 8 }}>
-      <div style={{ flex: 1, height: 1, background: '#DDD6FE' }} /><div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: .7, color: 'var(--t-6D28D9)' }}>{it.rotulo}</div><div style={{ flex: 1, height: 1, background: '#DDD6FE' }} />
+      <div style={{ flex: 1, height: 1, background: '#DDD6FE' }} /><div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: .7, color: '#6D28D9' }}>{it.rotulo}</div><div style={{ flex: 1, height: 1, background: '#DDD6FE' }} />
     </div>;
   }
   const lblEsq = it.x >= 200;
@@ -451,9 +447,9 @@ function PlanoNo({ it, onTarefa, onAula, bolha, nota }) {
         {feita ? <span style={{ position: 'relative' }}>🎓<span style={{ position: 'absolute', right: -14, bottom: -8, background: '#fff', color: '#15803D', borderRadius: 99, width: 22, height: 22, fontSize: 14, fontWeight: 800, display: 'grid', placeItems: 'center' }}>✓</span></span> : '🎓'}
       </button>
       <div style={{ ...rotulo, width: `${((W - (it.x + it.r + 10) - 2) / W) * 100}%`, left: `${((it.x + it.r + 10) / W) * 100}%`, textAlign: 'left', top: it.y - 26 }}>
-        <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: .6, color: feita ? 'var(--t-15803D)' : 'var(--c-blue-ink)' }}>{feita ? 'AULA FEITA' : 'PRÓXIMA AULA'}</div>
-        <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--c-ink)', lineHeight: 1.2 }}>{a.rotulo}</div>
-        <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--c-mute)' }}>{PlanoDataCurta(a.data)}{a.hora ? ` · ${a.hora}` : ''}{!feita ? ` · ${PlanoEmDias(a.data)}` : ''}</div>
+        <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: .6, color: feita ? '#15803D' : '#1E40AF' }}>{feita ? 'AULA FEITA' : 'PRÓXIMA AULA'}</div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A', lineHeight: 1.2 }}>{a.rotulo}</div>
+        <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B' }}>{PlanoDataCurta(a.data)}{a.hora ? ` · ${a.hora}` : ''}{!feita ? ` · ${PlanoEmDias(a.data)}` : ''}</div>
       </div>
     </>;
   }
@@ -463,18 +459,18 @@ function PlanoNo({ it, onTarefa, onAula, bolha, nota }) {
   const COR = expl ? '#0EA5E9' : PLANO_COR;
   const estilo = e === 'feita' ? { background: 'linear-gradient(150deg,#22C55E,#15803D)', color: '#fff', boxShadow: '0 6px 0 #166534' }
     : e === 'atual' ? (expl ? { background: 'linear-gradient(150deg,#38BDF8,#0284C7)', color: '#fff', boxShadow: '0 6px 0 #075985', animation: 'planoPulsoAz 1.8s infinite' } : { background: 'linear-gradient(150deg,#8B5CF6,#6D28D9)', color: '#fff', boxShadow: '0 6px 0 #4C1D95', animation: 'planoPulso 1.8s infinite' })
-    : e === 'aberta' ? { background: 'var(--c-card)', color: 'var(--c-ink)', border: `3px solid ${COR}`, boxShadow: `0 6px 0 ${expl ? '#BAE6FD' : '#DDD6FE'}` }
-    : { background: 'var(--c-line)', color: 'var(--c-mute2)', boxShadow: '0 6px 0 var(--c-line2)' };
+    : e === 'aberta' ? { background: '#fff', color: '#0F172A', border: `3px solid ${COR}`, boxShadow: `0 6px 0 ${expl ? '#BAE6FD' : '#DDD6FE'}` }
+    : { background: '#E2E8F0', color: '#94A3B8', boxShadow: '0 6px 0 #CBD5E1' };
   return <>
-    {bolha && <div style={{ position: 'absolute', top: it.y - it.r - 36, left: `${(it.x / W) * 100}%`, transform: 'translateX(-50%)', background: 'var(--c-card)', border: `2px solid ${COR}`, color: expl ? 'var(--t-075985)' : 'var(--t-5B21B6)', borderRadius: 12, padding: '4px 12px', fontSize: 11.5, fontWeight: 800, letterSpacing: .5, whiteSpace: 'nowrap', boxShadow: '0 4px 10px rgba(124,58,237,.18)' }}>
-      {bolha}<span style={{ position: 'absolute', left: '50%', bottom: -7, width: 10, height: 10, background: 'var(--c-card)', borderRight: `2px solid ${COR}`, borderBottom: `2px solid ${COR}`, transform: 'translateX(-50%) rotate(45deg)' }} /></div>}
+    {bolha && <div style={{ position: 'absolute', top: it.y - it.r - 36, left: `${(it.x / W) * 100}%`, transform: 'translateX(-50%)', background: '#fff', border: `2px solid ${COR}`, color: expl ? '#075985' : '#5B21B6', borderRadius: 12, padding: '4px 12px', fontSize: 11.5, fontWeight: 800, letterSpacing: .5, whiteSpace: 'nowrap', boxShadow: '0 4px 10px rgba(124,58,237,.18)' }}>
+      {bolha}<span style={{ position: 'absolute', left: '50%', bottom: -7, width: 10, height: 10, background: '#fff', borderRight: `2px solid ${COR}`, borderBottom: `2px solid ${COR}`, transform: 'translateX(-50%) rotate(45deg)' }} /></div>}
     <button data-atual={bolha ? '1' : undefined} onClick={() => onTarefa(t, e)} style={{ ...nodeBase, borderRadius: '50%', fontSize: 26, ...estilo }} aria-label={t.titulo}>
       {e === 'feita' ? '✓' : e === 'trancada' ? '🔒' : t.ic}
     </button>
     <div style={{ ...rotulo, opacity: e === 'trancada' ? .6 : 1 }}>
-      <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--c-ink)', lineHeight: 1.2 }}>{t.titulo}</div>
-      {t.sub && <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-mute)', marginTop: 1 }}>{t.sub}</div>}
-      {nota && <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--t-6D28D9)', marginTop: 1 }}>{nota}</div>}
+      <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', lineHeight: 1.2 }}>{t.titulo}</div>
+      {t.sub && <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', marginTop: 1 }}>{t.sub}</div>}
+      {nota && <div style={{ fontSize: 11, fontWeight: 800, color: '#6D28D9', marginTop: 1 }}>{nota}</div>}
     </div>
   </>;
 }
@@ -510,12 +506,12 @@ function PlanoCaminho({ cfg, feitas, ativOk, onTarefa, onAula, onComoFunciona, o
   const bolhaDe = it => (it.k !== 'tarefa' ? null : retomar ? (it.t.id === retomar.t.id ? 'CONTINUAR' : null) : (it.estado === 'atual' ? 'COMEÇAR' : null));
   return (
     <div className="scroll-area" ref={ref} style={{ padding: '14px 16px 24px', position: 'relative' }}>
-      {retomar && <div style={{ position: 'sticky', top: -14, zIndex: 40, margin: '-14px -16px 12px', padding: '10px 16px', background: 'color-mix(in srgb,var(--c-bg) 96%,transparent)', borderBottom: '1px solid rgba(var(--brand-rgb),.1)', boxShadow: '0 6px 14px rgba(15,23,42,.06)' }}>
-        <button onClick={() => onTarefa(retomar.t, 'aberta')} style={{ display: 'flex', alignItems: 'center', gap: 11, width: '100%', boxSizing: 'border-box', textAlign: 'left', background: 'var(--c-card)', border: '1.5px solid #C4B5FD', borderRadius: 16, padding: '9px 11px', boxShadow: '0 8px 20px rgba(109,40,217,.16)', fontFamily: 'inherit', cursor: 'pointer' }}>
-          <span style={{ width: 38, height: 38, borderRadius: 12, background: 'var(--p-F5F3FF)', display: 'grid', placeItems: 'center', fontSize: 19, flexShrink: 0 }}>{retomar.t.ic || '📖'}</span>
+      {retomar && <div style={{ position: 'sticky', top: -14, zIndex: 40, margin: '-14px -16px 12px', padding: '10px 16px', background: 'rgba(246,241,234,.96)', borderBottom: '1px solid rgba(var(--brand-rgb),.1)', boxShadow: '0 6px 14px rgba(15,23,42,.06)' }}>
+        <button onClick={() => onTarefa(retomar.t, 'aberta')} style={{ display: 'flex', alignItems: 'center', gap: 11, width: '100%', boxSizing: 'border-box', textAlign: 'left', background: '#fff', border: '1.5px solid #C4B5FD', borderRadius: 16, padding: '9px 11px', boxShadow: '0 8px 20px rgba(109,40,217,.16)', fontFamily: 'inherit', cursor: 'pointer' }}>
+          <span style={{ width: 38, height: 38, borderRadius: 12, background: '#F5F3FF', display: 'grid', placeItems: 'center', fontSize: 19, flexShrink: 0 }}>{retomar.t.ic || '📖'}</span>
           <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ display: 'block', fontSize: 13.5, fontWeight: 800, color: 'var(--t-4C1D95)', lineHeight: 1.2 }}>Continuar de onde parei</span>
-            <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontSize: 11, fontWeight: 700, color: 'var(--c-mute)', marginTop: 1, lineHeight: 1.3 }}>{retomar.t.titulo} · {retomar.info}{retomar.em ? ` · ${PlanoQuando(retomar.em)}` : ''}</span>
+            <span style={{ display: 'block', fontSize: 13.5, fontWeight: 800, color: '#4C1D95', lineHeight: 1.2 }}>Continuar de onde parei</span>
+            <span style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontSize: 11, fontWeight: 700, color: '#64748B', marginTop: 1, lineHeight: 1.3 }}>{retomar.t.titulo} · {retomar.info}{retomar.em ? ` · ${PlanoQuando(retomar.em)}` : ''}</span>
           </span>
           <span style={{ padding: '8px 12px', borderRadius: 11, background: 'linear-gradient(180deg,#8B5CF6,#6D28D9)', color: '#fff', fontWeight: 800, fontSize: 12.5, whiteSpace: 'nowrap' }}>Continuar ›</span>
         </button>
@@ -531,13 +527,13 @@ function PlanoCaminho({ cfg, feitas, ativOk, onTarefa, onAula, onComoFunciona, o
         {selo && <div style={{ marginTop: 10, display: 'inline-block', background: 'rgba(255,255,255,.18)', borderRadius: 99, padding: '5px 12px', fontSize: 12, fontWeight: 800 }}>🏅 Selo da Unit {cfg.unidade.numero || 4} conquistado</div>}
       </div>
       {cfg.unidadesLista && cfg.unidadesLista.length > 1 && <div style={{ display: 'flex', gap: 7, justifyContent: 'center', flexWrap: 'wrap', marginTop: 10 }}>
-        {cfg.unidadesLista.map(u => { const on = u.id === cfg.unidade.id; return <button key={u.id} onClick={() => cfg.onUnidade && cfg.onUnidade(u.id)} style={{ border: `1.5px solid ${on ? '#6D28D9' : '#DDD6FE'}`, background: on ? '#6D28D9' : 'var(--c-card)', color: on ? '#fff' : 'var(--t-5B21B6)', borderRadius: 99, padding: '5px 13px', fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer' }}>Unit {u.n}</button>; })}
+        {cfg.unidadesLista.map(u => { const on = u.id === cfg.unidade.id; return <button key={u.id} onClick={() => cfg.onUnidade && cfg.onUnidade(u.id)} style={{ border: `1.5px solid ${on ? '#6D28D9' : '#DDD6FE'}`, background: on ? '#6D28D9' : '#fff', color: on ? '#fff' : '#5B21B6', borderRadius: 99, padding: '5px 13px', fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer' }}>Unit {u.n}</button>; })}
       </div>}
-      {onGramatica && <button onClick={onGramatica} style={{ display: 'block', margin: '12px auto 0', background: 'var(--p-E0F2FE)', border: '1.5px solid #7DD3FC', color: 'var(--t-075985)', borderRadius: 99, padding: '7px 17px', fontWeight: 800, fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer' }}>📘 Gramática: todas as explicações</button>}
-      <button onClick={onComoFunciona} style={{ display: 'block', margin: '10px auto 0', background: 'none', border: 0, color: 'var(--t-5B21B6)', fontWeight: 800, fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Como funciona o caminho</button>
+      {onGramatica && <button onClick={onGramatica} style={{ display: 'block', margin: '12px auto 0', background: '#E0F2FE', border: '1.5px solid #7DD3FC', color: '#075985', borderRadius: 99, padding: '7px 17px', fontWeight: 800, fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer' }}>📘 Gramática: todas as explicações</button>}
+      <button onClick={onComoFunciona} style={{ display: 'block', margin: '10px auto 0', background: 'none', border: 0, color: '#5B21B6', fontWeight: 800, fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}>Como funciona o caminho</button>
       <div style={{ position: 'relative', width: '100%', maxWidth: 340, margin: '6px auto 0', height: L.altura }}>
         <svg viewBox={`0 0 340 ${L.altura}`} preserveAspectRatio="none" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible' }}>
-          <path d={L.todo} fill="none" stroke="var(--c-line2)" strokeWidth="5" strokeLinecap="round" strokeDasharray="1 11" vectorEffect="non-scaling-stroke" />
+          <path d={L.todo} fill="none" stroke="#CBD5E1" strokeWidth="5" strokeLinecap="round" strokeDasharray="1 11" vectorEffect="non-scaling-stroke" />
           {L.feito && <path d={L.feito} fill="none" stroke="#22C55E" strokeWidth="6" strokeLinecap="round" vectorEffect="non-scaling-stroke" />}
         </svg>
         {L.itens.map((it, i) => <PlanoNo key={i} it={it} onTarefa={onTarefa} onAula={onAula} bolha={bolhaDe(it)} nota={retomar && it.k === 'tarefa' && it.t.id === retomar.t.id ? `parou: ${retomar.info}` : null} />)}
@@ -553,17 +549,17 @@ function PlanoCamada({ titulo, sub, onClose, onAsk, children, rodape, semPos }) 
   if (pos && !semPos) sub = [sub, `tarefa ${pos.n} de ${pos.de}`].filter(Boolean).join(' · ');
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(15,23,42,.4)', display: 'flex', justifyContent: 'center' }}>
-      <div style={{ width: '100%', maxWidth: 480, height: '100%', background: 'var(--c-bg)', display: 'flex', flexDirection: 'column', animation: 'planoSurge .22s' }}>
-        <div style={{ background: 'var(--c-card)', borderBottom: '1px solid rgba(var(--brand-rgb),.12)', padding: '11px 12px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          <button onClick={onClose} aria-label="Fechar" style={{ width: 36, height: 36, borderRadius: 12, border: 0, background: 'var(--c-soft)', fontSize: 18, fontWeight: 800, color: 'var(--c-ink2)', cursor: 'pointer' }}>✕</button>
+      <div style={{ width: '100%', maxWidth: 480, height: '100%', background: '#F6F1EA', display: 'flex', flexDirection: 'column', animation: 'planoSurge .22s' }}>
+        <div style={{ background: '#fff', borderBottom: '1px solid rgba(var(--brand-rgb),.12)', padding: '11px 12px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          <button onClick={onClose} aria-label="Fechar" style={{ width: 36, height: 36, borderRadius: 12, border: 0, background: '#F1F5F9', fontSize: 18, fontWeight: 800, color: '#475569', cursor: 'pointer' }}>✕</button>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 15.5, fontWeight: 800, color: 'var(--c-ink)', lineHeight: 1.15 }}>{titulo}</div>
-            {sub && <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--c-mute)' }}>{sub}</div>}
+            <div style={{ fontSize: 15.5, fontWeight: 800, color: '#0F172A', lineHeight: 1.15 }}>{titulo}</div>
+            {sub && <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B' }}>{sub}</div>}
           </div>
-          {onAsk && <button onClick={onAsk} style={{ border: 0, background: 'var(--p-F5F3FF)', color: 'var(--t-5B21B6)', borderRadius: 12, padding: '8px 11px', fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer' }}>💡 Dr. EurekIA</button>}
+          {onAsk && <button onClick={onAsk} style={{ border: 0, background: '#F5F3FF', color: '#5B21B6', borderRadius: 12, padding: '8px 11px', fontWeight: 800, fontSize: 12, fontFamily: 'inherit', cursor: 'pointer' }}>💡 Dr. EurekIA</button>}
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 18px' }}>{children}</div>
-        {rodape && <div style={{ padding: '10px 16px calc(12px + env(safe-area-inset-bottom, 0px))', background: 'var(--c-card)', borderTop: '1px solid rgba(var(--brand-rgb),.12)', flexShrink: 0 }}>{rodape}</div>}
+        {rodape && <div style={{ padding: '10px 16px calc(12px + env(safe-area-inset-bottom, 0px))', background: '#fff', borderTop: '1px solid rgba(var(--brand-rgb),.12)', flexShrink: 0 }}>{rodape}</div>}
       </div>
     </div>
   );
@@ -573,8 +569,8 @@ function PlanoFolha({ onClose, children, z }) {
   PlanoUsaVoltar(true, onClose);   // o "voltar" do celular fecha esta folha
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: z || 450, background: 'rgba(15,23,42,.5)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 480, maxHeight: '88%', overflowY: 'auto', background: 'var(--c-card)', borderRadius: '24px 24px 0 0', padding: '18px 18px calc(20px + env(safe-area-inset-bottom, 0px))', animation: 'planoSobe .25s', boxShadow: '0 -12px 40px rgba(0,0,0,.25)' }}>
-        <div style={{ width: 40, height: 4, borderRadius: 99, background: 'var(--c-line2)', margin: '0 auto 14px' }} />
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 480, maxHeight: '88%', overflowY: 'auto', background: '#fff', borderRadius: '24px 24px 0 0', padding: '18px 18px calc(20px + env(safe-area-inset-bottom, 0px))', animation: 'planoSobe .25s', boxShadow: '0 -12px 40px rgba(0,0,0,.25)' }}>
+        <div style={{ width: 40, height: 4, borderRadius: 99, background: '#CBD5E1', margin: '0 auto 14px' }} />
         {children}
       </div>
     </div>
@@ -598,25 +594,25 @@ function PlanoPerguntas({ perguntas, minimo = 0, rotuloFim = 'Concluir tarefa �
     return <div style={{ textAlign: 'center', padding: '20px 4px' }}>
       <div style={{ fontSize: 56 }}>{passou ? '🎉' : '💪'}</div>
       <div style={{ fontSize: 22, fontWeight: 800, margin: '4px 0' }}>{acertos} de {total} certas</div>
-      <div style={{ color: 'var(--c-mute)', fontWeight: 700, fontSize: 14, margin: '0 0 16px' }}>{passou ? 'Muito bem!' : `Quase! Para passar você precisa de ${minimo}. Revise e tente de novo.`}</div>
+      <div style={{ color: '#64748B', fontWeight: 700, fontSize: 14, margin: '0 0 16px' }}>{passou ? 'Muito bem!' : `Quase! Para passar você precisa de ${minimo}. Revise e tente de novo.`}</div>
       {passou ? <button className="plano-btn" onClick={() => onFim(acertos, total)}>{rotuloFim}</button> : <button className="plano-btn violeta" onClick={recomecar}>Tentar de novo</button>}
     </div>;
   }
   const respostaCerta = q.t === 'gap' ? q.a[0] : q.t === 'vf' ? (q.c ? 'Verdadeiro' : 'Falso') : q.o[q.c];
   return <div>
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-      <div style={{ flex: 1, height: 8, borderRadius: 99, background: 'var(--p-E5E7EB)', overflow: 'hidden' }}><div style={{ width: `${(i / total) * 100}%`, height: '100%', background: 'linear-gradient(90deg,var(--brand),var(--brand-light))', transition: 'width .3s' }} /></div>
-      <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--c-mute)' }}>{i + 1}/{total}</div>
+      <div style={{ flex: 1, height: 8, borderRadius: 99, background: '#E5E7EB', overflow: 'hidden' }}><div style={{ width: `${(i / total) * 100}%`, height: '100%', background: 'linear-gradient(90deg,var(--brand),var(--brand-light))', transition: 'width .3s' }} /></div>
+      <div style={{ fontSize: 12, fontWeight: 800, color: '#64748B' }}>{i + 1}/{total}</div>
     </div>
-    <div style={{ background: 'var(--c-card)', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 18, padding: 15, fontSize: 16.5, fontWeight: 800, lineHeight: 1.4, boxShadow: '0 8px 24px rgba(15,23,42,.05)' }}>{q.q}</div>
+    <div style={{ background: '#fff', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 18, padding: 15, fontSize: 16.5, fontWeight: 800, lineHeight: 1.4, boxShadow: '0 8px 24px rgba(15,23,42,.05)' }}>{q.q}</div>
     {q.t === 'mc' && q.o.map((o, k) => <button key={k} disabled={ok !== null} onClick={() => responder(k)} className={`plano-opt ${ok !== null ? (k === q.c ? 'ok' : k === sel ? 'no' : '') : ''}`}>{o}</button>)}
     {q.t === 'vf' && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 7 }}>{[[true, 'Verdadeiro'], [false, 'Falso']].map(([v, l]) => <button key={l} disabled={ok !== null} onClick={() => responder(v)} className={`plano-opt ${ok !== null ? (v === q.c ? 'ok' : v === sel ? 'no' : '') : ''}`} style={{ textAlign: 'center', marginTop: 0 }}>{l}</button>)}</div>}
     {q.t === 'gap' && <div style={{ marginTop: 10 }}>
       <input value={txt} disabled={ok !== null} onChange={e => setTxt(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && txt.trim()) responder(txt); }} placeholder="Digite a resposta" autoCapitalize="none" autoCorrect="off" spellCheck="false"
-        style={{ width: '100%', border: `2px solid ${ok === null ? 'var(--c-line2)' : ok ? '#22C55E' : '#F87171'}`, borderRadius: 14, padding: '13px 14px', fontSize: 16, fontWeight: 700, fontFamily: 'inherit', outline: 'none', background: ok === null ? 'var(--c-card)' : ok ? 'var(--p-F0FDF4)' : 'var(--c-red-bg)' }} />
+        style={{ width: '100%', border: `2px solid ${ok === null ? '#CBD5E1' : ok ? '#22C55E' : '#F87171'}`, borderRadius: 14, padding: '13px 14px', fontSize: 16, fontWeight: 700, fontFamily: 'inherit', outline: 'none', background: ok === null ? '#fff' : ok ? '#F0FDF4' : '#FEF2F2' }} />
       {ok === null && <button className="plano-btn" style={{ marginTop: 10 }} disabled={!txt.trim()} onClick={() => responder(txt)}>Conferir</button>}
     </div>}
-    {ok !== null && <div style={{ marginTop: 12, padding: '11px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, background: ok ? 'var(--p-F0FDF4)' : 'var(--c-red-bg)', color: ok ? 'var(--t-14532D)' : 'var(--t-7F1D1D)', border: `1px solid ${ok ? 'var(--p-BBF7D0)' : '#FECACA'}` }}>
+    {ok !== null && <div style={{ marginTop: 12, padding: '11px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, background: ok ? '#F0FDF4' : '#FEF2F2', color: ok ? '#14532D' : '#7F1D1D', border: `1px solid ${ok ? '#BBF7D0' : '#FECACA'}` }}>
       {ok ? '✔ Isso!' : `✘ A resposta certa é: ${respostaCerta}`}{q.exp ? <div style={{ fontWeight: 600, marginTop: 3 }}>{q.exp}</div> : null}
     </div>}
     {ok !== null && <button className="plano-btn" style={{ marginTop: 12 }} onClick={proxima}>{i + 1 >= total ? 'Ver resultado' : 'Continuar ›'}</button>}
@@ -624,14 +620,14 @@ function PlanoPerguntas({ perguntas, minimo = 0, rotuloFim = 'Concluir tarefa �
 }
 
 function PlanoCartaoLivro({ t, unidade }) {
-  return <div style={{ background: 'linear-gradient(150deg,var(--c-warn-bg),var(--c-card))', border: '1px solid var(--c-warn-line)', borderRadius: 18, padding: 14, marginBottom: 14 }}>
+  return <div style={{ background: 'linear-gradient(150deg,#FFFBEB,#fff)', border: '1px solid #FDE68A', borderRadius: 18, padding: 14, marginBottom: 14 }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
       <div style={{ fontSize: 34 }}>📘</div>
-      <div><div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .7, color: 'var(--c-warn-ink)' }}>NO SEU LIVRO</div>
+      <div><div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .7, color: '#92400E' }}>NO SEU LIVRO</div>
         <div style={{ fontSize: 15, fontWeight: 800, lineHeight: 1.25 }}>{t.pagina}</div>
-        <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--c-mute)' }}>{unidade.livro}</div></div>
+        <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B' }}>{unidade.livro}</div></div>
     </div>
-    <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--c-ink2)', lineHeight: 1.5, marginTop: 10 }}>{t.oQue}</div>
+    <div style={{ fontSize: 13.5, fontWeight: 700, color: '#475569', lineHeight: 1.5, marginTop: 10 }}>{t.oQue}</div>
   </div>;
 }
 
@@ -639,7 +635,7 @@ function PlanoTarefaLivro({ t, unidade, onFeita, onClose, onAsk }) {
   return (
     <PlanoCamada titulo={t.titulo} sub={t.pagina} onClose={onClose} onAsk={onAsk}>
       <PlanoCartaoLivro t={t} unidade={unidade} />
-      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: .6, color: 'var(--c-mute)', margin: '0 2px 8px' }}>RESPONDA AQUI, NÃO NO LIVRO</div>
+      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: .6, color: '#64748B', margin: '0 2px 8px' }}>RESPONDA AQUI, NÃO NO LIVRO</div>
       <PlanoPerguntas perguntas={unidade.perguntas[t.ref]} onFim={onFeita} />
     </PlanoCamada>
   );
@@ -649,11 +645,11 @@ function PlanoTarefaPosaula({ t, unidade, posaulas, onOpenPost, onFeita, onClose
   const aulas = React.useMemo(() => PlanoAulasDoTema(unidade.temas[t.tema], posaulas || []), [t, unidade, posaulas]);
   return (
     <PlanoCamada titulo={t.titulo} sub="Pós-aula · suas aulas" onClose={onClose} onAsk={onAsk}>
-      <div style={{ background: 'var(--p-F5F3FF)', border: '1px solid #DDD6FE', borderRadius: 18, padding: 14, marginBottom: 14 }}>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .7, color: 'var(--t-5B21B6)' }}>RELEIA SUAS AULAS</div>
-        <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--c-ink2)', lineHeight: 1.5, margin: '4px 0 6px' }}>{t.oQue}</div>
-        {aulas.length ? aulas.map(p => <button key={p.id} onClick={() => onOpenPost(p)} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 0, padding: '6px 0 0', fontFamily: 'inherit', fontWeight: 800, fontSize: 13, color: 'var(--t-5B21B6)', textDecoration: 'underline', cursor: 'pointer' }}>📄 {PlanoTituloAula(p)}</button>)
-          : <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--c-mute)' }}>Você ainda não tem um pós-aula sobre este assunto. Use o estudo do caminho como referência.</div>}
+      <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 18, padding: 14, marginBottom: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .7, color: '#5B21B6' }}>RELEIA SUAS AULAS</div>
+        <div style={{ fontSize: 13.5, fontWeight: 700, color: '#475569', lineHeight: 1.5, margin: '4px 0 6px' }}>{t.oQue}</div>
+        {aulas.length ? aulas.map(p => <button key={p.id} onClick={() => onOpenPost(p)} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 0, padding: '6px 0 0', fontFamily: 'inherit', fontWeight: 800, fontSize: 13, color: '#5B21B6', textDecoration: 'underline', cursor: 'pointer' }}>📄 {PlanoTituloAula(p)}</button>)
+          : <div style={{ fontSize: 12.5, fontWeight: 700, color: '#64748B' }}>Você ainda não tem um pós-aula sobre este assunto. Use o estudo do caminho como referência.</div>}
       </div>
       <PlanoPerguntas perguntas={unidade.perguntas[t.ref]} onFim={onFeita} />
     </PlanoCamada>
@@ -670,21 +666,21 @@ function PlanoEstudo({ estudo, unidade, posaulas, onOpenPost, onFeita, onClose, 
     <PlanoCamada titulo={estudo.titulo} sub={`${unidade.livro}`} onClose={onClose} onAsk={onAsk}
       rodape={<button className="plano-btn" disabled={resp === null} onClick={onFeita}>{resp === null ? 'Responda o teste para concluir' : 'Concluir tarefa ✓'}</button>}>
       {estudo.blocos.map((b, i) => {
-        if (b.t === 'p') return <p key={i} style={{ fontSize: 14.5, lineHeight: 1.6, fontWeight: 600, color: 'var(--c-ink2)', margin: '0 0 12px' }}><PlanoMd x={b.x} /></p>;
-        if (b.t === 'ex') return <div key={i} style={{ background: 'var(--p-F0FDF4)', borderLeft: '4px solid var(--brand)', borderRadius: 10, padding: '9px 12px', margin: '0 0 12px', fontSize: 14.5, fontWeight: 800, lineHeight: 1.5 }}>{b.en}<div style={{ color: 'var(--c-mute)', fontWeight: 600, fontSize: 12.5, marginTop: 2 }}>{b.pt}</div></div>;
-        if (b.t === 'dica') return <div key={i} style={{ background: 'var(--c-warn-bg)', border: '1px solid var(--c-warn-line)', borderRadius: 12, padding: '10px 12px', margin: '0 0 12px', fontSize: 13.5, fontWeight: 700, color: 'var(--t-78350F)', lineHeight: 1.5 }}>💡 <PlanoMd x={b.x} /></div>;
+        if (b.t === 'p') return <p key={i} style={{ fontSize: 14.5, lineHeight: 1.6, fontWeight: 600, color: '#334155', margin: '0 0 12px' }}><PlanoMd x={b.x} /></p>;
+        if (b.t === 'ex') return <div key={i} style={{ background: '#F0FDF4', borderLeft: '4px solid var(--brand)', borderRadius: 10, padding: '9px 12px', margin: '0 0 12px', fontSize: 14.5, fontWeight: 800, lineHeight: 1.5 }}>{b.en}<div style={{ color: '#64748B', fontWeight: 600, fontSize: 12.5, marginTop: 2 }}>{b.pt}</div></div>;
+        if (b.t === 'dica') return <div key={i} style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 12, padding: '10px 12px', margin: '0 0 12px', fontSize: 13.5, fontWeight: 700, color: '#78350F', lineHeight: 1.5 }}>💡 <PlanoMd x={b.x} /></div>;
         if (b.t === 'tab') return <table key={i} className="plano-tab"><thead><tr>{b.cab.map((c, j) => <th key={j}>{c}</th>)}</tr></thead><tbody>{b.lin.map((l, j) => <tr key={j}>{l.map((c, k) => <td key={k}>{c}</td>)}</tr>)}</tbody></table>;
         return null;
       })}
       {aulas.length > 0 && (
-        <div style={{ background: 'var(--p-F5F3FF)', border: '1px solid #DDD6FE', borderRadius: 14, padding: '10px 12px', margin: '4px 0 12px' }}>
-          <div style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--t-4C1D95)' }}>📌 Você viu isso nas suas aulas</div>
-          {aulas.map(p => <button key={p.id} onClick={() => onOpenPost(p)} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 0, padding: '6px 0 0', fontFamily: 'inherit', fontWeight: 800, fontSize: 12.5, color: 'var(--t-5B21B6)', textDecoration: 'underline', cursor: 'pointer' }}>{PlanoTituloAula(p)}</button>)}
+        <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 14, padding: '10px 12px', margin: '4px 0 12px' }}>
+          <div style={{ fontSize: 12.5, fontWeight: 800, color: '#4C1D95' }}>📌 Você viu isso nas suas aulas</div>
+          {aulas.map(p => <button key={p.id} onClick={() => onOpenPost(p)} style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 0, padding: '6px 0 0', fontFamily: 'inherit', fontWeight: 800, fontSize: 12.5, color: '#5B21B6', textDecoration: 'underline', cursor: 'pointer' }}>{PlanoTituloAula(p)}</button>)}
         </div>)}
-      <div style={{ background: 'var(--c-card)', border: '1.5px dashed rgba(var(--brand-rgb),.5)', borderRadius: 16, padding: 13 }}>
+      <div style={{ background: '#fff', border: '1.5px dashed rgba(var(--brand-rgb),.5)', borderRadius: 16, padding: 13 }}>
         <div style={{ fontSize: 14, fontWeight: 800 }}>✅ Teste rápido: {q.p}</div>
         {q.o.map((o, i) => <button key={i} disabled={resp !== null} onClick={() => setResp(i)} className={`plano-opt ${resp !== null ? (i === q.c ? 'ok' : i === resp ? 'no' : '') : ''}`}>{o}</button>)}
-        {resp !== null && <div style={{ fontSize: 13, fontWeight: 700, marginTop: 9, color: resp === q.c ? 'var(--t-14532D)' : 'var(--t-7F1D1D)' }}>{resp === q.c ? q.ok : q.no}</div>}
+        {resp !== null && <div style={{ fontSize: 13, fontWeight: 700, marginTop: 9, color: resp === q.c ? '#14532D' : '#7F1D1D' }}>{resp === q.c ? q.ok : q.no}</div>}
       </div>
     </PlanoCamada>
   );
@@ -701,10 +697,10 @@ function PlanoVocabCartas({ vocab, titulo, onFeita, onClose, onAsk }) {
         <button className="plano-btn sec" disabled={i === 0} onClick={() => { setI(i - 1); setVira(false); }}>‹ Anterior</button>
         {ultimo ? <button className="plano-btn" onClick={onFeita}>Concluir ✓</button> : <button className="plano-btn" onClick={() => { setI(i + 1); setVira(false); }}>Próxima ›</button>}
       </div>}>
-      <button onClick={() => { setVira(v => !v); if (!vira) PlanoFalar(en); }} style={{ width: '100%', minHeight: 240, background: 'var(--c-card)', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 22, boxShadow: '0 12px 30px rgba(15,23,42,.08)', fontFamily: 'inherit', cursor: 'pointer', display: 'grid', placeItems: 'center', textAlign: 'center', padding: 16 }}>
+      <button onClick={() => { setVira(v => !v); if (!vira) PlanoFalar(en); }} style={{ width: '100%', minHeight: 240, background: '#fff', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 22, boxShadow: '0 12px 30px rgba(15,23,42,.08)', fontFamily: 'inherit', cursor: 'pointer', display: 'grid', placeItems: 'center', textAlign: 'center', padding: 16 }}>
         <div>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .7, color: 'var(--c-mute)' }}>{vira ? 'PORTUGUÊS' : 'INGLÊS · TOQUE PARA VIRAR'}</div>
-          <div style={{ fontSize: 36, fontWeight: 800, marginTop: 10, color: vira ? 'var(--t-15803D)' : 'var(--c-ink)' }}>{vira ? pt : en}</div>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .7, color: '#64748B' }}>{vira ? 'PORTUGUÊS' : 'INGLÊS · TOQUE PARA VIRAR'}</div>
+          <div style={{ fontSize: 36, fontWeight: 800, marginTop: 10, color: vira ? '#15803D' : '#0F172A' }}>{vira ? pt : en}</div>
           {!vira && <div onClick={e => { e.stopPropagation(); PlanoFalar(en); }} style={{ fontSize: 28, marginTop: 10 }} role="button" aria-label="Ouvir">🔊</div>}
         </div>
       </button>
@@ -809,7 +805,7 @@ function PlanoGravadorCurto({ rotulo, onGravou, maxMs = 4000 }) {
   return (
     <div>
       <button className="plano-btn violeta" onClick={gravando ? parar : comecar} style={gravando ? { background: 'linear-gradient(180deg,#EF4444,#DC2626)', boxShadow: '0 8px 20px rgba(220,38,38,.3)' } : undefined}>{gravando ? '⏹ Parar (para sozinho em 4 s)' : rotulo}</button>
-      {erro && <div style={{ fontSize: 12.5, color: 'var(--t-DC2626)', marginTop: 8, fontWeight: 700, lineHeight: 1.4 }}>{erro}</div>}
+      {erro && <div style={{ fontSize: 12.5, color: '#DC2626', marginTop: 8, fontWeight: 700, lineHeight: 1.4 }}>{erro}</div>}
     </div>
   );
 }
@@ -858,7 +854,7 @@ function PlanoEsperar(p, ms) { return Promise.race([p, new Promise(res => setTim
 
 // A palavra com as letras que saíram diferentes em vermelho. `partes` = [{t, ok}] vindo da função.
 function PlanoPalavraComErros({ partes }) {
-  return <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: .5, wordBreak: 'break-word' }}>{(partes || []).map((p, k) => <span key={k} style={p.ok ? { color: 'var(--t-15803D)' } : { color: 'var(--t-DC2626)', textDecoration: 'underline wavy #DC2626', textUnderlineOffset: 5 }}>{p.t}</span>)}</span>;
+  return <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: .5, wordBreak: 'break-word' }}>{(partes || []).map((p, k) => <span key={k} style={p.ok ? { color: '#15803D' } : { color: '#DC2626', textDecoration: 'underline wavy #DC2626', textUnderlineOffset: 5 }}>{p.t}</span>)}</span>;
 }
 
 // Só no teste do professor (?planoteste=1&falar=1): mostra a confiança que o serviço de voz deu a cada palavra, para calibrar a exigência.
@@ -866,7 +862,7 @@ function PlanoNotaTeste({ res, teste }) {
   if (!teste || !res || res.falha) return null;
   const f = n => (typeof n === 'number' ? String(Math.round(n * 100) / 100).replace('.', ',') : '—');
   const pal = Array.isArray(res.palavras) && res.palavras.length ? res.palavras.map(p => `${p.t} ${f(p.c)}`).join(' · ') : '';
-  return <div style={{ marginTop: 8, fontSize: 11.5, fontWeight: 700, color: 'var(--c-mute)', textAlign: 'center', overflowWrap: 'anywhere' }}>🔬 Teste do professor · confiança {f(res.conf)} (mínimo {f(typeof res.minimo === 'number' ? res.minimo : 0.8)}){pal ? ` · ${pal}` : ''}</div>;
+  return <div style={{ marginTop: 8, fontSize: 11.5, fontWeight: 700, color: '#64748B', textAlign: 'center', overflowWrap: 'anywhere' }}>🔬 Teste do professor · confiança {f(res.conf)} (mínimo {f(typeof res.minimo === 'number' ? res.minimo : 0.8)}){pal ? ` · ${pal}` : ''}</div>;
 }
 
 // Vocabulário (modo "ouvir e falar"): a aluna ouve a palavra, grava, e o app confere. Cada tentativa é guardada.
@@ -928,14 +924,14 @@ function PlanoVocabFalar({ vocab, titulo, onFeita, onClose, onAsk, fala }) {
   return (
     <PlanoCamada titulo={titulo || 'Vocabulário'} sub={`${pos + 1} de ${fila.length} · ouça e fale`} onClose={onClose} onAsk={onAsk}
       rodape={<button className="plano-btn" disabled={!liberado || enviando} onClick={() => avancar(false)}>{ultimo ? 'Concluir ✓' : 'Próxima ›'}</button>}>
-      <div style={{ background: 'var(--c-card)', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 22, boxShadow: '0 12px 30px rgba(15,23,42,.08)', padding: '22px 16px', textAlign: 'center' }}>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .7, color: 'var(--c-mute)' }}>OUÇA E FALE EM INGLÊS</div>
-        <div style={{ fontSize: 36, fontWeight: 800, marginTop: 10, color: 'var(--c-ink)', lineHeight: 1.15, wordBreak: 'break-word' }}>{en}</div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--c-mute)', marginTop: 5 }}>{pt}</div>
+      <div style={{ background: '#fff', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 22, boxShadow: '0 12px 30px rgba(15,23,42,.08)', padding: '22px 16px', textAlign: 'center' }}>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .7, color: '#64748B' }}>OUÇA E FALE EM INGLÊS</div>
+        <div style={{ fontSize: 36, fontWeight: 800, marginTop: 10, color: '#0F172A', lineHeight: 1.15, wordBreak: 'break-word' }}>{en}</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#64748B', marginTop: 5 }}>{pt}</div>
         <button className="plano-btn sec" style={{ display: 'inline-block', width: 'auto', margin: '14px auto 0', padding: '9px 20px', fontSize: 15 }} onClick={() => PlanoFalar(en)}>🔊 Ouvir</button>
       </div>
 
-      {enviando && <div style={caixa('var(--c-ink2)', 'var(--c-soft2)', 'var(--c-line)')}>⏳ Conferindo a sua pronúncia…</div>}
+      {enviando && <div style={caixa('#334155', '#F8FAFC', '#E2E8F0')}>⏳ Conferindo a sua pronúncia…</div>}
       {res && res.ok === true && <div style={caixa('#14532D', '#F0FDF4', '#BBF7D0')}>✅ Muito bem! Eu ouvi “{res.ouvi}”.<PlanoNotaTeste res={res} teste={fala.teste} /></div>}
       {res && res.falha && <div style={caixa('#78350F', '#FFFBEB', '#FDE68A')}>⚠️ {res.falha}</div>}
       {res && res.ok === false && !res.falha && <div style={{ ...caixa('#7F1D1D', '#FEF2F2', '#FECACA'), textAlign: 'center' }}>
@@ -943,10 +939,10 @@ function PlanoVocabFalar({ vocab, titulo, onFeita, onClose, onAsk, fala }) {
           ? <div>🎧 Ouvi a sua voz, mas não reconheci a palavra.</div>
           : <div>❌ Eu ouvi: <b>“{res.ouvi || 'nada'}”</b></div>}
         <div style={{ margin: '8px 0 4px' }}>{res.semResposta
-          ? <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: .5, wordBreak: 'break-word', color: 'var(--c-ink)' }}>{alvo}</span>
+          ? <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: .5, wordBreak: 'break-word', color: '#0F172A' }}>{alvo}</span>
           : <PlanoPalavraComErros partes={res.partes} />}</div>
-        <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--c-red-ink)' }}>{res.semResposta ? 'Alguma parte saiu diferente do esperado.' : res.motivo === 'pouco-claro' ? 'Eu entendi a palavra, mas o que está em vermelho não saiu com clareza.' : 'As letras em vermelho saíram diferentes.'}</div>
-        {res.dica && <div style={{ marginTop: 8, fontWeight: 700, color: 'var(--t-7F1D1D)' }}>💡 {res.dica}</div>}
+        <div style={{ fontSize: 11.5, fontWeight: 700, color: '#991B1B' }}>{res.semResposta ? 'Alguma parte saiu diferente do esperado.' : res.motivo === 'pouco-claro' ? 'Eu entendi a palavra, mas o que está em vermelho não saiu com clareza.' : 'As letras em vermelho saíram diferentes.'}</div>
+        {res.dica && <div style={{ marginTop: 8, fontWeight: 700, color: '#7F1D1D' }}>💡 {res.dica}</div>}
         <PlanoNotaTeste res={res} teste={fala.teste} />
         <button className="plano-btn sec" style={{ marginTop: 10, padding: '9px 14px', fontSize: 14 }} onClick={() => PlanoFalar(en)}>🔊 Ouvir de novo</button>
       </div>}
@@ -996,10 +992,10 @@ function PlanoFalaGravar({ ex, fala, feito, onFeito }) {
     setFase('feito'); onFeito();
   };
   if (fase === 'feito' || feito) return (
-    <div style={{ marginTop: 11, padding: '10px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, background: 'var(--p-F0FDF4)', color: 'var(--t-14532D)', border: '1px solid var(--p-BBF7D0)' }}>
+    <div style={{ marginTop: 11, padding: '10px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, background: '#F0FDF4', color: '#14532D', border: '1px solid #BBF7D0' }}>
       {fala.teste ? '✔ Prévia: nada foi gravado.' : '✔ Gravação enviada para o professor.'}
       {texto && <div style={{ fontWeight: 600, marginTop: 4 }}>Você disse: “{texto}”</div>}
-      {aviso && <div style={{ fontWeight: 600, marginTop: 4, color: 'var(--t-78350F)' }}>{aviso}</div>}
+      {aviso && <div style={{ fontWeight: 600, marginTop: 4, color: '#78350F' }}>{aviso}</div>}
     </div>
   );
   return (
@@ -1025,13 +1021,13 @@ function PlanoJogoMemoria({ pares, onFim }) {
     }
   };
   const fim = achadas.length === pares.length;
-  if (fim) return <div style={{ textAlign: 'center', padding: '24px 4px' }}><div style={{ fontSize: 56 }}>🎉</div><div style={{ fontSize: 22, fontWeight: 800 }}>Você achou todos!</div><div style={{ color: 'var(--c-mute)', fontWeight: 700, margin: '4px 0 16px' }}>{jogadas} jogadas</div><button className="plano-btn" onClick={() => onFim(jogadas)}>Concluir ✓</button></div>;
+  if (fim) return <div style={{ textAlign: 'center', padding: '24px 4px' }}><div style={{ fontSize: 56 }}>🎉</div><div style={{ fontSize: 22, fontWeight: 800 }}>Você achou todos!</div><div style={{ color: '#64748B', fontWeight: 700, margin: '4px 0 16px' }}>{jogadas} jogadas</div><button className="plano-btn" onClick={() => onFim(jogadas)}>Concluir ✓</button></div>;
   return <div>
-    <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: 'var(--c-mute)', marginBottom: 10 }}>Vire duas cartas: a palavra em inglês e o significado. · {jogadas} jogadas</div>
+    <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#64748B', marginBottom: 10 }}>Vire duas cartas: a palavra em inglês e o significado. · {jogadas} jogadas</div>
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 9 }}>
       {cartas.map((c, i) => { const up = viradas.includes(i) || achadas.includes(c.k); const ok = achadas.includes(c.k); return (
-        <button key={i} onClick={() => virar(i)} style={{ aspectRatio: '1/1.05', borderRadius: 16, border: up ? `2px solid ${ok ? '#22C55E' : 'var(--c-line)'}` : 0, fontFamily: 'inherit', fontWeight: 800, fontSize: up ? 15 : 28, lineHeight: 1.15, padding: 4, cursor: 'pointer',
-          background: ok ? 'var(--p-DCFCE7)' : up ? 'var(--c-card)' : 'linear-gradient(150deg,var(--brand),var(--brand-dark))', color: ok ? 'var(--t-14532D)' : up ? 'var(--c-ink)' : 'color-mix(in srgb,var(--c-card) 50%,transparent)', boxShadow: up ? 'none' : '0 6px 14px rgba(6,78,59,.25)' }}>{up ? c.t : '?'}</button>); })}
+        <button key={i} onClick={() => virar(i)} style={{ aspectRatio: '1/1.05', borderRadius: 16, border: up ? `2px solid ${ok ? '#22C55E' : '#E2E8F0'}` : 0, fontFamily: 'inherit', fontWeight: 800, fontSize: up ? 15 : 28, lineHeight: 1.15, padding: 4, cursor: 'pointer',
+          background: ok ? '#DCFCE7' : up ? '#fff' : 'linear-gradient(150deg,var(--brand),var(--brand-dark))', color: ok ? '#14532D' : up ? '#0F172A' : 'rgba(255,255,255,.5)', boxShadow: up ? 'none' : '0 6px 14px rgba(6,78,59,.25)' }}>{up ? c.t : '?'}</button>); })}
     </div>
   </div>;
 }
@@ -1052,14 +1048,14 @@ function PlanoJogoRelampago({ perguntas, onFim }) {
     const id = setInterval(() => { const f = Math.min(1, (Date.now() - t0) / 8000); setW(100 * (1 - f)); if (f >= 1) { clearInterval(id); responder(-1); } }, 100);
     return () => clearInterval(id);
   }, [i, fb, fim, responder]);
-  if (fim) return <div style={{ textAlign: 'center', padding: '24px 4px' }}><div style={{ fontSize: 56 }}>⚡</div><div style={{ fontSize: 22, fontWeight: 800 }}>{pts} pontos!</div><div style={{ color: 'var(--c-mute)', fontWeight: 700, margin: '4px 0 16px' }}>Melhor sequência: {melhor} acertos seguidos</div><button className="plano-btn" onClick={() => onFim(pts)}>Concluir ✓</button></div>;
+  if (fim) return <div style={{ textAlign: 'center', padding: '24px 4px' }}><div style={{ fontSize: 56 }}>⚡</div><div style={{ fontSize: 22, fontWeight: 800 }}>{pts} pontos!</div><div style={{ color: '#64748B', fontWeight: 700, margin: '4px 0 16px' }}>Melhor sequência: {melhor} acertos seguidos</div><button className="plano-btn" onClick={() => onFim(pts)}>Concluir ✓</button></div>;
   const q = perguntas[i]; const [a, b] = q.f.split('___');
   return <div>
-    <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>{[[`${i + 1}/${perguntas.length}`, 'pergunta'], [pts, 'pontos'], [`🔥${seq}`, 'sequência']].map(([v, l]) => <div key={l} style={{ flex: 1, background: 'var(--c-card)', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 14, padding: 8, textAlign: 'center' }}><b style={{ display: 'block', fontSize: 18 }}>{v}</b><small style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--c-mute)', textTransform: 'uppercase' }}>{l}</small></div>)}</div>
-    <div style={{ height: 10, borderRadius: 99, background: 'var(--p-E5E7EB)', overflow: 'hidden', margin: '6px 0 14px' }}><div style={{ width: `${w}%`, height: '100%', background: 'linear-gradient(90deg,#F59E0B,#EF4444)' }} /></div>
-    <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.35, textAlign: 'center', margin: '10px 0 16px', padding: '20px 10px', background: 'var(--c-card)', borderRadius: 18, border: '1px solid rgba(var(--brand-rgb),.12)' }}>{a}<span style={{ display: 'inline-block', minWidth: 70, borderBottom: '3px solid var(--brand)', color: fb ? 'var(--c-brand-ink)' : 'transparent' }}>{fb ? q.o[q.c] : '____'}</span>{b}</div>
+    <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>{[[`${i + 1}/${perguntas.length}`, 'pergunta'], [pts, 'pontos'], [`🔥${seq}`, 'sequência']].map(([v, l]) => <div key={l} style={{ flex: 1, background: '#fff', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 14, padding: 8, textAlign: 'center' }}><b style={{ display: 'block', fontSize: 18 }}>{v}</b><small style={{ fontSize: 10.5, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>{l}</small></div>)}</div>
+    <div style={{ height: 10, borderRadius: 99, background: '#E5E7EB', overflow: 'hidden', margin: '6px 0 14px' }}><div style={{ width: `${w}%`, height: '100%', background: 'linear-gradient(90deg,#F59E0B,#EF4444)' }} /></div>
+    <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.35, textAlign: 'center', margin: '10px 0 16px', padding: '20px 10px', background: '#fff', borderRadius: 18, border: '1px solid rgba(var(--brand-rgb),.12)' }}>{a}<span style={{ display: 'inline-block', minWidth: 70, borderBottom: '3px solid var(--brand)', color: fb ? 'var(--brand-dark)' : 'transparent' }}>{fb ? q.o[q.c] : '____'}</span>{b}</div>
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>{q.o.map((o, k) => <button key={k} disabled={!!fb} onClick={() => responder(k)} className={`plano-opt ${fb ? (k === q.c ? 'ok' : k === fb.op ? 'no' : '') : ''}`} style={{ textAlign: 'center', fontSize: 18, padding: '16px 8px', marginTop: 0 }}>{o}</button>)}</div>
-    {fb && <div style={{ textAlign: 'center', marginTop: 12, fontWeight: 800, color: fb.ok ? 'var(--t-14532D)' : 'var(--t-7F1D1D)' }}>{fb.ok ? '✔ Isso!' : fb.op < 0 ? '⏰ Acabou o tempo' : `✘ Era “${q.o[q.c]}”`}</div>}
+    {fb && <div style={{ textAlign: 'center', marginTop: 12, fontWeight: 800, color: fb.ok ? '#14532D' : '#7F1D1D' }}>{fb.ok ? '✔ Isso!' : fb.op < 0 ? '⏰ Acabou o tempo' : `✘ Era “${q.o[q.c]}”`}</div>}
   </div>;
 }
 
@@ -1067,17 +1063,17 @@ function PlanoJogoMontar({ frases, onFim }) {
   const [i, setI] = React.useState(0); const [score, setScore] = React.useState(0);
   const novo = idx => PlanoEmbaralhar((frases[idx] ? frases[idx].w : []).map((t, k) => ({ t, k })));
   const [banco, setBanco] = React.useState(() => novo(0)); const [resp, setResp] = React.useState([]); const [res, setRes] = React.useState(null);
-  if (i >= frases.length) return <div style={{ textAlign: 'center', padding: '24px 4px' }}><div style={{ fontSize: 56 }}>🧩</div><div style={{ fontSize: 22, fontWeight: 800 }}>Frases completas!</div><div style={{ color: 'var(--c-mute)', fontWeight: 700, margin: '4px 0 16px' }}>{score} de {frases.length} certas</div><button className="plano-btn" onClick={() => onFim(score)}>Concluir ✓</button></div>;
+  if (i >= frases.length) return <div style={{ textAlign: 'center', padding: '24px 4px' }}><div style={{ fontSize: 56 }}>🧩</div><div style={{ fontSize: 22, fontWeight: 800 }}>Frases completas!</div><div style={{ color: '#64748B', fontWeight: 700, margin: '4px 0 16px' }}>{score} de {frases.length} certas</div><button className="plano-btn" onClick={() => onFim(score)}>Concluir ✓</button></div>;
   const cur = frases[i];
-  const palavra = (w, onClick, extra) => <button key={w.k + w.t} onClick={onClick} style={{ padding: '9px 13px', borderRadius: 12, background: 'var(--c-card)', border: `1.5px solid ${extra ? 'var(--brand)' : 'var(--c-line2)'}`, boxShadow: `0 2px 0 ${extra ? 'var(--brand)' : 'var(--c-line2)'}`, fontWeight: 800, fontSize: 15, fontFamily: 'inherit', cursor: 'pointer' }}>{w.t}</button>;
+  const palavra = (w, onClick, extra) => <button key={w.k + w.t} onClick={onClick} style={{ padding: '9px 13px', borderRadius: 12, background: '#fff', border: `1.5px solid ${extra ? 'var(--brand)' : '#CBD5E1'}`, boxShadow: `0 2px 0 ${extra ? 'var(--brand)' : '#CBD5E1'}`, fontWeight: 800, fontSize: 15, fontFamily: 'inherit', cursor: 'pointer' }}>{w.t}</button>;
   const conferir = () => { const ok = resp.map(w => w.t).join(' ') === cur.w.join(' '); setRes(ok); if (ok) setScore(s => s + 1); };
   const proxima = () => { const n = i + 1; setI(n); setRes(null); setResp([]); setBanco(novo(n)); };
   return <div>
-    <div style={{ background: 'var(--c-card)', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 18, padding: 14, marginBottom: 10 }}><div style={{ fontSize: 12, fontWeight: 700, color: 'var(--c-mute)' }}>Monte a frase em inglês ({i + 1}/{frases.length}):</div><div style={{ fontSize: 16.5, fontWeight: 800, marginTop: 4 }}>“{cur.pt}”</div></div>
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, minHeight: 56, padding: 10, borderRadius: 16, background: 'var(--c-card)', border: '2px dashed var(--c-line2)', margin: '8px 0 12px' }}>{resp.map((w, k) => palavra(w, () => { if (res === null) { setBanco(b => [...b, w]); setResp(r => r.filter((_, j) => j !== k)); } }, true))}</div>
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, minHeight: 56, padding: 10, borderRadius: 16, background: 'var(--c-soft)' }}>{banco.map((w, k) => palavra(w, () => { if (res === null) { setResp(r => [...r, w]); setBanco(b => b.filter((_, j) => j !== k)); } }, false))}</div>
+    <div style={{ background: '#fff', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 18, padding: 14, marginBottom: 10 }}><div style={{ fontSize: 12, fontWeight: 700, color: '#64748B' }}>Monte a frase em inglês ({i + 1}/{frases.length}):</div><div style={{ fontSize: 16.5, fontWeight: 800, marginTop: 4 }}>“{cur.pt}”</div></div>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, minHeight: 56, padding: 10, borderRadius: 16, background: '#fff', border: '2px dashed #CBD5E1', margin: '8px 0 12px' }}>{resp.map((w, k) => palavra(w, () => { if (res === null) { setBanco(b => [...b, w]); setResp(r => r.filter((_, j) => j !== k)); } }, true))}</div>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, minHeight: 56, padding: 10, borderRadius: 16, background: '#F1F5F9' }}>{banco.map((w, k) => palavra(w, () => { if (res === null) { setResp(r => [...r, w]); setBanco(b => b.filter((_, j) => j !== k)); } }, false))}</div>
     {res === null ? <button className="plano-btn" style={{ marginTop: 14 }} disabled={!resp.length} onClick={conferir}>Conferir</button>
-      : <div><div style={{ textAlign: 'center', fontWeight: 800, margin: '12px 0', color: res ? 'var(--t-14532D)' : 'var(--t-7F1D1D)' }}>{res ? '✔ Perfeito!' : `✘ Quase! O certo é: ${cur.w.join(' ')}`}</div><button className="plano-btn" onClick={proxima}>Próxima ›</button></div>}
+      : <div><div style={{ textAlign: 'center', fontWeight: 800, margin: '12px 0', color: res ? '#14532D' : '#7F1D1D' }}>{res ? '✔ Perfeito!' : `✘ Quase! O certo é: ${cur.w.join(' ')}`}</div><button className="plano-btn" onClick={proxima}>Próxima ›</button></div>}
   </div>;
 }
 
@@ -1085,7 +1081,7 @@ function PlanoJogoMontar({ frases, onFim }) {
 function PlanoJogoForca({ palavras, onFim }) {
   const [i, setI] = React.useState(0); const [certas, setCertas] = React.useState([]); const [erradas, setErradas] = React.useState([]);
   const [res, setRes] = React.useState(null); const [pontos, setPontos] = React.useState(0);
-  if (i >= palavras.length) return <div style={{ textAlign: 'center', padding: '24px 4px' }}><div style={{ fontSize: 56 }}>🔠</div><div style={{ fontSize: 22, fontWeight: 800 }}>{pontos} de {palavras.length} palavras!</div><div style={{ color: 'var(--c-mute)', fontWeight: 700, margin: '4px 0 16px' }}>Bom treino de vocabulário.</div><button className="plano-btn" onClick={() => onFim(pontos)}>Concluir ✓</button></div>;
+  if (i >= palavras.length) return <div style={{ textAlign: 'center', padding: '24px 4px' }}><div style={{ fontSize: 56 }}>🔠</div><div style={{ fontSize: 22, fontWeight: 800 }}>{pontos} de {palavras.length} palavras!</div><div style={{ color: '#64748B', fontWeight: 700, margin: '4px 0 16px' }}>Bom treino de vocabulário.</div><button className="plano-btn" onClick={() => onFim(pontos)}>Concluir ✓</button></div>;
   const alvo = palavras[i]; const w = alvo.w.toLowerCase(); const letras = 'abcdefghijklmnopqrstuvwxyz'.split('');
   const tentar = l => {
     if (res || certas.includes(l) || erradas.includes(l)) return;
@@ -1096,13 +1092,13 @@ function PlanoJogoForca({ palavras, onFim }) {
   };
   const proxima = () => { setI(i + 1); setCertas([]); setErradas([]); setRes(null); };
   return <div>
-    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 800, color: 'var(--c-mute)', marginBottom: 8 }}><span>Palavra {i + 1} de {palavras.length}</span><span>{'❤️'.repeat(6 - erradas.length)}{'🤍'.repeat(erradas.length)}</span></div>
-    <div style={{ background: 'var(--c-card)', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 18, padding: '16px 12px', textAlign: 'center' }}>
-      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--c-mute)' }}>Significa: <b style={{ color: 'var(--c-ink)' }}>{alvo.d}</b></div>
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 800, color: '#64748B', marginBottom: 8 }}><span>Palavra {i + 1} de {palavras.length}</span><span>{'❤️'.repeat(6 - erradas.length)}{'🤍'.repeat(erradas.length)}</span></div>
+    <div style={{ background: '#fff', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 18, padding: '16px 12px', textAlign: 'center' }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B' }}>Significa: <b style={{ color: '#0F172A' }}>{alvo.d}</b></div>
       <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: 6, marginTop: 8, fontFamily: 'ui-monospace,Menlo,monospace' }}>{w.split('').map(c => certas.includes(c) || res ? c : '_').join(' ')}</div>
     </div>
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 6, marginTop: 14 }}>{letras.map(l => { const c = certas.includes(l), e = erradas.includes(l); return <button key={l} disabled={c || e || !!res} onClick={() => tentar(l)} style={{ padding: '10px 0', borderRadius: 10, border: '1.5px solid ' + (c ? '#22C55E' : e ? '#F87171' : 'var(--c-line2)'), background: c ? 'var(--p-DCFCE7)' : e ? 'var(--p-FEE2E2)' : 'var(--c-card)', color: c ? 'var(--t-14532D)' : e ? 'var(--t-7F1D1D)' : 'var(--c-ink)', fontWeight: 800, fontSize: 15, fontFamily: 'inherit', textTransform: 'uppercase', cursor: 'pointer', opacity: c || e ? .6 : 1 }}>{l}</button>; })}</div>
-    {res && <div style={{ marginTop: 14 }}><div style={{ textAlign: 'center', fontWeight: 800, marginBottom: 10, color: res === 'ganhou' ? 'var(--t-14532D)' : 'var(--t-7F1D1D)' }}>{res === 'ganhou' ? `✔ Isso! ${alvo.w}` : `✘ Era “${alvo.w}”`}</div><button className="plano-btn" onClick={proxima}>{i + 1 >= palavras.length ? 'Ver resultado' : 'Próxima ›'}</button></div>}
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 6, marginTop: 14 }}>{letras.map(l => { const c = certas.includes(l), e = erradas.includes(l); return <button key={l} disabled={c || e || !!res} onClick={() => tentar(l)} style={{ padding: '10px 0', borderRadius: 10, border: '1.5px solid ' + (c ? '#22C55E' : e ? '#F87171' : '#CBD5E1'), background: c ? '#DCFCE7' : e ? '#FEE2E2' : '#fff', color: c ? '#14532D' : e ? '#7F1D1D' : '#0F172A', fontWeight: 800, fontSize: 15, fontFamily: 'inherit', textTransform: 'uppercase', cursor: 'pointer', opacity: c || e ? .6 : 1 }}>{l}</button>; })}</div>
+    {res && <div style={{ marginTop: 14 }}><div style={{ textAlign: 'center', fontWeight: 800, marginBottom: 10, color: res === 'ganhou' ? '#14532D' : '#7F1D1D' }}>{res === 'ganhou' ? `✔ Isso! ${alvo.w}` : `✘ Era “${alvo.w}”`}</div><button className="plano-btn" onClick={proxima}>{i + 1 >= palavras.length ? 'Ver resultado' : 'Próxima ›'}</button></div>}
   </div>;
 }
 
@@ -1164,8 +1160,8 @@ function PlanoLinhasTexto({ segs, pos, ligado, onIr }) {
   let ativa = -1; if (ligado) segs.forEach((g, k) => { if (pos >= g.a - 0.05) ativa = k; });   // a última que já começou: não "apaga" entre uma frase e outra
   React.useEffect(() => { const c = caixa.current; const el = c && c.querySelector('[data-ativa="1"]'); if (el) c.scrollTop = Math.max(0, el.offsetTop - 30); }, [ativa]);
   return (
-    <div ref={caixa} style={{ maxHeight: 150, overflowY: 'auto', position: 'relative', background: 'var(--p-F0F9FF)', border: '1px solid #BAE6FD', borderRadius: 11, padding: '6px 10px', fontSize: 14, lineHeight: 1.5, color: 'var(--t-0C4A6E)' }}>
-      {segs.map((g, k) => <div key={k} data-ativa={k === ativa ? '1' : '0'} onClick={() => onIr && onIr(g.a)} style={{ padding: '2px 4px', margin: '1px 0', cursor: onIr ? 'pointer' : 'default', fontWeight: k === ativa ? 800 : 500, color: k === ativa ? 'var(--c-ink)' : 'var(--t-0C4A6E)', background: k === ativa ? 'var(--p-FEF08A)' : 'transparent', borderRadius: 6 }}>{g.t}</div>)}
+    <div ref={caixa} style={{ maxHeight: 150, overflowY: 'auto', position: 'relative', background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 11, padding: '6px 10px', fontSize: 14, lineHeight: 1.5, color: '#0C4A6E' }}>
+      {segs.map((g, k) => <div key={k} data-ativa={k === ativa ? '1' : '0'} onClick={() => onIr && onIr(g.a)} style={{ padding: '2px 4px', margin: '1px 0', cursor: onIr ? 'pointer' : 'default', fontWeight: k === ativa ? 800 : 500, color: k === ativa ? '#0F172A' : '#0C4A6E', background: k === ativa ? '#FEF08A' : 'transparent', borderRadius: 6 }}>{g.t}</div>)}
     </div>
   );
 }
@@ -1230,24 +1226,24 @@ function PlanoTarefaVideo({ t, onFeita, onResumo, resumoAnterior, rascunho, onRa
         ? <div style={moldura}><iframe title={t.titulo} src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?rel=0&modestbranding=1&playsinline=1`} allow="encrypted-media; picture-in-picture; fullscreen" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }} /></div>
         : <div style={moldura}><div ref={caixa} style={{ position: 'absolute', inset: 0 }} /></div>)
         : url ? <a href={url} target="_blank" rel="noopener noreferrer" className="plano-btn violeta" style={{ textDecoration: 'none', textAlign: 'center' }}>▶ Abrir o vídeo</a>
-        : <div style={{ background: 'var(--c-card)', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: 'var(--c-mute)' }}>🎬 Vídeo em breve.</div>}
-      {terminou && !pedeResposta && <div style={{ marginTop: 12, padding: '10px 13px', borderRadius: 14, background: 'var(--p-F0FDF4)', border: '1px solid var(--p-BBF7D0)', color: 'var(--t-14532D)', fontWeight: 800, fontSize: 13.5 }}>🎉 Vídeo terminado! Toque em “Concluir tarefa”.</div>}
-      {t.oQue && <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--c-ink2)', lineHeight: 1.5, marginTop: 12 }}>{t.oQue}</div>}
-      {pedeResposta && !liberado && <div style={{ marginTop: 14, background: 'var(--c-card)', borderRadius: 16, padding: '12px 13px', border: '1.5px solid #DDD6FE' }}>
-        <div style={{ fontWeight: 800, fontSize: 14.5, color: 'var(--c-ink)' }}>{final ? '✍️ Escreva um resumo do que você entendeu' : '✍️ O que você entendeu?'}</div>
-        <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--c-mute)', margin: '3px 0 8px', lineHeight: 1.4 }}>{final
+        : <div style={{ background: '#fff', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: '#64748B' }}>🎬 Vídeo em breve.</div>}
+      {terminou && !pedeResposta && <div style={{ marginTop: 12, padding: '10px 13px', borderRadius: 14, background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#14532D', fontWeight: 800, fontSize: 13.5 }}>🎉 Vídeo terminado! Toque em “Concluir tarefa”.</div>}
+      {t.oQue && <div style={{ fontSize: 13.5, fontWeight: 700, color: '#475569', lineHeight: 1.5, marginTop: 12 }}>{t.oQue}</div>}
+      {pedeResposta && !liberado && <div style={{ marginTop: 14, background: '#fff', borderRadius: 16, padding: '12px 13px', border: '1.5px solid #DDD6FE' }}>
+        <div style={{ fontWeight: 800, fontSize: 14.5, color: '#0F172A' }}>{final ? '✍️ Escreva um resumo do que você entendeu' : '✍️ O que você entendeu?'}</div>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: '#64748B', margin: '3px 0 8px', lineHeight: 1.4 }}>{final
           ? 'Assista quantas vezes precisar. Aqui não tem texto do que é dito: escreva, em inglês e com as suas palavras, o que você entendeu.'
           : 'Assista quantas vezes precisar, sem texto. Escreva do jeito que der, mesmo que seja pouco ou “não entendi o suficiente”. Depois de enviar, o texto do vídeo aparece.'}</div>
-        <textarea value={resumo} onChange={e => setResumo(e.target.value)} placeholder={final ? 'In this video…' : 'I understood…'} rows={final ? 5 : 4} style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid var(--c-line2)', borderRadius: 12, padding: '10px 12px', fontSize: 15, fontFamily: 'inherit', lineHeight: 1.5, resize: 'vertical' }} />
-        <div style={{ fontSize: 11.5, fontWeight: 800, color: pronto ? 'var(--t-15803D)' : 'var(--c-mute2)', marginTop: 4 }}>{palavras} palavra{palavras === 1 ? '' : 's'}{pronto ? ' ✓' : ''}{onRascunho && resumo.trim() && !resumoAnterior ? <span style={{ color: rascSalvo ? 'var(--t-15803D)' : 'var(--t-B45309)', marginLeft: 8 }}>{rascSalvo ? '✓ rascunho salvo' : 'salvando…'}</span> : null}</div>
-        {final && resumoAnterior && <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--c-mute)', marginTop: 4 }}>Você já enviou um resumo. Se mudar o texto e enviar de novo, o professor vê a versão nova.</div>}
+        <textarea value={resumo} onChange={e => setResumo(e.target.value)} placeholder={final ? 'In this video…' : 'I understood…'} rows={final ? 5 : 4} style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid #CBD5E1', borderRadius: 12, padding: '10px 12px', fontSize: 15, fontFamily: 'inherit', lineHeight: 1.5, resize: 'vertical' }} />
+        <div style={{ fontSize: 11.5, fontWeight: 800, color: pronto ? '#15803D' : '#94A3B8', marginTop: 4 }}>{palavras} palavra{palavras === 1 ? '' : 's'}{pronto ? ' ✓' : ''}{onRascunho && resumo.trim() && !resumoAnterior ? <span style={{ color: rascSalvo ? '#15803D' : '#B45309', marginLeft: 8 }}>{rascSalvo ? '✓ rascunho salvo' : 'salvando…'}</span> : null}</div>
+        {final && resumoAnterior && <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B', marginTop: 4 }}>Você já enviou um resumo. Se mudar o texto e enviar de novo, o professor vê a versão nova.</div>}
       </div>}
       {liberado && <div style={{ marginTop: 14 }}>
-        {enviou && <div style={{ marginBottom: 10, padding: '10px 13px', borderRadius: 14, background: 'var(--p-F0FDF4)', border: '1px solid var(--p-BBF7D0)', color: 'var(--t-14532D)', fontWeight: 800, fontSize: 13.5 }}>✅ Resposta enviada! Agora o texto do vídeo está liberado: assista de novo lendo.</div>}
-        <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--t-0369A1)', marginBottom: 6 }}>📄 O que é dito no vídeo</div>
+        {enviou && <div style={{ marginBottom: 10, padding: '10px 13px', borderRadius: 14, background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#14532D', fontWeight: 800, fontSize: 13.5 }}>✅ Resposta enviada! Agora o texto do vídeo está liberado: assista de novo lendo.</div>}
+        <div style={{ fontWeight: 800, fontSize: 14, color: '#0369A1', marginBottom: 6 }}>📄 O que é dito no vídeo</div>
         {segsVideo
           ? <PlanoLinhasTexto segs={segsVideo} pos={pos} ligado={tocou && pos > 0} onIr={jogador.current ? irPara : null} />
-          : <div style={{ background: 'var(--p-F0F9FF)', border: '1px solid #BAE6FD', borderRadius: 12, padding: '10px 12px', fontSize: 14.5, lineHeight: 1.6, color: 'var(--t-0C4A6E)', whiteSpace: 'pre-wrap' }}>{textoVideo}</div>}
+          : <div style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 12, padding: '10px 12px', fontSize: 14.5, lineHeight: 1.6, color: '#0C4A6E', whiteSpace: 'pre-wrap' }}>{textoVideo}</div>}
       </div>}
     </PlanoCamada>
   );
@@ -1306,28 +1302,28 @@ function PlanoAudiosPagina({ audios, rotulo }) {
   const a = audios[sel] || audios[0]; const segs = (a && a.segs) || []; const temTexto = audios.some(x => x.segs && x.segs.length);
   const total = durs[sel] || (a && a.dur) || 0;
   return (
-    <div style={{ flexShrink: 0, margin: '8px 10px 0', background: 'var(--c-card)', borderRadius: 16, boxShadow: '0 4px 14px rgba(15,23,42,.14)', padding: '9px 11px 10px', border: '1px solid var(--p-EDE9FE)' }}>
+    <div style={{ flexShrink: 0, margin: '8px 10px 0', background: '#fff', borderRadius: 16, boxShadow: '0 4px 14px rgba(15,23,42,.14)', padding: '9px 11px 10px', border: '1px solid #EDE9FE' }}>
       <button onClick={() => setAberta(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', border: 0, background: 'none', padding: 0, fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>
-        <span style={{ fontSize: 17 }}>🔊</span><b style={{ fontSize: 13.5, color: 'var(--c-ink)', flex: 1 }}>{rotulo || (audios.length > 1 ? 'Áudios desta página' : 'Áudio desta página')}</b>
-        <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--c-mute)' }}>{aberta ? 'toque para ouvir' : '▼'}</span>
+        <span style={{ fontSize: 17 }}>🔊</span><b style={{ fontSize: 13.5, color: '#0F172A', flex: 1 }}>{rotulo || (audios.length > 1 ? 'Áudios desta página' : 'Áudio desta página')}</b>
+        <span style={{ fontSize: 11.5, fontWeight: 700, color: '#64748B' }}>{aberta ? 'toque para ouvir' : '▼'}</span>
       </button>
       {aberta && <>
         <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-          {audios.map((x, i) => { const on = tocando === i; return <button key={x.caminho} onClick={() => tocar(i)} disabled={!urls[x.caminho]} style={{ flex: 1, borderRadius: 11, padding: '6px 2px', fontWeight: 800, fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer', border: `2px solid ${on || sel === i ? '#6D28D9' : '#DDD6FE'}`, background: on ? '#6D28D9' : 'var(--c-card)', color: on ? '#fff' : 'var(--t-5B21B6)', opacity: urls[x.caminho] ? 1 : .55 }}>
+          {audios.map((x, i) => { const on = tocando === i; return <button key={x.caminho} onClick={() => tocar(i)} disabled={!urls[x.caminho]} style={{ flex: 1, borderRadius: 11, padding: '6px 2px', fontWeight: 800, fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer', border: `2px solid ${on || sel === i ? '#6D28D9' : '#DDD6FE'}`, background: on ? '#6D28D9' : '#fff', color: on ? '#fff' : '#5B21B6', opacity: urls[x.caminho] ? 1 : .55 }}>
             {on ? '⏸' : '▶'} {audios.length > 1 ? `Áudio ${i + 1}` : 'Ouvir'}<br /><span style={{ fontWeight: 700, fontSize: 11, opacity: .85 }}>{x.dur ? PlanoTempo(x.dur) : ' '}</span></button>; })}
         </div>
-        {a && a.titulo && <div style={{ marginTop: 7, fontSize: 13, fontWeight: 800, color: 'var(--c-ink)' }}>🎧 {audios.length > 1 ? `Áudio ${sel + 1}: ` : ''}{a.titulo}</div>}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 11.5, fontWeight: 800, color: 'var(--t-5B21B6)' }}>
+        {a && a.titulo && <div style={{ marginTop: 7, fontSize: 13, fontWeight: 800, color: '#0F172A' }}>🎧 {audios.length > 1 ? `Áudio ${sel + 1}: ` : ''}{a.titulo}</div>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 11.5, fontWeight: 800, color: '#5B21B6' }}>
           <span>{PlanoTempo(pos)}</span>
-          <div onClick={ir} style={{ flex: 1, height: 14, display: 'flex', alignItems: 'center', cursor: 'pointer' }}><div style={{ width: '100%', height: 7, borderRadius: 9, background: 'var(--p-EDE9FE)', overflow: 'hidden' }}><div style={{ width: `${total ? Math.min(100, pos / total * 100) : 0}%`, height: '100%', background: '#7C3AED' }} /></div></div>
+          <div onClick={ir} style={{ flex: 1, height: 14, display: 'flex', alignItems: 'center', cursor: 'pointer' }}><div style={{ width: '100%', height: 7, borderRadius: 9, background: '#EDE9FE', overflow: 'hidden' }}><div style={{ width: `${total ? Math.min(100, pos / total * 100) : 0}%`, height: '100%', background: '#7C3AED' }} /></div></div>
           <span>{total ? PlanoTempo(total) : '–:––'}</span>
-          <button onClick={() => setLento(v => !v)} style={{ border: `1.5px solid ${lento ? '#6D28D9' : '#DDD6FE'}`, background: lento ? '#6D28D9' : 'var(--c-card)', color: lento ? '#fff' : 'var(--t-6D28D9)', borderRadius: 99, padding: '2px 9px', fontWeight: 800, fontSize: 11.5, fontFamily: 'inherit', cursor: 'pointer' }}>🐢 devagar</button>
+          <button onClick={() => setLento(v => !v)} style={{ border: `1.5px solid ${lento ? '#6D28D9' : '#DDD6FE'}`, background: lento ? '#6D28D9' : '#fff', color: lento ? '#fff' : '#6D28D9', borderRadius: 99, padding: '2px 9px', fontWeight: 800, fontSize: 11.5, fontFamily: 'inherit', cursor: 'pointer' }}>🐢 devagar</button>
         </div>
-        {temTexto && <button onClick={() => setTexto(v => !v)} style={{ marginTop: 8, border: 0, background: 'none', color: 'var(--t-0369A1)', fontWeight: 800, fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer', padding: 0 }}>{texto ? '▼ Esconder o texto' : '📄 Ler o que está sendo dito'}</button>}
+        {temTexto && <button onClick={() => setTexto(v => !v)} style={{ marginTop: 8, border: 0, background: 'none', color: '#0369A1', fontWeight: 800, fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer', padding: 0 }}>{texto ? '▼ Esconder o texto' : '📄 Ler o que está sendo dito'}</button>}
         {temTexto && texto && (segs.length
           ? <div style={{ marginTop: 6 }}><PlanoLinhasTexto segs={segs} pos={pos} ligado={tocando >= 0 || pos > 0} onIr={tempo => { const el = els.current[sel]; if (el) { el.currentTime = tempo; setPos(tempo); } }} /></div>
-          : <div style={{ marginTop: 6, color: 'var(--c-mute)', fontSize: 13 }}>Este áudio ainda não tem texto.</div>)}
-        {erro && <div style={{ marginTop: 6, fontSize: 12, fontWeight: 700, color: 'var(--t-B91C1C)' }}>Não consegui abrir o áudio agora. Confira a internet e tente de novo.</div>}
+          : <div style={{ marginTop: 6, color: '#64748B', fontSize: 13 }}>Este áudio ainda não tem texto.</div>)}
+        {erro && <div style={{ marginTop: 6, fontSize: 12, fontWeight: 700, color: '#B91C1C' }}>Não consegui abrir o áudio agora. Confira a internet e tente de novo.</div>}
       </>}
       {audios.map((x, i) => urls[x.caminho] ? <audio key={x.caminho} ref={e => { els.current[i] = e; }} src={urls[x.caminho]} preload="metadata"
         onPlay={() => { setTocando(i); setSel(i); }} onPause={() => setTocando(c => (c === i ? -1 : c))} onEnded={() => setTocando(c => (c === i ? -1 : c))}
@@ -1363,18 +1359,18 @@ function PlanoCaixaFolha({ caixas, k, onK, onClose }) {
   React.useEffect(() => { PlanoParaDeOuvir(); setTocando(false); return () => PlanoParaDeOuvir(); }, [k]);
   const ouvir = () => { if (tocando) { PlanoParaDeOuvir(); setTocando(false); return; } setTocando(PlanoOuvirExplicacao(c.fala, () => setTocando(false))); };
   const fechar = () => { PlanoParaDeOuvir(); onClose(); };
-  const seta = { width: 40, height: 40, borderRadius: 12, border: 0, background: 'var(--p-F5F3FF)', color: 'var(--t-5B21B6)', fontWeight: 800, fontSize: 20, fontFamily: 'inherit', cursor: 'pointer' };
+  const seta = { width: 40, height: 40, borderRadius: 12, border: 0, background: '#F5F3FF', color: '#5B21B6', fontWeight: 800, fontSize: 20, fontFamily: 'inherit', cursor: 'pointer' };
   return (
     <PlanoFolha onClose={fechar} z={470}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 12 }}>
         <EurekiaAvatar size={52} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: .7, color: 'var(--t-6D28D9)' }}>DR. EUREKIA EXPLICA · QUADRO {k + 1} DE {caixas.length}</div>
-          <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1.2, color: 'var(--c-ink)' }}>{c.titulo}</div>
+          <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: .7, color: '#6D28D9' }}>DR. EUREKIA EXPLICA · QUADRO {k + 1} DE {caixas.length}</div>
+          <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1.2, color: '#0F172A' }}>{c.titulo}</div>
         </div>
       </div>
       <button className="plano-btn violeta" onClick={ouvir}>{tocando ? '⏹ Parar' : '🔊 Ouvir a explicação'}</button>
-      <div style={{ margin: '12px 0 4px', background: 'var(--p-F5F3FF)', border: '1px solid #DDD6FE', borderRadius: 16, padding: '12px 13px', fontSize: 14.5, fontWeight: 600, lineHeight: 1.65, color: 'var(--t-2E1065)' }}><PlanoMd x={c.fala} /></div>
+      <div style={{ margin: '12px 0 4px', background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 16, padding: '12px 13px', fontSize: 14.5, fontWeight: 600, lineHeight: 1.65, color: '#2E1065' }}><PlanoMd x={c.fala} /></div>
       {(c.blocos || []).map((b, i) => <PlanoBloco key={i} b={b} />)}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 18 }}>
         {caixas.length > 1 && <button style={seta} aria-label="Quadro anterior" disabled={k <= 0} onClick={() => onK(k - 1)}>‹</button>}
@@ -1447,7 +1443,7 @@ function PlanoLeitor({ curso, pdf, cobrir, caixas, onCaixa }) {
     }
   };
   const meio = () => { const c = caixa.current; return c ? [c.clientWidth / 2, c.clientHeight / 2] : [0, 0]; };
-  const bt = { width: 38, height: 38, borderRadius: 12, border: 0, background: 'color-mix(in srgb,var(--c-card) 95%,transparent)', boxShadow: '0 3px 10px rgba(0,0,0,.28)', fontWeight: 800, fontSize: 18, fontFamily: 'inherit', cursor: 'pointer', color: 'var(--c-ink)' };
+  const bt = { width: 38, height: 38, borderRadius: 12, border: 0, background: 'rgba(255,255,255,.95)', boxShadow: '0 3px 10px rgba(0,0,0,.28)', fontWeight: 800, fontSize: 18, fontFamily: 'inherit', cursor: 'pointer', color: '#0F172A' };
   return (
     <div ref={caixa} onPointerDown={desce} onPointerMove={mexe} onPointerUp={sobe} onPointerCancel={sobe}
       style={{ position: 'relative', flex: 1, minHeight: 90, overflow: 'hidden', background: '#3B3F4A', touchAction: 'none', cursor: 'grab' }}>
@@ -1456,9 +1452,9 @@ function PlanoLeitor({ curso, pdf, cobrir, caixas, onCaixa }) {
           style={{ display: 'block', userSelect: 'none', WebkitUserDrag: 'none', maxWidth: 'none' }} />
         {(caixas || []).map((c, k) => <div key={'cx' + k} style={{ position: 'absolute', left: `${c.x0 * 100}%`, top: `${c.y0 * 100}%`, width: `${(c.x1 - c.x0) * 100}%`, height: `${(c.y1 - c.y0) * 100}%`, boxSizing: 'border-box', border: '4px solid #7C3AED', borderRadius: 14, background: 'rgba(124,58,237,.08)', pointerEvents: 'none' }}>
           <span style={{ position: 'absolute', right: 14, top: -20, background: '#7C3AED', color: '#fff', borderRadius: 99, padding: '2px 14px', fontWeight: 800, fontSize: 22, lineHeight: 1.25, boxShadow: '0 3px 10px rgba(76,29,149,.5)' }}>💡 Dr. EurekIA</span></div>)}
-        {(cobrir || []).map((c, k) => <div key={k} style={{ position: 'absolute', left: 0, right: 0, top: `${c.y0 * 100}%`, height: `${(c.y1 - c.y0) * 100}%`, background: 'var(--p-F1EDE6)', boxShadow: 'inset 0 0 0 3px #E2DCD2', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: 'var(--c-mute2)', fontWeight: 800, fontSize: 30, padding: 40, boxSizing: 'border-box' }}>Este exercício do livro não faz parte do seu curso.</div>)}
+        {(cobrir || []).map((c, k) => <div key={k} style={{ position: 'absolute', left: 0, right: 0, top: `${c.y0 * 100}%`, height: `${(c.y1 - c.y0) * 100}%`, background: '#F1EDE6', boxShadow: 'inset 0 0 0 3px #E2DCD2', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: '#94A3B8', fontWeight: 800, fontSize: 30, padding: 40, boxSizing: 'border-box' }}>Este exercício do livro não faz parte do seu curso.</div>)}
       </div>}
-      {!url && !erro && <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: 'var(--c-line2)', fontWeight: 800, fontSize: 14 }}>Abrindo a página…</div>}
+      {!url && !erro && <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: '#CBD5E1', fontWeight: 800, fontSize: 14 }}>Abrindo a página…</div>}
       {erro && <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: '#FECACA', fontWeight: 800, fontSize: 14, textAlign: 'center', padding: 24 }}>Não consegui abrir a página agora. Confira a internet e tente de novo.</div>}
       <div data-zoomctl="1" style={{ position: 'absolute', right: 8, top: 8, display: 'flex', flexDirection: 'column', gap: 6, zIndex: 2 }}>
         <button style={bt} aria-label="Aproximar" onClick={() => { const [x, y] = meio(); zoom(1.4, x, y); }}>＋</button>
@@ -1487,10 +1483,10 @@ function PlanoLacunas({ ex, onFim }) {
   const cor = b => (fim ? (certo(b) ? '#16A34A' : '#DC2626') : String(resp[b.id] || '').trim() ? '#6D28D9' : '#7C3AED');
   return (
     <div>
-      <div style={{ display: 'inline-block', fontSize: 10, fontWeight: 800, letterSpacing: .6, textTransform: 'uppercase', color: 'var(--t-5B21B6)', background: 'var(--p-F5F3FF)', border: '1px solid #DDD6FE', padding: '2px 9px', borderRadius: 99, marginBottom: 7 }}>{PLANO_ROTULO_EX.lacunas}</div>
-      {ex.ins && <div style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.4, color: 'var(--c-mute)', marginBottom: 5 }}>{ex.ins}</div>}
+      <div style={{ display: 'inline-block', fontSize: 10, fontWeight: 800, letterSpacing: .6, textTransform: 'uppercase', color: '#5B21B6', background: '#F5F3FF', border: '1px solid #DDD6FE', padding: '2px 9px', borderRadius: 99, marginBottom: 7 }}>{PLANO_ROTULO_EX.lacunas}</div>
+      {ex.ins && <div style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.4, color: '#64748B', marginBottom: 5 }}>{ex.ins}</div>}
       <div style={{ fontSize: 15.5, fontWeight: 800, lineHeight: 1.4, marginBottom: 8 }}>{ex.q}</div>
-      <div style={{ overflow: 'auto', maxHeight: '55vh', border: '1px solid var(--c-line)', borderRadius: 12, background: 'var(--c-card)', WebkitOverflowScrolling: 'touch' }}>
+      <div style={{ overflow: 'auto', maxHeight: '55vh', border: '1px solid #E2E8F0', borderRadius: 12, background: '#fff', WebkitOverflowScrolling: 'touch' }}>
         <div style={{ width: zoom ? '230%' : '100%' }}>
           <PlanoQuadroLivro curso={ex.curso || 'connectivity-1'} pdf={ex.pdf} quadro={ex.quadro} alt="Texto do livro com lacunas">
             {bl.map(b => <button key={b.id} type="button" aria-label={`Lacuna ${b.n}`} onClick={() => ir(b.id)}
@@ -1501,19 +1497,19 @@ function PlanoLacunas({ ex, onFim }) {
       <button type="button" className="plano-btn sec" style={{ marginTop: 8, padding: '8px 10px', fontSize: 13 }} onClick={() => setZoom(z => !z)}>{zoom ? '🔍 Voltar ao tamanho normal' : '🔍 Ampliar o texto'}</button>
       <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
         {bl.map(b => { const ok = fim && certo(b);
-          return <div key={b.id} style={{ background: 'var(--c-card)', border: `1.5px solid ${fim ? (ok ? 'var(--p-BBF7D0)' : '#FECACA') : foco === b.id ? '#7C3AED' : 'var(--c-line)'}`, borderRadius: 14, padding: '10px 12px' }}>
+          return <div key={b.id} style={{ background: '#fff', border: `1.5px solid ${fim ? (ok ? '#BBF7D0' : '#FECACA') : foco === b.id ? '#7C3AED' : '#E2E8F0'}`, borderRadius: 14, padding: '10px 12px' }}>
             <div style={{ display: 'flex', gap: 9, alignItems: 'flex-start' }}>
               <b style={{ minWidth: 24, height: 24, borderRadius: 99, background: cor(b), color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0, marginTop: 1 }}>{b.n}</b>
-              <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.45, color: 'var(--c-ink2)' }}>{b.ctx} <span style={{ color: 'var(--t-7C3AED)', fontWeight: 800 }}>({b.adj})</span></div>
+              <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.45, color: '#334155' }}>{b.ctx} <span style={{ color: '#7C3AED', fontWeight: 800 }}>({b.adj})</span></div>
             </div>
             <input ref={el => { caixas.current[b.id] = el; }} value={resp[b.id] || ''} disabled={!!fim} onFocus={() => setFoco(b.id)} onChange={e => setResp(r => ({ ...r, [b.id]: e.target.value }))}
               autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="Digite aqui"
-              style={{ width: '100%', marginTop: 8, border: `2px solid ${!fim ? 'var(--c-line2)' : ok ? '#22C55E' : '#F87171'}`, borderRadius: 12, padding: '10px 12px', fontSize: 16, fontWeight: 700, fontFamily: 'inherit', outline: 'none', background: !fim ? 'var(--c-card)' : ok ? 'var(--p-F0FDF4)' : 'var(--c-red-bg)' }} />
-            {fim && !ok && <div style={{ marginTop: 5, fontSize: 13, fontWeight: 800, color: 'var(--t-15803D)' }}>✓ {String(b.a).split('|')[0]}</div>}
+              style={{ width: '100%', marginTop: 8, border: `2px solid ${!fim ? '#CBD5E1' : ok ? '#22C55E' : '#F87171'}`, borderRadius: 12, padding: '10px 12px', fontSize: 16, fontWeight: 700, fontFamily: 'inherit', outline: 'none', background: !fim ? '#fff' : ok ? '#F0FDF4' : '#FEF2F2' }} />
+            {fim && !ok && <div style={{ marginTop: 5, fontSize: 13, fontWeight: 800, color: '#15803D' }}>✓ {String(b.a).split('|')[0]}</div>}
           </div>; })}
       </div>
       {!fim && <button className="plano-btn" style={{ marginTop: 12 }} disabled={vazias} onClick={conferir}>Conferir</button>}
-      {fim && <div style={{ marginTop: 11, padding: '10px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, background: fim.ok ? 'var(--p-F0FDF4)' : 'var(--c-warn-bg)', color: fim.ok ? 'var(--t-14532D)' : 'var(--t-78350F)', border: `1px solid ${fim.ok ? 'var(--p-BBF7D0)' : 'var(--c-warn-line)'}` }}>
+      {fim && <div style={{ marginTop: 11, padding: '10px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, background: fim.ok ? '#F0FDF4' : '#FFFBEB', color: fim.ok ? '#14532D' : '#78350F', border: `1px solid ${fim.ok ? '#BBF7D0' : '#FDE68A'}` }}>
         {fim.ok ? '✔ Tudo certo!' : `Você acertou ${fim.certas} de ${bl.length}. A resposta certa aparece em verde embaixo de cada lacuna.`}{ex.exp ? <div style={{ fontWeight: 600, marginTop: 3 }}>{ex.exp}</div> : null}</div>}
     </div>
   );
@@ -1554,7 +1550,7 @@ function PlanoMapa({ ex, onFim }) {
     border: tem ? '2.5px solid #fff' : `2.5px ${selecionada ? 'solid' : 'dashed'} #7C3AED`, background: tem ? c : selecionada ? 'rgba(124,58,237,.28)' : 'rgba(124,58,237,.10)', boxShadow: tem ? `0 0 0 2px ${c}` : 'none', animation: selecionada && !tem ? 'planoPulso 1.2s infinite' : undefined });
   const cheios = ex.chaves || [];
   const mapa = (
-    <div style={{ overflow: 'auto', maxHeight: '62vh', border: '1px solid var(--c-line)', borderRadius: 12, background: 'var(--c-card)', WebkitOverflowScrolling: 'touch' }}>
+    <div style={{ overflow: 'auto', maxHeight: '62vh', border: '1px solid #E2E8F0', borderRadius: 12, background: '#fff', WebkitOverflowScrolling: 'touch' }}>
       <div style={{ width: zoom ? '230%' : '100%' }}>
         <PlanoQuadroLivro curso={ex.curso || 'connectivity-1'} pdf={ex.pdf} quadro={ex.quadro} alt="Mapa do livro">
           {locais
@@ -1563,14 +1559,14 @@ function PlanoMapa({ ex, onFim }) {
               return <button key={p.id} type="button" aria-label={`Lugar ${p.t || p.id}`} disabled={!!fim || !sel} onClick={() => escolher(p.id)}
                 style={{ ...bola(false, false, ''), left: `${p.x * 100}%`, top: `${p.y * 100}%`, width: 40, height: 40, borderColor: sel && !fim ? '#7C3AED' : '#A78BFA', background: quem.length ? 'rgba(124,58,237,.18)' : 'rgba(124,58,237,.08)' }}>
                 {quem.map(x => <span key={x.a.id} style={{ minWidth: 20, height: 20, borderRadius: 99, background: cor(x.a.id), color: '#fff', fontSize: 12, lineHeight: '20px', padding: '0 5px', margin: '0 1px', boxShadow: '0 0 0 1.5px #fff' }}>{x.i + 1}</span>)}
-                {fim && quem.length === 0 && alvos.some(a => certa(a.id) === p.id && conf[a.id] === false) && <span style={{ position: 'absolute', top: -19, left: '50%', transform: 'translateX(-50%)', background: 'var(--p-FEF3C7)', color: 'var(--c-warn-ink)', fontSize: 11, padding: '0 6px', borderRadius: 99, border: '1px solid var(--c-warn-line)', whiteSpace: 'nowrap' }}>certo: {alvos.map((a, i) => (certa(a.id) === p.id && conf[a.id] === false ? i + 1 : '')).filter(Boolean).join(', ')}</span>}
+                {fim && quem.length === 0 && alvos.some(a => certa(a.id) === p.id && conf[a.id] === false) && <span style={{ position: 'absolute', top: -19, left: '50%', transform: 'translateX(-50%)', background: '#FEF3C7', color: '#92400E', fontSize: 11, padding: '0 6px', borderRadius: 99, border: '1px solid #FDE68A', whiteSpace: 'nowrap' }}>certo: {alvos.map((a, i) => (certa(a.id) === p.id && conf[a.id] === false ? i + 1 : '')).filter(Boolean).join(', ')}</span>}
               </button>;
             })
             : pontos.map(p => {
               const v = resp[p.id]; const errado = fim && conf[p.id] === false;
               return <button key={p.id} type="button" aria-label="Círculo do mapa" onClick={() => tocarAlvo(p.id)} style={{ ...bola(sel === p.id && conf[p.id] === undefined, !!v, cor(p.id)), left: `${p.x * 100}%`, top: `${p.y * 100}%` }}>
                 {v || ''}
-                {errado && <span style={{ position: 'absolute', top: -19, left: '50%', transform: 'translateX(-50%)', background: 'var(--p-FEF3C7)', color: 'var(--c-warn-ink)', fontSize: 11, padding: '0 6px', borderRadius: 99, border: '1px solid var(--c-warn-line)', whiteSpace: 'nowrap' }}>certo: {certa(p.id)}</span>}
+                {errado && <span style={{ position: 'absolute', top: -19, left: '50%', transform: 'translateX(-50%)', background: '#FEF3C7', color: '#92400E', fontSize: 11, padding: '0 6px', borderRadius: 99, border: '1px solid #FDE68A', whiteSpace: 'nowrap' }}>certo: {certa(p.id)}</span>}
               </button>;
             })}
         </PlanoQuadroLivro>
@@ -1580,26 +1576,26 @@ function PlanoMapa({ ex, onFim }) {
   const abaixo = locais
     ? <div style={{ display: 'grid', gap: 7, marginTop: 10 }}>
       {alvos.map((a, i) => { const v = resp[a.id]; const l = v ? (pontos.find(p => p.id === v) || {}) : null; const ativo = sel === a.id && !fim;
-        return <button key={a.id} type="button" disabled={!!fim} onClick={() => tocarAlvo(a.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', background: ativo ? 'var(--p-F5F3FF)' : 'var(--c-card)', border: `1.5px solid ${conf[a.id] === true ? '#22C55E' : conf[a.id] === false ? '#F87171' : ativo ? '#7C3AED' : 'var(--c-line)'}`, borderRadius: 12, padding: '9px 12px', fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: fim ? 'default' : 'pointer' }}>
+        return <button key={a.id} type="button" disabled={!!fim} onClick={() => tocarAlvo(a.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', background: ativo ? '#F5F3FF' : '#fff', border: `1.5px solid ${conf[a.id] === true ? '#22C55E' : conf[a.id] === false ? '#F87171' : ativo ? '#7C3AED' : '#E2E8F0'}`, borderRadius: 12, padding: '9px 12px', fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: fim ? 'default' : 'pointer' }}>
           <b style={{ width: 24, height: 24, borderRadius: '50%', background: cor(a.id), color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>{i + 1}</b>
           <span style={{ flex: 1 }}>{a.t}</span>
-          <span style={{ fontWeight: 800, color: l ? 'var(--t-4C1D95)' : 'var(--c-mute2)', fontSize: 13 }}>{l ? `lugar ${l.t || l.id}` : ativo ? 'toque no lugar do mapa' : 'sem resposta'}</span>
-          {fim && conf[a.id] === false && <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--t-15803D)' }}>✓ {rotuloCerto(a)}</span>}
+          <span style={{ fontWeight: 800, color: l ? '#4C1D95' : '#94A3B8', fontSize: 13 }}>{l ? `lugar ${l.t || l.id}` : ativo ? 'toque no lugar do mapa' : 'sem resposta'}</span>
+          {fim && conf[a.id] === false && <span style={{ fontSize: 12, fontWeight: 800, color: '#15803D' }}>✓ {rotuloCerto(a)}</span>}
         </button>; })}
     </div>
     : <div style={{ display: 'grid', gap: 7, marginTop: 10 }}>
       {cheios.map(c => { const usado = pontos.find(p => resp[p.id] === c.k);
-        return <button key={c.k} type="button" disabled={!!fim || !sel} onClick={() => escolher(c.k)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', background: usado ? 'var(--c-soft2)' : 'var(--c-card)', border: '1.5px solid var(--c-line)', borderRadius: 12, padding: '9px 12px', fontSize: 14, fontWeight: 700, fontFamily: 'inherit', color: usado ? 'var(--c-mute)' : 'var(--c-ink)', cursor: fim || !sel ? 'default' : 'pointer' }}>
-          <b style={{ width: 26, height: 26, borderRadius: '50%', background: usado ? '#6D28D9' : 'var(--p-EDE9FE)', color: usado ? '#fff' : 'var(--t-5B21B6)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{c.k}</b>
-          <span style={{ flex: 1 }}>{c.t}</span>{usado && <span style={{ fontSize: 11.5, color: 'var(--c-mute)' }}>no mapa ✓</span>}</button>; })}
+        return <button key={c.k} type="button" disabled={!!fim || !sel} onClick={() => escolher(c.k)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', background: usado ? '#F8FAFC' : '#fff', border: '1.5px solid #E2E8F0', borderRadius: 12, padding: '9px 12px', fontSize: 14, fontWeight: 700, fontFamily: 'inherit', color: usado ? '#64748B' : '#0F172A', cursor: fim || !sel ? 'default' : 'pointer' }}>
+          <b style={{ width: 26, height: 26, borderRadius: '50%', background: usado ? '#6D28D9' : '#EDE9FE', color: usado ? '#fff' : '#5B21B6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{c.k}</b>
+          <span style={{ flex: 1 }}>{c.t}</span>{usado && <span style={{ fontSize: 11.5, color: '#64748B' }}>no mapa ✓</span>}</button>; })}
     </div>;
   const erros = Object.values(conf).filter(v => v === false).length; const certas = alvos.length - erros;
   return (
     <div>
-      <div style={{ display: 'inline-block', fontSize: 10, fontWeight: 800, letterSpacing: .6, textTransform: 'uppercase', color: 'var(--t-5B21B6)', background: 'var(--p-F5F3FF)', border: '1px solid #DDD6FE', padding: '2px 9px', borderRadius: 99, marginBottom: 7 }}>{PLANO_ROTULO_EX.mapa}</div>
-      {ex.ins && <div style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.4, color: 'var(--c-mute)', marginBottom: 5 }}>{ex.ins}</div>}
+      <div style={{ display: 'inline-block', fontSize: 10, fontWeight: 800, letterSpacing: .6, textTransform: 'uppercase', color: '#5B21B6', background: '#F5F3FF', border: '1px solid #DDD6FE', padding: '2px 9px', borderRadius: 99, marginBottom: 7 }}>{PLANO_ROTULO_EX.mapa}</div>
+      {ex.ins && <div style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.4, color: '#64748B', marginBottom: 5 }}>{ex.ins}</div>}
       <div style={{ fontSize: 15.5, fontWeight: 800, lineHeight: 1.4, marginBottom: 4 }}>{ex.q}</div>
-      <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--t-7C3AED)', marginBottom: 8 }}>{locais ? '1) Toque na conversa  2) Toque no lugar do mapa' : '1) Toque num círculo do mapa  2) Toque no lugar da lista'}</div>
+      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#7C3AED', marginBottom: 8 }}>{locais ? '1) Toque na conversa  2) Toque no lugar do mapa' : '1) Toque num círculo do mapa  2) Toque no lugar da lista'}</div>
       {mapa}
       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
         <button type="button" className="plano-btn sec" style={{ padding: '8px 10px', fontSize: 13 }} onClick={() => setZoom(z => !z)}>{zoom ? '🔍 Voltar ao tamanho normal' : '🔍 Ampliar o mapa'}</button>
@@ -1607,8 +1603,8 @@ function PlanoMapa({ ex, onFim }) {
       </div>
       {abaixo}
       {!fim && <button className="plano-btn" style={{ marginTop: 12 }} disabled={!completo} onClick={conferir}>Conferir</button>}
-      {tent > 0 && !fim && erros > 0 && <div style={{ marginTop: 10, padding: '10px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, background: 'var(--c-red-bg)', color: 'var(--t-7F1D1D)', border: '1px solid #FECACA' }}>Você acertou {certas} de {alvos.length}. Ouça de novo, toque nos vermelhos e troque a resposta. ({tent} de 3 conferências)</div>}
-      {fim && <div style={{ marginTop: 11, padding: '10px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, background: fim.erros ? 'var(--c-red-bg)' : 'var(--p-F0FDF4)', color: fim.erros ? 'var(--t-7F1D1D)' : 'var(--t-14532D)', border: `1px solid ${fim.erros ? '#FECACA' : 'var(--p-BBF7D0)'}` }}>
+      {tent > 0 && !fim && erros > 0 && <div style={{ marginTop: 10, padding: '10px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, background: '#FEF2F2', color: '#7F1D1D', border: '1px solid #FECACA' }}>Você acertou {certas} de {alvos.length}. Ouça de novo, toque nos vermelhos e troque a resposta. ({tent} de 3 conferências)</div>}
+      {fim && <div style={{ marginTop: 11, padding: '10px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, background: fim.erros ? '#FEF2F2' : '#F0FDF4', color: fim.erros ? '#7F1D1D' : '#14532D', border: `1px solid ${fim.erros ? '#FECACA' : '#BBF7D0'}` }}>
         {fim.erros ? `Você acertou ${alvos.length - fim.erros} de ${alvos.length}. O certo aparece em amarelo. Ouça o áudio de novo para entender.` : (tent === 1 ? '✔ Tudo certo de primeira!' : '✔ Agora sim, tudo certo!')}{ex.exp ? <div style={{ fontWeight: 600, marginTop: 3 }}>{ex.exp}</div> : null}</div>}
     </div>
   );
@@ -1629,20 +1625,20 @@ function PlanoExercicio({ ex, onFim }) {
   const opcoes = (ex.t === 'mc' || ex.t === 'ouvir') && ex.o.map((o, k) => <button key={k} disabled={!!fim} onClick={() => { setSel(k); fechar(k === ex.c); }} className={`plano-opt ${fim ? (k === ex.c ? 'ok' : k === sel ? 'no' : '') : ''}`}>{o}</button>);
   const caixaTxt = (ex.t === 'gap' || ex.t === 'ditado') && <div style={{ marginTop: 10 }}>
     <input value={txt} disabled={!!fim} onChange={e => setTxt(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && txt.trim()) confere(txt); }} placeholder={ex.t === 'ditado' ? 'Escreva o que você ouviu' : 'Digite a resposta'} autoCapitalize="none" autoCorrect="off" spellCheck="false"
-      style={{ width: '100%', border: `2px solid ${!fim ? 'var(--c-line2)' : fim.ok ? '#22C55E' : '#F87171'}`, borderRadius: 14, padding: '12px 14px', fontSize: 16, fontWeight: 700, fontFamily: 'inherit', outline: 'none', background: !fim ? 'var(--c-card)' : fim.ok ? 'var(--p-F0FDF4)' : 'var(--c-red-bg)' }} />
+      style={{ width: '100%', border: `2px solid ${!fim ? '#CBD5E1' : fim.ok ? '#22C55E' : '#F87171'}`, borderRadius: 14, padding: '12px 14px', fontSize: 16, fontWeight: 700, fontFamily: 'inherit', outline: 'none', background: !fim ? '#fff' : fim.ok ? '#F0FDF4' : '#FEF2F2' }} />
     {!fim && <button className="plano-btn" style={{ marginTop: 9 }} disabled={!txt.trim()} onClick={() => confere(txt)}>Conferir</button>}
   </div>;
   const ordem = ex.t === 'order' && <div style={{ marginTop: 8 }}>
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, minHeight: 46, padding: 8, borderRadius: 12, border: '1.5px dashed var(--c-line2)', marginBottom: 9 }}>
-      {montada.map(c => <button key={c.k} disabled={!!fim} onClick={() => setMontada(m => m.filter(x => x !== c))} style={{ padding: '7px 11px', borderRadius: 10, background: 'var(--p-F5F3FF)', border: '1.5px solid #DDD6FE', fontWeight: 800, fontSize: 14, fontFamily: 'inherit', cursor: 'pointer' }}>{c.w}</button>)}
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, minHeight: 46, padding: 8, borderRadius: 12, border: '1.5px dashed #CBD5E1', marginBottom: 9 }}>
+      {montada.map(c => <button key={c.k} disabled={!!fim} onClick={() => setMontada(m => m.filter(x => x !== c))} style={{ padding: '7px 11px', borderRadius: 10, background: '#F5F3FF', border: '1.5px solid #DDD6FE', fontWeight: 800, fontSize: 14, fontFamily: 'inherit', cursor: 'pointer' }}>{c.w}</button>)}
     </div>
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
-      {banco.filter(c => !montada.includes(c)).map(c => <button key={c.k} disabled={!!fim} onClick={() => setMontada(m => [...m, c])} style={{ padding: '7px 11px', borderRadius: 10, background: 'var(--c-card)', border: '1.5px solid var(--c-line2)', fontWeight: 800, fontSize: 14, fontFamily: 'inherit', cursor: 'pointer' }}>{c.w}</button>)}
+      {banco.filter(c => !montada.includes(c)).map(c => <button key={c.k} disabled={!!fim} onClick={() => setMontada(m => [...m, c])} style={{ padding: '7px 11px', borderRadius: 10, background: '#fff', border: '1.5px solid #CBD5E1', fontWeight: 800, fontSize: 14, fontFamily: 'inherit', cursor: 'pointer' }}>{c.w}</button>)}
     </div>
     {!fim && <button className="plano-btn" style={{ marginTop: 10 }} disabled={montada.length !== ex.w.length} onClick={() => fechar(PlanoNormResp(montada.map(c => c.w).join(' ')) === PlanoNormResp(ex.w.join(' ')))}>Conferir</button>}
   </div>;
   const ligar = ex.t === 'match' && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 6 }}>
-    <div>{ex.pares.map((p, k) => <button key={k} disabled={!!ligados[k]} onClick={() => setSelE(k)} className={`plano-opt ${ligados[k] ? 'ok' : selE === k ? '' : ''}`} style={selE === k && !ligados[k] ? { borderColor: '#7C3AED', background: 'var(--p-F5F3FF)' } : undefined}>{p[0]}</button>)}</div>
+    <div>{ex.pares.map((p, k) => <button key={k} disabled={!!ligados[k]} onClick={() => setSelE(k)} className={`plano-opt ${ligados[k] ? 'ok' : selE === k ? '' : ''}`} style={selE === k && !ligados[k] ? { borderColor: '#7C3AED', background: '#F5F3FF' } : undefined}>{p[0]}</button>)}</div>
     <div>{dir.map(c => <button key={c.k} disabled={!!ligados[c.k]} onClick={() => {
       if (selE === null) return;
       if (selE === c.k) { const nl = { ...ligados, [c.k]: true }; setLigados(nl); setSelE(null); if (Object.keys(nl).length === ex.pares.length) fechar(erros === 0, erros ? `Você errou ${erros} ligação(ões), mas completou.` : 'Todas ligadas de primeira.'); }
@@ -1654,26 +1650,26 @@ function PlanoExercicio({ ex, onFim }) {
     let n = -1; const vazias = (ex.a || []).some((_, k) => !String(resp[k] || '').trim());
     const certo = k => String((ex.a || [])[k] || '').split('|').map(PlanoNormResp).includes(PlanoNormResp(resp[k] || ''));
     return <div style={{ marginTop: 8 }}>
-      <div style={{ background: 'var(--c-card)', border: '1px solid var(--c-line)', borderRadius: 14, padding: '10px 12px' }}>
-        {(ex.linhas || []).map((l, i) => <div key={i} style={{ fontSize: 15, fontWeight: 700, lineHeight: 2.1, color: 'var(--c-ink)' }}>
+      <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 14, padding: '10px 12px' }}>
+        {(ex.linhas || []).map((l, i) => <div key={i} style={{ fontSize: 15, fontWeight: 700, lineHeight: 2.1, color: '#0F172A' }}>
           {String(l).split('____').map((p, j, tudo) => { const k = j < tudo.length - 1 ? ++n : -1;
             return <React.Fragment key={j}>{p}{k >= 0 && <span style={{ display: 'inline-block', verticalAlign: 'baseline' }}>
               <input value={resp[k] || ''} disabled={!!fim} onChange={e => setResp(r => ({ ...r, [k]: e.target.value }))} autoCapitalize="none" autoCorrect="off" spellCheck={false}
-                style={{ width: Math.max(70, 11 * Math.max(...String((ex.a || [])[k] || '').split('|').map(x => x.length)) + 22), maxWidth: '100%', margin: '0 3px', border: 0, borderBottom: `2.5px solid ${!fim ? '#A78BFA' : certo(k) ? '#22C55E' : '#F87171'}`, background: !fim ? 'var(--p-F5F3FF)' : certo(k) ? 'var(--p-F0FDF4)' : 'var(--c-red-bg)', borderRadius: 6, padding: '3px 5px', fontSize: 15, fontWeight: 800, fontFamily: 'inherit', outline: 'none', textAlign: 'center' }} />
-              {fim && !certo(k) && <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--t-15803D)', marginLeft: 2 }}>✓ {String((ex.a || [])[k]).split('|')[0]}</span>}</span>}</React.Fragment>; })}
+                style={{ width: Math.max(70, 11 * Math.max(...String((ex.a || [])[k] || '').split('|').map(x => x.length)) + 22), maxWidth: '100%', margin: '0 3px', border: 0, borderBottom: `2.5px solid ${!fim ? '#A78BFA' : certo(k) ? '#22C55E' : '#F87171'}`, background: !fim ? '#F5F3FF' : certo(k) ? '#F0FDF4' : '#FEF2F2', borderRadius: 6, padding: '3px 5px', fontSize: 15, fontWeight: 800, fontFamily: 'inherit', outline: 'none', textAlign: 'center' }} />
+              {fim && !certo(k) && <span style={{ fontSize: 11.5, fontWeight: 800, color: '#15803D', marginLeft: 2 }}>✓ {String((ex.a || [])[k]).split('|')[0]}</span>}</span>}</React.Fragment>; })}
         </div>)}
       </div>
       {!fim && <button className="plano-btn" style={{ marginTop: 9 }} disabled={vazias} onClick={() => fechar((ex.a || []).every((_, k) => certo(k)))}>Conferir</button>}
     </div>;
   })();
   const fala = ex.t === 'speak' && <div style={{ marginTop: 6 }}>
-    {ex.dica && <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--c-mute)', lineHeight: 1.45, marginBottom: 10 }}>{ex.dica}</div>}
+    {ex.dica && <div style={{ fontSize: 13, fontWeight: 700, color: '#64748B', lineHeight: 1.45, marginBottom: 10 }}>{ex.dica}</div>}
     <PlanoFalaExercicio ex={ex} feito={!!fim} onFeito={() => fechar(true)} />
   </div>;
   return (
     <div>
-      <div style={{ display: 'inline-block', fontSize: 10, fontWeight: 800, letterSpacing: .6, textTransform: 'uppercase', color: 'var(--t-5B21B6)', background: 'var(--p-F5F3FF)', border: '1px solid #DDD6FE', padding: '2px 9px', borderRadius: 99, marginBottom: 7 }}>{PLANO_ROTULO_EX[ex.t] || 'Exercício'}</div>
-      {ex.ins && <div style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.4, color: 'var(--c-mute)', marginBottom: 5 }}>{ex.ins}</div>}
+      <div style={{ display: 'inline-block', fontSize: 10, fontWeight: 800, letterSpacing: .6, textTransform: 'uppercase', color: '#5B21B6', background: '#F5F3FF', border: '1px solid #DDD6FE', padding: '2px 9px', borderRadius: 99, marginBottom: 7 }}>{PLANO_ROTULO_EX[ex.t] || 'Exercício'}</div>
+      {ex.ins && <div style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.4, color: '#64748B', marginBottom: 5 }}>{ex.ins}</div>}
       <div style={{ fontSize: 15.5, fontWeight: 800, lineHeight: 1.4, marginBottom: 6 }}>{ex.q}</div>
       {(ex.t === 'ouvir' || ex.t === 'ditado') && <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
         <button className="plano-btn sec" style={{ width: 'auto', padding: '9px 14px', fontSize: 14 }} onClick={() => PlanoFalar(ex.fala)}>🔊 Ouvir</button>
@@ -1681,9 +1677,9 @@ function PlanoExercicio({ ex, onFim }) {
       </div>}
       {ex.t === 'vf' && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 7 }}>{[[true, 'Verdadeiro'], [false, 'Falso']].map(([v, l]) => <button key={l} disabled={!!fim} onClick={() => { setSel(v); fechar(v === ex.c); }} className={`plano-opt ${fim ? (v === ex.c ? 'ok' : v === sel ? 'no' : '') : ''}`} style={{ textAlign: 'center', marginTop: 0 }}>{l}</button>)}</div>}
       {opcoes}{caixaTxt}{ordem}{ligar}{conv}{fala}
-      {fim && ex.t !== 'speak' && ex.t !== 'match' && <div style={{ marginTop: 11, padding: '10px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, background: fim.ok ? 'var(--p-F0FDF4)' : 'var(--c-red-bg)', color: fim.ok ? 'var(--t-14532D)' : 'var(--t-7F1D1D)', border: `1px solid ${fim.ok ? 'var(--p-BBF7D0)' : '#FECACA'}` }}>
+      {fim && ex.t !== 'speak' && ex.t !== 'match' && <div style={{ marginTop: 11, padding: '10px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, background: fim.ok ? '#F0FDF4' : '#FEF2F2', color: fim.ok ? '#14532D' : '#7F1D1D', border: `1px solid ${fim.ok ? '#BBF7D0' : '#FECACA'}` }}>
         {fim.ok ? '✔ Isso!' : `✘ A resposta certa é: ${certaTxt}`}{ex.exp ? <div style={{ fontWeight: 600, marginTop: 3 }}>{ex.exp}</div> : null}</div>}
-      {fim && ex.t === 'match' && <div style={{ marginTop: 11, padding: '10px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, background: fim.ok ? 'var(--p-F0FDF4)' : 'var(--c-warn-bg)', color: fim.ok ? 'var(--t-14532D)' : 'var(--t-78350F)', border: `1px solid ${fim.ok ? 'var(--p-BBF7D0)' : 'var(--c-warn-line)'}` }}>{fim.ok ? '✔ ' : ''}{fim.extra}</div>}
+      {fim && ex.t === 'match' && <div style={{ marginTop: 11, padding: '10px 13px', borderRadius: 14, fontSize: 13.5, fontWeight: 700, background: fim.ok ? '#F0FDF4' : '#FFFBEB', color: fim.ok ? '#14532D' : '#78350F', border: `1px solid ${fim.ok ? '#BBF7D0' : '#FDE68A'}` }}>{fim.ok ? '✔ ' : ''}{fim.extra}</div>}
     </div>
   );
 }
@@ -1715,28 +1711,28 @@ function PlanoPreviaTexto(t) {
   return PlanoCorta(com.length <= PLANO_PREVIA_IA_MAX ? com : (pag + resto).replace(/\*/g, ''), PLANO_PREVIA_IA_MAX);
 }
 function PlanoPreviaFolha({ previa, onEntendi, onPerguntar }) {
-  const rotulo = { fontSize: 11, fontWeight: 800, letterSpacing: .7, color: 'var(--t-6D28D9)', margin: '0 2px 6px' };
+  const rotulo = { fontSize: 11, fontWeight: 800, letterSpacing: .7, color: '#6D28D9', margin: '0 2px 6px' };
   return (
     <div role="dialog" aria-modal="true" aria-label="Prévia da página, com o Dr. EurekIA" style={{ position: 'absolute', inset: 0, zIndex: 20, background: 'rgba(15,23,42,.64)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
-      <div style={{ width: '100%', maxWidth: 410, maxHeight: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--c-card)', borderRadius: 26, boxShadow: '0 24px 60px rgba(0,0,0,.4)', animation: 'planoSurge .25s' }}>
+      <div style={{ width: '100%', maxWidth: 410, maxHeight: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff', borderRadius: 26, boxShadow: '0 24px 60px rgba(0,0,0,.4)', animation: 'planoSurge .25s' }}>
         <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', background: 'linear-gradient(150deg,#7C3AED,#4C1D95)', color: '#fff' }}>
           <EurekiaAvatar size={64} />
           <div><div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .7, opacity: .8 }}>ANTES DE COMEÇAR</div><div style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.15 }}>Dr. EurekIA</div></div>
         </div>
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px 18px 6px' }}>
-          {previa.intro && <div style={{ fontSize: 14.5, fontWeight: 700, lineHeight: 1.5, color: 'var(--c-ink)', margin: '0 0 12px' }}><PlanoMd x={previa.intro} /></div>}
+          {previa.intro && <div style={{ fontSize: 14.5, fontWeight: 700, lineHeight: 1.5, color: '#0F172A', margin: '0 0 12px' }}><PlanoMd x={previa.intro} /></div>}
           {previa.topicos.length > 0 && <>
             <div style={rotulo}>NESTA PÁGINA</div>
             <div style={{ display: 'grid', gap: 7, margin: '0 0 12px' }}>
-              {previa.topicos.map((x, i) => <div key={i} style={{ display: 'flex', gap: 9, alignItems: 'flex-start', background: 'var(--c-soft2)', border: '1px solid var(--c-line)', borderRadius: 14, padding: '9px 12px', fontSize: 13.5, fontWeight: 600, lineHeight: 1.45, color: 'var(--c-ink2)' }}>
-                <span style={{ color: 'var(--t-7C3AED)', fontWeight: 800 }}>•</span><span style={{ minWidth: 0, overflowWrap: 'anywhere' }}><PlanoMd x={x} /></span></div>)}
+              {previa.topicos.map((x, i) => <div key={i} style={{ display: 'flex', gap: 9, alignItems: 'flex-start', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 14, padding: '9px 12px', fontSize: 13.5, fontWeight: 600, lineHeight: 1.45, color: '#334155' }}>
+                <span style={{ color: '#7C3AED', fontWeight: 800 }}>•</span><span style={{ minWidth: 0, overflowWrap: 'anywhere' }}><PlanoMd x={x} /></span></div>)}
             </div>
           </>}
-          {previa.fazer && <div style={{ background: 'var(--p-F5F3FF)', border: '1px solid #DDD6FE', borderRadius: 14, padding: '10px 12px', margin: '0 0 12px' }}>
+          {previa.fazer && <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 14, padding: '10px 12px', margin: '0 0 12px' }}>
             <div style={{ ...rotulo, margin: '0 0 3px' }}>O QUE FAZER</div>
-            <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.5, color: 'var(--t-3B0764)' }}><PlanoMd x={previa.fazer} /></div>
+            <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.5, color: '#3B0764' }}><PlanoMd x={previa.fazer} /></div>
           </div>}
-          <div style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, color: 'var(--t-5B21B6)', margin: '0 2px 8px' }}>Qualquer dúvida é só falar comigo. 🙂</div>
+          <div style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.45, color: '#5B21B6', margin: '0 2px 8px' }}>Qualquer dúvida é só falar comigo. 🙂</div>
         </div>
         <div style={{ flexShrink: 0, padding: '10px 18px calc(18px + env(safe-area-inset-bottom, 0px))' }}>
           <button className="plano-btn violeta" onClick={onEntendi}>Entendi, vamos lá</button>
@@ -1795,45 +1791,45 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, 
   }, [res]);
   const recomecar = () => { setI(0); setRes([]); setRespondeu(false); setRetomou(false); setSalvo(0); sigSalva.current = ''; if (onSalvar && !semGravar) onSalvar(null); };
   const caixas = pdf === t.pdf && Array.isArray(t.caixas) && t.caixas.length ? t.caixas : null;
-  const pagina = pdf - 14; const btn = { width: 34, height: 34, borderRadius: 10, border: 0, background: 'var(--p-F5F3FF)', color: 'var(--t-5B21B6)', fontWeight: 800, fontSize: 18, fontFamily: 'inherit', cursor: 'pointer' };
+  const pagina = pdf - 14; const btn = { width: 34, height: 34, borderRadius: 10, border: 0, background: '#F5F3FF', color: '#5B21B6', fontWeight: 800, fontSize: 18, fontFamily: 'inherit', cursor: 'pointer' };
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(15,23,42,.4)', display: 'flex', justifyContent: 'center' }}>
-      <div style={{ width: '100%', maxWidth: 480, height: '100%', background: 'var(--c-bg)', display: 'flex', flexDirection: 'column', animation: 'planoSurge .22s' }}>
-        <div style={{ background: 'var(--c-card)', borderBottom: '1px solid rgba(var(--brand-rgb),.12)', padding: '9px 10px', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          <button onClick={sair} aria-label="Fechar" style={{ width: 36, height: 36, borderRadius: 12, border: 0, background: 'var(--c-soft)', fontSize: 18, fontWeight: 800, color: 'var(--c-ink2)', cursor: 'pointer' }}>✕</button>
+      <div style={{ width: '100%', maxWidth: 480, height: '100%', background: '#F6F1EA', display: 'flex', flexDirection: 'column', animation: 'planoSurge .22s' }}>
+        <div style={{ background: '#fff', borderBottom: '1px solid rgba(var(--brand-rgb),.12)', padding: '9px 10px', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <button onClick={sair} aria-label="Fechar" style={{ width: 36, height: 36, borderRadius: 12, border: 0, background: '#F1F5F9', fontSize: 18, fontWeight: 800, color: '#475569', cursor: 'pointer' }}>✕</button>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--c-ink)', lineHeight: 1.15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.titulo}</div>
-            <div style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--c-mute)' }}>{pos ? `p. ${pagina} · tarefa ${pos.n} de ${pos.de}` : `Connectivity 1 · página ${pagina}`}{salvo > 0 && <span style={{ marginLeft: 6, color: salvo === 2 ? 'var(--t-15803D)' : 'var(--t-B45309)' }}>{salvo === 2 ? '✓ salvo' : 'salvando…'}</span>}</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A', lineHeight: 1.15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.titulo}</div>
+            <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748B' }}>{pos ? `p. ${pagina} · tarefa ${pos.n} de ${pos.de}` : `Connectivity 1 · página ${pagina}`}{salvo > 0 && <span style={{ marginLeft: 6, color: salvo === 2 ? '#15803D' : '#B45309' }}>{salvo === 2 ? '✓ salvo' : 'salvando…'}</span>}</div>
           </div>
           <button style={btn} aria-label="Página anterior" disabled={pdf <= 15} onClick={() => setPdf(p => p - 1)}>‹</button>
           <button style={btn} aria-label="Próxima página" disabled={pdf >= 177} onClick={() => setPdf(p => p + 1)}>›</button>
           {prev && <button onClick={() => setVerPrev(true)} aria-label="Rever a prévia desta página" style={{ ...btn, width: 'auto', padding: '0 8px', fontSize: 12, whiteSpace: 'nowrap' }}>💡 Prévia</button>}
-          {onAsk && <button onClick={() => onAsk()} aria-label="Perguntar ao Dr. EurekIA" title="Tem uma dúvida? Pergunte ao Dr. EurekIA" style={{ display: 'flex', alignItems: 'center', gap: 3, height: 38, padding: '0 9px 0 3px', borderRadius: 99, border: 0, background: 'var(--p-F5F3FF)', boxShadow: '0 2px 8px rgba(109,40,217,.28)', cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit' }}><EurekiaAvatar size={32} /><span style={{ fontSize: 20, lineHeight: 1 }}>💡</span></button>}
+          {onAsk && <button onClick={() => onAsk()} aria-label="Perguntar ao Dr. EurekIA" title="Tem uma dúvida? Pergunte ao Dr. EurekIA" style={{ display: 'flex', alignItems: 'center', gap: 3, height: 38, padding: '0 9px 0 3px', borderRadius: 99, border: 0, background: '#F5F3FF', boxShadow: '0 2px 8px rgba(109,40,217,.28)', cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit' }}><EurekiaAvatar size={32} /><span style={{ fontSize: 20, lineHeight: 1 }}>💡</span></button>}
         </div>
-        {ret && retomou && !acabou && <div style={{ background: 'var(--p-EDE9FE)', borderBottom: '1px solid #DDD6FE', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 800, color: 'var(--t-4C1D95)', flexShrink: 0 }}>
+        {ret && retomou && !acabou && <div style={{ background: '#EDE9FE', borderBottom: '1px solid #DDD6FE', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 800, color: '#4C1D95', flexShrink: 0 }}>
           <span style={{ flex: 1, lineHeight: 1.3 }}>↩ Voltamos onde você parou: exercício {Math.min(ret.i + 1, total)} de {total}.</span>
-          <button onClick={recomecar} style={{ padding: '5px 10px', borderRadius: 99, background: 'var(--c-card)', border: '1.5px solid #C4B5FD', fontWeight: 800, fontSize: 11, color: 'var(--t-5B21B6)', whiteSpace: 'nowrap', fontFamily: 'inherit', cursor: 'pointer' }}>Recomeçar do 1</button>
+          <button onClick={recomecar} style={{ padding: '5px 10px', borderRadius: 99, background: '#fff', border: '1.5px solid #C4B5FD', fontWeight: 800, fontSize: 11, color: '#5B21B6', whiteSpace: 'nowrap', fontFamily: 'inherit', cursor: 'pointer' }}>Recomeçar do 1</button>
         </div>}
         {audiosTopo.length > 0 && pdf === t.pdf && <PlanoAudiosPagina audios={audiosTopo} />}
         <PlanoLeitor curso={cursoId} pdf={pdf} cobrir={pdf === t.pdf ? t.cobrir : null} caixas={caixas} onCaixa={setCx} />
         {total === 0
-          ? <div style={{ padding: '10px 14px calc(12px + env(safe-area-inset-bottom, 0px))', background: 'var(--c-card)', borderTop: '1px solid rgba(var(--brand-rgb),.12)', flexShrink: 0 }}>
+          ? <div style={{ padding: '10px 14px calc(12px + env(safe-area-inset-bottom, 0px))', background: '#fff', borderTop: '1px solid rgba(var(--brand-rgb),.12)', flexShrink: 0 }}>
             {caixas && <button className="plano-btn sec" style={{ marginBottom: 8 }} onClick={() => setCx(0)}>💡 Ver a explicação do Dr. EurekIA</button>}
             <button className="plano-btn violeta" onClick={() => onFeita()}>Já li a página ✓</button>
             {proxima && onProxima && <button className="plano-btn sec" style={{ marginTop: 8 }} onClick={() => onProxima()}>Já li e ir para a próxima ›</button>}</div>
-          : <div style={{ background: 'var(--c-card)', borderTopLeftRadius: 20, borderTopRightRadius: 20, boxShadow: '0 -8px 24px rgba(15,23,42,.18)', flexShrink: 0, display: 'flex', flexDirection: 'column', height: aberta ? '54%' : 'auto', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-            {caixas && <button onClick={() => setCx(0)} style={{ width: '100%', border: 0, background: 'var(--p-F5F3FF)', color: 'var(--t-5B21B6)', fontWeight: 800, fontSize: 13, padding: '9px 14px', borderTopLeftRadius: 20, borderTopRightRadius: 20, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>💡 Ver a explicação do Dr. EurekIA</button>}
+          : <div style={{ background: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, boxShadow: '0 -8px 24px rgba(15,23,42,.18)', flexShrink: 0, display: 'flex', flexDirection: 'column', height: aberta ? '54%' : 'auto', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+            {caixas && <button onClick={() => setCx(0)} style={{ width: '100%', border: 0, background: '#F5F3FF', color: '#5B21B6', fontWeight: 800, fontSize: 13, padding: '9px 14px', borderTopLeftRadius: 20, borderTopRightRadius: 20, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>💡 Ver a explicação do Dr. EurekIA</button>}
             <button onClick={() => setAberta(a => !a)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', border: 0, background: 'none', padding: '11px 14px 10px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left', flexShrink: 0 }}>
               <span style={{ fontSize: 14, fontWeight: 800, flex: 1 }}>✏️ Exercícios desta página</span>
-              <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--t-5B21B6)', background: 'var(--p-F5F3FF)', border: '1px solid #DDD6FE', padding: '3px 10px', borderRadius: 99 }}>{respondidos}/{total}</span>
-              <span style={{ fontSize: 12, color: 'var(--c-mute)' }}>{aberta ? '▼' : '▲'}</span>
+              <span style={{ fontSize: 11.5, fontWeight: 800, color: '#5B21B6', background: '#F5F3FF', border: '1px solid #DDD6FE', padding: '3px 10px', borderRadius: 99 }}>{respondidos}/{total}</span>
+              <span style={{ fontSize: 12, color: '#64748B' }}>{aberta ? '▼' : '▲'}</span>
             </button>
             {aberta && <div style={{ flex: 1, overflowY: 'auto', padding: '2px 14px 16px' }}>
               {acabou
                 ? <div style={{ textAlign: 'center', padding: '8px 4px' }}>
                   <div style={{ fontSize: 46 }}>🎉</div>
                   <div style={{ fontSize: 19, fontWeight: 800, margin: '2px 0' }}>{acertos} de {total} certas</div>
-                  <div style={{ color: 'var(--c-mute)', fontWeight: 700, fontSize: 13, margin: '0 0 12px' }}>Você pode rever a página antes de concluir.</div>
+                  <div style={{ color: '#64748B', fontWeight: 700, fontSize: 13, margin: '0 0 12px' }}>Você pode rever a página antes de concluir.</div>
                   {proxima && onProxima
                     ? <>
                       <button className="plano-btn violeta" onClick={() => onProxima(resultado())}>Próxima tarefa › {proxima.titulo}</button>
@@ -1843,7 +1839,7 @@ function PlanoTarefaPagina({ t, cursoId, onFeita, onClose, onAsk, abrirEm, uid, 
                   <button className="plano-btn sec" style={{ marginTop: 8 }} onClick={recomecar}>Refazer os exercícios</button>
                 </div>
                 : <>
-                  <div style={{ display: 'flex', gap: 5, marginBottom: 10 }}>{exs.map((e, k) => <div key={e.id || k} style={{ flex: 1, height: 5, borderRadius: 9, background: k < i ? '#22C55E' : k === i ? '#7C3AED' : 'var(--c-line)' }} />)}</div>
+                  <div style={{ display: 'flex', gap: 5, marginBottom: 10 }}>{exs.map((e, k) => <div key={e.id || k} style={{ flex: 1, height: 5, borderRadius: 9, background: k < i ? '#22C55E' : k === i ? '#7C3AED' : '#E2E8F0' }} />)}</div>
                   {/* o áudio deste exercício (campo bk do áudio = bloco do livro), logo acima dele: o do vocabulário com o vocabulário, o da conversa com a conversa */}
                   {exs[i].bk && audiosDoBloco(exs[i].bk).length > 0 && <div style={{ margin: '0 -4px 10px' }}><PlanoAudiosPagina key={'bk-' + exs[i].bk} audios={audiosDoBloco(exs[i].bk)} rotulo={`Áudio do exercício ${((t.regioes || []).find(r => r.id === exs[i].bk) || {}).letra || ''}`.trim()} /></div>}
                   <PlanoExercicio key={exs[i].id || i} ex={exs[i]} onFim={onFim} />
@@ -1870,34 +1866,34 @@ function PlanoQuadroLivro({ curso, pdf, quadro, largura, children, alt }) {
   }, [curso, pdf]);
   const lw = quadro.x1 - quadro.x0, lh = quadro.y1 - quadro.y0;
   return (
-    <div style={{ position: 'relative', width: largura || '100%', overflow: 'hidden', background: 'var(--c-card)', borderRadius: 8, paddingBottom: `${((lh * 1.3162) / lw) * 100}%` }}>
+    <div style={{ position: 'relative', width: largura || '100%', overflow: 'hidden', background: '#fff', borderRadius: 8, paddingBottom: `${((lh * 1.3162) / lw) * 100}%` }}>
       {url && <img src={url} alt={alt || 'Quadro de gramática do livro'} draggable="false" style={{ position: 'absolute', maxWidth: 'none', width: `${100 / lw}%`, left: `${-(quadro.x0 / lw) * 100}%`, top: `${-(quadro.y0 / lh) * 100}%` }} />}
       {url && children}
-      {!url && <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', padding: 12, textAlign: 'center', fontWeight: 800, fontSize: 13, color: erro ? 'var(--t-B91C1C)' : 'var(--c-mute2)' }}>{erro ? 'Não consegui abrir o quadro agora.' : 'Abrindo o quadro…'}</div>}
+      {!url && <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', padding: 12, textAlign: 'center', fontWeight: 800, fontSize: 13, color: erro ? '#B91C1C' : '#94A3B8' }}>{erro ? 'Não consegui abrir o quadro agora.' : 'Abrindo o quadro…'}</div>}
     </div>
   );
 }
 
 function PlanoBloco({ b }) {
-  const tit = b.t ? <div style={{ fontSize: 15, fontWeight: 800, margin: '22px 0 8px', color: 'var(--c-ink)' }}><PlanoMd x={b.t} /></div> : null;
-  const caixa = { background: 'var(--c-card)', border: '1px solid var(--c-line)', borderRadius: 14, padding: '10px 12px', marginBottom: 8 };
-  if (b.k === 'texto') return <>{tit}<div style={{ ...caixa, fontSize: 14, fontWeight: 600, lineHeight: 1.55, color: 'var(--c-ink2)' }}><PlanoMd x={b.x} /></div></>;
-  if (b.k === 'dica') return <>{tit}<div style={{ background: 'var(--c-warn-bg)', border: '1px solid var(--c-warn-line)', borderRadius: 14, padding: '10px 12px', fontSize: 14, fontWeight: 700, lineHeight: 1.55, color: 'var(--t-78350F)' }}><PlanoMd x={b.x} /></div></>;
-  if (b.k === 'formula') return <>{tit}<div style={{ background: 'linear-gradient(150deg,var(--p-ECFEFF),var(--p-E0F2FE))', border: '1.5px solid #7DD3FC', borderRadius: 16, padding: 13, textAlign: 'center' }}>
-    <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--t-075985)', lineHeight: 1.45 }}><PlanoMd x={b.f} /></div>
-    {b.x && <div style={{ marginTop: 8, fontSize: 13, fontWeight: 700, color: 'var(--t-0C4A6E)', lineHeight: 1.5 }}><PlanoMd x={b.x} /></div>}</div></>;
+  const tit = b.t ? <div style={{ fontSize: 15, fontWeight: 800, margin: '22px 0 8px', color: '#0F172A' }}><PlanoMd x={b.t} /></div> : null;
+  const caixa = { background: '#fff', border: '1px solid #E2E8F0', borderRadius: 14, padding: '10px 12px', marginBottom: 8 };
+  if (b.k === 'texto') return <>{tit}<div style={{ ...caixa, fontSize: 14, fontWeight: 600, lineHeight: 1.55, color: '#334155' }}><PlanoMd x={b.x} /></div></>;
+  if (b.k === 'dica') return <>{tit}<div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 14, padding: '10px 12px', fontSize: 14, fontWeight: 700, lineHeight: 1.55, color: '#78350F' }}><PlanoMd x={b.x} /></div></>;
+  if (b.k === 'formula') return <>{tit}<div style={{ background: 'linear-gradient(150deg,#ECFEFF,#E0F2FE)', border: '1.5px solid #7DD3FC', borderRadius: 16, padding: 13, textAlign: 'center' }}>
+    <div style={{ fontSize: 16, fontWeight: 800, color: '#075985', lineHeight: 1.45 }}><PlanoMd x={b.f} /></div>
+    {b.x && <div style={{ marginTop: 8, fontSize: 13, fontWeight: 700, color: '#0C4A6E', lineHeight: 1.5 }}><PlanoMd x={b.x} /></div>}</div></>;
   if (b.k === 'linhas') return <>{tit}{(b.itens || []).map((l, i) => <div key={i} style={caixa}>
     <span style={{ display: 'inline-block', fontWeight: 800, fontSize: 13, color: '#fff', background: PLANO_COR, borderRadius: 8, padding: '1px 9px', marginRight: 6 }}>{l.w}</span>
     <span style={{ fontWeight: 800, fontSize: 13.5 }}>{l.s}</span>
     <div style={{ fontWeight: 800, fontSize: 14, marginTop: 6 }}><PlanoMd x={l.en} /></div>
-    <div style={{ fontSize: 13, color: 'var(--c-ink2)', fontWeight: 600, marginTop: 1 }}><PlanoMd x={l.pt} /></div>
-    {l.re && <div style={{ fontSize: 12.5, color: 'var(--c-mute)', fontWeight: 700, marginTop: 3 }}>Resposta: <PlanoMd x={l.re} /></div>}</div>)}</>;
-  if (b.k === 'duas') return <>{tit}<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>{[b.a, b.b].map((c, i) => <div key={i} style={{ background: 'var(--c-blue-bg)', border: '1px solid var(--c-blue-line)', borderRadius: 14, padding: '11px 12px', fontSize: 13, fontWeight: 700, lineHeight: 1.5, color: 'var(--t-1E3A8A)' }}>
+    <div style={{ fontSize: 13, color: '#475569', fontWeight: 600, marginTop: 1 }}><PlanoMd x={l.pt} /></div>
+    {l.re && <div style={{ fontSize: 12.5, color: '#64748B', fontWeight: 700, marginTop: 3 }}>Resposta: <PlanoMd x={l.re} /></div>}</div>)}</>;
+  if (b.k === 'duas') return <>{tit}<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>{[b.a, b.b].map((c, i) => <div key={i} style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 14, padding: '11px 12px', fontSize: 13, fontWeight: 700, lineHeight: 1.5, color: '#1E3A8A' }}>
     <div style={{ fontWeight: 800, marginBottom: 4 }}><PlanoMd x={c.t} /></div><div style={{ whiteSpace: 'pre-line' }}><PlanoMd x={c.x} /></div></div>)}</div></>;
   if (b.k === 'contr') return <>{tit}<div style={{ ...caixa, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 12px', padding: '11px 13px', fontSize: 13, fontWeight: 700 }}>{(b.itens || []).map((c, i) => { const [a, ...r] = String(c).split(' = '); return <span key={i}><b style={{ color: PLANO_COR }}>{a}</b>{r.length ? ` = ${r.join(' = ')}` : ''}</span>; })}</div></>;
   if (b.k === 'erros') return <>{tit}{(b.itens || []).map((e, i) => <div key={i} style={{ display: 'grid', gap: 6, marginBottom: 8 }}>
-    <div style={{ background: 'var(--c-red-bg)', color: 'var(--t-7F1D1D)', borderRadius: 12, padding: '9px 12px', fontSize: 13.5, fontWeight: 700 }}>❌ <PlanoMd x={e.no} /></div>
-    <div style={{ background: 'var(--p-F0FDF4)', color: 'var(--t-14532D)', borderRadius: 12, padding: '9px 12px', fontSize: 13.5, fontWeight: 700 }}>✅ <PlanoMd x={e.ok} />{e.nota ? <div style={{ fontSize: 12, fontWeight: 600, marginTop: 2 }}><PlanoMd x={e.nota} /></div> : null}</div></div>)}</>;
+    <div style={{ background: '#FEF2F2', color: '#7F1D1D', borderRadius: 12, padding: '9px 12px', fontSize: 13.5, fontWeight: 700 }}>❌ <PlanoMd x={e.no} /></div>
+    <div style={{ background: '#F0FDF4', color: '#14532D', borderRadius: 12, padding: '9px 12px', fontSize: 13.5, fontWeight: 700 }}>✅ <PlanoMd x={e.ok} />{e.nota ? <div style={{ fontSize: 12, fontWeight: 600, marginTop: 2 }}><PlanoMd x={e.nota} /></div> : null}</div></div>)}</>;
   return null;
 }
 
@@ -1908,24 +1904,24 @@ function PlanoTarefaExplicacao({ t, cursoId, onFeita, onClose, onAsk }) {
   return (
     <PlanoCamada titulo={t.titulo} sub={`Connectivity 1 · página ${t.pagina} · gramática`} onClose={onClose} onAsk={onAsk}
       rodape={<><button className="plano-btn" style={{ background: 'linear-gradient(180deg,#38BDF8,#0284C7)', boxShadow: '0 8px 18px rgba(2,132,199,.3)' }} onClick={() => onFeita(exs.length ? { ok: acertos, total: exs.length, feitos: feitos, err: exs.filter(ex => res[ex.id] === false).map(ex => ex.id) } : undefined)}>Já estudei ✓</button>
-        <div style={{ textAlign: 'center', fontSize: 11.5, fontWeight: 700, color: 'var(--c-mute)', marginTop: 7 }}>Você pode voltar aqui quando quiser, antes ou depois dos exercícios.</div></>}>
+        <div style={{ textAlign: 'center', fontSize: 11.5, fontWeight: 700, color: '#64748B', marginTop: 7 }}>Você pode voltar aqui quando quiser, antes ou depois dos exercícios.</div></>}>
       {t.quadro && <>
-        <div style={{ fontSize: 15, fontWeight: 800, margin: '2px 0 8px' }}>📖 O quadro do livro <span style={{ color: 'var(--c-mute)', fontWeight: 700, fontSize: 12 }}>(toque para ampliar)</span></div>
-        <div onClick={() => setZoom(true)} style={{ background: 'var(--c-card)', border: '1px solid var(--c-line)', borderRadius: 16, padding: 8, cursor: 'zoom-in' }}>
+        <div style={{ fontSize: 15, fontWeight: 800, margin: '2px 0 8px' }}>📖 O quadro do livro <span style={{ color: '#64748B', fontWeight: 700, fontSize: 12 }}>(toque para ampliar)</span></div>
+        <div onClick={() => setZoom(true)} style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 16, padding: 8, cursor: 'zoom-in' }}>
           <PlanoQuadroLivro curso={cursoId} pdf={t.pdf} quadro={t.quadro} />
-          <div style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: 'var(--c-mute)', marginTop: 6 }}>Connectivity 1 · p. {t.pagina}</div>
+          <div style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#64748B', marginTop: 6 }}>Connectivity 1 · p. {t.pagina}</div>
         </div>
       </>}
-      {!t.quadro && <div style={{ background: 'var(--p-F5F3FF)', border: '1px solid #DDD6FE', borderRadius: 14, padding: '10px 13px', fontSize: 13, fontWeight: 700, color: 'var(--t-4C1D95)', lineHeight: 1.5 }}>📖 Esta explicação é da página <b>{t.pagina}</b> do Grammar Expander. A página inteira vem logo depois no Caminho, para você ler e praticar.</div>}
+      {!t.quadro && <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 14, padding: '10px 13px', fontSize: 13, fontWeight: 700, color: '#4C1D95', lineHeight: 1.5 }}>📖 Esta explicação é da página <b>{t.pagina}</b> do Grammar Expander. A página inteira vem logo depois no Caminho, para você ler e praticar.</div>}
       {(t.blocos || []).map((b, i) => <PlanoBloco key={i} b={b} />)}
       {exs.length > 0 && <>
-        <div style={{ fontSize: 15, fontWeight: 800, margin: '22px 0 8px' }}>🎯 Treine rápido <span style={{ color: 'var(--c-mute)', fontWeight: 700, fontSize: 12 }}>({exs.length} perguntinhas)</span></div>
-        {exs.map(ex => <div key={ex.id} style={{ background: 'var(--c-card)', border: '2px solid #DDD6FE', borderRadius: 18, padding: 13, marginBottom: 10 }}>
+        <div style={{ fontSize: 15, fontWeight: 800, margin: '22px 0 8px' }}>🎯 Treine rápido <span style={{ color: '#64748B', fontWeight: 700, fontSize: 12 }}>({exs.length} perguntinhas)</span></div>
+        {exs.map(ex => <div key={ex.id} style={{ background: '#fff', border: '2px solid #DDD6FE', borderRadius: 18, padding: 13, marginBottom: 10 }}>
           <PlanoExercicio ex={ex} onFim={ok => setRes(r => (r[ex.id] !== undefined ? r : { ...r, [ex.id]: ok }))} /></div>)}
-        {feitos === exs.length && <div style={{ background: 'var(--p-F0FDF4)', border: '1px solid var(--p-BBF7D0)', borderRadius: 14, padding: '11px 13px', fontSize: 13.5, fontWeight: 700, color: 'var(--t-14532D)' }}>🎉 <b>{acertos} de {exs.length}</b> certas. {acertos === exs.length ? (t.quadro ? 'Já pode ir para os exercícios da página!' : 'Já pode ir para a página do livro!') : (t.quadro ? 'Releia o quadro acima e depois vá para os exercícios.' : 'Releia a explicação acima e depois vá para a página do livro.')}</div>}
+        {feitos === exs.length && <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 14, padding: '11px 13px', fontSize: 13.5, fontWeight: 700, color: '#14532D' }}>🎉 <b>{acertos} de {exs.length}</b> certas. {acertos === exs.length ? (t.quadro ? 'Já pode ir para os exercícios da página!' : 'Já pode ir para a página do livro!') : (t.quadro ? 'Releia o quadro acima e depois vá para os exercícios.' : 'Releia a explicação acima e depois vá para a página do livro.')}</div>}
       </>}
       {zoom && t.quadro && <div onClick={() => setZoom(false)} style={{ position: 'fixed', inset: 0, zIndex: 900, background: 'rgba(15,23,42,.92)', overflow: 'auto', padding: '56px 10px 24px' }}>
-        <button onClick={() => setZoom(false)} style={{ position: 'fixed', top: 12, right: 14, border: 0, borderRadius: 99, background: 'var(--c-card)', padding: '8px 15px', fontFamily: 'inherit', fontWeight: 800, cursor: 'pointer' }}>✕ Fechar</button>
+        <button onClick={() => setZoom(false)} style={{ position: 'fixed', top: 12, right: 14, border: 0, borderRadius: 99, background: '#fff', padding: '8px 15px', fontFamily: 'inherit', fontWeight: 800, cursor: 'pointer' }}>✕ Fechar</button>
         <div style={{ width: '230%', maxWidth: 1100 }}><PlanoQuadroLivro curso={cursoId} pdf={t.pdf} quadro={t.quadro} /></div></div>}
     </PlanoCamada>
   );
@@ -1936,9 +1932,9 @@ function PlanoTarefaExtra({ t, unidade, onAbrirExtras, onFeita, onClose, onAsk }
     <PlanoCamada titulo={t.titulo} sub={t.sub} onClose={onClose} onAsk={onAsk}
       rodape={<button className="plano-btn" onClick={onFeita}>Já fiz ✓</button>}>
       {t.pagina && <PlanoCartaoLivro t={{ ...t, oQue: '' }} unidade={unidade} />}
-      <div style={{ background: 'var(--c-card)', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 18, padding: 15, fontSize: 14.5, fontWeight: 700, color: 'var(--c-ink2)', lineHeight: 1.55 }}>{t.oQue}</div>
+      <div style={{ background: '#fff', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 18, padding: 15, fontSize: 14.5, fontWeight: 700, color: '#334155', lineHeight: 1.55 }}>{t.oQue}</div>
       <button className="plano-btn violeta" style={{ marginTop: 14 }} onClick={onAbrirExtras}>🎧 Abrir os Extras</button>
-      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--c-mute2)', textAlign: 'center', marginTop: 8 }}>Em Atividades, toque na aba “Extras”.</div>
+      <div style={{ fontSize: 12, fontWeight: 700, color: '#94A3B8', textAlign: 'center', marginTop: 8 }}>Em Atividades, toque na aba “Extras”.</div>
     </PlanoCamada>
   );
 }
@@ -1961,13 +1957,13 @@ function PlanoProva({ t, onNota, onFim }) {
     const passou = nota >= 7;
     return <div style={{ textAlign: 'center', padding: '6px 2px 10px' }}>
       <div style={{ fontSize: 52 }}>{passou ? '🏅' : '💪'}</div>
-      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: .8, color: 'var(--c-mute)' }}>SUA NOTA</div>
-      <div style={{ fontSize: 58, fontWeight: 800, lineHeight: 1.05, color: passou ? 'var(--t-15803D)' : 'var(--t-B45309)' }}>{PLANO_NOTA(nota)}<span style={{ fontSize: 22, color: 'var(--c-mute2)' }}> / 10</span></div>
-      <div style={{ color: 'var(--c-ink2)', fontWeight: 700, fontSize: 14, lineHeight: 1.45, margin: '6px 8px 14px' }}>{passou ? 'Muito bem! Você conquistou o selo da unidade.' : 'Quase lá! Para o selo da unidade a nota mínima é 7,0. Revise as explicações e refaça a prova quando quiser.'}</div>
-      <div style={{ textAlign: 'left', background: 'var(--c-card)', border: '1px solid var(--c-line)', borderRadius: 16, padding: '12px 14px', marginBottom: 14 }}>
+      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: .8, color: '#64748B' }}>SUA NOTA</div>
+      <div style={{ fontSize: 58, fontWeight: 800, lineHeight: 1.05, color: passou ? '#15803D' : '#B45309' }}>{PLANO_NOTA(nota)}<span style={{ fontSize: 22, color: '#94A3B8' }}> / 10</span></div>
+      <div style={{ color: '#475569', fontWeight: 700, fontSize: 14, lineHeight: 1.45, margin: '6px 8px 14px' }}>{passou ? 'Muito bem! Você conquistou o selo da unidade.' : 'Quase lá! Para o selo da unidade a nota mínima é 7,0. Revise as explicações e refaça a prova quando quiser.'}</div>
+      <div style={{ textAlign: 'left', background: '#fff', border: '1px solid #E2E8F0', borderRadius: 16, padding: '12px 14px', marginBottom: 14 }}>
         {partes.map(p => <div key={p.k} style={{ marginBottom: 10 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 800 }}><span>{p.nome}</span><span style={{ color: 'var(--c-mute)' }}>{PLANO_NOTA(p.pts)} de {PLANO_NOTA(p.max)} · {p.ok}/{p.n} certas</span></div>
-          <div style={{ height: 7, borderRadius: 99, background: 'var(--p-E5E7EB)', marginTop: 4, overflow: 'hidden' }}><div style={{ width: `${p.max ? (p.pts / p.max) * 100 : 0}%`, height: '100%', background: 'linear-gradient(90deg,var(--brand),var(--brand-light))' }} /></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 800 }}><span>{p.nome}</span><span style={{ color: '#64748B' }}>{PLANO_NOTA(p.pts)} de {PLANO_NOTA(p.max)} · {p.ok}/{p.n} certas</span></div>
+          <div style={{ height: 7, borderRadius: 99, background: '#E5E7EB', marginTop: 4, overflow: 'hidden' }}><div style={{ width: `${p.max ? (p.pts / p.max) * 100 : 0}%`, height: '100%', background: 'linear-gradient(90deg,var(--brand),var(--brand-light))' }} /></div>
         </div>)}
       </div>
       {passou && <button className="plano-btn" onClick={onFim}>Continuar ›</button>}
@@ -1976,11 +1972,11 @@ function PlanoProva({ t, onNota, onFim }) {
   }
   return <div>
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-      <div style={{ flex: 1, height: 8, borderRadius: 99, background: 'var(--p-E5E7EB)', overflow: 'hidden' }}><div style={{ width: `${(i / total) * 100}%`, height: '100%', background: 'linear-gradient(90deg,var(--brand),var(--brand-light))', transition: 'width .3s' }} /></div>
-      <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--c-mute)' }}>{i + 1}/{total}</div>
+      <div style={{ flex: 1, height: 8, borderRadius: 99, background: '#E5E7EB', overflow: 'hidden' }}><div style={{ width: `${(i / total) * 100}%`, height: '100%', background: 'linear-gradient(90deg,var(--brand),var(--brand-light))', transition: 'width .3s' }} /></div>
+      <div style={{ fontSize: 12, fontWeight: 800, color: '#64748B' }}>{i + 1}/{total}</div>
     </div>
-    <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 800, color: 'var(--t-B45309)', background: 'var(--c-warn-bg)', border: '1px solid var(--c-warn-line)', padding: '2px 10px', borderRadius: 99, marginBottom: 8 }}>{nomeSec(q.sec)} · vale {PLANO_NOTA(q.peso)}</div>
-    <div style={{ background: 'var(--c-card)', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 18, padding: 14, boxShadow: '0 8px 24px rgba(15,23,42,.05)' }}>
+    <div style={{ display: 'inline-block', fontSize: 11, fontWeight: 800, color: '#B45309', background: '#FFFBEB', border: '1px solid #FDE68A', padding: '2px 10px', borderRadius: 99, marginBottom: 8 }}>{nomeSec(q.sec)} · vale {PLANO_NOTA(q.peso)}</div>
+    <div style={{ background: '#fff', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 18, padding: 14, boxShadow: '0 8px 24px rgba(15,23,42,.05)' }}>
       <PlanoExercicio key={i} ex={q} onFim={onEx} />
     </div>
     {respondeu && <button className="plano-btn" style={{ marginTop: 12 }} onClick={() => { if (i + 1 >= total) ver(); else { setI(i + 1); setRespondeu(false); } }}>{i + 1 >= total ? 'Ver a minha nota' : 'Continuar ›'}</button>}
@@ -1996,9 +1992,9 @@ function PlanoTarefaTeste({ t, unidade, onFeita, onClose, onAsk, onNota }) {
       {fase === 'perguntas'
         ? (t.prova ? <PlanoProva t={t} onNota={onNota} onFim={() => setFase('selo')} /> : <PlanoPerguntas perguntas={perguntas} minimo={minimo} rotuloFim="Continuar ›" onFim={() => setFase('selo')} />)
         : <div>
-          <div style={{ textAlign: 'center', padding: '6px 0 16px' }}><div style={{ fontSize: 64 }}>🏅</div><div style={{ fontSize: 22, fontWeight: 800 }}>Selo da Unit {unidade.numero || 4}!</div><div style={{ color: 'var(--c-mute)', fontWeight: 700, fontSize: 13.5 }}>Marque o que você já consegue fazer:</div></div>
-          {unidade.agoraPosso.map(a => <button key={a} onClick={() => setMarcas(m => ({ ...m, [a]: !m[a] }))} style={{ display: 'flex', width: '100%', alignItems: 'center', gap: 12, textAlign: 'left', background: marcas[a] ? 'var(--p-F0FDF4)' : 'var(--c-card)', border: `1.5px solid ${marcas[a] ? '#22C55E' : 'var(--c-line)'}`, borderRadius: 14, padding: '12px 14px', marginBottom: 8, fontFamily: 'inherit', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>
-            <span style={{ width: 24, height: 24, borderRadius: 7, background: marcas[a] ? '#22C55E' : 'var(--c-card)', border: `2px solid ${marcas[a] ? '#22C55E' : 'var(--c-line2)'}`, color: '#fff', display: 'grid', placeItems: 'center', fontSize: 14, flexShrink: 0 }}>{marcas[a] ? '✓' : ''}</span>{a}</button>)}
+          <div style={{ textAlign: 'center', padding: '6px 0 16px' }}><div style={{ fontSize: 64 }}>🏅</div><div style={{ fontSize: 22, fontWeight: 800 }}>Selo da Unit {unidade.numero || 4}!</div><div style={{ color: '#64748B', fontWeight: 700, fontSize: 13.5 }}>Marque o que você já consegue fazer:</div></div>
+          {unidade.agoraPosso.map(a => <button key={a} onClick={() => setMarcas(m => ({ ...m, [a]: !m[a] }))} style={{ display: 'flex', width: '100%', alignItems: 'center', gap: 12, textAlign: 'left', background: marcas[a] ? '#F0FDF4' : '#fff', border: `1.5px solid ${marcas[a] ? '#22C55E' : '#E2E8F0'}`, borderRadius: 14, padding: '12px 14px', marginBottom: 8, fontFamily: 'inherit', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>
+            <span style={{ width: 24, height: 24, borderRadius: 7, background: marcas[a] ? '#22C55E' : '#fff', border: `2px solid ${marcas[a] ? '#22C55E' : '#CBD5E1'}`, color: '#fff', display: 'grid', placeItems: 'center', fontSize: 14, flexShrink: 0 }}>{marcas[a] ? '✓' : ''}</span>{a}</button>)}
           <button className="plano-btn" style={{ marginTop: 10 }} onClick={onFeita}>Concluir a unidade ✓</button>
         </div>}
     </PlanoCamada>
@@ -2010,10 +2006,10 @@ function PlanoAulaFolha({ aula, student, cfg, onClose }) {
   const feita = aula.feita; const zoom = student && student.zoomLink;
   return (
     <PlanoFolha onClose={onClose}>
-      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .7, color: feita ? 'var(--t-15803D)' : 'var(--c-blue-ink)' }}>{feita ? 'AULA FEITA' : 'PRÓXIMA AULA'}</div>
+      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .7, color: feita ? '#15803D' : '#1E40AF' }}>{feita ? 'AULA FEITA' : 'PRÓXIMA AULA'}</div>
       <div style={{ fontSize: 22, fontWeight: 800, margin: '2px 0' }}>{aula.rotulo}</div>
-      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--c-mute)' }}>{PlanoDataCurta(aula.data)}{aula.hora ? ` às ${aula.hora}` : ''}{!feita ? ` · ${PlanoEmDias(aula.data)}` : ''}</div>
-      <div style={{ background: 'var(--c-blue-bg)', border: '1px solid var(--c-blue-line)', borderRadius: 14, padding: '11px 13px', margin: '14px 0', fontSize: 13.5, fontWeight: 700, color: 'var(--t-1E3A8A)', lineHeight: 1.5 }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: '#64748B' }}>{PlanoDataCurta(aula.data)}{aula.hora ? ` às ${aula.hora}` : ''}{!feita ? ` · ${PlanoEmDias(aula.data)}` : ''}</div>
+      <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 14, padding: '11px 13px', margin: '14px 0', fontSize: 13.5, fontWeight: 700, color: '#1E3A8A', lineHeight: 1.5 }}>
         {feita ? 'Essa aula liberou as tarefas do seu caminho. Faça no seu ritmo até a próxima.' : 'Na aula de 1 hora o César revisa o seu caminho, tira dúvidas e libera as tarefas do próximo mês.'}
       </div>
       {!feita && zoom && <a href={zoom} target="_blank" rel="noopener noreferrer" className="plano-btn" style={{ textDecoration: 'none', textAlign: 'center', marginBottom: 10, background: 'linear-gradient(180deg,#3B82F6,#1E40AF)', boxShadow: '0 8px 20px rgba(30,64,175,.28)' }}>📹 Entrar na aula (Zoom)</a>}
@@ -2023,13 +2019,44 @@ function PlanoAulaFolha({ aula, student, cfg, onClose }) {
   );
 }
 
-// O Dr. EurekIA: o mesmo personagem do site (cabelo branco, óculos laranja, jaleco). A imagem fica em eurekia/.
-// Continua devolvendo um texto SVG (e não JSX) porque as bolinhas dos exercícios são montadas direto no DOM pelo index.html.
-// De 52 px para cima aparece o busto com o jaleco e a mão acenando; menor que isso, só o rosto, para continuar nítido.
-const EUREKIA_IMG = 'eurekia/acenando.png';
+// O Dr. EurekIA: cientista de jaleco, óculos de proteção na testa e balão de ensaio. O desenho é um texto SVG (e não JSX)
+// para as bolinhas dos exercícios, que o index.html monta direto no DOM, usarem exatamente o mesmo. Abaixo de 44 px saem
+// o balão, o bolso e os brilhos, para o rosto continuar nítido nas bolinhas pequenas.
+let EUREKIA_SEQ = 0;
+function eurekiaBrilho(x, y, s) {
+  return `<path d="M${x} ${y - s} l${s * .28} ${s * .72} ${s * .72} ${s * .28} -${s * .72} ${s * .28} -${s * .28} ${s * .72} -${s * .28} -${s * .72} -${s * .72} -${s * .28} ${s * .72} -${s * .28}z" fill="#FDE047"/>`;
+}
 function eurekiaSvg(size) {
-  const recorte = size >= 52 ? '22 6 196 196' : '72 12 94 94';
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="${recorte}" style="display:block;border-radius:50%;overflow:hidden;background:#EBDDFB" aria-hidden="true" focusable="false"><image href="${EUREKIA_IMG}" x="0" y="0" width="232" height="224"/></svg>`;
+  const grande = size >= 44, N = '#1E1B4B', id = 'eu' + (EUREKIA_SEQ++);
+  let s = '';
+  if (grande) s += eurekiaBrilho(52, 12, 5) + eurekiaBrilho(10, 24, 3.4);
+  s += `<path d="M28 40 H36 V50 H28Z" fill="#E8A877"/>`;
+  s += `<path d="M7 67 C7 53 16 47.5 27 46.5 L37 46.5 C48 47.5 57 53 57 67Z" fill="#fff" stroke="${N}" stroke-width="2" stroke-linejoin="round"/>`;
+  s += `<path d="M27 46.8 L32 58 L37 46.8Z" fill="#FBBF24"/>`;
+  s += `<path d="M26.6 46.4 L31.2 59 L23.4 54.2 L20.4 48.6Z" fill="#fff" stroke="${N}" stroke-width="1.6" stroke-linejoin="round"/>`;
+  s += `<path d="M37.4 46.4 L32.8 59 L40.6 54.2 L43.6 48.6Z" fill="#fff" stroke="${N}" stroke-width="1.6" stroke-linejoin="round"/>`;
+  if (grande) {
+    s += `<rect x="42" y="56" width="8" height="8" rx="1.3" fill="#fff" stroke="${N}" stroke-width="1.4"/>`;
+    s += `<path d="M44.2 56 V52.6" stroke="#EF4444" stroke-width="1.8" stroke-linecap="round"/><path d="M47.4 56 V51.8" stroke="#3B82F6" stroke-width="1.8" stroke-linecap="round"/>`;
+  }
+  s += `<circle cx="19.4" cy="32.5" r="2.8" fill="#F2B98C" stroke="${N}" stroke-width="1.6"/><circle cx="44.6" cy="32.5" r="2.8" fill="#F2B98C" stroke="${N}" stroke-width="1.6"/>`;
+  s += `<ellipse cx="32" cy="31.6" rx="12.8" ry="13.7" fill="#F7C59F" stroke="${N}" stroke-width="1.9"/>`;
+  s += `<path d="M19 30.5 C15.8 21 19.6 12.2 28 10.8 C31 7.4 38.4 8.2 40.4 10.8 C48.2 12.4 50.6 22 45 30.5 C44.2 25.8 41.6 22.8 37.6 22 C34 23.2 30 23.2 26.4 22 C22.4 22.8 19.8 25.8 19 30.5Z" fill="#4A2C17" stroke="${N}" stroke-width="1.9" stroke-linejoin="round"/>`;
+  s += `<path d="M26.6 13.4 Q31 11.2 35.6 12.4" stroke="#8A5530" stroke-width="1.5" fill="none" stroke-linecap="round"/>`;
+  s += `<path d="M18.6 20.8 Q32 15.8 45.4 20.8" stroke="${N}" stroke-width="6.2" fill="none"/><path d="M18.6 20.8 Q32 15.8 45.4 20.8" stroke="#F97316" stroke-width="3.8" fill="none"/>`;
+  s += `<circle cx="26.2" cy="19.8" r="5.4" fill="#A5F3FC" stroke="${N}" stroke-width="1.9"/><circle cx="37.8" cy="19.8" r="5.4" fill="#A5F3FC" stroke="${N}" stroke-width="1.9"/>`;
+  s += `<path d="M23.4 17.8 Q24.8 16.4 26.8 16.4" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M35 17.8 Q36.4 16.4 38.4 16.4" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/>`;
+  s += `<circle cx="27.4" cy="31.8" r="1.9" fill="${N}"/><circle cx="36.6" cy="31.8" r="1.9" fill="${N}"/><circle cx="28" cy="31.1" r=".6" fill="#fff"/><circle cx="37.2" cy="31.1" r=".6" fill="#fff"/>`;
+  s += `<path d="M24.4 28.2 Q27.4 26.6 30 27.8" stroke="#4A2C17" stroke-width="1.4" fill="none" stroke-linecap="round"/><path d="M33.6 27.8 Q36.2 26.6 39.6 28.2" stroke="#4A2C17" stroke-width="1.4" fill="none" stroke-linecap="round"/>`;
+  s += `<circle cx="24" cy="36.2" r="2.3" fill="#F87171" opacity=".38"/><circle cx="40" cy="36.2" r="2.3" fill="#F87171" opacity=".38"/>`;
+  s += `<path d="M26.6 38.4 Q32 45.4 37.4 38.4Z" fill="#9F1239" stroke="${N}" stroke-width="1.4" stroke-linejoin="round"/><path d="M27.8 38.9 Q32 40.6 36.2 38.9 L35.8 40.1 Q32 41.6 28.2 40.1Z" fill="#fff"/>`;
+  if (grande) {
+    s += `<path d="M10.6 42 L10.6 48 L5 58 Q3.8 61 7 61 L19 61 Q22.2 61 21 58 L15.4 48 L15.4 42Z" fill="#ECFEFF" stroke="${N}" stroke-width="1.7" stroke-linejoin="round"/>`;
+    s += `<path d="M7.2 54.2 L18.8 54.2 L21 58.2 Q22 60.2 19 60.2 L7 60.2 Q4 60.2 5 58.2Z" fill="#A3E635"/>`;
+    s += `<circle cx="10.5" cy="57" r="1.1" fill="#fff"/><circle cx="14.5" cy="58.2" r=".9" fill="#fff"/><circle cx="13.2" cy="51" r="1" fill="#A3E635" stroke="${N}" stroke-width=".6"/>`;
+    s += `<path d="M9.6 41.6 H16.4" stroke="${N}" stroke-width="2.2" stroke-linecap="round"/>`;
+  }
+  return `<svg width="${size}" height="${size}" viewBox="0 0 64 64" aria-hidden="true" style="display:block"><defs><clipPath id="c${id}"><circle cx="32" cy="32" r="32"/></clipPath><radialGradient id="g${id}" cx="35%" cy="22%" r="90%"><stop offset="0" stop-color="#8B5CF6"/><stop offset="1" stop-color="#5B21B6"/></radialGradient></defs><circle cx="32" cy="32" r="32" fill="url(#g${id})"/><g clip-path="url(#c${id})">${s}</g></svg>`;
 }
 function EurekiaAvatar({ size = 54 }) {
   const html = React.useMemo(() => eurekiaSvg(size), [size]);
@@ -2079,25 +2106,25 @@ function PlanoPerguntar({ cfg, student, contexto, onAsk, onClose, z, sugestao, e
   const wa = PlanoWhatsLink(student, `Oi, César! Aqui é ${student.firstName || student.name || 'sua aluna'} (${cfg.nome}). ${contexto ? `Estou na tarefa “${contexto}”. ` : ''}${ultima ? `Minha dúvida: ${ultima.x}` : 'Tenho uma dúvida: '}`);
   return (
     <PlanoFolha onClose={onClose} z={z}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><EurekiaAvatar size={40} /><div><div style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.1 }}>Dr. EurekIA</div><div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--t-6D28D9)' }}>Tem uma dúvida de inglês?</div></div></div>
-      <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--c-mute)', margin: '2px 0 12px' }}>{contexto ? `Sobre: ${contexto}` : 'Pergunte sobre o que está estudando em inglês.'}</div>
-      {semIA ? <div style={{ background: 'var(--c-soft2)', border: '1px solid var(--c-line)', borderRadius: 16, padding: 14, margin: '0 0 12px', fontSize: 13.5, fontWeight: 600, color: 'var(--c-ink2)', lineHeight: 1.5 }}>Para tirar dúvidas, fale direto com o César pelo WhatsApp. Ele responde assim que puder.</div> : <>
-      <div style={{ background: 'var(--c-soft2)', border: '1px solid var(--c-line)', borderRadius: 16, padding: 10, minHeight: 110, maxHeight: 280, overflowY: 'auto' }}>
-        {exercicio && <div style={{ background: 'var(--p-F5F3FF)', border: '1px solid #DDD6FE', borderRadius: 12, padding: '9px 11px', margin: '0 0 8px', fontSize: 12.5, lineHeight: 1.45, color: 'var(--t-4C1D95)', fontWeight: 600, overflowWrap: 'anywhere' }}><div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .4, textTransform: 'uppercase', color: 'var(--t-6D28D9)', marginBottom: 2 }}>Exercício</div>{exercicio.enunciado && exercicio.item !== exercicio.enunciado && <div style={{ color: 'var(--c-mute)', marginBottom: 3 }}>{PlanoCorta(exercicio.enunciado, 160)}</div>}<div>{PlanoCorta(exercicio.item, 220)}</div></div>}
-        {msgs.length === 0 && exercicio && <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--c-mute)', padding: 6 }}>A pergunta já está escrita: toque em <b>Enviar</b> e o Dr. EurekIA explica o que o exercício pede, <b>sem entregar a resposta</b>.</div>}
-        {msgs.length === 0 && sugestao && !exercicio && <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--t-5B21B6)', background: 'var(--p-F5F3FF)', border: '1px solid #DDD6FE', borderRadius: 12, padding: '9px 11px', margin: '0 0 8px', lineHeight: 1.45 }}>{previa ? <>💡 A pergunta já está escrita: toque em <b>Enviar</b> e o Dr. EurekIA explica o que você vai aprender nesta página.</> : <>💡 Que tal começar por aqui? A pergunta já está escrita: toque em <b>Enviar</b> e veja o que o Dr. EurekIA sabe sobre os seus estudos.</>}</div>}
-        {msgs.length === 0 && !exercicio && <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--c-mute)', padding: 6 }}>Escreva a sua dúvida de inglês abaixo. O assistente pode usar suas últimas aulas e atividades quando elas ajudarem a responder. Se precisar do César, toque em WhatsApp.</div>}
-        {msgs.map((m, i) => <div key={i} style={{ display: 'flex', justifyContent: m.de === 'eu' ? 'flex-end' : 'flex-start', margin: '6px 0' }}><div style={{ maxWidth: '86%', padding: '9px 12px', borderRadius: 14, fontSize: 13.5, fontWeight: 600, lineHeight: 1.5, whiteSpace: 'pre-wrap', background: m.de === 'eu' ? '#7C3AED' : m.erro ? 'var(--c-red-bg)' : 'var(--c-card)', color: m.de === 'eu' ? '#fff' : 'var(--c-ink)', border: m.de === 'eu' ? 0 : '1px solid var(--c-line)' }}>{m.de === 'ia' ? <PlanoMd x={m.x} /> : m.x}</div></div>)}
-        {pensando && <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--c-mute)', padding: 6 }}>O Dr. EurekIA está pensando…</div>}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><EurekiaAvatar size={40} /><div><div style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.1 }}>Dr. EurekIA</div><div style={{ fontSize: 11.5, fontWeight: 700, color: '#6D28D9' }}>Tem uma dúvida de inglês?</div></div></div>
+      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#64748B', margin: '2px 0 12px' }}>{contexto ? `Sobre: ${contexto}` : 'Pergunte sobre o que está estudando em inglês.'}</div>
+      {semIA ? <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 16, padding: 14, margin: '0 0 12px', fontSize: 13.5, fontWeight: 600, color: '#475569', lineHeight: 1.5 }}>Para tirar dúvidas, fale direto com o César pelo WhatsApp. Ele responde assim que puder.</div> : <>
+      <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 16, padding: 10, minHeight: 110, maxHeight: 280, overflowY: 'auto' }}>
+        {exercicio && <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 12, padding: '9px 11px', margin: '0 0 8px', fontSize: 12.5, lineHeight: 1.45, color: '#4C1D95', fontWeight: 600, overflowWrap: 'anywhere' }}><div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .4, textTransform: 'uppercase', color: '#6D28D9', marginBottom: 2 }}>Exercício</div>{exercicio.enunciado && exercicio.item !== exercicio.enunciado && <div style={{ color: '#64748B', marginBottom: 3 }}>{PlanoCorta(exercicio.enunciado, 160)}</div>}<div>{PlanoCorta(exercicio.item, 220)}</div></div>}
+        {msgs.length === 0 && exercicio && <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B', padding: 6 }}>A pergunta já está escrita: toque em <b>Enviar</b> e o Dr. EurekIA explica o que o exercício pede, <b>sem entregar a resposta</b>.</div>}
+        {msgs.length === 0 && sugestao && !exercicio && <div style={{ fontSize: 13, fontWeight: 700, color: '#5B21B6', background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 12, padding: '9px 11px', margin: '0 0 8px', lineHeight: 1.45 }}>{previa ? <>💡 A pergunta já está escrita: toque em <b>Enviar</b> e o Dr. EurekIA explica o que você vai aprender nesta página.</> : <>💡 Que tal começar por aqui? A pergunta já está escrita: toque em <b>Enviar</b> e veja o que o Dr. EurekIA sabe sobre os seus estudos.</>}</div>}
+        {msgs.length === 0 && !exercicio && <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B', padding: 6 }}>Escreva a sua dúvida de inglês abaixo. O assistente pode usar suas últimas aulas e atividades quando elas ajudarem a responder. Se precisar do César, toque em WhatsApp.</div>}
+        {msgs.map((m, i) => <div key={i} style={{ display: 'flex', justifyContent: m.de === 'eu' ? 'flex-end' : 'flex-start', margin: '6px 0' }}><div style={{ maxWidth: '86%', padding: '9px 12px', borderRadius: 14, fontSize: 13.5, fontWeight: 600, lineHeight: 1.5, whiteSpace: 'pre-wrap', background: m.de === 'eu' ? '#7C3AED' : m.erro ? '#FEF2F2' : '#fff', color: m.de === 'eu' ? '#fff' : '#0F172A', border: m.de === 'eu' ? 0 : '1px solid #E2E8F0' }}>{m.de === 'ia' ? <PlanoMd x={m.x} /> : m.x}</div></div>)}
+        {pensando && <div style={{ fontSize: 13, fontWeight: 700, color: '#64748B', padding: 6 }}>O Dr. EurekIA está pensando…</div>}
         <div ref={fimRef} />
       </div>
       <div style={{ display: 'flex', gap: 8, margin: '10px 0' }}>
-        <input value={texto} onChange={e => setTexto(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') enviar(); }} placeholder="Digite sua dúvida…" style={{ flex: 1, border: '1.5px solid var(--c-line2)', borderRadius: 14, padding: '12px 13px', fontSize: 14.5, fontFamily: 'inherit', fontWeight: 600, outline: 'none' }} />
+        <input value={texto} onChange={e => setTexto(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') enviar(); }} placeholder="Digite sua dúvida…" style={{ flex: 1, border: '1.5px solid #CBD5E1', borderRadius: 14, padding: '12px 13px', fontSize: 14.5, fontFamily: 'inherit', fontWeight: 600, outline: 'none' }} />
         <button onClick={enviar} disabled={!texto.trim() || pensando} style={{ border: 0, borderRadius: 14, padding: '0 16px', background: PLANO_COR, color: '#fff', fontWeight: 800, fontFamily: 'inherit', fontSize: 14, cursor: 'pointer', opacity: !texto.trim() || pensando ? .5 : 1 }}>Enviar</button>
       </div>
       </>}
       <a href={wa} target="_blank" rel="noopener noreferrer" className="plano-btn" style={{ textDecoration: 'none', textAlign: 'center', background: '#25D366', boxShadow: 'none' }}>💬 Falar com o César no WhatsApp</a>
-      {!semIA && <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--c-mute2)', textAlign: 'center', marginTop: 8 }}>O assistente é uma ajuda automática e pode errar. Na dúvida, fale com o César.</div>}
+      {!semIA && <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textAlign: 'center', marginTop: 8 }}>O assistente é uma ajuda automática e pode errar. Na dúvida, fale com o César.</div>}
     </PlanoFolha>
   );
 }
@@ -2128,14 +2155,14 @@ function PlanoBoasVindas({ cfg, nome, onFim }) {
 function PlanoAulasLista({ posaulas, onOpenPost }) {
   return (
     <div className="scroll-area" style={{ padding: '14px 16px 24px' }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--c-mute)', margin: '0 2px 12px' }}>Todas as suas aulas continuam aqui. Dentro de cada tarefa o app também indica onde o assunto foi explicado.</div>
-      {posaulas.length === 0 && <div style={{ background: 'var(--c-card)', borderRadius: 18, padding: 28, textAlign: 'center', fontWeight: 700, color: 'var(--c-mute)' }}>Nenhum pós-aula ainda.</div>}
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#64748B', margin: '0 2px 12px' }}>Todas as suas aulas continuam aqui. Dentro de cada tarefa o app também indica onde o assunto foi explicado.</div>
+      {posaulas.length === 0 && <div style={{ background: '#fff', borderRadius: 18, padding: 28, textAlign: 'center', fontWeight: 700, color: '#64748B' }}>Nenhum pós-aula ainda.</div>}
       {posaulas.map(p => (
-        <div key={p.id} onClick={() => onOpenPost(p)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--c-card)', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 14, padding: '11px 14px', marginBottom: 8, cursor: 'pointer' }}>
+        <div key={p.id} onClick={() => onOpenPost(p)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', border: '1px solid rgba(var(--brand-rgb),.12)', borderRadius: 14, padding: '11px 14px', marginBottom: 8, cursor: 'pointer' }}>
           <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(var(--brand-rgb),.1)', display: 'grid', placeItems: 'center', fontSize: 15, flexShrink: 0 }}>📄</div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.3, color: 'var(--c-ink)', overflowWrap: 'anywhere' }}>{PlanoTituloAula(p)}</div>
-            <div style={{ fontSize: 11.5, fontWeight: 800, marginTop: 1, color: p.readAt ? 'var(--brand)' : 'var(--t-D97706)' }}>{p.readAt ? '✓ Lido' : 'Não lido'}</div>
+            <div style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.3, color: '#0F172A', overflowWrap: 'anywhere' }}>{PlanoTituloAula(p)}</div>
+            <div style={{ fontSize: 11.5, fontWeight: 800, marginTop: 1, color: p.readAt ? 'var(--brand)' : '#D97706' }}>{p.readAt ? '✓ Lido' : 'Não lido'}</div>
           </div>
         </div>))}
     </div>
@@ -2156,23 +2183,23 @@ function PlanoGramaticaLista({ cfg, feitas, onAbrir, onClose }) {
       }).catch(() => { if (vivo) setErro(true); });
     return () => { vivo = false; };
   }, [cfg.cursoId, cfg.unidadesLista]);
-  const msg = (x, cor) => <div style={{ background: 'var(--c-card)', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: cor || 'var(--c-mute)' }}>{x}</div>;
+  const msg = (x, cor) => <div style={{ background: '#fff', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: cor || '#64748B' }}>{x}</div>;
   return (
     <PlanoCamada titulo="📘 Gramática" sub="Todas as explicações das unidades liberadas" onClose={onClose} semPos>
       {erro ? msg('Não consegui abrir agora. Confira a internet e tente de novo.', '#B91C1C')
         : !itens ? msg('Abrindo…')
         : !itens.length ? msg('Ainda não há explicações nas unidades liberadas.')
         : <>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--c-ink2)', lineHeight: 1.5, margin: '0 2px 4px' }}>Toque numa explicação para estudar de novo, quando quiser: antes da aula ou quando travar numa atividade.</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#475569', lineHeight: 1.5, margin: '0 2px 4px' }}>Toque numa explicação para estudar de novo, quando quiser: antes da aula ou quando travar numa atividade.</div>
           {itens.map(({ u: x, tarefas }) => <div key={x.id}>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .7, color: 'var(--t-0369A1)', margin: '18px 2px 7px' }}>UNIT {x.n} · {String(x.titulo).toUpperCase()}</div>
-            {tarefas.map(t => <button key={t.id} onClick={() => onAbrir(t)} style={{ display: 'flex', alignItems: 'center', gap: 11, width: '100%', textAlign: 'left', background: 'var(--c-card)', border: '1px solid var(--c-line)', borderRadius: 16, padding: '11px 13px', marginBottom: 8, fontFamily: 'inherit', cursor: 'pointer' }}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: .7, color: '#0369A1', margin: '18px 2px 7px' }}>UNIT {x.n} · {String(x.titulo).toUpperCase()}</div>
+            {tarefas.map(t => <button key={t.id} onClick={() => onAbrir(t)} style={{ display: 'flex', alignItems: 'center', gap: 11, width: '100%', textAlign: 'left', background: '#fff', border: '1px solid #E2E8F0', borderRadius: 16, padding: '11px 13px', marginBottom: 8, fontFamily: 'inherit', cursor: 'pointer' }}>
               <span style={{ width: 40, height: 40, flexShrink: 0, borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: 20, color: '#fff', background: feitas[t.id] ? 'linear-gradient(150deg,#22C55E,#15803D)' : 'linear-gradient(150deg,#38BDF8,#0284C7)' }}>{feitas[t.id] ? '✓' : '💡'}</span>
               <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--c-ink)', lineHeight: 1.25 }}>{String(t.titulo).replace(/^Explicação:\s*/, '')}</span>
-                <span style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: 'var(--c-mute)', marginTop: 2 }}>{t.sub} · livro p. {t.pagina}</span>
+                <span style={{ display: 'block', fontSize: 14, fontWeight: 800, color: '#0F172A', lineHeight: 1.25 }}>{String(t.titulo).replace(/^Explicação:\s*/, '')}</span>
+                <span style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: '#64748B', marginTop: 2 }}>{t.sub} · livro p. {t.pagina}</span>
               </span>
-              <span style={{ color: 'var(--c-mute2)', fontSize: 18, fontWeight: 800 }}>›</span>
+              <span style={{ color: '#94A3B8', fontSize: 18, fontWeight: 800 }}>›</span>
             </button>)}
           </div>)}
         </>}
@@ -2273,7 +2300,7 @@ function PlanoConteudoBase({ tab, onTab, cfg, student, posaulas, activities, slo
           parc={feitas[tarefa.id] ? null : feitas['parc:' + tarefa.id]} onSalvar={feitas[tarefa.id] ? null : salvarParc} proxima={proximaT} onProxima={proximaT ? fProxima : null} />
         : <PlanoTarefaLivro key={tarefa.id} t={tarefa} unidade={u} onFeita={f} onClose={fechar} onAsk={perguntar} />)}
       {tarefa && tarefa.tipo === 'explicacao' && <PlanoTarefaExplicacao key={tarefa.id} t={tarefa} cursoId={cfg.cursoId} onFeita={f} onClose={fechar} onAsk={perguntar} />}
-      {tarefa && tarefa.tipo === 'revisao' && <PlanoCamada titulo={tarefa.titulo} sub={tarefa.sub} onClose={fechar}><div style={{ background: 'var(--c-card)', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: 'var(--c-mute)' }}>📝 Esta revisão ainda está sendo montada.</div></PlanoCamada>}
+      {tarefa && tarefa.tipo === 'revisao' && <PlanoCamada titulo={tarefa.titulo} sub={tarefa.sub} onClose={fechar}><div style={{ background: '#fff', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: '#64748B' }}>📝 Esta revisão ainda está sendo montada.</div></PlanoCamada>}
       {tarefa && tarefa.tipo === 'posaula' && <PlanoTarefaPosaula key={tarefa.id} t={tarefa} unidade={u} posaulas={posaulas} onOpenPost={onOpenPost} onFeita={f} onClose={fechar} onAsk={perguntar} />}
       {tarefa && tarefa.tipo === 'estudo' && <PlanoEstudo key={tarefa.id} estudo={u.estudos[tarefa.ref]} unidade={u} posaulas={posaulas} onOpenPost={onOpenPost} onFeita={f} onClose={fechar} onAsk={perguntar} />}
       {tarefa && tarefa.tipo === 'vocab' && <PlanoVocab key={tarefa.id} vocab={u.vocab[tarefa.ref]} titulo={tarefa.titulo} onFeita={f} onClose={fechar} onAsk={perguntar} />}
@@ -2355,7 +2382,7 @@ function PlanoConteudoCurso(props) {
   const cfg = React.useMemo(() => (dados ? PlanoCfgDoCurso(props.cfg, dados.indice, dados.un, ref, setSel) : null), [dados, props.cfg, ref]);
   if (!cfg) {
     if (props.tab !== 'caminho') return <PlanoConteudoBase {...props} />;
-    return <div className="scroll-area" style={{ padding: '40px 24px', textAlign: 'center', fontWeight: 700, color: erro ? 'var(--t-B91C1C)' : 'var(--c-mute)' }}>
+    return <div className="scroll-area" style={{ padding: '40px 24px', textAlign: 'center', fontWeight: 700, color: erro ? '#B91C1C' : '#64748B' }}>
       <style>{PLANO_CSS}</style>{erro || 'Carregando o seu caminho…'}</div>;
   }
   return <PlanoConteudoBase {...props} cfg={cfg} />;
@@ -2383,7 +2410,7 @@ function PlanoPreviaCurso({ user }) {
       .catch(() => { if (vivo) setErro('Não consegui carregar a unidade agora.'); });
     return () => { vivo = false; };
   }, [admin, cursoId, unId]);
-  const tela = (x, cor) => <div style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', padding: 24, textAlign: 'center', background: 'var(--c-bg)', fontWeight: 700, color: cor || 'var(--c-mute)' }}><style>{PLANO_CSS}</style>{x}</div>;
+  const tela = (x, cor) => <div style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', padding: 24, textAlign: 'center', background: '#F6F1EA', fontWeight: 700, color: cor || '#64748B' }}><style>{PLANO_CSS}</style>{x}</div>;
   if (!admin) return tela('Esta prévia é só para o professor.', '#B91C1C');
   if (erro) return tela(erro, '#B91C1C');
   if (!dados) return tela('Abrindo a prévia…');
@@ -2403,13 +2430,13 @@ function PlanoPreviaCurso({ user }) {
   return (
     <PlanoFalaCtx.Provider value={falaCtx}>
       <style>{PLANO_CSS}</style>
-      <div style={{ position: 'fixed', inset: 0, background: 'var(--c-bg)' }} />
+      <div style={{ position: 'fixed', inset: 0, background: '#F6F1EA' }} />
       <React.Fragment key={vez}>
         {tarefa.tipo === 'livro' && (tarefa.pdf
           ? <PlanoTarefaPagina t={tarefa} cursoId={cursoId} semGravar onFeita={f} onClose={fechar} abrirEm={abrirEm} />
           : <PlanoTarefaLivro t={tarefa} unidade={u} onFeita={f} onClose={fechar} />)}
         {tarefa.tipo === 'explicacao' && <PlanoTarefaExplicacao t={tarefa} cursoId={cursoId} onFeita={f} onClose={fechar} />}
-        {tarefa.tipo === 'revisao' && <PlanoCamada titulo={tarefa.titulo} sub={tarefa.sub} onClose={fechar}><div style={{ background: 'var(--c-card)', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: 'var(--c-mute)' }}>📝 Esta revisão ainda está sendo montada.</div></PlanoCamada>}
+        {tarefa.tipo === 'revisao' && <PlanoCamada titulo={tarefa.titulo} sub={tarefa.sub} onClose={fechar}><div style={{ background: '#fff', borderRadius: 18, padding: 24, textAlign: 'center', fontWeight: 700, color: '#64748B' }}>📝 Esta revisão ainda está sendo montada.</div></PlanoCamada>}
         {tarefa.tipo === 'vocab' && <PlanoVocab vocab={u.vocab[tarefa.ref]} titulo={tarefa.titulo} onFeita={f} onClose={fechar} />}
         {tarefa.tipo === 'jogo' && <PlanoTarefaJogo t={tarefa} unidade={u} onFeita={f} onClose={fechar} />}
         {tarefa.tipo === 'video' && <PlanoTarefaVideo t={tarefa} onFeita={f} onClose={fechar} />}

@@ -9,67 +9,67 @@ const NOV_CSS = `
 @keyframes novSobe { from { opacity:0; transform: translateY(16px) scale(.97); } to { opacity:1; transform:none; } }
 @keyframes novTroca { from { opacity:0; transform: translateX(14px); } to { opacity:1; transform:none; } }
 .nov-fundo { position:fixed; inset:0; z-index:10060; background:rgba(15,23,42,.64); display:flex; align-items:center; justify-content:center; padding:14px; }
-.nov-card { width:100%; max-width:410px; max-height:100%; overflow:hidden; background:var(--c-card); border-radius:26px; box-shadow:0 24px 60px rgba(0,0,0,.4); animation:novSobe .3s; display:flex; flex-direction:column; font-family:inherit; }
+.nov-card { width:100%; max-width:410px; max-height:100%; overflow:hidden; background:#fff; border-radius:26px; box-shadow:0 24px 60px rgba(0,0,0,.4); animation:novSobe .3s; display:flex; flex-direction:column; font-family:inherit; }
 .nov-topo { position:relative; flex-shrink:0; padding:26px 20px 20px; display:flex; align-items:center; justify-content:center; min-height:128px; color:#fff; }
 .nov-topo .nov-ilu { font-size:62px; line-height:1; }
 .nov-pular { position:absolute; top:12px; right:12px; border:0; background:rgba(255,255,255,.2); color:#fff; font-weight:800; font-size:12.5px; font-family:inherit; padding:7px 13px; border-radius:99px; cursor:pointer; }
 .nov-pular:hover { background:rgba(255,255,255,.32); }
 .nov-corpo { flex:1; min-height:0; overflow-y:auto; padding:18px 20px 6px; animation:novTroca .22s; }
-.nov-titulo { font-size:21px; font-weight:800; line-height:1.2; color:var(--c-ink); margin-bottom:8px; }
-.nov-texto { font-size:14.5px; font-weight:600; line-height:1.55; color:var(--c-ink2); }
-.nov-texto b { color:var(--c-ink); }
+.nov-titulo { font-size:21px; font-weight:800; line-height:1.2; color:#0F172A; margin-bottom:8px; }
+.nov-texto { font-size:14.5px; font-weight:600; line-height:1.55; color:#475569; }
+.nov-texto b { color:#0F172A; }
 .nov-rodape { flex-shrink:0; padding:12px 20px calc(18px + env(safe-area-inset-bottom, 0px)); }
 .nov-pontos { display:flex; gap:6px; justify-content:center; margin-bottom:12px; }
-.nov-pontos i { width:7px; height:7px; border-radius:99px; background:var(--c-line2); transition:all .2s; }
+.nov-pontos i { width:7px; height:7px; border-radius:99px; background:#CBD5E1; transition:all .2s; }
 .nov-pontos i.on { width:22px; background:#7C3AED; }
 .nov-botoes { display:flex; gap:10px; align-items:center; }
 .nov-prox { flex:1; border:0; border-radius:16px; padding:14px 16px; background:linear-gradient(180deg,#8B5CF6,#6D28D9); color:#fff; font-weight:800; font-size:15px; font-family:inherit; cursor:pointer; box-shadow:0 8px 20px rgba(109,40,217,.3); }
-.nov-voltar { border:0; background:none; color:var(--c-mute); font-weight:800; font-size:14px; font-family:inherit; padding:12px 6px; cursor:pointer; }
-.nov-extra { display:block; width:100%; margin-top:8px; border:1.5px solid #DDD6FE; background:var(--c-card); color:var(--t-5B21B6); border-radius:16px; padding:12px; font-weight:800; font-size:14px; font-family:inherit; cursor:pointer; }
+.nov-voltar { border:0; background:none; color:#64748B; font-weight:800; font-size:14px; font-family:inherit; padding:12px 6px; cursor:pointer; }
+.nov-extra { display:block; width:100%; margin-top:8px; border:1.5px solid #DDD6FE; background:#fff; color:#5B21B6; border-radius:16px; padding:12px; font-weight:800; font-size:14px; font-family:inherit; cursor:pointer; }
 .nov-lista { display:grid; gap:9px; margin-top:4px; }
-.nov-lista > div { display:flex; gap:10px; align-items:flex-start; background:var(--c-soft2); border:1px solid var(--c-line); border-radius:14px; padding:10px 12px; font-size:13.5px; font-weight:600; line-height:1.45; color:var(--c-ink2); }
+.nov-lista > div { display:flex; gap:10px; align-items:flex-start; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:14px; padding:10px 12px; font-size:13.5px; font-weight:600; line-height:1.45; color:#334155; }
 .nov-lista > div > span { font-size:18px; line-height:1.2; flex-shrink:0; }
-.nov-lista.nao > div { background:var(--c-red-bg); border-color:#FECACA; color:var(--t-7F1D1D); }
-.nov-chat { margin-top:12px; background:var(--c-soft2); border:1px solid var(--c-line); border-radius:16px; padding:10px; }
-.nov-chat small { display:block; font-size:10.5px; font-weight:800; letter-spacing:.6px; color:var(--c-mute2); margin:0 2px 6px; }
+.nov-lista.nao > div { background:#FEF2F2; border-color:#FECACA; color:#7F1D1D; }
+.nov-chat { margin-top:12px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:16px; padding:10px; }
+.nov-chat small { display:block; font-size:10.5px; font-weight:800; letter-spacing:.6px; color:#94A3B8; margin:0 2px 6px; }
 .nov-bolha { max-width:88%; padding:8px 11px; border-radius:13px; font-size:13px; font-weight:600; line-height:1.45; margin:5px 0; }
 .nov-bolha.eu { margin-left:auto; background:#7C3AED; color:#fff; }
-.nov-bolha.ia { background:var(--c-card); border:1px solid var(--c-line); color:var(--c-ink); }
+.nov-bolha.ia { background:#fff; border:1px solid #E2E8F0; color:#0F172A; }
 .nov-num { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:10px; }
-.nov-num > div { background:var(--p-F5F3FF); border:1px solid #DDD6FE; border-radius:14px; padding:11px 12px; }
-.nov-num > div.larga { grid-column:1 / -1; background:var(--p-ECFDF5); border-color:#A7F3D0; }
-.nov-num b { display:block; font-size:22px; font-weight:800; line-height:1.1; color:var(--t-4C1D95); }
-.nov-num > div.larga b { color:var(--t-065F46); }
-.nov-num span { display:block; margin-top:3px; font-size:11.5px; font-weight:700; line-height:1.3; color:var(--c-mute); }
+.nov-num > div { background:#F5F3FF; border:1px solid #DDD6FE; border-radius:14px; padding:11px 12px; }
+.nov-num > div.larga { grid-column:1 / -1; background:#ECFDF5; border-color:#A7F3D0; }
+.nov-num b { display:block; font-size:22px; font-weight:800; line-height:1.1; color:#4C1D95; }
+.nov-num > div.larga b { color:#065F46; }
+.nov-num span { display:block; margin-top:3px; font-size:11.5px; font-weight:700; line-height:1.3; color:#64748B; }
 .nov-ops { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
-.nov-op { border:1.5px solid #DDD6FE; background:var(--c-card); color:var(--t-5B21B6); border-radius:14px; padding:10px 14px; font-weight:800; font-size:15px; font-family:inherit; cursor:pointer; min-width:58px; }
+.nov-op { border:1.5px solid #DDD6FE; background:#fff; color:#5B21B6; border-radius:14px; padding:10px 14px; font-weight:800; font-size:15px; font-family:inherit; cursor:pointer; min-width:58px; }
 .nov-op small { font-size:11px; font-weight:700; }
 .nov-op.on { background:linear-gradient(180deg,#8B5CF6,#6D28D9); border-color:transparent; color:#fff; box-shadow:0 6px 14px rgba(109,40,217,.28); }
-.nov-conta { margin-top:12px; border:1px solid #DDD6FE; background:var(--p-F5F3FF); border-radius:16px; padding:12px; }
-.nov-conta .t { font-size:11px; font-weight:800; letter-spacing:.5px; color:var(--t-7C3AED); text-transform:uppercase; margin-bottom:6px; }
-.nov-linha { display:flex; justify-content:space-between; gap:10px; font-size:13px; font-weight:700; color:var(--c-ink2); padding:3px 0; }
-.nov-linha b { color:var(--c-ink); white-space:nowrap; }
-.nov-linha.tot { border-top:1px dashed #C4B5FD; margin-top:5px; padding-top:7px; font-size:13.5px; color:var(--c-ink); }
-.nov-meta { margin-top:10px; display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--c-card); border:1.5px solid #8B5CF6; border-radius:14px; padding:9px 10px; }
-.nov-meta .l { font-size:12px; font-weight:800; color:var(--t-5B21B6); line-height:1.25; }
-.nov-meta .l small { display:block; font-size:11px; font-weight:700; color:var(--c-mute); }
+.nov-conta { margin-top:12px; border:1px solid #DDD6FE; background:#F5F3FF; border-radius:16px; padding:12px; }
+.nov-conta .t { font-size:11px; font-weight:800; letter-spacing:.5px; color:#7C3AED; text-transform:uppercase; margin-bottom:6px; }
+.nov-linha { display:flex; justify-content:space-between; gap:10px; font-size:13px; font-weight:700; color:#475569; padding:3px 0; }
+.nov-linha b { color:#0F172A; white-space:nowrap; }
+.nov-linha.tot { border-top:1px dashed #C4B5FD; margin-top:5px; padding-top:7px; font-size:13.5px; color:#0F172A; }
+.nov-meta { margin-top:10px; display:flex; align-items:center; justify-content:space-between; gap:8px; background:#fff; border:1.5px solid #8B5CF6; border-radius:14px; padding:9px 10px; }
+.nov-meta .l { font-size:12px; font-weight:800; color:#5B21B6; line-height:1.25; }
+.nov-meta .l small { display:block; font-size:11px; font-weight:700; color:#64748B; }
 .nov-step { display:flex; align-items:center; gap:8px; }
-.nov-step button { width:34px; height:34px; border-radius:11px; border:0; background:var(--p-EDE9FE); color:var(--t-5B21B6); font-size:20px; font-weight:800; font-family:inherit; cursor:pointer; line-height:1; }
-.nov-step b { min-width:74px; text-align:center; font-size:17px; color:var(--c-ink); }
-.nov-usar { margin-top:6px; border:0; background:none; color:var(--t-7C3AED); font-weight:800; font-size:12px; font-family:inherit; cursor:pointer; padding:2px 0; }
-.nov-nota { margin-top:10px; font-size:12px; font-weight:700; color:var(--c-mute); line-height:1.45; }
-.nov-erro { margin-top:10px; background:var(--c-red-bg); border:1px solid #FECACA; color:var(--t-7F1D1D); border-radius:12px; padding:9px 11px; font-size:12.5px; font-weight:700; }
-.nov-recado { margin-top:6px; background:var(--c-warn-bg); border:1px solid var(--c-warn-line); border-radius:16px; padding:14px; }
+.nov-step button { width:34px; height:34px; border-radius:11px; border:0; background:#EDE9FE; color:#5B21B6; font-size:20px; font-weight:800; font-family:inherit; cursor:pointer; line-height:1; }
+.nov-step b { min-width:74px; text-align:center; font-size:17px; color:#0F172A; }
+.nov-usar { margin-top:6px; border:0; background:none; color:#7C3AED; font-weight:800; font-size:12px; font-family:inherit; cursor:pointer; padding:2px 0; }
+.nov-nota { margin-top:10px; font-size:12px; font-weight:700; color:#64748B; line-height:1.45; }
+.nov-erro { margin-top:10px; background:#FEF2F2; border:1px solid #FECACA; color:#7F1D1D; border-radius:12px; padding:9px 11px; font-size:12.5px; font-weight:700; }
+.nov-recado { margin-top:6px; background:#FFFBEB; border:1px solid #FDE68A; border-radius:16px; padding:14px; }
 .nov-recado .por { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
 .nov-recado .av { width:38px; height:38px; border-radius:50%; background:#16A34A; color:#fff; display:grid; place-items:center; font-weight:800; font-size:16px; }
-.nov-recado .por b { display:block; font-size:13.5px; color:var(--t-451A03); }
-.nov-recado .por small { font-size:11px; font-weight:700; color:var(--c-warn-ink); }
-.nov-recado p { font-size:14px; font-weight:600; line-height:1.55; color:var(--t-451A03); white-space:pre-wrap; }
+.nov-recado .por b { display:block; font-size:13.5px; color:#451A03; }
+.nov-recado .por small { font-size:11px; font-weight:700; color:#92400E; }
+.nov-recado p { font-size:14px; font-weight:600; line-height:1.55; color:#451A03; white-space:pre-wrap; }
 .nov-veredito { margin-top:4px; border-radius:14px; padding:11px 12px; font-size:13.5px; font-weight:700; line-height:1.5; }
-.nov-veredito.ok { background:var(--p-F0FDF4); border:1px solid var(--p-BBF7D0); color:var(--t-14532D); }
-.nov-veredito.meio { background:var(--c-warn-bg); border:1px solid var(--c-warn-line); color:var(--t-78350F); }
-.nov-veredito.baixo { background:var(--c-orange-bg); border:1px solid var(--c-orange-line); color:var(--t-7C2D12); }
-.nov-veredito.zero { background:var(--c-soft); border:1px solid var(--c-line); color:var(--c-ink2); }
+.nov-veredito.ok { background:#F0FDF4; border:1px solid #BBF7D0; color:#14532D; }
+.nov-veredito.meio { background:#FFFBEB; border:1px solid #FDE68A; color:#78350F; }
+.nov-veredito.baixo { background:#FFF7ED; border:1px solid #FED7AA; color:#7C2D12; }
+.nov-veredito.zero { background:#F1F5F9; border:1px solid #E2E8F0; color:#334155; }
 `;
 
 function NovidadePassos({ passos, rotuloFim = 'Entendi', rotuloExtra, onFim, onExtra }) {
@@ -130,7 +130,7 @@ function NovidadeEurekIA({ onFim, onExperimentar }) {
       fundo: 'linear-gradient(150deg,#8B5CF6,#6D28D9)', ilu: '👆', titulo: 'Como usar',
       texto: <>Toque no <b>botão roxo com o Dr. EurekIA</b>, no canto da tela, e escreva a sua dúvida. E <b>quando você está fazendo uma atividade</b>, ele aparece em <b>cada exercício</b>, numa bolinha roxa: com dificuldade? É só tocar nela e ele explica o que o exercício pede, sem entregar a resposta.</>,
       extra: onExperimentar ? <div className="nov-chat"><small>QUE TAL COMEÇAR POR AQUI?</small>
-        <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.45, color: 'var(--c-ink2)', margin: '0 2px 6px' }}>Pergunte ao Dr. EurekIA <b>o que você está aprendendo</b> ultimamente. Deixei a pergunta pronta: toque em <b>Experimentar agora</b> e depois em <b>Enviar</b>.</div>
+        <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.45, color: '#334155', margin: '0 2px 6px' }}>Pergunte ao Dr. EurekIA <b>o que você está aprendendo</b> ultimamente. Deixei a pergunta pronta: toque em <b>Experimentar agora</b> e depois em <b>Enviar</b>.</div>
         <div className="nov-bolha eu">{NOV_PERGUNTA_INICIAL}</div></div> : null,
     },
   ];
@@ -329,7 +329,7 @@ function NovidadeAdesao({ AD, result, student, aulasSemana = 0, durMin = 60, onS
     {
       fundo: 'linear-gradient(150deg,#6366F1,#4338CA)', ilu: '🤔', titulo: 'E aí, o que você acha da sua média?',
       texto: <><div className={`nov-veredito ${ver.cls}`}>{ver.ic} {ver.t}</div>
-        <div style={{ marginTop: 12, fontWeight: 800, color: 'var(--c-ink)' }}>Que tal melhorar por aqui?</div>
+        <div style={{ marginTop: 12, fontWeight: 800, color: '#0F172A' }}>Que tal melhorar por aqui?</div>
         <div className="nov-lista" style={{ marginTop: 6 }}>{dicas.map((x, i) => <div key={i}><span>{x[0]}</span><div><b>{x[1]}.</b> {x[2]}</div></div>)}</div></>,
     },
     {
