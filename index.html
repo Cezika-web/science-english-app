@@ -6179,6 +6179,13 @@ function App() {
     ]);
     if (!snap.exists()) return;
     const dadosAluno = snap.data();
+    // Versão nova em teste: só quem tem `versaoNova` no cadastro é levado para a pasta novo/ (e quem não tem, volta).
+    const naPastaNova = /\/novo\/(index\.html)?$/.test(window.location.pathname);
+    if ((dadosAluno.versaoNova === true) !== naPastaNova) {
+      const raiz = window.location.pathname.replace(/(novo\/)?(index\.html)?$/, '');
+      window.location.replace(raiz + (naPastaNova ? '' : 'novo/') + window.location.search + window.location.hash);
+      return;
+    }
     const { senha: _senhaLegada, ...dadosSeguros } = dadosAluno;
     setStudent({ ...dadosSeguros, uid });
     // Só quem tem trilha ativada lê o briefing (os outros alunos não gastam essa leitura).

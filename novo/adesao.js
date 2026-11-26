@@ -1,0 +1,1751 @@
+/* Adesão — cálculo e textos compartilhados entre o app do aluno (index.html) e o
+ * painel do professor (admin/). Sem dependência de DOM nem de Firebase: recebe
+ * dados já lidos e devolve números e textos. Por isso roda igual nos dois lados
+ * (e nos testes em Node).
+ *
+ * O que entra na nota (por semana, segunda a domingo):
+ *   Constância  dias com pelo menos `minDia` min ativos ÷ meta de dias
+ *   Atividades  % de exercícios feitos × fator de tempo (tempo real ÷ tempo esperado)
+ *   Pós-aula    minutos lidos (somando todas as aberturas) ÷ meta por pós-aula
+ *   Aulas       aulas assistidas ÷ aulas previstas
+ *   Desafio     partes feitas ÷ partes disponíveis
+ * Pilar sem dado (ex.: aluno sem aulas, ou semana anterior à coleta) sai da
+ * conta e os pesos dos demais se redistribuem.
+ *
+ * A nota é recalculada na hora (não espera a semana fechar): média das últimas 3
+ * semanas fechadas e da semana de hoje, com mais peso para a mais recente. O peso
+ * escorrega dia a dia (ver `wts` em compute), então a nota não dá salto na segunda.
+ * O dia de hoje ainda está aberto: o que o aluno faz hoje só ajuda; o que ficar por
+ * fazer passa a contar quando o dia virar. A medição de cada aluno começa no primeiro
+ * sinal dele (1ª aula, pós-aula ou atividade), não no dia do cadastro.
+ */
+(function (root) {
+  'use strict';
+
+  var KEYS = ['C', 'At', 'Pos', 'Aula', 'Des'];
+  var PIL = {
+    C:    { name: 'Constância', short: 'Co', ic: '📅', desc: 'Dias da semana em que estudou' },
+    At:   { name: 'Atividades', short: 'At', ic: '✏️', desc: 'Exercícios feitos, com tempo mínimo' },
+    Pos:  { name: 'Pós-aula',   short: 'Pó', ic: '📖', desc: 'Tempo de leitura somado' },
+    Aula: { name: 'Aulas',      short: 'Au', ic: '🎓', desc: 'Presença nas aulas' },
+    Des:  { name: 'Desafio',    short: 'De', ic: '🏆', desc: 'Partes do desafio feitas' }
+  };
+  var WD = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+  var WD1 = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+  var WDF = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado', 'domingo'];
+  var DEFAULTS = {
+    minPos: 5, secEx: 15, metaDias: 5, minDia: 3, limiteSeg: 60,
+    metaDiaMin: 10, metaDiasEstudo: 5, minTipo: 1,
+    // A nota aparece quando houver este tanto de dias medidos (antes disso um único dia mandaria em tudo).
+    minDiasNota: 3,
+    w: { C: 25, At: 25, Pos: 20, Aula: 20, Des: 10 }
+  };
+  // Quem ainda não teve aula, pós-aula nem atividade só começa a ser medido pelo primeiro uso do app;
+  // quem não fez nem isso ganha uma carência antes de a medição começar a contar os dias em branco.
+  var CARENCIA_DIAS = 7;
+
+  // ── utilidades ────────────────────────────────────────────────────────
+  function sum(a) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i]; return s; }
+  function mean(a) { return a.length ? sum(a) / a.length : 0; }
+  function pct(v) { return Math.round(v * 100); }
+  function num1(v) { return (Math.round(v * 10) / 10).toString().replace('.', ','); }
+  function fm(m) { return m < 1 ? Math.round(m * 60) + ' s' : num1(m) + ' min'; }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+    });
+  }
+  function cap1(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function listPt(a) { return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1]; }
+  function plural(n, s, p) { return n + ' ' + (n === 1 ? s : p); }
+
+  function toDate(v) {
+    if (!v) return null;
+    if (v instanceof Date) return isNaN(v) ? null : v;
+    if (typeof v.toDate === 'function') { var d0 = v.toDate(); return isNaN(d0) ? null : d0; }
+    if (typeof v === 'object' && typeof v.seconds === 'number') return new Date(v.seconds * 1000);
+    if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return new Date(+v.slice(0, 4), +v.slice(5, 7) - 1, +v.slice(8, 10));
+    var d = new Date(v);
+    return isNaN(d) ? null : d;
+  }
+  function dayKey(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function addDays(d, n) { var x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() + n); return x; }
+  function mondayOf(d) {
+    var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+    return x;
+  }
+  function ddmm(d) { return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0'); }
+  // Chave do item (pós-aula, atividade, extra) no documento de uso do dia.
+  // Mesma regra do cronômetro do app (CzkUsage em index.html).
+  function itemKey(kind, id) { return kind + '_' + String(id).replace(/[^A-Za-z0-9_-]/g, '_'); }
+
+  // Mesma regra do app: o nome do arquivo guarda a data real da aula; createdAt
+  // pode ser a data da importação. Mantenha igual a postReferenceDate (index.html).
+  function postFilenameDate(post) {
+    var sources = [post && post.filename, post && post.url, post && post.id].filter(Boolean).map(String);
+    for (var i = 0; i < sources.length; i++) {
+      var value = sources[i];
+      try { value = decodeURIComponent(sources[i]); } catch (e) { /* mantém */ }
+      var match = value.match(/(?:^|[^\d])(\d{2})[-_](\d{2})[-_](20\d{2})(?=[^\d]|$)/);
+      var year, month, day;
+      if (match) { month = match[1]; day = match[2]; year = match[3]; }
+      else {
+        match = value.match(/(?:^|[^\d])(20\d{2})[-_](\d{2})[-_](\d{2})(?=[^\d]|$)/);
+        if (match) { year = match[1]; month = match[2]; day = match[3]; }
+      }
+      if (!match) continue;
+      var parsed = new Date(Number(year), Number(month) - 1, Number(day));
+      if (parsed.getFullYear() === Number(year) && parsed.getMonth() === Number(month) - 1 && parsed.getDate() === Number(day)) return parsed;
+    }
+    return null;
+  }
+  function postRef(post) { return postFilenameDate(post) || toDate(post && (post.classDate || post.createdAt)); }
+
+  function cfgOf(raw) {
+    var c = raw || {}, w = c.w || {};
+    function n(v, d, lo, hi) { v = Number(v); if (!isFinite(v)) return d; return Math.max(lo, Math.min(hi, v)); }
+    return {
+      minPos: n(c.minPos, DEFAULTS.minPos, 1, 30),
+      secEx: n(c.secEx, DEFAULTS.secEx, 3, 180),
+      metaDias: Math.round(n(c.metaDias, DEFAULTS.metaDias, 1, 7)),
+      minDia: n(c.minDia, DEFAULTS.minDia, 1, 60),
+      // Maior intervalo entre dois movimentos que ainda conta como estudo. Vale para a
+      // coleta daqui para frente (o app do aluno lê este valor); não refaz o que já foi gravado.
+      limiteSeg: Math.round(n(c.limiteSeg, DEFAULTS.limiteSeg, 20, 180)),
+      // Meta de estudo: minutos por dia, quantos dias da semana precisam bater a meta e
+      // quantos minutos um tipo de estudo precisa ter no dia para contar como "feito".
+      metaDiaMin: n(c.metaDiaMin, DEFAULTS.metaDiaMin, 1, 180),
+      metaDiasEstudo: Math.round(n(c.metaDiasEstudo, DEFAULTS.metaDiasEstudo, 1, 7)),
+      minTipo: n(c.minTipo, DEFAULTS.minTipo, 0.5, 30),
+      minDiasNota: Math.round(n(c.minDiasNota, DEFAULTS.minDiasNota, 1, 14)),
+      w: {
+        C: n(w.C, DEFAULTS.w.C, 0, 100), At: n(w.At, DEFAULTS.w.At, 0, 100), Pos: n(w.Pos, DEFAULTS.w.Pos, 0, 100),
+        Aula: n(w.Aula, DEFAULTS.w.Aula, 0, 100), Des: n(w.Des, DEFAULTS.w.Des, 0, 100)
+      },
+      coletaDesde: /^\d{4}-\d{2}-\d{2}$/.test(c.coletaDesde || '') ? c.coletaDesde : null
+    };
+  }
+
+  // Metas que o aluno escolhe no Perfil: minutos por dia, horas por semana e horas por mês. Vazio = em aberto.
+  function metasOf(m) {
+    m = m || {};
+    function n(v, lo, hi) { v = Number(v); return isFinite(v) && v >= lo && v <= hi ? v : null; }
+    return { diaMin: n(m.diaMin, 1, 600), semH: n(m.semH, 0.5, 120), mesH: n(m.mesH, 0.5, 500) };
+  }
+
+  function band(v) {
+    if (v >= 85) return { k: 'alta', label: 'Alta', color: '#15935f', soft: '#16A34A' };
+    if (v >= 65) return { k: 'media', label: 'Média', color: '#d97706', soft: '#F59E0B' };
+    return { k: 'baixa', label: 'Baixa', color: '#dc2626', soft: '#F97316' };
+  }
+  function combine(parts, cfg) {
+    var n = 0, d = 0;
+    KEYS.forEach(function (k) { if (parts[k] == null) return; n += cfg.w[k] * parts[k]; d += cfg.w[k]; });
+    return d ? Math.round(100 * n / d) : null;
+  }
+  // Peso efetivo (em %) de um pilar, já redistribuído entre os que se aplicam.
+  function effWeight(present, k, cfg) {
+    var d = 0;
+    KEYS.forEach(function (x) { if (present[x]) d += cfg.w[x]; });
+    return d && present[k] ? Math.round(100 * cfg.w[k] / d) : 0;
+  }
+
+  // ── cálculo ───────────────────────────────────────────────────────────
+  /* input = {
+   *   now: Date,
+   *   student: { createdAt, challengeEnabled },
+   *   usage:   [{ date:'AAAA-MM-DD', secs:{total,posaula,atividade,desafio,outros}, items:{}, itemOpens:{}, opens }],
+   *   posts:   [{ id, title, createdAt, classDate, filename, url }],
+   *   activities: [{ id, createdAt, finalizada, exTotal, exFeitos, correct, wrong, correctedAt }],
+   *   attendance: [{ key:'AAAA-MM-DD', present:bool, excused?:bool }],
+   *   challenge: { enabled, weeks:['AAAA-MM-DD'], completed:['AAAA-MM-DD-part-1'] }
+   * } */
+  function compute(input, cfgRaw) {
+    var cfg = cfgOf(cfgRaw);
+    // A meta por dia que o aluno escolheu vale no lugar da meta da escola, nas telas dele (anel, bolinhas e dias com meta).
+    // Semana e mês só aparecem no quadro "Horas de estudo". Nada disso mexe na nota de adesão.
+    var metas = metasOf(input.metas);
+    if (metas.diaMin) cfg.metaDiaMin = metas.diaMin;
+    var now = input.now || new Date();
+    var studentStart = toDate(input.student && input.student.createdAt);
+    var usage = input.usage || [];
+    var usageByDay = {}, itemSecs = {}, itemOpens = {}, earliest = null, opensTotal = 0;
+    usage.forEach(function (u) {
+      if (!u || !u.date) return;
+      usageByDay[u.date] = u;
+      if (!earliest || u.date < earliest) earliest = u.date;
+      opensTotal += Number(u.opens || 0);
+      var it = u.items || {}, io = u.itemOpens || {};
+      Object.keys(it).forEach(function (k) { itemSecs[k] = (itemSecs[k] || 0) + Number(it[k] || 0); });
+      Object.keys(io).forEach(function (k) { itemOpens[k] = (itemOpens[k] || 0) + Number(io[k] || 0); });
+    });
+    var coleta = cfg.coletaDesde || earliest;
+    // Dia a dia (página de adesão): minutos de estudo por tipo e os itens de cada dia.
+    var daily = {};
+    Object.keys(usageByDay).forEach(function (k) {
+      var s = usageByDay[k].secs || {}, it = usageByDay[k].items || {};
+      var pos = Number(s.posaula || 0) / 60, act = Number(s.atividade || 0) / 60, des = Number(s.desafio || 0) / 60, voc = Number(s.vocab || 0) / 60;
+      var study = pos + act + des + voc;
+      daily[k] = {
+        pos: pos, act: act, des: des, voc: voc, min: study, out: Math.max(0, Number(s.total || 0) / 60 - study),
+        items: Object.keys(it).map(function (ik) { return { k: ik, min: Number(it[ik] || 0) / 60 }; }).filter(function (x) { return x.min > 0; })
+      };
+    });
+    var posts = (input.posts || []).map(function (p) { return { p: p, ref: postRef(p) }; }).filter(function (x) { return x.ref; });
+    // Nomes dos itens que aparecem no detalhe do dia (pós-aula, atividade, extra...).
+    var names = {};
+    posts.forEach(function (x) { names[itemKey('pos', x.p.id)] = x.p.title || ('Pós-aula ' + ddmm(x.ref)); });
+    (input.activities || []).forEach(function (a) { if (a && a.id != null) names[itemKey('act', a.id)] = a.name || 'Atividade'; });
+    Object.keys(input.names || {}).forEach(function (k) { names[k] = input.names[k]; });
+    var acts = (input.activities || []).map(function (a) { return { a: a, at: toDate(a.createdAt) }; }).filter(function (x) { return x.at; });
+    var att = input.attendance || [];
+    var ch = input.challenge || {};
+    var start0 = mondayOf(now);
+    var todayK = dayKey(now);
+    // O dia só vira "não estudou" depois de o app começar a medir (e do cadastro do aluno).
+    var measureFrom = coleta || todayK;
+    if (studentStart && dayKey(studentStart) > measureFrom) measureFrom = dayKey(studentStart);
+    // Aluno novo: a medição dele começa no 1º sinal (aula, pós-aula ou atividade; sem isso, o 1º uso do app), não no
+    // dia do cadastro. Cadastrado numa sexta e com a 1ª aula na quarta seguinte, os dias de espera não são "dias sem
+    // estudar". Quem já tinha histórico antes da medição (aula, pós-aula ou atividade) segue medido desde o cadastro.
+    var before = false, firstClass = null, firstUse = null;
+    function seen(k, use) {
+      if (!k) return;
+      if (k < measureFrom) { if (!use) before = true; return; }
+      if (use) { if (!firstUse || k < firstUse) firstUse = k; } else if (!firstClass || k < firstClass) firstClass = k;
+    }
+    posts.forEach(function (x) { seen(dayKey(x.ref), false); });
+    acts.forEach(function (x) { seen(dayKey(x.at), false); });
+    att.forEach(function (x) { if (x && x.key && !x.excused) seen(x.key, false); });
+    usage.forEach(function (u) { if (u && u.date && Number((u.secs || {}).total || 0) > 0) seen(u.date, true); });
+    // (Sem data de cadastro não dá para saber se o aluno é novo: segue medido desde o início da coleta.)
+    if (!before && studentStart) measureFrom = firstClass || firstUse || dayKey(addDays(parseKey(measureFrom), CARENCIA_DIAS));
+    // Semana só vale (para snapshot e nota) se terminar depois de o aluno entrar.
+    var validFrom = before ? (studentStart ? dayKey(studentStart) : '0000-00-00') : measureFrom;
+
+    function weekCalc(start, isCurrent) {
+      var key = dayKey(start), end = addDays(start, 6), endExclusive = addDays(start, 7);
+      // days = minutos de ESTUDO por dia: pós-aula + atividades (inclui extras e correção) +
+      // desafio + vocabulário/verbos/chunks. df = o resto do uso do app (início, progresso,
+      // perfil...), que é uso mas não é estudo e não entra em dia estudado nem na meta.
+      var days = [], dp = [], da = [], dd = [], dv = [], df = [], i;
+      for (i = 0; i < 7; i++) {
+        var u = usageByDay[dayKey(addDays(start, i))];
+        var s = (u && u.secs) || {};
+        var tot = Number(s.total || 0) / 60, p = Number(s.posaula || 0) / 60, a = Number(s.atividade || 0) / 60;
+        var d2 = Number(s.desafio || 0) / 60, v = Number(s.vocab || 0) / 60, st = p + a + d2 + v;
+        days.push(st); dp.push(p); da.push(a); dd.push(d2); dv.push(v); df.push(Math.max(0, tot - st));
+      }
+      var elapsed = isCurrent ? ((now.getDay() + 6) % 7) + 1 : 7;
+      var activeDays = days.slice(0, elapsed).filter(function (m) { return m >= cfg.minDia; }).length;
+      // Dias medidos da semana: do início da medição do aluno (firstIdx) até hoje, na semana atual, ou até domingo.
+      // Dias antes de o aluno começar não são "dias sem estudar". Hoje ainda corre: só entra na conta se já estudou.
+      var firstIdx = 7, lastIdx = elapsed - 1;
+      for (i = 0; i < 7; i++) if (dayKey(addDays(start, i)) >= measureFrom) { firstIdx = i; break; }
+      // A semana vale pelos dias medidos (do início da medição em diante), mesmo que comece antes dele (ex.: coleta numa quarta).
+      var hasTime = !!coleta && firstIdx <= lastIdx;
+      var nDias = 0, ativos = 0;
+      for (i = firstIdx; i <= lastIdx; i++) {
+        var on = days[i] >= cfg.minDia;
+        if (isCurrent && i === lastIdx) { if (on) { nDias++; ativos++; } }
+        else { nDias++; if (on) ativos++; }
+      }
+      var from0 = hasTime ? new Date(Math.max(start.getTime(), parseKey(measureFrom).getTime())) : start;
+
+      // Meta de estudo da semana: dias que bateram a meta diária, minutos, e quais tipos de
+      // estudo (ler pós-aula, vocabulário/verbos/chunks, exercícios) foram feitos.
+      var goalDays = days.map(function (m, k) {
+        return { min: m, hit: k < elapsed && m >= cfg.metaDiaMin, leitura: dp[k], vocab: dv[k], exercicio: da[k] + dd[k] };
+      });
+      var upto = function (fn) { return sum(goalDays.slice(0, elapsed).map(fn)); };
+      var tipoFeito = function (fn) { return goalDays.slice(0, elapsed).some(function (g) { return fn(g) >= cfg.minTipo; }); };
+      var goal = {
+        metaDiaMin: cfg.metaDiaMin, metaDias: cfg.metaDiasEstudo, metaSemanaMin: cfg.metaDiaMin * cfg.metaDiasEstudo,
+        hits: goalDays.filter(function (g) { return g.hit; }).length,
+        minutos: upto(function (g) { return g.min; }),
+        mins: { leitura: upto(function (g) { return g.leitura; }), vocab: upto(function (g) { return g.vocab; }), exercicio: upto(function (g) { return g.exercicio; }) },
+        tipos: { leitura: tipoFeito(function (g) { return g.leitura; }), vocab: tipoFeito(function (g) { return g.vocab; }), exercicio: tipoFeito(function (g) { return g.exercicio; }) },
+        dias: goalDays
+      };
+      goal.atingida = goal.hits >= goal.metaDias;
+
+      // `open` = item do dia de hoje (ou o Desafio da semana em andamento): ainda dá tempo de fazer, então não conta como
+      // "deixou de fazer". Só passa a valer quando o dia (ou a semana) vira.
+      var posItems = !hasTime ? [] : posts.filter(function (x) { return x.ref >= from0 && x.ref < endExclusive; }).map(function (x) {
+        var pk = itemKey('pos', x.p.id), m = (itemSecs[pk] || 0) / 60;
+        return { id: x.p.id, name: x.p.title || 'Pós-aula ' + ddmm(x.ref), ref: x.ref, minutes: m, opens: itemOpens[pk] || 0, score: Math.min(1, m / cfg.minPos), open: isCurrent && dayKey(x.ref) === todayK };
+      });
+      var atItems = acts.filter(function (x) { return x.at >= from0 && x.at < endExclusive; }).map(function (x) {
+        var a = x.a, known = Number(a.exTotal) > 0;
+        var n = known ? Number(a.exTotal) : 1;
+        var done = known ? Math.min(n, Number(a.exFeitos || 0)) : (a.finalizada ? 1 : 0);
+        var t = (itemSecs[itemKey('act', a.id)] || 0) / 60, exp = done * cfg.secEx / 60;
+        var entrega = done / n;
+        var fator = !hasTime ? 1 : (done ? Math.min(1, t / exp) : 0);
+        return { id: a.id, name: a.name || 'Atividade', n: n, done: done, time: t, exp: exp, entrega: entrega, fator: fator, score: entrega * fator, open: isCurrent && dayKey(x.at) === todayK };
+      });
+      function atPart(list) { var nn = sum(list.map(function (i) { return i.n; })); return nn ? sum(list.map(function (i) { return i.n * i.score; })) / nn : null; }
+      function posPart(list) { return list.length ? mean(list.map(function (i) { return i.score; })) : null; }
+      // Ao vivo, mostra o que o aluno já fez hoje (item aberto com progresso) e, na nota, só o que já venceu.
+      var atVisto = atItems.filter(function (i) { return !i.open || i.done > 0; }), atVence = atItems.filter(function (i) { return !i.open; });
+      var posVisto = posItems.filter(function (i) { return !i.open || i.minutes > 0; }), posVence = posItems.filter(function (i) { return !i.open; });
+
+      var fromKey = hasTime && measureFrom > key ? measureFrom : key;
+      var pts = att.filter(function (x) { return x.key >= fromKey && x.key <= dayKey(end) && !x.excused; });
+      var aulas = [pts.length, pts.filter(function (x) { return x.present; }).length];
+
+      var avail = 0, doneParts = 0;
+      if (ch.enabled !== false && (ch.weeks || []).indexOf(key) >= 0 && dayKey(end) >= validFrom) {
+        avail = 2;
+        doneParts = [1, 2].filter(function (n) { return (ch.completed || []).indexOf(key + '-part-' + n) >= 0; }).length;
+      }
+
+      // Constância proporcional aos dias medidos: 5 dias de meta por semana de 7, então 3 dias medidos pedem ~2,1 dias.
+      // Semana inteira (7 dias medidos) dá a conta de sempre: dias ativos ÷ meta de dias.
+      var cC = null;
+      if (hasTime && nDias) {
+        cC = Math.min(1, ativos / (cfg.metaDias * nDias / 7));
+        if (isCurrent) {
+          // Semana em andamento: um dia em branco no começo ainda dá para compensar (a meta é 5 dias por semana, não "todo dia").
+          // No começo da semana pesa também a chance de ainda bater a meta com os dias que restam (amanhã em diante e hoje, se ainda
+          // não estudou); a cada dia que passa a conta fica mais exata, e no domingo vale só o ritmo real.
+          var resta = (7 - elapsed) + (days[lastIdx] >= cfg.minDia ? 0 : 1);
+          var possivel = Math.min(1, (ativos + resta) / (cfg.metaDias * (7 - firstIdx) / 7));
+          cC = cC * (elapsed / 7) + possivel * (1 - elapsed / 7);
+        }
+      }
+      var aulaP = aulas[0] ? aulas[1] / aulas[0] : null;
+      var partsVence = { C: cC, At: atPart(atVence), Pos: posPart(posVence), Aula: aulaP, Des: isCurrent ? null : (avail ? doneParts / avail : null) };
+      var parts = !isCurrent ? partsVence : { C: cC, At: atPart(atVisto), Pos: posPart(posVisto), Aula: aulaP, Des: avail && doneParts ? doneParts / avail : null };
+      var corr = 0, wrong = 0;
+      acts.forEach(function (x) {
+        var when = toDate(x.a.correctedAt) || x.at;
+        if (!(x.a.correct != null || x.a.wrong != null) || when < start || when >= endExclusive) return;
+        corr += Number(x.a.correct || 0); wrong += Number(x.a.wrong || 0);
+      });
+      // Semana em andamento: a nota nunca cai por algo feito hoje. Vale a maior entre "com o que já fez hoje" e "só o que já
+      // venceu", e os pilares mostrados são os do conjunto que deu a nota (assim a conta da tela fecha com o número).
+      var tVisto = combine(parts, cfg), tVence = combine(partsVence, cfg);
+      var usaVence = isCurrent && tVence != null && (tVisto == null || tVence >= tVisto);
+      var total = usaVence ? tVence : tVisto;
+      if (usaVence) parts = partsVence;
+      return {
+        key: key, start: start, label: ddmm(start) + ' – ' + ddmm(end), short: ddmm(start),
+        partial: !!isCurrent, elapsed: elapsed, days: days, dp: dp, da: da, dd: dd, dv: dv, df: df, goal: goal,
+        activeDays: activeDays, hasTime: hasTime, weekMin: sum(days),
+        firstIdx: Math.min(firstIdx, 7), span: Math.max(0, lastIdx - firstIdx + 1), nDias: nDias, ativos: ativos,
+        posItems: posItems, atItems: atItems, aulas: aulas, des: [avail, doneParts],
+        parts: parts, total: total,
+        valid: !isCurrent && dayKey(end) >= validFrom,
+        acc: (corr + wrong) ? Math.round(corr / (corr + wrong) * 100) : null
+      };
+    }
+
+    var weeks = [-3, -2, -1, 0].map(function (off) { return weekCalc(addDays(start0, off * 7), off === 0); });
+    var cur = weeks[3];
+    // Só semanas com tempo medido entram na nota: sem constância, quem estuda num dia só
+    // pareceria melhor do que é, e as semanas ficariam incomparáveis entre si.
+    // `used` = semanas FECHADAS (gráfico, tendência e detalhe do professor). A nota usa também a semana de hoje (`ser`).
+    var used = weeks.slice(0, 3).filter(function (w) { return w.valid && w.hasTime && w.total != null; });
+    // Pesos que escorregam dia a dia: a semana de hoje ganha 3/7 de peso por dia que passa e a mais antiga perde 1/7.
+    // Na segunda (1/7 da semana) ficam ≈ 0,86 · 1,86 · 2,86 · 0,43 e no domingo 0 · 1 · 2 · 3, que vira 1 · 2 · 3 na
+    // semana seguinte. Assim a nota não dá salto quando a semana vira, e o dia de hoje já mexe nela.
+    var fr = cur.elapsed / 7;
+    var wts = [1 - fr, 2 - fr, 3 - fr, 3 * fr];
+    var ser = [];
+    weeks.forEach(function (w, i) {
+      var vale = i < 3 ? (w.valid && w.hasTime && w.total != null) : (w.hasTime && w.total != null && w.nDias > 0);
+      if (vale) ser.push({ w: w, wt: wts[i] });
+    });
+    var temNota = ser.length > 0 && sum(ser.map(function (s) { return s.w.nDias; })) >= cfg.minDiasNota;
+    var res = {
+      cfg: cfg, weeks: weeks, cur: cur, used: used, now: now, coleta: coleta,
+      daily: daily, names: names, measureFrom: measureFrom,
+      status: temNota ? 'ok' : 'coletando',
+      opensTotal: opensTotal, hasUsage: usage.length > 0,
+      timeReady: ser.some(function (s) { return s.w.hasTime; })
+    };
+    // Números "até agora" por pilar (valem mesmo antes da primeira nota): explicam, na tela do aluno, o que
+    // já está sendo olhado e por que um pilar não se aplica. Semanas anteriores à entrada do aluno ficam de fora.
+    var vw = weeks.filter(function (w) { return dayKey(addDays(w.start, 6)) >= validFrom; });
+    var atAll = [].concat.apply([], vw.map(function (w) { return w.atItems; }));
+    var posRead = [].concat.apply([], vw.map(function (w) { return w.posItems; })).filter(function (i) { return i.minutes > 0; });
+    res.live = {
+      aulasPrev: sum(vw.map(function (w) { return w.aulas[0]; })), aulasPres: sum(vw.map(function (w) { return w.aulas[1]; })),
+      atN: sum(atAll.map(function (i) { return i.n; })), atDone: sum(atAll.map(function (i) { return i.done; })),
+      desDisp: sum(vw.map(function (w) { return w.des[0]; })), desFeitas: sum(vw.map(function (w) { return w.des[1]; })),
+      posN: posRead.length, posAvg: posRead.length ? mean(posRead.map(function (i) { return i.minutes; })) : null
+    };
+    // Horas de estudo: o tempo de aula entra a cada pós-aula publicado (sem estimar pela agenda: sem pós-aula, não soma),
+    // com a duração do cadastro (60 min se vazio), contando só desde o início da medição, como o tempo no app.
+    var dur = Number(input.student && input.student.aulaDuracao) > 0 ? Number(input.student.aulaDuracao) : 60;
+    var nowKey = dayKey(now), monKey = dayKey(mondayOf(now)), sunKey = dayKey(addDays(mondayOf(now), 6)), monthKey = nowKey.slice(0, 7);
+    var aN = 0, aSem = 0, aMes = 0, pTot = 0, pSem = 0, pMes = 0;
+    posts.forEach(function (x) {
+      var k = dayKey(x.ref);
+      if (k < measureFrom || k > nowKey) return;
+      aN++; if (k >= monKey && k <= sunKey) aSem++; if (k.slice(0, 7) === monthKey) aMes++;
+    });
+    Object.keys(daily).forEach(function (k) {
+      var m = daily[k].min;
+      pTot += m; if (k >= monKey && k <= sunKey) pSem += m; if (k.slice(0, 7) === monthKey) pMes += m;
+    });
+    res.hours = {
+      dur: dur, aulas: { n: aN, nSem: aSem, nMes: aMes, min: aN * dur, minSem: aSem * dur, minMes: aMes * dur },
+      app: { total: pTot, sem: pSem, mes: pMes },
+      total: aN * dur + pTot, sem: aSem * dur + pSem, mes: aMes * dur + pMes
+    };
+    res.evo = evoSeries(res, posts, dur);
+    res.metas = metas;
+    res.desEnabled = ch.enabled !== false;
+    // A nota aparece quando houver `minDiasNota` dias medidos (a partir do 1º sinal do aluno); depois disso ela
+    // se atualiza a cada abertura do app e vira de dia à meia-noite.
+    res.firstNota = coleta ? dayKey(addDays(parseKey(measureFrom), cfg.minDiasNota)) : null;
+    if (!temNota) { res.pm = {}; res.totals = []; res.index = null; res.band = null; res.trend = null; res.agora = null; return res; }
+
+    var totals = used.map(function (w) { return w.total; });
+    res.totals = totals;
+    var wsum = sum(ser.map(function (s) { return s.wt; }));
+    res.index = Math.round(wsum > 0 ? sum(ser.map(function (s) { return s.wt * s.w.total; })) / wsum : mean(ser.map(function (s) { return s.w.total; })));
+    res.band = band(res.index);
+    res.trend = used.length >= 2 ? totals[totals.length - 1] - totals[totals.length - 2] : null;
+    // A semana de hoje já entra na nota (peso `agora.peso`); fora dela, `agora` é null.
+    res.agora = ser.some(function (s) { return s.w === cur; }) ? { total: cur.total, nDias: cur.nDias, ativos: cur.ativos, peso: wts[3] } : null;
+    // Tudo o que descreve a nota (pilares, médias, frases) olha as mesmas semanas da nota: as fechadas e a de hoje.
+    var sw = ser.map(function (s) { return s.w; });
+    res.pm = {};
+    KEYS.forEach(function (k) {
+      var v = sw.map(function (w) { return w.parts[k]; }).filter(function (x) { return x != null; });
+      res.pm[k] = v.length ? mean(v) : null;
+    });
+    // Item de hoje ainda sem nada feito não entra nas médias: ainda não venceu.
+    var seenPos = function (i) { return !i.open || i.minutes > 0; }, seenAt = function (i) { return !i.open || i.done > 0; };
+    var diasMed = sum(sw.map(function (w) { return w.nDias; }));
+    res.avgDays = diasMed ? sum(sw.map(function (w) { return w.ativos; })) / diasMed * 7 : null;
+    var posTot = [].concat.apply([], sw.map(function (w) { return w.posItems.filter(seenPos).map(function (i) { return i.minutes; }); }));
+    res.avgPos = posTot.length ? mean(posTot) : null;
+    var at = [].concat.apply([], sw.map(function (w) { return w.atItems.filter(seenAt); }));
+    var nAll = sum(at.map(function (i) { return i.n; })), doneAll = sum(at.map(function (i) { return i.done; }));
+    res.entrega = nAll ? doneAll / nAll : null;
+    res.timeAll = sum(at.map(function (i) { return i.time; }));
+    res.expAll = sum(at.map(function (i) { return i.exp; }));
+    res.fator = res.expAll ? Math.min(1, res.timeAll / res.expAll) : (sum(at.map(function (i) { return i.done; })) ? 1 : null);
+    var shares = used.filter(function (w) { return w.weekMin > 0; }).map(function (w) { return Math.max.apply(null, w.days) / w.weekMin; });
+    res.topShare = shares.length ? mean(shares) : 0;
+    res.aulasPrev = sum(sw.map(function (w) { return w.aulas[0]; }));
+    res.aulasPres = sum(sw.map(function (w) { return w.aulas[1]; }));
+    // O Desafio da semana em andamento só entra na contagem depois de a 1ª parte feita (a semana ainda corre).
+    var desOf = function (w) { return w.partial && !w.des[1] ? [0, 0] : w.des; };
+    res.desDisp = sum(sw.map(function (w) { return desOf(w)[0]; }));
+    res.desFeitas = sum(sw.map(function (w) { return desOf(w)[1]; }));
+    res.acc = used.map(function (w) { return w.acc; });
+    res.accLast = (function () { for (var i = res.acc.length - 1; i >= 0; i--) if (res.acc[i] != null) return res.acc[i]; return null; })();
+    res.tags = tagsOf(res);
+    res.diag = diagOf(res);
+    return res;
+  }
+
+  // ── etiquetas e frases (visão do professor) ───────────────────────────
+  function tagsOf(c) {
+    var t = [];
+    if (c.trend != null && c.trend <= -10) t.push({ t: '↓ Caindo (' + c.trend + ')', c: 'bad' });
+    if (c.avgDays != null && c.avgDays < 1) t.push({ t: 'Quase não abre o app', c: 'bad' });
+    if (c.pm.C != null && c.pm.C < .5 && (c.pm.At || 0) >= .75) t.push({ t: 'Tudo concentrado em poucos dias', c: 'warn' });
+    if (c.entrega != null && c.entrega >= .7 && c.fator != null && c.fator < .6) t.push({ t: 'Responde rápido demais', c: 'warn' });
+    if (c.pm.Pos != null && c.pm.Pos < .5) t.push({ t: 'Quase não lê o pós-aula', c: 'bad' });
+    if (c.entrega != null && c.entrega < .5) t.push({ t: 'Faz poucas atividades', c: 'warn' });
+    if (!t.length) t.push(c.index >= 85 ? { t: 'Rotina constante', c: 'ok' } : { t: 'Dentro do esperado', c: 'neutral' });
+    return t;
+  }
+  function diagOf(c) {
+    var cfg = c.cfg, o = [], n = c.used.length;
+    if (c.trend != null && c.trend <= -10) o.push({ ic: '📉', txt: 'A adesão caiu ' + (-c.trend) + ' pontos da semana de ' + c.used[n - 2].short + ' para a de ' + c.used[n - 1].short + '.' });
+    if (c.pm.C != null && c.pm.C < .7 && c.avgDays != null) {
+      var s = 'Estudou em média ' + num1(c.avgDays) + ' de 7 dias por semana (meta: ' + cfg.metaDias + ').';
+      if (c.topShare >= .6) s += ' Em média ' + pct(c.topShare) + '% do tempo da semana ficou concentrado num único dia.';
+      o.push({ ic: '📅', txt: s });
+    }
+    if (c.entrega != null && c.entrega >= .7 && c.fator != null && c.fator < .8) o.push({ ic: '⏱️', txt: 'Faz as atividades, mas rápido: ' + fm(c.timeAll) + ' onde o esperado seria ≥ ' + fm(c.expAll) + '. Vale conferir se está lendo cada questão.' });
+    else if (c.entrega != null && c.entrega < .7) o.push({ ic: '✏️', txt: 'Fez só ' + pct(c.entrega) + '% dos exercícios enviados nas últimas ' + n + ' semanas.' });
+    if (c.avgPos != null && c.pm.Pos != null && c.pm.Pos < .8) o.push({ ic: '📖', txt: 'Lê cada pós-aula por ' + fm(c.avgPos) + ' em média (mínimo: ' + cfg.minPos + ' min, somando todas as aberturas).' });
+    if (c.aulasPrev && c.aulasPres / c.aulasPrev < .8) o.push({ ic: '🎓', txt: 'Esteve em ' + c.aulasPres + ' de ' + c.aulasPrev + ' aulas previstas.' });
+    if (c.desDisp && c.desFeitas / c.desDisp < .5) o.push({ ic: '🏆', txt: 'Desafio: fez ' + c.desFeitas + ' de ' + c.desDisp + ' partes disponíveis.' });
+    if (!o.length) o.push({ ic: '✅', txt: 'Rotina saudável' + (c.avgDays != null ? ': ' + num1(c.avgDays) + ' dias ativos por semana' : '') + (c.avgPos != null ? ', pós-aula lido por ' + fm(c.avgPos) + ' em média' : '') + ' e atividades em dia.' });
+    return o.slice(0, 4);
+  }
+
+  // ── textos da visão do aluno ──────────────────────────────────────────
+  var GOOD = { C: 'Você estuda em vários dias', At: 'Atividades em dia', Pos: 'Pós-aulas lidos com atenção', Aula: 'Presença nas aulas', Des: 'Boa participação no Desafio' };
+  var TINY = {
+    C: 'estudar em mais dias da semana, mesmo que sejam 10 minutinhos',
+    At: 'fazer as atividades que ainda estão pendentes',
+    Pos: 'ler cada pós-aula por uns 5 minutinhos',
+    Aula: 'não faltar às aulas',
+    Des: 'participar do Desafio da semana'
+  };
+  function suggestComment(c, firstName) {
+    var nm = firstName || 'Oi', cfg = c.cfg;
+    if (c.status !== 'ok') return nm + ', bem-vindo(a) à sua adesão! Em poucos dias você vai ver aqui como está sua rotina de estudo: dias, pós-aulas, atividades e Desafio. Comece com 10 minutinhos por dia.';
+    var ks = KEYS.filter(function (k) { return c.pm[k] != null; });
+    var worst = ks.slice().sort(function (a, b) { return c.pm[a] - c.pm[b]; })[0];
+    if (c.avgDays != null && c.avgDays < 1) return nm + ', sentimos sua falta por aqui! Sem pressão: que tal começar com 10 minutinhos amanhã? Abra o pós-aula da última aula e leia com calma. Estou por aqui para ajudar.';
+    if (c.trend != null && c.trend <= -10) return nm + ', percebi que seu ritmo diminuiu nas últimas semanas. Isso acontece com todo mundo. E você já mostrou que consegue: na semana de ' + c.used[0].short + ' sua adesão estava em ' + c.totals[0] + '. Vamos retomar aos poucos? 10 a 15 minutos por dia já fazem diferença.';
+    if (c.pm.C != null && c.pm.C < .5 && (c.pm.At || 0) >= .75) return nm + ', você manda muito bem nos dias de aula: faz as atividades inteiras e lê o pós-aula. O próximo passo é espalhar esse esforço. 15 minutinhos em mais 3 dias da semana fixam muito mais do que tudo num dia só.';
+    if (c.entrega != null && c.entrega >= .7 && c.fator != null && c.fator < .6) return nm + ', você completou as atividades, parabéns pela disciplina! Agora vale ir com mais calma: ler cada pergunta e pensar antes de responder é o que faz o inglês ficar.';
+    if (c.pm.Pos != null && c.pm.Pos < .5) return nm + ', você tem feito as atividades, ótimo! O pós-aula é onde a aula fica registrada. Reserve uns ' + cfg.minPos + ' minutinhos para ler com calma: vale muito para fixar o que a gente viu.';
+    if (c.entrega != null && c.entrega < .5 && (c.pm.Pos || 0) >= .8) return nm + ', você lê os pós-aulas com atenção e esse é um ótimo hábito. Falta colocar em prática: comece pelas atividades. Mesmo 10 exercícios por dia já fazem a diferença.';
+    if (c.index >= 85) return nm + ', que rotina bonita! Você aparece em quase tudo que o curso oferece e isso se vê nos seus acertos. Continue assim.';
+    return nm + ', você já tem um bom ritmo. O que mais vai render agora é ' + (worst ? TINY[worst] : 'manter a regularidade') + '. Pequenos ajustes, grande efeito.';
+  }
+  function studentChips(c) {
+    var t = [];
+    if (c.status !== 'ok') return t;
+    if (c.trend != null && c.trend <= -10) t.push({ t: '📉 Seu ritmo caiu nas últimas semanas', c: 'warn' });
+    else if (c.trend != null && c.trend >= 8) t.push({ t: '📈 Seu ritmo está subindo', c: 'ok' });
+    if (c.avgDays != null && c.avgDays < 1) t.push({ t: '📱 Poucos dias com o app aberto', c: 'warn' });
+    if (c.pm.C != null && c.pm.C < .5 && (c.pm.At || 0) >= .75) t.push({ t: '📅 Você estuda forte num dia só', c: 'warn' });
+    if (c.entrega != null && c.entrega >= .7 && c.fator != null && c.fator < .6) t.push({ t: '⏱️ Atividades feitas bem rápido', c: 'warn' });
+    if (c.pm.Pos != null && c.pm.Pos < .5) t.push({ t: '📖 Pós-aulas lidos por pouco tempo', c: 'warn' });
+    if (c.entrega != null && c.entrega < .5) t.push({ t: '✏️ Faltam atividades por fazer', c: 'warn' });
+    KEYS.filter(function (k) { return c.pm[k] != null && c.pm[k] >= .9; }).forEach(function (k) { t.push({ t: '✅ ' + GOOD[k], c: 'ok' }); });
+    return t.slice(0, 5);
+  }
+  // Resumo enxuto do resultado de compute() para a EurekIA (assistente de dúvidas) responder "qual a minha adesão?",
+  // "quanto estudei?". Só números e códigos fixos, nunca texto livre: o servidor põe isto no prompt (e ainda o limpa
+  // em functions/assistente.js). Só mande quando o aluno já pode ver a Adesão (liberada pelo professor).
+  function assistantSummary(c) {
+    if (!c || !c.cfg) return null;
+    var fin = function (v) { return v != null && isFinite(v); };
+    var r1 = function (v) { return fin(v) ? Math.round(v * 10) / 10 : null; };
+    var p100 = function (v) { return fin(v) ? Math.round(v * 100) : null; };
+    var pil = {}, pesos = {};
+    KEYS.forEach(function (k) { pil[k] = p100(c.pm && c.pm[k]); pesos[k] = c.cfg.w[k]; });
+    var cur = c.cur, h = c.hours;
+    return {
+      status: c.status === 'ok' ? 'ok' : 'coletando',
+      indice: fin(c.index) ? c.index : null,
+      faixa: c.band ? c.band.k : null,
+      tendencia: fin(c.trend) ? c.trend : null,
+      primeiraNota: c.firstNota || null,
+      pilares: pil, pesos: pesos,
+      semanas: (c.used || []).map(function (w) { return { de: dayKey(w.start), nota: w.total, min: r1(w.weekMin), dias: w.activeDays }; }),
+      atual: cur ? {
+        de: dayKey(cur.start), min: r1(cur.weekMin), dias: cur.activeDays, passados: cur.elapsed,
+        porDia: cur.days.map(r1),
+        metaDiaMin: cur.goal.metaDiaMin, metaDias: cur.goal.metaDias, bateram: cur.goal.hits
+      } : null,
+      horas: h ? {
+        durAula: h.dur, aulaMin: h.aulas.min, aulaSemMin: h.aulas.minSem, aulaMesMin: h.aulas.minMes,
+        appMin: r1(h.app.total), appSemMin: r1(h.app.sem), appMesMin: r1(h.app.mes)
+      } : null,
+      mediaDiasAtivos: r1(c.avgDays), mediaMinPos: r1(c.avgPos),
+      entrega: p100(c.entrega), acertoUltima: fin(c.accLast) ? c.accLast : null,
+      presenca: fin(c.aulasPrev) ? { prevista: c.aulasPrev, presente: c.aulasPres } : null,
+      desafio: { ligado: c.desEnabled !== false, disponiveis: fin(c.desDisp) ? c.desDisp : null, feitas: fin(c.desFeitas) ? c.desFeitas : null },
+      metasAluno: c.metas ? { diaMin: c.metas.diaMin, semH: c.metas.semH, mesH: c.metas.mesH } : null
+    };
+  }
+  // Média de minutos por dia da semana, nas semanas usadas e na atual (só dias já passados).
+  function wdStats(c) {
+    var ws = c.used.concat([c.cur]);
+    // Só entram os dias medidos: antes de o aluno começar e dias que ainda não chegaram não contam como "em branco".
+    var seen = WD.map(function (_, d) {
+      return ws.filter(function (w) { return d >= w.firstIdx && !(w.partial && d >= w.elapsed); }).map(function (w) { return w.days[d]; });
+    });
+    var avg = seen.map(function (a) { return mean(a); });
+    var max = Math.max.apply(null, avg), minDia = c.cfg.minDia;
+    return {
+      avg: avg, max: max, best: max >= minDia ? avg.indexOf(max) : -1,
+      known: seen.filter(function (a) { return a.length; }).length,
+      blanks: avg.map(function (m, d) { return seen[d].length && m < minDia ? d : -1; }).filter(function (d) { return d >= 0; })
+    };
+  }
+  function changes(c) {
+    var up = [], down = [], n = c.used.length;
+    if (n < 2) return { up: up, down: down, from: null, to: null };
+    var a = c.used[n - 2], b = c.used[n - 1];
+    function posAvg(w) { return w.posItems.length ? mean(w.posItems.map(function (i) { return i.minutes; })) : null; }
+    function diff(k) { return (a.parts[k] == null || b.parts[k] == null) ? 0 : b.parts[k] - a.parts[k]; }
+    if (diff('C') >= .15) up.push('Você estudou em mais dias: ' + plural(a.activeDays, 'dia', 'dias') + ' → ' + plural(b.activeDays, 'dia', 'dias'));
+    if (diff('C') <= -.15) down.push('Você estudou em menos dias: ' + plural(a.activeDays, 'dia', 'dias') + ' → ' + plural(b.activeDays, 'dia', 'dias'));
+    if (diff('At') >= .15) up.push('Você avançou nas atividades: ' + pct(a.parts.At) + '% → ' + pct(b.parts.At) + '%');
+    if (diff('At') <= -.15) down.push('Menos atividades concluídas: ' + pct(a.parts.At) + '% → ' + pct(b.parts.At) + '%');
+    if (diff('Pos') >= .15) up.push('Você leu os pós-aulas por mais tempo: ' + fm(posAvg(a)) + ' → ' + fm(posAvg(b)));
+    if (diff('Pos') <= -.15) down.push('Você leu os pós-aulas por menos tempo: ' + fm(posAvg(a)) + ' → ' + fm(posAvg(b)));
+    if (diff('Aula') >= .15) up.push('Você voltou a frequentar as aulas');
+    if (diff('Aula') <= -.15) down.push('Você faltou a ' + plural(b.aulas[0] - b.aulas[1], 'aula', 'aulas') + ' na semana de ' + b.short);
+    if (diff('Des') >= .15) up.push('Mais participação no Desafio: ' + a.des[1] + ' → ' + b.des[1] + ' partes');
+    if (diff('Des') <= -.15) down.push('Menos participação no Desafio: ' + a.des[1] + ' → ' + b.des[1] + ' partes');
+    return { up: up.slice(0, 3), down: down.slice(0, 3), from: a.short, to: b.short };
+  }
+  function advice(c) {
+    var cfg = c.cfg;
+    var lows = KEYS.filter(function (k) { return c.pm[k] != null && c.pm[k] < .85; }).sort(function (a, b) { return c.pm[a] - c.pm[b]; }).slice(0, 2);
+    var T = {
+      C: function () { return ['Estude um pouco todo dia', '15 min em ' + cfg.metaDias + ' dias valem mais do que 1h30 num dia só.' + (c.avgDays != null ? ' Hoje você estuda em média ' + num1(c.avgDays) + ' dias por semana.' : '')]; },
+      At: function () { return c.entrega != null && c.entrega < .7 ? ['Faltam exercícios', 'Você fez ' + pct(c.entrega) + '% do que foi enviado nas últimas semanas. Comece por uma atividade curta.'] : ['Responda com calma', 'Ler cada questão faz diferença. Responder rápido demais vale menos.']; },
+      Pos: function () { return ['Leia o pós-aula com calma', 'Pelo menos ' + cfg.minPos + ' min, pode ser em vários momentos.' + (c.avgPos != null ? ' Sua média: ' + fm(c.avgPos) + '.' : '')]; },
+      Aula: function () { return ['Venha às aulas', 'Cada aula perdida pesa. Você foi a ' + c.aulasPres + ' de ' + c.aulasPrev + '.']; },
+      Des: function () { return ['Participe do Desafio', 'Você fez ' + c.desFeitas + ' de ' + c.desDisp + ' partes. Cada parte conta.']; }
+    };
+    return lows.map(function (k) { return { k: k, t: T[k]() }; });
+  }
+  function sDayText(c, wi, d) {
+    var w = c.weeks[wi], m = w.days[d], other = w.df[d], cfg = c.cfg;
+    var head = '<b>' + cap1(WDF[d]) + ', ' + ddmm(addDays(w.start, d)) + '</b> · ';
+    if (m === 0 && other === 0) return head + 'dia em branco. Sem estudo registrado.';
+    var parts = [];
+    if (w.dp[d] > 0) parts.push('pós-aula ' + fm(w.dp[d]));
+    if (w.da[d] > 0) parts.push('atividades ' + fm(w.da[d]));
+    if (w.dd[d] > 0) parts.push('desafio ' + fm(w.dd[d]));
+    if (w.dv[d] > 0) parts.push('vocabulário, verbos e chunks ' + fm(w.dv[d]));
+    var txt = m > 0 ? fm(m) + ' de estudo (' + parts.join(' · ') + ')' : 'sem estudo';
+    if (other > 0) txt += (m > 0 ? ' e ' : ' · ') + fm(other) + ' em outras telas (não conta como estudo)';
+    var v = m >= cfg.metaDiaMin ? 'Meta do dia batida! 🎯' : m >= cfg.minDia ? 'Dia estudado ✓ (a meta do dia é ' + num1(cfg.metaDiaMin) + ' min)' : m > 0 ? 'Menos de ' + num1(cfg.minDia) + ' min de estudo: não conta como dia estudado.' : '';
+    return head + txt + '.' + (v ? ' ' + v : '');
+  }
+
+  // ── gráfico de acertos por faixa de adesão (média da turma, sem nomes) ─
+  // stats = { baixa:{n,acc}, media:{n,acc}, alta:{n,acc} }. Só mostra quando a
+  // ordem fecha (alta > média > baixa) com pelo menos 2 alunos por faixa.
+  function statsOk(stats) {
+    if (!stats) return false;
+    var b = stats.baixa, m = stats.media, a = stats.alta;
+    return !!(b && m && a && b.n >= 2 && m.n >= 2 && a.n >= 2 && a.acc > m.acc && m.acc > b.acc);
+  }
+  function bandStats(list) {            // list = [{ band:'alta'|'media'|'baixa', acc:Number|null }]
+    var g = { baixa: [], media: [], alta: [] };
+    list.forEach(function (x) { if (x.acc != null && g[x.band]) g[x.band].push(x.acc); });
+    var out = {};
+    Object.keys(g).forEach(function (k) { out[k] = { n: g[k].length, acc: g[k].length ? Math.round(mean(g[k])) : null }; });
+    return out;
+  }
+
+  // ── HTML da tela do aluno (classes com prefixo cza- para não colidir) ──
+  function ring(v, size, stroke, color) {
+    var r = (size - stroke) / 2, cc = 2 * Math.PI * r;
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" role="img" aria-label="Adesão ' + v + ' de 100" style="flex-shrink:0">'
+      + '<circle cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" fill="none" stroke="var(--cza-s-EDF1F6,#edf1f6)" stroke-width="' + stroke + '"/>'
+      + '<circle cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="' + stroke + '" stroke-linecap="round" stroke-dasharray="' + (cc * v / 100) + ' ' + cc + '" transform="rotate(-90 ' + size / 2 + ' ' + size / 2 + ')"/>'
+      + '<text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-weight="800" font-size="' + Math.round(size * .34) + '" fill="var(--cza-t-0F1724,#0f1724)">' + v + '</text></svg>';
+  }
+  function scol(v) { return v >= .85 ? '#16A34A' : v >= .6 ? '#F59E0B' : '#F97316'; }
+
+  function lineChartHtml(c) {
+    var ad = c.totals, ac = c.acc, n = ad.length;
+    if (n < 2) return '<div class="cza-cap">O gráfico aparece quando você tiver pelo menos 2 semanas completas.</div>';
+    var W = 300, H = 130, L = 26, R = 22, T = 10, B = 22, pw = W - L - R, ph = H - T - B;
+    function X(i) { return L + i / (n - 1) * pw; }
+    function Y(v) { return T + (100 - v) / 100 * ph; }
+    function line(arr, col) {
+      var pts = [];
+      arr.forEach(function (v, i) { if (v != null) pts.push([X(i), Y(v)]); });
+      if (!pts.length) return '';
+      return '<polyline fill="none" stroke="' + col + '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points="' + pts.map(function (p) { return p.join(','); }).join(' ') + '"/>'
+        + pts.map(function (p) { return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="4" fill="' + col + '"/>'; }).join('');
+    }
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Evolução de adesão e acertos por semana">';
+    [0, 50, 100].forEach(function (v) { s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="var(--cza-s-E2E8F0,#E2E8F0)"/><text x="' + (L - 5) + '" y="' + Y(v) + '" text-anchor="end" dominant-baseline="central" font-size="9" fill="#94A3B8">' + v + '</text>'; });
+    c.used.forEach(function (w, i) { s += '<text x="' + X(i) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="9.5" font-weight="700" fill="var(--cza-t-64748B,#64748B)">' + w.short + '</text>'; });
+    s += line(ad, '#16A34A') + line(ac, '#7C3AED') + '</svg>';
+    var accOk = ac.filter(function (v) { return v != null; });
+    var both = accOk.length >= 2 && ad[n - 1] - ad[0] >= 5 && accOk[accOk.length - 1] - accOk[0] >= 3;
+    var bothDown = accOk.length >= 2 && ad[n - 1] - ad[0] <= -5 && accOk[accOk.length - 1] - accOk[0] <= -3;
+    var cap = accOk.length < 2 ? 'Os acertos aparecem aqui quando as atividades forem corrigidas.'
+      : both ? 'Nas semanas em que sua adesão subiu, seus acertos subiram junto.'
+      : bothDown ? 'Quando sua adesão caiu, seus acertos caíram junto. A boa notícia: dá para recuperar, e os dois sobem juntos.'
+      : 'Acompanhe: adesão e acertos costumam andar juntos ao longo das semanas.';
+    return s + '<div class="cza-lg"><span><i style="background:#16A34A"></i>Adesão</span><span><i style="background:#7C3AED"></i>Acertos (%)</span></div><div class="cza-cap">' + cap + '</div>';
+  }
+  function groupBarsHtml(c, stats) {
+    if (!statsOk(stats)) return '<div class="cza-cap">Ainda estamos juntando dados da turma para comparar adesão e acertos.</div>';
+    var cols = { baixa: '#F97316', media: '#F59E0B', alta: '#16A34A' }, lab = { baixa: 'Adesão baixa', media: 'Adesão média', alta: 'Adesão alta' };
+    return '<div class="cza-grp">' + ['baixa', 'media', 'alta'].map(function (k) {
+      return '<div class="' + (c.band && c.band.k === k ? 'me' : '') + '">' + (c.band && c.band.k === k ? '<em class="cza-you">você</em>' : '')
+        + '<span>' + stats[k].acc + '%</span><i class="cza-bar" style="height:' + (stats[k].acc * .85) + 'px;background:' + cols[k] + '"></i><span>' + lab[k] + '</span></div>';
+    }).join('') + '</div><div class="cza-cap"><b>Média de acertos dos alunos, por faixa de adesão.</b> Quem se dedica mais costuma acertar mais.</div>';
+  }
+  function ruleRowsHtml(c) {
+    var cfg = c.cfg, ok = c.status === 'ok', L = c.live || {};
+    var present = {};
+    KEYS.forEach(function (k) { present[k] = c.pm[k] != null; });
+    var since = c.coleta ? ddmm(parseKey(c.coleta)) : '';
+    // Antes da 1ª nota: espera os primeiros dias medidos. Com a nota já rodando, um ponto sem nada fechado ainda (ex.: pós-aula
+    // de hoje, Desafio da semana) entra assim que o dia (ou a semana) virar.
+    var wait = ok ? 'Ainda não há nada vencido neste ponto. Ele entra na nota quando o dia (ou a semana, no Desafio) virar.'
+      : 'A nota aparece depois de ' + cfg.minDiasNota + ' dias medidos' + (c.firstNota ? ' (a partir de ' + ddmm(parseKey(c.firstNota)) + ')' : '') + '. Depois disso ela se atualiza na hora.';
+    // state: 'val' entra na nota · 'coll' ainda coletando · 'na' não se aplica a este aluno (e o motivo aparece em `why`)
+    function row(k, state, status, why, goal) {
+      var v = c.pm[k];
+      var tag = state === 'val' ? 'vale ' + effWeight(present, k, cfg) + '%' : state === 'coll' ? 'coletando' : 'não se aplica';
+      return '<div class="cza-rule"><div class="cza-rh"><span>' + PIL[k].ic + ' ' + PIL[k].name + '</span><em>' + tag + '</em></div>'
+        + (state === 'val' ? '<div class="cza-mt"><i style="width:' + pct(v) + '%;background:' + scol(v) + '"></i></div>' : '')
+        + '<p><b>' + status + '</b></p>' + (why ? '<p>' + why + '</p>' : '') + '<p class="cza-goal">Meta: ' + goal + '</p></div>';
+    }
+    var gC = 'pelo menos ' + cfg.minDia + ' min de estudo em ' + cfg.metaDias + ' dias da semana. Estudo é pós-aula, atividades, desafio, vocabulário, verbos e chunks, e só conta enquanto você está mexendo no app';
+    var gAt = 'fazer os exercícios enviados, sem pressa (cerca de ' + cfg.secEx + ' s cada)';
+    var gPos = 'ler cada pós-aula por ' + cfg.minPos + ' min ou mais (pode ser em vários momentos)';
+    var h = '';
+    // Constância
+    h += c.pm.C != null
+      ? row('C', 'val', 'Você estuda em média ' + (c.avgDays != null ? num1(c.avgDays) : '—') + ' dias por semana', '', gC)
+      : row('C', 'coll', 'Esta semana: ' + c.cur.activeDays + ' de ' + Math.max(c.cur.span, c.cur.activeDays) + (c.cur.span === 1 ? ' dia estudado' : ' dias estudados'), 'O app mede os seus dias desde ' + since + '. ' + wait, gC);
+    // Atividades
+    if (c.pm.At != null) {
+      var stAt = c.entrega == null ? 'Sem atividades enviadas' : c.entrega < .7 ? 'Você fez ' + pct(c.entrega) + '% dos exercícios enviados'
+        : (c.fator != null && c.fator < .8) ? 'Feitas bem rápido: ' + fm(c.timeAll) + ' para ≥ ' + fm(c.expAll) + ' esperados' : 'Você fez ' + pct(c.entrega) + '%, com tempo adequado';
+      h += row('At', 'val', stAt, '', gAt);
+    } else if (L.atN > 0) h += row('At', 'coll', 'Você fez ' + L.atDone + ' de ' + L.atN + ' exercícios enviados nas últimas semanas', wait, gAt);
+    else h += row('At', 'na', 'Nenhuma atividade foi enviada para você nas últimas semanas', 'Por isso este ponto não entra na sua nota. Quando chegarem atividades novas, ele passa a contar.', gAt);
+    // Pós-aula
+    if (c.pm.Pos != null) h += row('Pos', 'val', 'Sua média: ' + (c.avgPos != null ? fm(c.avgPos) : '—') + ' por pós-aula', '', gPos);
+    else if (ok) h += row('Pos', 'na', 'Nenhum pós-aula foi publicado nas semanas da sua nota', 'Por isso este ponto não entra na sua nota.', gPos);
+    else h += row('Pos', 'coll', L.posN ? 'Até agora: ' + fm(L.posAvg) + ' de leitura por pós-aula' : 'Ainda sem leitura medida', 'O app mede a leitura dos pós-aulas desde ' + since + '. ' + wait, gPos);
+    // Aulas
+    if (c.pm.Aula != null) h += row('Aula', 'val', 'Você foi a ' + c.aulasPres + ' de ' + c.aulasPrev + ' aulas', '', 'vir às aulas');
+    else if (L.aulasPrev > 0) h += row('Aula', 'coll', 'Você foi a ' + L.aulasPres + ' de ' + L.aulasPrev + ' aulas nas últimas semanas', wait, 'vir às aulas');
+    else h += row('Aula', 'na', 'Não houve aulas previstas para você nas últimas semanas', 'Por isso este ponto não entra na sua nota. Os outros ganham mais peso.', 'vir às aulas');
+    // Desafio
+    if (c.pm.Des != null) h += row('Des', 'val', 'Você fez ' + c.desFeitas + ' de ' + c.desDisp + ' partes do Desafio', '', 'participar do Desafio da semana');
+    else if (c.desEnabled === false) h += row('Des', 'na', 'O Desafio não está ligado para você', 'Por isso este ponto não entra na sua nota.', 'participar do Desafio da semana');
+    else if (L.desDisp > 0) h += row('Des', 'coll', 'Você fez ' + L.desFeitas + ' de ' + L.desDisp + ' partes do Desafio nas últimas semanas', wait, 'participar do Desafio da semana');
+    else h += row('Des', 'na', 'Nenhum Desafio foi publicado para você nas últimas semanas', 'Por isso este ponto não entra na sua nota.', 'participar do Desafio da semana');
+    return h;
+  }
+
+  // Texto do estado "ainda sem nota": a nota espera os primeiros dias medidos e depois anda sozinha.
+  function semNotaTxt(c, curto) {
+    var n = c.cfg.minDiasNota;
+    if (curto) return 'Sua nota aparece depois de ' + n + ' dias de estudo medidos. Toque para ver o que conta e como seus dias estão indo.';
+    return 'A nota aparece depois de ' + n + ' dias medidos' + (c.firstNota && c.coleta ? ', a partir de ' + ddmm(parseKey(c.firstNota)) : '') + '. Daí em diante ela se atualiza na hora: sobe quando você estuda e desce quando um dia passa sem estudo.';
+  }
+
+  /* c = resultado de compute(); o = { firstName, recado, ribbon, ribbonOpen, stats } */
+  function studentHtml(c, o) {
+    o = o || {};
+    var cfg = c.cfg, cur = c.cur, ok = c.status === 'ok';
+    var todayIdx = (c.now.getDay() + 6) % 7;
+    var recado = o.recado || suggestComment(c, o.firstName);
+    var h = '<div class="cza">';
+    // Aluno: só o cartão da nota aparece; tocar nele abre o resto (.cza-more).
+    var coll = o.collapsible !== false;
+    var SUB = '<div class="cza-sub">Quanto você está presente no curso: aulas, pós-aula, atividades, desafio e constância.</div>';
+    var HINT = '<div class="cza-hint"><span class="cza-lbl-open">Ver detalhes</span><span class="cza-lbl-close">Ocultar detalhes</span><span class="cza-chev">›</span></div>';
+    var TOG = coll ? ' data-cza-toggle role="button" tabindex="0" aria-expanded="false"' : '';
+    h += (o.noTitle ? '' : '<div class="cza-title">Minha adesão</div>') + (coll ? '' : SUB);
+    if (o.ribbon) h += '<div class="cza-ribbon' + (o.ribbonOpen ? ' open' : '') + '">' + esc(o.ribbon) + '</div>';
+
+    // topo: nota + etiquetas
+    if (ok) {
+      var b = c.band, d = c.trend;
+      var msg = b.k === 'alta' ? ['Ritmo excelente', 'Você aparece em quase tudo que o curso oferece. É isso que faz o inglês fixar.']
+        : b.k === 'media' ? ['Bom ritmo, dá para crescer', 'Você já faz bastante coisa. Veja abaixo onde um pequeno ajuste rende mais.']
+        : ['Vamos aumentar o ritmo', 'O inglês fixa com prática frequente. Comece pelos passos abaixo: pequenos já contam.'];
+      var dt = d == null ? '' : d >= 3 ? '<small style="color:var(--cza-t-16A34A,#16A34A)">▲ +' + d + ' pts desde a semana passada</small>'
+        : d <= -3 ? '<small style="color:var(--cza-t-EA580C,#EA580C)">▼ ' + d + ' pts desde a semana passada</small>'
+        : '<small style="color:var(--cza-t-64748B,#64748B)">● estável desde a semana passada</small>';
+      var chips = studentChips(c);
+      var chipsHtml = chips.length ? '<div class="cza-chs">' + chips.map(function (x) { return '<span class="' + x.c + '">' + esc(x.t) + '</span>'; }).join('') + '</div>' : '';
+      h += '<div class="cza-pc cza-herocard"' + TOG + '><div class="cza-hero">' + ring(c.index, 96, 11, b.soft) + '<div class="cza-t"><b>' + msg[0] + '</b>' + msg[1] + dt + '</div></div>' + (coll ? HINT : chipsHtml) + '</div>';
+      h += '<div class="cza-more"' + (coll ? ' hidden' : '') + '>' + (coll ? SUB + chipsHtml : '');
+    } else {
+      h += '<div class="cza-pc cza-herocard"' + TOG + '><div class="cza-hero"><div class="cza-t"><b>Estamos conhecendo o seu ritmo</b>' + (coll ? semNotaTxt(c, true) : semNotaTxt(c, false) + ' Abaixo você vê como estão os seus dias e por que cada ponto está assim.') + '</div></div>' + (coll ? HINT : '') + '</div>';
+      h += '<div class="cza-more"' + (coll ? ' hidden' : '') + '>' + (coll ? SUB : '');
+    }
+    h += '<div class="cza-pc cza-recado"><div class="cza-by">💬 Recado do seu professor</div><p>' + esc(recado) + '</p></div>';
+
+    // semana atual (na página de adesão a semana e o calendário já aparecem acima)
+    if (!o.page) h += '<div class="cza-pc"><h4>Sua semana</h4><div class="cza-hsub">Segunda a domingo. A bolinha verde é um dia estudado.</div><div class="cza-days">' + cur.days.map(function (m, i) {
+      var fut = i >= cur.elapsed || (i < cur.firstIdx && m === 0), on = !fut && m >= cfg.minDia;
+      return '<div class="cza-dd ' + (fut ? 'fut' : on ? 'on' : 'off') + (i === todayIdx ? ' today' : '') + '"><span>' + (on ? '✓' : '') + '</span>' + WD1[i] + '</div>';
+    }).join('') + '</div><div class="cza-cap">Você estudou <b>' + cur.activeDays + ' de ' + Math.max(cur.span, cur.activeDays) + ' dias</b> até agora. A meta é ' + cfg.metaDias + ' dias por semana.</div></div>';
+
+    // mapa de 4 semanas
+    var hSave = h;
+    h += '<div class="cza-pc"><h4>Seu mapa de estudo</h4><div class="cza-hsub">Cada quadrado é um dia, e o número são os minutos de estudo. Toque para ver o que você fez.</div><div class="cza-smap"><div class="cza-sm-row cza-hd"><span></span>' + WD.map(function (x) { return '<span>' + x + '</span>'; }).join('') + '</div>';
+    c.weeks.forEach(function (w, wi) {
+      h += '<div class="cza-sm-row"><span class="cza-wl">' + w.short + '</span>';
+      w.days.forEach(function (m, i) {
+        var fut = (w.partial && i >= w.elapsed) || (i < w.firstIdx && m === 0);
+        var lv = m < cfg.minDia ? 0 : m < 10 ? 1 : m < 25 ? 2 : m < 45 ? 3 : 4;
+        h += '<button type="button" class="cza-cell ' + (fut ? 'fut' : lv ? 'g' + lv : m > 0 ? '' : 'z') + '" data-cza-w="' + wi + '" data-cza-d="' + i + '" ' + (fut ? 'disabled' : '') + ' aria-label="' + WD[i] + ' ' + ddmm(addDays(w.start, i)) + '">' + (fut ? '' : m >= 1 ? Math.round(m) : m > 0 ? '<1' : '·') + '</button>';
+      });
+      h += '</div>';
+    });
+    h += '</div><div class="cza-dayinfo" id="cza-dayinfo">Toque num quadrado para ver o dia.</div>';
+    if (o.page) h = hSave + '<div class="cza-pc">';
+    var ws = wdStats(c);
+    h += (o.page ? '' : '<div class="cza-divider"></div>') + '<h4 style="margin-top:8px">Seus dias da semana</h4><div class="cza-hsub">Média de minutos de estudo em cada dia, nas últimas semanas.</div><div class="cza-wdb">'
+      + ws.avg.map(function (m, i) {
+        return '<div>' + (m >= cfg.minDia ? '<b>' + Math.round(m) + '</b>' : '<b style="color:#94A3B8">' + (m > 0 ? '<1' : '0') + '</b>')
+          + '<i class="' + (i === ws.best ? 'best' : m < cfg.minDia ? 'zero' : '') + '" style="height:' + (m < cfg.minDia ? 10 : Math.max(8, m / ws.max * 74)) + 'px"></i>' + WD1[i] + '</div>';
+      }).join('') + '</div>'
+      + '<div class="cza-cap">' + (ws.best >= 0 ? 'Seu dia mais forte é <b>' + WDF[ws.best] + '</b>. ' : '')
+      + (ws.blanks.length ? 'Dias em branco: <b>' + listPt(ws.blanks.map(function (i) { return WDF[i]; })) + '</b>. Que tal escolher um deles para 10 minutinhos?' : ws.known === 7 ? 'Você estuda em todos os dias da semana. 👏' : '') + '</div></div>';
+
+    // o que conta
+    h += '<div class="cza-pc"><h4>O que conta na sua adesão</h4><div class="cza-hsub">São 5 pontos. Cada um vale uma parte da nota, e a barra mostra como você está.</div>' + ruleRowsHtml(c) + '</div>';
+
+    if (ok) {
+      var ch = changes(c), adv = advice(c);
+      if (ch.from) {
+        h += '<div class="cza-pc"><h4>O que mudou</h4><div class="cza-hsub">Semana de ' + ch.to + ' comparada com a de ' + ch.from + '.</div><div class="cza-chg">'
+          + (ch.up.length ? '<h5>Melhorando</h5>' + ch.up.map(function (x) { return '<div class="u"><span>▲</span><span>' + esc(x) + '</span></div>'; }).join('') : '')
+          + (ch.down.length ? '<h5>Pede atenção</h5>' + ch.down.map(function (x) { return '<div class="d"><span>▼</span><span>' + esc(x) + '</span></div>'; }).join('') : '')
+          + (!ch.up.length && !ch.down.length ? '<div class="n"><span>●</span><span>Seu ritmo ficou estável de uma semana para a outra.</span></div>' : '') + '</div></div>';
+      }
+      h += '<div class="cza-pc"><h4>Seu próximo passo</h4>' + (adv.length ? adv.map(function (a) { return '<div class="cza-adv"><span style="font-size:20px">' + PIL[a.k].ic + '</span><div><b>' + esc(a.t[0]) + '</b>' + esc(a.t[1]) + '</div></div>'; }).join('')
+        : '<div class="cza-adv good"><span style="font-size:20px">🎉</span><div><b>Nada a corrigir</b>Mantenha o ritmo.</div></div>') + '</div>';
+      h += '<div class="cza-pc"><h4>Adesão e acertos</h4><div class="cza-hsub">Mais prática, mais acertos. Veja se isso acontece com você.</div>' + lineChartHtml(c) + '<div class="cza-divider"></div>' + groupBarsHtml(c, o.stats) + '</div>';
+    }
+    return h + '</div></div>';          // fecha .cza-more e .cza
+  }
+
+  // Abre/fecha os detalhes. `host` é o elemento que contém o HTML do aluno e `trigger`
+  // o cartão da nota (data-cza-toggle). Usado pelo app do aluno e pela prévia do painel.
+  function toggleDetails(host, trigger) {
+    var more = host.querySelector('.cza-more');
+    if (!more || !trigger) return;
+    var open = more.hidden;               // estava fechado: vai abrir
+    more.hidden = !open;
+    trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  // ── Meta de estudo e página de adesão ───────────────────────────────────
+  // Início: cartão pequeno (anel, frase e a semana em bolinhas com os minutos).
+  // Progresso: cartão "Meu estudo" só com os dias. Os dois abrem a página de adesão,
+  // que reúne atalhos, semana, calendário, total da semana e a nota.
+  var TYPE_SOFT = { leitura: '#DCFCE7', vocab: '#FEF3C7', exercicio: '#DBEAFE' };
+  var TYPE_GO = { leitura: 'pos', vocab: 'vocab', exercicio: 'aulas' };   // para onde o toque leva no app
+  // Os quatro tipos de estudo que aparecem no detalhe do dia (k = chave em cur/daily).
+  var DAY_TYPES = [
+    { k: 'pos', name: 'Pós-aula', ic: '📖', color: '#16A34A', soft: '#DCFCE7' },
+    { k: 'act', name: 'Atividades', ic: '✏️', color: '#3B82F6', soft: '#DBEAFE' },
+    { k: 'des', name: 'Desafio da semana', ic: '🏆', color: '#8B5CF6', soft: '#EDE9FE' },
+    { k: 'voc', name: 'Verbos, chunks e vocabulário', ic: '🧩', color: '#F59E0B', soft: '#FEF3C7' }
+  ];
+  var MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  var VOCAB_NAMES = { vocab_menu: 'Menu do vocabulário', vocab_vocab: 'Meu vocabulário', vocab_verbs: 'Verbos irregulares', vocab_chunks: 'Chunks do inglês' };
+  var DAY_HINT = '<div class="cza-dy hint">Toque num dia para ver o detalhe.</div>';
+
+  function limiteTxt(sec) { return sec % 60 === 0 ? (sec / 60) + (sec === 60 ? ' minuto' : ' minutos') : sec + ' segundos'; }
+  // Lendo o pós-aula a pausa aceita é de pelo menos isto (ler é parado). Igual a READ_MS do CzkUsage, no index.html.
+  var LEITURA_SEG = 180;
+  // "2 de 5 dias com meta"; passou da meta da semana: "6 dias com meta (a meta é 5)".
+  function goalDaysTxt(g) {
+    return g.hits > g.metaDias ? g.hits + ' dias com meta (a meta é ' + g.metaDias + ')' : g.hits + ' de ' + g.metaDias + ' dias com meta';
+  }
+  function parseKey(k) { var p = String(k).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function weekdayOf(key) { return (parseKey(key).getDay() + 6) % 7; }
+  function monthKeyOf(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+  function todayOf(c) {
+    var cur = c.cur, cfg = c.cfg, idx = (c.now.getDay() + 6) % 7;
+    var min = cur.days[idx] || 0;
+    var t = { leitura: cur.dp[idx] || 0, vocab: cur.dv[idx] || 0, exercicio: (cur.da[idx] || 0) + (cur.dd[idx] || 0) };
+    return {
+      idx: idx, min: min, t: t, hit: min >= cfg.metaDiaMin, remaining: Math.max(0, cfg.metaDiaMin - min),
+      done: { leitura: t.leitura >= cfg.minTipo, vocab: t.vocab >= cfg.minTipo, exercicio: t.exercicio >= cfg.minTipo }
+    };
+  }
+
+  // Estado de um dia do ponto de vista do aluno:
+  //   fut = ainda não chegou · pre = antes de o app medir o tempo · now = hoje, ainda correndo
+  //   hit = bateu a meta do dia · part = estudou, mas menos que a meta · x = não estudou (menos de 1 min)
+  // Só vira "x" um dia que já passou e que o app media; hoje nunca é "x" (o dia ainda corre).
+  function dayStatus(c, key) {
+    var d = (c.daily && c.daily[key]) || null, m = d ? d.min : 0, meta = c.cfg.metaDiaMin, today = dayKey(c.now);
+    if (key > today) return { st: 'fut', m: 0, d: d };
+    if (key < c.measureFrom && !d) return { st: 'pre', m: 0, d: d };
+    if (key === today) return { st: m >= meta ? 'hit' : 'now', m: m, d: d };
+    return { st: m >= meta ? 'hit' : m >= 1 ? 'part' : 'x', m: m, d: d };
+  }
+
+  // Mensagem do cartão de hoje. `short` é a frase curta do Início; `text`, a da página.
+  function goalMsg(c, firstName) {
+    var cfg = c.cfg, td = todayOf(c), g = c.cur.goal, meta = cfg.metaDiaMin;
+    var frac = Math.min(1, td.min / meta), nm = firstName ? ', ' + esc(firstName) : '';
+    if (td.hit) {
+      return {
+        title: 'Meta de hoje batida! 🎯',
+        short: 'Você estudou <em>' + Math.floor(td.min) + ' min</em> hoje.',
+        text: 'Você estudou <em>' + Math.floor(td.min) + ' min</em> hoje. ' + (g.atingida ? 'E a meta da semana também. Parabéns! 🎉' : 'Faltam <em>' + plural(g.metaDias - g.hits, 'dia', 'dias') + '</em> para a meta da semana.')
+      };
+    }
+    if (td.min < 0.05) {
+      return {
+        title: 'Vamos começar' + nm + '?',
+        short: 'São só <em>' + num1(meta) + ' minutos</em> hoje.',
+        text: 'São só <em>' + num1(meta) + ' minutos</em> hoje. Pode ser lendo, praticando ou revendo verbos.'
+      };
+    }
+    var falta = plural(Math.ceil(td.remaining), 'minuto', 'minutos');
+    return {
+      title: (frac >= .6 ? 'Quase lá' : 'Bom começo') + nm + '!',
+      short: 'Faltam <em>' + falta + '</em> para a meta de hoje.',
+      text: 'Faltam <em>' + falta + '</em> para bater a meta de hoje. Pode ser lendo, praticando ou revendo verbos.'
+    };
+  }
+  function goalRing(min, meta, size, stroke) {
+    var r = (size - stroke) / 2 - 1, C = 2 * Math.PI * r, frac = Math.min(1, min / meta), c = size / 2, big = size > 80;
+    var label = min > 0 && min < 1 ? '&lt;1' : Math.floor(min);
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" role="img" aria-label="' + Math.floor(min) + ' de ' + num1(meta) + ' minutos" style="flex-shrink:0">'
+      + '<circle cx="' + c + '" cy="' + c + '" r="' + r + '" fill="none" stroke="var(--cza-s-E5F3EA,#E5F3EA)" stroke-width="' + stroke + '"/>'
+      + '<circle cx="' + c + '" cy="' + c + '" r="' + r + '" fill="none" stroke="#16A34A" stroke-width="' + stroke + '" stroke-linecap="round" stroke-dasharray="' + (C * frac).toFixed(1) + ' ' + C.toFixed(1) + '" transform="rotate(-90 ' + c + ' ' + c + ')"/>'
+      + '<text x="' + c + '" y="' + (big ? c : c + 3) + '" text-anchor="middle" font-size="' + (big ? 36 : 20) + '" font-weight="800" fill="var(--cza-t-0F172A,#0F172A)">' + label + '</text>'
+      + (big ? '<text x="' + c + '" y="' + (c + 22) + '" text-anchor="middle" font-size="12.5" font-weight="800" fill="var(--cza-t-64748B,#64748B)">de ' + num1(meta) + ' min</text>' : '<text x="' + c + '" y="' + (c + 17) + '" text-anchor="middle" font-size="9.5" font-weight="800" fill="var(--cza-t-64748B,#64748B)">min</text>') + '</svg>';
+  }
+
+  // Bolinha de um dia. o.mode 'pick' abre o detalhe ali mesmo; 'open' abre a página de adesão.
+  function bubbleHtml(c, key, o) {
+    var i = dayStatus(c, key), w = weekdayOf(key), meta = c.cfg.metaDiaMin, label;
+    if (i.st === 'x') label = '✕';
+    else if (i.st === 'pre') label = '·';
+    else if (i.st === 'fut') label = '';
+    else if (i.st === 'now') label = '<b>' + (i.m >= 1 ? Math.floor(i.m) : i.m > 0 ? '&lt;1' : '0') + '<small>m</small></b>';
+    else label = '<b>' + (i.m >= 1 ? Math.floor(i.m) : '&lt;1') + '<small>m</small></b>';
+    var prog = i.st === 'now' ? ' style="--p:' + Math.round(Math.min(1, i.m / meta) * 100) + '%"' : '';
+    var at = o.mode === 'open' ? 'data-cza-open data-cza-k="' + key + '"' : 'data-cza-pick="week" data-cza-k="' + key + '"';
+    return '<button type="button" class="cza-bb ' + i.st + (key === dayKey(c.now) ? ' today' : '') + (o.sel === key ? ' sel' : '') + '" ' + at
+      + (i.st === 'fut' ? ' disabled' : '') + ' aria-label="' + WDF[w] + ' ' + ddmm(parseKey(key)) + '"><span' + prog + '>' + label + '</span><i>' + WD[w] + '</i></button>';
+  }
+  function weekKeys(c) {
+    var mon = mondayOf(c.now), out = [];
+    for (var i = 0; i < 7; i++) out.push(dayKey(addDays(mon, i)));
+    return out;
+  }
+  function weekStripHtml(c, o) {
+    o = o || {};
+    return '<div class="cza-wk">' + weekKeys(c).map(function (k) { return bubbleHtml(c, k, o); }).join('') + '</div>';
+  }
+
+  /* Início: cartão da meta de hoje (anel + frase + semana). Tocar abre a página. o = { firstName, ribbon } */
+  function goalHomeHtml(c, o) {
+    o = o || {};
+    var td = todayOf(c), m = goalMsg(c, o.firstName);
+    return '<div class="cza cza-home">' + (o.ribbon ? '<div class="cza-ribbon">' + esc(o.ribbon) + '</div>' : '')
+      + '<div class="cza-mini" role="button" tabindex="0" data-cza-open aria-label="Abrir minha adesão">'
+      + '<div class="cza-mini-top">' + goalRing(td.min, c.cfg.metaDiaMin, 64, 8)
+      + '<div class="cza-mtx"><small>🎯 Meta de estudo de hoje</small><b>' + m.title + '</b><span class="cza-tx">' + m.short + '</span></div><span class="cza-go">›</span></div>'
+      + weekStripHtml(c, { mode: 'open' }) + '</div></div>';
+  }
+
+  /* Progresso: cartão "Meu estudo", só com os dias. Tocar abre a página. o = { ribbon } */
+  function goalProgressHtml(c, o) {
+    o = o || {};
+    var g = c.cur.goal;
+    return '<div class="cza cza-prog">' + (o.ribbon ? '<div class="cza-ribbon">' + esc(o.ribbon) + '</div>' : '')
+      + '<div class="cza-msc" role="button" tabindex="0" data-cza-open aria-label="Abrir meu estudo">'
+      + '<div class="cza-top"><b>📈 Meu estudo</b><div class="cza-r"><span class="cza-gchip' + (g.atingida ? '' : ' muted') + '">' + (c.metas && c.metas.semH ? fhm(c.hours.sem) + ' de ' + num1(c.metas.semH) + ' h' : fhm(g.minutos) + ' no app') + '</span><span class="cza-go">›</span></div></div>'
+      + weekStripHtml(c, { mode: 'open' }) + '</div></div>';
+  }
+
+  // ── Detalhe de um dia (abre na própria página) ──────────────────────────
+  function itemType(k) {
+    return /^pos_/.test(k) ? 'pos' : /^vocab_/.test(k) ? 'voc' : /^(act|extra|corr)_/.test(k) ? 'act' : null;
+  }
+  function itemName(c, k) {
+    if (c.names && c.names[k]) return c.names[k];
+    if (VOCAB_NAMES[k]) return VOCAB_NAMES[k];
+    if (/^corr_/.test(k)) return 'Correção das atividades';
+    if (/^extra_/.test(k)) return 'Atividade extra';
+    if (/^act_/.test(k)) return 'Atividade';
+    if (/^pos_/.test(k)) return 'Pós-aula';
+    return 'Outro';
+  }
+  function dayDetailHtml(c, key) {
+    var i = dayStatus(c, key);
+    if (i.st === 'fut') return '';
+    var w = weekdayOf(key), d = i.d, m = i.m, meta = c.cfg.metaDiaMin;
+    function head(chip) { return '<div class="cza-dh"><b>' + cap1(WDF[w]) + ', ' + ddmm(parseKey(key)) + '</b><span class="cza-dr">' + chip + '<button type="button" class="cza-dx" data-cza-close aria-label="Fechar o dia">×</button></span></div>'; }
+    var foot = d && d.out > 0.05 ? '<div class="cza-dfoot">Mais ' + fm(d.out) + ' em outras telas (início, perfil, avisos). Isso não conta como estudo.</div>' : '';
+    if (i.st === 'pre') return '<div class="cza-dy pre">' + head('<span class="cza-gchip muted">sem medição</span>') + '<p>Neste dia o app ainda não media o seu tempo de estudo. Por isso ele fica sem registro.</p></div>';
+    if (i.st === 'x') {
+      var few = m > 0;
+      return '<div class="cza-dy nox">' + head('<span class="cza-gchip red">✕ não estudou</span>')
+        + '<div class="cza-xbox"><span>✕</span><div><b>' + (few ? 'Estudou menos de 1 minuto' : 'Não estudou nenhum minuto') + '</b>' + (few ? 'Foi só uma passada rápida pelo app.' : 'Neste dia não houve estudo no app.') + '</div></div>' + foot + '</div>';
+    }
+    if (i.st === 'now' && m < 0.05) return '<div class="cza-dy amb">' + head('<span class="cza-gchip amber">hoje · em andamento</span>') + '<p>Hoje ainda não teve estudo. Dá tempo! São só ' + num1(meta) + ' minutos.</p>' + foot + '</div>';
+    var chip = i.st === 'hit' ? '<span class="cza-gchip">Meta batida ✓</span>' : i.st === 'now' ? '<span class="cza-gchip amber">hoje · em andamento</span>' : '<span class="cza-gchip amber">estudou um pouco</span>';
+    var rows = '';
+    DAY_TYPES.forEach(function (t) {
+      var v = d[t.k];
+      if (!(v > 0.05)) return;
+      var its = (d.items || []).filter(function (x) { return itemType(x.k) === t.k && x.min >= 0.05; }).sort(function (a, b) { return b.min - a.min; }).slice(0, 8);
+      rows += '<div class="cza-tr"><div class="cza-ti" style="background:' + t.soft + '">' + t.ic + '</div><div class="cza-tb">'
+        + '<div class="cza-tl"><b>' + t.name + '</b><em>' + fm(v) + '</em></div>'
+        + '<div class="cza-pbar"><i style="width:' + Math.max(4, v / m * 100).toFixed(0) + '%;background:' + t.color + '"></i></div>'
+        + (its.length ? '<ul class="cza-its">' + its.map(function (x) { return '<li><span>' + esc(itemName(c, x.k)) + '</span><span>' + fm(x.min) + '</span></li>'; }).join('') + '</ul>' : '')
+        + '</div></div>';
+    });
+    return '<div class="cza-dy' + (i.st === 'hit' ? '' : ' amb') + '">' + head(chip)
+      + '<div class="cza-dtot">' + fm(m) + ' <small>de estudo' + (i.st === 'hit' ? '' : ' · a meta é ' + num1(meta) + ' min') + '</small></div>' + rows + foot + '</div>';
+  }
+
+  // ── Calendário do mês ───────────────────────────────────────────────────
+  function calendarHtml(c, month) {
+    var y = +month.slice(0, 4), mo = +month.slice(5, 7);
+    var minM = String(c.measureFrom).slice(0, 7), maxM = monthKeyOf(c.now);
+    var prev = monthKeyOf(new Date(y, mo - 2, 1)), next = monthKeyOf(new Date(y, mo, 1));
+    var off = (new Date(y, mo - 1, 1).getDay() + 6) % 7, n = new Date(y, mo, 0).getDate();
+    var h = '<div class="cza-calnav"><button type="button" data-cza-month="prev"' + (prev < minM ? ' disabled' : '') + ' aria-label="Mês anterior">‹</button>'
+      + '<b>' + cap1(MESES[mo - 1]) + ' de ' + y + '</b>'
+      + '<button type="button" data-cza-month="next"' + (next > maxM ? ' disabled' : '') + ' aria-label="Próximo mês">›</button></div>'
+      + '<div class="cza-cg">' + WD.map(function (x) { return '<div class="h">' + x + '</div>'; }).join('');
+    for (var b = 0; b < off; b++) h += '<div class="cza-cc blank"></div>';
+    for (var d = 1; d <= n; d++) {
+      var key = month + '-' + String(d).padStart(2, '0'), i = dayStatus(c, key), label;
+      if (i.st === 'x') label = '✕';
+      else if (i.st === 'pre' || i.st === 'fut') label = '';
+      else label = (i.m >= 1 ? Math.floor(i.m) : '&lt;1') + '<small>m</small>';
+      h += '<button type="button" class="cza-cc ' + i.st + (i.st === 'hit' && i.m >= 25 ? ' big' : '') + '" data-cza-pick="cal" data-cza-k="' + key + '"'
+        + (i.st === 'fut' ? ' disabled' : '') + ' aria-label="' + ddmm(parseKey(key)) + '"><em>' + d + '</em><b>' + label + '</b></button>';
+    }
+    return h + '</div>'
+      + '<div class="cza-leg"><span><i style="background:#22C55E"></i>meta batida (' + num1(c.cfg.metaDiaMin) + '+ min)</span><span><i style="background:var(--cza-s-FEF3C7,#FEF3C7);border:1px solid #FCD34D"></i>estudou um pouco</span>'
+      + '<span><i style="background:var(--cza-s-FEE2E2,#FEE2E2);color:var(--cza-t-DC2626,#DC2626)">✕</i>não estudou</span><span><i style="background:var(--cza-s-F1F5F9,#F1F5F9);border:1px solid #CBD5E1"></i>sem medição</span></div>';
+  }
+
+  // ── Blocos da página de adesão ──────────────────────────────────────────
+  // Os três atalhos do cartão de hoje: um quadradinho por tipo de estudo, com o que já foi feito hoje.
+  var TILE_NAME = { leitura: 'Pós-aula', vocab: 'Vocabulário', exercicio: 'Exercícios' };
+  function tilesHtml(c) {
+    var td = todayOf(c);
+    return '<div class="cza-tiles">' + A_STUDY_TYPES.map(function (t) {
+      var m = td.t[t.k], done = td.done[t.k];
+      return '<button type="button" class="cza-tile' + (done ? ' done' : '') + '" data-cza-go="' + TYPE_GO[t.k] + '">'
+        + '<span class="i" style="background:' + TYPE_SOFT[t.k] + '">' + t.ic + '</span><b>' + TILE_NAME[t.k] + '</b>'
+        + '<small>' + (done ? 'feito ✓' : m >= 0.05 ? 'hoje ' + fm(m) : 'ainda não hoje') + '</small></button>';
+    }).join('') + '</div>';
+  }
+  var A_STUDY_TYPES = [
+    { k: 'leitura', name: 'Ler um pós-aula', ic: '📖', inclui: 'pós-aula' },
+    { k: 'vocab', name: 'Ler chunks, verbos ou vocabulário', ic: '🧩', inclui: 'vocabulário, lista de verbos e chunks' },
+    { k: 'exercicio', name: 'Fazer um exercício', ic: '✏️', inclui: 'atividades, extras, correção e desafio' }
+  ];
+
+  // Total da semana: minutos por tipo e dias com meta. O que conta como estudo fica em "Como essa área funciona".
+  function weekTotalsHtml(c) {
+    var w = c.cur, g = w.goal;
+    var part = function (arr) { return sum(arr.slice(0, w.elapsed)); };
+    var tot = { pos: part(w.dp), act: part(w.da), des: part(w.dd), voc: part(w.dv) };
+    var scale = g.minutos || 1;
+    var bar = '<div class="cza-gbar">' + DAY_TYPES.map(function (t) { return '<i style="width:' + (tot[t.k] / scale * 100).toFixed(1) + '%;background:' + t.color + '"></i>'; }).join('') + '</div>';
+    var falta = Math.max(0, g.metaDias - g.hits);
+    var chips = '<div class="cza-gchips"><span class="cza-gchip">' + goalDaysTxt(g).replace('com meta', 'com meta batida') + '</span>'
+      + (g.atingida ? '<span class="cza-gchip">Meta da semana batida 🎉</span>' : '<span class="cza-gchip amber">' + (falta === 1 ? 'falta 1 dia' : 'faltam ' + falta + ' dias') + '</span>') + '</div>';
+    var legend = '<div class="cza-glegend">' + DAY_TYPES.map(function (t) { return '<span><i style="background:' + t.color + '"></i>' + (t.k === 'des' ? 'Desafio' : t.name) + '</span>'; }).join('') + '</div>';
+    return '<div class="cza-sect">Total da semana</div>'
+      + '<div class="cza-gtot"><b>' + Math.round(g.minutos) + ' min</b><span>de estudo no app</span></div>' + bar + chips + legend;
+  }
+
+  // ── Liberação para os alunos ────────────────────────────────────────────
+  // meta = schools/{escola}.adesao. Vale o que liberar primeiro: `liberarEm` é o instante (texto ISO, ex.: 2026-11-05T12:00:00-03:00)
+  // e `liberadaEm` é o campo antigo, só a data (vale desde 00:00). O painel novo grava só `liberarEm`.
+  function liberadaDesde(meta) {
+    if (!meta) return null;
+    var ds = [];
+    if (meta.liberarEm) { var t = new Date(meta.liberarEm); if (!isNaN(t)) ds.push(t); }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(meta.liberadaEm || '')) ds.push(parseKey(meta.liberadaEm));
+    if (!ds.length) return null;
+    return ds.reduce(function (a, b) { return a.getTime() <= b.getTime() ? a : b; });
+  }
+  function liberadaAgora(meta, now) { var d = liberadaDesde(meta); return !!d && d.getTime() <= (now || new Date()).getTime(); }
+  // "05/11 às 12:00" (sem a hora quando é meia-noite, que é o caso do campo antigo)
+  function liberadaTxt(d) {
+    var hm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    return ddmm(d) + (hm === '00:00' ? '' : ' às ' + hm);
+  }
+
+  // ── Apresentação da Adesão: o que o aluno fez e as metas sugeridas ───────
+  // Resumo dos últimos `maxDias` dias FECHADOS (até ontem), a partir do início da medição.
+  function resumoPeriodo(c, maxDias) {
+    var ate = dayKey(addDays(c.now, -1)), ini = dayKey(addDays(c.now, -maxDias));
+    if (ini < c.measureFrom) ini = c.measureFrom;
+    var dias = ini > ate ? 0 : Math.round((parseKey(ate) - parseKey(ini)) / 86400000) + 1;
+    var total = 0, est = [], melhor = null, minDia = c.cfg.minDia;
+    for (var i = 0; i < dias; i++) {
+      var k = dayKey(addDays(parseKey(ini), i)), m = (c.daily[k] && c.daily[k].min) || 0;
+      total += m;
+      if (m >= minDia) est.push(m);
+      if (m > (melhor ? melhor.m : 0)) melhor = { k: k, m: m };
+    }
+    return {
+      ini: ini, ate: ate, dias: dias, total: total, diasEstudados: est.length,
+      mediaGeral: dias ? total / dias : 0, mediaEstudados: est.length ? sum(est) / est.length : 0, melhor: melhor, metaDia: c.cfg.metaDiaMin
+    };
+  }
+  // Metas sugeridas: o que o aluno escolhe por dia, mais as aulas, dá o total da semana e do mês; a sugestão fica 5% abaixo
+  // (para a meta ser possível), arredondada PARA BAIXO em meia hora na semana e em 1 hora no mês. Tudo em minutos.
+  // Semana: min/dia × 7 + aulas por semana × duração. Mês: min/dia × 30 + (aulas por semana × 52 ÷ 12, arredondado) × duração.
+  function metasSugeridas(diaMin, aulasSemana, durMin) {
+    var dia = Math.max(1, Number(diaMin) || 0), aulas = Math.max(0, Number(aulasSemana) || 0), dur = Number(durMin) > 0 ? Number(durMin) : 60;
+    var aulasSemMin = aulas * dur, appSem = dia * 7, totSem = appSem + aulasSemMin;
+    var aulasMesN = Math.round(aulas * 52 / 12), aulasMesMin = aulasMesN * dur, appMes = dia * 30, totMes = appMes + aulasMesMin;
+    return {
+      dia: dia, appSem: appSem, aulasSemMin: aulasSemMin, totSem: totSem, sugSem: Math.min(7200, Math.max(30, Math.floor(totSem * 0.95 / 30) * 30)),
+      aulasMesN: aulasMesN, aulasMesMin: aulasMesMin, appMes: appMes, totMes: totMes, sugMes: Math.min(30000, Math.max(60, Math.floor(totMes * 0.95 / 60) * 60))
+    };
+  }
+
+  // Cronômetro de estudo (cantinho da tela): "45 s" abaixo de 1 min, "1:05" depois e "1:05:10" a partir de 1 h.
+  function fmtTimer(secs) {
+    var t = Math.max(0, Math.floor(Number(secs) || 0));
+    if (t < 60) return t + ' s';
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    var h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), sec = t % 60;
+    return h ? h + ':' + p(m) + ':' + p(sec) : m + ':' + p(sec);
+  }
+  // Cor do cronômetro pela meta do dia (em minutos): vermelho até 75%, amarelo até bater a meta, verde daí em diante.
+  function timerTone(secs, goalMin) {
+    var goal = (Number(goalMin) > 0 ? Number(goalMin) : DEFAULTS.metaDiaMin) * 60, r = (Number(secs) || 0) / goal;
+    return r >= 1 ? 'g' : r >= 0.75 ? 'y' : 'r';
+  }
+
+  // "2 h 33 min", "1 h", "45 min"
+  function fhm(m) {
+    m = Math.round(m);
+    var h = Math.floor(m / 60), r = m % 60;
+    return h ? h + ' h' + (r ? ' ' + r + ' min' : '') : r + ' min';
+  }
+  function goalRowHtml(label, val, h) {
+    if (h) {
+      var goalMin = h * 60;
+      return '<div class="cza-hgoal"><div class="cza-top2"><b>' + esc(label) + '</b><span>' + fhm(val) + ' de ' + num1(h) + ' h</span></div>'
+        + '<div class="cza-hbar"><i style="width:' + Math.min(100, val / goalMin * 100).toFixed(0) + '%"></i></div>'
+        + '<p>' + (val >= goalMin ? 'Meta batida! 🎉' : 'Faltam <b>' + fhm(goalMin - val) + '</b> para a sua meta.') + '</p></div>';
+    }
+    return '<div class="cza-hgoal open"><div class="cza-top2"><b>' + esc(label) + '</b><span>' + fhm(val) + '</span></div>'
+      + '<button type="button" class="cza-setgoal" data-cza-perfil>Escolha a sua meta no Perfil ›</button></div>';
+  }
+  // Total de horas (aulas + estudo no app) e as metas de semana e de mês que o aluno escolheu.
+  function hoursHtml(c, o) {
+    var H = c.hours, M = c.metas || {}, A = H.aulas;
+    return ((o && o.noTitle) ? '' : '<div class="cza-sect">Horas de estudo</div>')
+      + '<div class="cza-hrbig"><b>' + fhm(H.total) + '</b><span>no total</span></div>'
+      + '<div class="cza-hbar2">' + (H.total > 0 ? '<i style="width:' + (A.min / H.total * 100).toFixed(1) + '%;background:#0EA5E9"></i><i style="width:' + (H.app.total / H.total * 100).toFixed(1) + '%;background:#16A34A"></i>' : '') + '</div>'
+      + '<div class="cza-hsplit"><div><span><i style="background:#0EA5E9"></i>🎓 Aulas</span><b>' + fhm(A.min) + '</b><small>' + (A.n ? A.n + (A.n === 1 ? ' aula' : ' aulas') + ' × ' + fhm(H.dur) : 'entra com cada pós-aula') + '</small></div>'
+      + '<div><span><i style="background:#16A34A"></i>📱 No app</span><b>' + fhm(H.app.total) + '</b><small>desde ' + ddmm(parseKey(c.measureFrom)) + '</small></div></div>'
+      + goalRowHtml('Esta semana', H.sem, M.semH) + goalRowHtml(cap1(MESES[c.now.getMonth()]), H.mes, M.mesH)
+      + '<p class="cza-hnote">As metas da semana e do mês somam as aulas e o estudo no app. Cada pós-aula publicado soma o tempo da aula.</p>';
+  }
+
+  // ── Evolução: gráfico de linha por dia, semana e mês, com a linha de meta ─────
+  var MES3 = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  var EVO = [
+    { k: 'tot', n: 'Geral', color: '#14532D' },
+    { k: 'all', n: 'Todas juntas', color: '#334155' },
+    { k: 'pos', n: 'Pós-aula', ic: '📖', color: '#16A34A' },
+    { k: 'act', n: 'Atividades', ic: '✏️', color: '#3B82F6' },
+    { k: 'voc', n: 'Vocabulário', ic: '🧩', color: '#F59E0B' },
+    { k: 'des', n: 'Desafio', ic: '🏆', color: '#8B5CF6' },
+    { k: 'aul', n: 'Aulas', ic: '🎓', color: '#0EA5E9' }
+  ];
+  var EVO_ALL = ['pos', 'act', 'voc', 'des', 'aul'], EVO_APP = ['pos', 'act', 'voc', 'des'];
+  var EVO_GOAL_COLOR = '#B45309';
+  var EVO_MODES = {
+    d: { list: 'days', per: 'por dia (14 dias)', one: 'dia', many: 'dias', prev: 'o dia anterior', cur: 'hoje', colW: 36 },
+    w: { list: 'weeks', per: 'por semana', one: 'semana', many: 'semanas', prev: 'a semana anterior', cur: 'semana em andamento', colW: 52 },
+    m: { list: 'months', per: 'por mês', one: 'mês', many: 'meses', prev: 'o mês anterior', cur: 'mês em andamento', colW: 74 }
+  };
+  function evoBy(k) { return EVO.filter(function (x) { return x.k === k; })[0]; }
+
+  // Série de estudo por dia (últimos 14), semana e mês, desde o início da medição. "tot" (Geral) é o estudo no app, SEM as aulas,
+  // porque é isso que a meta mede. As aulas (pós-aulas publicados × duração, como em Horas de estudo) ficam à parte, em "aul".
+  // Período "partial" = o que ainda corre; "pre" = o primeiro, em que a medição começou no meio (não entra na conta da meta).
+  // Meta, em minutos: por dia = a meta do dia; por semana = meta do dia × dias de estudo da semana; por mês = semana × 52 ÷ 12 (12 meses fecham o ano).
+  function evoSeries(c, posts, dur) {
+    var mf = c.measureFrom, today = dayKey(c.now), aulDay = {}, i;
+    posts.forEach(function (x) { var k = dayKey(x.ref); if (k >= mf && k <= today) aulDay[k] = (aulDay[k] || 0) + dur; });
+    function cell(k) {
+      var d = c.daily[k] || { pos: 0, act: 0, des: 0, voc: 0 };
+      var v = { pos: d.pos, act: d.act, voc: d.voc, des: d.des, aul: aulDay[k] || 0 };
+      v.tot = v.pos + v.act + v.voc + v.des;
+      return v;
+    }
+    function add(a, b) { var o = {}; Object.keys(a).forEach(function (x) { o[x] = a[x] + b[x]; }); return o; }
+    var zero = { pos: 0, act: 0, voc: 0, des: 0, aul: 0, tot: 0 };
+    var days = [], weeks = [], months = [];
+    var d0 = addDays(c.now, -13); if (dayKey(d0) < mf) d0 = parseKey(mf);
+    for (var d = d0; dayKey(d) <= today; d = addDays(d, 1)) {
+      var k = dayKey(d), w = (d.getDay() + 6) % 7;
+      days.push({ key: k, label: String(d.getDate()), sub: WD1[w], long: cap1(WDF[w]) + ', ' + ddmm(d), partial: k === today, v: cell(k) });
+    }
+    var curMon = dayKey(mondayOf(c.now));
+    for (var m = mondayOf(parseKey(mf)); dayKey(m) <= curMon; m = addDays(m, 7)) {
+      var v = zero, mk = dayKey(m);
+      for (i = 0; i < 7; i++) { var kk = dayKey(addDays(m, i)); if (kk >= mf && kk <= today) v = add(v, cell(kk)); }
+      weeks.push({ key: mk, label: ddmm(m), sub: '', long: 'Semana de ' + ddmm(m) + ' a ' + ddmm(addDays(m, 6)), partial: mk === curMon, pre: mk < mf, v: v });
+    }
+    var curM = today.slice(0, 7), p0 = parseKey(mf);
+    for (var mo = new Date(p0.getFullYear(), p0.getMonth(), 1); dayKey(mo).slice(0, 7) <= curM; mo = new Date(mo.getFullYear(), mo.getMonth() + 1, 1)) {
+      var key = dayKey(mo).slice(0, 7), nd = new Date(mo.getFullYear(), mo.getMonth() + 1, 0).getDate(), vm = zero;
+      for (i = 1; i <= nd; i++) { var k2 = key + '-' + String(i).padStart(2, '0'); if (k2 >= mf && k2 <= today) vm = add(vm, cell(k2)); }
+      months.push({ key: key, label: MES3[mo.getMonth()], sub: '', long: cap1(MESES[mo.getMonth()]) + ' de ' + mo.getFullYear(), partial: key === curM, pre: dayKey(mo) < mf, v: vm });
+    }
+    var gd = c.cfg.metaDiaMin, gw = gd * c.cfg.metaDiasEstudo;
+    return { days: days, weeks: weeks, months: months, goal: { d: gd, w: gw, m: Math.round(gw * 52 / 12 / 5) * 5 } };
+  }
+
+  function evoNiceMax(v) {
+    var steps = [10, 20, 30, 40, 60, 80, 120, 180, 240, 300, 360, 480, 600, 900, 1200, 1800, 2400, 3600, 4800, 6000];
+    for (var i = 0; i < steps.length; i++) if (steps[i] >= v * 1.05) return steps[i];
+    return Math.ceil(v / 1200) * 1200;
+  }
+  function evoTick(v) { return v === 0 ? '0' : v < 120 ? v + ' min' : num1(v / 60) + ' h'; }
+  function evoSel(pts, st) { var i = st.sel === '' || st.sel == null ? NaN : +st.sel; return isNaN(i) || i < 0 || i >= pts.length ? pts.length - 1 : i; }
+  function evoPts(c, st) { return c.evo[EVO_MODES[st.mode].list]; }
+  // A meta é do total de estudo: só a ficha Geral leva a linha.
+  function evoGoal(c, st) { return st.area === 'tot' ? c.evo.goal[st.mode] : null; }
+  function evoGoalName(c, st) {
+    return st.mode === 'd' ? 'por dia' : st.mode === 'w' ? 'por semana: ' + fhm(c.evo.goal.d) + ' × ' + c.cfg.metaDiasEstudo + ' dias' : 'por mês';
+  }
+
+  function evoChartHtml(pts, st, goal) {
+    var n = pts.length, keys = st.area === 'all' ? EVO_ALL : [st.area], M = EVO_MODES[st.mode];
+    var colW = M.colW, L = 12, R = 14, T = 16, B = 38, H = 190, MINW = 290;
+    var scroll = n * colW + L + R > MINW, W = scroll ? n * colW + L + R : MINW;
+    var top = Math.max.apply(null, [1, goal || 0].concat(pts.map(function (p) { return Math.max.apply(null, keys.map(function (k) { return p.v[k]; })); })));
+    var max = evoNiceMax(top), pw = W - L - R, ph = H - T - B, sel = evoSel(pts, st);
+    function X(i) { return n === 1 ? L + pw / 2 : L + (scroll ? colW / 2 + i * (pw - colW) / (n - 1) : i * pw / (n - 1)); }
+    function Y(v) { return T + (max - v) / max * ph; }
+    // eixo de minutos fixo à esquerda; só a área das linhas rola
+    var ax = '<svg class="cza-evy" width="38" height="' + H + '" viewBox="0 0 38 ' + H + '" aria-hidden="true">';
+    [0, max / 2, max].forEach(function (v) {
+      if (goal && v > 0 && Math.abs(Y(v) - Y(goal)) < 13) return;          // a etiqueta da meta ocupa o lugar
+      ax += '<text x="34" y="' + (Y(v) + 3.5) + '" text-anchor="end" font-size="9.5" font-weight="700" fill="var(--cza-t-64748B,#64748B)">' + evoTick(Math.round(v)) + '</text>';
+    });
+    if (goal) {
+      var gy = Math.min(Y(goal), Y(0) - 11);
+      ax += '<rect x="0" y="' + (gy - 8) + '" width="38" height="16" rx="8" fill="var(--cza-s-FEF3C7,#FEF3C7)"/><text x="19" y="' + (gy + 3.5) + '" text-anchor="middle" font-size="9.5" font-weight="800" fill="var(--cza-t-92400E,#92400E)">' + evoTick(goal) + '</text>';
+    }
+    ax += '</svg>';
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="' + (scroll ? 'width:' + W + 'px;height:' + H + 'px' : 'width:100%;height:auto') + '" role="img" aria-label="Evolução do estudo">';
+    if (goal) s += '<rect x="0" y="' + T + '" width="' + W + '" height="' + Math.max(0, Y(goal) - T) + '" fill="rgba(22,163,74,.08)"/>';
+    [0, max / 2, max].forEach(function (v) { s += '<line x1="0" x2="' + W + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="var(--cza-s-E2E8F0,#E2E8F0)"/>'; });
+    s += '<line x1="' + X(sel) + '" x2="' + X(sel) + '" y1="' + T + '" y2="' + (T + ph) + '" stroke="#94A3B8" stroke-dasharray="3 3"/>';
+    pts.forEach(function (p, i) {
+      s += '<text x="' + X(i) + '" y="' + (H - 21) + '" text-anchor="middle" font-size="9.5" font-weight="' + (i === sel ? 800 : 700) + '" fill="' + (i === sel ? '#0F172A' : '#64748B') + '">' + p.label + '</text>';
+      if (p.sub) s += '<text x="' + X(i) + '" y="' + (H - 9) + '" text-anchor="middle" font-size="9" font-weight="700" fill="#94A3B8">' + p.sub + '</text>';
+    });
+    if (goal) s += '<line x1="0" x2="' + W + '" y1="' + Y(goal) + '" y2="' + Y(goal) + '" stroke="' + EVO_GOAL_COLOR + '" stroke-width="2" stroke-dasharray="7 4"/>';
+    keys.forEach(function (key) {
+      var col = evoBy(key).color, thick = st.area === 'all' ? 2.6 : 3;
+      var solid = pts.map(function (p, i) { return X(i) + ',' + Y(p.v[key]); });
+      var lastPartial = pts[n - 1].partial && n > 1;
+      if (lastPartial) {
+        if (n > 2) s += '<polyline points="' + solid.slice(0, n - 1).join(' ') + '" fill="none" stroke="' + col + '" stroke-width="' + thick + '" stroke-linejoin="round" stroke-linecap="round"/>';
+        s += '<line x1="' + X(n - 2) + '" y1="' + Y(pts[n - 2].v[key]) + '" x2="' + X(n - 1) + '" y2="' + Y(pts[n - 1].v[key]) + '" stroke="' + col + '" stroke-width="' + thick + '" stroke-dasharray="1 6" stroke-linecap="round"/>';
+      } else if (n > 1) s += '<polyline points="' + solid.join(' ') + '" fill="none" stroke="' + col + '" stroke-width="' + thick + '" stroke-linejoin="round" stroke-linecap="round"/>';
+      pts.forEach(function (p, i) {
+        var hollow = p.partial, r = i === sel ? 6 : 4;
+        s += '<circle cx="' + X(i) + '" cy="' + Y(p.v[key]) + '" r="' + r + '" fill="' + (hollow ? '#fff' : col) + '" stroke="' + (hollow ? col : '#fff') + '" stroke-width="' + (hollow ? 2.5 : 2) + '"/>';
+      });
+    });
+    var cw = n === 1 ? pw : (scroll ? colW : pw / (n - 1));
+    pts.forEach(function (p, i) { s += '<rect data-cza-evo-pt="' + i + '" x="' + (X(i) - cw / 2) + '" y="0" width="' + cw + '" height="' + H + '" fill="transparent" style="cursor:pointer"/>'; });
+    return '<div class="cza-evw">' + ax + '<div class="cza-evg" data-cza-evg>' + s + '</svg></div></div>';
+  }
+  function evoDelta(pts, i, st) {
+    var p = pts[i], prev = pts[i - 1], key = st.area === 'all' ? 'tot' : st.area;
+    if (p.partial || !prev || prev.pre) return { cls: 'eq', txt: '' };
+    var d = Math.round(p.v[key] - prev.v[key]), unit = EVO_MODES[st.mode].prev;
+    if (Math.abs(d) < 1) return { cls: 'eq', txt: '● igual a ' + unit };
+    return d > 0 ? { cls: 'up', txt: '▲ ' + fhm(d) + ' a mais que ' + unit } : { cls: 'dn', txt: '▼ ' + fhm(-d) + ' a menos que ' + unit };
+  }
+  // Onde o ponto está em relação à meta (só a ficha Geral).
+  function evoVsGoal(p, goal) {
+    var v = p.v.tot, d = Math.round(v - goal);
+    if (p.pre) return null;
+    if (p.partial) return v >= goal ? { cls: 'up', txt: '✓ meta já batida (' + fhm(goal) + ')' } : { cls: 'eq', txt: 'faltam ' + fhm(goal - v) + ' para a meta de ' + fhm(goal) };
+    if (v >= goal) return { cls: 'up', txt: (d < 1 ? '✓ bateu a meta' : '▲ ' + fhm(d) + ' acima da meta') + ' (' + fhm(goal) + ')' };
+    return { cls: 'dn', txt: '▼ ' + fhm(goal - v) + ' abaixo da meta (' + fhm(goal) + ')' };
+  }
+  function evoReadHtml(pts, st, goal) {
+    var i = evoSel(pts, st), p = pts[i], key = st.area === 'all' ? 'tot' : st.area, e = evoBy(st.area), dl = evoDelta(pts, i, st), M = EVO_MODES[st.mode];
+    var tag = p.partial ? '<span class="cza-gchip amber">' + M.cur + '</span>' : p.pre ? '<span class="cza-gchip muted">a medição começou no meio</span>' : '';
+    var h = '<div class="cza-evr"><div class="h"><span>' + esc(p.long) + '</span>' + tag + '</div>'
+      + '<div class="v" style="color:' + (st.area === 'all' || st.area === 'tot' ? '#14532D' : e.color) + '">' + (p.v[key] >= 0.5 ? fhm(p.v[key]) : '0 min') + '<small class="' + dl.cls + '">' + dl.txt + '</small></div>';
+    var vg = goal ? evoVsGoal(p, goal) : null;
+    if (vg) h += '<div class="cza-vg ' + vg.cls + '">' + vg.txt + '</div>';
+    if (st.area === 'tot' || st.area === 'all') {
+      h += '<div class="cza-brk">' + EVO_APP.map(function (k) { var x = evoBy(k); return '<div><i style="background:' + x.color + '"></i>' + x.ic + ' ' + x.n + '<span>' + (p.v[k] >= 0.5 ? fhm(p.v[k]) : '—') + '</span></div>'; }).join('')
+        + '<div class="out"><i style="background:' + evoBy('aul').color + '"></i>🎓 Aulas <em>(fora da meta)</em><span>' + (p.v.aul >= 0.5 ? fhm(p.v.aul) : '—') + '</span></div></div>';
+    }
+    return h + '</div>';
+  }
+  // "Meta batida em 6 de 8 semanas" e, se estiver sempre bem acima, um convite para o aluno subir a própria meta.
+  function evoGoalSummary(pts, st, goal) {
+    var closed = pts.filter(function (p) { return !p.partial && !p.pre; }), M = EVO_MODES[st.mode];
+    if (!closed.length) return '<div class="cza-msum">Ainda não há ' + M.one + ' fechado para comparar com a meta.</div>';
+    var hit = closed.filter(function (p) { return p.v.tot >= goal; }).length, strong = closed.filter(function (p) { return p.v.tot >= 1.5 * goal; }).length;
+    var ratio = mean(closed.map(function (p) { return p.v.tot / goal; }));
+    var h = '<div class="cza-msum"><b>Meta batida em ' + hit + ' de ' + closed.length + ' ' + (closed.length === 1 ? M.one : M.many) + '</b> · em média <b>' + num1(ratio) + '×</b> a meta</div>';
+    if (closed.length >= 3 && strong / closed.length >= 0.75) h += '<div class="cza-nudge">🌟 <span>Você está bem acima da meta há um bom tempo. Que tal subir a sua?</span><button type="button" data-cza-perfil>Ajustar no Perfil ›</button></div>';
+    return h;
+  }
+  function evoTitle(st) {
+    var what = st.area === 'tot' ? 'Estudo no app' : st.area === 'all' ? 'Tempo por área' : evoBy(st.area).n;
+    return what + ' ' + EVO_MODES[st.mode].per;
+  }
+  // st = { mode: 'd'|'w'|'m', area: 'tot'|'all'|'pos'|'act'|'voc'|'des'|'aul', sel: índice do ponto tocado ('' = o último) }
+  function evoBodyHtml(c, st) {
+    var pts = evoPts(c, st), goal = evoGoal(c, st), M = EVO_MODES[st.mode];
+    var h = '<div class="cza-evh"><span class="t">' + evoTitle(st) + '</span>'
+      + '<div class="cza-sg">' + ['d', 'w', 'm'].map(function (k) { return '<button type="button" data-cza-evo-mode="' + k + '" class="' + (st.mode === k ? 'on' : '') + '">' + { d: 'Dias', w: 'Semanas', m: 'Meses' }[k] + '</button>'; }).join('') + '</div></div>'
+      + '<div class="cza-fch">' + EVO.map(function (x) {
+        var on = x.k === st.area;
+        return '<button type="button" class="cza-fc' + (on ? ' on' : '') + '" data-cza-evo-area="' + x.k + '"' + (on ? ' style="background:' + x.color + '"' : '') + '>' + (x.ic ? x.ic + ' ' : '') + x.n + '</button>';
+      }).join('') + '</div>';
+    if (pts.length < 2) return h + '<div class="cza-evx">' + (st.mode === 'd' ? 'Ainda não há dias suficientes para desenhar a linha.' : 'O gráfico por ' + M.one + ' aparece quando houver pelo menos 2 ' + M.many + ' de dados. Enquanto isso, olhe os dias: toque em <b>Dias</b>.') + '</div>';
+    h += evoChartHtml(pts, st, goal);
+    h += '<div class="cza-lgd">' + (st.area === 'all' ? EVO_ALL.map(function (k) { var x = evoBy(k); return '<span><i style="background:' + x.color + '"></i>' + x.n + '</span>'; }).join('') : '')
+      + (goal ? '<span><i class="m"></i>Meta (' + evoGoalName(c, st) + ')</span><span><i class="b"></i>acima da meta</span>' : '')
+      + '<span><span class="f"></span> ' + M.one + ' fechado</span><span><span class="o" style="border-color:' + evoBy(st.area).color + '"></span> ' + M.cur + '</span></div>';
+    h += evoReadHtml(pts, st, goal);
+    if (goal) h += evoGoalSummary(pts, st, goal);
+    else if (st.area !== 'tot') h += '<div class="cza-msum soft">A meta é do estudo no total. A linha dela está na ficha <b>Geral</b>.</div>';
+    return h;
+  }
+  // Resumo da seção fechada: em quantas semanas bateu a meta (ou, no começo, quanto falta esta semana).
+  function evoSummary(c) {
+    var g = c.evo.goal.w, w = c.evo.weeks.filter(function (x) { return !x.partial && !x.pre; });
+    if (w.length >= 2) return '<em>' + w.filter(function (x) { return x.v.tot >= g; }).length + ' de ' + w.length + '</em> semanas com a meta batida';
+    var cur = c.evo.weeks[c.evo.weeks.length - 1];
+    if (!cur) return 'Aparece com os primeiros dias de dados';
+    return cur.v.tot >= g ? '<em>Meta da semana batida</em> (' + fhm(g) + ')' : 'Esta semana: ' + fhm(cur.v.tot) + ' de ' + fhm(g) + ' da meta';
+  }
+  // O estado do gráfico (período, ficha, ponto) fica em atributos do contêiner: o clique só lê, muda e redesenha.
+  function evoRedraw(host, patch, c) {
+    var el = host.querySelector && host.querySelector('[data-cza-evo]');
+    if (!el || !c || !c.evo) return;
+    var st = { mode: el.getAttribute('data-mode') || 'd', area: el.getAttribute('data-area') || 'tot', sel: el.getAttribute('data-sel') || '' };
+    Object.keys(patch).forEach(function (k) { st[k] = patch[k]; });
+    el.setAttribute('data-mode', st.mode); el.setAttribute('data-area', st.area); el.setAttribute('data-sel', st.sel);
+    var g0 = el.querySelector('[data-cza-evg]'), keep = g0 ? g0.scrollLeft : 0;
+    el.innerHTML = evoBodyHtml(c, st);
+    var g = el.querySelector('[data-cza-evg]');
+    var tapped = ('sel' in patch) && patch.sel !== '' && Object.keys(patch).length === 1;
+    if (g) g.scrollLeft = tapped ? keep : g.scrollWidth;       // trocar de período ou ficha mostra o fim (o mais recente); tocar num ponto não rola
+  }
+
+  // ── Seções que abrem e fecham ───────────────────────────────────────────
+  function accHtml(id, ic, bg, title, summary, body, open) {
+    return '<section class="cza-ac' + (open ? ' open' : '') + '" data-cza-ac="' + id + '"><button type="button" class="cza-ach" data-cza-sec="' + id + '" aria-expanded="' + (open ? 'true' : 'false') + '">'
+      + '<span class="cza-aci" style="background:' + bg + '">' + ic + '</span><span class="cza-act"><b>' + title + '</b><small>' + summary + '</small></span><span class="cza-chev">›</span></button>'
+      + '<div class="cza-acb"' + (open ? '' : ' hidden') + '>' + body + '</div></section>';
+  }
+  function toggleSec(trigger) {
+    var box = trigger.closest('.cza-ac'), body = box && box.querySelector('.cza-acb');
+    if (!body) return;
+    var open = body.hidden;                       // estava fechada: vai abrir
+    body.hidden = !open;
+    trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (box.classList) box.classList.toggle('open', open);
+    if (open) { var g = body.querySelector('[data-cza-evg]'); if (g) g.scrollLeft = g.scrollWidth; }   // o gráfico abre mostrando o mais recente
+  }
+
+  // "Seus dias da semana": média de minutos de estudo em cada dia da semana.
+  function weekdaysHtml(c) {
+    var ws = wdStats(c), cfg = c.cfg;
+    return '<div class="cza-sub2">Seus dias da semana</div><div class="cza-hsub">Média de minutos de estudo em cada dia, nas últimas semanas.</div><div class="cza-wdb">'
+      + ws.avg.map(function (m, i) {
+        return '<div>' + (m >= cfg.minDia ? '<b>' + Math.round(m) + '</b>' : '<b style="color:#94A3B8">' + (m > 0 ? '<1' : '0') + '</b>')
+          + '<i class="' + (i === ws.best ? 'best' : m < cfg.minDia ? 'zero' : '') + '" style="height:' + (m < cfg.minDia ? 10 : Math.max(8, m / ws.max * 74)) + 'px"></i>' + WD1[i] + '</div>';
+      }).join('') + '</div>'
+      + '<div class="cza-cap">' + (ws.best >= 0 ? 'Seu dia mais forte é <b>' + WDF[ws.best] + '</b>. ' : '')
+      + (ws.blanks.length ? 'Dias em branco: <b>' + listPt(ws.blanks.map(function (i) { return WDF[i]; })) + '</b>. Que tal escolher um deles para 10 minutinhos?' : ws.known === 7 ? 'Você estuda em todos os dias da semana. 👏' : '') + '</div>';
+  }
+
+  // Minha nota: a nota e a faixa, o recado do professor, o que mudou e o próximo passo.
+  function notaBodyHtml(c, o) {
+    var ok = c.status === 'ok', h = '';
+    if (ok) {
+      var b = c.band, d = c.trend;
+      var msg = b.k === 'alta' ? ['Ritmo excelente', 'Você aparece em quase tudo que o curso oferece. É isso que faz o inglês fixar.']
+        : b.k === 'media' ? ['Bom ritmo, dá para crescer', 'Você já faz bastante coisa. Veja abaixo onde um pequeno ajuste rende mais.']
+        : ['Vamos aumentar o ritmo', 'O inglês fixa com prática frequente. Comece pelos passos abaixo: pequenos já contam.'];
+      var dt = d == null ? '' : d >= 3 ? '<small style="color:var(--cza-t-16A34A,#16A34A)">▲ +' + d + ' pts desde a semana passada</small>'
+        : d <= -3 ? '<small style="color:var(--cza-t-EA580C,#EA580C)">▼ ' + d + ' pts desde a semana passada</small>'
+        : '<small style="color:var(--cza-t-64748B,#64748B)">● estável desde a semana passada</small>';
+      var chips = studentChips(c);
+      h += '<div class="cza-hero">' + ring(c.index, 92, 11, b.soft) + '<div class="cza-t"><b>' + msg[0] + '</b>' + msg[1] + dt + '</div></div>'
+        + (chips.length ? '<div class="cza-chs">' + chips.map(function (x) { return '<span class="' + x.c + '">' + esc(x.t) + '</span>'; }).join('') + '</div>' : '');
+    } else {
+      h += '<div class="cza-hero"><div class="cza-t"><b>Estamos conhecendo o seu ritmo</b>' + semNotaTxt(c, false)
+        + ' Os seus dias e o que conta estão nas outras seções e em “Como essa área funciona”.</div></div>';
+    }
+    h += '<div class="cza-pc cza-recado"><div class="cza-by">💬 Recado do seu professor</div><p>' + esc(o.recado || suggestComment(c, o.firstName)) + '</p></div>';
+    if (ok) {
+      var ch = changes(c), adv = advice(c);
+      if (ch.from) {
+        h += '<div class="cza-sub2">O que mudou <span class="cza-soft">· semana de ' + ch.to + ' x ' + ch.from + '</span></div><div class="cza-chg">'
+          + (ch.up.length ? '<h5>Melhorando</h5>' + ch.up.map(function (x) { return '<div class="u"><span>▲</span><span>' + esc(x) + '</span></div>'; }).join('') : '')
+          + (ch.down.length ? '<h5>Pede atenção</h5>' + ch.down.map(function (x) { return '<div class="d"><span>▼</span><span>' + esc(x) + '</span></div>'; }).join('') : '')
+          + (!ch.up.length && !ch.down.length ? '<div class="n"><span>●</span><span>Seu ritmo ficou estável de uma semana para a outra.</span></div>' : '') + '</div>';
+      }
+      h += '<div class="cza-sub2">Seu próximo passo</div>' + (adv.length ? adv.map(function (a) { return '<div class="cza-adv"><span style="font-size:20px">' + PIL[a.k].ic + '</span><div><b>' + esc(a.t[0]) + '</b>' + esc(a.t[1]) + '</div></div>'; }).join('')
+        : '<div class="cza-adv good"><span style="font-size:20px">🎉</span><div><b>Nada a corrigir</b>Mantenha o ritmo.</div></div>');
+    }
+    return h;
+  }
+
+  // Como essa área funciona: tudo o que explica a regra fica aqui, no fim da página.
+  function howHtml(c) {
+    var cfg = c.cfg, W = cfg.w, tw = sum(KEYS.map(function (k) { return W[k]; })) || 1;
+    function wp(k) { return Math.round(100 * W[k] / tw); }
+    return '<div class="cza-sect">O que conta como estudo</div><div class="cza-glist">'
+      + '<div><span style="background:var(--cza-s-DCFCE7,#DCFCE7)">📖</span>Ler o pós-aula</div>'
+      + '<div><span style="background:var(--cza-s-DBEAFE,#DBEAFE)">✏️</span><div>Fazer as atividades e as atividades extras<small>e ler a correção</small></div></div>'
+      + '<div><span style="background:var(--cza-s-EDE9FE,#EDE9FE)">🏆</span>O Desafio da semana</div>'
+      + '<div><span style="background:var(--cza-s-FEF3C7,#FEF3C7)">🧩</span>Meu vocabulário, a lista de verbos e os chunks</div></div>'
+      + '<div class="cza-sect" style="margin-top:14px">O que não conta</div><div class="cza-glist no">'
+      + '<div><span>🏠</span>Ficar na tela inicial, no perfil ou nos avisos</div><div><span>💤</span>Deixar o app aberto sem mexer</div></div>'
+      + '<div class="cza-grule"><span style="font-size:18px">⏱️</span><div><b>Como o tempo é contado.</b> O relógio anda enquanto você usa o app: tocando, rolando a página, digitando, ouvindo ou gravando áudio. Pensar um pouco também vale: pausas de até <b>' + limiteTxt(cfg.limiteSeg) + '</b> contam' + (cfg.limiteSeg < LEITURA_SEG ? ' (lendo o pós-aula, até <b>' + limiteTxt(LEITURA_SEG) + '</b>)' : '') + '. Passou disso, o app entende que você saiu e não conta.</div></div>'
+      + '<div class="cza-sect" style="margin-top:16px">Os 5 pontos da sua adesão</div><div class="cza-lead">Cada ponto vale uma parte da nota. A barra mostra como você está e a meta diz o que fazer.</div>' + ruleRowsHtml(c)
+      + '<div class="cza-sect" style="margin-top:16px">Como a nota é calculada</div>'
+      + '<p class="cza-cap">A nota vai de 0 a 100 e é calculada na hora, toda vez que você abre o app. Constância vale <b>' + wp('C') + '%</b>, Atividades <b>' + wp('At') + '%</b>, Pós-aula <b>' + wp('Pos') + '%</b>, Aulas <b>' + wp('Aula') + '%</b> e Desafio <b>' + wp('Des') + '%</b>. Vale a média das últimas 3 semanas e da semana de hoje, e o mais recente pesa mais. Se um ponto não se aplica a você, os outros ganham o peso dele.</p>'
+      + '<p class="cza-cap">O dia de hoje ainda está aberto: o que você faz hoje só ajuda a nota, e o que ficar por fazer passa a contar quando o dia virar, à meia-noite. O Desafio da semana conta quando a semana fecha, no domingo. A constância da semana de hoje é mais tranquila no começo (um dia de descanso ainda dá para compensar) e vai ficando exata até domingo. Nos seus primeiros dias, a contagem começa na sua primeira aula (ou no primeiro uso do app) e a nota aparece depois de ' + cfg.minDiasNota + ' dias medidos.</p>'
+      + '<div class="cza-sect" style="margin-top:16px">Suas metas</div>'
+      + '<p class="cza-cap">Você escolhe no <b>Perfil</b> quantos minutos por dia, e quantas horas por semana e por mês quer estudar. A meta do dia vale só para o app. As da semana e do mês somam as aulas. As metas não mexem na nota.</p>'
+      + '<div class="cza-sect" style="margin-top:16px">A linha de meta do gráfico</div>'
+      + '<p class="cza-cap">Na ficha <b>Geral</b> da Evolução, a linha tracejada mostra onde chegar. Ela compara só o estudo no app (as aulas ficam de fora). Por dia é a meta do dia (' + fhm(cfg.metaDiaMin) + '). Por semana é a meta do dia × ' + cfg.metaDiasEstudo + ' dias de estudo. Por mês é a da semana × 52 ÷ 12. A faixa verde é a área acima da meta.</p>';
+  }
+
+  /* Página de adesão: em cima o cartão de hoje; embaixo, seções que abrem e fecham (todas fechadas, cada uma com um resumo).
+   * "Como essa área funciona" é a última. Tocar numa bolinha do Início abre a página já com o dia aberto.
+   * o = { firstName, recado, ribbon, ribbonOpen, stats, sel (dia já aberto, AAAA-MM-DD), open (ids de seções abertas) } */
+  function pageHtml(c, o) {
+    o = o || {};
+    var cfg = c.cfg, td = todayOf(c), g = c.cur.goal, m = goalMsg(c, o.firstName), H = c.hours, ok = c.status === 'ok', sel = o.sel || null;
+    var opened = {}; (o.open || []).forEach(function (id) { opened[id] = true; });
+    if (sel) opened.sem = true;
+    var month = monthKeyOf(c.now), y = +month.slice(0, 4), mo = +month.slice(5, 7), hits = 0;
+    for (var d = 1, nd = new Date(y, mo, 0).getDate(); d <= nd; d++) if (dayStatus(c, month + '-' + String(d).padStart(2, '0')).st === 'hit') hits++;
+    var h = '<div class="cza cza-page">' + (o.ribbon ? '<div class="cza-ribbon' + (o.ribbonOpen ? ' open' : '') + '">' + esc(o.ribbon) + '</div>' : '');
+    h += '<div class="cza-pc cza-gfirst"><div class="cza-gtop"><b>🎯 Meta de estudo de hoje</b><span class="cza-gchip muted">' + num1(cfg.metaDiaMin) + ' min por dia</span></div>'
+      + '<div class="cza-gbody">' + goalRing(td.min, cfg.metaDiaMin, 88, 11) + '<div class="cza-gt"><b class="big">' + m.title + '</b>' + m.text + '</div></div>' + tilesHtml(c) + '</div>';
+
+    h += accHtml('sem', '🗓️', '#DCFCE7', 'Minha semana', goalDaysTxt(g) + ' · ' + Math.round(g.minutos) + ' min',
+      weekStripHtml(c, { mode: 'pick', sel: sel })
+      + '<div class="cza-cap">O número é o tempo de estudo do dia, em minutos. Toque numa bolinha para ver onde o tempo foi gasto.</div>'
+      + '<div data-cza-box="week">' + (sel ? dayDetailHtml(c, sel) || DAY_HINT : DAY_HINT) + '</div>' + weekTotalsHtml(c), opened.sem);
+    h += accHtml('cal', '📅', '#E0F2FE', 'Calendário', cap1(MESES[mo - 1]) + ' · ' + (hits === 1 ? '1 dia' : hits + ' dias') + ' com meta batida',
+      '<div class="cza-calbody" data-cza-cur="' + month + '">' + calendarHtml(c, month) + '</div><div data-cza-box="cal">' + DAY_HINT + '</div>', opened.cal);
+    var st0 = { mode: c.evo.weeks.length >= 3 ? 'w' : 'd', area: 'tot', sel: '' };
+    h += accHtml('evo', '📈', '#DCFCE7', 'Evolução', evoSummary(c),
+      '<div data-cza-evo data-mode="' + st0.mode + '" data-area="' + st0.area + '" data-sel="">' + evoBodyHtml(c, st0) + '</div>' + weekdaysHtml(c), opened.evo);
+    h += accHtml('hor', '⏱️', '#E0F2FE', 'Horas de estudo', fhm(H.total) + ' no total · ' + fhm(H.sem) + ' esta semana', hoursHtml(c, { noTitle: true }), opened.hor);
+    h += accHtml('nota', '🏅', '#FEF3C7', 'Minha nota',
+      ok ? 'Adesão <em style="color:' + c.band.color + '">' + c.index + '</em> · ' + c.band.label : 'Coletando' + (c.firstNota ? ' · a 1ª nota aparece em ' + ddmm(parseKey(c.firstNota)) : ''),
+      notaBodyHtml(c, o), opened.nota);
+    h += accHtml('ace', '🎯', '#EDE9FE', 'Adesão e acertos', ok && c.accLast != null ? 'Acertos <em>' + c.accLast + '%</em> na última semana' : 'Aparece com 2 semanas fechadas',
+      ok ? '<div class="cza-hsub">Mais prática, mais acertos. Veja se isso acontece com você.</div>' + lineChartHtml(c) + '<div class="cza-divider"></div>' + groupBarsHtml(c, o.stats)
+        : '<div class="cza-cap">O gráfico de adesão e acertos aparece quando houver pelo menos 2 semanas fechadas.</div>', opened.ace);
+    h += accHtml('como', '❓', '#F1F5F9', 'Como essa área funciona', 'O que conta, quanto tempo e o que fazer', howHtml(c), opened.como);
+    return h + '</div>';
+  }
+
+  // Toques dentro da página (usada pelo app do aluno e pela prévia do painel). Mexe só no DOM:
+  // abre e fecha seções, muda o gráfico, abre o detalhe do dia e o calendário. Devolve null se o toque não é da página,
+  // { go: 'pos'|'vocab'|'aulas' } para um atalho, { perfil: true } para o Perfil ou { open: 'AAAA-MM-DD'|null } para abrir a página.
+  function pageClick(e, host, c) {
+    var t = e && e.target, el;
+    if (!t || !t.closest) return null;
+    if ((el = t.closest('[data-cza-sec]'))) { toggleSec(el); return {}; }
+    if ((el = t.closest('[data-cza-evo-mode]'))) { evoRedraw(host, { mode: el.getAttribute('data-cza-evo-mode'), sel: '' }, c); return {}; }
+    if ((el = t.closest('[data-cza-evo-area]'))) { evoRedraw(host, { area: el.getAttribute('data-cza-evo-area'), sel: '' }, c); return {}; }
+    if ((el = t.closest('[data-cza-evo-pt]'))) { evoRedraw(host, { sel: el.getAttribute('data-cza-evo-pt') }, c); return {}; }
+    if ((el = t.closest('[data-cza-close]'))) {
+      var cbox = el.closest('[data-cza-box]');
+      if (cbox) {
+        var cwhere = cbox.getAttribute('data-cza-box');
+        Array.prototype.forEach.call(host.querySelectorAll('[data-cza-pick="' + cwhere + '"].sel'), function (x) { x.classList.remove('sel'); });
+        cbox.innerHTML = DAY_HINT;
+      }
+      return {};
+    }
+    if ((el = t.closest('[data-cza-pick]'))) {
+      var where = el.getAttribute('data-cza-pick'), box = host.querySelector('[data-cza-box="' + where + '"]');
+      Array.prototype.forEach.call(host.querySelectorAll('[data-cza-pick="' + where + '"].sel'), function (x) { x.classList.remove('sel'); });
+      el.classList.add('sel');
+      if (box) box.innerHTML = dayDetailHtml(c, el.getAttribute('data-cza-k')) || DAY_HINT;
+      return {};
+    }
+    if ((el = t.closest('[data-cza-month]'))) {
+      var body = host.querySelector('.cza-calbody');
+      if (!body || el.disabled) return {};
+      var cur = body.getAttribute('data-cza-cur'), nx = monthKeyOf(new Date(+cur.slice(0, 4), +cur.slice(5, 7) - 1 + (el.getAttribute('data-cza-month') === 'next' ? 1 : -1), 1));
+      body.setAttribute('data-cza-cur', nx);
+      body.innerHTML = calendarHtml(c, nx);
+      var cb = host.querySelector('[data-cza-box="cal"]');
+      if (cb) cb.innerHTML = DAY_HINT;
+      return {};
+    }
+    if ((el = t.closest('[data-cza-toggle]'))) { toggleDetails(host, el); return {}; }
+    if ((el = t.closest('.cza-cell'))) {
+      if (el.disabled) return {};
+      Array.prototype.forEach.call(host.querySelectorAll('.cza-cell.sel'), function (x) { x.classList.remove('sel'); });
+      el.classList.add('sel');
+      var info = host.querySelector('.cza-dayinfo');
+      if (info) info.innerHTML = sDayText(c, +el.getAttribute('data-cza-w'), +el.getAttribute('data-cza-d'));
+      return {};
+    }
+    if (t.closest('[data-cza-perfil]')) return { perfil: true };
+    if ((el = t.closest('[data-cza-go]'))) return { go: el.getAttribute('data-cza-go') };
+    if ((el = t.closest('[data-cza-open]'))) return { open: el.getAttribute('data-cza-k') || null };
+    return null;
+  }
+
+  var STUDENT_CSS = ''
+    + '.cza{font-family:inherit;color:var(--cza-t-0F172A,#0F172A)}'
+    + '.cza *{box-sizing:border-box}'
+    + '.cza-title{font-size:22px;font-weight:800}'
+    + '.cza-sub{font-size:12.5px;color:var(--cza-t-64748B,#64748B);font-weight:600;margin-top:2px}'
+    + '.cza-ribbon{margin:10px 0 0;padding:7px 10px;border-radius:10px;background:var(--cza-s-FEF3C7,#FEF3C7);color:var(--cza-t-92400E,#92400E);font-size:11.5px;font-weight:800;text-align:center}'
+    + '.cza-ribbon.open{background:var(--cza-s-DCFCE7,#DCFCE7);color:var(--cza-t-166534,#166534)}'
+    + '.cza-pc{background:var(--cza-s-FFFFFF,#fff);border:1px solid rgba(22,163,74,.12);border-radius:18px;padding:14px;margin-top:12px}'
+    + '.cza-pc h4{font-size:14px;font-weight:800;margin-bottom:2px}'
+    + '.cza-hsub{font-size:12px;color:var(--cza-t-64748B,#64748B);font-weight:600;margin-bottom:8px}'
+    + '.cza-hero{display:flex;gap:14px;align-items:center;margin-top:6px}'
+    + '.cza-hero .cza-t{font-size:13px;color:var(--cza-t-475569,#475569);font-weight:700;line-height:1.35}'
+    + '.cza-hero .cza-t b{display:block;font-size:17px;color:var(--cza-t-0F172A,#0F172A);margin-bottom:2px}'
+    + '.cza-hero .cza-t small{display:block;margin-top:6px;font-size:11.5px;font-weight:800}'
+    + '.cza-chs{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}'
+    + '.cza-chs span{display:inline-flex;gap:5px;align-items:center;padding:5px 10px;border-radius:99px;font-size:11.5px;font-weight:800}'
+    + '.cza-chs .ok{background:var(--cza-s-DCFCE7,#DCFCE7);color:var(--cza-t-14532D,#14532D)}.cza-chs .warn{background:var(--cza-s-FFEDD5,#FFEDD5);color:var(--cza-t-7C2D12,#7C2D12)}'
+    + '.cza-recado{background:var(--cza-s-FFFBEB,#FFFBEB);border-color:var(--cza-s-FDE68A,#FDE68A)}'
+    + '.cza-by{font-size:12px;font-weight:800;color:var(--cza-t-92400E,#92400E);margin-bottom:6px}'
+    + '.cza-recado p{font-size:13.5px;font-weight:600;line-height:1.5;color:var(--cza-t-451A03,#451A03);white-space:pre-wrap}'
+    + '.cza-days{display:flex;justify-content:space-between;gap:4px;margin-top:6px}'
+    + '.cza-dd{flex:1;text-align:center;font-size:10.5px;font-weight:800;color:#94A3B8}'
+    + '.cza-dd span{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;margin:0 auto 4px;background:var(--cza-s-EEF2F6,#EEF2F6);color:#94A3B8;font-size:15px}'
+    + '.cza-dd.on span{background:#16A34A;color:#fff}'
+    + '.cza-dd.off span{background:var(--cza-s-FFFFFF,#fff);border:2px solid var(--cza-s-E2E8F0,#E2E8F0)}'
+    + '.cza-dd.today span{box-shadow:0 0 0 3px rgba(22,163,74,.25)}'
+    + '.cza-dd.fut span{background:none;border:2px dashed var(--cza-s-E2E8F0,#E2E8F0)}'
+    + '.cza-smap{display:grid;gap:5px;margin-top:6px}'
+    + '.cza-sm-row{display:grid;grid-template-columns:34px repeat(7,1fr);gap:4px;align-items:center}'
+    + '.cza-sm-row.cza-hd{font-size:10px;font-weight:800;color:#94A3B8;text-align:center}'
+    + '.cza-wl{font-size:10.5px;font-weight:800;color:var(--cza-t-64748B,#64748B)}'
+    + '.cza-cell{height:32px;border:0;border-radius:9px;background:var(--cza-s-EEF2F6,#EEF2F6);font:inherit;font-size:10.5px;font-weight:800;color:var(--cza-t-166534,#166534);display:grid;place-items:center;width:100%;padding:0}'
+    + '.cza-cell.g1{background:var(--cza-s-DCFCE7,#DCFCE7)}.cza-cell.g2{background:#86EFAC}.cza-cell.g3{background:#22C55E;color:#fff}.cza-cell.g4{background:#15803D;color:#fff}'
+    + '.cza-cell.z{color:#CBD5E1}'
+    + '.cza-cell.fut{background:none;border:2px dashed var(--cza-s-E2E8F0,#E2E8F0);color:transparent}'
+    + '.cza-cell.sel{outline:3px solid #0F172A;outline-offset:1px}'
+    + '.cza-dayinfo{margin-top:8px;padding:9px 11px;border-radius:12px;background:var(--cza-s-F0FDF4,#F0FDF4);border:1px solid var(--cza-s-BBF7D0,#BBF7D0);font-size:12.5px;font-weight:600;color:var(--cza-t-14532D,#14532D);min-height:38px}'
+    + '.cza-wdb{display:flex;gap:6px;align-items:flex-end;height:104px;margin-top:6px}'
+    + '.cza-wdb div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px;font-size:10px;font-weight:800;color:var(--cza-t-64748B,#64748B)}'
+    + '.cza-wdb i{display:block;width:100%;border-radius:6px 6px 0 0;background:#86EFAC;min-height:3px}'
+    + '.cza-wdb i.best{background:#16A34A}'
+    + '.cza-wdb i.zero{background:var(--cza-s-F8FAFC,#F8FAFC);border:1.5px dashed #CBD5E1;height:10px!important}'
+    + '.cza-wdb b{font-size:10px;color:var(--cza-t-0F172A,#0F172A)}'
+    + '.cza-cap{font-size:12px;color:var(--cza-t-475569,#475569);font-weight:600;margin-top:6px;line-height:1.4}'
+    + '.cza-cap b{color:var(--cza-t-0F172A,#0F172A)}'
+    + '.cza-rule{padding:10px 0;border-top:1px solid var(--cza-s-F1F5F9,#F1F5F9)}'
+    + '.cza-rule:first-of-type{border-top:0;padding-top:4px}'
+    + '.cza-rh{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:800;gap:8px}'
+    + '.cza-rh em{font-style:normal;font-size:10.5px;font-weight:800;color:var(--cza-t-475569,#475569);background:var(--cza-s-F1F5F9,#F1F5F9);border-radius:99px;padding:2px 8px;white-space:nowrap}'
+    + '.cza-mt{position:relative;height:8px;background:var(--cza-s-EEF2F6,#EEF2F6);border-radius:99px;margin:7px 0 5px}'
+    + '.cza-mt i{position:absolute;left:0;top:0;bottom:0;border-radius:99px}'
+    + '.cza-rule p{font-size:12px;color:var(--cza-t-475569,#475569);font-weight:600;line-height:1.35}'
+    + '.cza-rule p b{color:var(--cza-t-0F172A,#0F172A)}'
+    + '.cza-goal{color:var(--cza-t-64748B,#64748B)}'
+    + '.cza-chg{display:grid;gap:6px;margin-top:6px}'
+    + '.cza-chg h5{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--cza-t-64748B,#64748B);margin:6px 0 0}'
+    + '.cza-chg div{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border-radius:12px;font-size:12.5px;font-weight:700;line-height:1.35}'
+    + '.cza-chg .u{background:var(--cza-s-F0FDF4,#F0FDF4);color:var(--cza-t-14532D,#14532D)}.cza-chg .d{background:var(--cza-s-FFF7ED,#FFF7ED);color:var(--cza-t-7C2D12,#7C2D12)}.cza-chg .n{background:var(--cza-s-F1F5F9,#F1F5F9);color:var(--cza-t-475569,#475569)}'
+    + '.cza-adv{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:14px;background:var(--cza-s-FFF7ED,#FFF7ED);border:1px solid var(--cza-s-FED7AA,#FED7AA);margin-top:8px;font-size:13px;font-weight:600;color:var(--cza-t-7C2D12,#7C2D12)}'
+    + '.cza-adv.good{background:var(--cza-s-F0FDF4,#F0FDF4);border-color:var(--cza-s-BBF7D0,#BBF7D0);color:var(--cza-t-14532D,#14532D)}'
+    + '.cza-adv b{display:block;margin-bottom:1px}'
+    + '.cza-lg{display:flex;gap:14px;font-size:11.5px;font-weight:800;margin-top:4px}'
+    + '.cza-lg span{display:inline-flex;align-items:center;gap:5px}'
+    + '.cza-lg i{width:14px;height:4px;border-radius:2px;display:inline-block}'
+    + '.cza-grp{display:flex;gap:10px;align-items:flex-end;height:150px;margin-top:10px}'
+    + '.cza-grp>div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px;font-size:11px;font-weight:800;color:var(--cza-t-64748B,#64748B)}'
+    + '.cza-grp i.cza-bar{display:block;width:100%;border-radius:8px 8px 0 0}'
+    + '.cza-grp .me i.cza-bar{outline:3px solid #0F172A;outline-offset:1px}'
+    + '.cza-you{background:#0F172A;color:#fff;border-radius:99px;padding:1px 8px;font-size:9.5px;font-style:normal}'
+    + '.cza-divider{height:1px;background:var(--cza-s-EEF2F6,#EEF2F6);margin:12px 0 4px}'
+    + '.cza-herocard[data-cza-toggle]{cursor:pointer;-webkit-tap-highlight-color:transparent}'
+    + '.cza-herocard[data-cza-toggle]:focus-visible{outline:3px solid rgba(22,163,74,.45);outline-offset:2px}'
+    + '.cza-hint{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--cza-s-EEF2F6,#EEF2F6);font-size:12px;font-weight:800;color:var(--cza-t-15803D,#15803D)}'
+    + '.cza-chev{display:inline-block;font-size:16px;line-height:1;transition:transform .15s}'
+    + '.cza-herocard[aria-expanded="true"] .cza-chev{transform:rotate(90deg)}'
+    + '.cza-lbl-close{display:none}'
+    + '.cza-herocard[aria-expanded="true"] .cza-lbl-open{display:none}'
+    + '.cza-herocard[aria-expanded="true"] .cza-lbl-close{display:inline}'
+    + '.cza-more[hidden]{display:none}'
+    + '.cza-more>.cza-sub{margin-top:12px}'
+    // meta de estudo
+    + '.cza-sect{font-size:12px;font-weight:800;color:var(--cza-t-475569,#475569);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}'
+    + '.cza-page>.cza-pc{margin-top:12px}.cza-page>.cza-gfirst{margin-top:0}.cza-page>.cza-ac{margin-top:10px}'
+    + '.cza-gtop{display:flex;align-items:center;justify-content:space-between;gap:8px}'
+    + '.cza-gtop b{font-size:15px;font-weight:800}'
+    + '.cza-gchip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:800;background:var(--cza-s-DCFCE7,#DCFCE7);color:var(--cza-t-14532D,#14532D);white-space:nowrap}'
+    + '.cza-gchip.amber{background:var(--cza-s-FEF3C7,#FEF3C7);color:var(--cza-t-92400E,#92400E)}.cza-gchip.muted{background:var(--cza-s-F1F5F9,#F1F5F9);color:var(--cza-t-475569,#475569)}'
+    + '.cza-gchips{display:flex;gap:8px;flex-wrap:wrap}'
+    + '.cza-gbody{display:flex;gap:16px;align-items:center;margin-top:12px}'
+    + '.cza-gt{font-size:13.5px;font-weight:700;color:var(--cza-t-334155,#334155);line-height:1.4}'
+    + '.cza-gt b.big{display:block;font-size:19px;font-weight:800;color:var(--cza-t-0F172A,#0F172A);margin-bottom:3px}'
+    + '.cza-gt em{font-style:normal;color:var(--cza-t-15803D,#15803D);font-weight:800}'
+    + '.cza-gtot{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}'
+    + '.cza-gtot b{font-size:34px;font-weight:800;letter-spacing:-1px;color:var(--cza-t-14532D,#14532D)}.cza-gtot span{font-size:14px;color:var(--cza-t-64748B,#64748B);font-weight:800}'
+    + '.cza-gbar{height:12px;border-radius:99px;background:var(--cza-s-E5E7EB,#E5E7EB);margin:10px 0 8px;overflow:hidden;display:flex}.cza-gbar i{display:block;height:100%}'
+    + '.cza-glegend{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;font-weight:800;color:var(--cza-t-475569,#475569)}'
+    + '.cza-glegend span{display:inline-flex;align-items:center;gap:6px}.cza-glegend i{width:12px;height:12px;border-radius:4px;display:inline-block}'
+    + '.cza-glist{display:grid;gap:9px}'
+    + '.cza-glist>div{display:flex;gap:11px;align-items:flex-start;font-size:13.5px;font-weight:700;color:var(--cza-t-1E293B,#1E293B);line-height:1.35}'
+    + '.cza-glist>div>span{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:17px;flex-shrink:0;background:var(--cza-s-F1F5F9,#F1F5F9)}'
+    + '.cza-glist small{display:block;font-size:11.5px;color:var(--cza-t-64748B,#64748B);font-weight:700;margin-top:1px}'
+    + '.cza-grule{display:flex;gap:11px;align-items:flex-start;padding:12px 13px;border-radius:15px;background:var(--cza-s-FFFBEB,#FFFBEB);border:1px solid var(--cza-s-FDE68A,#FDE68A);font-size:12.5px;font-weight:700;color:var(--cza-t-78350F,#78350F);line-height:1.45;margin-top:12px}'
+    + '.cza-grule b{color:var(--cza-t-451A03,#451A03)}'
+    // cartões do Início e do Progresso, bolinhas da semana e página de adesão
+    + '.cza-mini,.cza-msc{display:block;width:100%;text-align:left;background:var(--cza-s-FFFFFF,#fff);border:1px solid rgba(22,163,74,.16);border-radius:20px;box-shadow:0 8px 20px rgba(15,23,42,.06);cursor:pointer;-webkit-tap-highlight-color:transparent}'
+    + '.cza-mini{padding:13px 14px 11px}.cza-msc{padding:13px 14px 12px}'
+    + '.cza-mini:focus-visible,.cza-msc:focus-visible{outline:3px solid rgba(22,163,74,.45);outline-offset:2px}'
+    + '.cza-home .cza-ribbon,.cza-prog .cza-ribbon{margin:0 0 8px}'
+    + '.cza-mini-top{display:flex;align-items:center;gap:13px}'
+    + '.cza-mtx{flex:1;min-width:0}'
+    + '.cza-mtx small{display:block;font-size:10px;font-weight:800;letter-spacing:.5px;color:var(--cza-t-64748B,#64748B);text-transform:uppercase}'
+    + '.cza-mtx b{display:block;font-size:16.5px;font-weight:800;line-height:1.2;margin-top:1px}'
+    + '.cza-tx{display:block;font-size:12.5px;font-weight:700;color:var(--cza-t-475569,#475569);margin-top:2px;line-height:1.3}'
+    + '.cza-tx em{font-style:normal;color:var(--cza-t-15803D,#15803D);font-weight:800}'
+    + '.cza-go{font-size:26px;color:var(--cza-t-16A34A,#16A34A);font-weight:800;line-height:1}'
+    + '.cza-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.cza-top b{font-size:15px;font-weight:800}'
+    + '.cza-r{display:flex;align-items:center;gap:8px}.cza-msc .cza-go{font-size:24px}'
+    + '.cza-wk{display:flex;justify-content:space-between;gap:3px;margin-top:12px}'
+    + '.cza-mini .cza-wk{margin-top:10px;padding-top:10px;border-top:1px solid var(--cza-s-EEF2F6,#EEF2F6)}.cza-msc .cza-wk{margin-top:8px}'
+    + '.cza-bb{flex:1;min-width:0;text-align:center;font:inherit;font-size:10.5px;font-weight:800;color:#94A3B8;display:grid;justify-items:center;gap:4px;padding:2px 0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}'
+    + '.cza-bb i{font-style:normal}'
+    + '.cza-bb span{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;font-size:14.5px;font-weight:800;position:relative}'
+    + '.cza-mini .cza-bb span,.cza-msc .cza-bb span{width:38px;height:38px;font-size:13px}.cza-bb span small,.cza-cc b small{font-size:.66em;font-weight:800;margin-left:1px;opacity:.9}'
+    + '.cza-bb.hit span{background:#16A34A;color:#fff}'
+    + '.cza-bb.part span{background:var(--cza-s-FEF3C7,#FEF3C7);color:var(--cza-t-92400E,#92400E);border:2px solid #FCD34D}'
+    + '.cza-bb.x span{background:var(--cza-s-FEE2E2,#FEE2E2);color:var(--cza-t-DC2626,#DC2626);border:2px solid #FCA5A5;font-size:19px}.cza-mini .cza-bb.x span,.cza-msc .cza-bb.x span{font-size:16px}'
+    + '.cza-bb.pre span{background:var(--cza-s-F1F5F9,#F1F5F9);color:#CBD5E1;border:2px dotted #CBD5E1}'
+    + '.cza-bb.fut{cursor:default}.cza-bb.fut span{background:none;border:2px dashed var(--cza-s-E2E8F0,#E2E8F0)}'
+    + '.cza-bb.now span{background:conic-gradient(#16A34A 0 var(--p,0%),var(--cza-s-E5E7EB,#E5E7EB) var(--p,0%) 100%);color:var(--cza-t-14532D,#14532D)}'
+    + '.cza-bb.now span::before{content:"";position:absolute;inset:4px;border-radius:50%;background:var(--cza-s-FFFFFF,#fff)}.cza-mini .cza-bb.now span::before,.cza-msc .cza-bb.now span::before{inset:3.5px}'
+    + '.cza-bb span b{font-weight:800}.cza-bb.now span b{position:relative}'
+    + '.cza-bb.today i{color:var(--cza-t-0F172A,#0F172A)}'
+    + '.cza-page .cza-bb.sel span{outline:3px solid #0F172A;outline-offset:2px}'
+    // detalhe do dia
+    + '.cza-dy{margin-top:10px;border-radius:15px;background:var(--cza-s-F0FDF4,#F0FDF4);border:1px solid var(--cza-s-BBF7D0,#BBF7D0);padding:12px 13px;font-size:12.5px;font-weight:700;color:var(--cza-t-14532D,#14532D);line-height:1.45}'
+    + '.cza-dy.hint{background:var(--cza-s-F8FAFC,#F8FAFC);border-color:var(--cza-s-E2E8F0,#E2E8F0);color:var(--cza-t-64748B,#64748B)}.cza-dy.nox{background:var(--cza-s-FEE2E2,#FEE2E2);border-color:#FCA5A5;color:var(--cza-t-7F1D1D,#7F1D1D)}'
+    + '.cza-dy.pre{background:var(--cza-s-F1F5F9,#F1F5F9);border-color:var(--cza-s-E2E8F0,#E2E8F0);color:var(--cza-t-475569,#475569)}.cza-dy.amb{background:var(--cza-s-FFFBEB,#FFFBEB);border-color:var(--cza-s-FDE68A,#FDE68A);color:var(--cza-t-78350F,#78350F)}'
+    + '.cza-dy p{margin-top:6px}'
+    + '.cza-dh{display:flex;align-items:center;justify-content:space-between;gap:8px}.cza-dh b{font-size:14px;font-weight:800;color:var(--cza-t-0F172A,#0F172A)}'
+    + '.cza-dr{display:inline-flex;align-items:center;gap:8px}'
+    + '.cza-dx{width:26px;height:26px;border-radius:50%;border:0;background:rgba(15,23,42,.09);color:var(--cza-t-334155,#334155);font:inherit;font-size:18px;font-weight:700;line-height:1;display:grid;place-items:center;flex-shrink:0;cursor:pointer;padding:0 0 2px}'
+    + '.cza-dx:active{background:rgba(15,23,42,.18)}'
+    + '.cza-gchip.red{background:var(--cza-s-FEE2E2,#FEE2E2);color:var(--cza-t-991B1B,#991B1B)}'
+    + '.cza-dtot{font-size:22px;font-weight:800;color:var(--cza-t-14532D,#14532D);letter-spacing:-.5px;margin:6px 0 2px}.cza-dtot small{font-size:12px;color:var(--cza-t-475569,#475569);font-weight:700;letter-spacing:0}'
+    + '.cza-dy.amb .cza-dtot{color:var(--cza-t-78350F,#78350F)}'
+    + '.cza-tr{display:flex;gap:10px;margin-top:10px}.cza-ti{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;font-size:16px;flex-shrink:0}'
+    + '.cza-tb{flex:1;min-width:0}.cza-tl{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--cza-t-0F172A,#0F172A)}.cza-tl em{font-style:normal;font-weight:800}'
+    + '.cza-pbar{height:7px;border-radius:99px;background:rgba(15,23,42,.08);margin:4px 0 3px;overflow:hidden}.cza-pbar i{display:block;height:100%;border-radius:99px}'
+    + '.cza-its{list-style:none;font-size:11.5px;color:var(--cza-t-475569,#475569);font-weight:700}.cza-its li{display:flex;justify-content:space-between;gap:10px}'
+    + '.cza-its li span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cza-its li span:last-child{flex-shrink:0;color:var(--cza-t-0F172A,#0F172A)}'
+    + '.cza-dfoot{margin-top:10px;padding-top:8px;border-top:1px dashed rgba(15,23,42,.15);font-size:11.5px;color:var(--cza-t-64748B,#64748B);font-weight:700}'
+    + '.cza-xbox{display:flex;gap:11px;align-items:center;margin-top:8px}'
+    + '.cza-xbox>span{width:40px;height:40px;border-radius:50%;background:var(--cza-s-FFFFFF,#fff);border:2px solid #FCA5A5;color:var(--cza-t-DC2626,#DC2626);display:grid;place-items:center;font-size:21px;font-weight:800;flex-shrink:0}'
+    + '.cza-xbox b{display:block;font-size:15px;color:var(--cza-t-7F1D1D,#7F1D1D)}'
+    // calendário
+    + '.cza-calnav{display:flex;align-items:center;justify-content:space-between;margin:12px 0 8px}.cza-calnav b{font-size:14px;font-weight:800}'
+    + '.cza-calnav button{width:34px;height:34px;border-radius:11px;border:1.5px solid var(--cza-s-E2E8F0,#E2E8F0);background:var(--cza-s-FFFFFF,#fff);font:inherit;font-size:18px;font-weight:800;color:var(--cza-t-15803D,#15803D);cursor:pointer;padding:0}.cza-calnav button:disabled{opacity:.3;cursor:default}'
+    + '.cza-cg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.cza-cg .h{text-align:center;font-size:10px;font-weight:800;color:#94A3B8;padding-bottom:2px}'
+    + '.cza-cc{aspect-ratio:1/1.02;border-radius:11px;display:grid;align-content:center;justify-items:center;position:relative;font:inherit;font-weight:800;padding:0;border:0;background:var(--cza-s-F1F5F9,#F1F5F9);cursor:pointer;min-width:0}'
+    + '.cza-cc em{position:absolute;top:3px;left:5px;font-style:normal;font-size:8.5px;font-weight:800;opacity:.7}.cza-cc b{font-size:13px;font-weight:800}'
+    + '.cza-cc.hit{background:#22C55E;color:#fff}.cza-cc.hit.big{background:#15803D}.cza-cc.part{background:var(--cza-s-FEF3C7,#FEF3C7);color:var(--cza-t-92400E,#92400E)}'
+    + '.cza-cc.x{background:var(--cza-s-FEE2E2,#FEE2E2);color:var(--cza-t-DC2626,#DC2626)}.cza-cc.x b{font-size:16px}.cza-cc.pre{background:var(--cza-s-F1F5F9,#F1F5F9);color:#CBD5E1}'
+    + '.cza-cc.fut{background:none;border:1.5px dashed var(--cza-s-E2E8F0,#E2E8F0);color:transparent;cursor:default}'
+    + '.cza-cc.now{background:var(--cza-s-FFFFFF,#fff);border:2px solid #16A34A;color:var(--cza-t-14532D,#14532D)}.cza-cc.blank{visibility:hidden}'
+    + '.cza-cc.sel{outline:3px solid #0F172A;outline-offset:1px}'
+    + '.cza-leg{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:10px;font-size:10.5px;font-weight:800;color:var(--cza-t-475569,#475569)}.cza-leg span{display:inline-flex;align-items:center;gap:5px}'
+    + '.cza-leg i{width:12px;height:12px;border-radius:4px;display:inline-block;font-style:normal;font-size:9px;line-height:12px;text-align:center;font-weight:800}'
+    + '.cza-hrbig{display:flex;align-items:baseline;gap:8px;margin-top:6px}.cza-hrbig b{font-size:32px;font-weight:800;letter-spacing:-1px;color:var(--cza-t-0C4A6E,#0C4A6E)}.cza-hrbig span{font-size:14px;color:var(--cza-t-64748B,#64748B);font-weight:800}'
+    + '.cza-hbar2{height:12px;border-radius:99px;background:var(--cza-s-E5E7EB,#E5E7EB);margin:8px 0 10px;overflow:hidden;display:flex}.cza-hbar2 i{display:block;height:100%}'
+    + '.cza-hsplit{display:grid;grid-template-columns:1fr 1fr;gap:8px}'
+    + '.cza-hsplit>div{border:1.5px solid var(--cza-s-EEF2F6,#EEF2F6);border-radius:14px;padding:9px 11px}'
+    + '.cza-hsplit span{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:var(--cza-t-475569,#475569)}.cza-hsplit span i{width:10px;height:10px;border-radius:3px;display:inline-block}'
+    + '.cza-hsplit b{display:block;font-size:17px;font-weight:800;margin-top:3px}.cza-hsplit small{font-size:11px;color:var(--cza-t-64748B,#64748B);font-weight:700}'
+    + '.cza-hgoal{margin-top:10px;padding:10px 12px;border-radius:14px;background:var(--cza-s-F0F9FF,#F0F9FF);border:1px solid var(--cza-s-BAE6FD,#BAE6FD)}'
+    + '.cza-top2{display:flex;justify-content:space-between;gap:8px;font-size:13px;font-weight:800;color:var(--cza-t-0C4A6E,#0C4A6E)}.cza-top2 span{font-size:12.5px}'
+    + '.cza-hbar{height:9px;border-radius:99px;background:var(--cza-s-FFFFFF,#fff);margin:8px 0 6px;overflow:hidden}.cza-hbar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#0EA5E9,#16A34A)}'
+    + '.cza-hgoal p{font-size:12px;font-weight:700;color:var(--cza-t-075985,#075985);line-height:1.4}'
+    + '.cza-hgoal.open{background:var(--cza-s-F8FAFC,#F8FAFC);border-color:var(--cza-s-E2E8F0,#E2E8F0)}.cza-hgoal.open .cza-top2{color:var(--cza-t-0F172A,#0F172A)}'
+    + '.cza-setgoal{margin-top:7px;padding:7px 11px;border-radius:99px;background:var(--cza-s-FFFFFF,#fff);border:1.5px dashed #94A3B8;font:inherit;font-size:12px;font-weight:800;color:var(--cza-t-0369A1,#0369A1);cursor:pointer}'
+    + '.cza-hnote{margin-top:10px;font-size:11.5px;font-weight:700;color:var(--cza-t-64748B,#64748B);line-height:1.4}'
+    // seções que abrem e fecham
+    + '.cza-ac{background:var(--cza-s-FFFFFF,#fff);border:1px solid rgba(22,163,74,.12);border-radius:18px;overflow:hidden}'
+    + '.cza-ac.open{border-color:rgba(22,163,74,.32);box-shadow:0 6px 16px rgba(15,23,42,.05)}'
+    + '.cza-ach{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;color:inherit;border:0;background:none;padding:12px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent}'
+    + '.cza-ach:focus-visible{outline:3px solid rgba(22,163,74,.45);outline-offset:-3px;border-radius:18px}'
+    + '.cza-aci{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:19px;flex-shrink:0}'
+    + '.cza-act{flex:1;min-width:0}.cza-act b{display:block;font-size:14.5px;font-weight:800;color:var(--cza-t-0F172A,#0F172A)}'
+    + '.cza-act small{display:block;font-size:12px;font-weight:700;color:var(--cza-t-64748B,#64748B);margin-top:1px;line-height:1.3}.cza-act small em{font-style:normal;font-weight:800;color:var(--cza-t-15803D,#15803D)}'
+    + '.cza-ach .cza-chev{font-size:22px;color:var(--cza-t-15803D,#15803D)}.cza-ach[aria-expanded="true"] .cza-chev{transform:rotate(90deg)}'
+    + '.cza-acb{padding:6px 14px 14px;border-top:1px solid var(--cza-s-EEF2F6,#EEF2F6)}.cza-acb[hidden]{display:none}'
+    + '.cza-acb>.cza-sect{margin-top:14px}.cza-acb>.cza-sect:first-child{margin-top:8px}'
+    + '.cza-acb>.cza-hero{margin-top:10px}.cza-acb>.cza-pc{margin-top:12px}'
+    + '.cza-lead{font-size:12px;color:var(--cza-t-64748B,#64748B);font-weight:600;margin:2px 0 8px}'
+    + '.cza-sub2{font-size:12.5px;font-weight:800;color:var(--cza-t-0F172A,#0F172A);margin:14px 0 4px}.cza-soft{font-weight:600;color:var(--cza-t-64748B,#64748B)}'
+    // atalhos do cartão de hoje
+    + '.cza-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}'
+    + '.cza-tile{display:grid;justify-items:center;gap:2px;text-align:center;font:inherit;color:inherit;padding:10px 4px 9px;border-radius:14px;border:1.5px solid var(--cza-s-EEF2F6,#EEF2F6);background:var(--cza-s-FFFFFF,#fff);cursor:pointer}'
+    + '.cza-tile:focus-visible{outline:3px solid rgba(22,163,74,.45);outline-offset:2px}'
+    + '.cza-tile .i{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:17px;margin-bottom:2px}'
+    + '.cza-tile b{font-size:12px;font-weight:800}.cza-tile small{font-size:10.5px;font-weight:700;color:var(--cza-t-64748B,#64748B)}'
+    + '.cza-tile.done{background:var(--cza-s-F0FDF4,#F0FDF4);border-color:var(--cza-s-BBF7D0,#BBF7D0)}.cza-tile.done small{color:var(--cza-t-15803D,#15803D);font-weight:800}'
+    // gráfico de evolução
+    + '.cza-evh{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}.cza-evh .t{font-size:12px;font-weight:700;color:var(--cza-t-64748B,#64748B)}'
+    + '.cza-sg{display:inline-flex;background:var(--cza-s-F1F5F9,#F1F5F9);border-radius:99px;padding:3px;flex-shrink:0}'
+    + '.cza-sg button{border:0;background:none;font:inherit;font-size:11.5px;font-weight:800;color:var(--cza-t-64748B,#64748B);padding:5px 12px;border-radius:99px;cursor:pointer}'
+    + '.cza-sg button.on{background:var(--cza-s-FFFFFF,#fff);color:var(--cza-t-0F172A,#0F172A);box-shadow:0 1px 3px rgba(15,23,42,.18)}'
+    + '.cza-fch{display:flex;gap:6px;overflow-x:auto;padding:10px 0 4px;scrollbar-width:none}.cza-fch::-webkit-scrollbar{display:none}'
+    + '.cza-fc{flex-shrink:0;border:1.5px solid var(--cza-s-E2E8F0,#E2E8F0);background:var(--cza-s-FFFFFF,#fff);border-radius:99px;font:inherit;font-size:12px;font-weight:800;color:var(--cza-t-475569,#475569);padding:6px 12px;cursor:pointer;white-space:nowrap}'
+    + '.cza-fc.on{color:#fff;border-color:transparent}'
+    + '.cza-evw{display:flex;align-items:flex-start;margin-top:4px}.cza-evy{flex-shrink:0;display:block}'
+    + '.cza-evg{flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}.cza-evg::-webkit-scrollbar{display:none}.cza-evg svg{display:block}.cza-evg text,.cza-evy text{font-family:inherit}'
+    + '.cza-evr{margin-top:8px;padding:11px 12px;border-radius:15px;background:var(--cza-s-F8FAFC,#F8FAFC);border:1px solid var(--cza-s-E2E8F0,#E2E8F0)}'
+    + '.cza-evr .h{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:800;color:var(--cza-t-475569,#475569)}'
+    + '.cza-evr .v{font-size:24px;font-weight:800;letter-spacing:-.5px;margin-top:2px}.cza-evr .v small{font-size:12px;font-weight:800;letter-spacing:0;margin-left:6px}'
+    + '.cza-evr .up{color:var(--cza-t-15803D,#15803D)}.cza-evr .dn{color:var(--cza-t-C2410C,#C2410C)}.cza-evr .eq{color:var(--cza-t-64748B,#64748B)}'
+    + '.cza-vg{margin-top:6px;display:inline-block;padding:4px 10px;border-radius:99px;font-size:12px;font-weight:800;background:var(--cza-s-F1F5F9,#F1F5F9);color:var(--cza-t-475569,#475569)}'
+    + '.cza-vg.up{background:var(--cza-s-DCFCE7,#DCFCE7);color:var(--cza-t-14532D,#14532D)}.cza-vg.dn{background:var(--cza-s-FFEDD5,#FFEDD5);color:var(--cza-t-7C2D12,#7C2D12)}'
+    + '.cza-brk{display:grid;gap:5px;margin-top:9px;padding-top:9px;border-top:1px dashed #CBD5E1}'
+    + '.cza-brk div{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--cza-t-334155,#334155)}.cza-brk i{width:10px;height:10px;border-radius:3px;flex-shrink:0}'
+    + '.cza-brk span{margin-left:auto;font-weight:800;color:var(--cza-t-0F172A,#0F172A)}'
+    + '.cza-brk .out{margin-top:2px;padding-top:6px;border-top:1px dashed #CBD5E1;color:var(--cza-t-64748B,#64748B)}.cza-brk .out em{font-style:normal;font-size:11px;font-weight:700}'
+    + '.cza-lgd{display:flex;gap:6px 14px;flex-wrap:wrap;margin-top:8px;font-size:11px;font-weight:800;color:var(--cza-t-64748B,#64748B)}.cza-lgd span{display:inline-flex;align-items:center;gap:5px}'
+    + '.cza-lgd i{width:14px;height:4px;border-radius:2px;display:inline-block}'
+    + '.cza-lgd i.m{width:20px;height:0;border-top:2px dashed #B45309;background:none;border-radius:0}.cza-lgd i.b{width:12px;height:12px;border-radius:3px;background:rgba(22,163,74,.18)}'
+    + '.cza-lgd .o{width:9px;height:9px;border-radius:50%;background:var(--cza-s-FFFFFF,#fff);border:2.5px solid #64748B}.cza-lgd .f{width:9px;height:9px;border-radius:50%;background:#64748B}'
+    + '.cza-evx{margin-top:8px;padding:12px;border-radius:14px;background:var(--cza-s-F8FAFC,#F8FAFC);border:1px dashed #CBD5E1;font-size:12.5px;font-weight:700;color:var(--cza-t-475569,#475569);line-height:1.45}'
+    + '.cza-msum{margin-top:8px;padding:10px 12px;border-radius:14px;background:var(--cza-s-FFFBEB,#FFFBEB);border:1px solid var(--cza-s-FDE68A,#FDE68A);font-size:12.5px;font-weight:700;color:var(--cza-t-78350F,#78350F);line-height:1.4}'
+    + '.cza-msum.soft{background:var(--cza-s-F8FAFC,#F8FAFC);border-color:var(--cza-s-E2E8F0,#E2E8F0);color:var(--cza-t-64748B,#64748B)}'
+    + '.cza-nudge{margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border-radius:14px;background:var(--cza-s-F0FDF4,#F0FDF4);border:1px solid var(--cza-s-BBF7D0,#BBF7D0);font-size:12.5px;font-weight:700;color:var(--cza-t-14532D,#14532D);line-height:1.4}'
+    + '.cza-nudge span{flex:1;min-width:160px}'
+    + '.cza-nudge button{padding:6px 12px;border-radius:99px;background:var(--cza-s-FFFFFF,#fff);border:1.5px solid #86EFAC;font:inherit;font-size:12px;font-weight:800;color:var(--cza-t-15803D,#15803D);cursor:pointer}';
+
+  var api = {
+    KEYS: KEYS, PIL: PIL, WD: WD, WD1: WD1, WDF: WDF, DEFAULTS: DEFAULTS, LEITURA_SEG: LEITURA_SEG,
+    // Os três tipos de estudo da meta diária/semanal e o que cada um reúne.
+    STUDY_TYPES: A_STUDY_TYPES,
+    goalHomeHtml: goalHomeHtml, goalProgressHtml: goalProgressHtml, pageHtml: pageHtml, pageClick: pageClick, evoBodyHtml: evoBodyHtml,
+    liberadaDesde: liberadaDesde, liberadaAgora: liberadaAgora, liberadaTxt: liberadaTxt, resumoPeriodo: resumoPeriodo, metasSugeridas: metasSugeridas,
+    todayOf: todayOf, goalDaysTxt: goalDaysTxt, metasOf: metasOf, fhm: fhm, hoursHtml: hoursHtml, fmtTimer: fmtTimer, timerTone: timerTone, dayStatus: dayStatus, dayDetailHtml: dayDetailHtml, calendarHtml: calendarHtml, weekStripHtml: weekStripHtml, goalMsg: goalMsg,
+    cfgOf: cfgOf, compute: compute, band: band, effWeight: effWeight, combine: combine, itemKey: itemKey,
+    tagsOf: tagsOf, diagOf: diagOf, suggestComment: suggestComment, studentChips: studentChips, assistantSummary: assistantSummary,
+    wdStats: wdStats, changes: changes, advice: advice, sDayText: sDayText,
+    statsOk: statsOk, bandStats: bandStats,
+    studentHtml: studentHtml, lineChartHtml: lineChartHtml, toggleDetails: toggleDetails, studentCss: function () { return STUDENT_CSS; },
+    ring: ring, scol: scol,
+    util: { esc: esc, fm: fm, num1: num1, pct: pct, mean: mean, sum: sum, toDate: toDate, dayKey: dayKey, addDays: addDays, mondayOf: mondayOf, ddmm: ddmm, postRef: postRef, listPt: listPt, cap1: cap1 }
+  };
+  root.CzkAdesao = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : globalThis);
