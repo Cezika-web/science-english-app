@@ -213,7 +213,7 @@ function TrilhaForm({ tr, conf, inicial, onVoltar, onEnviar }) {
   const [enviando, setEnviando] = React.useState(false);
   const set = (k, v) => setVals(a => ({ ...a, [k]: v }));
   const pronto = trilhaTemResp(vals[conf.principal]);
-  const entrada = { width: '100%', boxSizing: 'border-box', border: '1.5px solid #E2D9CB', background: '#fff', borderRadius: 13, padding: '11px 12px', fontSize: 14, fontWeight: 600, fontFamily: 'inherit', color: '#0F172A', outline: 'none', resize: 'none', lineHeight: 1.4 };
+  const entrada = { width: '100%', boxSizing: 'border-box', border: '1.5px solid #E2D9CB', background: 'var(--c-card)', borderRadius: 13, padding: '11px 12px', fontSize: 14, fontWeight: 600, fontFamily: 'inherit', color: 'var(--c-ink)', outline: 'none', resize: 'none', lineHeight: 1.4 };
   const campo = c => {
     const v = vals[c.k];
     let corpo = null;
@@ -230,7 +230,7 @@ function TrilhaForm({ tr, conf, inicial, onVoltar, onEnviar }) {
               const tem = cur.includes(o);
               return { ...a, [c.k]: multi ? (tem ? cur.filter(x => x !== o) : cur.concat(o)) : (tem ? '' : o) };
             })}
-              style={{ padding: '8px 12px', borderRadius: 999, border: `1.5px solid ${on ? tr.tc : '#E2D9CB'}`, background: on ? tr.bg : '#fff', color: on ? tr.dark : '#475569', fontSize: 12.6, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}>
+              style={{ padding: '8px 12px', borderRadius: 999, border: `1.5px solid ${on ? tr.tc : '#E2D9CB'}`, background: on ? tr.bg : 'var(--c-card)', color: on ? tr.dark : 'var(--c-ink2)', fontSize: 12.6, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}>
               {on ? '✓ ' : ''}{o}
             </button>); })}
         </div>
@@ -238,8 +238,8 @@ function TrilhaForm({ tr, conf, inicial, onVoltar, onEnviar }) {
     }
     return (
       <div key={c.k} style={{ marginBottom: 15 }}>
-        <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', marginBottom: 3 }}>{c.l}{c.opt ? <span style={{ fontSize: 10.5, fontWeight: 700, color: '#94A3B8', marginLeft: 5 }}>opcional</span> : null}</div>
-        {c.h ? <div style={{ fontSize: 11.4, color: '#64748B', fontWeight: 700, marginBottom: 6, lineHeight: 1.4 }}>{c.h}</div> : null}
+        <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--c-ink)', marginBottom: 3 }}>{c.l}{c.opt ? <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--c-mute2)', marginLeft: 5 }}>opcional</span> : null}</div>
+        {c.h ? <div style={{ fontSize: 11.4, color: 'var(--c-mute)', fontWeight: 700, marginBottom: 6, lineHeight: 1.4 }}>{c.h}</div> : null}
         {corpo}
       </div>
     );
@@ -258,10 +258,10 @@ function TrilhaForm({ tr, conf, inicial, onVoltar, onEnviar }) {
       <button onClick={onVoltar} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: tr.dark, fontWeight: 800, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit', padding: '2px 0 10px' }}>&#8249; Voltar</button>
       <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: tr.dark, margin: '0 2px 10px' }}>{tr.ic} Conte para o professor</div>
       {conf.campos.map(campo)}
-      <button onClick={enviar} disabled={!pronto || enviando} style={{ width: '100%', border: 'none', borderRadius: 15, padding: 14, marginTop: 4, background: pronto ? tr.grad : '#CBD5E1', color: '#fff', fontWeight: 800, fontSize: 14, fontFamily: 'inherit', cursor: pronto && !enviando ? 'pointer' : 'not-allowed' }}>
+      <button onClick={enviar} disabled={!pronto || enviando} style={{ width: '100%', border: 'none', borderRadius: 15, padding: 14, marginTop: 4, background: pronto ? tr.grad : 'var(--c-line2)', color: '#fff', fontWeight: 800, fontSize: 14, fontFamily: 'inherit', cursor: pronto && !enviando ? 'pointer' : 'not-allowed' }}>
         {enviando ? 'Enviando…' : 'Enviar para o professor'}
       </button>
-      {!pronto && <div style={{ fontSize: 11.5, color: '#D97706', fontWeight: 700, textAlign: 'center', marginTop: 8 }}>Preencha pelo menos o primeiro campo para enviar.</div>}
+      {!pronto && <div style={{ fontSize: 11.5, color: 'var(--t-D97706)', fontWeight: 700, textAlign: 'center', marginTop: 8 }}>Preencha pelo menos o primeiro campo para enviar.</div>}
       <div style={{ height: 72 }} />{/* respiro: o botão flutuante do assistente não cobre o "Enviar" */}
     </div>
   );
@@ -271,10 +271,10 @@ function TrilhaForm({ tr, conf, inicial, onVoltar, onEnviar }) {
 function TrilhaResumo({ tipo, conf, respostas }) {
   const linhas = conf.campos.filter(c => trilhaTemResp(respostas[c.k]));
   return (
-    <div style={{ background: '#fff', border: '1px solid #E8DFD2', borderRadius: 16, padding: '6px 14px', margin: '12px 0' }}>
+    <div style={{ background: 'var(--c-card)', border: '1px solid #E8DFD2', borderRadius: 16, padding: '6px 14px', margin: '12px 0' }}>
       {linhas.map((c, i) => (
-        <div key={c.k} style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: i < linhas.length - 1 ? '1px solid #F1EBE1' : 'none', fontSize: 12.4 }}>
-          <span style={{ width: 96, color: '#64748B', fontWeight: 800, flexShrink: 0 }}>{trilhaRotulo(tipo, c)}</span>
+        <div key={c.k} style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: i < linhas.length - 1 ? '1px solid var(--p-F1EBE1)' : 'none', fontSize: 12.4 }}>
+          <span style={{ width: 96, color: 'var(--c-mute)', fontWeight: 800, flexShrink: 0 }}>{trilhaRotulo(tipo, c)}</span>
           <b style={{ fontWeight: 700, lineHeight: 1.35, overflowWrap: 'anywhere' }}>{trilhaFmtResp(c, respostas[c.k])}</b>
         </div>
       ))}
@@ -285,14 +285,14 @@ function TrilhaResumo({ tipo, conf, respostas }) {
 function TrilhaFoco({ tr, foco, aberto }) {
   const [open, setOpen] = React.useState(aberto !== false);
   return (
-    <div style={{ background: '#fff', border: `1.5px solid ${tr.line}`, borderRadius: 18, padding: '12px 14px', margin: '12px 0' }}>
+    <div style={{ background: 'var(--c-card)', border: `1.5px solid ${tr.line}`, borderRadius: 18, padding: '12px 14px', margin: '12px 0' }}>
       <button onClick={() => setOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: 0, fontFamily: 'inherit', cursor: 'pointer' }}>
         <span style={{ width: 34, height: 34, borderRadius: 11, background: tr.bg, display: 'grid', placeItems: 'center', fontSize: 17, flexShrink: 0 }}>📌</span>
         <span style={{ flex: 1, minWidth: 0 }}>
-          <b style={{ display: 'block', fontSize: 13.5, fontWeight: 800, color: '#0F172A' }}>{foco.titulo}</b>
-          <small style={{ display: 'block', fontSize: 11.3, color: '#64748B', fontWeight: 700, marginTop: 1, lineHeight: 1.35 }}>{open ? foco.intro : foco.itens.map(i => `${i.ic} ${i.curto}`).join(' · ')}</small>
+          <b style={{ display: 'block', fontSize: 13.5, fontWeight: 800, color: 'var(--c-ink)' }}>{foco.titulo}</b>
+          <small style={{ display: 'block', fontSize: 11.3, color: 'var(--c-mute)', fontWeight: 700, marginTop: 1, lineHeight: 1.35 }}>{open ? foco.intro : foco.itens.map(i => `${i.ic} ${i.curto}`).join(' · ')}</small>
         </span>
-        <span style={{ fontSize: 18, color: '#94A3B8', transform: open ? 'rotate(90deg)' : 'none' }}>›</span>
+        <span style={{ fontSize: 18, color: 'var(--c-mute2)', transform: open ? 'rotate(90deg)' : 'none' }}>›</span>
       </button>
       {open && (
         <div style={{ marginTop: 10 }}>
@@ -300,12 +300,12 @@ function TrilhaFoco({ tr, foco, aberto }) {
             <div key={i} style={{ display: 'flex', gap: 11, padding: '10px 0', borderTop: `1px solid ${tr.line}` }}>
               <span style={{ width: 34, height: 34, borderRadius: 11, background: tr.bg, display: 'grid', placeItems: 'center', fontSize: 17, flexShrink: 0 }}>{it.ic}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <b style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#0F172A' }}>{i + 1}. {it.t}</b>
-                <small style={{ display: 'block', fontSize: 11.8, color: '#475569', fontWeight: 700, lineHeight: 1.45, marginTop: 2 }}>{it.d}</small>
+                <b style={{ display: 'block', fontSize: 13, fontWeight: 800, color: 'var(--c-ink)' }}>{i + 1}. {it.t}</b>
+                <small style={{ display: 'block', fontSize: 11.8, color: 'var(--c-ink2)', fontWeight: 700, lineHeight: 1.45, marginTop: 2 }}>{it.d}</small>
                 {it.sub && it.sub.map((s, j) => (
                   <div key={j} style={{ display: 'flex', gap: 8, marginTop: 7, padding: '7px 9px', background: tr.bg, borderRadius: 11 }}>
                     <span style={{ fontSize: 15, flexShrink: 0 }}>{s[0]}</span>
-                    <span style={{ minWidth: 0 }}><b style={{ display: 'block', fontSize: 12.2, fontWeight: 800, color: tr.dark }}>{String.fromCharCode(97 + j)}) {s[1]}</b><small style={{ display: 'block', fontSize: 11.4, color: '#475569', fontWeight: 700, lineHeight: 1.4 }}>{s[2]}</small></span>
+                    <span style={{ minWidth: 0 }}><b style={{ display: 'block', fontSize: 12.2, fontWeight: 800, color: tr.dark }}>{String.fromCharCode(97 + j)}) {s[1]}</b><small style={{ display: 'block', fontSize: 11.4, color: 'var(--c-ink2)', fontWeight: 700, lineHeight: 1.4 }}>{s[2]}</small></span>
                   </div>
                 ))}
               </div>
@@ -322,22 +322,22 @@ function TrilhaNo({ tr, e, st, qtd, feitas, onClick, aula }) {
   return (
     <button onClick={onClick} style={{
       display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer',
-      background: feita ? '#F0FDF4' : vazio ? 'rgba(255,255,255,.6)' : '#fff', opacity: vazio ? 0.55 : 1,
-      border: `1.5px solid ${feita ? '#BBF7D0' : tr.line}`, borderRadius: 16, padding: '10px 12px', marginBottom: 9,
+      background: feita ? 'var(--p-F0FDF4)' : vazio ? 'color-mix(in srgb,var(--c-card) 60%,transparent)' : 'var(--c-card)', opacity: vazio ? 0.55 : 1,
+      border: `1.5px solid ${feita ? 'var(--p-BBF7D0)' : tr.line}`, borderRadius: 16, padding: '10px 12px', marginBottom: 9,
       boxShadow: atual ? `0 0 0 3px ${tr.bg}, 0 8px 18px rgba(15,23,42,.1)` : '0 6px 16px rgba(15,23,42,.06)',
       ...(atual ? { borderColor: tr.tc } : {}),
     }}>
       <span style={{ width: 44, height: 44, borderRadius: '50%', flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 20, fontWeight: 800,
-        background: feita ? '#16A34A' : vazio ? '#fff' : tr.bg, color: feita ? '#fff' : 'inherit',
+        background: feita ? '#16A34A' : vazio ? 'var(--c-card)' : tr.bg, color: feita ? '#fff' : 'inherit',
         border: feita ? '2px solid #16A34A' : vazio ? '2px dashed #B8C1CC' : `2px solid ${tr.tc}`, filter: vazio ? 'grayscale(1)' : 'none' }}>{feita ? '✓' : e.ic}</span>
       <span style={{ minWidth: 0, flex: 1 }}>
-        <b style={{ display: 'block', fontSize: 13.5, fontWeight: 800, lineHeight: 1.2, color: '#0F172A' }}>{e.n}</b>
-        <small style={{ display: 'block', fontSize: 11, color: '#64748B', fontWeight: 700, marginTop: 2, lineHeight: 1.3 }}>
+        <b style={{ display: 'block', fontSize: 13.5, fontWeight: 800, lineHeight: 1.2, color: 'var(--c-ink)' }}>{e.n}</b>
+        <small style={{ display: 'block', fontSize: 11, color: 'var(--c-mute)', fontWeight: 700, marginTop: 2, lineHeight: 1.3 }}>
           {e.d}{qtd ? ` · ${feitas}/${qtd} tarefa${qtd !== 1 ? 's' : ''}` : ''}{aula ? ` · aula de ${aula}` : ''}
         </small>
       </span>
       {atual && <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 0.5, padding: '3px 8px', borderRadius: 999, background: tr.tc, color: '#fff', flexShrink: 0 }}>AGORA</span>}
-      {vazio && <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 0.5, padding: '3px 8px', borderRadius: 999, background: '#E5E7EB', color: '#6B7280', flexShrink: 0 }}>EM BREVE</span>}
+      {vazio && <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 0.5, padding: '3px 8px', borderRadius: 999, background: 'var(--p-E5E7EB)', color: 'var(--t-6B7280)', flexShrink: 0 }}>EM BREVE</span>}
     </button>
   );
 }
@@ -346,13 +346,13 @@ function TrilhaTarefaLinha({ tr, e, onClick }) {
   const hab = TRILHA_HAB[e.skill] || ['📝', 'tarefa'];
   const feita = trilhaFeita(e);
   return (
-    <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 11, width: '100%', textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', background: '#fff', border: '1.5px solid #ECE3D5', borderRadius: 14, padding: '11px 12px', marginBottom: 8 }}>
+    <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 11, width: '100%', textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', background: 'var(--c-card)', border: '1.5px solid #ECE3D5', borderRadius: 14, padding: '11px 12px', marginBottom: 8 }}>
       <span style={{ width: 36, height: 36, borderRadius: 11, background: tr.bg, display: 'grid', placeItems: 'center', fontSize: 17, flexShrink: 0 }}>{hab[0]}</span>
       <span style={{ flex: 1, minWidth: 0 }}>
-        <b style={{ display: 'block', fontSize: 13, fontWeight: 800, lineHeight: 1.25, color: '#0F172A', overflowWrap: 'anywhere' }}>{e.title || 'Tarefa'}</b>
+        <b style={{ display: 'block', fontSize: 13, fontWeight: 800, lineHeight: 1.25, color: 'var(--c-ink)', overflowWrap: 'anywhere' }}>{e.title || 'Tarefa'}</b>
         <small style={{ fontSize: 10.8, fontWeight: 800, color: tr.dark, textTransform: 'uppercase', letterSpacing: 0.4 }}>{hab[1]}</small>
       </span>
-      <span style={{ fontSize: 11.5, fontWeight: 700, padding: '4px 10px', borderRadius: 999, flexShrink: 0, background: feita ? 'rgba(var(--brand-rgb),0.12)' : 'rgba(245,158,11,0.12)', color: feita ? 'var(--brand-dark)' : '#92400E' }}>{feita ? '✓ Finalizada' : 'Pendente'}</span>
+      <span style={{ fontSize: 11.5, fontWeight: 700, padding: '4px 10px', borderRadius: 999, flexShrink: 0, background: feita ? 'rgba(var(--brand-rgb),0.12)' : 'rgba(245,158,11,0.12)', color: feita ? 'var(--c-brand-ink)' : 'var(--c-warn-ink)' }}>{feita ? '✓ Finalizada' : 'Pendente'}</span>
     </button>
   );
 }
@@ -361,7 +361,7 @@ function TrilhaTarefaLinha({ tr, e, onClick }) {
 function TrilhaOuvir({ tr, on, label, onClick }) {
   return (
     <button type="button" onClick={onClick} aria-label={label} title={label} style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0, cursor: 'pointer', fontSize: 15, lineHeight: 1, fontFamily: 'inherit', display: 'grid', placeItems: 'center',
-      border: `1px solid ${on ? tr.tc : tr.line}`, background: on ? tr.tc : tr.bg, color: on ? '#fff' : tr.dark }}>&#128266;</button>
+      border: `1px solid ${on ? tr.tc : tr.line}`, background: on ? tr.tc : tr.bg, color: on ? '#fff' : tr.dark }}>&var(--t-128266);</button>
   );
 }
 function TrilhaAulaResumo({ tr, post }) {
@@ -380,8 +380,8 @@ function TrilhaAulaResumo({ tr, post }) {
     });
     if (!ok) setAviso('A voz não está disponível neste aparelho.');
   };
-  const caixa = { background: '#fff', border: `1.5px solid ${tr.line}`, borderRadius: 18, padding: '12px 14px', marginBottom: 10 };
-  const rotulo = { fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: '#9A6438', marginBottom: 6 };
+  const caixa = { background: 'var(--c-card)', border: `1.5px solid ${tr.line}`, borderRadius: 18, padding: '12px 14px', marginBottom: 10 };
+  const rotulo = { fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: 'var(--c-camel)', marginBottom: 6 };
   const dia = trilhaDiaMes(post), topico = postTopic(post);
   const FRASES_CURTO = 5;
   const frases = lei ? (todas ? lei.frases : lei.frases.slice(0, FRASES_CURTO)) : [];
@@ -390,11 +390,11 @@ function TrilhaAulaResumo({ tr, post }) {
     <div>
       <div style={{ ...caixa, background: tr.bg }}>
         <div style={{ ...rotulo, color: tr.dark }}>📘 O que vimos na aula{dia ? ` de ${dia}` : ''}</div>
-        {topico ? <b style={{ display: 'block', fontSize: 14, fontWeight: 800, color: '#0F172A', lineHeight: 1.3 }}>{topico}</b> : null}
+        {topico ? <b style={{ display: 'block', fontSize: 14, fontWeight: 800, color: 'var(--c-ink)', lineHeight: 1.3 }}>{topico}</b> : null}
         {lei && lei.intro
-          ? <div style={{ fontSize: 12.6, color: '#334155', fontWeight: 600, lineHeight: 1.5, marginTop: topico ? 5 : 0 }}>{lei.intro}</div>
+          ? <div style={{ fontSize: 12.6, color: 'var(--c-ink2)', fontWeight: 600, lineHeight: 1.5, marginTop: topico ? 5 : 0 }}>{lei.intro}</div>
           : null}
-        {!lei && <div style={{ fontSize: 12.4, color: '#64748B', fontWeight: 700, lineHeight: 1.45, marginTop: 5 }}>O resumo curto desta aula não está disponível. Abra o pós-aula completo no botão abaixo.</div>}
+        {!lei && <div style={{ fontSize: 12.4, color: 'var(--c-mute)', fontWeight: 700, lineHeight: 1.45, marginTop: 5 }}>O resumo curto desta aula não está disponível. Abra o pós-aula completo no botão abaixo.</div>}
       </div>
 
       {lei && lei.frases.length > 0 && (
@@ -403,8 +403,8 @@ function TrilhaAulaResumo({ tr, post }) {
           {frases.map((f, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: i ? `1px solid ${tr.line}` : 'none' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <b style={{ display: 'block', fontSize: 13.2, fontWeight: 800, color: '#0F172A', lineHeight: 1.3, overflowWrap: 'anywhere' }}>{f.en}</b>
-                {f.pt ? <small style={{ display: 'block', fontSize: 11.8, color: '#64748B', fontWeight: 700, lineHeight: 1.35, marginTop: 1 }}>{f.pt}</small> : null}
+                <b style={{ display: 'block', fontSize: 13.2, fontWeight: 800, color: 'var(--c-ink)', lineHeight: 1.3, overflowWrap: 'anywhere' }}>{f.en}</b>
+                {f.pt ? <small style={{ display: 'block', fontSize: 11.8, color: 'var(--c-mute)', fontWeight: 700, lineHeight: 1.35, marginTop: 1 }}>{f.pt}</small> : null}
               </div>
               <TrilhaOuvir tr={tr} on={falando === 'f' + i} label={`Ouvir: ${f.en}`} onClick={() => ouvir(f.en, 'f' + i)} />
             </div>
@@ -424,8 +424,8 @@ function TrilhaAulaResumo({ tr, post }) {
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px', background: tr.bg, borderRadius: 13, marginTop: i ? 7 : 0 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <b style={{ fontSize: 14, fontWeight: 800, color: tr.dark }}>{c.en}</b>
-                {c.pt ? <span style={{ fontSize: 12.2, color: '#475569', fontWeight: 700 }}> · {c.pt}</span> : null}
-                {c.ex ? <small style={{ display: 'block', fontSize: 11.6, color: '#64748B', fontWeight: 700, lineHeight: 1.4, marginTop: 2 }}><i>{c.ex}</i>{c.exPt ? ` — ${c.exPt}` : ''}</small> : null}
+                {c.pt ? <span style={{ fontSize: 12.2, color: 'var(--c-ink2)', fontWeight: 700 }}> · {c.pt}</span> : null}
+                {c.ex ? <small style={{ display: 'block', fontSize: 11.6, color: 'var(--c-mute)', fontWeight: 700, lineHeight: 1.4, marginTop: 2 }}><i>{c.ex}</i>{c.exPt ? ` — ${c.exPt}` : ''}</small> : null}
               </div>
               <TrilhaOuvir tr={tr} on={falando === 'c' + i} label={`Ouvir: ${c.en}`} onClick={() => ouvir(c.en, 'c' + i)} />
             </div>
@@ -436,23 +436,23 @@ function TrilhaAulaResumo({ tr, post }) {
       {lei && lei.nVocab > 0 && (
         <div style={caixa}>
           <button onClick={() => setVocabAberto(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', background: 'none', border: 'none', padding: 0, fontFamily: 'inherit', cursor: 'pointer' }}>
-            <span style={{ flex: 1, fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: '#9A6438' }}>📚 Vocabulário · {lei.nVocab} palavras</span>
-            <span style={{ fontSize: 18, color: '#94A3B8', transform: vocabAberto ? 'rotate(90deg)' : 'none' }}>›</span>
+            <span style={{ flex: 1, fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: 'var(--c-camel)' }}>📚 Vocabulário · {lei.nVocab} palavras</span>
+            <span style={{ fontSize: 18, color: 'var(--c-mute2)', transform: vocabAberto ? 'rotate(90deg)' : 'none' }}>›</span>
           </button>
           {vocabAberto && lei.vocab.map((g, gi) => (
             <div key={gi} style={{ marginTop: 10 }}>
               {g.t ? <div style={{ fontSize: 12, fontWeight: 800, color: tr.dark, marginBottom: 3 }}>{g.t}</div> : null}
               {g.itens.map((x, xi) => (
                 <div key={xi} style={{ display: 'flex', gap: 8, padding: '5px 0', borderTop: xi ? `1px solid ${tr.line}` : 'none', fontSize: 12.4, lineHeight: 1.4 }}>
-                  <b style={{ flexShrink: 0, maxWidth: '45%', fontWeight: 800, color: '#0F172A', overflowWrap: 'anywhere' }}>{x.en}</b>
-                  <span style={{ color: '#475569', fontWeight: 600, overflowWrap: 'anywhere' }}>{x.pt}</span>
+                  <b style={{ flexShrink: 0, maxWidth: '45%', fontWeight: 800, color: 'var(--c-ink)', overflowWrap: 'anywhere' }}>{x.en}</b>
+                  <span style={{ color: 'var(--c-ink2)', fontWeight: 600, overflowWrap: 'anywhere' }}>{x.pt}</span>
                 </div>
               ))}
             </div>
           ))}
         </div>
       )}
-      {aviso ? <div style={{ fontSize: 11.5, color: '#92400E', fontWeight: 700, textAlign: 'center', margin: '0 0 8px' }}>{aviso}</div> : null}
+      {aviso ? <div style={{ fontSize: 11.5, color: 'var(--c-warn-ink)', fontWeight: 700, textAlign: 'center', margin: '0 0 8px' }}>{aviso}</div> : null}
     </div>
   );
 }
@@ -482,10 +482,10 @@ function TrilhaTab({ tipo, briefing, onSaveBriefing, extras, posaulas, activitie
   const iAtual = iPendente >= 0 ? iPendente : status.lastIndexOf('liberada');   // AGORA: a que tem tarefa pendente; senão a aula mais nova
   const temAula = aulas.length > 0;
   const respostas = (briefing && briefing.respostas) || {};
-  const caixa = { background: '#fff', border: `1.5px solid ${tr.line}`, borderRadius: 16, padding: '11px 13px', marginBottom: 8 };
+  const caixa = { background: 'var(--c-card)', border: `1.5px solid ${tr.line}`, borderRadius: 16, padding: '11px 13px', marginBottom: 8 };
 
   if (briefing === undefined && minhas.length === 0 && !temAula) {
-    return <div style={{ textAlign: 'center', padding: 30, color: '#94A3B8', fontSize: 13, fontWeight: 700 }}>Carregando…</div>;
+    return <div style={{ textAlign: 'center', padding: 30, color: 'var(--c-mute2)', fontSize: 13, fontWeight: 700 }}>Carregando…</div>;
   }
 
   const cartaoConsulta = (onClick, sub, ativo) => (
@@ -493,12 +493,12 @@ function TrilhaTab({ tipo, briefing, onSaveBriefing, extras, posaulas, activitie
       display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', fontFamily: 'inherit', cursor: ativo ? 'pointer' : 'default',
       background: tr.bg, border: `1.5px solid ${tr.line}`, borderRadius: 15, padding: '10px 13px', marginBottom: 10, opacity: ativo ? 1 : 0.7,
     }}>
-      <span style={{ width: 32, height: 32, borderRadius: 10, background: '#fff', display: 'grid', placeItems: 'center', fontSize: 15 }}>&#128196;</span>
+      <span style={{ width: 32, height: 32, borderRadius: 10, background: 'var(--c-card)', display: 'grid', placeItems: 'center', fontSize: 15 }}>&#128196;</span>
       <span style={{ flex: 1, minWidth: 0 }}>
         <b style={{ display: 'block', fontSize: 13, fontWeight: 800, color: tr.dark }}>Consultar pós-aula</b>
-        <small style={{ fontSize: 10.8, color: '#64748B', fontWeight: 700 }}>{sub}</small>
+        <small style={{ fontSize: 10.8, color: 'var(--c-mute)', fontWeight: 700 }}>{sub}</small>
       </span>
-      {ativo && <span style={{ fontSize: 18, color: '#94A3B8' }}>›</span>}
+      {ativo && <span style={{ fontSize: 18, color: 'var(--c-mute2)' }}>›</span>}
     </button>
   );
   const botaoConsulta = cartaoConsulta(() => setPeek(true), aulas.length ? `${aulas.length} aula${aulas.length !== 1 ? 's' : ''} de ${tr.nome.toLowerCase()}` : 'As aulas de ' + tr.nome.toLowerCase() + ' aparecem aqui', aulas.length > 0);
@@ -517,13 +517,13 @@ function TrilhaTab({ tipo, briefing, onSaveBriefing, extras, posaulas, activitie
       display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', fontFamily: 'inherit', cursor: ativs.length ? 'pointer' : 'default',
       background: tr.bg, border: `1.5px solid ${aFazer ? tr.tc : tr.line}`, borderRadius: 15, padding: '10px 13px', marginBottom: 10, opacity: ativs.length ? 1 : 0.7,
     }}>
-      <span style={{ width: 32, height: 32, borderRadius: 10, background: '#fff', display: 'grid', placeItems: 'center', fontSize: 15 }}>&#9999;&#65039;</span>
+      <span style={{ width: 32, height: 32, borderRadius: 10, background: 'var(--c-card)', display: 'grid', placeItems: 'center', fontSize: 15 }}>&#9999;&#65039;</span>
       <span style={{ flex: 1, minWidth: 0 }}>
         <b style={{ display: 'block', fontSize: 13, fontWeight: 800, color: tr.dark }}>Atividades das aulas de {tr.nome.toLowerCase()}</b>
-        <small style={{ fontSize: 10.8, color: '#64748B', fontWeight: 700 }}>{ativs.length ? resumoAtivs : 'As atividades das aulas de ' + tr.nome.toLowerCase() + ' aparecem aqui'}</small>
+        <small style={{ fontSize: 10.8, color: 'var(--c-mute)', fontWeight: 700 }}>{ativs.length ? resumoAtivs : 'As atividades das aulas de ' + tr.nome.toLowerCase() + ' aparecem aqui'}</small>
       </span>
-      {aFazer > 0 && <span style={{ fontSize: 11.5, fontWeight: 800, padding: '3px 9px', borderRadius: 999, flexShrink: 0, background: 'rgba(245,158,11,0.14)', color: '#92400E' }}>{aFazer}</span>}
-      {ativs.length > 0 && <span style={{ fontSize: 18, color: '#94A3B8' }}>›</span>}
+      {aFazer > 0 && <span style={{ fontSize: 11.5, fontWeight: 800, padding: '3px 9px', borderRadius: 999, flexShrink: 0, background: 'rgba(245,158,11,0.14)', color: 'var(--c-warn-ink)' }}>{aFazer}</span>}
+      {ativs.length > 0 && <span style={{ fontSize: 18, color: 'var(--c-mute2)' }}>›</span>}
     </button>
   );
 
@@ -544,7 +544,7 @@ function TrilhaTab({ tipo, briefing, onSaveBriefing, extras, posaulas, activitie
         {conf.como.map((c, i) => (
           <div key={i} style={{ ...caixa, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
             <div style={{ width: 34, height: 34, borderRadius: 11, background: tr.bg, display: 'grid', placeItems: 'center', fontSize: 17, flexShrink: 0 }}>{c[0]}</div>
-            <div><b style={{ fontSize: 13.2, fontWeight: 800, display: 'block' }}>{i + 1}. {c[1]}</b><small style={{ fontSize: 11.6, color: '#64748B', fontWeight: 700, lineHeight: 1.4, display: 'block', marginTop: 1 }}>{c[2]}</small></div>
+            <div><b style={{ fontSize: 13.2, fontWeight: 800, display: 'block' }}>{i + 1}. {c[1]}</b><small style={{ fontSize: 11.6, color: 'var(--c-mute)', fontWeight: 700, lineHeight: 1.4, display: 'block', marginTop: 1 }}>{c[2]}</small></div>
           </div>
         ))}
         {conf.foco && <TrilhaFoco tr={tr} foco={conf.foco} />}
@@ -565,16 +565,16 @@ function TrilhaTab({ tipo, briefing, onSaveBriefing, extras, posaulas, activitie
         <div style={{ textAlign: 'center', padding: '10px 6px 4px' }}>
           <div style={{ fontSize: 44 }}>🎉</div>
           <div style={{ fontSize: 19, fontWeight: 800, margin: '6px 0 4px' }}>Recebido!</div>
-          <div style={{ fontSize: 13, color: '#64748B', fontWeight: 700, lineHeight: 1.5 }}>O professor está montando o seu material. Você recebe um aviso quando a primeira etapa estiver no ar.</div>
+          <div style={{ fontSize: 13, color: 'var(--c-mute)', fontWeight: 700, lineHeight: 1.5 }}>O professor está montando o seu material. Você recebe um aviso quando a primeira etapa estiver no ar.</div>
         </div>
         {botaoConsulta}
         {cartaoAtivs}
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: '#9A6438', margin: '12px 2px 4px' }}>O que você contou</div>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: 'var(--c-camel)', margin: '12px 2px 4px' }}>O que você contou</div>
         <TrilhaResumo tipo={tipo} conf={conf} respostas={respostas} />
         {conf.foco && <TrilhaFoco tr={tr} foco={conf.foco} />}
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: '#9A6438', margin: '12px 2px 8px' }}>O que vem por aí</div>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: 'var(--c-camel)', margin: '12px 2px 8px' }}>O que vem por aí</div>
         {conf.etapas.map((e, i) => <TrilhaNo key={i} tr={tr} e={e} st="vazio" qtd={0} feitas={0} onClick={() => {}} />)}
-        <button onClick={() => setTela('form')} style={{ width: '100%', borderRadius: 15, padding: 13, marginTop: 4, background: '#fff', color: tr.dark, border: `1.5px solid ${tr.line}`, fontWeight: 800, fontSize: 14, fontFamily: 'inherit', cursor: 'pointer' }}>Editar o que contei</button>
+        <button onClick={() => setTela('form')} style={{ width: '100%', borderRadius: 15, padding: 13, marginTop: 4, background: 'var(--c-card)', color: tr.dark, border: `1.5px solid ${tr.line}`, fontWeight: 800, fontSize: 14, fontFamily: 'inherit', cursor: 'pointer' }}>Editar o que contei</button>
         {consulta}
       </div>
     );
@@ -592,12 +592,12 @@ function TrilhaTab({ tipo, briefing, onSaveBriefing, extras, posaulas, activitie
         <div style={{ fontSize: 11, fontWeight: 800, color: tr.dark, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>{dentro ? `Etapa ${etapa + 1} de ${conf.etapas.length}` : 'Trilha'}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
           <div style={{ width: 46, height: 46, borderRadius: 14, background: tr.bg, display: 'grid', placeItems: 'center', fontSize: 23, flexShrink: 0 }}>{e.ic}</div>
-          <div><div style={{ fontSize: 16, fontWeight: 800, color: '#0F172A' }}>{e.n}</div>{e.d ? <div style={{ fontSize: 11.5, color: '#64748B', fontWeight: 700 }}>{e.d}</div> : null}</div>
+          <div><div style={{ fontSize: 16, fontWeight: 800, color: 'var(--c-ink)' }}>{e.n}</div>{e.d ? <div style={{ fontSize: 11.5, color: 'var(--c-mute)', fontWeight: 700 }}>{e.d}</div> : null}</div>
         </div>
         {aulaE ? (
           <>
             <TrilhaAulaResumo tr={tr} post={aulaE} />
-            {lista.length > 0 && <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: '#9A6438', margin: '4px 2px 8px' }}>Tarefas desta etapa</div>}
+            {lista.length > 0 && <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: 'var(--c-camel)', margin: '4px 2px 8px' }}>Tarefas desta etapa</div>}
             {lista.map(x => <TrilhaTarefaLinha key={x.id} tr={tr} e={x} onClick={() => onOpenExtra(x)} />)}
             {cartaoConsulta(() => setEtapaPeekId(aulaE.id), postTitle(aulaE), true)}
             {cartaoAtivs}
@@ -637,16 +637,16 @@ function TrilhaTab({ tipo, briefing, onSaveBriefing, extras, posaulas, activitie
           )}
         </div>
         <div style={{ height: 8, borderRadius: 99, background: 'rgba(255,255,255,.28)', marginTop: 12, overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: `${Math.round(liberadas / conf.etapas.length * 100)}%`, background: '#fff', borderRadius: 99 }} />
+          <div style={{ height: '100%', width: `${Math.round(liberadas / conf.etapas.length * 100)}%`, background: 'var(--c-card)', borderRadius: 99 }} />
         </div>
         <div style={{ fontSize: 11, fontWeight: 800, marginTop: 5, opacity: 0.95 }}>{liberadas} de {conf.etapas.length} etapas liberadas{feitas > 0 ? ` · ${feitas} concluída${feitas !== 1 ? 's' : ''}` : ''}</div>
       </div>
 
       {proxima >= 0 && (
-        <button onClick={() => { setEtapa(proxima); setTela('etapa'); }} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', background: '#fff', border: `1.5px solid ${tr.tc}`, borderRadius: 15, padding: '10px 13px', marginBottom: 8 }}>
+        <button onClick={() => { setEtapa(proxima); setTela('etapa'); }} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', background: 'var(--c-card)', border: `1.5px solid ${tr.tc}`, borderRadius: 15, padding: '10px 13px', marginBottom: 8 }}>
           <span style={{ width: 32, height: 32, borderRadius: 10, background: tr.bg, display: 'grid', placeItems: 'center', color: tr.dark, fontSize: 13 }}>▶</span>
-          <span style={{ flex: 1, minWidth: 0 }}><b style={{ display: 'block', fontSize: 13, fontWeight: 800 }}>{status[proxima] === 'liberada' ? 'Ver o que vimos na última aula' : 'Continuar de onde parei'}</b><small style={{ fontSize: 10.8, color: '#64748B', fontWeight: 700 }}>{conf.etapas[proxima].n}</small></span>
-          <span style={{ fontSize: 18, color: '#94A3B8' }}>›</span>
+          <span style={{ flex: 1, minWidth: 0 }}><b style={{ display: 'block', fontSize: 13, fontWeight: 800 }}>{status[proxima] === 'liberada' ? 'Ver o que vimos na última aula' : 'Continuar de onde parei'}</b><small style={{ fontSize: 10.8, color: 'var(--c-mute)', fontWeight: 700 }}>{conf.etapas[proxima].n}</small></span>
+          <span style={{ fontSize: 18, color: 'var(--c-mute2)' }}>›</span>
         </button>
       )}
       {botaoConsulta}
@@ -654,7 +654,7 @@ function TrilhaTab({ tipo, briefing, onSaveBriefing, extras, posaulas, activitie
       {conf.foco && <TrilhaFoco tr={tr} foco={conf.foco} aberto={false} />}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase', color: tr.dark, margin: '14px 2px 8px' }}>
-        <span>Seu caminho</span><small style={{ color: '#64748B', letterSpacing: 0, textTransform: 'none', fontWeight: 700 }}>feito pelo professor para você</small>
+        <span>Seu caminho</span><small style={{ color: 'var(--c-mute)', letterSpacing: 0, textTransform: 'none', fontWeight: 700 }}>feito pelo professor para você</small>
       </div>
       {conf.etapas.map((e, i) => {
         const st = i === iAtual ? 'atual' : status[i];
@@ -665,7 +665,7 @@ function TrilhaTab({ tipo, briefing, onSaveBriefing, extras, posaulas, activitie
       {soltas.length > 0 && (
         <button onClick={() => { setEtapa(-1); setTela('etapa'); }} style={{ ...caixa, width: '100%', textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer', fontSize: 13, fontWeight: 800, color: tr.dark }}>📌 Outras tarefas da trilha ({soltas.length})</button>
       )}
-      <button onClick={() => setTela('form')} style={{ width: '100%', borderRadius: 15, padding: 12, marginTop: 4, background: '#fff', color: tr.dark, border: `1.5px solid ${tr.line}`, fontWeight: 800, fontSize: 13, fontFamily: 'inherit', cursor: 'pointer' }}>
+      <button onClick={() => setTela('form')} style={{ width: '100%', borderRadius: 15, padding: 12, marginTop: 4, background: 'var(--c-card)', color: tr.dark, border: `1.5px solid ${tr.line}`, fontWeight: 800, fontSize: 13, fontFamily: 'inherit', cursor: 'pointer' }}>
         {briefing ? 'Ver ou editar o que contei' : 'Contar sobre ' + conf.comecar}
       </button>
       {consulta}

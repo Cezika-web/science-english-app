@@ -15,17 +15,19 @@ const messaging = firebase.messaging();
 // Subir esta versão a cada mudança em challenge.jsx ou no shell: os assets são
 // servidos cache-first, então sem trocar o nome do cache o aluno continua com o
 // arquivo antigo mesmo depois do deploy. Os arquivos de apoio (adesao.js, plano.jsx…) levam ?v=NN no index.html E aqui no SHELL: troque o NN junto com o CACHE. Os arquivos de apoio (adesao.js, plano.jsx…) levam ?v=NN no index.html E aqui no SHELL: troque o NN junto com o CACHE. Os arquivos de apoio (adesao.js, plano.jsx…) levam ?v=NN no index.html E aqui no SHELL: troque o NN junto com o CACHE. Os arquivos de apoio (adesao.js, plano.jsx…) levam ?v=NN no index.html E aqui no SHELL: troque o NN junto com o CACHE. Os arquivos de apoio (adesao.js, plano.jsx…) levam ?v=NN no index.html E aqui no SHELL: troque o NN junto com o CACHE. Os arquivos de apoio (adesao.js, plano.jsx…) levam ?v=NN no index.html E aqui no SHELL: troque o NN junto com o CACHE. Os arquivos de apoio (adesao.js, plano.jsx…) levam ?v=NN no index.html E aqui no SHELL: troque o NN junto com o CACHE. Os arquivos de apoio (adesao.js, plano.jsx…) levam ?v=NN no index.html E aqui no SHELL: troque o NN junto com o CACHE. Os arquivos de apoio (adesao.js, plano.jsx…) levam ?v=NN no index.html E aqui no SHELL: troque o NN junto com o CACHE.
-const CACHE = 'czk-v90';
+const CACHE = 'czk-v91';
 const SHELL = [
   '/science-english-app/',
   '/science-english-app/index.html',
-  '/science-english-app/challenge.jsx?v=88',
-  '/science-english-app/plano.jsx?v=89',
-  '/science-english-app/trilha.jsx?v=84',
-  '/science-english-app/novidades.jsx?v=82',
-  '/science-english-app/adesao.js?v=85',
+  '/science-english-app/challenge.jsx?v=89',
+  '/science-english-app/plano.jsx?v=90',
+  '/science-english-app/trilha.jsx?v=85',
+  '/science-english-app/novidades.jsx?v=83',
+  '/science-english-app/adesao.js?v=86',
   '/science-english-app/challenge-week-2026-08-17.json',
-  '/science-english-app/manifest.json'
+  '/science-english-app/manifest.json',
+  '/science-english-app/eurekia/acenando.png',
+  '/science-english-app/eurekia/ideia.png'
 ];
 const DEFAULT_URL = '/science-english-app/';
 
