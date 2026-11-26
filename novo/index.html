@@ -20,6 +20,7 @@
         var t = localStorage.getItem('czk_tema') || 'auto';
         var esc = t === 'escuro' || (t === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.setAttribute('data-tema', esc ? 'escuro' : 'claro');
+        if (localStorage.getItem('czk_layout') === 'cel') document.documentElement.setAttribute('data-layout', 'cel');
       } catch (e) {}
     })();
   </script>
@@ -168,45 +169,81 @@
 
     /* ── Versão para computador (a partir de 1024 px): menu lateral + conteúdo centralizado ── */
     @media (min-width: 1024px) {
-      .student-app-shell.czk-shell {
-        max-width: 1320px !important; display: grid !important; height: 100%;
+      html:not([data-layout="cel"]) .student-app-shell.czk-shell {
+        max-width: none !important; display: grid !important; height: 100%;
         grid-template-columns: 252px minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr);
       }
-      .czk-mirror { grid-column: 1 / -1; grid-row: 1; }
-      .czk-header { grid-column: 2; grid-row: 2; background: transparent !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; border-bottom: none !important; padding: 22px 34px 6px !important; position: static !important; }
-      .czk-hdr-brand { display: none !important; }
-      .czk-hdr-hi { display: block; font-size: 24px; font-weight: 800; color: var(--c-ink); line-height: 1.15; }
-      .czk-hdr-hi small { display: block; font-size: 13px; font-weight: 500; color: var(--c-mute); margin-top: 3px; }
-      .czk-main { grid-column: 2; grid-row: 3; min-height: 0; }
-      .czk-main .scroll-area { padding-left: 34px !important; padding-right: 34px !important; padding-top: 14px !important; }
-      .czk-nav {
+      html:not([data-layout="cel"]) .czk-mirror { grid-column: 1 / -1; grid-row: 1; }
+      html:not([data-layout="cel"]) .czk-header { grid-column: 2; grid-row: 2; background: transparent !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; border-bottom: none !important; padding: 22px 34px 6px !important; position: static !important; }
+      html:not([data-layout="cel"]) .czk-hdr-brand { display: none !important; }
+      html:not([data-layout="cel"]) .czk-hdr-hi { display: block; font-size: 24px; font-weight: 800; color: var(--c-ink); line-height: 1.15; }
+      html:not([data-layout="cel"]) .czk-hdr-hi small { display: block; font-size: 13px; font-weight: 500; color: var(--c-mute); margin-top: 3px; }
+      html:not([data-layout="cel"]) .czk-main { grid-column: 2; grid-row: 3; min-height: 0; }
+      html:not([data-layout="cel"]) .czk-main .scroll-area { padding-left: 34px !important; padding-right: 34px !important; padding-top: 14px !important; }
+      html:not([data-layout="cel"]) .czk-nav {
         grid-column: 1; grid-row: 2 / span 2; position: static !important; flex-direction: column !important; align-items: stretch;
         gap: 4px; padding: 22px 14px 18px !important; border-top: none !important; border-right: 1px solid var(--c-line);
         background: var(--c-card) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; overflow-y: auto;
       }
-      .czk-nav-brand { display: flex; align-items: center; gap: 11px; padding: 2px 8px 22px; }
-      .czk-nav-brand b { display: block; font-size: 15.5px; font-weight: 800; color: var(--c-ink); line-height: 1.1; }
-      .czk-nav-brand small { display: block; font-size: 11px; color: var(--c-mute); margin-top: 2px; }
-      .czk-nav-logo { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; flex-shrink: 0; background: linear-gradient(145deg,var(--brand),var(--brand-dark)); box-shadow: 0 6px 16px rgba(var(--brand-rgb),0.3); }
-      .czk-nav > button { flex: none !important; flex-direction: row !important; justify-content: flex-start !important; gap: 12px !important; padding: 4px 8px !important; border-radius: 14px !important; width: 100%; }
-      .czk-nav > button:hover { background: rgba(var(--brand-rgb),0.07) !important; }
-      .czk-nav > button > div { width: 38px !important; height: 38px !important; }
-      .czk-nav > button > span { font-size: 14.5px !important; }
-      .czk-fab { right: 34px !important; bottom: 30px !important; }
+      html:not([data-layout="cel"]) .czk-nav-brand { display: flex; align-items: center; gap: 11px; padding: 2px 8px 22px; }
+      html:not([data-layout="cel"]) .czk-nav-brand b { display: block; font-size: 15.5px; font-weight: 800; color: var(--c-ink); line-height: 1.1; }
+      html:not([data-layout="cel"]) .czk-nav-brand small { display: block; font-size: 11px; color: var(--c-mute); margin-top: 2px; }
+      html:not([data-layout="cel"]) .czk-nav-logo { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; flex-shrink: 0; background: linear-gradient(145deg,var(--brand),var(--brand-dark)); box-shadow: 0 6px 16px rgba(var(--brand-rgb),0.3); }
+      html:not([data-layout="cel"]) .czk-nav > button { flex: none !important; flex-direction: row !important; justify-content: flex-start !important; gap: 12px !important; padding: 4px 8px !important; border-radius: 14px !important; width: 100%; }
+      html:not([data-layout="cel"]) .czk-nav > button:hover { background: rgba(var(--brand-rgb),0.07) !important; }
+      html:not([data-layout="cel"]) .czk-nav > button > div { width: 38px !important; height: 38px !important; }
+      html:not([data-layout="cel"]) .czk-nav > button > span { font-size: 14.5px !important; }
+      html:not([data-layout="cel"]) .czk-fab { right: 34px !important; bottom: 30px !important; }
       /* telas cheias (exercício, desafio, aulas) ficam mais largas que no celular, mas ainda centralizadas */
-      [style*="max-width: 480px"]:not(.czk-shell) { max-width: 860px !important; }
-      [style*="position: fixed"][style*="max-width: 480px"]:not(.czk-shell) { box-shadow: 0 0 0 100vmax rgba(4,12,8,0.62) !important; }
-      .toast-el { bottom: 40px; }
+      html:not([data-layout="cel"]) [style*="max-width: 480px"]:not(.czk-shell) { max-width: 860px !important; }
+      html:not([data-layout="cel"]) [style*="position: fixed"][style*="max-width: 480px"]:not(.czk-shell) { box-shadow: 0 0 0 100vmax rgba(4,12,8,0.62) !important; }
+      html:not([data-layout="cel"]) .toast-el { bottom: 40px; }
       /* folhas que sobem de baixo (atividade, parte, pós-aula): colunas centralizadas, não a tela inteira */
-      .modal-sheet { max-width: 760px; margin: 0 auto; }
-      .modal-sheet.modal-sheet-full { max-width: 920px; box-shadow: 0 0 70px rgba(0,0,0,0.28); }
+      html:not([data-layout="cel"]) .modal-sheet { max-width: 760px; margin: 0 auto; }
+      html:not([data-layout="cel"]) .modal-sheet.modal-sheet-full { max-width: 920px; box-shadow: 0 0 70px rgba(0,0,0,0.28); }
       /* Início: duas colunas */
-      .h-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 0 20px; align-items: start; }
-      .h-wotd-pc { display: block; }
-      .h-wotd-mob { display: none; }
-      .h-side { order: 0; grid-column: 2; grid-row: 1; position: sticky; top: 0; }
-      .h-main { grid-column: 1; grid-row: 1; min-width: 0; }
+      html:not([data-layout="cel"]) .h-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 0 20px; align-items: start; }
+      html:not([data-layout="cel"]) .h-wotd-pc { display: block; }
+      html:not([data-layout="cel"]) .h-wotd-mob { display: none; }
+      html:not([data-layout="cel"]) .h-side { order: 0; grid-column: 2; grid-row: 1; position: sticky; top: 0; }
+      html:not([data-layout="cel"]) .h-main { grid-column: 1; grid-row: 1; min-width: 0; }
+    
+      /* Progresso em duas colunas, com graficos de altura contida */
+      html:not([data-layout="cel"]) .czk-prog svg[role="img"] { max-height: 270px; }
+      /* Vocabulario: tres cartoes lado a lado */
+      html:not([data-layout="cel"]) .czk-voc { flex-direction: row !important; align-items: flex-start; }
+      html:not([data-layout="cel"]) .czk-voc > button { flex: 1 1 0 !important; min-height: 320px; }
     }
+    @media (min-width: 1280px) {
+      html:not([data-layout="cel"]) .scroll-area.czk-prog { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 22px; align-content: start; }
+      html:not([data-layout="cel"]) .czk-prog > * { grid-column: 1 / -1; min-width: 0; }
+      html:not([data-layout="cel"]) .czk-prog > section { grid-column: auto; }
+      html:not([data-layout="cel"]) .czk-prog > section:first-of-type { grid-column: 1 / -1; }
+      html:not([data-layout="cel"]) .czk-perfil-cols { columns: 2; column-gap: 22px; }
+      html:not([data-layout="cel"]) .czk-perfil-cols > * { break-inside: avoid; }
+      html:not([data-layout="cel"]) .czk-perfil-cols > :first-child { column-span: all; }
+    }
+    /* botao computador / celular: so em tela grande */
+    .czk-layout-btn { display: none; }
+    @media (min-width: 1024px) { .czk-layout-btn { display: flex; } }
+    html[data-layout="cel"] .modal-sheet { max-width: 480px; margin: 0 auto; }
+    /* topo em tela estreita: sem o lema, nome e nivel em uma linha */
+    @media (max-width: 420px) {
+      .czk-hdr-brand > div:last-child > div:nth-child(2) { display: none; }
+      .czk-hdr-quem { max-width: 104px; }
+      .czk-hdr-quem > div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    }
+    html[data-layout="cel"] .czk-hdr-brand > div:last-child > div:nth-child(2) { display: none; }
+    html[data-layout="cel"] .czk-hdr-quem { max-width: 104px; }
+    html[data-layout="cel"] .czk-hdr-quem > div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    /* tela baixa: cartoes do vocabulario mais compactos */
+    @media (max-height: 760px) and (max-width: 1023px) {
+      .czk-voc { padding: 10px 14px !important; gap: 9px !important; }
+      .czk-voc > button { padding: 10px !important; }
+      .czk-voc > button > span:first-child { width: 48px !important; height: 48px !important; margin-bottom: 6px !important; }
+      .czk-voc > button > span:last-child { margin-top: 8px !important; }
+    }
+
 
     .scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; width: 100%; max-width: 100%; min-width: 0; }
 
@@ -320,9 +357,9 @@
 <div class="toast-el" id="global-toast"></div>
 
 <script src="novo/adesao.js?v=86"></script>
-<script type="text/babel" data-presets="react" src="novo/challenge.jsx?v=89"></script>
+<script type="text/babel" data-presets="react" src="novo/challenge.jsx?v=93"></script>
 <script type="text/babel" data-presets="react" src="novo/plano.jsx?v=90"></script>
-<script type="text/babel" data-presets="react" src="novo/trilha.jsx?v=85"></script>
+<script type="text/babel" data-presets="react" src="novo/trilha.jsx?v=93"></script>
 <script type="text/babel" data-presets="react" src="novo/novidades.jsx?v=83"></script>
 <script type="text/babel" data-presets="react">
 const FB_CONFIG = {
@@ -1627,6 +1664,13 @@ function dataPorExtenso() {
 
 function AppHeader({ student, onNotif, showNotifBtn, onLogout, onPatchStudent }) {
   const [, temaEfetivo] = useTema();
+  const [modoCel, setModoCel] = useState(() => document.documentElement.getAttribute('data-layout') === 'cel');
+  const trocarModo = () => {
+    const cel = !modoCel;
+    try { localStorage.setItem('czk_layout', cel ? 'cel' : 'auto'); } catch (e) {}
+    if (cel) document.documentElement.setAttribute('data-layout', 'cel'); else document.documentElement.removeAttribute('data-layout');
+    setModoCel(cel);
+  };
   const name    = student?.firstName || student?.name || 'Aluno';
   const level   = student?.level || '';
   const initial = name[0].toUpperCase();
@@ -1689,6 +1733,17 @@ function AppHeader({ student, onNotif, showNotifBtn, onLogout, onPatchStudent })
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button type="button" className="czk-layout-btn" onClick={trocarModo}
+          aria-label={modoCel ? 'Mudar para o modo computador' : 'Mudar para o modo celular'}
+          title={modoCel ? 'Ver como no computador' : 'Ver como no celular'}
+          style={{
+            height: 36, padding: '0 13px', borderRadius: 999, flexShrink: 0, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 800,
+            background: 'rgba(var(--brand-rgb),0.1)', border: '1px solid rgba(var(--brand-rgb),0.25)', color: 'var(--c-brand-ink)', alignItems: 'center', gap: 7,
+          }}>
+          {modoCel
+            ? <><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8M12 16v4" /></svg>Computador</>
+            : <><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2.5" /><path d="M11 18h2" /></svg>Celular</>}
+        </button>
         <button data-czk="tema"
           onClick={() => CzkTema.set(temaEfetivo === 'escuro' ? 'claro' : 'escuro')}
           aria-label={temaEfetivo === 'escuro' ? 'Mudar para o modo claro' : 'Mudar para o modo escuro'}
@@ -1704,7 +1759,7 @@ function AppHeader({ student, onNotif, showNotifBtn, onLogout, onPatchStudent })
             color: 'var(--brand)', borderRadius: 10, padding: '6px 10px', fontSize: 16, cursor: 'pointer', lineHeight: 1,
           }}>&#128276;</button>
         )}
-        <div style={{ textAlign: 'right', marginRight: 4 }}>
+        <div className="czk-hdr-quem" style={{ textAlign: 'right', marginRight: 4 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--c-ink)', lineHeight: 1.1 }}>{name}</div>
           {level && <div style={{ fontSize: 10.5, color: 'var(--brand)', fontWeight: 600 }}>{level}</div>}
         </div>
@@ -2032,7 +2087,7 @@ function InstallBanner() {
   if (showInstall) return (
     <div style={base}>
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--c-brand-ink)' }}>&var(--t-128242); Instalar app</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--c-brand-ink)' }}>&#128242; Instalar app</div>
         <div style={{ fontSize: 12, color: 'var(--brand)', marginTop: 2 }}>Adicione a tela inicial para acesso rapido.</div>
       </div>
       <button style={actBtn} onClick={async () => { if (!_deferredPrompt) return; _deferredPrompt.prompt(); await _deferredPrompt.userChoice; localStorage.setItem('installDismissed','1'); setShowInstall(false); _deferredPrompt = null; }}>Instalar</button>
@@ -2042,7 +2097,7 @@ function InstallBanner() {
   if (showIos) return (
     <div style={base}>
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--c-brand-ink)' }}>&var(--t-128242); Instalar app</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--c-brand-ink)' }}>&#128242; Instalar app</div>
         <div style={{ fontSize: 12, color: 'var(--brand)', marginTop: 2 }}>No iPhone: Compartilhar &#8594; Adicionar a Tela de Inicio.</div>
       </div>
       <button style={xBtn} onClick={() => { setShowIos(false); localStorage.setItem('iosInstallDismissed','1'); }}>&#x2715;</button>
@@ -2051,7 +2106,7 @@ function InstallBanner() {
   if (showNotif) return (
     <div style={base}>
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--c-brand-ink)' }}>&var(--t-128276); Ativar notificacoes</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--c-brand-ink)' }}>&#128276; Ativar notificacoes</div>
         <div style={{ fontSize: 12, color: 'var(--brand)', marginTop: 2 }}>Receba os pos-aulas neste celular.</div>
       </div>
       <button style={actBtn} onClick={() => { setShowNotif(false); window.dispatchEvent(new CustomEvent('request-notif')); }}>Ativar</button>
@@ -3097,7 +3152,7 @@ function ProgressTab({ student, posaulas, activities, reviewReports = [], onOpen
     : '';
 
   return (
-    <div className="scroll-area" style={{ padding:'18px 14px 28px', width:'100%', maxWidth:'100%', minWidth:0, boxSizing:'border-box', overflowX:'hidden' }}>
+    <div className="scroll-area czk-prog" style={{ padding:'18px 14px 28px', width:'100%', maxWidth:'100%', minWidth:0, boxSizing:'border-box', overflowX:'hidden' }}>
       <div style={{ fontSize:22, fontWeight:800, color:'var(--c-ink)' }}>Meu progresso</div>
       <AdesaoProgressCard adesao={adesao} onOpen={onOpenAdesao} />
       {challengeEnabled && <ChallengeProgressPanel challengeState={challengeState} onOpenChallenge={onOpenChallenge} />}
@@ -3503,7 +3558,7 @@ function HomeTab({ student, posaulas, activities, onOpenPost, onGoActivities, ad
                   width: '100%', background: 'rgba(139,94,52,0.1)', border: '1px solid rgba(var(--brand-rgb),0.2)', borderRadius: 14,
                   padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontFamily: 'inherit',
                 }}>
-                  <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--c-camel-d)' }}>&var(--t-128193); {month.label}</span>
+                  <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--c-camel-d)' }}>&#128193; {month.label}</span>
                   <span style={{ fontSize: 11, color: 'var(--c-camel-d)', display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span>{total} aula{total !== 1 ? 's' : ''}</span>
                     <span style={{ fontSize: 14 }}>{open ? '▾' : '▸'}</span>
@@ -5311,13 +5366,13 @@ function VocabTab({ vocab, onViewChange }) {
   }, [chunkSearch]);
 
   if (!listView) return (
-    <div className="scroll-area" style={{ padding:'16px', display:'flex', flexDirection:'column', gap:12, overflow:'hidden', width:'100%', maxWidth:'100%', minWidth:0, boxSizing:'border-box' }}>
+    <div className="scroll-area czk-voc" style={{ padding:'16px', display:'flex', flexDirection:'column', gap:12, overflowY:'auto', overflowX:'hidden', width:'100%', maxWidth:'100%', minWidth:0, boxSizing:'border-box' }}>
       {[
         { id:'vocab', icon:'ABC', title:'Meu vocabulário', count:`${vocab.length} palavra${vocab.length !== 1 ? 's' : ''}`, background:'rgba(var(--brand-rgb),.1)', border:'var(--brand)', iconBg:'rgba(var(--brand-rgb),.12)', iconBorder:'rgba(var(--brand-rgb),.24)', text:'var(--c-brand-ink)', accent:'var(--brand)', iconSize:18 },
         { id:'verbs', icon:'↻', title:'Verbos irregulares', count:`${IRREGULAR_VERBS.length} verbos`, background:'var(--c-soft2)', border:'#8B5E34', iconBg:'var(--p-F1E5D5)', iconBorder:'#D9C1A3', text:'var(--t-7C4A21)', accent:'var(--t-8B5E34)', iconSize:38 },
         { id:'chunks', icon:'🧩', title:'Chunks do inglês', count:`${ENGLISH_CHUNKS.length} chunks`, background:'var(--c-warn-bg)', border:'#B8860B', iconBg:'var(--p-F5E6BE)', iconBorder:'#E0C978', text:'var(--t-7A5B0A)', accent:'var(--t-B8860B)', iconSize:30 },
       ].map(({ id,icon,title,count,background,border,iconBg,iconBorder,text,accent,iconSize }) => <button key={id} onClick={() => setListView(id)} style={{
-        flex:1, minHeight:0, width:'100%', border:`2px solid ${border}`, borderRadius:24, padding:'20px',
+        flex:'1 0 auto', width:'100%', border:`2px solid ${border}`, borderRadius:24, padding:'20px',
         background, cursor:'pointer', fontFamily:'inherit', display:'flex', flexDirection:'column',
         alignItems:'center', justifyContent:'center', textAlign:'center', boxShadow:'0 10px 28px rgba(15,23,42,.07)'
       }}>
@@ -5786,7 +5841,8 @@ function PerfilTab({ student, mirror, onLogout, onPatchStudent, reviews = [], ow
   );
 
   return (
-    <div className="scroll-area" style={{ padding: '16px 16px 8px', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', overflowX: 'hidden' }}>
+    <div className="scroll-area czk-perfil" style={{ padding: '16px 16px 8px', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', overflowX: 'hidden' }}>
+      <div className="czk-perfil-cols">
       <GlassCard style={{ padding: '28px 20px', textAlign: 'center', marginBottom: 14 }}>
         <div style={{ position: 'relative', width: 88, height: 88, margin: '0 auto 12px' }}>
           {student?.photo ? (
@@ -5941,6 +5997,7 @@ function PerfilTab({ student, mirror, onLogout, onPatchStudent, reviews = [], ow
         <button onClick={onLogout} style={{ width: '100%', padding: 14, border: 'none', borderRadius: 14, background: 'rgba(220,38,38,0.08)', color: 'var(--c-red-ink)', fontWeight: 700, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit' }}>Sair da conta</button>
       </GlassCard>
       <div style={{ height: 12 }} />
+      </div>
     </div>
   );
 }
@@ -6717,7 +6774,7 @@ function App() {
   }
 
   const loadPeerDuels = React.useCallback(async () => {
-    if (mirror) return { opponents:[], duels:[] };
+    if (mirror) return { opponents:[], duels:[], espelho:true };
     const fb = await getFB();
     const obter = fb.httpsCallable(fb.functions, 'obterDesafiosEntreAlunos');
     return (await obter({})).data;

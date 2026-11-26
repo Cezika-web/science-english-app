@@ -361,7 +361,7 @@ function TrilhaTarefaLinha({ tr, e, onClick }) {
 function TrilhaOuvir({ tr, on, label, onClick }) {
   return (
     <button type="button" onClick={onClick} aria-label={label} title={label} style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0, cursor: 'pointer', fontSize: 15, lineHeight: 1, fontFamily: 'inherit', display: 'grid', placeItems: 'center',
-      border: `1px solid ${on ? tr.tc : tr.line}`, background: on ? tr.tc : tr.bg, color: on ? '#fff' : tr.dark }}>&var(--t-128266);</button>
+      border: `1px solid ${on ? tr.tc : tr.line}`, background: on ? tr.tc : tr.bg, color: on ? '#fff' : tr.dark }}>&#128266;</button>
   );
 }
 function TrilhaAulaResumo({ tr, post }) {
