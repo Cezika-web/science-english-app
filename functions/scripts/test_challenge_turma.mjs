@@ -225,5 +225,37 @@ try {
   assert.equal(pedido.split('A e B — Aula').length - 1, 2, 'cada aula em comum vai uma vez só, com os dois nomes');
   assert.equal(pedido.includes('Aula solo'), false, 'o que só um deles teve não entra na rodada da dupla');
   assert.equal(db.docs.get('students/u-b/challengeRounds/2026-11-09-g-g4-part-2').questions.length, 5);
+
+  // 12. Painel: o professor vê perguntas, gabarito e o que cada um escreveu.
+  const prof = data => as('prof', { schoolId:'school-1', ...data }, 'prof@example.test');
+  const parte1 = '2026-11-09-g-g1-part-1';
+  await assert.rejects(fns.obterRespostasDuplaAdmin.run(as('u-karlla', { schoolId:'school-1', groupId:'g1', roundId:parte1 })),
+    e => e.code === 'permission-denied', 'aluno não lê o gabarito');
+  const detalhe = await fns.obterRespostasDuplaAdmin.run(prof({ groupId:'g1', roundId:parte1 }));
+  assert.equal(detalhe.part, 1);
+  assert.equal(detalhe.perguntas.length, 5);
+  assert.equal(detalhe.perguntas[0].expected, 'I work every day.');
+  assert.equal(detalhe.perguntas[4].correctOption, 'b');
+  const [karlla, vitor] = detalhe.membros;
+  assert.deepEqual([karlla.name, karlla.done, karlla.score, karlla.maxScore], ['Karlla', true, 500, 500]);
+  assert.deepEqual(karlla.respostas.g1q1, { answer:'I work every day', score:100 });
+  assert.equal(karlla.respostas.g1q5.answer, 'works', 'alternativa aparece pelo texto');
+  assert.deepEqual([vitor.name, vitor.done, vitor.started, vitor.score], ['Vitor', false, false, null]);
+  assert.deepEqual(vitor.respostas, {});
+  // Quem ainda está jogando: aparece o que já enviou, sem nota.
+  const meio = '2026-11-09-g-g4-part-1';
+  await fns.iniciarDesafioSemanal.run(as('u-b', { roundId:meio }));
+  await fns.salvarRespostaDesafio.run(as('u-b', { roundId:meio, questionId:'g1q1', value:'I works' }));
+  const jogando = await fns.obterRespostasDuplaAdmin.run(prof({ groupId:'g4', roundId:meio }));
+  assert.deepEqual(jogando.membros[1].respostas, { g1q1:{ answer:'I works', score:null } });
+  assert.deepEqual([jogando.membros[1].started, jogando.membros[1].done], [true, false]);
+  // Rodada de outra dupla não passa, e a lista só traz semanas que já viraram.
+  await assert.rejects(fns.obterRespostasDuplaAdmin.run(prof({ groupId:'g4', roundId:parte1 })), e => e.code === 'not-found');
+  await assert.rejects(fns.obterRespostasDuplaAdmin.run(prof({ groupId:'nao-existe' })), e => e.code === 'not-found');
+  assert.deepEqual((await fns.obterRespostasDuplaAdmin.run(prof({ groupId:'g1' }))).rodadas, []);
+  clock = new NativeDate('2026-11-17T10:00:00-03:00');
+  const antigas = (await fns.obterRespostasDuplaAdmin.run(prof({ groupId:'g1' }))).rodadas;
+  assert.deepEqual(antigas.map(item => [item.weekKey, item.part]), [['2026-11-09', 2], ['2026-11-09', 1]]);
+  assert.deepEqual(antigas[1].membros.slice(0, 2), [{ name:'Karlla', done:true, score:500 }, { name:'Vitor', done:false, score:null }]);
 } finally { globalThis.Date = NativeDate; }
-console.log('OK — turma: estado sem gabarito, geração única sob demanda, jogo pelo caminho de sempre, placar só depois de fechar, espelho do professor, entrada tardia, falha da IA, resposta cortada refeita, aulas em comum sem duplicar e semana encerrada.');
+console.log('OK — turma: estado sem gabarito, geração única sob demanda, jogo pelo caminho de sempre, placar só depois de fechar, espelho do professor, entrada tardia, falha da IA, resposta cortada refeita, aulas em comum sem duplicar, semana encerrada e respostas no painel.');

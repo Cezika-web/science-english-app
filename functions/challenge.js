@@ -1500,6 +1500,95 @@ ${item.text}`).join('\n\n')}`
     }
   );
 
+  // Painel do professor: o que a dupla perguntou e o que cada um respondeu. Só
+  // leitura. Sem `roundId` devolve as semanas anteriores; com ele, uma rodada
+  // inteira (perguntas, gabarito e respostas).
+  const obterRespostasDuplaAdmin = onCall(
+    { region:REGION, timeoutSeconds:60, memory:'256MiB' },
+    async request => {
+      requireAdmin(request, adminEmails);
+      const schoolId = String(request.data?.schoolId || '').trim();
+      const groupId = String(request.data?.groupId || '').trim();
+      const roundId = String(request.data?.roundId || '').trim();
+      if (!schoolId || !groupId) throw new HttpsError('invalid-argument', 'Faltou a escola ou a turma.');
+      const groupSnap = await db.doc(`schools/${schoolId}/classGroups/${groupId}`).get();
+      if (!groupSnap.exists) throw new HttpsError('not-found', 'Turma não encontrada.');
+      const group = groupSnap.data();
+      const members = (group.memberUids || []).map((uid, index) => ({ uid, name:(group.memberNames || [])[index] || 'Aluno' }));
+      const results = (await db.collection('_challengeResults').where('groupId', '==', groupId).get()).docs.map(doc => doc.data());
+      const resultOf = (uid, id) => results.find(item => item.uid === uid && item.roundId === id) || null;
+
+      if (!roundId) {
+        const snaps = await Promise.all(members.map(member =>
+          db.collection(`students/${member.uid}/challengeRounds`).where('groupId', '==', groupId).get()));
+        const rounds = new Map();
+        const currentWeek = weekKeyFor(new Date());
+        snaps.forEach(snap => snap.docs.forEach(doc => {
+          const round = doc.data();
+          // A semana em andamento já aparece no cartão da dupla.
+          if (!round.weekKey || round.weekKey >= currentWeek) return;
+          rounds.set(doc.id, { roundId:doc.id, weekKey:round.weekKey, part:Number(round.part || 1) });
+        }));
+        const rodadas = [...rounds.values()]
+          .sort((a, b) => b.weekKey.localeCompare(a.weekKey) || b.part - a.part).slice(0, 24)
+          .map(round => ({ ...round, membros:members.map(member => {
+            const result = resultOf(member.uid, round.roundId);
+            return { name:member.name, done:Boolean(result), score:result ? Number(result.score || 0) : null };
+          }) }));
+        return { groupId, rodadas };
+      }
+
+      if (roundId.includes('/')) throw new HttpsError('invalid-argument', 'Rodada inválida.');
+      const items = await Promise.all(members.map(async member => {
+        const [roundSnap, keySnap, submissionSnap] = await Promise.all([
+          db.doc(`students/${member.uid}/challengeRounds/${roundId}`).get(),
+          answerKeyRef(member.uid, roundId, true).get(),
+          db.doc(`students/${member.uid}/challengeSubmissions/${roundId}`).get(),
+        ]);
+        return { ...member, round:roundSnap.exists ? roundSnap.data() : null,
+          keys:keySnap.exists ? keySnap.data().answers || [] : [],
+          submission:submissionSnap.exists ? submissionSnap.data() : null,
+          result:resultOf(member.uid, roundId) };
+      }));
+      const base = items.find(item => item.round?.groupId === groupId);
+      if (!base) throw new HttpsError('not-found', 'Esta dupla não tem perguntas nesta rodada.');
+      const keys = new Map(base.keys.map(key => [key.id, key]));
+      const perguntas = (base.round.questions || []).map(question => {
+        const key = keys.get(question.id) || {};
+        return { id:question.id, type:question.type, prompt:question.prompt || '', context:question.context || '',
+          options:question.options || [], correctOption:key.correctOption || '',
+          expected:key.expected || '', explanation:key.explanation || '' };
+      });
+
+      const membros = items.map(item => {
+        const respostas = {};
+        if (item.result) {
+          (item.result.details || []).forEach(detail => {
+            const igual = perguntas.find(question => question.id === detail.questionId);
+            // Se a rodada deste aluno tinha outra frase, a resposta não pode
+            // aparecer como se fosse da pergunta do parceiro.
+            const outra = igual && (String(detail.prompt || '') !== igual.prompt || String(detail.context || '') !== igual.context);
+            respostas[detail.questionId] = { answer:String(detail.answer || ''), score:Number(detail.score || 0),
+              ...(outra ? { outraPergunta:[detail.prompt, detail.context].filter(Boolean).join(' — ') } : {}) };
+          });
+        } else {
+          // Ainda jogando: mostra o que já foi enviado, sem nota.
+          (item.submission?.answers || []).forEach(answer => {
+            const question = (item.round?.questions || []).find(entry => entry.id === answer.questionId);
+            const option = question?.options?.find(entry => entry.id === answer.value);
+            respostas[answer.questionId] = { answer:String(option?.text || answer.value || ''), score:null };
+          });
+        }
+        return { name:item.name, done:Boolean(item.result), started:Boolean(item.submission),
+          score:item.result ? Number(item.result.score || 0) : null,
+          maxScore:Number(item.result?.maxScore || perguntas.length * 100), respostas };
+      });
+
+      return { groupId, groupName:group.name || '', roundId, weekKey:base.round.weekKey,
+        part:Number(base.round.part || 1), closesAt:iso(base.round.closesAt), perguntas, membros };
+    }
+  );
+
   // Criar a dupla tem de fazer o desafio dela aparecer na hora, e não só na leva
   // de domingo — foi o que ele pediu: "assim que for criado, já tem que aparecer
   // no aplicativo deles os dois desafios".
@@ -3305,7 +3394,7 @@ ${item.text}`).join('\n\n')}`
     salvarRespostaDesafio, obterStatusDesafioAdmin, finalizarDesafioSemanal,
     notificarAberturaDesafio, lembrarDesafioManha, lembrarDesafioNoite, lembrarDesafioDiario,
     gerarDesafiosAtrasados, gerarDesafioDaSemana, gerarDesafioDaTurma,
-    obterDesafioDaTurma, prepararDesafioDaTurma, obterDuelosAdmin, avisarParceiroDaDupla,
+    obterDesafioDaTurma, prepararDesafioDaTurma, obterDuelosAdmin, obterRespostasDuplaAdmin, avisarParceiroDaDupla,
     aceitarRespostaDesafio, ajustarPontuacaoRespostaDesafio,
     obterDesafiosEntreAlunos, criarDesafioEntreAlunos, responderDesafioEntreAlunos,
     marcarProntoDesafioAoVivo, obterSalaDesafioAoVivo,

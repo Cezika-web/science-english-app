@@ -485,6 +485,48 @@
     .modal-header h2 { font-size: 1rem; font-weight: 700; }
     .btn-close { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--muted); }
     .modal-body { padding: 20px; }
+
+    /* Perguntas e respostas das duplas (aba Duelos e duplas) */
+    .rd-ver { margin-top:9px; border:1px solid #bfdbfe; border-radius:9px; padding:8px 12px; background:#eff6ff; color:#0d5aa7; font:inherit; font-size:.78rem; font-weight:800; cursor:pointer; }
+    .rd-ver:hover { background:#dbeafe; }
+    .rd-antigas { border-top:1px solid var(--border); padding-top:10px; }
+    .rd-antigas summary { cursor:pointer; font-size:.8rem; font-weight:800; color:#0d5aa7; }
+    .rd-antiga { padding:10px 0; border-bottom:1px solid var(--border); font-size:.82rem; }
+    .rd-antiga:last-child { border-bottom:0; }
+    .rd-antiga .rd-membros { font-size:.8rem; line-height:1.6; margin-top:5px; }
+    .modal.rd-modal { max-width:680px; max-height:88vh; }
+    .rd-modal .modal-header { display:block; padding:16px 20px 12px; }
+    .rd-topo { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .rd-sub { font-size:.74rem; color:var(--muted); margin-top:3px; }
+    .rd-placar { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; margin-top:11px; }
+    .rd-placar:empty { display:none; }
+    .rd-placar div { border:1px solid var(--border); border-radius:10px; padding:8px 11px; font-size:.78rem; color:var(--muted); font-weight:700; }
+    .rd-placar strong { display:block; font-size:1.1rem; color:var(--text); }
+    .rd-modal .modal-body { padding-top:6px; }
+    .rd-q { border-top:1px solid var(--border); padding:14px 0; }
+    .rd-q:first-child { border-top:0; }
+    .rd-rotulo { font-size:.7rem; font-weight:800; text-transform:uppercase; color:var(--muted); }
+    .rd-enunciado { font-size:.84rem; color:var(--muted); margin-top:5px; }
+    .rd-contexto { font-weight:700; margin:3px 0 8px; line-height:1.4; }
+    .rd-certa { font-size:.84rem; margin-bottom:8px; }
+    .rd-certa strong { color:#166534; }
+    .rd-opcoes { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+    .rd-opcoes span { font-size:.76rem; border:1px solid var(--border); border-radius:8px; padding:3px 9px; color:#475569; }
+    .rd-opcoes span.ok { background:#f0fdf4; border-color:#86efac; color:#166534; font-weight:800; }
+    .rd-resp { display:grid; grid-template-columns:72px minmax(0,1fr) 40px; gap:9px; align-items:center; border:1px solid; border-radius:10px; padding:7px 10px; margin-top:5px; font-size:.84rem; }
+    .rd-resp b { font-size:.78rem; overflow:hidden; text-overflow:ellipsis; }
+    .rd-resp code { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.84rem; overflow-wrap:anywhere; }
+    .rd-resp small { display:block; font-size:.72rem; margin-top:3px; }
+    .rd-resp > span { text-align:right; font-weight:800; }
+    .rd-resp.cem { background:#f0fdf4; border-color:#bbf7d0; color:#166534; }
+    .rd-resp.meio { background:#fffbeb; border-color:#fde68a; color:#92400e; }
+    .rd-resp.zero { background:#fef2f2; border-color:#fecaca; color:#991b1b; }
+    .rd-resp.vazia { background:#f8fafc; border-color:var(--border); color:var(--muted); }
+    .rd-explica { margin-top:8px; font-size:.8rem; color:var(--muted); background:#f8fafc; border-left:3px solid var(--border); padding:6px 10px; border-radius:0 8px 8px 0; line-height:1.45; }
+    @media (max-width:560px) {
+      #dupla-modal.modal-overlay { padding:0; }
+      .modal.rd-modal { height:100%; max-height:100%; border-radius:0; }
+    }
     .posaula-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
     .posaula-item:last-child { border-bottom: none; }
     .posaula-item .p-title { font-weight: 600; font-size: 0.95rem; }
@@ -2151,6 +2193,20 @@
       <div class="modal-body" id="modal-body">
         <div class="loading">Carregando...</div>
       </div>
+    </div>
+  </div>
+
+  <!-- Perguntas e respostas de uma dupla (somente admin) -->
+  <div class="modal-overlay" id="dupla-modal">
+    <div class="modal rd-modal" role="dialog" aria-modal="true" aria-labelledby="dupla-modal-titulo">
+      <div class="modal-header">
+        <div class="rd-topo">
+          <div><h2 id="dupla-modal-titulo">Dupla</h2><div class="rd-sub" id="dupla-modal-sub"></div></div>
+          <button type="button" class="btn-close" id="dupla-modal-fechar" aria-label="Fechar">✕</button>
+        </div>
+        <div class="rd-placar" id="dupla-modal-placar"></div>
+      </div>
+      <div class="modal-body" id="dupla-modal-corpo"></div>
     </div>
   </div>
 
@@ -12362,18 +12418,115 @@
           : p.status === 'closed' ? [p.published ? 'Encerrada' : 'Encerrada · não chegou a abrir', '#6B7280', '#F3F4F6']
           : p.published ? ['Aberta · perguntas prontas', '#15803D', '#F0FDF4'] : ['Aberta · sem perguntas', '#B45309', '#FFFBEB'];
         const membros = p.published ? p.membros.map(linhaMembroDupla).join('<br>') : '';
+        const ver = p.published ? botaoRespostasDupla(turma.id, p.roundId, p.membros.some(m => m.started || m.done)) : '';
         return `<div style="padding:10px 0;border-top:1px solid var(--border);">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><strong>Parte ${p.part}</strong>${chipDuelo(rotulo, cor, fundo)}</div>
           <div style="font-size:.74rem;color:var(--muted);margin-top:3px;">${diaDuelo(p.opensAt)} → ${diaDuelo(p.closesAt)}</div>
-          ${membros ? `<div style="font-size:.8rem;line-height:1.6;margin-top:6px;">${membros}</div>` : ''}
+          ${membros ? `<div style="font-size:.8rem;line-height:1.6;margin-top:6px;">${membros}</div>` : ''}${ver}
         </div>`;
       }).join('');
       return `<div style="padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--card);margin-top:10px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
           <div><strong style="font-size:.95rem;">${esc(turma.name)}</strong><br><small style="color:var(--muted);">${turma.members.map(esc).join(' e ')}${turma.automaticChallenge ? '' : ' · desafio desligado'}</small></div>
           ${faltaPreparar ? `<button type="button" class="btn-primary" data-preparar-turma="${esc(turma.id)}" style="padding:8px 12px;font-size:.78rem;">Preparar perguntas agora</button>` : ''}
-        </div>${partes}</div>`;
+        </div>${partes}
+        <details class="rd-antigas" data-turma="${esc(turma.id)}"><summary>Semanas anteriores</summary><div></div></details></div>`;
     }
+
+    // ── Perguntas e respostas das duplas (obterRespostasDuplaAdmin, só leitura)
+    function botaoRespostasDupla(turmaId, roundId, houveResposta) {
+      return `<button type="button" class="rd-ver" data-turma="${esc(turmaId)}" data-rodada="${esc(roundId)}">👁 ${houveResposta ? 'Ver perguntas e respostas' : 'Ver perguntas'}</button>`;
+    }
+
+    async function carregarSemanasDupla(bloco) {
+      if (!bloco.open || bloco.dataset.carregado) return;
+      bloco.dataset.carregado = '1';
+      const corpo = bloco.querySelector('div');
+      corpo.innerHTML = '<div class="loading">Consultando servidor...</div>';
+      try {
+        const obter = httpsCallable(fns, 'obterRespostasDuplaAdmin', { timeout:60000 });
+        const { data } = await obter({ schoolId:escolaAtual, groupId:bloco.dataset.turma });
+        corpo.innerHTML = data.rodadas.length ? data.rodadas.map(rodada => `<div class="rd-antiga">
+            <strong>${esc(challengeWeekLabel(rodada.weekKey))} · Parte ${rodada.part}</strong>
+            <div class="rd-membros">${rodada.membros.map(linhaMembroDupla).join('<br>')}</div>
+            ${botaoRespostasDupla(bloco.dataset.turma, rodada.roundId, rodada.membros.some(m => m.done))}
+          </div>`).join('') : '<p class="rd-sub">Nenhuma semana anterior com perguntas.</p>';
+      } catch (error) {
+        delete bloco.dataset.carregado;   // abrir de novo tenta outra vez
+        corpo.innerHTML = `<div class="form-msg err" style="display:block;">Erro: ${esc(error.message)}</div>`;
+      }
+    }
+
+    function linhaRespostaDupla(membro, pergunta) {
+      const nome = esc(String(membro.name).split(/\s+/)[0]);
+      const resposta = membro.respostas[pergunta.id];
+      if (!resposta) {
+        const motivo = membro.done ? 'sem resposta' : membro.started ? 'não chegou nesta' : 'não respondeu';
+        return `<div class="rd-resp vazia"><b>${nome}</b><em>${motivo}</em><span>—</span></div>`;
+      }
+      const cor = resposta.score == null ? 'vazia' : resposta.score === 100 ? 'cem' : resposta.score > 0 ? 'meio' : 'zero';
+      return `<div class="rd-resp ${cor}"><b>${nome}</b><div>${resposta.answer ? `<code>${esc(resposta.answer)}</code>` : '<em>em branco</em>'}
+        ${resposta.outraPergunta ? `<small>Para ${nome} a pergunta era outra: ${esc(resposta.outraPergunta)}</small>` : ''}</div>
+        <span>${resposta.score == null ? '…' : resposta.score}</span></div>`;
+    }
+
+    function cartaoPerguntaDupla(pergunta, indice, membros) {
+      const escolha = pergunta.type === 'multipleChoice';
+      const tipo = !escolha ? 'Escrita' : pergunta.options.length === 2 ? 'Certo ou errado' : 'Múltipla escolha';
+      return `<div class="rd-q">
+        <div class="rd-rotulo">Pergunta ${indice + 1} · ${tipo}</div>
+        <div class="rd-enunciado">${esc(pergunta.prompt)}</div>
+        ${pergunta.context ? `<div class="rd-contexto">${esc(pergunta.context)}</div>` : ''}
+        ${escolha ? `<div class="rd-opcoes">${pergunta.options.map(o => `<span class="${o.id === pergunta.correctOption ? 'ok' : ''}">${o.id === pergunta.correctOption ? '✓ ' : ''}${esc(o.text)}</span>`).join('')}</div>` : ''}
+        <div class="rd-certa">Resposta certa: <strong>${esc(pergunta.expected)}</strong></div>
+        ${membros.map(membro => linhaRespostaDupla(membro, pergunta)).join('')}
+        ${pergunta.explanation ? `<div class="rd-explica">${esc(pergunta.explanation)}</div>` : ''}
+      </div>`;
+    }
+
+    // O contador descarta a resposta atrasada de uma janela já fechada ou trocada.
+    let pedidoRespostasDupla = 0;
+    async function abrirRespostasDupla(groupId, roundId) {
+      const pedido = ++pedidoRespostasDupla;
+      const modal = document.getElementById('dupla-modal');
+      const titulo = document.getElementById('dupla-modal-titulo');
+      const sub = document.getElementById('dupla-modal-sub');
+      const placar = document.getElementById('dupla-modal-placar');
+      const corpo = document.getElementById('dupla-modal-corpo');
+      titulo.textContent = 'Perguntas da dupla';
+      sub.textContent = ''; placar.innerHTML = '';
+      corpo.innerHTML = '<div class="loading">Consultando servidor...</div>';
+      modal.classList.add('open');
+      modal.querySelector('.modal').scrollTop = 0;
+      try {
+        const obter = httpsCallable(fns, 'obterRespostasDuplaAdmin', { timeout:60000 });
+        const { data } = await obter({ schoolId:escolaAtual, groupId, roundId });
+        if (pedido !== pedidoRespostasDupla) return;
+        const aberta = Boolean(data.closesAt) && new Date(data.closesAt) > new Date();
+        titulo.textContent = `${data.groupName} · Parte ${data.part}`;
+        sub.textContent = `${challengeWeekLabel(data.weekKey)} · ${aberta ? `aberta até ${diaHoraDuelo(data.closesAt)}` : 'encerrada'}`;
+        placar.innerHTML = data.membros.map(m => `<div>${esc(m.name)}<strong>${m.done ? `${m.score} / ${m.maxScore}`
+          : m.started ? (aberta ? 'jogando' : 'não terminou') : 'não respondeu'}</strong></div>`).join('');
+        corpo.innerHTML = data.perguntas.map((pergunta, indice) => cartaoPerguntaDupla(pergunta, indice, data.membros)).join('');
+      } catch (error) {
+        if (pedido !== pedidoRespostasDupla) return;
+        corpo.innerHTML = `<div class="form-msg err" style="display:block;">Erro: ${esc(error.message)}</div>`;
+      }
+    }
+
+    function fecharRespostasDupla() {
+      pedidoRespostasDupla++;
+      document.getElementById('dupla-modal').classList.remove('open');
+    }
+    document.getElementById('dupla-modal-fechar').onclick = fecharRespostasDupla;
+    document.getElementById('dupla-modal').onclick = e => { if (e.target === e.currentTarget) fecharRespostasDupla(); };
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && document.getElementById('dupla-modal').classList.contains('open')) fecharRespostasDupla();
+    });
+    document.getElementById('duelos-turmas').addEventListener('click', evento => {
+      const botao = evento.target.closest('.rd-ver');
+      if (botao) abrirRespostasDupla(botao.dataset.turma, botao.dataset.rodada);
+    });
 
     function cartaoDuelo(duelo) {
       const [rotulo, cor, fundo] = statusDoDuelo(duelo);
@@ -12407,6 +12560,7 @@
         caixaDuelos.innerHTML = data.duels.length
           ? data.duels.map(cartaoDuelo).join('')
           : '<p style="color:var(--muted);font-size:.84rem;">Nenhum duelo criado ainda nesta escola.</p>';
+        caixaTurmas.querySelectorAll('.rd-antigas').forEach(bloco => { bloco.ontoggle = () => carregarSemanasDupla(bloco); });
         caixaTurmas.querySelectorAll('[data-preparar-turma]').forEach(botao => {
           botao.onclick = async () => {
             const original = botao.textContent;
